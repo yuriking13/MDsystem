@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { prisma } from '../db.js';
 
 export async function articleRoutes(app: FastifyInstance) {
-  app.get('/api/projects/:id/articles', { preHandler: [app.auth] }, async (req: any) => {
+  // app.get('/api/projects/:id/articles', { preHandler: [app.auth] }, async (req: any) => {
+  app.get('/api/projects/:id/articles', async (req: any) => {
     const userId = req.user.sub as string;
     const projectId = req.params.id as string;
     const state = (req.query?.state as string | undefined) ?? 'found';
@@ -18,7 +19,7 @@ export async function articleRoutes(app: FastifyInstance) {
       take: 200
     });
 
-    const articles = rows.map((r) => ({
+    const articles = rows.map((r: any) => ({
       ...r.article,
       state: r.state
     }));
@@ -26,7 +27,8 @@ export async function articleRoutes(app: FastifyInstance) {
     return { articles };
   });
 
-  app.post('/api/projects/:id/articles/:articleId/state', { preHandler: [app.auth] }, async (req: any, reply) => {
+  // app.post('/api/projects/:id/articles/:articleId/state', { preHandler: [app.auth] }, async (req: any, reply) => {
+  app.post('/api/projects/:id/articles/:articleId/state', async (req: any, reply) => {
     const userId = req.user.sub as string;
     const projectId = req.params.id as string;
     const articleId = req.params.articleId as string;

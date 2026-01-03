@@ -5,7 +5,7 @@ export async function startWorkers() {
   const boss = await startBoss();
 
   // PubMed search worker (1 concurrent)
-  await boss.work('search:pubmed', { teamSize: 1, teamConcurrency: 1 }, async (job) => {
+  await boss.work('search:pubmed', async (job: any) => {
     await runPubmedSearchJob(job.data as any);
   });
 

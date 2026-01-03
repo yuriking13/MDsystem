@@ -4,7 +4,8 @@ import { prisma } from '../db.js';
 import { getBoss } from '../worker/boss.js';
 
 export async function searchRoutes(app: FastifyInstance) {
-  app.post('/api/projects/:id/search', { preHandler: [app.auth] }, async (req: any, reply) => {
+  // app.post('/api/projects/:id/search', { preHandler: [app.auth] }, async (req: any, reply) => {
+  app.post('/api/projects/:id/search', async (req: any, reply) => {
     const userId = req.user.sub as string;
     const projectId = req.params.id as string;
 

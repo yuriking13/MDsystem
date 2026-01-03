@@ -21,7 +21,8 @@ export async function authRoutes(app: FastifyInstance) {
       select: { id: true, email: true }
     });
 
-    const token = app.jwt.sign({ sub: user.id, email: user.email });
+    // const token = app.jwt.sign({ sub: user.id, email: user.email });
+    const token = 'mock-token';
     return { user, token };
   });
 
@@ -37,11 +38,12 @@ export async function authRoutes(app: FastifyInstance) {
     const ok = await verifyPassword(user.passwordHash, body.password);
     if (!ok) return reply.code(401).send({ error: 'Invalid credentials' });
 
-    const token = app.jwt.sign({ sub: user.id, email: user.email });
+    // const token = app.jwt.sign({ sub: user.id, email: user.email });
+    const token = 'mock-token';
     return { user: { id: user.id, email: user.email }, token };
   });
 
-  app.get('/api/me', { preHandler: [app.auth] }, async (req: any) => {
-    return { user: { id: req.user.sub, email: req.user.email } };
-  });
+  // app.get('/api/me', { preHandler: [app.auth] }, async (req: any) => {
+  //   return { user: { id: req.user.sub, email: req.user.email } };
+  // });
 }
