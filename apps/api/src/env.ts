@@ -7,8 +7,10 @@ const EnvSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
 
   JWT_SECRET: z.string().min(20, 'JWT_SECRET must be at least 20 chars'),
-
   DATABASE_URL: z.string().min(1),
+
+  // Для шифрования пользовательских API ключей в БД
+  API_KEYS_MASTER_KEY: z.string().min(32, 'API_KEYS_MASTER_KEY must be at least 32 chars'),
 
   PUBMED_API_KEY: z.string().optional().default(''),
   CROSSREF_MAILTO: z.string().email().optional().default(''),

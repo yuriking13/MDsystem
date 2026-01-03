@@ -6,11 +6,7 @@ import { env } from './env.js';
 import authPlugin from './auth.js';
 
 import { authRoutes } from './routes/auth.js';
-import { projectRoutes } from './routes/projects.js';
-import { searchRoutes } from './routes/search.js';
-import { articleRoutes } from './routes/articles.js';
-
-import { startWorkers } from './worker/index.js';
+import { userRoutes } from './routes/user.js';
 
 const app = Fastify({ logger: true });
 
@@ -22,17 +18,13 @@ await app.register(sensible);
 await app.register(authPlugin);
 
 await authRoutes(app);
-await projectRoutes(app);
-await searchRoutes(app);
-await articleRoutes(app);
+await userRoutes(app);
 
 app.get('/api/health', async () => ({ ok: true }));
 
 app.listen({ host: env.HOST, port: env.PORT })
-  .then(async () => {
+  .then(() => {
     app.log.info(`API listening on http://${env.HOST}:${env.PORT}`);
-    // In MVP запускаем воркеры в том же процессе. Потом можно вынести в отдельный процесс/сервис.
-    await startWorkers();
   })
   .catch((err) => {
     app.log.error(err);

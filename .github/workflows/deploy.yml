@@ -1,8 +1,8 @@
-name: deploy
+name: Deploy MDsystem
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -12,11 +12,12 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            set -e
+            set -euo pipefail
 
             cd /root/MDsystem
             git fetch --all
@@ -41,7 +42,6 @@ jobs:
             PGHOST="${{ secrets.PG_HOST }}"
             PGPORT="${{ secrets.PG_PORT }}"
 
-            # защита от ошибок: если вдруг в PG_HOST попал host:port
             if [[ "$PGHOST" == *:* ]]; then
               HOST_PART="${PGHOST%%:*}"
               PORT_PART="${PGHOST##*:}"
@@ -52,7 +52,7 @@ jobs:
             fi
 
             if [[ -z "$PGPORT" || ! "$PGPORT" =~ ^[0-9]+$ ]]; then
-              echo "ERROR: PG_PORT must be numeric. Fix GitHub Secrets PG_PORT/PG_HOST."
+              echo "ERROR: PG_PORT must be numeric (e.g. 5432). Check GitHub Secrets PG_PORT/PG_HOST."
               exit 2
             fi
 
@@ -79,27 +79,27 @@ jobs:
               created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
               UNIQUE (user_id, provider)
             );
-
-            CREATE INDEX IF NOT EXISTS idx_user_api_keys_user_id ON user_api_keys(user_id);
             SQL
 
-            # --- systemd secrets (SERVER ONLY, no .env) ---
+            # --- systemd env (NO .env файлов) ---
             mkdir -p /etc/systemd/system/thesis-api.service.d
 
             cat > /etc/systemd/system/thesis-api.service.d/override.conf <<EOF
             [Service]
             Environment=JWT_SECRET=${{ secrets.JWT_SECRET }}
+            Environment=CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
             Environment=CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}
-            Environment=API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}
+            Environment=API_KEYS_MASTER_KEY=${{ secrets.API_KEYS_MASTER_KEY }}
             Environment=DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}
             EOF
 
+            # service file (ты уже делаешь правильно)
             cp /root/MDsystem/deploy/thesis-api.service /etc/systemd/system/thesis-api.service
             systemctl daemon-reload
             systemctl daemon-reexec
             systemctl restart thesis-api
 
-            # --- deploy web ---
+            # frontend
             mkdir -p /var/www/thesis/web
             rm -rf /var/www/thesis/web/*
             cp -r /root/MDsystem/apps/web/dist/* /var/www/thesis/web/
@@ -107,4 +107,8 @@ jobs:
             nginx -t
             systemctl reload nginx
 
-            echo "DEPLOY + DB OK"
+            # smoke checks
+            systemctl is-active thesis-api
+            curl -fsS http://127.0.0.1:3000/api/health >/dev/null
+
+            echo "DEPLOY OK"
