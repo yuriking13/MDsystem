@@ -25,8 +25,9 @@ jobs:
 
             # --- system deps ---
             if ! command -v psql >/dev/null 2>&1; then
-              apt-get update
-              apt-get install -y postgresql-client
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update -y
+              apt-get install -y --no-install-recommends postgresql-client
             fi
 
             corepack enable
@@ -39,9 +40,30 @@ jobs:
             # --- DATABASE MIGRATION (PURE SQL) ---
             export PGPASSWORD="${{ secrets.PG_PASSWORD }}"
 
+            # --- normalize PG host/port (protect from mistakes) ---
+            PGHOST="${{ secrets.PG_HOST }}"
+            PGPORT="${{ secrets.PG_PORT }}"
+
+            # if someone put host:port into PG_HOST, split it
+            if [[ "$PGHOST" == *:* ]]; then
+              # only split if port isn't separately provided or is wrong
+              HOST_PART="${PGHOST%%:*}"
+              PORT_PART="${PGHOST##*:}"
+              if [[ -z "$PGPORT" || ! "$PGPORT" =~ ^[0-9]+$ ]]; then
+                PGHOST="$HOST_PART"
+                PGPORT="$PORT_PART"
+              fi
+            fi
+
+            # hard validation
+            if [[ -z "$PGPORT" || ! "$PGPORT" =~ ^[0-9]+$ ]]; then
+              echo "ERROR: PG_PORT must be numeric (e.g. 5432). Check GitHub Secrets PG_PORT/PG_HOST."
+              exit 2
+            fi
+
             psql \
-              -h ${{ secrets.PG_HOST }} \
-              -p ${{ secrets.PG_PORT }} \
+              -h "$PGHOST" \
+              -p "$PGPORT" \
               -U ${{ secrets.PG_USER }} \
               -d ${{ secrets.PG_DATABASE }} <<'SQL'
             CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -74,6 +96,8 @@ jobs:
             Environment=DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}
             EOF
 
+            cp /root/MDsystem/deploy/thesis-api.service /etc/systemd/system/thesis-api.service
+            systemctl daemon-reload
             systemctl daemon-reexec
             systemctl restart thesis-api
 

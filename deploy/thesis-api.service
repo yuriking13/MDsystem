@@ -4,9 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/thesis/apps/api
-EnvironmentFile=/opt/thesis/apps/api/.env
-ExecStart=/usr/bin/node /opt/thesis/apps/api/dist/server.js
+WorkingDirectory=/root/MDsystem/apps/api
+EnvironmentFile=-/root/MDsystem/apps/api/.env
+ExecStart=/usr/bin/node /root/MDsystem/apps/api/dist/server.js
 Restart=always
 RestartSec=3
 
