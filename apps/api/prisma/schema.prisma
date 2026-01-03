@@ -1,0 +1,110 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ProjectRole {
+  owner
+  editor
+  viewer
+}
+
+enum ArticleState {
+  found
+  selected
+  excluded
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  projectsOwned Project[] @relation("OwnerProjects")
+  memberships   ProjectMember[]
+}
+
+model Project {
+  id            String   @id @default(uuid())
+  title         String
+  citationStyle String   @default("gost-r-7-0-5-2008")
+  createdAt     DateTime @default(now())
+
+  ownerId String
+  owner   User     @relation("OwnerProjects", fields: [ownerId], references: [id])
+
+  members  ProjectMember[]
+  queries  SearchQuery[]
+  states   ArticleProjectState[]
+}
+
+model ProjectMember {
+  projectId String
+  userId    String
+  role      ProjectRole @default(editor)
+  createdAt DateTime    @default(now())
+
+  project Project @relation(fields: [projectId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@id([projectId, userId])
+}
+
+model SearchQuery {
+  id        String   @id @default(uuid())
+  projectId String
+  topic     String
+  filters   Json
+  status    String   @default("queued") // queued|running|done|error
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+  states  ArticleProjectState[]
+}
+
+model Article {
+  id        String   @id @default(uuid())
+  doi       String?  @unique
+  pmid      String?  @unique
+  titleEn   String
+  abstractEn String?
+  titleRu   String?
+  abstractRu String?
+  authors   String? // plain string for MVP
+  journal   String?
+  year      Int?
+  url       String?
+  source    String   // pubmed|crossref|wiley|...
+  studyTypes String[] // ["RCT", "SystematicReview", ...]
+  fulltextStatus String @default("none") // none|available|downloaded
+  stats     Json?
+  hasStats  Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  states ArticleProjectState[]
+}
+
+model ArticleProjectState {
+  projectId String
+  articleId String
+  state     ArticleState @default(found)
+  sourceQueryId String?
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+  article Article @relation(fields: [articleId], references: [id])
+  query   SearchQuery? @relation(fields: [sourceQueryId], references: [id])
+
+  @@id([projectId, articleId])
+  @@index([projectId, state])
+  @@index([sourceQueryId])
+}
