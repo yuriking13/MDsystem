@@ -1,25 +1,81 @@
-name: SSH Test
+name: Deploy MDsystem
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: SSH into server and print info
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
+          username: root
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
           script: |
             set -e
-            whoami
-            hostname
-            pwd
-            ls -la /root/MDsystem | head -n 30
+
+            # --- code update ---
             cd /root/MDsystem
-            git remote -v
-            git rev-parse HEAD
+            git fetch --all
+            git reset --hard origin/main
+
+            corepack enable
+            corepack prepare pnpm@latest --activate
+            pnpm install
+
+            pnpm --filter api build
+            pnpm --filter web build
+
+            # --- DATABASE MIGRATION (PURE SQL) ---
+            export PGPASSWORD="${{ secrets.PG_PASSWORD }}"
+
+            psql \
+              -h ${{ secrets.PG_HOST }} \
+              -p ${{ secrets.PG_PORT }} \
+              -U ${{ secrets.PG_USER }} \
+              -d ${{ secrets.PG_DATABASE }} <<'SQL'
+            CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+            CREATE TABLE IF NOT EXISTS users (
+              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              email TEXT NOT NULL UNIQUE,
+              password_hash TEXT NOT NULL,
+              created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+              last_login_at TIMESTAMPTZ
+            );
+
+            CREATE TABLE IF NOT EXISTS user_api_keys (
+              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+              user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+              provider TEXT NOT NULL,
+              encrypted_key TEXT NOT NULL,
+              created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+              UNIQUE (user_id, provider)
+            );
+            SQL
+
+            # --- systemd secrets (SERVER ONLY) ---
+            mkdir -p /etc/systemd/system/thesis-api.service.d
+
+            cat > /etc/systemd/system/thesis-api.service.d/override.conf <<EOF
+            [Service]
+            Environment=JWT_SECRET=${{ secrets.JWT_SECRET }}
+            Environment=CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}
+            Environment=DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}
+            EOF
+
+            systemctl daemon-reexec
+            systemctl restart thesis-api
+
+            mkdir -p /var/www/thesis/web
+            rm -rf /var/www/thesis/web/*
+            cp -r /root/MDsystem/apps/web/dist/* /var/www/thesis/web/
+
+            nginx -t
+            systemctl reload nginx
+
+            echo "DEPLOY + DB OK"
