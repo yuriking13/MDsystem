@@ -31,14 +31,16 @@ jobs:
             pnpm --filter web build
 
             mkdir -p /etc/systemd/system/thesis-api.service.d
-            cat > /etc/systemd/system/thesis-api.service.d/override.conf <<EOF
-            [Service]
-            Environment=JWT_SECRET=${{ secrets.JWT_SECRET }}
-            Environment=CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
-            Environment=CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}
-            Environment=API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}
-            Environment=DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}
-            EOF
+
+            # write drop-in safely (no BOM/CRLF/indent issues)
+            printf "%s\n" \
+              "[Service]" \
+              "Environment=\"JWT_SECRET=${{ secrets.JWT_SECRET }}\"" \
+              "Environment=\"CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}\"" \
+              "Environment=\"CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}\"" \
+              "Environment=\"API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}\"" \
+              "Environment=\"DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}\"" \
+              > /etc/systemd/system/thesis-api.service.d/override.conf
 
             cp /root/MDsystem/deploy/thesis-api.service /etc/systemd/system/thesis-api.service
             systemctl daemon-reload
@@ -52,7 +54,8 @@ jobs:
             nginx -t
             systemctl reload nginx
 
-            systemctl is-active thesis-api
+            # real smoke check: fail if not active
+            systemctl is-active --quiet thesis-api
             curl -fsS http://127.0.0.1:3000/api/health >/dev/null
 
             echo "DEPLOY OK"

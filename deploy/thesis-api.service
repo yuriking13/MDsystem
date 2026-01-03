@@ -1,11 +1,9 @@
 [Unit]
-Description=Thesis API
+Description=MDsystem API
 After=network.target
 
 [Service]
-Type=simple
 WorkingDirectory=/root/MDsystem/apps/api
-EnvironmentFile=-/root/MDsystem/apps/api/.env
 ExecStart=/usr/bin/node /root/MDsystem/apps/api/dist/server.js
 Restart=always
 RestartSec=3
