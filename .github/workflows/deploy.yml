@@ -23,13 +23,6 @@ jobs:
             git fetch --all
             git reset --hard origin/main
 
-            # --- system deps ---
-            if ! command -v psql >/dev/null 2>&1; then
-              export DEBIAN_FRONTEND=noninteractive
-              apt-get update -y
-              apt-get install -y --no-install-recommends postgresql-client
-            fi
-
             corepack enable
             corepack prepare pnpm@latest --activate
             pnpm install
@@ -37,49 +30,7 @@ jobs:
             pnpm --filter api build
             pnpm --filter web build
 
-            # --- DATABASE MIGRATION (PURE SQL) ---
-            export PGPASSWORD="${{ secrets.PG_PASSWORD }}"
-            PGHOST="${{ secrets.PG_HOST }}"
-            PGPORT="${{ secrets.PG_PORT }}"
-
-            if [[ "$PGHOST" == *:* ]]; then
-              HOST_PART="${PGHOST%%:*}"
-              PORT_PART="${PGHOST##*:}"
-              if [[ -z "$PGPORT" || ! "$PGPORT" =~ ^[0-9]+$ ]]; then
-                PGHOST="$HOST_PART"
-                PGPORT="$PORT_PART"
-              fi
-            fi
-
-            if [[ -z "$PGPORT" || ! "$PGPORT" =~ ^[0-9]+$ ]]; then
-              echo "ERROR: PG_PORT must be numeric (e.g. 5432). Check GitHub Secrets PG_PORT/PG_HOST."
-              exit 2
-            fi
-
-            cat <<'SQL' | psql -v ON_ERROR_STOP=1 -h "$PGHOST" -p "$PGPORT" -U "${{ secrets.PG_USER }}" -d "${{ secrets.PG_DATABASE }}"
-            CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
-            CREATE TABLE IF NOT EXISTS users (
-              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-              email TEXT NOT NULL UNIQUE,
-              password_hash TEXT NOT NULL,
-              created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-              last_login_at TIMESTAMPTZ
-            );
-
-            CREATE TABLE IF NOT EXISTS user_api_keys (
-              id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-              user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-              provider TEXT NOT NULL,
-              encrypted_key TEXT NOT NULL,
-              created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-              UNIQUE (user_id, provider)
-            );
-            SQL
-
-            # --- systemd env (NO .env файлов) ---
             mkdir -p /etc/systemd/system/thesis-api.service.d
-
             cat > /etc/systemd/system/thesis-api.service.d/override.conf <<EOF
             [Service]
             Environment=JWT_SECRET=${{ secrets.JWT_SECRET }}
@@ -89,13 +40,11 @@ jobs:
             Environment=DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}
             EOF
 
-            # service file (ты уже делаешь правильно)
             cp /root/MDsystem/deploy/thesis-api.service /etc/systemd/system/thesis-api.service
             systemctl daemon-reload
             systemctl daemon-reexec
             systemctl restart thesis-api
 
-            # frontend
             mkdir -p /var/www/thesis/web
             rm -rf /var/www/thesis/web/*
             cp -r /root/MDsystem/apps/web/dist/* /var/www/thesis/web/
@@ -103,7 +52,6 @@ jobs:
             nginx -t
             systemctl reload nginx
 
-            # smoke checks
             systemctl is-active thesis-api
             curl -fsS http://127.0.0.1:3000/api/health >/dev/null
 
