@@ -1,14 +1,13 @@
-name: Deploy to server
+name: SSH Test
 
 on:
-  push:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
+      - name: SSH into server and print info
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -17,9 +16,10 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -e
+            whoami
+            hostname
+            pwd
+            ls -la /root/MDsystem | head -n 30
             cd /root/MDsystem
-            git fetch --all
-            git reset --hard origin/main
-            npm ci --omit=dev || npm install
-            pm2 reload mdsystem || pm2 start npm --name mdsystem -- start
-            pm2 save
+            git remote -v
+            git rev-parse HEAD
