@@ -32,7 +32,7 @@ jobs:
 
             mkdir -p /etc/systemd/system/thesis-api.service.d
 
-            # write drop-in safely (no BOM/CRLF/indent issues)
+            # Пишем drop-in гарантированно без BOM/CRLF/отступов и с корректными кавычками systemd
             printf "%s\n" \
               "[Service]" \
               "Environment=\"JWT_SECRET=${{ secrets.JWT_SECRET }}\"" \
@@ -42,11 +42,19 @@ jobs:
               "Environment=\"DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}\"" \
               > /etc/systemd/system/thesis-api.service.d/override.conf
 
+            # На всякий случай убиваем дефолтный Beget hello-world (если вдруг снова появился)
+            sudo -u nodejs pm2 delete hello-world || true
+            sudo -u nodejs pm2 save || true
+
             cp /root/MDsystem/deploy/thesis-api.service /etc/systemd/system/thesis-api.service
             systemctl daemon-reload
             systemctl daemon-reexec
             systemctl restart thesis-api
 
+            # Диагностика: покажи, что systemd реально видит нужные env (без вывода секретов целиком)
+            systemctl show thesis-api -p Environment
+
+            # frontend
             mkdir -p /var/www/thesis/web
             rm -rf /var/www/thesis/web/*
             cp -r /root/MDsystem/apps/web/dist/* /var/www/thesis/web/
@@ -54,7 +62,7 @@ jobs:
             nginx -t
             systemctl reload nginx
 
-            # real smoke check: fail if not active
+            # Smoke check (если не поднялся — сразу падаем)
             systemctl is-active --quiet thesis-api
             curl -fsS http://127.0.0.1:3000/api/health >/dev/null
 
