@@ -108,4 +108,15 @@ jobs:
             nginx -t
             systemctl reload nginx
 
+            # --- smoke checks ---
+            echo "== systemd =="
+            systemctl is-active thesis-api
+
+            echo "== api health =="
+            curl -fsS http://127.0.0.1:3000/api/health >/dev/null
+
+            echo "== db check =="
+            export PGPASSWORD="${{ secrets.PG_PASSWORD }}"
+            psql -h "$PGHOST" -p "$PGPORT" -U ${{ secrets.PG_USER }} -d ${{ secrets.PG_DATABASE }} -c "SELECT 1;" >/dev/null
+
             echo "DEPLOY + DB OK"
