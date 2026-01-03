@@ -4,20 +4,14 @@ import { z } from 'zod';
 const EnvSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
   PORT: z.coerce.number().default(3000),
-  CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  CORS_ORIGIN: z.string(),
 
-  JWT_SECRET: z.string().min(20, 'JWT_SECRET must be at least 20 chars'),
+  JWT_SECRET: z.string().min(20),
   DATABASE_URL: z.string().min(1),
 
-  // Для шифрования пользовательских API ключей в БД
-  API_KEYS_MASTER_KEY: z.string().min(32, 'API_KEYS_MASTER_KEY must be at least 32 chars'),
+  API_KEY_ENCRYPTION_SECRET: z.string().min(32),
 
-  PUBMED_API_KEY: z.string().optional().default(''),
   CROSSREF_MAILTO: z.string().email().optional().default(''),
-  WILEY_TDM_TOKEN: z.string().optional().default(''),
-
-  TRANSLATE_PROVIDER: z.string().optional().default(''),
-  TRANSLATE_API_KEY: z.string().optional().default('')
 });
 
 export const env = EnvSchema.parse(process.env);

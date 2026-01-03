@@ -7,16 +7,15 @@ import { pool } from '../pg.js';
 const Providers = z.enum(['pubmed', 'wiley', 'crossref', 'openrouter']);
 type Provider = z.infer<typeof Providers>;
 
-function getMasterKey(): Buffer {
-  // Берём первые 32 байта (если длиннее) или падём если меньше 32
-  const raw = env.API_KEYS_MASTER_KEY;
+function getEncryptionKey(): Buffer {
+  const raw = env.API_KEY_ENCRYPTION_SECRET;
   const buf = Buffer.from(raw, 'utf8');
-  if (buf.length < 32) throw new Error('API_KEYS_MASTER_KEY too short');
+  if (buf.length < 32) throw new Error('API_KEY_ENCRYPTION_SECRET too short');
   return buf.subarray(0, 32);
 }
 
 function encrypt(plain: string): string {
-  const key = getMasterKey();
+  const key = getEncryptionKey();
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   const enc = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);

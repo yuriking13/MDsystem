@@ -13,7 +13,7 @@ export async function runPubmedSearchJob(payload: { projectId: string; queryId: 
     const filters = query.filters as any;
 
     const result = await pubmedFetchAll({
-      apiKey: env.PUBMED_API_KEY || undefined,
+      // apiKey: env.PUBMED_API_KEY || undefined,
       topic: query.topic,
       filters: {
         publishedFrom: filters.publishedFrom,
