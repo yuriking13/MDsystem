@@ -202,6 +202,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(400).send({ error: "BadRequest", message: "No fields to update" });
       }
 
+      // Always update the updated_at timestamp
+      updates.push(`updated_at = NOW()`);
+
       values.push(paramsP.data.statId);
       values.push(paramsP.data.id);
 
