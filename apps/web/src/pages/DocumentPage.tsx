@@ -7,10 +7,46 @@ import {
   apiGetArticles,
   apiAddCitation,
   apiRemoveCitation,
+  apiGetProject,
   type Document,
   type Article,
   type Citation,
+  type CitationStyle,
 } from "../lib/api";
+
+// Простое форматирование цитаты для отображения в панели
+function formatCitationSimple(
+  article: { 
+    title_en: string; 
+    title_ru?: string | null; 
+    authors?: string[] | null; 
+    year?: number | null;
+    journal?: string | null;
+  },
+  style: CitationStyle
+): string {
+  const authors = article.authors || [];
+  const firstAuthor = authors[0] || 'Anonymous';
+  const title = article.title_ru || article.title_en;
+  const year = article.year || 'n.d.';
+  
+  // Сокращаем имя первого автора
+  const parts = firstAuthor.split(' ');
+  const shortAuthor = parts.length > 1 
+    ? `${parts[0]} ${parts.slice(1).map(p => p[0] + '.').join('')}`
+    : parts[0];
+  
+  switch (style) {
+    case 'gost':
+      return `${shortAuthor}${authors.length > 1 ? ' и др.' : ''} ${title.slice(0, 60)}${title.length > 60 ? '...' : ''} (${year})`;
+    case 'apa':
+      return `${shortAuthor}${authors.length > 1 ? ' et al.' : ''} (${year}). ${title.slice(0, 50)}...`;
+    case 'vancouver':
+      return `${shortAuthor}${authors.length > 1 ? ' et al' : ''}. ${title.slice(0, 50)}... ${year}`;
+    default:
+      return `${shortAuthor} (${year}) ${title.slice(0, 50)}...`;
+  }
+}
 
 export default function DocumentPage() {
   const { projectId, docId } = useParams<{ projectId: string; docId: string }>();
@@ -22,23 +58,28 @@ export default function DocumentPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [citationStyle, setCitationStyle] = useState<CitationStyle>("gost");
 
   // Модальное окно выбора статьи для цитаты
   const [showCitationPicker, setShowCitationPicker] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [searchArticle, setSearchArticle] = useState("");
 
-  // Загрузка документа
+  // Загрузка документа и проекта
   useEffect(() => {
     if (!projectId || !docId) return;
 
     async function load() {
       setLoading(true);
       try {
-        const res = await apiGetDocument(projectId!, docId!);
-        setDoc(res.document);
-        setTitle(res.document.title);
-        setContent(res.document.content || "");
+        const [docRes, projRes] = await Promise.all([
+          apiGetDocument(projectId!, docId!),
+          apiGetProject(projectId!),
+        ]);
+        setDoc(docRes.document);
+        setTitle(docRes.document.title);
+        setContent(docRes.document.content || "");
+        setCitationStyle(projRes.project.citation_style || "gost");
       } catch (err: any) {
         setError(err?.message || "Ошибка загрузки");
       } finally {
@@ -207,18 +248,19 @@ export default function DocumentPage() {
 
         {/* Панель цитат */}
         <div className="citations-panel">
-          <h4>Список литературы ({doc.citations?.length || 0})</h4>
+          <div className="row space" style={{ marginBottom: 8 }}>
+            <h4 style={{ margin: 0 }}>Список литературы ({doc.citations?.length || 0})</h4>
+            <span className="id-badge" title="Стиль цитирования">
+              {citationStyle.toUpperCase()}
+            </span>
+          </div>
           {doc.citations && doc.citations.length > 0 ? (
             <ol className="citations-list">
               {doc.citations.map((c) => (
                 <li key={c.id}>
                   <div className="citation-item">
                     <div className="citation-text">
-                      {c.article.authors?.slice(0, 2).join(", ")}
-                      {c.article.authors && c.article.authors.length > 2 && " и др."}
-                      {" "}
-                      {c.article.title_ru || c.article.title_en}
-                      {c.article.year && ` (${c.article.year})`}
+                      {formatCitationSimple(c.article, citationStyle)}
                     </div>
                     <button
                       className="btn secondary"

@@ -225,10 +225,15 @@ export default function Editor({
   const insertCitation = useCallback(
     (citationNumber: number) => {
       if (editor) {
+        // Вставляем как простой текст с особым форматированием
         editor
           .chain()
           .focus()
-          .insertContent(`<span class="citation" data-number="${citationNumber}">[${citationNumber}]</span>`)
+          .insertContent({
+            type: 'text',
+            marks: [{ type: 'bold' }],
+            text: `[${citationNumber}]`,
+          })
           .run();
       }
     },

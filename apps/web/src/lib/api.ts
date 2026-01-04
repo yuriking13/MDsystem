@@ -91,11 +91,14 @@ export async function apiDeleteApiKey(provider: string): Promise<{ ok: true }> {
 
 // ========== Projects ==========
 
+export type CitationStyle = "gost" | "apa" | "vancouver";
+
 export type Project = {
   id: string;
   name: string;
   description: string | null;
   role: "owner" | "editor" | "viewer";
+  citation_style?: CitationStyle;
   created_at: string;
   updated_at: string;
 };
@@ -127,7 +130,7 @@ export async function apiCreateProject(
 
 export async function apiUpdateProject(
   id: string,
-  data: { name?: string; description?: string }
+  data: { name?: string; description?: string; citationStyle?: CitationStyle }
 ): Promise<{ project: Project }> {
   return apiFetch<{ project: Project }>(`/api/projects/${id}`, {
     method: "PATCH",
@@ -434,4 +437,39 @@ export async function apiRemoveCitation(
     `/api/projects/${projectId}/documents/${docId}/citations/${citationId}`,
     { method: "DELETE" }
   );
+}
+
+// ========== Bibliography & Export ==========
+
+export type BibliographyItem = {
+  number: number;
+  articleId: string;
+  formatted: string;
+  raw?: any;
+};
+
+export type BibliographyResponse = {
+  citationStyle: CitationStyle;
+  bibliography: BibliographyItem[];
+};
+
+export async function apiGetBibliography(
+  projectId: string,
+  style?: CitationStyle
+): Promise<BibliographyResponse> {
+  const url = style 
+    ? `/api/projects/${projectId}/bibliography?style=${style}`
+    : `/api/projects/${projectId}/bibliography`;
+  return apiFetch<BibliographyResponse>(url);
+}
+
+export type ExportResponse = {
+  projectName: string;
+  citationStyle: CitationStyle;
+  documents: Document[];
+  bibliography: BibliographyItem[];
+};
+
+export async function apiExportProject(projectId: string): Promise<ExportResponse> {
+  return apiFetch<ExportResponse>(`/api/projects/${projectId}/export`);
 }
