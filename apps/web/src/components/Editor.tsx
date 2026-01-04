@@ -268,7 +268,11 @@ export default function Editor({
   const insertCitation = useCallback(
     (citationNumber: number, citationId?: string, note?: string, articleTitle?: string) => {
       if (editor) {
+        // Сначала убираем все активные marks чтобы цитата была изолирована
+        editor.chain().focus().unsetAllMarks().run();
+        
         // Вставляем как HTML span с data-атрибутами
+        // Используем пробел до и после чтобы изолировать от окружающего текста
         const noteAttr = note ? ` data-note="${note.replace(/"/g, '&quot;')}"` : '';
         const titleAttr = articleTitle ? ` data-article-title="${articleTitle.replace(/"/g, '&quot;')}"` : '';
         const html = `<span class="citation-link" data-citation-number="${citationNumber}" data-citation-id="${citationId || `citation-${citationNumber}`}"${noteAttr}${titleAttr}>[${citationNumber}]</span>`;
@@ -276,7 +280,11 @@ export default function Editor({
         editor
           .chain()
           .focus()
-          .insertContent(html)
+          .insertContent(html, {
+            parseOptions: {
+              preserveWhitespace: true,
+            }
+          })
           .run();
       }
     },

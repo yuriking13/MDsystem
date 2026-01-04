@@ -54,6 +54,8 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   const [viewStatus, setViewStatus] = useState<"candidate" | "selected" | "excluded" | "all">("candidate");
   const [showStatsOnly, setShowStatsOnly] = useState(false);
   const [filterPubType, setFilterPubType] = useState<string | null>(null);
+  const [filterSourceQuery, setFilterSourceQuery] = useState<string | null>(null);
+  const [availableSourceQueries, setAvailableSourceQueries] = useState<string[]>([]);
 
   // Поиск
   const [showSearch, setShowSearch] = useState(false);
@@ -103,9 +105,13 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     setError(null);
     try {
       const status = viewStatus === "all" ? undefined : viewStatus;
-      const res = await apiGetArticles(projectId, status, showStatsOnly || undefined);
+      const res = await apiGetArticles(projectId, status, showStatsOnly || undefined, filterSourceQuery || undefined);
       setArticles(res.articles);
       setCounts(res.counts);
+      // Сохраняем доступные поисковые запросы для фильтра
+      if (res.searchQueries) {
+        setAvailableSourceQueries(res.searchQueries);
+      }
       // Передаём counts наверх для отображения в табах
       if (onCountsChange) {
         const total = res.counts.candidate + res.counts.selected + res.counts.excluded;
@@ -120,7 +126,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
   useEffect(() => {
     loadArticles();
-  }, [projectId, viewStatus, showStatsOnly]);
+  }, [projectId, viewStatus, showStatsOnly, filterSourceQuery]);
 
   // Вычислить годы из пресета
   function getYearsFromPreset(): { yearFrom: number; yearTo: number } {
@@ -716,6 +722,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           <option value="stats">По статистике</option>
           <option value="year">По году</option>
         </select>
+        
+        {/* Фильтр по поисковому запросу (подбазы) */}
+        {availableSourceQueries.length > 0 && (
+          <select
+            value={filterSourceQuery || ""}
+            onChange={(e) => setFilterSourceQuery(e.target.value || null)}
+            style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12, maxWidth: 200 }}
+            title="Фильтр по поисковому запросу"
+          >
+            <option value="">📂 Все запросы</option>
+            {availableSourceQueries.map((q) => (
+              <option key={q} value={q} title={q}>
+                {q.length > 25 ? q.slice(0, 25) + '...' : q}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Панель массовых операций */}

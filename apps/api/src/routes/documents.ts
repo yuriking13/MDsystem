@@ -741,7 +741,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       );
 
       // Строим nodes и links
-      const nodes: { id: string; label: string; year: number | null; status: string; doi: string | null; pmid: string | null }[] = [];
+      const nodes: { id: string; label: string; year: number | null; status: string; doi: string | null; pmid: string | null; citedByCount: number }[] = [];
       const links: { source: string; target: string }[] = [];
       const linksSet = new Set<string>(); // Для дедупликации
       const doiToId = new Map<string, string>();
@@ -752,6 +752,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
         const label = `${firstAuthor} (${article.year || '?'})`;
         
+        // Количество цитирований (cited_by_pmids)
+        const citedByCount = article.cited_by_pmids?.length || 0;
+        
         nodes.push({
           id: article.id,
           label,
@@ -759,6 +762,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           status: article.status,
           doi: article.doi,
           pmid: article.pmid,
+          citedByCount,
         });
 
         if (article.doi) {

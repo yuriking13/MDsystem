@@ -236,11 +236,13 @@ export async function apiSearchArticles(
 export async function apiGetArticles(
   projectId: string,
   status?: "candidate" | "selected" | "excluded",
-  hasStats?: boolean
+  hasStats?: boolean,
+  sourceQuery?: string
 ): Promise<ArticlesResponse> {
   const params = new URLSearchParams();
   if (status) params.set("status", status);
   if (hasStats) params.set("hasStats", "true");
+  if (sourceQuery) params.set("sourceQuery", sourceQuery);
   
   const qs = params.toString();
   return apiFetch<ArticlesResponse>(
@@ -500,6 +502,8 @@ export type GraphNode = {
   year: number | null;
   status: string;
   doi: string | null;
+  pmid?: string | null;
+  citedByCount?: number;
 };
 
 export type GraphLink = {
