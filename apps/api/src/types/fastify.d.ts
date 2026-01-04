@@ -1,7 +1,3 @@
-import "fastify";
-
-declare module "fastify" {
-  interface FastifyInstance {
-    authenticate: (request: any, reply: any) => Promise<void>;
-  }
-}
+// Декларации находятся в auth.ts
+// Этот файл оставлен для совместимости с TypeScript
+export {};
