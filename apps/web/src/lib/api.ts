@@ -656,6 +656,15 @@ export async function apiGetStatistics(
   );
 }
 
+export async function apiGetStatistic(
+  projectId: string,
+  statId: string
+): Promise<{ statistic: ProjectStatistic }> {
+  return apiFetch<{ statistic: ProjectStatistic }>(
+    `/api/projects/${projectId}/statistics/${statId}`
+  );
+}
+
 export async function apiCreateStatistic(
   projectId: string,
   data: {
