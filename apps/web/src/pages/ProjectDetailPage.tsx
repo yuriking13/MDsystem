@@ -29,6 +29,7 @@ import ArticlesSection from "../components/ArticlesSection";
 import CitationGraph from "../components/CitationGraph";
 import ChartFromTable, { CHART_TYPE_INFO, type ChartType, type TableData } from "../components/ChartFromTable";
 import StatisticEditModal from "../components/StatisticEditModal";
+import CreateStatisticModal from "../components/CreateStatisticModal";
 import { exportToWord } from "../lib/exportWord";
 
 type Tab = "articles" | "documents" | "statistics" | "graph" | "team" | "settings";
@@ -180,6 +181,7 @@ export default function ProjectDetailPage() {
   const [loadingStats, setLoadingStats] = useState(false);
   const [editingStat, setEditingStat] = useState<ProjectStatistic | null>(null);
   const [statisticsView, setStatisticsView] = useState<'charts' | 'tables'>('charts');
+  const [showCreateStatistic, setShowCreateStatistic] = useState(false);
 
   // Invite form
   const [showInvite, setShowInvite] = useState(false);
@@ -811,30 +813,30 @@ export default function ProjectDetailPage() {
               </div>
             </div>
             
-            {/* Быстрое создание - кликабельные типы графиков */}
+            {/* Быстрое создание - кнопка открывает модал */}
             <div className="chart-types-selector">
               <div className="chart-types-header">
-                <h4>📊 Создать новый график</h4>
-                <span className="muted">Выберите тип для быстрого создания</span>
+                <h4>📊 Создать новый график или таблицу</h4>
+                <span className="muted">Создайте таблицу с данными, затем визуализируйте её</span>
               </div>
-              <div className="chart-types-grid">
+              <div className="row gap" style={{ marginTop: 12 }}>
+                <button
+                  className="btn"
+                  onClick={() => setShowCreateStatistic(true)}
+                  type="button"
+                >
+                  ➕ Создать таблицу/график
+                </button>
+              </div>
+              <div className="chart-types-grid" style={{ marginTop: 16 }}>
                 {(['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter'] as ChartType[]).map(type => (
                   <div 
                     key={type} 
-                    className="chart-type-card"
-                    onClick={() => {
-                      if (documents.length > 0) {
-                        // Переходим в документ с подсказкой о создании графика
-                        nav(`/projects/${id}/documents/${documents[0].id}?createChart=${type}`);
-                      } else {
-                        setError('Сначала создайте документ');
-                      }
-                    }}
-                    title={`Создать ${CHART_TYPE_INFO[type].name}`}
+                    className="chart-type-card chart-type-hint"
+                    title={CHART_TYPE_INFO[type].description}
                   >
                     <span className="chart-type-icon">{CHART_TYPE_INFO[type].icon}</span>
                     <span className="chart-type-name">{CHART_TYPE_INFO[type].name}</span>
-                    <span className="chart-type-desc">{CHART_TYPE_INFO[type].description}</span>
                   </div>
                 ))}
               </div>
@@ -862,115 +864,122 @@ export default function ProjectDetailPage() {
               </div>
             ) : (
               <div className="statistics-list">
-                {statistics
-                  .filter(stat => statisticsView === 'charts' ? stat.type === 'chart' : stat.type === 'table')
-                  .map(stat => {
-                    const chartInfo = stat.chart_type ? CHART_TYPE_INFO[stat.chart_type as ChartType] : null;
-                    const usedInDoc = stat.used_in_documents?.[0];
-                    
-                    return (
-                      <div key={stat.id} className="stat-card">
-                        <div className="stat-card-header">
-                          <div className="stat-card-title-row">
-                            <span className="stat-card-icon">{chartInfo?.icon || '📊'}</span>
-                            <div className="stat-card-title-info">
-                              <h4 className="stat-card-title">{stat.title || 'Без названия'}</h4>
-                              {usedInDoc && (
-                                <span className="stat-card-document">
-                                  📄 {typeof usedInDoc === 'object' ? (usedInDoc as any).title : 'Документ'}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <span className="stat-card-type-badge">
-                            {stat.type === 'chart' ? (chartInfo?.name || 'График') : 'Таблица'}
+                {statistics.map(stat => {
+                  const chartInfo = stat.chart_type ? CHART_TYPE_INFO[stat.chart_type as ChartType] : null;
+                  const usedInDoc = stat.used_in_documents?.[0];
+                  const tableData = stat.table_data as TableData | undefined;
+                  const showAsTable = statisticsView === 'tables';
+                  
+                  return (
+                    <div key={stat.id} className="stat-card">
+                      <div className="stat-card-header">
+                        <div className="stat-card-title-row">
+                          <span className="stat-card-icon">
+                            {showAsTable ? '📋' : (chartInfo?.icon || '📊')}
                           </span>
+                          <div className="stat-card-title-info">
+                            <h4 className="stat-card-title">{stat.title || 'Без названия'}</h4>
+                            {usedInDoc && (
+                              <span className="stat-card-document">
+                                📄 {typeof usedInDoc === 'object' ? (usedInDoc as any).title : 'Документ'}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        
-                        {stat.description && (
-                          <p className="stat-card-description">{stat.description}</p>
+                        <span className="stat-card-type-badge">
+                          {showAsTable ? 'Исходные данные' : (chartInfo?.name || 'График')}
+                        </span>
+                      </div>
+                      
+                      {stat.description && (
+                        <p className="stat-card-description">{stat.description}</p>
+                      )}
+                      
+                      <div className="stat-card-preview">
+                        {/* Режим графиков - показываем график */}
+                        {!showAsTable && stat.table_data && stat.config && (
+                          <ChartFromTable 
+                            tableData={stat.table_data as any} 
+                            config={stat.config as any} 
+                            height={180} 
+                          />
                         )}
                         
-                        <div className="stat-card-preview">
-                          {stat.type === 'chart' && stat.table_data && stat.config && (
-                            <ChartFromTable 
-                              tableData={stat.table_data as any} 
-                              config={stat.config as any} 
-                              height={180} 
-                            />
-                          )}
-                          {stat.type === 'table' && stat.table_data && (
-                            <div className="stat-table-preview">
-                              <table>
-                                <thead>
-                                  <tr>
-                                    {(stat.table_data as TableData).headers?.map((h, i) => (
-                                      <th key={i}>{h}</th>
+                        {/* Режим таблиц - показываем исходную таблицу данных */}
+                        {showAsTable && tableData && (
+                          <div className="stat-table-preview">
+                            <table>
+                              <thead>
+                                <tr>
+                                  {tableData.headers?.map((h, i) => (
+                                    <th key={i}>{h}</th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {tableData.rows?.map((row, i) => (
+                                  <tr key={i}>
+                                    {row.map((cell, j) => (
+                                      <td key={j}>{cell}</td>
                                     ))}
                                   </tr>
-                                </thead>
-                                <tbody>
-                                  {(stat.table_data as TableData).rows?.slice(0, 3).map((row, i) => (
-                                    <tr key={i}>
-                                      {row.map((cell, j) => (
-                                        <td key={j}>{cell}</td>
-                                      ))}
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                              {(stat.table_data as TableData).rows?.length > 3 && (
-                                <div className="table-more-rows">
-                                  +{(stat.table_data as TableData).rows.length - 3} строк...
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        
-                        {stat.data_classification && (
-                          <div className="stat-card-tags">
-                            <span className="stat-tag">
-                              {stat.data_classification.variableType === 'quantitative' ? 'Количественные' : 'Качественные'}
-                            </span>
-                            <span className="stat-tag">
-                              {stat.data_classification.subType}
-                            </span>
+                                ))}
+                              </tbody>
+                            </table>
                           </div>
                         )}
                         
-                        <div className="stat-card-actions">
-                          <button 
-                            className="btn stat-action-btn" 
-                            onClick={() => setEditingStat(stat)}
-                            title="Редактировать"
-                          >
-                            ✏️ Редактировать
-                          </button>
-                          {documents.length > 0 && (
-                            <button 
-                              className="btn secondary stat-action-btn" 
-                              onClick={() => {
-                                const chartCode = `[График: ${stat.title}]`;
-                                navigator.clipboard.writeText(chartCode);
-                                setOk(`Скопировано! Вставьте в документ.`);
-                              }}
-                              title="Скопировать ссылку"
-                            >
-                              📋 Копировать
-                            </button>
-                          )}
-                          <button 
-                            className="btn secondary stat-action-btn stat-delete-btn" 
-                            onClick={() => handleDeleteStatistic(stat.id)}
-                            title="Удалить"
-                          >
-                            🗑️
-                          </button>
-                        </div>
+                        {/* Если нет данных */}
+                        {!tableData && (
+                          <div className="stat-no-data">
+                            Нет данных для отображения
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
+                      
+                      {stat.data_classification && (
+                        <div className="stat-card-tags">
+                          <span className="stat-tag">
+                            {stat.data_classification.variableType === 'quantitative' ? 'Количественные' : 'Качественные'}
+                          </span>
+                          <span className="stat-tag">
+                            {stat.data_classification.subType}
+                          </span>
+                        </div>
+                      )}
+                      
+                      <div className="stat-card-actions">
+                        <button 
+                          className="btn stat-action-btn" 
+                          onClick={() => setEditingStat(stat)}
+                          title="Редактировать"
+                        >
+                          ✏️ Редактировать
+                        </button>
+                        {documents.length > 0 && (
+                          <button 
+                            className="btn secondary stat-action-btn" 
+                            onClick={() => {
+                              const chartCode = `[График: ${stat.title}]`;
+                              navigator.clipboard.writeText(chartCode);
+                              setOk(`Скопировано! Вставьте в документ.`);
+                            }}
+                            title="Скопировать ссылку"
+                          >
+                            📋 Копировать
+                          </button>
+                        )}
+                        <button 
+                          className="btn secondary stat-action-btn stat-delete-btn" 
+                          onClick={() => handleDeleteStatistic(stat.id)}
+                          title="Удалить"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
@@ -982,6 +991,19 @@ export default function ProjectDetailPage() {
                 onSave={async (updates) => {
                   await handleUpdateStatistic(editingStat.id, updates);
                   setEditingStat(null);
+                }}
+              />
+            )}
+            
+            {/* Модальное окно создания новой статистики */}
+            {showCreateStatistic && (
+              <CreateStatisticModal
+                projectId={id!}
+                onClose={() => setShowCreateStatistic(false)}
+                onCreated={(newStat) => {
+                  setStatistics([...statistics, newStat]);
+                  setShowCreateStatistic(false);
+                  setOk('Статистика создана');
                 }}
               />
             )}

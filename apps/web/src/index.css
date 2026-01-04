@@ -1330,6 +1330,32 @@ input::placeholder {
   background: var(--bg-glass-light);
 }
 
+/* Chart data input in modals */
+.chart-data-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  color: var(--text-primary);
+}
+
+.chart-data-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.chart-data-input.header-input {
+  font-weight: 600;
+}
+
+/* Statistic edit modal */
+.statistic-edit-modal {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
 /* Выделение ячеек таблицы */
 .editor-content .tiptap .selectedCell::after {
   content: "";
@@ -2083,6 +2109,17 @@ input::placeholder {
   transform: translateY(-2px);
 }
 
+.chart-type-card.chart-type-hint {
+  cursor: default;
+  opacity: 0.8;
+}
+
+.chart-type-card.chart-type-hint:hover {
+  transform: none;
+  border-color: var(--border-glass-light);
+  background: var(--bg-glass);
+}
+
 .chart-type-icon {
   font-size: 28px;
   margin-bottom: 8px;
@@ -2234,6 +2271,13 @@ input::placeholder {
   color: var(--text-muted);
 }
 
+.stat-no-data {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .stat-card-tags {
   display: flex;
   gap: 6px;
@@ -2276,43 +2320,75 @@ input::placeholder {
 /* ===== EDITOR PAGES MODE FIX ===== */
 
 .editor-scroll-area.pages-mode {
-  background: linear-gradient(135deg, rgba(40, 50, 70, 0.9), rgba(30, 40, 60, 0.95));
-  padding: 30px 20px;
+  --page-width: 794px;
+  --page-height: 1123px;
+  --page-margin-top: 20mm;
+  --page-margin-bottom: 20mm;
+  --page-margin-left: 30mm;
+  --page-margin-right: 15mm;
+  --line-height: 1.5;
+  
+  background: linear-gradient(135deg, #3a4a6a 0%, #2a3a5a 100%);
+  padding: 40px 20px;
   min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* Page container - the white "paper" */
 .editor-scroll-area.pages-mode .editor-page.page-view {
-  background: var(--editor-bg) !important;
-  color: var(--editor-text) !important;
+  width: var(--page-width);
+  min-width: var(--page-width);
+  max-width: var(--page-width);
+  min-height: var(--page-height);
+  padding: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left);
+  background: var(--editor-bg, #ffffff) !important;
+  color: var(--editor-text, #1a1a1a) !important;
   box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 4px 25px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 30px;
+  margin: 0 auto 40px auto;
   border-radius: 2px;
+  line-height: var(--line-height);
+  position: relative;
+}
+
+/* Page break indicator - visual separator between pages */
+.editor-scroll-area.pages-mode .editor-page.page-view::after {
+  content: '';
+  display: block;
+  position: absolute;
+  bottom: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
 }
 
 /* Ensure the entire content area inside the page has white background */
 .editor-scroll-area.pages-mode .editor-page.page-view .editor-content-area {
-  background: var(--editor-bg) !important;
-  color: var(--editor-text) !important;
-  min-height: 100%;
+  background: var(--editor-bg, #ffffff) !important;
+  color: var(--editor-text, #1a1a1a) !important;
+  min-height: calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom));
+  width: 100%;
 }
 
 /* ProseMirror/TipTap editor core */
 .editor-scroll-area.pages-mode .editor-page.page-view .ProseMirror,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap {
-  background: var(--editor-bg) !important;
-  color: var(--editor-text) !important;
-  min-height: 100%;
-  /* Ensure content expands within white area */
-  padding-bottom: 50px;
+  background: var(--editor-bg, #ffffff) !important;
+  color: var(--editor-text, #1a1a1a) !important;
+  min-height: calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 20px);
+  width: 100%;
+  outline: none;
 }
 
 /* All text elements inherit white background context */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap > * {
   background: transparent;
-  color: var(--editor-text) !important;
+  color: var(--editor-text, #1a1a1a) !important;
 }
 
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap p,
@@ -2328,23 +2404,25 @@ input::placeholder {
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap blockquote,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap pre,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap code {
-  color: var(--editor-text) !important;
+  color: var(--editor-text, #1a1a1a) !important;
 }
 
 /* Tables in pages mode */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap table {
   border-color: #ddd;
+  width: 100%;
+  max-width: 100%;
 }
 
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap table th {
   background: #f5f5f5;
-  color: var(--editor-text) !important;
+  color: var(--editor-text, #1a1a1a) !important;
   border-color: #ddd;
 }
 
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap table td {
   background: transparent;
-  color: var(--editor-text) !important;
+  color: var(--editor-text, #1a1a1a) !important;
   border-color: #ddd;
 }
 
@@ -2373,6 +2451,20 @@ input::placeholder {
 /* Placeholder text in pages mode */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap .is-editor-empty:first-child::before {
   color: #999;
+}
+
+/* Simulated page breaks using CSS - every ~page-height content gets a visual break */
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap {
+  /* Add subtle page break lines every ~1000px of content */
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 60px),
+    rgba(75, 116, 255, 0.1) calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 60px),
+    rgba(75, 116, 255, 0.1) calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 58px),
+    transparent calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 58px)
+  );
+  background-color: var(--editor-bg, #ffffff);
 }
 
 /* Article picker item */
