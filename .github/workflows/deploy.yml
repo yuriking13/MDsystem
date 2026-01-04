@@ -31,6 +31,10 @@ jobs:
             pnpm --filter api build
             pnpm --filter web build
 
+            # ---- Run Database Migrations ----
+            export DATABASE_URL="postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}"
+            pnpm --filter api run migrate:deploy
+
             # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'
