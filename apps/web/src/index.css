@@ -646,25 +646,29 @@ input::placeholder {
   height: 0;
 }
 
-/* Citation in text with tooltip */
-.editor-content .citation-link {
+/* Citation in text - атомарный inline node */
+.editor-content .citation-ref {
   color: var(--accent);
   font-weight: 600;
   cursor: pointer;
   position: relative;
   text-decoration: none;
-  padding: 0 2px;
+  padding: 1px 3px;
   border-radius: 3px;
   transition: all 0.15s ease;
+  display: inline;
+  /* Важно: не наследует стили от родителя */
+  font-style: normal !important;
+  background: transparent;
 }
 
-.editor-content .citation-link:hover {
+.editor-content .citation-ref:hover {
   background: var(--accent-glow);
   text-decoration: underline;
 }
 
 /* Tooltip для цитат в тексте */
-.editor-content .citation-link[data-note]:not([data-note=""]):hover::after {
+.editor-content .citation-ref[data-note]:not([data-note=""]):hover::after {
   content: attr(data-note);
   position: absolute;
   bottom: calc(100% + 8px);
@@ -687,7 +691,7 @@ input::placeholder {
   animation: tooltipFadeIn 0.2s ease;
 }
 
-.editor-content .citation-link[data-note]:not([data-note=""]):hover::before {
+.editor-content .citation-ref[data-note]:not([data-note=""]):hover::before {
   content: "";
   position: absolute;
   bottom: calc(100% + 2px);
@@ -710,8 +714,8 @@ input::placeholder {
 }
 
 /* Tooltip с названием статьи при отсутствии note */
-.editor-content .citation-link[data-article-title]:not([data-note]):hover::after,
-.editor-content .citation-link[data-article-title][data-note=""]:hover::after {
+.editor-content .citation-ref[data-article-title]:not([data-note]):hover::after,
+.editor-content .citation-ref[data-article-title][data-note=""]:hover::after {
   content: attr(data-article-title);
   position: absolute;
   bottom: calc(100% + 8px);

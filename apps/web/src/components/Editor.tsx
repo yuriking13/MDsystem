@@ -6,7 +6,7 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
-import CitationMark from "./CitationMark";
+import CitationNode from "./CitationNode";
 
 type CitationData = {
   id: string;
@@ -225,10 +225,8 @@ export default function Editor({
       Highlight.configure({
         multicolor: false,
       }),
-      CitationMark.configure({
-        HTMLAttributes: {
-          class: "citation-link",
-        },
+      CitationNode.configure({
+        HTMLAttributes: {},
       }),
     ],
     content,
@@ -245,7 +243,8 @@ export default function Editor({
     const handleClick = (event: Event) => {
       const mouseEvent = event as unknown as MouseEvent;
       const target = mouseEvent.target as HTMLElement;
-      if (target.classList.contains("citation-link")) {
+      // Проверяем клик по citation-ref (новый Node)
+      if (target.classList.contains("citation-ref")) {
         const citationNumber = target.getAttribute("data-citation-number");
         const citationId = target.getAttribute("data-citation-id");
         
@@ -264,26 +263,22 @@ export default function Editor({
     };
   }, [editor, onCitationClick]);
 
-  // Метод для вставки цитаты в текст с полными данными
+  // Метод для вставки цитаты в текст как атомарный Node
   const insertCitation = useCallback(
     (citationNumber: number, citationId?: string, note?: string, articleTitle?: string) => {
       if (editor) {
-        // Сначала убираем все активные marks чтобы цитата была изолирована
-        editor.chain().focus().unsetAllMarks().run();
-        
-        // Вставляем как HTML span с data-атрибутами
-        // Используем пробел до и после чтобы изолировать от окружающего текста
-        const noteAttr = note ? ` data-note="${note.replace(/"/g, '&quot;')}"` : '';
-        const titleAttr = articleTitle ? ` data-article-title="${articleTitle.replace(/"/g, '&quot;')}"` : '';
-        const html = `<span class="citation-link" data-citation-number="${citationNumber}" data-citation-id="${citationId || `citation-${citationNumber}`}"${noteAttr}${titleAttr}>[${citationNumber}]</span>`;
-        
+        // Вставляем как атомарный Node - не может "растечься" на соседний текст
         editor
           .chain()
           .focus()
-          .insertContent(html, {
-            parseOptions: {
-              preserveWhitespace: true,
-            }
+          .insertContent({
+            type: 'citationNode',
+            attrs: {
+              citationNumber,
+              citationId: citationId || `citation-${citationNumber}`,
+              note: note || null,
+              articleTitle: articleTitle || null,
+            },
           })
           .run();
       }

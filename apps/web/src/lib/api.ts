@@ -518,10 +518,28 @@ export type CitationGraphResponse = {
     totalNodes: number;
     totalLinks: number;
   };
+  availableQueries?: string[];
 };
 
-export async function apiGetCitationGraph(projectId: string): Promise<CitationGraphResponse> {
-  return apiFetch<CitationGraphResponse>(`/api/projects/${projectId}/citation-graph`);
+export type GraphFilterOptions = {
+  filter?: 'all' | 'selected' | 'excluded';
+  sourceQueries?: string[];
+};
+
+export async function apiGetCitationGraph(
+  projectId: string,
+  options?: GraphFilterOptions
+): Promise<CitationGraphResponse> {
+  const params = new URLSearchParams();
+  if (options?.filter) {
+    params.set('filter', options.filter);
+  }
+  if (options?.sourceQueries && options.sourceQueries.length > 0) {
+    params.set('sourceQueries', JSON.stringify(options.sourceQueries));
+  }
+  const queryString = params.toString();
+  const url = `/api/projects/${projectId}/citation-graph${queryString ? `?${queryString}` : ''}`;
+  return apiFetch<CitationGraphResponse>(url);
 }
 
 // Получение связей между статьями из PubMed

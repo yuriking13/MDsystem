@@ -692,6 +692,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
   // GET /api/projects/:projectId/citation-graph - данные для графа цитирований
+  // Query параметры:
+  // - filter: 'all' | 'selected' | 'excluded' (по умолчанию 'all')
+  // - sourceQueries: JSON массив строк запросов для фильтрации
   fastify.get(
     "/projects/:projectId/citation-graph",
     { preHandler: [fastify.authenticate] },
@@ -708,16 +711,53 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Project not found" });
       }
 
-      // Проверяем существование колонок reference_pmids
+      // Параметры фильтрации
+      const query = request.query as { filter?: string; sourceQueries?: string };
+      const filter = query.filter || 'all';
+      let sourceQueries: string[] = [];
+      if (query.sourceQueries) {
+        try {
+          sourceQueries = JSON.parse(query.sourceQueries);
+        } catch {
+          sourceQueries = [];
+        }
+      }
+
+      // Проверяем существование колонок reference_pmids и source_query
       let hasRefColumns = false;
+      let hasSourceQueryCol = false;
       try {
         const checkCol = await pool.query(
           `SELECT column_name FROM information_schema.columns 
            WHERE table_name = 'articles' AND column_name = 'reference_pmids'`
         );
         hasRefColumns = (checkCol.rowCount ?? 0) > 0;
+        
+        const checkSqCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'project_articles' AND column_name = 'source_query'`
+        );
+        hasSourceQueryCol = (checkSqCol.rowCount ?? 0) > 0;
       } catch {
         hasRefColumns = false;
+        hasSourceQueryCol = false;
+      }
+
+      // Строим условие WHERE
+      let statusCondition = '';
+      if (filter === 'selected') {
+        statusCondition = ` AND pa.status = 'selected'`;
+      } else if (filter === 'excluded') {
+        statusCondition = ` AND pa.status = 'excluded'`;
+      }
+      // Для 'all' — показываем все статусы (без ограничения)
+      
+      // Условие по source_query
+      let sourceQueryCondition = '';
+      const queryParams: (string | string[])[] = [paramsP.data.projectId];
+      if (hasSourceQueryCol && sourceQueries.length > 0) {
+        queryParams.push(sourceQueries);
+        sourceQueryCondition = ` AND pa.source_query = ANY($2)`;
       }
 
       // Получить все статьи проекта с их данными о references
@@ -725,19 +765,19 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         hasRefColumns
           ? `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
                     a.raw_json, a.reference_pmids, a.cited_by_pmids,
-                    pa.status
+                    pa.status${hasSourceQueryCol ? ', pa.source_query' : ''}
              FROM project_articles pa
              JOIN articles a ON a.id = pa.article_id
-             WHERE pa.project_id = $1 AND pa.status != 'excluded'`
+             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}`
           : `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
                     a.raw_json, 
                     ARRAY[]::text[] as reference_pmids, 
                     ARRAY[]::text[] as cited_by_pmids,
-                    pa.status
+                    pa.status${hasSourceQueryCol ? ', pa.source_query' : ''}
              FROM project_articles pa
              JOIN articles a ON a.id = pa.article_id
-             WHERE pa.project_id = $1 AND pa.status != 'excluded'`,
-        [paramsP.data.projectId]
+             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}`,
+        queryParams
       );
 
       // Строим nodes и links
@@ -836,6 +876,19 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
+      // Получаем уникальные source_queries для фильтра
+      let availableQueries: string[] = [];
+      if (hasSourceQueryCol) {
+        const queriesRes = await pool.query(
+          `SELECT DISTINCT pa.source_query 
+           FROM project_articles pa 
+           WHERE pa.project_id = $1 AND pa.source_query IS NOT NULL AND pa.source_query != ''
+           ORDER BY pa.source_query`,
+          [paramsP.data.projectId]
+        );
+        availableQueries = queriesRes.rows.map((r: { source_query: string }) => r.source_query);
+      }
+
       return {
         nodes,
         links,
@@ -843,6 +896,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           totalNodes: nodes.length,
           totalLinks: links.length,
         },
+        availableQueries,
       };
     }
   );
