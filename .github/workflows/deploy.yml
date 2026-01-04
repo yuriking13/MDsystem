@@ -74,6 +74,11 @@ jobs:
             rm -rf /var/www/thesis/web/*
             cp -r /root/MDsystem/apps/web/dist/* /var/www/thesis/web/
 
+            # ---- deploy nginx config ----
+            cp /root/MDsystem/deploy/nginx.conf /etc/nginx/sites-available/thesis.conf
+            ln -sf /etc/nginx/sites-available/thesis.conf /etc/nginx/sites-enabled/thesis.conf
+            rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+
             nginx -t
             systemctl reload nginx
 
