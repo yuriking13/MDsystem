@@ -105,10 +105,15 @@ export default function CitationGraph({ projectId }: Props) {
   }, []);
 
   // Размер узла зависит от количества цитирований
+  // Значительно увеличиваем разницу между статьями с цитированиями и без
   const nodeVal = useCallback((node: any) => {
     const citedByCount = node.citedByCount || 0;
-    // Базовый размер 1, увеличивается с логарифмом цитирований
-    return Math.max(1, 1 + Math.log10(citedByCount + 1) * 2);
+    if (citedByCount === 0) return 1; // Минимальный размер
+    if (citedByCount <= 5) return 2 + citedByCount * 0.5; // 2-4.5
+    if (citedByCount <= 20) return 5 + (citedByCount - 5) * 0.4; // 5-11
+    if (citedByCount <= 100) return 11 + (citedByCount - 20) * 0.2; // 11-27
+    // Для очень цитируемых статей
+    return 27 + Math.log10(citedByCount - 99) * 8; // 27+
   }, []);
 
   // Обработчики фильтров

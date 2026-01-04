@@ -593,11 +593,80 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         };
       });
 
+      // Создаём маппинг articleId -> новый номер в общем списке
+      const articleToNumber = new Map<string, number>();
+      for (const bib of bibliography) {
+        articleToNumber.set(bib.articleId, bib.number);
+      }
+
+      // Получаем все цитаты с их document_id и article_id
+      const allCitationsRes = await pool.query(
+        `SELECT c.document_id, c.article_id, c.inline_number
+         FROM citations c
+         JOIN documents d ON d.id = c.document_id
+         WHERE d.project_id = $1
+         ORDER BY c.document_id, c.inline_number`,
+        [paramsP.data.projectId]
+      );
+
+      // Создаём маппинг (document_id, inline_number) -> новый глобальный номер
+      const citationMapping = new Map<string, number>();
+      for (const c of allCitationsRes.rows) {
+        const key = `${c.document_id}:${c.inline_number}`;
+        const globalNum = articleToNumber.get(c.article_id);
+        if (globalNum !== undefined) {
+          citationMapping.set(key, globalNum);
+        }
+      }
+
+      // Объединённый контент с перенумерованными цитатами
+      let mergedContent = '';
+      for (const doc of docsRes.rows) {
+        if (mergedContent) {
+          mergedContent += '<hr class="chapter-break" />';
+        }
+        mergedContent += `<h1 class="chapter-title">${doc.title}</h1>`;
+        
+        // Перенумеровываем цитаты в контенте
+        let content = doc.content || '';
+        // Заменяем [n] на глобальные номера
+        content = content.replace(
+          /data-citation-number="(\d+)"/g,
+          (match: string, num: string) => {
+            const key = `${doc.id}:${num}`;
+            const globalNum = citationMapping.get(key);
+            if (globalNum !== undefined) {
+              return `data-citation-number="${globalNum}"`;
+            }
+            return match;
+          }
+        );
+        // Также заменяем текст [n] внутри span
+        content = content.replace(
+          /<span class="citation-ref"[^>]*>\[(\d+)\]<\/span>/g,
+          (match: string, num: string) => {
+            // Ищем data-citation-number в этом же span
+            const numMatch = match.match(/data-citation-number="(\d+)"/);
+            if (numMatch) {
+              const key = `${doc.id}:${numMatch[1]}`;
+              const globalNum = citationMapping.get(key);
+              if (globalNum !== undefined) {
+                return match.replace(`[${num}]`, `[${globalNum}]`);
+              }
+            }
+            return match;
+          }
+        );
+        
+        mergedContent += content;
+      }
+
       return {
         projectName,
         citationStyle,
         documents: docsRes.rows,
         bibliography,
+        mergedContent, // Объединённый контент с перенумерованными цитатами
       };
     }
   );

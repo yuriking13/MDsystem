@@ -574,6 +574,17 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           )}
           {canEdit && (
             <button
+              className="btn secondary"
+              onClick={handleAIDetectStats}
+              disabled={detectingStats}
+              type="button"
+              title="AI детекция статистики в абстрактах (OpenRouter)"
+            >
+              {detectingStats ? "Анализ..." : "🤖 AI Статистика"}
+            </button>
+          )}
+          {canEdit && (
+            <button
               className="btn"
               onClick={() => setShowSearch(!showSearch)}
               type="button"
@@ -837,15 +848,13 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         >
           Все ({total})
         </button>
-        {counts.deleted > 0 && (
-          <button
-            className={viewStatus === "deleted" ? "btn" : "btn secondary"}
-            onClick={() => setViewStatus("deleted")}
-            type="button"
-          >
-            🗑️ Корзина ({counts.deleted})
-          </button>
-        )}
+        <button
+          className={viewStatus === "deleted" ? "btn" : "btn secondary"}
+          onClick={() => setViewStatus("deleted")}
+          type="button"
+        >
+          🗑️ Корзина ({counts.deleted})
+        </button>
       </div>
       
       {/* Локальный поиск по базе */}

@@ -503,6 +503,7 @@ export type ExportResponse = {
   citationStyle: CitationStyle;
   documents: Document[];
   bibliography: BibliographyItem[];
+  mergedContent?: string; // Объединённый контент с общей нумерацией цитат
 };
 
 export async function apiExportProject(projectId: string): Promise<ExportResponse> {
