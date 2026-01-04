@@ -166,3 +166,109 @@ export async function apiRemoveProjectMember(
     method: "DELETE",
   });
 }
+
+// ========== Articles ==========
+
+export type Article = {
+  id: string;
+  doi: string | null;
+  pmid: string | null;
+  title_en: string;
+  title_ru: string | null;
+  abstract_en: string | null;
+  abstract_ru: string | null;
+  authors: string[] | null;
+  year: number | null;
+  journal: string | null;
+  url: string;
+  source: string;
+  has_stats: boolean;
+  stats_json: any;
+  status: "candidate" | "selected" | "excluded";
+  notes: string | null;
+  tags: string[] | null;
+  added_at: string;
+};
+
+export type ArticlesResponse = {
+  articles: Article[];
+  counts: { candidate: number; selected: number; excluded: number };
+  total: number;
+};
+
+export type SearchFilters = {
+  yearFrom?: number;
+  yearTo?: number;
+  freeFullTextOnly?: boolean;
+  publicationTypes?: string[];
+};
+
+export type SearchResult = {
+  totalFound: number;
+  fetched: number;
+  added: number;
+  skipped: number;
+  message: string;
+};
+
+export async function apiSearchArticles(
+  projectId: string,
+  query: string,
+  filters?: SearchFilters,
+  maxResults = 100
+): Promise<SearchResult> {
+  return apiFetch<SearchResult>(`/api/projects/${projectId}/search`, {
+    method: "POST",
+    body: JSON.stringify({ query, filters, maxResults }),
+  });
+}
+
+export async function apiGetArticles(
+  projectId: string,
+  status?: "candidate" | "selected" | "excluded",
+  hasStats?: boolean
+): Promise<ArticlesResponse> {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  if (hasStats) params.set("hasStats", "true");
+  
+  const qs = params.toString();
+  return apiFetch<ArticlesResponse>(
+    `/api/projects/${projectId}/articles${qs ? `?${qs}` : ""}`
+  );
+}
+
+export async function apiUpdateArticleStatus(
+  projectId: string,
+  articleId: string,
+  status: "candidate" | "selected" | "excluded",
+  notes?: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(`/api/projects/${projectId}/articles/${articleId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ status, notes }),
+  });
+}
+
+export async function apiRemoveArticle(
+  projectId: string,
+  articleId: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(`/api/projects/${projectId}/articles/${articleId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function apiBulkUpdateStatus(
+  projectId: string,
+  articleIds: string[],
+  status: "candidate" | "selected" | "excluded"
+): Promise<{ ok: true; updated: number }> {
+  return apiFetch<{ ok: true; updated: number }>(
+    `/api/projects/${projectId}/articles/bulk-status`,
+    {
+      method: "POST",
+      body: JSON.stringify({ articleIds, status }),
+    }
+  );
+}

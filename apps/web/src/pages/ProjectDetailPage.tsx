@@ -10,6 +10,7 @@ import {
   type ProjectMember,
 } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
+import ArticlesSection from "../components/ArticlesSection";
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -280,13 +281,8 @@ export default function ProjectDetailPage() {
           ))}
         </div>
 
-        {/* Placeholder for future: articles, documents */}
-        <div style={{ marginTop: 32 }}>
-          <h2>Articles Database</h2>
-          <p className="muted">
-            Coming soon: search and organize research articles from PubMed, Crossref, Wiley
-          </p>
-        </div>
+        {/* Articles Database */}
+        {id && <ArticlesSection projectId={id} canEdit={!!canEdit} />}
 
         <div style={{ marginTop: 24 }}>
           <h2>Documents</h2>
