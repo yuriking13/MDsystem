@@ -369,13 +369,18 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
             <div className="row gap" style={{ flexWrap: "wrap", alignItems: "center" }}>
               <label className="stack" style={{ minWidth: 150 }}>
                 <span>Макс. результатов</span>
-                <input
-                  type="number"
+                <select
                   value={maxResults}
                   onChange={(e) => setMaxResults(Number(e.target.value))}
-                  min={10}
-                  max={500}
-                />
+                  style={{ padding: "10px 12px", borderRadius: 10 }}
+                >
+                  <option value={10}>10 (тест)</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                  <option value={500}>500</option>
+                  <option value={1000}>1000</option>
+                </select>
               </label>
               
               <label className="row gap" style={{ alignItems: "center", marginTop: 20 }}>
