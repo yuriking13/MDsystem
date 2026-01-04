@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useEditor, EditorContent, Editor as TipTapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -6,6 +6,13 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
+import { Table } from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
+import Image from "@tiptap/extension-image";
+import { TextStyle } from "@tiptap/extension-text-style";
+import Color from "@tiptap/extension-color";
 import CitationNode from "./CitationNode";
 
 type CitationData = {
@@ -33,10 +40,33 @@ function Toolbar({
   editor: TipTapEditor | null;
   onInsertCitation?: () => void;
 }) {
+  const [showTableMenu, setShowTableMenu] = useState(false);
+  const [showInsertMenu, setShowInsertMenu] = useState(false);
+  
   if (!editor) return null;
+
+  const addLink = () => {
+    const url = window.prompt("URL ссылки:");
+    if (url) {
+      editor.chain().focus().setLink({ href: url }).run();
+    }
+  };
+
+  const addImage = () => {
+    const url = window.prompt("URL изображения:");
+    if (url) {
+      editor.chain().focus().setImage({ src: url }).run();
+    }
+  };
+
+  const insertTable = (rows: number, cols: number) => {
+    editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
+    setShowTableMenu(false);
+  };
 
   return (
     <div className="editor-toolbar">
+      {/* Форматирование текста */}
       <div className="toolbar-group">
         <button
           type="button"
@@ -64,6 +94,14 @@ function Toolbar({
         </button>
         <button
           type="button"
+          onClick={() => editor.chain().focus().toggleStrike().run()}
+          className={editor.isActive("strike") ? "active" : ""}
+          title="Зачёркнутый"
+        >
+          <s>S</s>
+        </button>
+        <button
+          type="button"
           onClick={() => editor.chain().focus().toggleHighlight().run()}
           className={editor.isActive("highlight") ? "active" : ""}
           title="Выделение"
@@ -72,6 +110,7 @@ function Toolbar({
         </button>
       </div>
 
+      {/* Заголовки */}
       <div className="toolbar-group">
         <button
           type="button"
@@ -97,8 +136,17 @@ function Toolbar({
         >
           H3
         </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setParagraph().run()}
+          className={editor.isActive("paragraph") ? "active" : ""}
+          title="Обычный текст"
+        >
+          ¶
+        </button>
       </div>
 
+      {/* Списки */}
       <div className="toolbar-group">
         <button
           type="button"
@@ -124,8 +172,17 @@ function Toolbar({
         >
           «»
         </button>
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+          className={editor.isActive("codeBlock") ? "active" : ""}
+          title="Блок кода"
+        >
+          {"</>"}
+        </button>
       </div>
 
+      {/* Выравнивание */}
       <div className="toolbar-group">
         <button
           type="button"
@@ -161,6 +218,85 @@ function Toolbar({
         </button>
       </div>
 
+      {/* Вставка элементов */}
+      <div className="toolbar-group">
+        <button
+          type="button"
+          onClick={addLink}
+          className={editor.isActive("link") ? "active" : ""}
+          title="Вставить ссылку"
+        >
+          🔗
+        </button>
+        <button
+          type="button"
+          onClick={addImage}
+          title="Вставить изображение"
+        >
+          🖼️
+        </button>
+        
+        {/* Таблицы */}
+        <div className="toolbar-dropdown">
+          <button
+            type="button"
+            onClick={() => setShowTableMenu(!showTableMenu)}
+            className={editor.isActive("table") ? "active" : ""}
+            title="Таблица"
+          >
+            📊
+          </button>
+          {showTableMenu && (
+            <div className="dropdown-menu">
+              <div className="dropdown-header">Вставить таблицу</div>
+              <div className="table-grid">
+                {[2, 3, 4, 5].map(rows => (
+                  [2, 3, 4, 5].map(cols => (
+                    <button
+                      key={`${rows}x${cols}`}
+                      onClick={() => insertTable(rows, cols)}
+                      className="table-cell-btn"
+                      title={`${rows}×${cols}`}
+                    >
+                      {rows}×{cols}
+                    </button>
+                  ))
+                ))}
+              </div>
+              {editor.isActive("table") && (
+                <>
+                  <div className="dropdown-divider" />
+                  <button onClick={() => { editor.chain().focus().addColumnAfter().run(); setShowTableMenu(false); }}>
+                    + Столбец справа
+                  </button>
+                  <button onClick={() => { editor.chain().focus().addRowAfter().run(); setShowTableMenu(false); }}>
+                    + Строка снизу
+                  </button>
+                  <button onClick={() => { editor.chain().focus().deleteColumn().run(); setShowTableMenu(false); }}>
+                    − Удалить столбец
+                  </button>
+                  <button onClick={() => { editor.chain().focus().deleteRow().run(); setShowTableMenu(false); }}>
+                    − Удалить строку
+                  </button>
+                  <button onClick={() => { editor.chain().focus().deleteTable().run(); setShowTableMenu(false); }}>
+                    🗑️ Удалить таблицу
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <button
+          type="button"
+          onClick={() => editor.chain().focus().setHorizontalRule().run()}
+          title="Горизонтальная линия"
+        >
+          ―
+        </button>
+      </div>
+
+      {/* История */}
       <div className="toolbar-group">
         <button
           type="button"
@@ -180,6 +316,7 @@ function Toolbar({
         </button>
       </div>
 
+      {/* Цитаты */}
       {onInsertCitation && (
         <div className="toolbar-group">
           <button
@@ -216,14 +353,36 @@ export default function Editor({
         placeholder,
       }),
       Link.configure({
-        openOnClick: false,
+        openOnClick: true,
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
       }),
       Underline,
       TextAlign.configure({
         types: ["heading", "paragraph"],
       }),
       Highlight.configure({
-        multicolor: false,
+        multicolor: true,
+      }),
+      TextStyle,
+      Color,
+      Table.configure({
+        resizable: true,
+        HTMLAttributes: {
+          class: 'editor-table',
+        },
+      }),
+      TableRow,
+      TableCell,
+      TableHeader,
+      Image.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'editor-image',
+        },
       }),
       CitationNode.configure({
         HTMLAttributes: {},
@@ -289,10 +448,21 @@ export default function Editor({
   // Экспортируем метод через ref или контекст если нужно
   (window as any).__editorInsertCitation = insertCitation;
 
+  // Статистика документа
+  const wordCount = editor?.state.doc.textContent.split(/\s+/).filter(Boolean).length || 0;
+  const charCount = editor?.state.doc.textContent.length || 0;
+
   return (
     <div className="editor-container">
       {editable && <Toolbar editor={editor} onInsertCitation={onInsertCitation} />}
       <EditorContent editor={editor} className="editor-content" />
+      {editable && (
+        <div className="editor-footer">
+          <span className="word-count">
+            {wordCount} слов • {charCount} символов
+          </span>
+        </div>
+      )}
     </div>
   );
 }

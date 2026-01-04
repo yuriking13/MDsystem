@@ -88,3 +88,130 @@ export function calculateStatsQuality(stats: ExtractedStats): number {
   
   return Math.floor(quality);
 }
+
+// ============ AI-powered statistics detection ============
+
+const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
+
+export type AIStatsResult = {
+  hasStats: boolean;
+  stats: Array<{
+    text: string;
+    type: 'p-value' | 'confidence-interval' | 'effect-size' | 'sample-size' | 'test-statistic' | 'other';
+    significance?: 'high' | 'medium' | 'low' | 'not-significant';
+  }>;
+  summary?: string;
+};
+
+/**
+ * Использует AI (OpenRouter) для детекции статистических данных в тексте
+ * Более точно чем regex, особенно для сложных случаев
+ */
+export async function detectStatsWithAI(args: {
+  text: string;
+  openrouterKey: string;
+  model?: string;
+}): Promise<AIStatsResult> {
+  const { text, openrouterKey, model = "google/gemini-2.0-flash-001" } = args;
+
+  const prompt = `You are a scientific statistics expert. Analyze the following text and identify ALL statistical data.
+
+TEXT:
+${text}
+
+Your task:
+1. Find ALL statistical values including: p-values, confidence intervals, odds ratios (OR), risk ratios (RR), hazard ratios (HR), sample sizes (n=), t-tests, chi-square, F-statistics, correlation coefficients, standard deviations, means with errors, etc.
+2. For each found statistic, identify its type and significance level.
+
+Respond in JSON format:
+{
+  "hasStats": true/false,
+  "stats": [
+    {
+      "text": "exact text from abstract containing the statistic",
+      "type": "p-value|confidence-interval|effect-size|sample-size|test-statistic|other",
+      "significance": "high|medium|low|not-significant"
+    }
+  ],
+  "summary": "brief summary of statistical findings"
+}
+
+Rules for significance:
+- high: p < 0.001 or very strong effects
+- medium: p < 0.01 or moderate effects  
+- low: p < 0.05 or weak effects
+- not-significant: p ≥ 0.05 or descriptive stats only
+
+IMPORTANT: Return ONLY valid JSON, no markdown or explanations.`;
+
+  try {
+    const res = await fetch(OPENROUTER_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${openrouterKey}`,
+        "HTTP-Referer": "https://mdsystem.app",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.1,
+        max_tokens: 2000,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`OpenRouter error ${res.status}: ${err.slice(0, 200)}`);
+    }
+
+    type OpenRouterResponse = {
+      choices: Array<{ message: { content: string } }>;
+    };
+    const data = (await res.json()) as OpenRouterResponse;
+    const content = data.choices?.[0]?.message?.content || "";
+    
+    // Parse JSON from response
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return { hasStats: false, stats: [] };
+    }
+    
+    const result = JSON.parse(jsonMatch[0]) as AIStatsResult;
+    return result;
+  } catch (err) {
+    console.error("AI stats detection error:", err);
+    return { hasStats: false, stats: [] };
+  }
+}
+
+/**
+ * Комбинированная детекция: сначала regex, потом AI если нужно
+ */
+export async function detectStatsCombined(args: {
+  text: string;
+  openrouterKey?: string;
+  useAI?: boolean;
+}): Promise<{ hasStats: boolean; quality: number; stats: ExtractedStats; aiStats?: AIStatsResult }> {
+  const { text, openrouterKey, useAI = true } = args;
+  
+  // Сначала regex
+  const regexStats = extractStats(text);
+  const hasRegexStats = hasAnyStats(regexStats);
+  const quality = calculateStatsQuality(regexStats);
+  
+  // Если regex нашёл - возвращаем
+  if (hasRegexStats || !useAI || !openrouterKey) {
+    return { hasStats: hasRegexStats, quality, stats: regexStats };
+  }
+  
+  // Если regex не нашёл - пробуем AI
+  const aiStats = await detectStatsWithAI({ text, openrouterKey });
+  
+  return {
+    hasStats: hasRegexStats || aiStats.hasStats,
+    quality: aiStats.hasStats ? Math.max(quality, 1) : quality,
+    stats: regexStats,
+    aiStats,
+  };
+}

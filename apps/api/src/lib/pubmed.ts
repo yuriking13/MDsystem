@@ -1,6 +1,51 @@
 import { XMLParser } from 'fast-xml-parser';
 import { fetchJson, sleep } from './http.js';
 
+// Декодирование HTML entities в тексте (&#xe3; -> ã, &#x2264; -> ≤)
+function decodeHtmlEntities(text: string): string {
+  if (!text) return text;
+  
+  return text
+    // Числовые entities (hex и dec)
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
+    // Именованные entities
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&ndash;/g, '–')
+    .replace(/&mdash;/g, '—')
+    .replace(/&lsquo;/g, '\u2018')
+    .replace(/&rsquo;/g, '\u2019')
+    .replace(/&ldquo;/g, '\u201C')
+    .replace(/&rdquo;/g, '\u201D')
+    .replace(/&hellip;/g, '…')
+    .replace(/&trade;/g, '™')
+    .replace(/&copy;/g, '©')
+    .replace(/&reg;/g, '®')
+    .replace(/&deg;/g, '°')
+    .replace(/&plusmn;/g, '±')
+    .replace(/&times;/g, '×')
+    .replace(/&divide;/g, '÷')
+    .replace(/&micro;/g, 'µ')
+    .replace(/&alpha;/g, 'α')
+    .replace(/&beta;/g, 'β')
+    .replace(/&gamma;/g, 'γ')
+    .replace(/&delta;/g, 'δ')
+    .replace(/&epsilon;/g, 'ε')
+    .replace(/&sigma;/g, 'σ')
+    .replace(/&omega;/g, 'ω')
+    .replace(/&le;/g, '≤')
+    .replace(/&ge;/g, '≥')
+    .replace(/&ne;/g, '≠')
+    .replace(/&asymp;/g, '≈')
+    .replace(/&rarr;/g, '→')
+    .replace(/&larr;/g, '←');
+}
+
 export type PubMedFilters = {
   publishedFrom?: string; // YYYY-MM-DD
   publishedTo?: string;   // YYYY-MM-DD
@@ -137,14 +182,14 @@ export async function pubmedEFetchBatch(args: {
       const pmid = String(mc?.PMID?.['#text'] ?? mc?.PMID ?? '').trim();
       if (!pmid) continue;
 
-      const title = String(art?.ArticleTitle ?? '').replace(/\s+/g, ' ').trim();
+      const title = decodeHtmlEntities(String(art?.ArticleTitle ?? '').replace(/\s+/g, ' ').trim());
 
       let abstract = '';
       const abs = art?.Abstract?.AbstractText;
       if (Array.isArray(abs)) abstract = abs.map((x: any) => (typeof x === 'string' ? x : x?.['#text'] ?? '')).join(' ');
       else if (typeof abs === 'string') abstract = abs;
       else if (abs?.['#text']) abstract = abs['#text'];
-      abstract = abstract.replace(/\s+/g, ' ').trim();
+      abstract = decodeHtmlEntities(abstract.replace(/\s+/g, ' ').trim());
 
       // year
       const yearStr = art?.Journal?.JournalIssue?.PubDate?.Year
@@ -152,15 +197,15 @@ export async function pubmedEFetchBatch(args: {
         ?? undefined;
       const year = yearStr ? Number(yearStr) : undefined;
 
-      // authors
+      // authors - decode HTML entities in names
       const authList = art?.AuthorList?.Author;
       let authors = '';
       if (Array.isArray(authList)) {
         authors = authList
           .map((au: any) => {
-            const ln = au?.LastName ?? '';
-            const ini = au?.Initials ?? '';
-            return String(`${ln} ${ini}`.trim());
+            const ln = decodeHtmlEntities(String(au?.LastName ?? ''));
+            const ini = decodeHtmlEntities(String(au?.Initials ?? ''));
+            return `${ln} ${ini}`.trim();
           })
           .filter(Boolean)
           .join(', ');
@@ -378,4 +423,52 @@ export async function enrichArticlesWithReferences(args: {
     map.set(r.pmid, r);
   }
   return map;
+}
+
+// ============ Europe PMC Integration ============
+
+export type EuropePMCCitation = {
+  pmid: string;
+  citedByCount: number;
+};
+
+/**
+ * Получить количество цитирований статьи из Europe PMC
+ * Europe PMC агрегирует данные из PubMed Central, Europe PMC и других источников
+ */
+export async function europePMCGetCitationCount(pmid: string): Promise<number> {
+  try {
+    const url = `https://www.ebi.ac.uk/europepmc/webservices/rest/MED/${pmid}/citations?format=json&pageSize=1`;
+    const response = await fetch(url);
+    if (!response.ok) return 0;
+    
+    const data = await response.json() as { hitCount?: number };
+    return data?.hitCount || 0;
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * Получить количество цитирований для нескольких статей из Europe PMC (батчами)
+ */
+export async function europePMCGetCitationCounts(args: {
+  pmids: string[];
+  throttleMs?: number;
+}): Promise<Map<string, number>> {
+  const result = new Map<string, number>();
+  
+  // Europe PMC не поддерживает батчевые запросы, поэтому делаем по одному
+  for (const pmid of args.pmids) {
+    try {
+      const count = await europePMCGetCitationCount(pmid);
+      result.set(pmid, count);
+      
+      if (args.throttleMs) await sleep(args.throttleMs);
+    } catch {
+      result.set(pmid, 0);
+    }
+  }
+  
+  return result;
 }

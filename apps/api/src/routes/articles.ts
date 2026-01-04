@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
-import { pubmedFetchAll, enrichArticlesWithReferences, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
+import { pubmedFetchAll, enrichArticlesWithReferences, europePMCGetCitationCounts, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
 import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.js";
 import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
@@ -22,7 +22,7 @@ const SearchBodySchema = z.object({
 });
 
 const ArticleStatusSchema = z.object({
-  status: z.enum(["candidate", "selected", "excluded"]),
+  status: z.enum(["candidate", "selected", "excluded", "deleted"]),
   notes: z.string().max(5000).optional(),
 });
 
@@ -396,9 +396,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const params: any[] = [paramsP.data.id];
       let paramIdx = 2;
       
-      if (status && ["candidate", "selected", "excluded"].includes(status)) {
+      if (status && ["candidate", "selected", "excluded", "deleted"].includes(status)) {
         sql += ` AND pa.status = $${paramIdx++}`;
         params.push(status);
+      } else if (!status) {
+        // По умолчанию не показываем удалённые
+        sql += ` AND pa.status != 'deleted'`;
       }
       
       if (hasStats) {
@@ -440,6 +443,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         candidate: 0,
         selected: 0,
         excluded: 0,
+        deleted: 0,
       };
       for (const row of countsRes.rows) {
         counts[row.status] = row.count;
@@ -849,6 +853,31 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
       
+      // После получения связей из PubMed, дополнительно получаем citation counts из Europe PMC
+      // Это асинхронная операция, не блокируем ответ
+      (async () => {
+        try {
+          const citationCounts = await europePMCGetCitationCounts({
+            pmids,
+            throttleMs: 200,
+          });
+          
+          for (const [pmid, count] of citationCounts) {
+            const articleId = idByPmid.get(pmid);
+            if (!articleId || count === 0) continue;
+            
+            await pool.query(
+              `UPDATE articles SET 
+                raw_json = COALESCE(raw_json, '{}'::jsonb) || jsonb_build_object('europePMCCitations', $1)
+               WHERE id = $2`,
+              [count, articleId]
+            );
+          }
+        } catch (err) {
+          console.error('Europe PMC citation fetch error:', err);
+        }
+      })();
+      
       return { 
         ok: true, 
         updated, 
@@ -994,6 +1023,97 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         .header("Content-Type", pdf.contentType)
         .header("Content-Disposition", `attachment; filename="${filename}"`)
         .send(pdf.buffer);
+    }
+  );
+
+  // POST /api/projects/:id/articles/ai-detect-stats - AI детекция статистики
+  fastify.post(
+    "/projects/:id/articles/ai-detect-stats",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+      
+      const access = await checkProjectAccess(paramsP.data.id, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+      
+      // Получить ключ OpenRouter
+      const openrouterKey = await getUserApiKey(userId, "openrouter");
+      if (!openrouterKey) {
+        return reply.code(400).send({ 
+          error: "OpenRouter API ключ не настроен. Добавьте его в настройках." 
+        });
+      }
+      
+      // Импортируем функцию
+      const { detectStatsCombined } = await import("../lib/stats.js");
+      
+      // Получить статьи без статистики или с низким quality
+      const articlesRes = await pool.query(
+        `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality
+         FROM articles a
+         JOIN project_articles pa ON pa.article_id = a.id
+         WHERE pa.project_id = $1 
+           AND a.abstract_en IS NOT NULL
+           AND (a.has_stats = false OR a.stats_quality = 0)
+         LIMIT 20`,
+        [paramsP.data.id]
+      );
+      
+      if (articlesRes.rows.length === 0) {
+        return { 
+          ok: true, 
+          analyzed: 0, 
+          found: 0,
+          message: "Все статьи уже проанализированы" 
+        };
+      }
+      
+      let analyzed = 0;
+      let found = 0;
+      
+      for (const article of articlesRes.rows) {
+        try {
+          const result = await detectStatsCombined({
+            text: article.abstract_en,
+            openrouterKey,
+            useAI: true,
+          });
+          
+          if (result.hasStats) {
+            await pool.query(
+              `UPDATE articles SET 
+                has_stats = true,
+                stats_quality = GREATEST(stats_quality, $1),
+                stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
+               WHERE id = $3`,
+              [
+                result.quality,
+                JSON.stringify({ ai: result.aiStats }),
+                article.id
+              ]
+            );
+            found++;
+          }
+          
+          analyzed++;
+        } catch (err) {
+          console.error(`AI stats detection error for ${article.id}:`, err);
+        }
+      }
+      
+      return { 
+        ok: true, 
+        analyzed,
+        found,
+        message: `Проанализировано ${analyzed} статей. Найдена статистика в ${found} статьях.` 
+      };
     }
   );
 };
