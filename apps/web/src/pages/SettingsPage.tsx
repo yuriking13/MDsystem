@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiDeleteApiKey, apiGetApiKeys, apiSaveApiKey } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 
-const Providers = ["pubmed", "wiley", "openrouter"] as const;
+const Providers = ["pubmed", "crossref", "wiley", "openrouter"] as const;
 
 export default function SettingsPage() {
+  const nav = useNavigate();
   const { user, logout, refreshMe } = useAuth();
 
   const [keys, setKeys] = useState<Record<string, boolean>>({});
@@ -82,9 +84,14 @@ export default function SettingsPage() {
             <h1>Settings</h1>
             <p className="muted">Profile + API keys</p>
           </div>
-          <button className="btn secondary" onClick={logout} type="button">
-            Logout
-          </button>
+          <div className="row gap">
+            <button className="btn secondary" onClick={() => nav("/projects")} type="button">
+              Projects
+            </button>
+            <button className="btn secondary" onClick={logout} type="button">
+              Logout
+            </button>
+          </div>
         </div>
 
         <h2>Profile</h2>

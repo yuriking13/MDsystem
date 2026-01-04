@@ -88,3 +88,81 @@ export async function apiDeleteApiKey(provider: string): Promise<{ ok: true }> {
     method: "DELETE",
   });
 }
+
+// ========== Projects ==========
+
+export type Project = {
+  id: string;
+  name: string;
+  description: string | null;
+  role: "owner" | "editor" | "viewer";
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProjectMember = {
+  user_id: string;
+  email: string;
+  role: "owner" | "editor" | "viewer";
+  joined_at: string;
+};
+
+export async function apiGetProjects(): Promise<{ projects: Project[] }> {
+  return apiFetch<{ projects: Project[] }>("/api/projects");
+}
+
+export async function apiGetProject(id: string): Promise<{ project: Project }> {
+  return apiFetch<{ project: Project }>(`/api/projects/${id}`);
+}
+
+export async function apiCreateProject(
+  name: string,
+  description?: string
+): Promise<{ project: Project }> {
+  return apiFetch<{ project: Project }>("/api/projects", {
+    method: "POST",
+    body: JSON.stringify({ name, description }),
+  });
+}
+
+export async function apiUpdateProject(
+  id: string,
+  data: { name?: string; description?: string }
+): Promise<{ project: Project }> {
+  return apiFetch<{ project: Project }>(`/api/projects/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function apiDeleteProject(id: string): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(`/api/projects/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function apiGetProjectMembers(
+  projectId: string
+): Promise<{ members: ProjectMember[] }> {
+  return apiFetch<{ members: ProjectMember[] }>(`/api/projects/${projectId}/members`);
+}
+
+export async function apiInviteProjectMember(
+  projectId: string,
+  email: string,
+  role: "viewer" | "editor" = "viewer"
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(`/api/projects/${projectId}/members`, {
+    method: "POST",
+    body: JSON.stringify({ email, role }),
+  });
+}
+
+export async function apiRemoveProjectMember(
+  projectId: string,
+  userId: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(`/api/projects/${projectId}/members/${userId}`, {
+    method: "DELETE",
+  });
+}
