@@ -154,12 +154,12 @@ export default function DocumentPage() {
       // sub_number используется для нумерации цитат
       const subNumber = (res.citation as { sub_number?: number }).sub_number || 1;
       
-      // Вставить номер в текст
+      // Вставить номер в текст (всегда английское название для тултипа)
       insertCitationToEditor(
         res.citation.inline_number,
         res.citation.id,
         res.citation.note || '',
-        article.title_ru || article.title_en
+        article.title_en // Всегда язык оригинала (английский)
       );
       
       // Обновить документ
@@ -275,7 +275,7 @@ export default function DocumentPage() {
               id: c.id,
               number: c.inline_number,
               note: c.note || undefined,
-              articleTitle: c.article.title_ru || c.article.title_en,
+              articleTitle: c.article.title_en, // Всегда язык оригинала
             }))}
             placeholder="Начните писать текст диссертации..."
           />

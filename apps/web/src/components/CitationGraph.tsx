@@ -85,7 +85,15 @@ export default function CitationGraph({ projectId }: Props) {
   }, []);
 
   const nodeLabel = useCallback((node: any) => {
-    return node.label;
+    const citedByCount = node.citedByCount || 0;
+    return `${node.label}${citedByCount > 0 ? ` (цитирований: ${citedByCount})` : ''}`;
+  }, []);
+
+  // Размер узла зависит от количества цитирований
+  const nodeVal = useCallback((node: any) => {
+    const citedByCount = node.citedByCount || 0;
+    // Базовый размер 1, увеличивается с логарифмом цитирований
+    return Math.max(1, 1 + Math.log10(citedByCount + 1) * 2);
   }, []);
 
   if (loading) {
@@ -154,16 +162,23 @@ export default function CitationGraph({ projectId }: Props) {
         height={dimensions.height}
         nodeColor={nodeColor}
         nodeLabel={nodeLabel}
-        nodeRelSize={6}
+        nodeVal={nodeVal}
+        nodeRelSize={4}
         linkColor={() => '#334477'}
         linkWidth={1}
         linkDirectionalArrowLength={4}
         linkDirectionalArrowRelPos={1}
         backgroundColor="#0b0f19"
+        d3AlphaDecay={0.02}
+        d3VelocityDecay={0.2}
+        cooldownTicks={200}
+        warmupTicks={100}
         onNodeHover={(node: any) => setHoveredNode(node)}
         onNodeClick={(node: any) => {
           if (node.doi) {
             window.open(`https://doi.org/${node.doi}`, '_blank');
+          } else if (node.pmid) {
+            window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
           }
         }}
       />
