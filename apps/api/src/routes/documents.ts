@@ -591,14 +591,35 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Project not found" });
       }
 
+      // Проверяем существование колонок reference_pmids
+      let hasRefColumns = false;
+      try {
+        const checkCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'articles' AND column_name = 'reference_pmids'`
+        );
+        hasRefColumns = (checkCol.rowCount ?? 0) > 0;
+      } catch {
+        hasRefColumns = false;
+      }
+
       // Получить все статьи проекта с их данными о references
       const articlesRes = await pool.query(
-        `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
-                a.raw_json, a.reference_pmids, a.cited_by_pmids,
-                pa.status
-         FROM project_articles pa
-         JOIN articles a ON a.id = pa.article_id
-         WHERE pa.project_id = $1 AND pa.status != 'excluded'`,
+        hasRefColumns
+          ? `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
+                    a.raw_json, a.reference_pmids, a.cited_by_pmids,
+                    pa.status
+             FROM project_articles pa
+             JOIN articles a ON a.id = pa.article_id
+             WHERE pa.project_id = $1 AND pa.status != 'excluded'`
+          : `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
+                    a.raw_json, 
+                    ARRAY[]::text[] as reference_pmids, 
+                    ARRAY[]::text[] as cited_by_pmids,
+                    pa.status
+             FROM project_articles pa
+             JOIN articles a ON a.id = pa.article_id
+             WHERE pa.project_id = $1 AND pa.status != 'excluded'`,
         [paramsP.data.projectId]
       );
 

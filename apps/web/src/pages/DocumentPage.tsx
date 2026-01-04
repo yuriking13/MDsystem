@@ -148,20 +148,35 @@ export default function DocumentPage() {
     if (!projectId || !docId) return;
 
     try {
-      const res = await apiAddCitation(projectId, docId, article.id);
-      // Вставить номер в текст с полными данными для тултипа
-      insertCitationToEditor(
-        res.citation.inline_number,
-        res.citation.id,
-        res.citation.note || '',
-        article.title_ru || article.title_en
-      );
+      // Проверяем, есть ли уже цитата на этот источник
+      const existingCitation = doc?.citations?.find(c => c.article_id === article.id);
       
-      // Обновить документ
-      const updated = await apiGetDocument(projectId, docId);
-      setDoc(updated.document);
-      
-      setShowCitationPicker(false);
+      if (existingCitation) {
+        // Если цитата уже есть - просто вставляем номер в текст
+        insertCitationToEditor(
+          existingCitation.inline_number,
+          existingCitation.id,
+          existingCitation.note || '',
+          article.title_ru || article.title_en
+        );
+        setShowCitationPicker(false);
+      } else {
+        // Новая цитата - добавляем в БД
+        const res = await apiAddCitation(projectId, docId, article.id);
+        // Вставить номер в текст с полными данными для тултипа
+        insertCitationToEditor(
+          res.citation.inline_number,
+          res.citation.id,
+          res.citation.note || '',
+          article.title_ru || article.title_en
+        );
+        
+        // Обновить документ
+        const updated = await apiGetDocument(projectId, docId);
+        setDoc(updated.document);
+        
+        setShowCitationPicker(false);
+      }
     } catch (err: any) {
       setError(err?.message || "Ошибка добавления цитаты");
     }
