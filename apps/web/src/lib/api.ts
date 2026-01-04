@@ -518,6 +518,21 @@ export async function apiGetCitationGraph(projectId: string): Promise<CitationGr
   return apiFetch<CitationGraphResponse>(`/api/projects/${projectId}/citation-graph`);
 }
 
+// Получение связей между статьями из PubMed
+export type FetchReferencesResult = {
+  ok: true;
+  updated: number;
+  total: number;
+  message: string;
+};
+
+export async function apiFetchReferences(projectId: string): Promise<FetchReferencesResult> {
+  return apiFetch<FetchReferencesResult>(
+    `/api/projects/${projectId}/articles/fetch-references`,
+    { method: "POST" }
+  );
+}
+
 // ========== PDF Download ==========
 
 export type PdfSourceResponse = {

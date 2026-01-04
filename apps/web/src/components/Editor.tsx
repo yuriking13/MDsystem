@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { useEditor, EditorContent, Editor as TipTapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -6,11 +6,21 @@ import Link from "@tiptap/extension-link";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
+import CitationMark from "./CitationMark";
+
+type CitationData = {
+  id: string;
+  number: number;
+  note?: string;
+  articleTitle?: string;
+};
 
 type Props = {
   content: string;
   onChange: (content: string) => void;
   onInsertCitation?: () => void;
+  onCitationClick?: (citationNumber: number, citationId: string) => void;
+  citations?: CitationData[];
   placeholder?: string;
   editable?: boolean;
 };
@@ -190,6 +200,8 @@ export default function Editor({
   content,
   onChange,
   onInsertCitation,
+  onCitationClick,
+  citations = [],
   placeholder = "Начните писать...",
   editable = true,
 }: Props) {
@@ -213,6 +225,11 @@ export default function Editor({
       Highlight.configure({
         multicolor: false,
       }),
+      CitationMark.configure({
+        HTMLAttributes: {
+          class: "citation-link",
+        },
+      }),
     ],
     content,
     editable,
@@ -221,17 +238,53 @@ export default function Editor({
     },
   });
 
-  // Метод для вставки цитаты в текст
+  // Обработка кликов по цитатам в редакторе
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleClick = (event: Event) => {
+      const mouseEvent = event as unknown as MouseEvent;
+      const target = mouseEvent.target as HTMLElement;
+      if (target.classList.contains("citation-link")) {
+        const citationNumber = target.getAttribute("data-citation-number");
+        const citationId = target.getAttribute("data-citation-id");
+        
+        if (citationNumber && citationId && onCitationClick) {
+          mouseEvent.preventDefault();
+          onCitationClick(parseInt(citationNumber, 10), citationId);
+        }
+      }
+    };
+
+    const editorEl = document.querySelector(".editor-content");
+    editorEl?.addEventListener("click", handleClick);
+
+    return () => {
+      editorEl?.removeEventListener("click", handleClick);
+    };
+  }, [editor, onCitationClick]);
+
+  // Метод для вставки цитаты в текст с полными данными
   const insertCitation = useCallback(
-    (citationNumber: number) => {
+    (citationNumber: number, citationId?: string, note?: string, articleTitle?: string) => {
       if (editor) {
-        // Вставляем как простой текст с особым форматированием
+        // Вставляем как специальную метку с данными
         editor
           .chain()
           .focus()
           .insertContent({
             type: 'text',
-            marks: [{ type: 'bold' }],
+            marks: [
+              {
+                type: 'citation',
+                attrs: {
+                  citationNumber,
+                  citationId: citationId || `citation-${citationNumber}`,
+                  note: note || '',
+                  articleTitle: articleTitle || '',
+                },
+              },
+            ],
             text: `[${citationNumber}]`,
           })
           .run();
@@ -252,7 +305,12 @@ export default function Editor({
 }
 
 // Вспомогательная функция для вставки цитаты извне
-export function insertCitationToEditor(citationNumber: number) {
+export function insertCitationToEditor(
+  citationNumber: number, 
+  citationId?: string, 
+  note?: string, 
+  articleTitle?: string
+) {
   const fn = (window as any).__editorInsertCitation;
-  if (fn) fn(citationNumber);
+  if (fn) fn(citationNumber, citationId, note, articleTitle);
 }

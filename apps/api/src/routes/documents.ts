@@ -591,9 +591,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Project not found" });
       }
 
-      // Получить все статьи проекта с их raw_json (Crossref данные)
+      // Получить все статьи проекта с их данными о references
       const articlesRes = await pool.query(
-        `SELECT a.id, a.doi, a.title_en, a.authors, a.year, a.raw_json,
+        `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
+                a.raw_json, a.reference_pmids, a.cited_by_pmids,
                 pa.status
          FROM project_articles pa
          JOIN articles a ON a.id = pa.article_id
@@ -602,13 +603,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       );
 
       // Строим nodes и links
-      const nodes: { id: string; label: string; year: number | null; status: string; doi: string | null }[] = [];
+      const nodes: { id: string; label: string; year: number | null; status: string; doi: string | null; pmid: string | null }[] = [];
       const links: { source: string; target: string }[] = [];
+      const linksSet = new Set<string>(); // Для дедупликации
       const doiToId = new Map<string, string>();
+      const pmidToId = new Map<string, string>();
 
       // Создаём узлы из статей проекта
       for (const article of articlesRes.rows) {
-        const shortTitle = article.title_en?.slice(0, 40) + (article.title_en?.length > 40 ? '...' : '');
         const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
         const label = `${firstAuthor} (${article.year || '?'})`;
         
@@ -618,14 +620,54 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           year: article.year,
           status: article.status,
           doi: article.doi,
+          pmid: article.pmid,
         });
 
         if (article.doi) {
           doiToId.set(article.doi.toLowerCase(), article.id);
         }
+        if (article.pmid) {
+          pmidToId.set(article.pmid, article.id);
+        }
       }
 
-      // Добавляем связи на основе references из Crossref
+      // Добавляем связи на основе references из PubMed (первый приоритет)
+      for (const article of articlesRes.rows) {
+        const refPmids = article.reference_pmids || [];
+        const citedByPmids = article.cited_by_pmids || [];
+        
+        // Исходящие связи (эта статья ссылается на другие)
+        for (const refPmid of refPmids) {
+          const targetId = pmidToId.get(refPmid);
+          if (targetId && targetId !== article.id) {
+            const linkKey = `${article.id}->${targetId}`;
+            if (!linksSet.has(linkKey)) {
+              linksSet.add(linkKey);
+              links.push({
+                source: article.id,
+                target: targetId,
+              });
+            }
+          }
+        }
+        
+        // Входящие связи (другие статьи ссылаются на эту)
+        for (const citingPmid of citedByPmids) {
+          const sourceId = pmidToId.get(citingPmid);
+          if (sourceId && sourceId !== article.id) {
+            const linkKey = `${sourceId}->${article.id}`;
+            if (!linksSet.has(linkKey)) {
+              linksSet.add(linkKey);
+              links.push({
+                source: sourceId,
+                target: article.id,
+              });
+            }
+          }
+        }
+      }
+
+      // Добавляем связи на основе references из Crossref (второй приоритет - fallback)
       for (const article of articlesRes.rows) {
         // Crossref данные хранятся в raw_json.crossref
         const crossrefData = article.raw_json?.crossref;
@@ -640,17 +682,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
           const targetId = doiToId.get(refDoi.toLowerCase());
           if (targetId && targetId !== article.id) {
-            // Есть связь между статьями в проекте
-            links.push({
-              source: article.id,
-              target: targetId,
-            });
+            const linkKey = `${article.id}->${targetId}`;
+            if (!linksSet.has(linkKey)) {
+              linksSet.add(linkKey);
+              links.push({
+                source: article.id,
+                target: targetId,
+              });
+            }
           }
         }
       }
-      
-      // Также ищем обратные связи через cited-by если есть
-      // и добавляем связи на основе совпадения авторов/года для статей без Crossref
 
       return {
         nodes,

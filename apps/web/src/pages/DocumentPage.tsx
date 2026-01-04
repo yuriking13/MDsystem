@@ -149,8 +149,13 @@ export default function DocumentPage() {
 
     try {
       const res = await apiAddCitation(projectId, docId, article.id);
-      // Вставить номер в текст
-      insertCitationToEditor(res.citation.inline_number);
+      // Вставить номер в текст с полными данными для тултипа
+      insertCitationToEditor(
+        res.citation.inline_number,
+        res.citation.id,
+        res.citation.note || '',
+        article.title_ru || article.title_en
+      );
       
       // Обновить документ
       const updated = await apiGetDocument(projectId, docId);
@@ -159,6 +164,20 @@ export default function DocumentPage() {
       setShowCitationPicker(false);
     } catch (err: any) {
       setError(err?.message || "Ошибка добавления цитаты");
+    }
+  }
+
+  // Клик по цитате в тексте - скролл к списку литературы
+  function handleCitationClick(citationNumber: number, citationId: string) {
+    // Находим элемент в списке литературы и скроллим к нему
+    const element = document.getElementById(`citation-${citationId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Подсветим ненадолго
+      element.classList.add('citation-highlight');
+      setTimeout(() => {
+        element.classList.remove('citation-highlight');
+      }, 2000);
     }
   }
 
@@ -246,6 +265,13 @@ export default function DocumentPage() {
             content={content}
             onChange={setContent}
             onInsertCitation={openCitationPicker}
+            onCitationClick={handleCitationClick}
+            citations={doc.citations?.map(c => ({
+              id: c.id,
+              number: c.inline_number,
+              note: c.note || undefined,
+              articleTitle: c.article.title_ru || c.article.title_en,
+            }))}
             placeholder="Начните писать текст диссертации..."
           />
         </div>
@@ -261,10 +287,19 @@ export default function DocumentPage() {
           {doc.citations && doc.citations.length > 0 ? (
             <ul className="citations-list">
               {doc.citations.map((c) => (
-                <li key={c.id}>
+                <li key={c.id} id={`citation-${c.id}`} className="citation-list-item">
                   <div className="citation-item" style={{ flexDirection: 'column', gap: 8 }}>
                     <div className="row space" style={{ width: '100%' }}>
-                      <span className="citation-number">[{c.inline_number}]</span>
+                      <span 
+                        className="citation-number clickable"
+                        title="Скопировать ссылку [n] для вставки в текст"
+                        onClick={() => {
+                          // Копируем формат цитаты для вставки
+                          navigator.clipboard.writeText(`[${c.inline_number}]`);
+                        }}
+                      >
+                        [{c.inline_number}]
+                      </span>
                       <button
                         className="btn secondary"
                         onClick={() => handleRemoveCitation(c.id)}
