@@ -253,8 +253,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           
           if (toTranslate.rows.length > 0) {
             try {
-              // Переводим пакетами по 10 статей для оптимизации
-              const BATCH_SIZE = 10;
+              // Переводим пакетами по 5 статей для надёжности
+              const BATCH_SIZE = 5;
               for (let i = 0; i < toTranslate.rows.length; i += BATCH_SIZE) {
                 const batch = toTranslate.rows.slice(i, i + BATCH_SIZE);
                 
@@ -556,9 +556,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         };
       }
       
-      // Переводим
+      // Переводим (маленькие батчи для надёжности)
       let translated = 0;
-      const BATCH_SIZE = 10;
+      const BATCH_SIZE = 5;
       
       for (let i = 0; i < toTranslate.rows.length; i += BATCH_SIZE) {
         const batch = toTranslate.rows.slice(i, i + BATCH_SIZE);
