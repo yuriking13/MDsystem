@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
+  id           String   @id @default(dbgenerated("gen_random_uuid()"))
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
@@ -37,7 +37,7 @@ model UserApiKey {
 }
 
 model Project {
-  id          String  @id @default(uuid())
+  id          String  @id @default(dbgenerated("gen_random_uuid()"))
   name        String
   description String?
 
@@ -80,7 +80,7 @@ model ProjectMember {
 }
 
 model Article {
-  id                  String    @id @default(uuid())
+  id                  String    @id @default(dbgenerated("gen_random_uuid()"))
   doi                 String?   @unique
   pmid                String?   @unique
   titleEn             String    @map("title_en")
@@ -133,7 +133,7 @@ model ProjectArticle {
 }
 
 model Document {
-  id         String   @id @default(uuid())
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
   projectId  String   @map("project_id")
   title      String
   content    String? // TEXT
@@ -153,7 +153,7 @@ model Document {
 }
 
 model Citation {
-  id           String   @id @default(uuid())
+  id           String   @id @default(dbgenerated("gen_random_uuid()"))
   documentId   String   @map("document_id")
   articleId    String   @map("article_id")
   orderIndex   Int      @default(0) @map("order_index")
@@ -170,7 +170,7 @@ model Citation {
 }
 
 model ProjectStatistic {
-  id                 String   @id @default(uuid())
+  id                 String   @id @default(dbgenerated("gen_random_uuid()"))
   projectId          String   @map("project_id")
   type               String // chart, table
   title              String
@@ -195,7 +195,7 @@ model ProjectStatistic {
 }
 
 model SearchQuery {
-  id        String   @id @default(uuid())
+  id        String   @id @default(dbgenerated("gen_random_uuid()"))
   projectId String   @map("project_id")
   topic     String
   filters   Json
