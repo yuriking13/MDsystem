@@ -27,6 +27,7 @@ model User {
 
   projectsOwned Project[] @relation("OwnerProjects")
   memberships   ProjectMember[]
+  createdStatistics ProjectStatistic[]
 }
 
 model Project {
@@ -41,6 +42,32 @@ model Project {
   members  ProjectMember[]
   queries  SearchQuery[]
   states   ArticleProjectState[]
+  statistics ProjectStatistic[]
+}
+
+model ProjectStatistic {
+  id                 String   @id @default(uuid())
+  projectId          String   @map("project_id")
+  type               String   // chart, table
+  title              String
+  description        String?
+  config             Json
+  tableData          Json?    @map("table_data")
+  dataClassification Json?    @map("data_classification")
+  chartType          String?  @map("chart_type")
+  usedInDocuments    String[] @map("used_in_documents")
+  orderIndex         Int      @default(0) @map("order_index")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at")
+  createdBy          String?  @map("created_by")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  creator User?   @relation(fields: [createdBy], references: [id])
+
+  @@map("project_statistics")
+  @@index([projectId])
+  @@index([type])
+  @@index([chartType])
 }
 
 model ProjectMember {
