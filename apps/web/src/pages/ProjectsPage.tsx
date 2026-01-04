@@ -23,6 +23,11 @@ export default function ProjectsPage() {
   const [newDesc, setNewDesc] = useState("");
   const [creating, setCreating] = useState(false);
 
+  // Delete confirmation
+  const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   async function load() {
     setError(null);
     setLoading(true);
@@ -60,16 +65,35 @@ export default function ProjectsPage() {
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`Delete project "${name}"?`)) return;
+  function openDeleteConfirm(project: Project) {
+    setDeleteTarget(project);
+    setDeleteConfirmText("");
+    setError(null);
+  }
 
+  function closeDeleteConfirm() {
+    setDeleteTarget(null);
+    setDeleteConfirmText("");
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    if (deleteConfirmText !== deleteTarget.name) {
+      setError("Название проекта не совпадает");
+      return;
+    }
+
+    setDeleting(true);
     setError(null);
     try {
-      await apiDeleteProject(id);
-      setOk("Project deleted");
+      await apiDeleteProject(deleteTarget.id);
+      setOk("Проект удалён");
+      closeDeleteConfirm();
       await load();
     } catch (err: any) {
       setError(err?.message || "Failed to delete project");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -173,7 +197,7 @@ export default function ProjectsPage() {
                     {p.role === "owner" && (
                       <button
                         className="btn secondary"
-                        onClick={() => handleDelete(p.id, p.name)}
+                        onClick={() => openDeleteConfirm(p)}
                         type="button"
                       >
                         Delete
@@ -183,6 +207,48 @@ export default function ProjectsPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Delete confirmation modal */}
+        {deleteTarget && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <h3>Удаление проекта</h3>
+              <p>
+                Вы уверены что хотите удалить проект <strong>"{deleteTarget.name}"</strong>?
+              </p>
+              <p className="muted" style={{ fontSize: 13 }}>
+                Это действие необратимо. Все данные проекта будут потеряны.
+              </p>
+              <p style={{ marginTop: 12 }}>
+                Для подтверждения введите название проекта:
+              </p>
+              <input
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder={deleteTarget.name}
+                style={{ marginBottom: 12 }}
+              />
+              {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
+              <div className="row gap">
+                <button
+                  className="btn danger"
+                  onClick={handleDelete}
+                  disabled={deleting || deleteConfirmText !== deleteTarget.name}
+                  type="button"
+                >
+                  {deleting ? "Удаление…" : "Удалить проект"}
+                </button>
+                <button
+                  className="btn secondary"
+                  onClick={closeDeleteConfirm}
+                  type="button"
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
