@@ -419,7 +419,7 @@ export default function DocumentPage() {
                     onClick={() => handleAddCitation(a)}
                   >
                     <div style={{ fontWeight: 500 }}>
-                      {a.title_ru || a.title_en}
+                      {a.title_en || a.title_ru}
                     </div>
                     <div className="muted" style={{ fontSize: 12 }}>
                       {a.authors?.slice(0, 2).join(", ")}

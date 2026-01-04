@@ -743,14 +743,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         hasSourceQueryCol = false;
       }
 
-      // Строим условие WHERE
-      let statusCondition = '';
+      // Строим условие WHERE (никогда не показываем удалённые в графе)
+      let statusCondition = ` AND pa.status != 'deleted'`;
       if (filter === 'selected') {
         statusCondition = ` AND pa.status = 'selected'`;
       } else if (filter === 'excluded') {
         statusCondition = ` AND pa.status = 'excluded'`;
       }
-      // Для 'all' — показываем все статусы (без ограничения)
+      // Для 'all' — показываем все статусы кроме deleted
       
       // Условие по source_query
       let sourceQueryCondition = '';
@@ -792,8 +792,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
         const label = `${firstAuthor} (${article.year || '?'})`;
         
-        // Количество цитирований (cited_by_pmids)
-        const citedByCount = article.cited_by_pmids?.length || 0;
+        // Количество цитирований - берём максимум из PubMed cited_by и Europe PMC
+        const pubmedCitedBy = article.cited_by_pmids?.length || 0;
+        const europePMCCitations = article.raw_json?.europePMCCitations || 0;
+        const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
         
         nodes.push({
           id: article.id,

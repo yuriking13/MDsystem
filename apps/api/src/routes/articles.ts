@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
-import { pubmedFetchAll, enrichArticlesWithReferences, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
+import { pubmedFetchAll, enrichArticlesWithReferences, europePMCGetCitationCounts, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
 import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.js";
 import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
@@ -22,7 +22,7 @@ const SearchBodySchema = z.object({
 });
 
 const ArticleStatusSchema = z.object({
-  status: z.enum(["candidate", "selected", "excluded"]),
+  status: z.enum(["candidate", "selected", "excluded", "deleted"]),
   notes: z.string().max(5000).optional(),
 });
 
@@ -396,9 +396,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const params: any[] = [paramsP.data.id];
       let paramIdx = 2;
       
-      if (status && ["candidate", "selected", "excluded"].includes(status)) {
+      if (status && ["candidate", "selected", "excluded", "deleted"].includes(status)) {
         sql += ` AND pa.status = $${paramIdx++}`;
         params.push(status);
+      } else if (!status) {
+        // По умолчанию не показываем удалённые
+        sql += ` AND pa.status != 'deleted'`;
       }
       
       if (hasStats) {
@@ -440,6 +443,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         candidate: 0,
         selected: 0,
         excluded: 0,
+        deleted: 0,
       };
       for (const row of countsRes.rows) {
         counts[row.status] = row.count;
@@ -848,6 +852,31 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           console.error(`Error updating references for ${pmid}:`, err);
         }
       }
+      
+      // После получения связей из PubMed, дополнительно получаем citation counts из Europe PMC
+      // Это асинхронная операция, не блокируем ответ
+      (async () => {
+        try {
+          const citationCounts = await europePMCGetCitationCounts({
+            pmids,
+            throttleMs: 200,
+          });
+          
+          for (const [pmid, count] of citationCounts) {
+            const articleId = idByPmid.get(pmid);
+            if (!articleId || count === 0) continue;
+            
+            await pool.query(
+              `UPDATE articles SET 
+                raw_json = COALESCE(raw_json, '{}'::jsonb) || jsonb_build_object('europePMCCitations', $1)
+               WHERE id = $2`,
+              [count, articleId]
+            );
+          }
+        } catch (err) {
+          console.error('Europe PMC citation fetch error:', err);
+        }
+      })();
       
       return { 
         ok: true, 

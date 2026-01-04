@@ -588,6 +588,84 @@ input::placeholder {
   background: rgba(74, 222, 128, 0.3);
 }
 
+/* Dropdown menu для таблиц */
+.toolbar-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass-light);
+  border-radius: 12px;
+  padding: 8px;
+  min-width: 180px;
+  z-index: 100;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.dropdown-header {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: var(--border-glass);
+  margin: 8px 0;
+}
+
+.dropdown-menu button {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.dropdown-menu button:hover {
+  background: var(--bg-glass-light);
+  color: var(--text-primary);
+}
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.table-cell-btn {
+  width: 36px !important;
+  height: 28px !important;
+  font-size: 10px !important;
+  padding: 0 !important;
+  text-align: center !important;
+}
+
+/* Editor footer */
+.editor-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid var(--border-glass);
+}
+
+.word-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
 .editor-content {
   padding: 20px 24px;
   min-height: 350px;
@@ -636,6 +714,99 @@ input::placeholder {
   color: inherit;
   padding: 0 3px;
   border-radius: 3px;
+}
+
+/* Таблицы в редакторе */
+.editor-content .tiptap table.editor-table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  table-layout: fixed;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.editor-content .tiptap table.editor-table th,
+.editor-content .tiptap table.editor-table td {
+  border: 1px solid var(--border-glass-light);
+  padding: 10px 14px;
+  text-align: left;
+  vertical-align: top;
+  min-width: 80px;
+}
+
+.editor-content .tiptap table.editor-table th {
+  background: rgba(75, 116, 255, 0.15);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.editor-content .tiptap table.editor-table td {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.editor-content .tiptap table.editor-table tr:hover td {
+  background: rgba(75, 116, 255, 0.05);
+}
+
+/* Выделение ячеек таблицы */
+.editor-content .tiptap .selectedCell::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 0; bottom: 0;
+  background: rgba(75, 116, 255, 0.2);
+  pointer-events: none;
+}
+
+/* Изображения в редакторе */
+.editor-content .tiptap img.editor-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 12px;
+  margin: 1em 0;
+  display: block;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.editor-content .tiptap img.editor-image.ProseMirror-selectednode {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Код */
+.editor-content .tiptap code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.9em;
+}
+
+.editor-content .tiptap pre {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 16px 20px;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.editor-content .tiptap pre code {
+  background: transparent;
+  padding: 0;
+}
+
+/* Горизонтальная линия */
+.editor-content .tiptap hr {
+  border: none;
+  border-top: 2px solid var(--border-glass-light);
+  margin: 2em 0;
+}
+
+/* Ссылки */
+.editor-content .tiptap a {
+  color: var(--accent);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .editor-content .tiptap .is-editor-empty:first-child::before {

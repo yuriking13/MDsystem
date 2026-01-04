@@ -190,7 +190,7 @@ export type Article = {
   stats_quality: number; // 0-3, качество статистики по p-value
   publication_types: string[] | null;
   fetched_at: string; // Дата обращения к источнику
-  status: "candidate" | "selected" | "excluded";
+  status: "candidate" | "selected" | "excluded" | "deleted";
   notes: string | null;
   tags: string[] | null;
   added_at: string;
@@ -198,7 +198,7 @@ export type Article = {
 
 export type ArticlesResponse = {
   articles: Article[];
-  counts: { candidate: number; selected: number; excluded: number };
+  counts: { candidate: number; selected: number; excluded: number; deleted: number };
   total: number;
   searchQueries?: string[]; // Уникальные поисковые запросы для фильтрации
 };
@@ -235,7 +235,7 @@ export async function apiSearchArticles(
 
 export async function apiGetArticles(
   projectId: string,
-  status?: "candidate" | "selected" | "excluded",
+  status?: "candidate" | "selected" | "excluded" | "deleted",
   hasStats?: boolean,
   sourceQuery?: string
 ): Promise<ArticlesResponse> {
@@ -253,7 +253,7 @@ export async function apiGetArticles(
 export async function apiUpdateArticleStatus(
   projectId: string,
   articleId: string,
-  status: "candidate" | "selected" | "excluded",
+  status: "candidate" | "selected" | "excluded" | "deleted",
   notes?: string
 ): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(`/api/projects/${projectId}/articles/${articleId}`, {
@@ -274,7 +274,7 @@ export async function apiRemoveArticle(
 export async function apiBulkUpdateStatus(
   projectId: string,
   articleIds: string[],
-  status: "candidate" | "selected" | "excluded"
+  status: "candidate" | "selected" | "excluded" | "deleted"
 ): Promise<{ ok: true; updated: number }> {
   return apiFetch<{ ok: true; updated: number }>(
     `/api/projects/${projectId}/articles/bulk-status`,

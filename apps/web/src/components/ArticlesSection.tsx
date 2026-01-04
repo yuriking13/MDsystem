@@ -45,13 +45,13 @@ const TEXT_AVAILABILITY = [
 
 export default function ArticlesSection({ projectId, canEdit, onCountsChange }: Props) {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [counts, setCounts] = useState({ candidate: 0, selected: 0, excluded: 0 });
+  const [counts, setCounts] = useState({ candidate: 0, selected: 0, excluded: 0, deleted: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
   // Фильтр отображения
-  const [viewStatus, setViewStatus] = useState<"candidate" | "selected" | "excluded" | "all">("candidate");
+  const [viewStatus, setViewStatus] = useState<"candidate" | "selected" | "excluded" | "deleted" | "all">("candidate");
   const [showStatsOnly, setShowStatsOnly] = useState(false);
   const [filterPubType, setFilterPubType] = useState<string | null>(null);
   const [filterSourceQuery, setFilterSourceQuery] = useState<string | null>(null);
@@ -98,7 +98,14 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   
   // Сортировка
-  const [sortBy, setSortBy] = useState<"date" | "stats" | "year">("date");
+  const [sortBy, setSortBy] = useState<"date" | "stats" | "year_desc" | "year_asc">("date");
+  
+  // Локальный поиск по названию в базе
+  const [localSearch, setLocalSearch] = useState("");
+  
+  // Фильтр по периоду годов
+  const [yearFromFilter, setYearFromFilter] = useState<number | null>(null);
+  const [yearToFilter, setYearToFilter] = useState<number | null>(null);
 
   async function loadArticles() {
     setLoading(true);
@@ -107,7 +114,12 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       const status = viewStatus === "all" ? undefined : viewStatus;
       const res = await apiGetArticles(projectId, status, showStatsOnly || undefined, filterSourceQuery || undefined);
       setArticles(res.articles);
-      setCounts(res.counts);
+      setCounts({
+        candidate: res.counts.candidate,
+        selected: res.counts.selected,
+        excluded: res.counts.excluded,
+        deleted: res.counts.deleted || 0,
+      });
       // Сохраняем доступные поисковые запросы для фильтра
       if (res.searchQueries) {
         setAvailableSourceQueries(res.searchQueries);
@@ -115,7 +127,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       // Передаём counts наверх для отображения в табах
       if (onCountsChange) {
         const total = res.counts.candidate + res.counts.selected + res.counts.excluded;
-        onCountsChange({ ...res.counts, total });
+        onCountsChange({ candidate: res.counts.candidate, selected: res.counts.selected, excluded: res.counts.excluded, total });
       }
     } catch (err: any) {
       setError(err?.message || "Ошибка загрузки статей");
@@ -194,7 +206,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     }
   }
 
-  async function handleStatusChange(article: Article, newStatus: "candidate" | "selected" | "excluded") {
+  async function handleStatusChange(article: Article, newStatus: "candidate" | "selected" | "excluded" | "deleted") {
     try {
       await apiUpdateArticleStatus(projectId, article.id, newStatus);
       await loadArticles();
@@ -204,7 +216,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   }
 
   // Массовое изменение статуса
-  async function handleBulkStatus(status: "candidate" | "selected" | "excluded") {
+  async function handleBulkStatus(status: "candidate" | "selected" | "excluded" | "deleted") {
     if (selectedIds.size === 0) return;
     
     try {
@@ -393,7 +405,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     return parts.length > 0 ? parts : text;
   }
 
-  const total = counts.candidate + counts.selected + counts.excluded;
+  const total = counts.candidate + counts.selected + counts.excluded; // deleted не включаем в общий счёт
   
   // Подсчёт непереведённых статей
   const untranslatedCount = articles.filter((a) => !a.title_ru).length;
@@ -414,13 +426,35 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     ? articles.filter((a) => a.publication_types?.includes(filterPubType))
     : articles;
   
+  // Фильтрация по локальному поиску (название)
+  const filteredBySearch = localSearch.trim()
+    ? filteredByType.filter((a) => {
+        const query = localSearch.toLowerCase();
+        return (
+          a.title_en?.toLowerCase().includes(query) ||
+          a.title_ru?.toLowerCase().includes(query) ||
+          a.authors?.some(auth => auth.toLowerCase().includes(query))
+        );
+      })
+    : filteredByType;
+  
+  // Фильтрация по периоду годов
+  const filteredByYear = filteredBySearch.filter((a) => {
+    if (yearFromFilter && a.year && a.year < yearFromFilter) return false;
+    if (yearToFilter && a.year && a.year > yearToFilter) return false;
+    return true;
+  });
+  
   // Сортировка
-  const filteredArticles = [...filteredByType].sort((a, b) => {
+  const filteredArticles = [...filteredByYear].sort((a, b) => {
     if (sortBy === "stats") {
       return (b.stats_quality || 0) - (a.stats_quality || 0);
     }
-    if (sortBy === "year") {
+    if (sortBy === "year_desc") {
       return (b.year || 0) - (a.year || 0);
+    }
+    if (sortBy === "year_asc") {
+      return (a.year || 0) - (b.year || 0);
     }
     // По умолчанию по дате добавления
     return new Date(b.added_at).getTime() - new Date(a.added_at).getTime();
@@ -654,8 +688,62 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         >
           Все ({total})
         </button>
+        {counts.deleted > 0 && (
+          <button
+            className={viewStatus === "deleted" ? "btn" : "btn secondary"}
+            onClick={() => setViewStatus("deleted")}
+            type="button"
+          >
+            🗑️ Корзина ({counts.deleted})
+          </button>
+        )}
       </div>
       
+      {/* Локальный поиск по базе */}
+      <div className="row gap" style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+        <input
+          type="text"
+          placeholder="🔍 Поиск по названию/автору..."
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          style={{ flex: 1, minWidth: 200, maxWidth: 400, padding: "8px 12px", fontSize: 13 }}
+        />
+        
+        {/* Фильтр по периоду годов */}
+        <div className="row gap" style={{ alignItems: "center" }}>
+          <span className="muted" style={{ fontSize: 12 }}>Год:</span>
+          <input
+            type="number"
+            placeholder="от"
+            value={yearFromFilter || ""}
+            onChange={(e) => setYearFromFilter(e.target.value ? Number(e.target.value) : null)}
+            style={{ width: 70, padding: "6px 8px", fontSize: 12 }}
+            min={1900}
+            max={2100}
+          />
+          <span className="muted">—</span>
+          <input
+            type="number"
+            placeholder="до"
+            value={yearToFilter || ""}
+            onChange={(e) => setYearToFilter(e.target.value ? Number(e.target.value) : null)}
+            style={{ width: 70, padding: "6px 8px", fontSize: 12 }}
+            min={1900}
+            max={2100}
+          />
+          {(yearFromFilter || yearToFilter) && (
+            <button
+              className="btn secondary"
+              onClick={() => { setYearFromFilter(null); setYearToFilter(null); }}
+              style={{ padding: "4px 8px", fontSize: 11 }}
+              type="button"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Фильтры - строка 2: настройки отображения */}
       <div className="row gap" style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
         {/* Переключатель языка */}
@@ -718,9 +806,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           onChange={(e) => setSortBy(e.target.value as any)}
           style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12 }}
         >
-          <option value="date">По дате</option>
+          <option value="date">По дате добавления</option>
           <option value="stats">По статистике</option>
-          <option value="year">По году</option>
+          <option value="year_desc">По году ↓ (новые)</option>
+          <option value="year_asc">По году ↑ (старые)</option>
         </select>
         
         {/* Фильтр по поисковому запросу (подбазы) */}
@@ -798,7 +887,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               >
                 📚 Crossref
               </button>
-              {viewStatus !== "candidate" && (
+              {viewStatus !== "candidate" && viewStatus !== "deleted" && (
                 <button
                   className="btn secondary"
                   onClick={() => handleBulkStatus("candidate")}
@@ -807,6 +896,28 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   style={{ padding: "4px 10px", fontSize: 12 }}
                 >
                   ↩️ В кандидаты
+                </button>
+              )}
+              {viewStatus !== "deleted" && (
+                <button
+                  className="btn secondary"
+                  onClick={() => handleBulkStatus("deleted")}
+                  title="Удалить в корзину"
+                  type="button"
+                  style={{ padding: "4px 10px", fontSize: 12 }}
+                >
+                  🗑️ Удалить
+                </button>
+              )}
+              {viewStatus === "deleted" && (
+                <button
+                  className="btn secondary"
+                  onClick={() => handleBulkStatus("candidate")}
+                  title="Восстановить из корзины"
+                  type="button"
+                  style={{ padding: "4px 10px", fontSize: 12 }}
+                >
+                  ♻️ Восстановить
                 </button>
               )}
             </div>
@@ -873,7 +984,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               {/* Кнопки действий */}
               {canEdit && (
                 <div className="article-actions" onClick={(e) => e.stopPropagation()}>
-                  {a.status !== "selected" && (
+                  {a.status !== "selected" && a.status !== "deleted" && (
                     <button
                       className="action-btn select"
                       onClick={() => handleStatusChange(a, "selected")}
@@ -883,7 +994,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       ✅
                     </button>
                   )}
-                  {a.status !== "excluded" && (
+                  {a.status !== "excluded" && a.status !== "deleted" && (
                     <button
                       className="action-btn exclude"
                       onClick={() => handleStatusChange(a, "excluded")}
@@ -893,7 +1004,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       ❌
                     </button>
                   )}
-                  {a.status !== "candidate" && (
+                  {a.status !== "candidate" && a.status !== "deleted" && (
                     <button
                       className="action-btn candidate"
                       onClick={() => handleStatusChange(a, "candidate")}
@@ -901,6 +1012,26 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       type="button"
                     >
                       ↩️
+                    </button>
+                  )}
+                  {a.status !== "deleted" && (
+                    <button
+                      className="action-btn delete"
+                      onClick={() => handleStatusChange(a, "deleted")}
+                      title="Удалить в корзину"
+                      type="button"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                  {a.status === "deleted" && (
+                    <button
+                      className="action-btn restore"
+                      onClick={() => handleStatusChange(a, "candidate")}
+                      title="Восстановить из корзины"
+                      type="button"
+                    >
+                      ♻️
                     </button>
                   )}
                 </div>
