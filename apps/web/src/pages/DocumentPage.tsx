@@ -280,6 +280,10 @@ export default function DocumentPage() {
             placeholder="Начните писать текст диссертации..."
             projectId={projectId}
             documentId={docId}
+            onStatisticCreated={(statId) => {
+              console.log('Statistic created:', statId);
+              // Можно показать уведомление пользователю
+            }}
           />
         </div>
 
