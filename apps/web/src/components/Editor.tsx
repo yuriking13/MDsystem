@@ -562,42 +562,50 @@ export default function Editor({
 
   // Вставка графика
   const handleInsertChart = useCallback(async (chartDataJson: string, chartId?: string) => {
-    if (editor) {
+    if (editor && projectId) {
       const match = chartDataJson.match(/data-chart='([^']+)'/);
       if (match) {
         const chartDataStr = match[1].replace(/&#39;/g, "'");
         
-        editor.chain().focus().insertContent([
-          { type: 'paragraph' },
-          { type: 'chartNode', attrs: { chartData: chartDataStr } },
-          { type: 'paragraph' },
-        ]).run();
-        
-        // Сохраняем в статистику проекта
-        if (projectId) {
-          setSavingChart(true);
-          try {
-            const parsedData = JSON.parse(chartDataStr);
-            const config = parsedData.config || {};
-            const chartType = config.type as ChartType;
-            const chartInfo = chartType ? CHART_TYPE_INFO[chartType] : null;
-            
-            const result = await apiCreateStatistic(projectId, {
-              type: 'chart',
-              title: config.title || (chartInfo?.name || 'График'),
-              description: chartInfo?.description,
-              config: config,
-              tableData: parsedData.tableData,
-              dataClassification: config.dataClassification as DataClassification,
-              chartType: chartType,
-            });
-            
-            onStatisticCreated?.(result.statistic.id);
-          } catch (err) {
-            console.error('Failed to save chart:', err);
-          } finally {
-            setSavingChart(false);
-          }
+        setSavingChart(true);
+        try {
+          // 1. Сначала создаем статистику на бэкенде
+          const parsedData = JSON.parse(chartDataStr);
+          const config = parsedData.config || {};
+          const chartType = config.type as ChartType;
+          const chartInfo = chartType ? CHART_TYPE_INFO[chartType] : null;
+          
+          const result = await apiCreateStatistic(projectId, {
+            type: 'chart',
+            title: config.title || (chartInfo?.name || 'График'),
+            description: chartInfo?.description,
+            config: config,
+            tableData: parsedData.tableData,
+            dataClassification: config.dataClassification as DataClassification,
+            chartType: chartType,
+          });
+          
+          onStatisticCreated?.(result.statistic.id);
+
+          // 2. Вставляем узел в редактор с привязкой к ID
+          editor.chain().focus().insertContent([
+            { type: 'paragraph' },
+            { 
+              type: 'chartNode', 
+              attrs: { 
+                chartData: chartDataStr,
+                statisticId: result.statistic.id,
+                projectId: projectId
+              } 
+            },
+            { type: 'paragraph' },
+          ]).run();
+
+        } catch (err) {
+          console.error('Failed to save chart:', err);
+          alert("Ошибка сохранения графика. Попробуйте еще раз.");
+        } finally {
+          setSavingChart(false);
         }
       }
     }
@@ -612,8 +620,9 @@ export default function Editor({
         width: settings.pageSize === 'a4' ? PAGE_WIDTH_A4 : 816,
         minHeight: settings.pageSize === 'a4' ? PAGE_HEIGHT_A4 : 1056,
         padding: `${settings.marginTop}mm ${settings.marginRight}mm ${settings.marginBottom}mm ${settings.marginLeft}mm`,
-        background: '#ffffff',
-        color: '#1a1a1a',
+        // Используем переменные темы, но с приоритетом на "бумажный" вид
+        background: 'var(--editor-bg, #ffffff)',
+        color: 'var(--editor-text, #1a1a1a)',
         margin: '20px auto',
         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
         lineHeight: settings.lineHeight,

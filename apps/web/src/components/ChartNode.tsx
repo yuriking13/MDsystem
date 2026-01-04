@@ -1,15 +1,23 @@
 import { Node, mergeAttributes } from "@tiptap/react";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import ChartFromTable, { ChartConfig, TableData, CHART_TYPE_INFO, ChartType } from "./ChartFromTable";
+import { apiGetStatistic, apiUpdateStatistic, type ProjectStatistic, type DataClassification } from "../lib/api";
 
 // React компонент для отображения графика с названием и сворачиваемой таблицей
 function ChartNodeView({ node, updateAttributes, editor }: { node: any; updateAttributes: (attrs: any) => void; editor: any }) {
   const [showSourceData, setShowSourceData] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<TableData | null>(null);
+  const [syncedStat, setSyncedStat] = useState<ProjectStatistic | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const chartData = useMemo(() => {
+  const projectId = node.attrs.projectId;
+  const statisticId = node.attrs.statisticId;
+
+  // Initial load from attributes
+  const initialChartData = useMemo(() => {
     try {
       const data = node.attrs.chartData;
       if (typeof data === "string") {
@@ -21,15 +29,51 @@ function ChartNodeView({ node, updateAttributes, editor }: { node: any; updateAt
     }
   }, [node.attrs.chartData]);
 
+  // Sync with backend
+  useEffect(() => {
+    if (projectId && statisticId) {
+      setLoading(true);
+      apiGetStatistic(projectId, statisticId)
+        .then(res => {
+          setSyncedStat(res.statistic);
+          // Update local attributes to match backend if needed
+          if (res.statistic.config && res.statistic.table_data) {
+             const newData = {
+               config: res.statistic.config,
+               tableData: res.statistic.table_data
+             };
+             // We don't necessarily want to trigger a document save every time we fetch,
+             // but we want the display to be up to date.
+             // If we want offline support, we should update attributes.
+             if (JSON.stringify(newData) !== JSON.stringify(initialChartData)) {
+                updateAttributes({
+                  chartData: JSON.stringify(newData)
+                });
+             }
+          }
+        })
+        .catch(err => {
+          console.error("Failed to sync statistic:", err);
+          setError("Ошибка синхронизации");
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [projectId, statisticId]);
+
+  // Determine what data to display
+  const chartData = syncedStat 
+    ? { config: syncedStat.config as ChartConfig, tableData: syncedStat.table_data as TableData }
+    : initialChartData;
+
   if (!chartData) {
     return (
       <NodeViewWrapper className="chart-node-wrapper">
-        <div className="chart-error">Ошибка загрузки графика</div>
+        <div className="chart-error">Ошибка загрузки графика {error ? `(${error})` : ''}</div>
       </NodeViewWrapper>
     );
   }
 
-  const { tableData, config } = chartData as { tableData: TableData; config: ChartConfig };
+  const { tableData, config } = chartData;
   const chartType = config.type as ChartType;
   const chartInfo = chartType ? CHART_TYPE_INFO[chartType] : null;
   const chartTitle = config.title || (chartInfo?.name || 'График');
@@ -54,16 +98,41 @@ function ChartNodeView({ node, updateAttributes, editor }: { node: any; updateAt
   };
 
   // Сохранить изменения
-  const handleSaveChanges = () => {
+  const handleSaveChanges = async () => {
     if (editedData) {
+      const newConfig = { ...config }; // Preserve config, only update data here
+      
       const newChartData = {
-        ...chartData,
+        config: newConfig,
         tableData: editedData,
       };
+      
+      // Update TipTap node
       updateAttributes({
         chartData: JSON.stringify(newChartData),
       });
+
+      // Update Backend
+      if (projectId && statisticId) {
+        setLoading(true);
+        try {
+          await apiUpdateStatistic(projectId, statisticId, {
+            tableData: editedData,
+            config: newConfig
+          });
+          // Refresh synced stat
+          const res = await apiGetStatistic(projectId, statisticId);
+          setSyncedStat(res.statistic);
+        } catch (err) {
+          console.error("Failed to save to backend:", err);
+          setError("Ошибка сохранения на сервере");
+        } finally {
+          setLoading(false);
+        }
+      }
+
       setIsEditing(false);
+      setEditedData(null);
     }
   };
 
@@ -78,13 +147,15 @@ function ChartNodeView({ node, updateAttributes, editor }: { node: any; updateAt
       <div className="chart-container-live">
         {/* Заголовок графика - РИСУНОК, не таблица */}
         <div className="chart-caption">
-          <span className="chart-caption-label">Рисунок.</span>
+          {/* CSS counter handles numbering automatically */}
+          <span className="chart-caption-label numbered">Рисунок</span>
           <span className="chart-caption-title">{chartTitle}</span>
           {chartInfo && (
             <span className="chart-type-badge" title={chartInfo.description}>
               {chartInfo.icon} {chartInfo.name}
             </span>
           )}
+          {loading && <span className="muted" style={{fontSize: 10, marginLeft: 8}}>🔄</span>}
         </div>
         
         {/* График */}
@@ -119,7 +190,7 @@ function ChartNodeView({ node, updateAttributes, editor }: { node: any; updateAt
               }}
               type="button"
             >
-              ✏️ Редактировать
+              ✏️ Редактировать данные
             </button>
           )}
           
@@ -133,8 +204,9 @@ function ChartNodeView({ node, updateAttributes, editor }: { node: any; updateAt
                   handleSaveChanges();
                 }}
                 type="button"
+                disabled={loading}
               >
-                💾 Сохранить
+                {loading ? '⏳...' : '💾 Сохранить'}
               </button>
               <button 
                 className="chart-toggle-data"
@@ -234,6 +306,14 @@ export const ChartNode = Node.create({
         renderHTML: (attributes) => {
           if (!attributes.statisticId) return {};
           return { "data-statistic-id": attributes.statisticId };
+        },
+      },
+      projectId: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-project-id"),
+        renderHTML: (attributes) => {
+          if (!attributes.projectId) return {};
+          return { "data-project-id": attributes.projectId };
         },
       },
       figureNumber: {
