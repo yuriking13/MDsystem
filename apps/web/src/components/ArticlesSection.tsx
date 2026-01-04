@@ -427,30 +427,42 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   }
 
   // Функция подсветки статистики в тексте
-  function highlightStatistics(text: string): React.ReactNode {
+  function highlightStatistics(text: string, aiStats?: any): React.ReactNode {
     if (!highlightStats || !text) return text;
     
-    // Паттерны для статистики (EN + RU)
+    // Паттерны для статистики (EN + RU) - расширенные
     const patterns = [
-      // p-value с разной значимостью (разные форматы, включая P = 0.xxx)
+      // p-value с разной значимостью
       { regex: /[PpРр]\s*[<≤]\s*0[.,]001/g, className: "stat-p001" },
       { regex: /[PpРр]\s*[<≤]\s*0[.,]01(?!\d)/g, className: "stat-p01" },
       { regex: /[PpРр]\s*[<≤]\s*0[.,]05(?!\d)/g, className: "stat-p05" },
       { regex: /[PpРр]\s*[=]\s*0[.,]\d+/g, className: "stat-pval" },
-      { regex: /[PpРр]\s*[>]\s*0[.,]05/g, className: "stat-pval" }, // P > 0.05
-      // CI / ДИ (доверительный интервал) - разные форматы
-      { regex: /95\s*%?\s*(?:CI|ДИ)[:\s]*[\d.,]+[\s–\-−—]+[\d.,]+/gi, className: "stat-ci" },
-      { regex: /(?:CI|ДИ)[:;\s]+[\d.,]+[\s–\-−—]+[\d.,]+/gi, className: "stat-ci" },
+      { regex: /[PpРр]\s*[>]\s*0[.,]05/g, className: "stat-pval" },
+      // p= в скобках: (p=0.0268)
+      { regex: /\(\s*[PpРр]\s*[=<>≤≥]\s*0[.,]\d+\s*\)/g, className: "stat-pval" },
+      // CI / ДИ (доверительный интервал) - все форматы
+      { regex: /95\s*%?\s*(?:CI|ДИ)[:\s]*\(?[\d.,]+[\s–\-−—to]+[\d.,]+\)?/gi, className: "stat-ci" },
+      { regex: /(?:CI|ДИ)[:\s]+\(?[\d.,]+[\s–\-−—to]+[\d.,]+\)?/gi, className: "stat-ci" },
+      // CI в скобках после значения: (0.778-0.985)
+      { regex: /\(\s*[\d.,]+\s*[\-–−—to]+\s*[\d.,]+\s*\)/g, className: "stat-ci" },
       // I² (гетерогенность) 
-      { regex: /I[²2]\s*[=]\s*[\d.,]+\s*%?/gi, className: "stat-ci" },
-      // OR, RR, HR с пробелами вокруг = или :
-      { regex: /\b(?:a?OR|a?RR|a?HR|SMD|ОШ|ОР)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
-      // Шкалы качества: NOS, AHRQ и др.
+      { regex: /I[²2]\s*[=:]\s*[\d.,]+\s*%?/gi, className: "stat-ci" },
+      // OR, RR, HR - все форматы включая с пробелами и скобками
+      { regex: /\b(?:a?OR|a?RR|a?HR|SMD|ОШ|ОР|NNT|NNH)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
+      { regex: /\(\s*(?:a?OR|a?RR|a?HR|SMD)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
+      // Хи-квадрат, F-статистика, t-test
+      { regex: /[χχ²X²]\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
+      { regex: /\bF\s*\(\s*\d+\s*,\s*\d+\s*\)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
+      { regex: /\bt\s*\(\s*\d+\s*\)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
+      // Корреляция
+      { regex: /\b[rR]\s*[=:]\s*[\-−]?0[.,]\d+/g, className: "stat-ratio" },
+      // Шкалы качества
       { regex: /\b(?:NOS|AHRQ|GRADE)[:\s]+[\d.,]+/gi, className: "stat-n" },
-      // Размер выборки
+      // Размер выборки - разные форматы
       { regex: /\b[nN]\s*[=]\s*[\d,\s]+/g, className: "stat-n" },
-      // Шаг для мета-анализа
-      { regex: /Шаг\s*\d+:/gi, className: "stat-ci" },
+      { regex: /\d+\s+(?:patients|subjects|participants|cases)/gi, className: "stat-n" },
+      // Mean ± SD
+      { regex: /\d+[.,]\d*\s*[±]\s*\d+[.,]?\d*/g, className: "stat-ratio" },
     ];
     
     // Применяем все паттерны
@@ -570,17 +582,6 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               title={`Перевести ${untranslatedCount} статей без перевода`}
             >
               {translating ? "Переводим..." : `🌐 Перевести (${untranslatedCount})`}
-            </button>
-          )}
-          {canEdit && (
-            <button
-              className="btn secondary"
-              onClick={handleAIDetectStats}
-              disabled={detectingStats}
-              type="button"
-              title="AI детекция статистики в абстрактах (OpenRouter)"
-            >
-              {detectingStats ? "Анализ..." : "🤖 AI Статистика"}
             </button>
           )}
           {canEdit && (

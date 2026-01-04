@@ -14,6 +14,8 @@ import Image from "@tiptap/extension-image";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import CitationNode from "./CitationNode";
+import { ChartCreatorModal } from "./ChartFromTable";
+import ChartNode from "./ChartNode";
 
 type CitationData = {
   id: string;
@@ -35,10 +37,12 @@ type Props = {
 // Панель инструментов
 function Toolbar({ 
   editor, 
-  onInsertCitation 
+  onInsertCitation,
+  onCreateChart,
 }: { 
   editor: TipTapEditor | null;
   onInsertCitation?: () => void;
+  onCreateChart?: () => void;
 }) {
   const [showTableMenu, setShowTableMenu] = useState(false);
   const [showInsertMenu, setShowInsertMenu] = useState(false);
@@ -281,6 +285,10 @@ function Toolbar({
                   <button onClick={() => { editor.chain().focus().deleteTable().run(); setShowTableMenu(false); }}>
                     🗑️ Удалить таблицу
                   </button>
+                  <div className="dropdown-divider" />
+                  <button onClick={() => { onCreateChart?.(); setShowTableMenu(false); }}>
+                    📈 Создать график
+                  </button>
                 </>
               )}
             </div>
@@ -342,6 +350,9 @@ export default function Editor({
   placeholder = "Начните писать...",
   editable = true,
 }: Props) {
+  const [showChartModal, setShowChartModal] = useState(false);
+  const [tableHtmlForChart, setTableHtmlForChart] = useState("");
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -387,6 +398,7 @@ export default function Editor({
       CitationNode.configure({
         HTMLAttributes: {},
       }),
+      ChartNode,
     ],
     content,
     editable,
@@ -452,9 +464,51 @@ export default function Editor({
   const wordCount = editor?.state.doc.textContent.split(/\s+/).filter(Boolean).length || 0;
   const charCount = editor?.state.doc.textContent.length || 0;
 
+  // Функция для создания графика из текущей таблицы
+  const handleCreateChart = useCallback(() => {
+    if (!editor) return;
+    
+    // Получаем HTML всего документа и ищем таблицу в позиции курсора
+    const html = editor.getHTML();
+    
+    // Простой способ - ищем первую таблицу в документе
+    // В реальном случае нужно искать таблицу, в которой находится курсор
+    const tableMatch = html.match(/<table[^>]*>[\s\S]*?<\/table>/i);
+    
+    if (tableMatch) {
+      setTableHtmlForChart(tableMatch[0]);
+      setShowChartModal(true);
+    } else {
+      alert("Сначала выберите таблицу в редакторе");
+    }
+  }, [editor]);
+
+  // Вставка графика в документ
+  const handleInsertChart = useCallback((chartDataJson: string) => {
+    if (editor) {
+      // Парсим JSON из HTML атрибута
+      const match = chartDataJson.match(/data-chart='([^']+)'/);
+      if (match) {
+        const chartData = match[1].replace(/&#39;/g, "'");
+        editor.chain().focus().insertContent({
+          type: 'chartNode',
+          attrs: { chartData },
+        }).run();
+      }
+    }
+    setShowChartModal(false);
+    setTableHtmlForChart("");
+  }, [editor]);
+
   return (
     <div className="editor-container">
-      {editable && <Toolbar editor={editor} onInsertCitation={onInsertCitation} />}
+      {editable && (
+        <Toolbar 
+          editor={editor} 
+          onInsertCitation={onInsertCitation}
+          onCreateChart={handleCreateChart}
+        />
+      )}
       <EditorContent editor={editor} className="editor-content" />
       {editable && (
         <div className="editor-footer">
@@ -462,6 +516,15 @@ export default function Editor({
             {wordCount} слов • {charCount} символов
           </span>
         </div>
+      )}
+      
+      {/* Модальное окно создания графика */}
+      {showChartModal && (
+        <ChartCreatorModal
+          tableHtml={tableHtmlForChart}
+          onClose={() => setShowChartModal(false)}
+          onInsert={handleInsertChart}
+        />
       )}
     </div>
   );
