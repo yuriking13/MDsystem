@@ -27,7 +27,7 @@ import {
 import { useAuth } from "../lib/AuthContext";
 import ArticlesSection from "../components/ArticlesSection";
 import CitationGraph from "../components/CitationGraph";
-import ChartFromTable, { CHART_TYPE_INFO, ChartTypeHint, type ChartType, type TableData } from "../components/ChartFromTable";
+import ChartFromTable, { CHART_TYPE_INFO, type ChartType, type TableData } from "../components/ChartFromTable";
 import StatisticEditModal from "../components/StatisticEditModal";
 import { exportToWord } from "../lib/exportWord";
 
@@ -179,6 +179,7 @@ export default function ProjectDetailPage() {
   const [statistics, setStatistics] = useState<ProjectStatistic[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
   const [editingStat, setEditingStat] = useState<ProjectStatistic | null>(null);
+  const [statisticsView, setStatisticsView] = useState<'charts' | 'tables'>('charts');
 
   // Invite form
   const [showInvite, setShowInvite] = useState(false);
@@ -602,29 +603,89 @@ export default function ProjectDetailPage() {
                 Нет документов. Создайте первый документ для написания текста диссертации.
               </div>
             ) : (
-              <div className="documents-list">
+              <div className="documents-grid">
                 {documents.map((doc, idx) => (
-                  <div key={doc.id} className="document-item">
-                    <div className="document-order">{idx + 1}</div>
-                    <div
-                      className="document-title"
+                  <div 
+                    key={doc.id} 
+                    className="document-card"
+                    draggable={!!canEdit}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('text/plain', idx.toString());
+                      e.currentTarget.classList.add('dragging');
+                    }}
+                    onDragEnd={(e) => {
+                      e.currentTarget.classList.remove('dragging');
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.add('drag-over');
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.classList.remove('drag-over');
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.classList.remove('drag-over');
+                      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+                      const toIdx = idx;
+                      if (fromIdx !== toIdx) {
+                        const newDocs = [...documents];
+                        const [moved] = newDocs.splice(fromIdx, 1);
+                        newDocs.splice(toIdx, 0, moved);
+                        setDocuments(newDocs);
+                        // TODO: Save order to backend
+                      }
+                    }}
+                  >
+                    <div className="document-card-header">
+                      <div className="document-order-badge">{idx + 1}</div>
+                      {canEdit && (
+                        <div className="document-drag-handle" title="Перетащите для изменения порядка">
+                          ⋮⋮
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div 
+                      className="document-card-body"
                       onClick={() => nav(`/projects/${id}/documents/${doc.id}`)}
                     >
-                      📄 {doc.title}
+                      <h4 className="document-card-title">{doc.title}</h4>
+                      <div className="document-card-dates">
+                        <div className="document-date-row">
+                          <span className="date-label">Создан:</span>
+                          <span className="date-value">{new Date(doc.created_at).toLocaleDateString('ru-RU', { 
+                            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                          })}</span>
+                        </div>
+                        <div className="document-date-row">
+                          <span className="date-label">Изменён:</span>
+                          <span className="date-value">{new Date(doc.updated_at).toLocaleDateString('ru-RU', { 
+                            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                          })}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="document-meta muted">
-                      {new Date(doc.updated_at).toLocaleString()}
-                    </div>
-                    {canEdit && (
+                    
+                    <div className="document-card-footer">
                       <button
-                        className="btn secondary"
-                        onClick={() => handleDeleteDocument(doc.id, doc.title)}
-                        style={{ padding: "4px 8px", fontSize: 11 }}
+                        className="btn secondary document-open-btn"
+                        onClick={() => nav(`/projects/${id}/documents/${doc.id}`)}
                         type="button"
                       >
-                        🗑️
+                        📝 Редактировать
                       </button>
-                    )}
+                      {canEdit && (
+                        <button
+                          className="btn secondary document-delete-btn"
+                          onClick={() => handleDeleteDocument(doc.id, doc.title)}
+                          type="button"
+                          title="Удалить документ"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -714,15 +775,31 @@ export default function ProjectDetailPage() {
 
         {/* === STATISTICS TAB === */}
         {activeTab === "statistics" && id && (
-          <div>
-            <div className="row space" style={{ marginBottom: 16 }}>
+          <div className="statistics-page">
+            <div className="statistics-header">
               <div>
                 <h2 style={{ margin: 0 }}>Статистика проекта</h2>
                 <div className="muted" style={{ fontSize: 13 }}>
                   Графики и таблицы из документов проекта
                 </div>
               </div>
-              <div className="row gap">
+              <div className="statistics-controls">
+                <div className="view-toggle">
+                  <button
+                    className={`view-toggle-btn ${statisticsView === 'charts' ? 'active' : ''}`}
+                    onClick={() => setStatisticsView('charts')}
+                    type="button"
+                  >
+                    📊 Графики
+                  </button>
+                  <button
+                    className={`view-toggle-btn ${statisticsView === 'tables' ? 'active' : ''}`}
+                    onClick={() => setStatisticsView('tables')}
+                    type="button"
+                  >
+                    📋 Таблицы
+                  </button>
+                </div>
                 <button 
                   className="btn secondary"
                   onClick={loadStatistics}
@@ -734,28 +811,40 @@ export default function ProjectDetailPage() {
               </div>
             </div>
             
-            {/* Инструкция */}
-            <div className="card" style={{ marginBottom: 16, padding: 14 }}>
-              <div className="row gap" style={{ alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 24 }}>💡</span>
-                <div>
-                  <strong style={{ fontSize: 13 }}>Как создать график:</strong>
-                  <ol style={{ margin: '8px 0 0 0', paddingLeft: 20, fontSize: 12, color: 'var(--text-secondary)' }}>
-                    <li>Откройте документ и создайте таблицу с данными</li>
-                    <li>Нажмите на кнопку 📊 в панели инструментов</li>
-                    <li>Выберите «Создать график из таблицы»</li>
-                    <li>Настройте тип графика и данные</li>
-                    <li>График автоматически появится здесь и в документе</li>
-                  </ol>
-                </div>
+            {/* Быстрое создание - кликабельные типы графиков */}
+            <div className="chart-types-selector">
+              <div className="chart-types-header">
+                <h4>📊 Создать новый график</h4>
+                <span className="muted">Выберите тип для быстрого создания</span>
+              </div>
+              <div className="chart-types-grid">
+                {(['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter'] as ChartType[]).map(type => (
+                  <div 
+                    key={type} 
+                    className="chart-type-card"
+                    onClick={() => {
+                      if (documents.length > 0) {
+                        // Переходим в документ с подсказкой о создании графика
+                        nav(`/projects/${id}/documents/${documents[0].id}?createChart=${type}`);
+                      } else {
+                        setError('Сначала создайте документ');
+                      }
+                    }}
+                    title={`Создать ${CHART_TYPE_INFO[type].name}`}
+                  >
+                    <span className="chart-type-icon">{CHART_TYPE_INFO[type].icon}</span>
+                    <span className="chart-type-name">{CHART_TYPE_INFO[type].name}</span>
+                    <span className="chart-type-desc">{CHART_TYPE_INFO[type].description}</span>
+                  </div>
+                ))}
               </div>
             </div>
             
             {loadingStats ? (
               <div className="muted">Загрузка...</div>
             ) : statistics.length === 0 ? (
-              <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-                <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+              <div className="statistics-empty">
+                <div className="statistics-empty-icon">📊</div>
                 <h3>Нет статистических данных</h3>
                 <p className="muted">
                   Создайте графики из таблиц в документах проекта.<br/>
@@ -772,117 +861,118 @@ export default function ProjectDetailPage() {
                 )}
               </div>
             ) : (
-              <div className="statistics-grid">
-                {statistics.map(stat => {
-                  const chartInfo = stat.chart_type ? CHART_TYPE_INFO[stat.chart_type as ChartType] : null;
-                  
-                  return (
-                    <div key={stat.id} className="stat-item">
-                      <div className="stat-item-header">
-                        <div className="stat-item-title">
-                          {chartInfo?.icon || '📊'} {stat.title}
+              <div className="statistics-list">
+                {statistics
+                  .filter(stat => statisticsView === 'charts' ? stat.type === 'chart' : stat.type === 'table')
+                  .map(stat => {
+                    const chartInfo = stat.chart_type ? CHART_TYPE_INFO[stat.chart_type as ChartType] : null;
+                    const usedInDoc = stat.used_in_documents?.[0];
+                    
+                    return (
+                      <div key={stat.id} className="stat-card">
+                        <div className="stat-card-header">
+                          <div className="stat-card-title-row">
+                            <span className="stat-card-icon">{chartInfo?.icon || '📊'}</span>
+                            <div className="stat-card-title-info">
+                              <h4 className="stat-card-title">{stat.title || 'Без названия'}</h4>
+                              {usedInDoc && (
+                                <span className="stat-card-document">
+                                  📄 {typeof usedInDoc === 'object' ? (usedInDoc as any).title : 'Документ'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <span className="stat-card-type-badge">
+                            {stat.type === 'chart' ? (chartInfo?.name || 'График') : 'Таблица'}
+                          </span>
                         </div>
-                        <span className="stat-item-type">
-                          {stat.type === 'chart' ? (chartInfo?.name || 'График') : 'Таблица'}
-                        </span>
-                      </div>
-                      
-                      {stat.description && (
-                        <p className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
-                          {stat.description}
-                        </p>
-                      )}
-                      
-                      <div className="stat-item-preview">
-                        {stat.type === 'chart' && stat.table_data && stat.config && (
-                          <ChartFromTable 
-                            tableData={stat.table_data as any} 
-                            config={stat.config as any} 
-                            height={150} 
-                          />
+                        
+                        {stat.description && (
+                          <p className="stat-card-description">{stat.description}</p>
                         )}
-                        {stat.type === 'table' && (
-                          <div className="muted" style={{ textAlign: 'center', padding: 20 }}>
-                            Таблица
+                        
+                        <div className="stat-card-preview">
+                          {stat.type === 'chart' && stat.table_data && stat.config && (
+                            <ChartFromTable 
+                              tableData={stat.table_data as any} 
+                              config={stat.config as any} 
+                              height={180} 
+                            />
+                          )}
+                          {stat.type === 'table' && stat.table_data && (
+                            <div className="stat-table-preview">
+                              <table>
+                                <thead>
+                                  <tr>
+                                    {(stat.table_data as TableData).headers?.map((h, i) => (
+                                      <th key={i}>{h}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {(stat.table_data as TableData).rows?.slice(0, 3).map((row, i) => (
+                                    <tr key={i}>
+                                      {row.map((cell, j) => (
+                                        <td key={j}>{cell}</td>
+                                      ))}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                              {(stat.table_data as TableData).rows?.length > 3 && (
+                                <div className="table-more-rows">
+                                  +{(stat.table_data as TableData).rows.length - 3} строк...
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        
+                        {stat.data_classification && (
+                          <div className="stat-card-tags">
+                            <span className="stat-tag">
+                              {stat.data_classification.variableType === 'quantitative' ? 'Количественные' : 'Качественные'}
+                            </span>
+                            <span className="stat-tag">
+                              {stat.data_classification.subType}
+                            </span>
                           </div>
                         )}
-                      </div>
-                      
-                      {stat.used_in_documents && stat.used_in_documents.length > 0 && (
-                        <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
-                          Используется в {stat.used_in_documents.length} документе(ах)
-                        </div>
-                      )}
-                      
-                      {stat.data_classification && (
-                        <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                          <span className="id-badge">
-                            {stat.data_classification.variableType === 'quantitative' ? 'Количественные' : 'Качественные'}
-                          </span>
-                          <span className="id-badge">
-                            {stat.data_classification.subType}
-                          </span>
-                        </div>
-                      )}
-                      
-                      <div className="stat-item-actions">
-                        <button 
-                          className="btn" 
-                          style={{ padding: '6px 12px', fontSize: 11 }}
-                          onClick={() => setEditingStat(stat)}
-                          title="Редактировать график"
-                        >
-                          ✏️ Редактировать
-                        </button>
-                        {documents.length > 0 && (
+                        
+                        <div className="stat-card-actions">
                           <button 
-                            className="btn secondary" 
-                            style={{ padding: '6px 12px', fontSize: 11 }}
-                            onClick={() => {
-                              // Копируем код для вставки в документ
-                              const chartCode = `[График: ${stat.title}]`;
-                              navigator.clipboard.writeText(chartCode);
-                              setOk(`Скопировано! Вставьте в документ или перейдите к редактированию.`);
-                            }}
-                            title="Скопировать ссылку на график"
+                            className="btn stat-action-btn" 
+                            onClick={() => setEditingStat(stat)}
+                            title="Редактировать"
                           >
-                            📋 Копировать
+                            ✏️ Редактировать
                           </button>
-                        )}
-                        <button 
-                          className="btn secondary" 
-                          style={{ padding: '6px 12px', fontSize: 11 }}
-                          onClick={() => handleDeleteStatistic(stat.id)}
-                        >
-                          🗑️ Удалить
-                        </button>
+                          {documents.length > 0 && (
+                            <button 
+                              className="btn secondary stat-action-btn" 
+                              onClick={() => {
+                                const chartCode = `[График: ${stat.title}]`;
+                                navigator.clipboard.writeText(chartCode);
+                                setOk(`Скопировано! Вставьте в документ.`);
+                              }}
+                              title="Скопировать ссылку"
+                            >
+                              📋 Копировать
+                            </button>
+                          )}
+                          <button 
+                            className="btn secondary stat-action-btn stat-delete-btn" 
+                            onClick={() => handleDeleteStatistic(stat.id)}
+                            title="Удалить"
+                          >
+                            🗑️
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             )}
-            
-            {/* Справка по типам графиков */}
-            <div className="card" style={{ marginTop: 24 }}>
-              <h4>📊 Типы графиков</h4>
-              <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
-                Создайте таблицу в документе, затем нажмите кнопку «Создать график» для визуализации данных.
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 12 }}>
-                {(['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter'] as ChartType[]).map(type => (
-                  <div key={type} style={{ padding: 12, background: 'rgba(0,0,0,0.2)', borderRadius: 10 }}>
-                    <div style={{ marginBottom: 6 }}>
-                      <span style={{ fontSize: 18 }}>{CHART_TYPE_INFO[type].icon}</span>
-                      <strong style={{ marginLeft: 8, fontSize: 13 }}>{CHART_TYPE_INFO[type].name}</strong>
-                    </div>
-                    <div className="muted" style={{ fontSize: 11, lineHeight: 1.5 }}>
-                      {CHART_TYPE_INFO[type].description}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
 
             {/* Модальное окно редактирования статистики */}
             {editingStat && (
@@ -1007,255 +1097,281 @@ export default function ProjectDetailPage() {
 
         {/* === SETTINGS TAB === */}
         {activeTab === "settings" && (
-          <div>
+          <div className="settings-page">
             <h2>Настройки проекта</h2>
 
             {/* Основные настройки */}
-            <div className="settings-section">
-              <h4><span className="icon">📋</span> Основные</h4>
-              <div className="stack">
-                <label className="stack">
-                  <span>Название проекта</span>
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <span className="settings-card-icon">📋</span>
+                <h4>Основные</h4>
+              </div>
+              <div className="settings-card-body">
+                <div className="settings-form-group">
+                  <label>Название проекта</label>
                   <input
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
+                    className="settings-input"
                   />
-                </label>
-                <label className="stack">
-                  <span>Описание</span>
-                  <input
+                </div>
+                <div className="settings-form-group">
+                  <label>Описание</label>
+                  <textarea
                     value={editDesc}
                     onChange={(e) => setEditDesc(e.target.value)}
                     placeholder="Описание проекта..."
+                    className="settings-textarea"
+                    rows={3}
                   />
-                </label>
+                </div>
               </div>
             </div>
 
             {/* Тип исследования */}
-            <div className="settings-section">
-              <h4><span className="icon">🔬</span> Вид исследования</h4>
-              <p className="muted" style={{ marginBottom: 12, fontSize: 13 }}>
-                Выберите тип исследования для получения рекомендаций по структуре и оформлению
-              </p>
-              <div className="stack" style={{ gap: 8 }}>
-                {(Object.entries(RESEARCH_TYPES) as [ResearchType, typeof RESEARCH_TYPES[ResearchType]][]).map(([type, info]) => (
-                  <div 
-                    key={type}
-                    className={`research-type-card ${researchType === type ? 'selected' : ''}`}
-                    onClick={() => {
-                      setResearchType(type);
-                      setResearchSubtype('');
-                    }}
-                  >
-                    <h5>{info.name}</h5>
-                    <p>{info.description}</p>
-                    {researchType === type && info.subtypes.length > 0 && (
-                      <div style={{ marginTop: 10 }}>
-                        <select
-                          value={researchSubtype}
-                          onChange={(e) => setResearchSubtype(e.target.value)}
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ width: '100%' }}
-                        >
-                          <option value="">Выберите подтип...</option>
-                          {info.subtypes.map(st => (
-                            <option key={st.value} value={st.value}>{st.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                ))}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <span className="settings-card-icon">🔬</span>
+                <h4>Вид исследования</h4>
+              </div>
+              <div className="settings-card-body">
+                <p className="settings-hint">
+                  Выберите тип исследования для получения рекомендаций по структуре и оформлению
+                </p>
+                <div className="research-types-grid">
+                  {(Object.entries(RESEARCH_TYPES) as [ResearchType, typeof RESEARCH_TYPES[ResearchType]][]).map(([type, info]) => (
+                    <div 
+                      key={type}
+                      className={`research-type-card ${researchType === type ? 'selected' : ''}`}
+                      onClick={() => {
+                        setResearchType(type);
+                        setResearchSubtype('');
+                      }}
+                    >
+                      <h5>{info.name}</h5>
+                      <p>{info.description}</p>
+                      {researchType === type && info.subtypes.length > 0 && (
+                        <div className="research-subtype-select">
+                          <select
+                            value={researchSubtype}
+                            onChange={(e) => setResearchSubtype(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="">Выберите подтип...</option>
+                            {info.subtypes.map(st => (
+                              <option key={st.value} value={st.value}>{st.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 
             {/* Протокол исследования */}
-            <div className="settings-section">
-              <h4><span className="icon">📑</span> Протокол исследования</h4>
-              <p className="muted" style={{ marginBottom: 12, fontSize: 13 }}>
-                Выберите стандарт отчётности для AI-проверки соответствия структуры статьи
-              </p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-                {(Object.entries(RESEARCH_PROTOCOLS) as [ResearchProtocol, typeof RESEARCH_PROTOCOLS[ResearchProtocol]][]).map(([protocol, info]) => {
-                  // Проверяем, подходит ли протокол для выбранного типа исследования
-                  const isRecommended = researchSubtype && info.applicableTo.includes(researchSubtype);
-                  
-                  return (
-                    <div 
-                      key={protocol}
-                      className={`protocol-card ${researchProtocol === protocol ? 'selected' : ''}`}
-                      onClick={() => setResearchProtocol(protocol)}
-                      style={isRecommended ? { borderColor: 'var(--accent)' } : undefined}
-                    >
-                      <div className="protocol-card-header">
-                        <h5>{info.name}</h5>
-                        {isRecommended && <span className="protocol-card-badge">Рекомендуется</span>}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <span className="settings-card-icon">📑</span>
+                <h4>Протокол исследования</h4>
+              </div>
+              <div className="settings-card-body">
+                <p className="settings-hint">
+                  Выберите стандарт отчётности для AI-проверки соответствия структуры статьи
+                </p>
+                <div className="protocols-grid">
+                  {(Object.entries(RESEARCH_PROTOCOLS) as [ResearchProtocol, typeof RESEARCH_PROTOCOLS[ResearchProtocol]][]).map(([protocol, info]) => {
+                    const isRecommended = researchSubtype && info.applicableTo.includes(researchSubtype);
+                    
+                    return (
+                      <div 
+                        key={protocol}
+                        className={`protocol-card ${researchProtocol === protocol ? 'selected' : ''} ${isRecommended ? 'recommended' : ''}`}
+                        onClick={() => setResearchProtocol(protocol)}
+                      >
+                        <div className="protocol-card-header">
+                          <h5>{info.name}</h5>
+                          {isRecommended && <span className="protocol-badge">Рекомендуется</span>}
+                        </div>
+                        <p className="protocol-description">{info.description}</p>
+                        {info.keyRequirements.length > 0 && (
+                          <ul className="protocol-requirements">
+                            {info.keyRequirements.slice(0, 3).map((req, i) => (
+                              <li key={i}>{req}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {researchProtocol === protocol && protocol === 'OTHER' && (
+                          <input
+                            value={protocolCustomName}
+                            onChange={(e) => setProtocolCustomName(e.target.value)}
+                            placeholder="Название протокола..."
+                            onClick={(e) => e.stopPropagation()}
+                            className="protocol-custom-input"
+                          />
+                        )}
                       </div>
-                      <p>{info.description}</p>
-                      {info.keyRequirements.length > 0 && (
-                        <ul>
-                          {info.keyRequirements.slice(0, 3).map((req, i) => (
-                            <li key={i}>{req}</li>
-                          ))}
-                        </ul>
-                      )}
-                      {researchProtocol === protocol && protocol === 'OTHER' && (
-                        <input
-                          value={protocolCustomName}
-                          onChange={(e) => setProtocolCustomName(e.target.value)}
-                          placeholder="Название протокола..."
-                          onClick={(e) => e.stopPropagation()}
-                          style={{ marginTop: 8 }}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
             {/* AI-анализ */}
-            <div className="settings-section">
-              <h4><span className="icon">🤖</span> AI-анализ работы</h4>
-              <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
-                Включите AI-функции для автоматической проверки и рекомендаций
-              </p>
-              
-              <div className="stack" style={{ gap: 16 }}>
-                {/* Ошибки I и II рода */}
-                <div className="ai-analysis-panel">
-                  <div className="ai-analysis-header">
-                    <input
-                      type="checkbox"
-                      checked={aiErrorAnalysisEnabled}
-                      onChange={(e) => setAiErrorAnalysisEnabled(e.target.checked)}
-                      style={{ width: 'auto' }}
-                    />
-                    <h4>Анализ ошибок первого и второго рода</h4>
-                    <span className="ai-badge">AI</span>
-                  </div>
-                  <div className="ai-analysis-content">
-                    Проверка статистических тестов на предмет возможных ошибок интерпретации
-                  </div>
-                  
-                  {aiErrorAnalysisEnabled && (
-                    <div className="error-types-grid">
-                      <div className="error-type-card error-type-1">
-                        <h5>❌ Ошибка I рода (α)</h5>
-                        <p>
-                          Отклонили нулевую гипотезу, хотя она верна.<br/>
-                          <strong>Ложноположительный результат.</strong><br/>
-                          Связана с уровнем значимости (обычно 0,05).
-                        </p>
-                      </div>
-                      <div className="error-type-card error-type-2">
-                        <h5>⚠️ Ошибка II рода (β)</h5>
-                        <p>
-                          Не выявили эффект, хотя он существует.<br/>
-                          <strong>Ложноотрицательный результат.</strong><br/>
-                          Часто из-за маленькой выборки. Мощность = 1 − β (рекомендуется 80-90%).
-                        </p>
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <span className="settings-card-icon">🤖</span>
+                <h4>AI-анализ работы</h4>
+              </div>
+              <div className="settings-card-body">
+                <p className="settings-hint">
+                  Включите AI-функции для автоматической проверки и рекомендаций
+                </p>
+                
+                <div className="ai-options-stack">
+                  {/* Ошибки I и II рода */}
+                  <div className="ai-option-card">
+                    <div className="ai-option-header">
+                      <label className="ai-option-toggle">
+                        <input
+                          type="checkbox"
+                          checked={aiErrorAnalysisEnabled}
+                          onChange={(e) => setAiErrorAnalysisEnabled(e.target.checked)}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <div className="ai-option-title">
+                        <h5>Анализ ошибок первого и второго рода</h5>
+                        <span className="ai-badge">AI</span>
                       </div>
                     </div>
-                  )}
-                </div>
-                
-                {/* Проверка соответствия протоколу */}
-                <div className="ai-analysis-panel">
-                  <div className="ai-analysis-header">
-                    <input
-                      type="checkbox"
-                      checked={aiProtocolCheckEnabled}
-                      onChange={(e) => setAiProtocolCheckEnabled(e.target.checked)}
-                      disabled={!researchProtocol}
-                      style={{ width: 'auto' }}
-                    />
-                    <h4>Проверка соответствия протоколу</h4>
-                    <span className="ai-badge">AI</span>
-                  </div>
-                  <div className="ai-analysis-content">
-                    {researchProtocol ? (
-                      <>
-                        Проверка структуры работы на соответствие протоколу <strong>{RESEARCH_PROTOCOLS[researchProtocol].fullName}</strong>.
-                        При работе над текстом AI будет давать рекомендации по улучшению.
-                      </>
-                    ) : (
-                      <span className="muted">Сначала выберите протокол исследования</span>
+                    <p className="ai-option-description">
+                      Проверка статистических тестов на предмет возможных ошибок интерпретации
+                    </p>
+                    
+                    {aiErrorAnalysisEnabled && (
+                      <div className="error-types-grid">
+                        <div className="error-type-card error-type-1">
+                          <h6>❌ Ошибка I рода (α)</h6>
+                          <p>
+                            Отклонили нулевую гипотезу, хотя она верна.<br/>
+                            <strong>Ложноположительный результат.</strong>
+                          </p>
+                        </div>
+                        <div className="error-type-card error-type-2">
+                          <h6>⚠️ Ошибка II рода (β)</h6>
+                          <p>
+                            Не выявили эффект, хотя он существует.<br/>
+                            <strong>Ложноотрицательный результат.</strong>
+                          </p>
+                        </div>
+                      </div>
                     )}
+                  </div>
+                  
+                  {/* Проверка соответствия протоколу */}
+                  <div className="ai-option-card">
+                    <div className="ai-option-header">
+                      <label className="ai-option-toggle">
+                        <input
+                          type="checkbox"
+                          checked={aiProtocolCheckEnabled}
+                          onChange={(e) => setAiProtocolCheckEnabled(e.target.checked)}
+                          disabled={!researchProtocol}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <div className="ai-option-title">
+                        <h5>Проверка соответствия протоколу</h5>
+                        <span className="ai-badge">AI</span>
+                      </div>
+                    </div>
+                    <p className="ai-option-description">
+                      {researchProtocol ? (
+                        <>
+                          Проверка структуры работы на соответствие протоколу <strong>{RESEARCH_PROTOCOLS[researchProtocol].fullName}</strong>.
+                        </>
+                      ) : (
+                        <span className="muted">Сначала выберите протокол исследования</span>
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Стиль библиографии */}
-            <div className="settings-section">
-              <h4><span className="icon">📚</span> Стиль библиографии</h4>
-              <p className="muted" style={{ marginBottom: 12, fontSize: 13 }}>
-                Выберите стиль оформления списка литературы для всех документов проекта
-              </p>
-              <div className="stack">
-                <label className="row gap" style={{ alignItems: "center" }}>
-                  <input
-                    type="radio"
-                    name="citationStyle"
-                    value="gost"
-                    checked={citationStyle === "gost"}
-                    onChange={() => setCitationStyle("gost")}
-                    style={{ width: "auto" }}
-                  />
-                  <div>
-                    <strong>ГОСТ Р 7.0.5-2008</strong>
-                    <div className="muted" style={{ fontSize: 12 }}>
-                      Иванов И.И. Название статьи // Журнал. — 2024. — Т. 1, № 2. — С. 10-20.
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <span className="settings-card-icon">📚</span>
+                <h4>Стиль библиографии</h4>
+              </div>
+              <div className="settings-card-body">
+                <p className="settings-hint">
+                  Выберите стиль оформления списка литературы для всех документов проекта
+                </p>
+                <div className="citation-styles-list">
+                  <label className={`citation-style-option ${citationStyle === "gost" ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="citationStyle"
+                      value="gost"
+                      checked={citationStyle === "gost"}
+                      onChange={() => setCitationStyle("gost")}
+                    />
+                    <div className="citation-style-content">
+                      <strong>ГОСТ Р 7.0.5-2008</strong>
+                      <span className="citation-example">
+                        Иванов И.И. Название статьи // Журнал. — 2024. — Т. 1, № 2. — С. 10-20.
+                      </span>
                     </div>
-                  </div>
-                </label>
-                <label className="row gap" style={{ alignItems: "center" }}>
-                  <input
-                    type="radio"
-                    name="citationStyle"
-                    value="apa"
-                    checked={citationStyle === "apa"}
-                    onChange={() => setCitationStyle("apa")}
-                    style={{ width: "auto" }}
-                  />
-                  <div>
-                    <strong>APA 7th Edition</strong>
-                    <div className="muted" style={{ fontSize: 12 }}>
-                      Ivanov, I. I. (2024). Article title. Journal Name, 1(2), 10-20.
+                  </label>
+                  <label className={`citation-style-option ${citationStyle === "apa" ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="citationStyle"
+                      value="apa"
+                      checked={citationStyle === "apa"}
+                      onChange={() => setCitationStyle("apa")}
+                    />
+                    <div className="citation-style-content">
+                      <strong>APA 7th Edition</strong>
+                      <span className="citation-example">
+                        Ivanov, I. I. (2024). Article title. Journal Name, 1(2), 10-20.
+                      </span>
                     </div>
-                  </div>
-                </label>
-                <label className="row gap" style={{ alignItems: "center" }}>
-                  <input
-                    type="radio"
-                    name="citationStyle"
-                    value="vancouver"
-                    checked={citationStyle === "vancouver"}
-                    onChange={() => setCitationStyle("vancouver")}
-                    style={{ width: "auto" }}
-                  />
-                  <div>
-                    <strong>Vancouver</strong>
-                    <div className="muted" style={{ fontSize: 12 }}>
-                      Ivanov II. Article title. Journal Name. 2024;1(2):10-20.
+                  </label>
+                  <label className={`citation-style-option ${citationStyle === "vancouver" ? 'selected' : ''}`}>
+                    <input
+                      type="radio"
+                      name="citationStyle"
+                      value="vancouver"
+                      checked={citationStyle === "vancouver"}
+                      onChange={() => setCitationStyle("vancouver")}
+                    />
+                    <div className="citation-style-content">
+                      <strong>Vancouver</strong>
+                      <span className="citation-example">
+                        Ivanov II. Article title. Journal Name. 2024;1(2):10-20.
+                      </span>
                     </div>
-                  </div>
-                </label>
+                  </label>
+                </div>
               </div>
             </div>
 
             {canEdit && (
-              <button
-                className="btn"
-                onClick={handleSaveSettings}
-                disabled={saving}
-                type="button"
-                style={{ marginTop: 8 }}
-              >
-                {saving ? "Сохранение..." : "💾 Сохранить настройки"}
-              </button>
+              <div className="settings-save-section">
+                <button
+                  className="btn settings-save-btn"
+                  onClick={handleSaveSettings}
+                  disabled={saving}
+                  type="button"
+                >
+                  {saving ? "Сохранение..." : "💾 Сохранить настройки"}
+                </button>
+              </div>
             )}
           </div>
         )}
