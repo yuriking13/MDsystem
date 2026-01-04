@@ -11,18 +11,137 @@ import {
   apiDeleteDocument,
   apiGetBibliography,
   apiExportProject,
+  apiGetStatistics,
+  apiDeleteStatistic,
   type Project,
   type ProjectMember,
   type Document,
   type BibliographyItem,
   type CitationStyle,
+  type ResearchType,
+  type ResearchProtocol,
+  type ProjectStatistic,
 } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 import ArticlesSection from "../components/ArticlesSection";
 import CitationGraph from "../components/CitationGraph";
+import ChartFromTable, { CHART_TYPE_INFO, ChartTypeHint, type ChartType } from "../components/ChartFromTable";
 import { exportToWord } from "../lib/exportWord";
 
-type Tab = "articles" | "documents" | "graph" | "team" | "settings";
+type Tab = "articles" | "documents" | "statistics" | "graph" | "team" | "settings";
+
+// Типы исследований с описаниями
+const RESEARCH_TYPES: Record<ResearchType, {
+  name: string;
+  description: string;
+  subtypes: { value: string; name: string; description: string }[];
+}> = {
+  observational_descriptive: {
+    name: "Описательное наблюдательное",
+    description: "Описание редких или новых феноменов",
+    subtypes: [
+      { value: "case_report", name: "Клинический случай (Case Report)", description: "Описание отдельного случая" },
+      { value: "case_series", name: "Серия случаев", description: "Описание нескольких схожих случаев" },
+    ],
+  },
+  observational_analytical: {
+    name: "Аналитическое наблюдательное",
+    description: "Выявление факторов риска и ассоциаций",
+    subtypes: [
+      { value: "cohort_prospective", name: "Когортное проспективное", description: "Наблюдение группы во времени" },
+      { value: "cohort_retrospective", name: "Когортное ретроспективное", description: "Анализ прошлых данных" },
+      { value: "case_control", name: "Случай-контроль", description: "Сравнение случаев с контролем" },
+      { value: "cross_sectional", name: "Поперечное (одномоментное)", description: "Срез в один момент времени" },
+    ],
+  },
+  experimental: {
+    name: "Экспериментальное",
+    description: "Оценка эффективности вмешательств",
+    subtypes: [
+      { value: "rct", name: "РКИ (рандомизированное контролируемое)", description: "Золотой стандарт" },
+      { value: "quasi_experimental", name: "Квазиэкспериментальное", description: "Без полной рандомизации" },
+      { value: "pre_post", name: "Пред- и постэкспериментальное", description: "До и после вмешательства" },
+    ],
+  },
+  second_order: {
+    name: "Исследование второго порядка",
+    description: "Синтез доказательств",
+    subtypes: [
+      { value: "systematic_review", name: "Систематический обзор", description: "Систематический поиск и анализ" },
+      { value: "meta_analysis", name: "Метаанализ", description: "Статистический синтез результатов" },
+    ],
+  },
+  other: {
+    name: "Иное",
+    description: "Другой тип исследования",
+    subtypes: [],
+  },
+};
+
+// Протоколы исследований
+const RESEARCH_PROTOCOLS: Record<ResearchProtocol, {
+  name: string;
+  fullName: string;
+  description: string;
+  applicableTo: string[];
+  keyRequirements: string[];
+}> = {
+  CARE: {
+    name: "CARE",
+    fullName: "CAse REport Guidelines",
+    description: "Для публикации клинических случаев",
+    applicableTo: ["case_report", "case_series"],
+    keyRequirements: [
+      "Структурированная аннотация",
+      "Таймлайн событий",
+      "Деперсонализация данных",
+      "Информированное согласие",
+    ],
+  },
+  STROBE: {
+    name: "STROBE",
+    fullName: "Strengthening the Reporting of Observational Studies",
+    description: "Для наблюдательных исследований",
+    applicableTo: ["cohort_prospective", "cohort_retrospective", "case_control", "cross_sectional"],
+    keyRequirements: [
+      "Чёткое описание дизайна",
+      "Критерии включения/исключения",
+      "Описание конфаундеров",
+      "Указание пропусков данных",
+    ],
+  },
+  CONSORT: {
+    name: "CONSORT",
+    fullName: "Consolidated Standards of Reporting Trials",
+    description: "Для рандомизированных контролируемых испытаний",
+    applicableTo: ["rct"],
+    keyRequirements: [
+      "CONSORT flow diagram",
+      "Описание рандомизации",
+      "Описание ослепления",
+      "Расчёт размера выборки",
+    ],
+  },
+  PRISMA: {
+    name: "PRISMA",
+    fullName: "Preferred Reporting Items for Systematic Reviews",
+    description: "Для систематических обзоров и метаанализов",
+    applicableTo: ["systematic_review", "meta_analysis"],
+    keyRequirements: [
+      "Регистрация протокола (PROSPERO)",
+      "PRISMA flowchart",
+      "Стратегия поиска",
+      "Оценка bias",
+    ],
+  },
+  OTHER: {
+    name: "Другой",
+    fullName: "Пользовательский протокол",
+    description: "Указать название протокола вручную",
+    applicableTo: [],
+    keyRequirements: [],
+  },
+};
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,6 +163,18 @@ export default function ProjectDetailPage() {
   const [editDesc, setEditDesc] = useState("");
   const [citationStyle, setCitationStyle] = useState<"gost" | "apa" | "vancouver">("gost");
   const [saving, setSaving] = useState(false);
+  
+  // Новые настройки проекта
+  const [researchType, setResearchType] = useState<ResearchType | undefined>();
+  const [researchSubtype, setResearchSubtype] = useState("");
+  const [researchProtocol, setResearchProtocol] = useState<ResearchProtocol | undefined>();
+  const [protocolCustomName, setProtocolCustomName] = useState("");
+  const [aiErrorAnalysisEnabled, setAiErrorAnalysisEnabled] = useState(false);
+  const [aiProtocolCheckEnabled, setAiProtocolCheckEnabled] = useState(false);
+  
+  // Статистика проекта
+  const [statistics, setStatistics] = useState<ProjectStatistic[]>([]);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   // Invite form
   const [showInvite, setShowInvite] = useState(false);
@@ -81,16 +212,43 @@ export default function ProjectDetailPage() {
       setEditName(pRes.project.name);
       setEditDesc(pRes.project.description || "");
       setCitationStyle(pRes.project.citation_style || "gost");
+      // Новые поля
+      setResearchType(pRes.project.research_type);
+      setResearchSubtype(pRes.project.research_subtype || "");
+      setResearchProtocol(pRes.project.research_protocol);
+      setProtocolCustomName(pRes.project.protocol_custom_name || "");
+      setAiErrorAnalysisEnabled(pRes.project.ai_error_analysis_enabled || false);
+      setAiProtocolCheckEnabled(pRes.project.ai_protocol_check_enabled || false);
     } catch (err: any) {
       setError(err?.message || "Failed to load project");
     } finally {
       setLoading(false);
     }
   }
+  
+  async function loadStatistics() {
+    if (!id) return;
+    setLoadingStats(true);
+    try {
+      const res = await apiGetStatistics(id);
+      setStatistics(res.statistics);
+    } catch (err: any) {
+      console.error("Failed to load statistics:", err);
+    } finally {
+      setLoadingStats(false);
+    }
+  }
 
   useEffect(() => {
     load();
   }, [id]);
+  
+  // Загружаем статистику при переходе на вкладку
+  useEffect(() => {
+    if (activeTab === "statistics" && statistics.length === 0) {
+      loadStatistics();
+    }
+  }, [activeTab]);
 
   const canEdit = project && (project.role === "owner" || project.role === "editor");
   const isOwner = project?.role === "owner";
@@ -106,6 +264,12 @@ export default function ProjectDetailPage() {
         name: editName.trim(),
         description: editDesc.trim() || undefined,
         citationStyle,
+        researchType,
+        researchSubtype: researchSubtype || undefined,
+        researchProtocol,
+        protocolCustomName: protocolCustomName || undefined,
+        aiErrorAnalysisEnabled,
+        aiProtocolCheckEnabled,
       });
       setOk("Настройки сохранены");
       await load();
@@ -113,6 +277,18 @@ export default function ProjectDetailPage() {
       setError(err?.message || "Failed to save");
     } finally {
       setSaving(false);
+    }
+  }
+  
+  async function handleDeleteStatistic(statId: string) {
+    if (!id) return;
+    if (!confirm("Удалить этот элемент статистики?")) return;
+    try {
+      await apiDeleteStatistic(id, statId);
+      setStatistics(statistics.filter(s => s.id !== statId));
+      setOk("Элемент удалён");
+    } catch (err: any) {
+      setError(err?.message || "Ошибка удаления");
     }
   }
 
@@ -316,6 +492,12 @@ export default function ProjectDetailPage() {
           📄 Документы ({documents.length})
         </button>
         <button
+          className={`tab ${activeTab === "statistics" ? "active" : ""}`}
+          onClick={() => setActiveTab("statistics")}
+        >
+          📊 Статистика ({statistics.length})
+        </button>
+        <button
           className={`tab ${activeTab === "graph" ? "active" : ""}`}
           onClick={() => setActiveTab("graph")}
         >
@@ -505,6 +687,119 @@ export default function ProjectDetailPage() {
           </div>
         )}
 
+        {/* === STATISTICS TAB === */}
+        {activeTab === "statistics" && id && (
+          <div>
+            <div className="row space" style={{ marginBottom: 16 }}>
+              <h2>Статистика проекта</h2>
+              <div className="muted" style={{ fontSize: 13 }}>
+                Графики и таблицы из документов проекта
+              </div>
+            </div>
+            
+            {loadingStats ? (
+              <div className="muted">Загрузка...</div>
+            ) : statistics.length === 0 ? (
+              <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>📊</div>
+                <h3>Нет статистических данных</h3>
+                <p className="muted">
+                  Создайте графики из таблиц в документах проекта.<br/>
+                  Они автоматически появятся здесь.
+                </p>
+              </div>
+            ) : (
+              <div className="statistics-grid">
+                {statistics.map(stat => {
+                  const chartInfo = stat.chart_type ? CHART_TYPE_INFO[stat.chart_type as ChartType] : null;
+                  
+                  return (
+                    <div key={stat.id} className="stat-item">
+                      <div className="stat-item-header">
+                        <div className="stat-item-title">
+                          {chartInfo?.icon || '📊'} {stat.title}
+                        </div>
+                        <span className="stat-item-type">
+                          {stat.type === 'chart' ? (chartInfo?.name || 'График') : 'Таблица'}
+                        </span>
+                      </div>
+                      
+                      {stat.description && (
+                        <p className="muted" style={{ fontSize: 12, marginBottom: 10 }}>
+                          {stat.description}
+                        </p>
+                      )}
+                      
+                      <div className="stat-item-preview">
+                        {stat.type === 'chart' && stat.table_data && stat.config && (
+                          <ChartFromTable 
+                            tableData={stat.table_data as any} 
+                            config={stat.config as any} 
+                            height={150} 
+                          />
+                        )}
+                        {stat.type === 'table' && (
+                          <div className="muted" style={{ textAlign: 'center', padding: 20 }}>
+                            Таблица
+                          </div>
+                        )}
+                      </div>
+                      
+                      {stat.used_in_documents && stat.used_in_documents.length > 0 && (
+                        <div style={{ marginTop: 8, fontSize: 11, color: 'var(--text-muted)' }}>
+                          Используется в {stat.used_in_documents.length} документе(ах)
+                        </div>
+                      )}
+                      
+                      {stat.data_classification && (
+                        <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                          <span className="id-badge">
+                            {stat.data_classification.variableType === 'quantitative' ? 'Количественные' : 'Качественные'}
+                          </span>
+                          <span className="id-badge">
+                            {stat.data_classification.subType}
+                          </span>
+                        </div>
+                      )}
+                      
+                      <div className="stat-item-actions">
+                        <button 
+                          className="btn secondary" 
+                          style={{ padding: '6px 12px', fontSize: 11 }}
+                          onClick={() => handleDeleteStatistic(stat.id)}
+                        >
+                          🗑️ Удалить
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            {/* Справка по типам графиков */}
+            <div className="card" style={{ marginTop: 24 }}>
+              <h4>📊 Типы графиков</h4>
+              <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
+                Создайте таблицу в документе, затем нажмите кнопку «Создать график» для визуализации данных.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 12 }}>
+                {(['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter'] as ChartType[]).map(type => (
+                  <div key={type} style={{ padding: 12, background: 'rgba(0,0,0,0.2)', borderRadius: 10 }}>
+                    <div style={{ marginBottom: 6 }}>
+                      <span style={{ fontSize: 18 }}>{CHART_TYPE_INFO[type].icon}</span>
+                      <strong style={{ marginLeft: 8, fontSize: 13 }}>{CHART_TYPE_INFO[type].name}</strong>
+                    </div>
+                    <div className="muted" style={{ fontSize: 11, lineHeight: 1.5 }}>
+                      {CHART_TYPE_INFO[type].description}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* === GRAPH TAB === */}
         {activeTab === "graph" && id && (
           <div>
@@ -617,8 +912,9 @@ export default function ProjectDetailPage() {
           <div>
             <h2>Настройки проекта</h2>
 
-            <div className="card" style={{ marginBottom: 16 }}>
-              <h4>Основные</h4>
+            {/* Основные настройки */}
+            <div className="settings-section">
+              <h4><span className="icon">📋</span> Основные</h4>
               <div className="stack">
                 <label className="stack">
                   <span>Название проекта</span>
@@ -638,9 +934,166 @@ export default function ProjectDetailPage() {
               </div>
             </div>
 
-            <div className="card" style={{ marginBottom: 16 }}>
-              <h4>Стиль библиографии</h4>
-              <p className="muted" style={{ marginBottom: 12 }}>
+            {/* Тип исследования */}
+            <div className="settings-section">
+              <h4><span className="icon">🔬</span> Вид исследования</h4>
+              <p className="muted" style={{ marginBottom: 12, fontSize: 13 }}>
+                Выберите тип исследования для получения рекомендаций по структуре и оформлению
+              </p>
+              <div className="stack" style={{ gap: 8 }}>
+                {(Object.entries(RESEARCH_TYPES) as [ResearchType, typeof RESEARCH_TYPES[ResearchType]][]).map(([type, info]) => (
+                  <div 
+                    key={type}
+                    className={`research-type-card ${researchType === type ? 'selected' : ''}`}
+                    onClick={() => {
+                      setResearchType(type);
+                      setResearchSubtype('');
+                    }}
+                  >
+                    <h5>{info.name}</h5>
+                    <p>{info.description}</p>
+                    {researchType === type && info.subtypes.length > 0 && (
+                      <div style={{ marginTop: 10 }}>
+                        <select
+                          value={researchSubtype}
+                          onChange={(e) => setResearchSubtype(e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ width: '100%' }}
+                        >
+                          <option value="">Выберите подтип...</option>
+                          {info.subtypes.map(st => (
+                            <option key={st.value} value={st.value}>{st.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Протокол исследования */}
+            <div className="settings-section">
+              <h4><span className="icon">📑</span> Протокол исследования</h4>
+              <p className="muted" style={{ marginBottom: 12, fontSize: 13 }}>
+                Выберите стандарт отчётности для AI-проверки соответствия структуры статьи
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+                {(Object.entries(RESEARCH_PROTOCOLS) as [ResearchProtocol, typeof RESEARCH_PROTOCOLS[ResearchProtocol]][]).map(([protocol, info]) => {
+                  // Проверяем, подходит ли протокол для выбранного типа исследования
+                  const isRecommended = researchSubtype && info.applicableTo.includes(researchSubtype);
+                  
+                  return (
+                    <div 
+                      key={protocol}
+                      className={`protocol-card ${researchProtocol === protocol ? 'selected' : ''}`}
+                      onClick={() => setResearchProtocol(protocol)}
+                      style={isRecommended ? { borderColor: 'var(--accent)' } : undefined}
+                    >
+                      <div className="protocol-card-header">
+                        <h5>{info.name}</h5>
+                        {isRecommended && <span className="protocol-card-badge">Рекомендуется</span>}
+                      </div>
+                      <p>{info.description}</p>
+                      {info.keyRequirements.length > 0 && (
+                        <ul>
+                          {info.keyRequirements.slice(0, 3).map((req, i) => (
+                            <li key={i}>{req}</li>
+                          ))}
+                        </ul>
+                      )}
+                      {researchProtocol === protocol && protocol === 'OTHER' && (
+                        <input
+                          value={protocolCustomName}
+                          onChange={(e) => setProtocolCustomName(e.target.value)}
+                          placeholder="Название протокола..."
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ marginTop: 8 }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* AI-анализ */}
+            <div className="settings-section">
+              <h4><span className="icon">🤖</span> AI-анализ работы</h4>
+              <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
+                Включите AI-функции для автоматической проверки и рекомендаций
+              </p>
+              
+              <div className="stack" style={{ gap: 16 }}>
+                {/* Ошибки I и II рода */}
+                <div className="ai-analysis-panel">
+                  <div className="ai-analysis-header">
+                    <input
+                      type="checkbox"
+                      checked={aiErrorAnalysisEnabled}
+                      onChange={(e) => setAiErrorAnalysisEnabled(e.target.checked)}
+                      style={{ width: 'auto' }}
+                    />
+                    <h4>Анализ ошибок первого и второго рода</h4>
+                    <span className="ai-badge">AI</span>
+                  </div>
+                  <div className="ai-analysis-content">
+                    Проверка статистических тестов на предмет возможных ошибок интерпретации
+                  </div>
+                  
+                  {aiErrorAnalysisEnabled && (
+                    <div className="error-types-grid">
+                      <div className="error-type-card error-type-1">
+                        <h5>❌ Ошибка I рода (α)</h5>
+                        <p>
+                          Отклонили нулевую гипотезу, хотя она верна.<br/>
+                          <strong>Ложноположительный результат.</strong><br/>
+                          Связана с уровнем значимости (обычно 0,05).
+                        </p>
+                      </div>
+                      <div className="error-type-card error-type-2">
+                        <h5>⚠️ Ошибка II рода (β)</h5>
+                        <p>
+                          Не выявили эффект, хотя он существует.<br/>
+                          <strong>Ложноотрицательный результат.</strong><br/>
+                          Часто из-за маленькой выборки. Мощность = 1 − β (рекомендуется 80-90%).
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Проверка соответствия протоколу */}
+                <div className="ai-analysis-panel">
+                  <div className="ai-analysis-header">
+                    <input
+                      type="checkbox"
+                      checked={aiProtocolCheckEnabled}
+                      onChange={(e) => setAiProtocolCheckEnabled(e.target.checked)}
+                      disabled={!researchProtocol}
+                      style={{ width: 'auto' }}
+                    />
+                    <h4>Проверка соответствия протоколу</h4>
+                    <span className="ai-badge">AI</span>
+                  </div>
+                  <div className="ai-analysis-content">
+                    {researchProtocol ? (
+                      <>
+                        Проверка структуры работы на соответствие протоколу <strong>{RESEARCH_PROTOCOLS[researchProtocol].fullName}</strong>.
+                        При работе над текстом AI будет давать рекомендации по улучшению.
+                      </>
+                    ) : (
+                      <span className="muted">Сначала выберите протокол исследования</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Стиль библиографии */}
+            <div className="settings-section">
+              <h4><span className="icon">📚</span> Стиль библиографии</h4>
+              <p className="muted" style={{ marginBottom: 12, fontSize: 13 }}>
                 Выберите стиль оформления списка литературы для всех документов проекта
               </p>
               <div className="stack">
@@ -701,8 +1154,9 @@ export default function ProjectDetailPage() {
                 onClick={handleSaveSettings}
                 disabled={saving}
                 type="button"
+                style={{ marginTop: 8 }}
               >
-                {saving ? "Сохранение..." : "Сохранить настройки"}
+                {saving ? "Сохранение..." : "💾 Сохранить настройки"}
               </button>
             )}
           </div>

@@ -10,6 +10,7 @@ import settingsRoutes from './routes/settings.js';
 import projectsRoutes from './routes/projects.js';
 import articlesRoutes from './routes/articles.js';
 import documentsRoutes from './routes/documents.js';
+import statisticsRoutes from './routes/statistics.js';
 
 import envGuard from './plugins/00-env-guard.js';
 
@@ -29,6 +30,7 @@ await app.register(settingsRoutes, { prefix: '/api' });
 await app.register(projectsRoutes, { prefix: '/api' });
 await app.register(articlesRoutes, { prefix: '/api' });
 await app.register(documentsRoutes, { prefix: '/api' });
+await app.register(statisticsRoutes, { prefix: '/api' });
 
 app.get('/api/health', async () => ({ ok: true }));
 

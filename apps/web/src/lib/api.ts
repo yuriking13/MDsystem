@@ -93,12 +93,30 @@ export async function apiDeleteApiKey(provider: string): Promise<{ ok: true }> {
 
 export type CitationStyle = "gost" | "apa" | "vancouver";
 
+export type ResearchType = 
+  | "observational_descriptive"
+  | "observational_analytical"
+  | "experimental"
+  | "second_order"
+  | "other";
+
+export type ResearchProtocol = "CARE" | "STROBE" | "CONSORT" | "PRISMA" | "OTHER";
+
 export type Project = {
   id: string;
   name: string;
   description: string | null;
   role: "owner" | "editor" | "viewer";
   citation_style?: CitationStyle;
+  // Тип исследования
+  research_type?: ResearchType;
+  research_subtype?: string;
+  // Протокол исследования
+  research_protocol?: ResearchProtocol;
+  protocol_custom_name?: string;
+  // AI-анализ
+  ai_error_analysis_enabled?: boolean;
+  ai_protocol_check_enabled?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -128,9 +146,21 @@ export async function apiCreateProject(
   });
 }
 
+export type UpdateProjectData = {
+  name?: string;
+  description?: string;
+  citationStyle?: CitationStyle;
+  researchType?: ResearchType;
+  researchSubtype?: string;
+  researchProtocol?: ResearchProtocol;
+  protocolCustomName?: string;
+  aiErrorAnalysisEnabled?: boolean;
+  aiProtocolCheckEnabled?: boolean;
+};
+
 export async function apiUpdateProject(
   id: string,
-  data: { name?: string; description?: string; citationStyle?: CitationStyle }
+  data: UpdateProjectData
 ): Promise<{ project: Project }> {
   return apiFetch<{ project: Project }>(`/api/projects/${id}`, {
     method: "PATCH",
@@ -593,4 +623,102 @@ export async function apiGetPdfSource(
 
 export function getPdfDownloadUrl(projectId: string, articleId: string): string {
   return `/api/projects/${projectId}/articles/${articleId}/pdf`;
+}
+
+// ========== Project Statistics (Charts & Tables) ==========
+
+export type DataClassification = {
+  variableType: "quantitative" | "qualitative";
+  subType: "continuous" | "discrete" | "nominal" | "dichotomous" | "ordinal";
+  isNormalDistribution?: boolean;
+};
+
+export type ProjectStatistic = {
+  id: string;
+  type: "chart" | "table";
+  title: string;
+  description?: string;
+  config: Record<string, any>;
+  table_data?: Record<string, any>;
+  data_classification?: DataClassification;
+  chart_type?: string;
+  used_in_documents?: string[];
+  order_index: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function apiGetStatistics(
+  projectId: string
+): Promise<{ statistics: ProjectStatistic[] }> {
+  return apiFetch<{ statistics: ProjectStatistic[] }>(
+    `/api/projects/${projectId}/statistics`
+  );
+}
+
+export async function apiCreateStatistic(
+  projectId: string,
+  data: {
+    type: "chart" | "table";
+    title: string;
+    description?: string;
+    config: Record<string, any>;
+    tableData?: Record<string, any>;
+    dataClassification?: DataClassification;
+    chartType?: string;
+  }
+): Promise<{ statistic: ProjectStatistic }> {
+  return apiFetch<{ statistic: ProjectStatistic }>(
+    `/api/projects/${projectId}/statistics`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function apiUpdateStatistic(
+  projectId: string,
+  statId: string,
+  data: {
+    title?: string;
+    description?: string;
+    config?: Record<string, any>;
+    tableData?: Record<string, any>;
+    dataClassification?: DataClassification;
+    chartType?: string;
+    orderIndex?: number;
+  }
+): Promise<{ statistic: ProjectStatistic }> {
+  return apiFetch<{ statistic: ProjectStatistic }>(
+    `/api/projects/${projectId}/statistics/${statId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function apiDeleteStatistic(
+  projectId: string,
+  statId: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/statistics/${statId}`,
+    { method: "DELETE" }
+  );
+}
+
+export async function apiMarkStatisticUsed(
+  projectId: string,
+  statId: string,
+  documentId: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/statistics/${statId}/use`,
+    {
+      method: "POST",
+      body: JSON.stringify({ documentId }),
+    }
+  );
 }

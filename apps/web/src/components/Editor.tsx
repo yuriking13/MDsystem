@@ -14,8 +14,9 @@ import Image from "@tiptap/extension-image";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import CitationNode from "./CitationNode";
-import { ChartCreatorModal } from "./ChartFromTable";
+import { ChartCreatorModal, CHART_TYPE_INFO, type ChartType } from "./ChartFromTable";
 import ChartNode from "./ChartNode";
+import { apiCreateStatistic, type DataClassification } from "../lib/api";
 
 type CitationData = {
   id: string;
@@ -32,6 +33,9 @@ type Props = {
   citations?: CitationData[];
   placeholder?: string;
   editable?: boolean;
+  projectId?: string;
+  documentId?: string;
+  onStatisticCreated?: (statId: string) => void;
 };
 
 // Панель инструментов
@@ -349,9 +353,13 @@ export default function Editor({
   citations = [],
   placeholder = "Начните писать...",
   editable = true,
+  projectId,
+  documentId,
+  onStatisticCreated,
 }: Props) {
   const [showChartModal, setShowChartModal] = useState(false);
   const [tableHtmlForChart, setTableHtmlForChart] = useState("");
+  const [savingChart, setSavingChart] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -483,22 +491,51 @@ export default function Editor({
     }
   }, [editor]);
 
-  // Вставка графика в документ
-  const handleInsertChart = useCallback((chartDataJson: string) => {
+  // Вставка графика в документ и сохранение в статистику проекта
+  const handleInsertChart = useCallback(async (chartDataJson: string, chartId?: string) => {
     if (editor) {
       // Парсим JSON из HTML атрибута
       const match = chartDataJson.match(/data-chart='([^']+)'/);
       if (match) {
-        const chartData = match[1].replace(/&#39;/g, "'");
+        const chartDataStr = match[1].replace(/&#39;/g, "'");
+        
+        // Вставляем график в редактор
         editor.chain().focus().insertContent({
           type: 'chartNode',
-          attrs: { chartData },
+          attrs: { chartData: chartDataStr },
         }).run();
+        
+        // Сохраняем в статистику проекта если есть projectId
+        if (projectId) {
+          setSavingChart(true);
+          try {
+            const parsedData = JSON.parse(chartDataStr);
+            const config = parsedData.config || {};
+            const chartType = config.type as ChartType;
+            const chartInfo = chartType ? CHART_TYPE_INFO[chartType] : null;
+            
+            const result = await apiCreateStatistic(projectId, {
+              type: 'chart',
+              title: config.title || (chartInfo?.name || 'График'),
+              description: chartInfo?.description,
+              config: config,
+              tableData: parsedData.tableData,
+              dataClassification: config.dataClassification as DataClassification,
+              chartType: chartType,
+            });
+            
+            onStatisticCreated?.(result.statistic.id);
+          } catch (err) {
+            console.error('Failed to save chart to statistics:', err);
+          } finally {
+            setSavingChart(false);
+          }
+        }
       }
     }
     setShowChartModal(false);
     setTableHtmlForChart("");
-  }, [editor]);
+  }, [editor, projectId, onStatisticCreated]);
 
   return (
     <div className="editor-container">
