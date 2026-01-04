@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
+import { formatCitation, type CitationStyle, type BibliographyArticle } from "../lib/bibliography.js";
 
 const ProjectIdSchema = z.object({
   projectId: z.string().uuid(),
@@ -353,6 +354,152 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       );
 
       return { ok: true };
+    }
+  );
+
+  // GET /api/projects/:projectId/export - экспорт всех документов со списком литературы
+  fastify.get(
+    "/projects/:projectId/export",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+
+      const access = await checkProjectAccess(paramsP.data.projectId, userId);
+      if (!access.ok) {
+        return reply.code(404).send({ error: "Project not found" });
+      }
+
+      // Получить стиль цитирования проекта
+      const projectRes = await pool.query(
+        `SELECT citation_style, name FROM projects WHERE id = $1`,
+        [paramsP.data.projectId]
+      );
+      const citationStyle = (projectRes.rows[0]?.citation_style || 'gost') as CitationStyle;
+      const projectName = projectRes.rows[0]?.name || 'Project';
+
+      // Получить все документы
+      const docsRes = await pool.query(
+        `SELECT id, title, content, order_index
+         FROM documents
+         WHERE project_id = $1
+         ORDER BY order_index, created_at`,
+        [paramsP.data.projectId]
+      );
+
+      // Получить все уникальные цитаты из всех документов проекта
+      const citationsRes = await pool.query(
+        `SELECT DISTINCT ON (a.id)
+           a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+           a.doi, a.pmid, a.volume, a.issue, a.pages
+         FROM citations c
+         JOIN documents d ON d.id = c.document_id
+         JOIN articles a ON a.id = c.article_id
+         WHERE d.project_id = $1
+         ORDER BY a.id, c.order_index`,
+        [paramsP.data.projectId]
+      );
+
+      // Форматировать список литературы
+      const bibliography = citationsRes.rows.map((article: any, index: number) => {
+        const bibArticle: BibliographyArticle = {
+          title_en: article.title_en,
+          title_ru: article.title_ru,
+          authors: article.authors,
+          journal: article.journal,
+          year: article.year,
+          volume: article.volume,
+          issue: article.issue,
+          pages: article.pages,
+          doi: article.doi,
+          pmid: article.pmid,
+        };
+        return {
+          number: index + 1,
+          articleId: article.id,
+          formatted: formatCitation(bibArticle, citationStyle),
+        };
+      });
+
+      return {
+        projectName,
+        citationStyle,
+        documents: docsRes.rows,
+        bibliography,
+      };
+    }
+  );
+
+  // GET /api/projects/:projectId/bibliography - только список литературы
+  fastify.get(
+    "/projects/:projectId/bibliography",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+
+      const querySchema = z.object({
+        style: z.enum(['gost', 'apa', 'vancouver']).optional(),
+      });
+      const queryP = querySchema.safeParse(request.query);
+
+      const access = await checkProjectAccess(paramsP.data.projectId, userId);
+      if (!access.ok) {
+        return reply.code(404).send({ error: "Project not found" });
+      }
+
+      // Получить стиль цитирования проекта
+      const projectRes = await pool.query(
+        `SELECT citation_style FROM projects WHERE id = $1`,
+        [paramsP.data.projectId]
+      );
+      const citationStyle = (queryP.success && queryP.data.style) 
+        || projectRes.rows[0]?.citation_style 
+        || 'gost';
+
+      // Получить все уникальные цитаты
+      const citationsRes = await pool.query(
+        `SELECT DISTINCT ON (a.id)
+           a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+           a.doi, a.pmid, a.volume, a.issue, a.pages
+         FROM citations c
+         JOIN documents d ON d.id = c.document_id
+         JOIN articles a ON a.id = c.article_id
+         WHERE d.project_id = $1
+         ORDER BY a.id`,
+        [paramsP.data.projectId]
+      );
+
+      const bibliography = citationsRes.rows.map((article: any, index: number) => {
+        const bibArticle: BibliographyArticle = {
+          title_en: article.title_en,
+          title_ru: article.title_ru,
+          authors: article.authors,
+          journal: article.journal,
+          year: article.year,
+          volume: article.volume,
+          issue: article.issue,
+          pages: article.pages,
+          doi: article.doi,
+          pmid: article.pmid,
+        };
+        return {
+          number: index + 1,
+          articleId: article.id,
+          formatted: formatCitation(bibArticle, citationStyle as CitationStyle),
+          raw: bibArticle,
+        };
+      });
+
+      return { citationStyle, bibliography };
     }
   );
 };

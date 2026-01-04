@@ -10,6 +10,7 @@ const CreateProjectSchema = z.object({
 const UpdateProjectSchema = z.object({
   name: z.string().min(1).max(500).optional(),
   description: z.string().max(2000).optional(),
+  citationStyle: z.enum(['gost', 'apa', 'vancouver']).optional(),
 });
 
 const ProjectIdSchema = z.object({
@@ -98,7 +99,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const res = await pool.query(
         `SELECT p.id, p.name, p.description, p.created_at, p.updated_at,
-                pm.role
+                p.citation_style, pm.role
          FROM projects p
          JOIN project_members pm ON pm.project_id = p.id
          WHERE p.id = $1 AND pm.user_id = $2`,
@@ -157,6 +158,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         updates.push(`description = $${idx++}`);
         values.push(bodyP.data.description);
       }
+      if (bodyP.data.citationStyle !== undefined) {
+        updates.push(`citation_style = $${idx++}`);
+        values.push(bodyP.data.citationStyle);
+      }
 
       if (updates.length === 0) {
         return reply.code(400).send({ error: "BadRequest", message: "No fields to update" });
@@ -167,7 +172,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const res = await pool.query(
         `UPDATE projects SET ${updates.join(", ")} WHERE id = $${idx}
-         RETURNING id, name, description, created_at, updated_at`,
+         RETURNING id, name, description, citation_style, created_at, updated_at`,
         values
       );
 

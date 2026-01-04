@@ -12,6 +12,7 @@ import {
 type Props = {
   projectId: string;
   canEdit: boolean;
+  onCountsChange?: (counts: { candidate: number; selected: number; excluded: number; total: number }) => void;
 };
 
 const PUBLICATION_TYPES = [
@@ -40,7 +41,7 @@ const TEXT_AVAILABILITY = [
   { id: "free_full", label: "Бесплатный полный текст" },
 ];
 
-export default function ArticlesSection({ projectId, canEdit }: Props) {
+export default function ArticlesSection({ projectId, canEdit, onCountsChange }: Props) {
   const [articles, setArticles] = useState<Article[]>([]);
   const [counts, setCounts] = useState({ candidate: 0, selected: 0, excluded: 0 });
   const [loading, setLoading] = useState(true);
@@ -103,6 +104,11 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
       const res = await apiGetArticles(projectId, status, showStatsOnly || undefined);
       setArticles(res.articles);
       setCounts(res.counts);
+      // Передаём counts наверх для отображения в табах
+      if (onCountsChange) {
+        const total = res.counts.candidate + res.counts.selected + res.counts.excluded;
+        onCountsChange({ ...res.counts, total });
+      }
     } catch (err: any) {
       setError(err?.message || "Ошибка загрузки статей");
     } finally {
