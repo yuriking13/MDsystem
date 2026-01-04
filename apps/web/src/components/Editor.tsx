@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useEditor, EditorContent, Editor as TipTapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -887,33 +887,6 @@ export default function Editor({
     setTableHtmlForChart("");
   }, [editor, projectId, onStatisticCreated, findTableEndPosition]);
 
-  // Стили для контента в зависимости от настроек
-  const contentStyle = useMemo(() => {
-    const base: React.CSSProperties = {
-      '--paragraph-spacing': `${settings.paragraphSpacing}px`,
-      '--line-height': settings.lineHeight,
-      '--first-line-indent': `${settings.firstLineIndent}mm`,
-    } as React.CSSProperties;
-
-    if (settings.viewMode === 'pages') {
-      return {
-        ...base,
-        maxWidth: settings.pageSize === 'a4' ? '210mm' : settings.pageSize === 'letter' ? '216mm' : '210mm',
-        margin: '0 auto',
-        padding: `${settings.marginTop}mm ${settings.marginRight}mm ${settings.marginBottom}mm ${settings.marginLeft}mm`,
-        background: 'white',
-        color: '#1a1a1a',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-        minHeight: settings.pageSize === 'a4' ? '297mm' : '279mm',
-      };
-    }
-
-    return {
-      ...base,
-      padding: `20px ${settings.marginRight}mm 20px ${settings.marginLeft}mm`,
-    };
-  }, [settings]);
-
   return (
     <div className={`editor-wrapper ${settings.viewMode === 'pages' ? 'page-mode' : 'scroll-mode'}`}>
       {/* Боковая панель навигации */}
@@ -935,12 +908,25 @@ export default function Editor({
           />
         )}
         
-        <div className={`editor-content-wrapper ${settings.viewMode}`}>
-          <EditorContent 
-            editor={editor} 
-            className="editor-content" 
-            style={contentStyle}
-          />
+        <div className={`editor-content-wrapper ${settings.viewMode === 'pages' ? 'pages' : 'scroll'}`}>
+          <div 
+            className={`editor-content-page ${settings.viewMode === 'pages' ? 'page-view' : 'scroll-view'}`}
+            style={settings.viewMode === 'pages' ? {
+              maxWidth: settings.pageSize === 'a4' ? '210mm' : settings.pageSize === 'letter' ? '216mm' : '210mm',
+              minHeight: settings.pageSize === 'a4' ? '297mm' : '279mm',
+              padding: `${settings.marginTop}mm ${settings.marginRight}mm ${settings.marginBottom}mm ${settings.marginLeft}mm`,
+            } : undefined}
+          >
+            <EditorContent 
+              editor={editor} 
+              className="editor-content" 
+              style={{
+                '--paragraph-spacing': `${settings.paragraphSpacing}px`,
+                '--line-height': settings.lineHeight,
+                '--first-line-indent': `${settings.firstLineIndent}mm`,
+              } as React.CSSProperties}
+            />
+          </div>
         </div>
         
         {editable && (

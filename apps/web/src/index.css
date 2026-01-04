@@ -1883,11 +1883,98 @@ select {
 }
 
 .editor-content-wrapper.pages {
-  background: rgba(50, 60, 80, 0.3);
+  background: linear-gradient(135deg, rgba(40, 50, 70, 0.8), rgba(30, 40, 60, 0.9));
   padding: 40px 20px;
+  display: flex;
+  justify-content: center;
 }
 
-/* Page mode styles */
+/* Page wrapper for page view mode */
+.editor-content-page {
+  width: 100%;
+}
+
+.editor-content-page.scroll-view {
+  /* Normal scroll mode - no special styling */
+}
+
+.editor-content-page.page-view {
+  margin: 0 auto;
+  background: #ffffff;
+  color: #1a1a1a;
+  box-shadow: 
+    0 4px 30px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.editor-content-page.page-view .editor-content {
+  padding: 0 !important;
+  background: transparent !important;
+  color: #1a1a1a !important;
+  min-height: auto;
+  max-height: none;
+}
+
+.editor-content-page.page-view .editor-content .tiptap {
+  color: #1a1a1a;
+}
+
+.editor-content-page.page-view .editor-content .tiptap p,
+.editor-content-page.page-view .editor-content .tiptap h1,
+.editor-content-page.page-view .editor-content .tiptap h2,
+.editor-content-page.page-view .editor-content .tiptap h3,
+.editor-content-page.page-view .editor-content .tiptap li {
+  color: #1a1a1a;
+}
+
+.editor-content-page.page-view .editor-content a {
+  color: #2563eb;
+}
+
+.editor-content-page.page-view .editor-content mark {
+  background: rgba(255, 235, 59, 0.6);
+}
+
+.editor-content-page.page-view .editor-content blockquote {
+  border-left-color: #4b74ff;
+  color: #555;
+}
+
+.editor-content-page.page-view .editor-content .muted {
+  color: #666;
+}
+
+/* Table styling in page view */
+.editor-content-page.page-view .editor-content table th,
+.editor-content-page.page-view .editor-content table td {
+  color: #1a1a1a;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.editor-content-page.page-view .editor-content table th {
+  background: rgba(75, 116, 255, 0.15);
+}
+
+.editor-content-page.page-view .editor-content table td {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* Chart styling in page view */
+.editor-content-page.page-view .chart-container-live {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.editor-content-page.page-view .chart-caption-label {
+  color: #4b74ff;
+}
+
+.editor-content-page.page-view .chart-caption-title {
+  color: #1a1a1a;
+}
+
+/* Legacy page mode styles - keep for backwards compatibility */
 .editor-wrapper.page-mode .editor-content {
   background: white;
   color: #1a1a1a;
@@ -2182,4 +2269,33 @@ select {
 
 .table-caption-title {
   font-weight: 500;
+}
+
+/* ===== STATISTIC EDIT MODAL ===== */
+
+.statistic-edit-modal {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.statistic-edit-modal .tabs {
+  margin-bottom: 16px;
+}
+
+.statistic-edit-modal .chart-source-table {
+  width: 100%;
+}
+
+.statistic-edit-modal .chart-source-table th,
+.statistic-edit-modal .chart-source-table td {
+  padding: 8px 10px;
+}
+
+.statistic-edit-modal .chart-data-input {
+  width: 100%;
+  min-width: 60px;
+}
+
+.statistic-edit-modal textarea {
+  font-family: inherit;
 }

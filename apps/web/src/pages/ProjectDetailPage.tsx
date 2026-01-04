@@ -13,6 +13,7 @@ import {
   apiExportProject,
   apiGetStatistics,
   apiDeleteStatistic,
+  apiUpdateStatistic,
   type Project,
   type ProjectMember,
   type Document,
@@ -21,11 +22,13 @@ import {
   type ResearchType,
   type ResearchProtocol,
   type ProjectStatistic,
+  type DataClassification,
 } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 import ArticlesSection from "../components/ArticlesSection";
 import CitationGraph from "../components/CitationGraph";
-import ChartFromTable, { CHART_TYPE_INFO, ChartTypeHint, type ChartType } from "../components/ChartFromTable";
+import ChartFromTable, { CHART_TYPE_INFO, ChartTypeHint, type ChartType, type TableData } from "../components/ChartFromTable";
+import StatisticEditModal from "../components/StatisticEditModal";
 import { exportToWord } from "../lib/exportWord";
 
 type Tab = "articles" | "documents" | "statistics" | "graph" | "team" | "settings";
@@ -175,6 +178,7 @@ export default function ProjectDetailPage() {
   // Статистика проекта
   const [statistics, setStatistics] = useState<ProjectStatistic[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [editingStat, setEditingStat] = useState<ProjectStatistic | null>(null);
 
   // Invite form
   const [showInvite, setShowInvite] = useState(false);
@@ -289,6 +293,27 @@ export default function ProjectDetailPage() {
       setOk("Элемент удалён");
     } catch (err: any) {
       setError(err?.message || "Ошибка удаления");
+    }
+  }
+
+  async function handleUpdateStatistic(statId: string, updates: {
+    title?: string;
+    description?: string;
+    config?: Record<string, any>;
+    tableData?: Record<string, any>;
+    dataClassification?: DataClassification;
+    chartType?: string;
+  }) {
+    if (!id) return;
+    try {
+      const result = await apiUpdateStatistic(id, statId, updates);
+      setStatistics(statistics.map(s => 
+        s.id === statId ? { ...s, ...result.statistic } : s
+      ));
+      setOk("Статистика обновлена");
+    } catch (err: any) {
+      setError(err?.message || "Ошибка обновления");
+      throw err;
     }
   }
 
@@ -801,9 +826,17 @@ export default function ProjectDetailPage() {
                       )}
                       
                       <div className="stat-item-actions">
+                        <button 
+                          className="btn" 
+                          style={{ padding: '6px 12px', fontSize: 11 }}
+                          onClick={() => setEditingStat(stat)}
+                          title="Редактировать график"
+                        >
+                          ✏️ Редактировать
+                        </button>
                         {documents.length > 0 && (
                           <button 
-                            className="btn" 
+                            className="btn secondary" 
                             style={{ padding: '6px 12px', fontSize: 11 }}
                             onClick={() => {
                               // Копируем код для вставки в документ
@@ -850,6 +883,18 @@ export default function ProjectDetailPage() {
                 ))}
               </div>
             </div>
+
+            {/* Модальное окно редактирования статистики */}
+            {editingStat && (
+              <StatisticEditModal
+                statistic={editingStat}
+                onClose={() => setEditingStat(null)}
+                onSave={async (updates) => {
+                  await handleUpdateStatistic(editingStat.id, updates);
+                  setEditingStat(null);
+                }}
+              />
+            )}
           </div>
         )}
 
