@@ -48,3 +48,43 @@ export function extractStats(text: string | undefined | null): ExtractedStats {
 export function hasAnyStats(stats: ExtractedStats): boolean {
   return stats.pValues.length + stats.tTests.length + stats.confidenceIntervals.length + stats.effects.length > 0;
 }
+
+/**
+ * Вычисляет качество статистики на основе p-values
+ * 3 = есть p < 0.001 (очень значимо)
+ * 2 = есть p < 0.01 (значимо)
+ * 1 = есть p < 0.05 (умеренно значимо)
+ * 0 = нет значимых p-values
+ */
+export function calculateStatsQuality(stats: ExtractedStats): number {
+  let quality = 0;
+  
+  for (const p of stats.pValues) {
+    if (p.value !== undefined) {
+      if (p.value < 0.001) {
+        quality = Math.max(quality, 3);
+      } else if (p.value < 0.01) {
+        quality = Math.max(quality, 2);
+      } else if (p.value < 0.05) {
+        quality = Math.max(quality, 1);
+      }
+    } else if (p.operator && p.raw) {
+      // Парсим из raw строки
+      const raw = p.raw.toLowerCase();
+      if (raw.includes('0.001') || raw.includes('0.0001')) {
+        quality = Math.max(quality, 3);
+      } else if (raw.includes('0.01')) {
+        quality = Math.max(quality, 2);
+      } else if (raw.includes('0.05')) {
+        quality = Math.max(quality, 1);
+      }
+    }
+  }
+  
+  // Бонус за наличие CI и эффектов
+  if (stats.confidenceIntervals.length > 0 && quality > 0) {
+    quality = Math.min(quality + 0.5, 3);
+  }
+  
+  return Math.floor(quality);
+}

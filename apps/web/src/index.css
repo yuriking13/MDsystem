@@ -306,3 +306,115 @@ h3 {
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+/* Language toggle */
+.lang-toggle {
+  display: flex;
+  border: 1px solid #2a3a66;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.lang-toggle button {
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: #a9b7da;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.lang-toggle button.active {
+  background: #2f57ff;
+  color: white;
+}
+
+.lang-toggle button:hover:not(.active) {
+  background: #1e2a4a;
+}
+
+/* No translation badge */
+.no-translate-badge {
+  margin-left: 6px;
+  font-size: 10px;
+  padding: 1px 4px;
+  background: #2a2a1a;
+  color: #a9a970;
+  border-radius: 3px;
+}
+
+/* Statistics highlighting in abstract */
+.stat-p001 {
+  background: #0a3d0a;
+  color: #4ade80;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.stat-p01 {
+  background: #1a3a1a;
+  color: #7dde80;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+.stat-p05 {
+  background: #2a3a1a;
+  color: #ade880;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.stat-pval {
+  background: #2a2a1a;
+  color: #e8e080;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.stat-ci {
+  background: #1a2a3a;
+  color: #80c8e8;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.stat-ratio {
+  background: #2a1a3a;
+  color: #c880e8;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.stat-n {
+  background: #1a1a2a;
+  color: #8080e8;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+/* Publication type badge */
+.id-badge.pub-type {
+  background: #2a1a2a;
+  color: #d8a0d8;
+}
+
+/* Stats quality badges */
+.id-badge.stats-q1 {
+  background: #2a3a1a;
+  color: #ade880;
+}
+
+.id-badge.stats-q2 {
+  background: #1a3a1a;
+  color: #7dde80;
+}
+
+.id-badge.stats-q3 {
+  background: #0a3d0a;
+  color: #4ade80;
+  font-weight: 600;
+}
