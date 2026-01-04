@@ -281,8 +281,13 @@ export default function DocumentPage() {
             projectId={projectId}
             documentId={docId}
             onStatisticCreated={(statId) => {
-              console.log('Statistic created:', statId);
-              // Можно показать уведомление пользователю
+              // Показываем уведомление пользователю
+              const notification = document.createElement('div');
+              notification.className = 'ok';
+              notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 20px; border-radius: 12px;';
+              notification.textContent = '📊 График добавлен в статистику проекта';
+              document.body.appendChild(notification);
+              setTimeout(() => notification.remove(), 3000);
             }}
           />
         </div>

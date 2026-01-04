@@ -4,8 +4,10 @@ import React, { useMemo, useState } from "react";
 import ChartFromTable, { ChartConfig, TableData, CHART_TYPE_INFO, ChartType } from "./ChartFromTable";
 
 // React компонент для отображения графика с названием и сворачиваемой таблицей
-function ChartNodeView({ node, updateAttributes }: { node: any; updateAttributes: (attrs: any) => void }) {
+function ChartNodeView({ node, updateAttributes, editor }: { node: any; updateAttributes: (attrs: any) => void; editor: any }) {
   const [showSourceData, setShowSourceData] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState<TableData | null>(null);
   
   const chartData = useMemo(() => {
     try {
@@ -31,13 +33,52 @@ function ChartNodeView({ node, updateAttributes }: { node: any; updateAttributes
   const chartType = config.type as ChartType;
   const chartInfo = chartType ? CHART_TYPE_INFO[chartType] : null;
   const chartTitle = config.title || (chartInfo?.name || 'График');
+  
+  // Используем редактируемые данные если есть
+  const displayData = editedData || tableData;
+
+  // Функция для обновления данных таблицы
+  const handleCellChange = (rowIdx: number, colIdx: number, value: string) => {
+    const newData = { ...displayData };
+    newData.rows = [...newData.rows];
+    newData.rows[rowIdx] = [...newData.rows[rowIdx]];
+    newData.rows[rowIdx][colIdx] = value;
+    setEditedData(newData);
+  };
+
+  const handleHeaderChange = (colIdx: number, value: string) => {
+    const newData = { ...displayData };
+    newData.headers = [...newData.headers];
+    newData.headers[colIdx] = value;
+    setEditedData(newData);
+  };
+
+  // Сохранить изменения
+  const handleSaveChanges = () => {
+    if (editedData) {
+      const newChartData = {
+        ...chartData,
+        tableData: editedData,
+      };
+      updateAttributes({
+        chartData: JSON.stringify(newChartData),
+      });
+      setIsEditing(false);
+    }
+  };
+
+  // Отменить изменения
+  const handleCancelEdit = () => {
+    setEditedData(null);
+    setIsEditing(false);
+  };
 
   return (
     <NodeViewWrapper className="chart-node-wrapper" data-drag-handle>
       <div className="chart-container-live">
-        {/* Заголовок графика */}
+        {/* Заголовок графика - РИСУНОК, не таблица */}
         <div className="chart-caption">
-          <span className="chart-caption-label">Рисунок</span>
+          <span className="chart-caption-label">Рисунок.</span>
           <span className="chart-caption-title">{chartTitle}</span>
           {chartInfo && (
             <span className="chart-type-badge" title={chartInfo.description}>
@@ -47,9 +88,13 @@ function ChartNodeView({ node, updateAttributes }: { node: any; updateAttributes
         </div>
         
         {/* График */}
-        <ChartFromTable tableData={tableData} config={config} height={300} />
+        <ChartFromTable 
+          tableData={displayData} 
+          config={config} 
+          height={300} 
+        />
         
-        {/* Кнопка показа исходных данных */}
+        {/* Кнопки управления */}
         <div className="chart-actions">
           <button 
             className="chart-toggle-data"
@@ -62,25 +107,92 @@ function ChartNodeView({ node, updateAttributes }: { node: any; updateAttributes
           >
             {showSourceData ? '▼ Скрыть данные' : '▶ Показать данные'}
           </button>
+          
+          {showSourceData && !isEditing && (
+            <button 
+              className="chart-toggle-data"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setEditedData({ ...displayData });
+                setIsEditing(true);
+              }}
+              type="button"
+            >
+              ✏️ Редактировать
+            </button>
+          )}
+          
+          {isEditing && (
+            <>
+              <button 
+                className="chart-toggle-data chart-save-btn"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleSaveChanges();
+                }}
+                type="button"
+              >
+                💾 Сохранить
+              </button>
+              <button 
+                className="chart-toggle-data"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleCancelEdit();
+                }}
+                type="button"
+              >
+                ✕ Отмена
+              </button>
+            </>
+          )}
         </div>
         
         {/* Сворачиваемая таблица с исходными данными */}
-        {showSourceData && tableData && (
+        {showSourceData && displayData && (
           <div className="chart-source-data">
-            <div className="chart-source-header">Исходные данные:</div>
+            <div className="chart-source-header">
+              Таблица. Исходные данные:
+              {isEditing && <span className="editing-badge"> (редактирование)</span>}
+            </div>
             <table className="chart-source-table">
               <thead>
                 <tr>
-                  {tableData.headers.map((h, i) => (
-                    <th key={i}>{h || `Колонка ${i + 1}`}</th>
+                  {displayData.headers.map((h, i) => (
+                    <th key={i}>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={h}
+                          onChange={(e) => handleHeaderChange(i, e.target.value)}
+                          className="chart-data-input header-input"
+                        />
+                      ) : (
+                        h || `Колонка ${i + 1}`
+                      )}
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {tableData.rows.map((row, ri) => (
+                {displayData.rows.map((row, ri) => (
                   <tr key={ri}>
                     {row.map((cell, ci) => (
-                      <td key={ci}>{cell}</td>
+                      <td key={ci}>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={cell}
+                            onChange={(e) => handleCellChange(ri, ci, e.target.value)}
+                            className="chart-data-input"
+                          />
+                        ) : (
+                          cell
+                        )}
+                      </td>
                     ))}
                   </tr>
                 ))}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import { useEditor, EditorContent, Editor as TipTapEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -25,6 +25,33 @@ type CitationData = {
   articleTitle?: string;
 };
 
+type ViewMode = 'scroll' | 'pages';
+type PageSize = 'a4' | 'letter' | 'custom';
+
+type EditorSettings = {
+  viewMode: ViewMode;
+  pageSize: PageSize;
+  marginTop: number;
+  marginBottom: number;
+  marginLeft: number;
+  marginRight: number;
+  paragraphSpacing: number;
+  lineHeight: number;
+  firstLineIndent: number;
+};
+
+const DEFAULT_SETTINGS: EditorSettings = {
+  viewMode: 'scroll',
+  pageSize: 'a4',
+  marginTop: 20,
+  marginBottom: 20,
+  marginLeft: 30,
+  marginRight: 15,
+  paragraphSpacing: 10,
+  lineHeight: 1.5,
+  firstLineIndent: 12.5,
+};
+
 type Props = {
   content: string;
   onChange: (content: string) => void;
@@ -38,15 +65,221 @@ type Props = {
   onStatisticCreated?: (statId: string) => void;
 };
 
+// Панель навигации по заголовкам
+function HeadingsNav({ editor, onClose }: { editor: TipTapEditor | null; onClose: () => void }) {
+  const [headings, setHeadings] = useState<{ level: number; text: string; pos: number }[]>([]);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const updateHeadings = () => {
+      const items: { level: number; text: string; pos: number }[] = [];
+      editor.state.doc.descendants((node, pos) => {
+        if (node.type.name === 'heading') {
+          items.push({
+            level: node.attrs.level,
+            text: node.textContent,
+            pos,
+          });
+        }
+      });
+      setHeadings(items);
+    };
+
+    updateHeadings();
+    editor.on('update', updateHeadings);
+    return () => {
+      editor.off('update', updateHeadings);
+    };
+  }, [editor]);
+
+  const scrollToHeading = (pos: number) => {
+    if (!editor) return;
+    editor.chain().focus().setTextSelection(pos).run();
+    // Скролл к позиции
+    const editorEl = document.querySelector('.editor-content');
+    if (editorEl) {
+      const coords = editor.view.coordsAtPos(pos);
+      editorEl.scrollTo({
+        top: coords.top - 100,
+        behavior: 'smooth',
+      });
+    }
+  };
+
+  return (
+    <div className="headings-nav">
+      <div className="headings-nav-header">
+        <span>📑 Структура документа</span>
+        <button onClick={onClose} className="btn secondary" style={{ padding: '4px 8px', fontSize: 10 }}>✕</button>
+      </div>
+      {headings.length === 0 ? (
+        <div className="muted" style={{ padding: 12, fontSize: 12 }}>
+          Нет заголовков. Используйте H1, H2, H3 для создания структуры.
+        </div>
+      ) : (
+        <div className="headings-list">
+          {headings.map((h, i) => (
+            <button
+              key={i}
+              className={`heading-item heading-level-${h.level}`}
+              onClick={() => scrollToHeading(h.pos)}
+              style={{ paddingLeft: 12 + (h.level - 1) * 16 }}
+            >
+              <span className="heading-marker">H{h.level}</span>
+              <span className="heading-text">{h.text || '(без названия)'}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Панель настроек документа
+function SettingsPanel({ 
+  settings, 
+  onSettingsChange, 
+  onClose 
+}: { 
+  settings: EditorSettings; 
+  onSettingsChange: (s: EditorSettings) => void; 
+  onClose: () => void;
+}) {
+  return (
+    <div className="settings-panel">
+      <div className="settings-panel-header">
+        <span>⚙️ Настройки документа</span>
+        <button onClick={onClose} className="btn secondary" style={{ padding: '4px 8px', fontSize: 10 }}>✕</button>
+      </div>
+      
+      <div className="settings-section-inner">
+        <label className="settings-label">Режим отображения</label>
+        <div className="settings-row">
+          <button 
+            className={`settings-btn ${settings.viewMode === 'scroll' ? 'active' : ''}`}
+            onClick={() => onSettingsChange({ ...settings, viewMode: 'scroll' })}
+          >
+            📜 Лента
+          </button>
+          <button 
+            className={`settings-btn ${settings.viewMode === 'pages' ? 'active' : ''}`}
+            onClick={() => onSettingsChange({ ...settings, viewMode: 'pages' })}
+          >
+            📄 Страницы
+          </button>
+        </div>
+      </div>
+
+      {settings.viewMode === 'pages' && (
+        <div className="settings-section-inner">
+          <label className="settings-label">Формат страницы</label>
+          <select 
+            value={settings.pageSize}
+            onChange={(e) => onSettingsChange({ ...settings, pageSize: e.target.value as PageSize })}
+          >
+            <option value="a4">A4 (210 × 297 мм)</option>
+            <option value="letter">Letter (216 × 279 мм)</option>
+            <option value="custom">Пользовательский</option>
+          </select>
+        </div>
+      )}
+
+      <div className="settings-section-inner">
+        <label className="settings-label">Поля (мм)</label>
+        <div className="settings-margins">
+          <div>
+            <span>Верх</span>
+            <input 
+              type="number" 
+              value={settings.marginTop} 
+              onChange={(e) => onSettingsChange({ ...settings, marginTop: +e.target.value })}
+              min={0} max={100}
+            />
+          </div>
+          <div>
+            <span>Низ</span>
+            <input 
+              type="number" 
+              value={settings.marginBottom} 
+              onChange={(e) => onSettingsChange({ ...settings, marginBottom: +e.target.value })}
+              min={0} max={100}
+            />
+          </div>
+          <div>
+            <span>Лево</span>
+            <input 
+              type="number" 
+              value={settings.marginLeft} 
+              onChange={(e) => onSettingsChange({ ...settings, marginLeft: +e.target.value })}
+              min={0} max={100}
+            />
+          </div>
+          <div>
+            <span>Право</span>
+            <input 
+              type="number" 
+              value={settings.marginRight} 
+              onChange={(e) => onSettingsChange({ ...settings, marginRight: +e.target.value })}
+              min={0} max={100}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="settings-section-inner">
+        <label className="settings-label">Межстрочный интервал</label>
+        <select 
+          value={settings.lineHeight}
+          onChange={(e) => onSettingsChange({ ...settings, lineHeight: +e.target.value })}
+        >
+          <option value={1}>Одинарный (1.0)</option>
+          <option value={1.15}>1.15</option>
+          <option value={1.5}>Полуторный (1.5)</option>
+          <option value={2}>Двойной (2.0)</option>
+        </select>
+      </div>
+
+      <div className="settings-section-inner">
+        <label className="settings-label">Отступ первой строки (мм): {settings.firstLineIndent}</label>
+        <input 
+          type="range" 
+          min={0} max={50} 
+          value={settings.firstLineIndent}
+          onChange={(e) => onSettingsChange({ ...settings, firstLineIndent: +e.target.value })}
+        />
+      </div>
+
+      <div className="settings-section-inner">
+        <label className="settings-label">Интервал между абзацами (px): {settings.paragraphSpacing}</label>
+        <input 
+          type="range" 
+          min={0} max={40} 
+          value={settings.paragraphSpacing}
+          onChange={(e) => onSettingsChange({ ...settings, paragraphSpacing: +e.target.value })}
+        />
+      </div>
+    </div>
+  );
+}
+
 // Панель инструментов
 function Toolbar({ 
   editor, 
   onInsertCitation,
   onCreateChart,
+  onToggleHeadings,
+  onToggleSettings,
+  showHeadings,
+  showSettings,
 }: { 
   editor: TipTapEditor | null;
   onInsertCitation?: () => void;
   onCreateChart?: () => void;
+  onToggleHeadings: () => void;
+  onToggleSettings: () => void;
+  showHeadings: boolean;
+  showSettings: boolean;
 }) {
   const [showTableMenu, setShowTableMenu] = useState(false);
   
@@ -71,12 +304,33 @@ function Toolbar({
     setShowTableMenu(false);
   };
 
-  // Проверяем есть ли выделенные ячейки для объединения
   const canMergeCells = editor.can().mergeCells();
   const canSplitCell = editor.can().splitCell();
 
   return (
     <div className="editor-toolbar">
+      {/* Навигация и настройки */}
+      <div className="toolbar-group">
+        <button
+          type="button"
+          onClick={onToggleHeadings}
+          className={showHeadings ? "active" : ""}
+          title="Структура документа"
+        >
+          📑
+        </button>
+        <button
+          type="button"
+          onClick={onToggleSettings}
+          className={showSettings ? "active" : ""}
+          title="Настройки документа"
+        >
+          ⚙️
+        </button>
+      </div>
+
+      <div className="toolbar-divider" />
+
       {/* Форматирование текста */}
       <div className="toolbar-group">
         <button
@@ -182,14 +436,6 @@ function Toolbar({
           title="Цитата"
         >
           «»
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={editor.isActive("codeBlock") ? "active" : ""}
-          title="Блок кода"
-        >
-          {"</>"}
         </button>
       </div>
 
@@ -393,7 +639,9 @@ export default function Editor({
   const [showChartModal, setShowChartModal] = useState(false);
   const [tableHtmlForChart, setTableHtmlForChart] = useState("");
   const [savingChart, setSavingChart] = useState(false);
-  const [currentTablePos, setCurrentTablePos] = useState<{ from: number; to: number } | null>(null);
+  const [showHeadings, setShowHeadings] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [settings, setSettings] = useState<EditorSettings>(DEFAULT_SETTINGS);
 
   const editor = useEditor({
     extensions: [
@@ -457,7 +705,6 @@ export default function Editor({
     const handleClick = (event: Event) => {
       const mouseEvent = event as unknown as MouseEvent;
       const target = mouseEvent.target as HTMLElement;
-      // Проверяем клик по citation-ref (новый Node)
       if (target.classList.contains("citation-ref")) {
         const citationNumber = target.getAttribute("data-citation-number");
         const citationId = target.getAttribute("data-citation-id");
@@ -477,11 +724,10 @@ export default function Editor({
     };
   }, [editor, onCitationClick]);
 
-  // Метод для вставки цитаты в текст как атомарный Node
+  // Метод для вставки цитаты в текст
   const insertCitation = useCallback(
     (citationNumber: number, citationId?: string, note?: string, articleTitle?: string) => {
       if (editor) {
-        // Вставляем как атомарный Node - не может "растечься" на соседний текст
         editor
           .chain()
           .focus()
@@ -500,14 +746,13 @@ export default function Editor({
     [editor]
   );
 
-  // Экспортируем метод через ref или контекст если нужно
   (window as any).__editorInsertCitation = insertCitation;
 
   // Статистика документа
   const wordCount = editor?.state.doc.textContent.split(/\s+/).filter(Boolean).length || 0;
   const charCount = editor?.state.doc.textContent.length || 0;
 
-  // Найти позицию конца таблицы для вставки графика после неё
+  // Найти позицию конца таблицы
   const findTableEndPosition = useCallback(() => {
     if (!editor) return null;
     
@@ -515,7 +760,6 @@ export default function Editor({
     const { selection } = state;
     const { $from } = selection;
     
-    // Ищем таблицу, которая содержит курсор
     let tableNode = null;
     let tablePos = 0;
     
@@ -529,14 +773,13 @@ export default function Editor({
     }
     
     if (tableNode) {
-      // Возвращаем позицию сразу после таблицы
       return tablePos + tableNode.nodeSize;
     }
     
     return null;
   }, [editor]);
 
-  // Функция для создания графика из текущей таблицы
+  // Создание графика из таблицы
   const handleCreateChart = useCallback(() => {
     if (!editor) return;
     
@@ -544,27 +787,22 @@ export default function Editor({
     const { selection } = state;
     const { $from } = selection;
     
-    // Ищем таблицу, которая содержит курсор
     let tableNode = null;
-    let tablePos = 0;
     
     for (let d = $from.depth; d > 0; d--) {
       const node = $from.node(d);
       if (node.type.name === 'table') {
         tableNode = node;
-        tablePos = $from.before(d);
         break;
       }
     }
     
     if (!tableNode) {
-      // Ищем любую таблицу в документе
       const html = editor.getHTML();
       const tableMatch = html.match(/<table[^>]*>[\s\S]*?<\/table>/i);
       
       if (tableMatch) {
         setTableHtmlForChart(tableMatch[0]);
-        setCurrentTablePos(null);
         setShowChartModal(true);
       } else {
         alert("Сначала создайте таблицу с данными в редакторе");
@@ -572,19 +810,6 @@ export default function Editor({
       return;
     }
     
-    // Получаем HTML только выбранной таблицы
-    const tableEndPos = tablePos + tableNode.nodeSize;
-    setCurrentTablePos({ from: tablePos, to: tableEndPos });
-    
-    // Создаём временный div для получения HTML таблицы
-    const fragment = state.doc.slice(tablePos, tableEndPos);
-    const tempDiv = document.createElement('div');
-    const serializer = (window as any).DOMSerializer?.fromSchema?.(state.schema);
-    if (serializer) {
-      tempDiv.appendChild(serializer.serializeFragment(fragment.content));
-    }
-    
-    // Fallback: ищем таблицу в полном HTML
     const html = editor.getHTML();
     const tableMatch = html.match(/<table[^>]*>[\s\S]*?<\/table>/i);
     
@@ -594,33 +819,29 @@ export default function Editor({
     }
   }, [editor]);
 
-  // Вставка графика в документ ПОСЛЕ таблицы и сохранение в статистику проекта
+  // Вставка графика после таблицы
   const handleInsertChart = useCallback(async (chartDataJson: string, chartId?: string) => {
     if (editor) {
-      // Парсим JSON из HTML атрибута
       const match = chartDataJson.match(/data-chart='([^']+)'/);
       if (match) {
         const chartDataStr = match[1].replace(/&#39;/g, "'");
         
-        // Находим позицию после таблицы
         const tableEndPos = findTableEndPosition();
         
         if (tableEndPos !== null) {
-          // Вставляем график ПОСЛЕ таблицы, не внутри неё
           editor
             .chain()
             .focus()
             .insertContentAt(tableEndPos, [
-              { type: 'paragraph' }, // Пустая строка перед графиком
+              { type: 'paragraph' },
               {
                 type: 'chartNode',
                 attrs: { chartData: chartDataStr },
               },
-              { type: 'paragraph' }, // Пустая строка после графика
+              { type: 'paragraph' },
             ])
             .run();
         } else {
-          // Если таблица не найдена, вставляем в конец документа
           editor
             .chain()
             .focus()
@@ -635,7 +856,6 @@ export default function Editor({
             .run();
         }
         
-        // Сохраняем в статистику проекта если есть projectId
         if (projectId) {
           setSavingChart(true);
           try {
@@ -655,7 +875,6 @@ export default function Editor({
             });
             
             onStatisticCreated?.(result.statistic.id);
-            console.log('Chart saved to statistics:', result.statistic.id);
           } catch (err) {
             console.error('Failed to save chart to statistics:', err);
           } finally {
@@ -666,26 +885,84 @@ export default function Editor({
     }
     setShowChartModal(false);
     setTableHtmlForChart("");
-    setCurrentTablePos(null);
   }, [editor, projectId, onStatisticCreated, findTableEndPosition]);
 
+  // Стили для контента в зависимости от настроек
+  const contentStyle = useMemo(() => {
+    const base: React.CSSProperties = {
+      '--paragraph-spacing': `${settings.paragraphSpacing}px`,
+      '--line-height': settings.lineHeight,
+      '--first-line-indent': `${settings.firstLineIndent}mm`,
+    } as React.CSSProperties;
+
+    if (settings.viewMode === 'pages') {
+      return {
+        ...base,
+        maxWidth: settings.pageSize === 'a4' ? '210mm' : settings.pageSize === 'letter' ? '216mm' : '210mm',
+        margin: '0 auto',
+        padding: `${settings.marginTop}mm ${settings.marginRight}mm ${settings.marginBottom}mm ${settings.marginLeft}mm`,
+        background: 'white',
+        color: '#1a1a1a',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+        minHeight: settings.pageSize === 'a4' ? '297mm' : '279mm',
+      };
+    }
+
+    return {
+      ...base,
+      padding: `20px ${settings.marginRight}mm 20px ${settings.marginLeft}mm`,
+    };
+  }, [settings]);
+
   return (
-    <div className="editor-container">
-      {editable && (
-        <Toolbar 
-          editor={editor} 
-          onInsertCitation={onInsertCitation}
-          onCreateChart={handleCreateChart}
-        />
+    <div className={`editor-wrapper ${settings.viewMode === 'pages' ? 'page-mode' : 'scroll-mode'}`}>
+      {/* Боковая панель навигации */}
+      {showHeadings && (
+        <HeadingsNav editor={editor} onClose={() => setShowHeadings(false)} />
       )}
-      <EditorContent editor={editor} className="editor-content" />
-      {editable && (
-        <div className="editor-footer">
-          <span className="word-count">
-            {wordCount} слов • {charCount} символов
-            {savingChart && ' • Сохранение графика...'}
-          </span>
+
+      {/* Основной редактор */}
+      <div className="editor-main">
+        {editable && (
+          <Toolbar 
+            editor={editor} 
+            onInsertCitation={onInsertCitation}
+            onCreateChart={handleCreateChart}
+            onToggleHeadings={() => setShowHeadings(!showHeadings)}
+            onToggleSettings={() => setShowSettings(!showSettings)}
+            showHeadings={showHeadings}
+            showSettings={showSettings}
+          />
+        )}
+        
+        <div className={`editor-content-wrapper ${settings.viewMode}`}>
+          <EditorContent 
+            editor={editor} 
+            className="editor-content" 
+            style={contentStyle}
+          />
         </div>
+        
+        {editable && (
+          <div className="editor-footer">
+            <span className="word-count">
+              {wordCount} слов • {charCount} символов
+              {savingChart && ' • Сохранение графика...'}
+            </span>
+            <span className="view-mode-indicator">
+              {settings.viewMode === 'pages' ? '📄 Страницы' : '📜 Лента'}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Панель настроек */}
+      {showSettings && (
+        <SettingsPanel 
+          settings={settings} 
+          onSettingsChange={setSettings}
+          onClose={() => setShowSettings(false)}
+        />
       )}
       
       {/* Модальное окно создания графика */}
@@ -695,7 +972,6 @@ export default function Editor({
           onClose={() => {
             setShowChartModal(false);
             setTableHtmlForChart("");
-            setCurrentTablePos(null);
           }}
           onInsert={handleInsertChart}
         />
@@ -704,7 +980,6 @@ export default function Editor({
   );
 }
 
-// Вспомогательная функция для вставки цитаты извне
 export function insertCitationToEditor(
   citationNumber: number, 
   citationId?: string, 
