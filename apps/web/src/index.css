@@ -254,8 +254,13 @@ h3 {
   line-height: 1.4;
 }
 
-.article-title .stats-badge {
+.article-title .stats-badge,
+.article-title .translate-badge {
   margin-left: 6px;
+}
+
+.article-title .translate-badge {
+  opacity: 0.7;
 }
 
 .article-meta {

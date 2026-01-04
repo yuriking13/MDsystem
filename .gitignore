@@ -21,3 +21,6 @@ Thumbs.db
 
 # Prisma
 apps/api/prisma/dev.db
+
+# Compiled JS in src (should be in dist only)
+apps/web/src/**/*.js
