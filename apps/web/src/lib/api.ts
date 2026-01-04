@@ -345,6 +345,7 @@ export type Citation = {
   order_index: number;
   inline_number: number;
   page_range: string | null;
+  note: string | null; // Прямая цитата из текста статьи
   article: {
     id: string;
     title_en: string;
@@ -436,6 +437,21 @@ export async function apiRemoveCitation(
   return apiFetch<{ ok: true }>(
     `/api/projects/${projectId}/documents/${docId}/citations/${citationId}`,
     { method: "DELETE" }
+  );
+}
+
+export async function apiUpdateCitation(
+  projectId: string,
+  docId: string,
+  citationId: string,
+  data: { note?: string; pageRange?: string }
+): Promise<{ citation: Citation }> {
+  return apiFetch<{ citation: Citation }>(
+    `/api/projects/${projectId}/documents/${docId}/citations/${citationId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }
   );
 }
 

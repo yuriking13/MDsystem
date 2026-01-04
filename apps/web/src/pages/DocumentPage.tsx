@@ -7,6 +7,7 @@ import {
   apiGetArticles,
   apiAddCitation,
   apiRemoveCitation,
+  apiUpdateCitation,
   apiGetProject,
   type Document,
   type Article,
@@ -258,25 +259,78 @@ export default function DocumentPage() {
             </span>
           </div>
           {doc.citations && doc.citations.length > 0 ? (
-            <ol className="citations-list">
+            <ul className="citations-list">
               {doc.citations.map((c) => (
                 <li key={c.id}>
-                  <div className="citation-item">
-                    <div className="citation-text">
+                  <div className="citation-item" style={{ flexDirection: 'column', gap: 8 }}>
+                    <div className="row space" style={{ width: '100%' }}>
+                      <span className="citation-number">[{c.inline_number}]</span>
+                      <button
+                        className="btn secondary"
+                        onClick={() => handleRemoveCitation(c.id)}
+                        style={{ padding: "2px 6px", fontSize: 10 }}
+                        title="Удалить цитату"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div 
+                      className="citation-text"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        if (c.article.doi) {
+                          window.open(`https://doi.org/${c.article.doi}`, '_blank');
+                        } else if (c.article.pmid) {
+                          window.open(`https://pubmed.ncbi.nlm.nih.gov/${c.article.pmid}`, '_blank');
+                        }
+                      }}
+                      title="Открыть оригинал статьи"
+                    >
                       {formatCitationSimple(c.article, citationStyle)}
                     </div>
-                    <button
-                      className="btn secondary"
-                      onClick={() => handleRemoveCitation(c.id)}
-                      style={{ padding: "2px 6px", fontSize: 11 }}
-                      title="Удалить цитату"
-                    >
-                      ✕
-                    </button>
+                    {c.note && (
+                      <div 
+                        className="citation-quote"
+                        style={{
+                          fontSize: 11,
+                          fontStyle: 'italic',
+                          color: 'var(--text-muted)',
+                          borderLeft: '2px solid var(--accent)',
+                          paddingLeft: 8,
+                          marginTop: 4,
+                        }}
+                      >
+                        "{c.note}"
+                      </div>
+                    )}
+                    <input
+                      placeholder="+ Добавить цитату из текста..."
+                      defaultValue={c.note || ''}
+                      onBlur={async (e) => {
+                        const newNote = e.target.value.trim();
+                        if (newNote !== (c.note || '')) {
+                          try {
+                            await apiUpdateCitation(projectId!, docId!, c.id, { note: newNote });
+                            // Обновляем локально
+                            const updated = await apiGetDocument(projectId!, docId!);
+                            setDoc(updated.document);
+                          } catch (err) {
+                            console.error('Update note error:', err);
+                          }
+                        }
+                      }}
+                      style={{
+                        fontSize: 11,
+                        padding: '6px 8px',
+                        background: 'var(--bg-glass-light)',
+                        border: '1px solid var(--border-glass)',
+                        borderRadius: 6,
+                      }}
+                    />
                   </div>
                 </li>
               ))}
-            </ol>
+            </ul>
           ) : (
             <div className="muted" style={{ fontSize: 13 }}>
               Нажмите "📖 Цитата" в редакторе чтобы добавить ссылки на литературу

@@ -95,6 +95,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             'order_index', c.order_index,
             'inline_number', c.inline_number,
             'page_range', c.page_range,
+            'note', c.note,
             'article', json_build_object(
               'id', a.id,
               'title_en', a.title_en,
@@ -312,6 +313,74 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // PATCH /api/projects/:projectId/documents/:docId/citations/:citationId - обновить цитату
+  fastify.patch(
+    "/projects/:projectId/documents/:docId/citations/:citationId",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsSchema = z.object({
+        projectId: z.string().uuid(),
+        docId: z.string().uuid(),
+        citationId: z.string().uuid(),
+      });
+
+      const paramsP = paramsSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid params" });
+      }
+
+      const bodySchema = z.object({
+        note: z.string().max(2000).optional(),
+        pageRange: z.string().max(50).optional(),
+      });
+
+      const bodyP = bodySchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "Invalid body" });
+      }
+
+      const access = await checkProjectAccess(paramsP.data.projectId, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+
+      const updates: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (bodyP.data.note !== undefined) {
+        updates.push(`note = $${idx++}`);
+        values.push(bodyP.data.note || null);
+      }
+      if (bodyP.data.pageRange !== undefined) {
+        updates.push(`page_range = $${idx++}`);
+        values.push(bodyP.data.pageRange || null);
+      }
+
+      if (updates.length === 0) {
+        return reply.code(400).send({ error: "No fields to update" });
+      }
+
+      values.push(paramsP.data.citationId);
+      values.push(paramsP.data.docId);
+
+      const res = await pool.query(
+        `UPDATE citations SET ${updates.join(", ")}
+         WHERE id = $${idx++} AND document_id = $${idx}
+         RETURNING *`,
+        values
+      );
+
+      if (res.rowCount === 0) {
+        return reply.code(404).send({ error: "Citation not found" });
+      }
+
+      return { citation: res.rows[0] };
+    }
+  );
+
   // DELETE /api/projects/:projectId/documents/:docId/citations/:citationId
   fastify.delete(
     "/projects/:projectId/documents/:docId/citations/:citationId",
@@ -395,7 +464,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const citationsRes = await pool.query(
         `SELECT DISTINCT ON (a.id)
            a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-           a.doi, a.pmid, a.volume, a.issue, a.pages
+           a.doi, a.pmid,
+           (a.raw_json->'crossref'->>'volume') as volume,
+           (a.raw_json->'crossref'->>'issue') as issue,
+           (a.raw_json->'crossref'->>'pages') as pages
          FROM citations c
          JOIN documents d ON d.id = c.document_id
          JOIN articles a ON a.id = c.article_id
@@ -555,12 +627,18 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Добавляем связи на основе references из Crossref
       for (const article of articlesRes.rows) {
-        if (!article.raw_json?.references) continue;
+        // Crossref данные хранятся в raw_json.crossref
+        const crossrefData = article.raw_json?.crossref;
+        const references = crossrefData?.references || crossrefData?.reference || [];
+        
+        if (!Array.isArray(references) || references.length === 0) continue;
 
-        for (const ref of article.raw_json.references) {
-          if (!ref.DOI) continue;
+        for (const ref of references) {
+          // DOI может быть в разных форматах
+          const refDoi = ref.DOI || ref.doi || ref['unstructured']?.match(/10\.\d{4,}\/[^\s]+/)?.[0];
+          if (!refDoi) continue;
 
-          const targetId = doiToId.get(ref.DOI.toLowerCase());
+          const targetId = doiToId.get(refDoi.toLowerCase());
           if (targetId && targetId !== article.id) {
             // Есть связь между статьями в проекте
             links.push({
@@ -570,6 +648,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
         }
       }
+      
+      // Также ищем обратные связи через cited-by если есть
+      // и добавляем связи на основе совпадения авторов/года для статей без Crossref
 
       return {
         nodes,
