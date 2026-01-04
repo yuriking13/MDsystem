@@ -186,6 +186,7 @@ export type Article = {
   stats_json: any;
   stats_quality: number; // 0-3, качество статистики по p-value
   publication_types: string[] | null;
+  fetched_at: string; // Дата обращения к источнику
   status: "candidate" | "selected" | "excluded";
   notes: string | null;
   tags: string[] | null;

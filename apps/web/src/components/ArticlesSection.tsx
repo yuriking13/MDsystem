@@ -85,6 +85,12 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
   // Глобальные настройки отображения
   const [listLang, setListLang] = useState<"ru" | "en">("ru"); // Язык в списке
   const [highlightStats, setHighlightStats] = useState(true); // Подсветка статистики
+  
+  // Массовый выбор
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
+  // Сортировка
+  const [sortBy, setSortBy] = useState<"date" | "stats" | "year">("date");
 
   async function loadArticles() {
     setLoading(true);
@@ -180,14 +186,57 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
     }
   }
 
-  async function handleRemove(article: Article) {
-    if (!confirm(`Удалить статью "${article.title_en.slice(0, 50)}..." из проекта?`)) return;
+  // Массовое изменение статуса
+  async function handleBulkStatus(status: "candidate" | "selected" | "excluded") {
+    if (selectedIds.size === 0) return;
+    
     try {
-      await apiRemoveArticle(projectId, article.id);
+      const ids = Array.from(selectedIds);
+      for (const id of ids) {
+        await apiUpdateArticleStatus(projectId, id, status);
+      }
+      setSelectedIds(new Set());
       await loadArticles();
     } catch (err: any) {
-      setError(err?.message || "Ошибка удаления");
+      setError(err?.message || "Ошибка обновления");
     }
+  }
+  
+  // Массовый перевод выбранных
+  async function handleBulkTranslate() {
+    if (selectedIds.size === 0) return;
+    setTranslating(true);
+    setError(null);
+    
+    try {
+      await apiTranslateArticles(projectId, Array.from(selectedIds), true);
+      setSelectedIds(new Set());
+      await loadArticles();
+    } catch (err: any) {
+      setError(err?.message || "Ошибка перевода");
+    } finally {
+      setTranslating(false);
+    }
+  }
+  
+  // Выбрать/снять все
+  function toggleSelectAll() {
+    if (selectedIds.size === filteredArticles.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredArticles.map(a => a.id)));
+    }
+  }
+  
+  // Переключить выбор одной статьи
+  function toggleSelect(id: string) {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
   }
 
   function togglePubType(pt: string) {
@@ -237,20 +286,22 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
   function highlightStatistics(text: string): React.ReactNode {
     if (!highlightStats || !text) return text;
     
-    // Паттерны для статистики
+    // Паттерны для статистики (EN + RU)
     const patterns = [
-      // p-value с разной значимостью
-      { regex: /p\s*[<≤]\s*0\.001/gi, className: "stat-p001", label: "p<0.001" },
-      { regex: /p\s*[<≤]\s*0\.01(?![0-9])/gi, className: "stat-p01", label: "p<0.01" },
-      { regex: /p\s*[<≤]\s*0\.05(?![0-9])/gi, className: "stat-p05", label: "p<0.05" },
-      { regex: /p\s*=\s*0\.\d+/gi, className: "stat-pval", label: "p-value" },
-      // CI
-      { regex: /95%?\s*CI[:\s]*[\[\(]?[\d.,–-]+[\]\)]?/gi, className: "stat-ci", label: "CI" },
-      { regex: /CI[:\s]*[\d.]+[–-][\d.]+/gi, className: "stat-ci", label: "CI" },
-      // OR, RR, HR
-      { regex: /\b(OR|RR|HR)[:\s]*[\d.]+/gi, className: "stat-ratio", label: "ratio" },
+      // p-value с разной значимостью (разные форматы)
+      { regex: /[pр]\s*[<≤<]\s*0[.,]001/gi, className: "stat-p001" },
+      { regex: /[pр]\s*[<≤<]\s*0[.,]01(?![0-9])/gi, className: "stat-p01" },
+      { regex: /[pр]\s*[<≤<]\s*0[.,]05(?![0-9])/gi, className: "stat-p05" },
+      { regex: /[pр]\s*[=＝]\s*0[.,]\d+/gi, className: "stat-pval" },
+      // CI / ДИ (доверительный интервал)
+      { regex: /95\s*%?\s*(?:CI|ДИ)[:\s]*[\[(]?[\d.,]+[\s–\-−—]+[\d.,]+[\])]?/gi, className: "stat-ci" },
+      { regex: /(?:CI|ДИ)\s*[\d.,]+[\s–\-−—]+[\d.,]+/gi, className: "stat-ci" },
+      // OR, RR, HR, aOR, aHR (отношения шансов/рисков)
+      { regex: /\b(?:a?OR|a?RR|a?HR|ОШ)\s*[=:\s]+[\d.,]+/gi, className: "stat-ratio" },
       // Размер выборки
-      { regex: /n\s*=\s*[\d,]+/gi, className: "stat-n", label: "n" },
+      { regex: /[nN]\s*[=＝]\s*[\d\s,]+/gi, className: "stat-n" },
+      // Шаг/Step для мета-анализа
+      { regex: /Шаг\s*\d+[:\s]+[^.]+/gi, className: "stat-ci" },
     ];
     
     // Применяем все паттерны
@@ -318,9 +369,21 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
   ).sort();
   
   // Фильтрация статей по типу публикации
-  const filteredArticles = filterPubType
+  const filteredByType = filterPubType
     ? articles.filter((a) => a.publication_types?.includes(filterPubType))
     : articles;
+  
+  // Сортировка
+  const filteredArticles = [...filteredByType].sort((a, b) => {
+    if (sortBy === "stats") {
+      return (b.stats_quality || 0) - (a.stats_quality || 0);
+    }
+    if (sortBy === "year") {
+      return (b.year || 0) - (a.year || 0);
+    }
+    // По умолчанию по дате добавления
+    return new Date(b.added_at).getTime() - new Date(a.added_at).getTime();
+  });
 
   return (
     <div style={{ marginTop: 24 }}>
@@ -605,8 +668,82 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
               ))}
             </select>
           )}
+          
+          {/* Сортировка */}
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+            style={{ padding: "4px 8px", borderRadius: 6, fontSize: 12 }}
+          >
+            <option value="date">По дате</option>
+            <option value="stats">По статистике</option>
+            <option value="year">По году</option>
+          </select>
         </div>
       </div>
+
+      {/* Панель массовых операций */}
+      {canEdit && (
+        <div className="bulk-actions" style={{ marginBottom: 12 }}>
+          <label className="row gap" style={{ alignItems: "center" }}>
+            <input
+              type="checkbox"
+              checked={selectedIds.size > 0 && selectedIds.size === filteredArticles.length}
+              onChange={toggleSelectAll}
+              style={{ width: 18, height: 18 }}
+            />
+            <span className="muted" style={{ fontSize: 13 }}>
+              {selectedIds.size > 0 
+                ? `Выбрано: ${selectedIds.size}` 
+                : "Выбрать все"}
+            </span>
+          </label>
+          
+          {selectedIds.size > 0 && (
+            <div className="row gap" style={{ marginLeft: 16 }}>
+              <button
+                className="btn secondary"
+                onClick={() => handleBulkStatus("selected")}
+                title="Добавить выбранные в отобранные"
+                type="button"
+                style={{ padding: "4px 10px", fontSize: 12 }}
+              >
+                ✅ Отобрать
+              </button>
+              <button
+                className="btn secondary"
+                onClick={() => handleBulkStatus("excluded")}
+                title="Исключить выбранные"
+                type="button"
+                style={{ padding: "4px 10px", fontSize: 12 }}
+              >
+                ❌ Исключить
+              </button>
+              <button
+                className="btn secondary"
+                onClick={handleBulkTranslate}
+                disabled={translating}
+                title="Перевести выбранные"
+                type="button"
+                style={{ padding: "4px 10px", fontSize: 12 }}
+              >
+                🌐 Перевести
+              </button>
+              {viewStatus !== "candidate" && (
+                <button
+                  className="btn secondary"
+                  onClick={() => handleBulkStatus("candidate")}
+                  title="Вернуть в кандидаты"
+                  type="button"
+                  style={{ padding: "4px 10px", fontSize: 12 }}
+                >
+                  ↩️ В кандидаты
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Таблица статей */}
       {loading ? (
@@ -623,10 +760,21 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
           {filteredArticles.map((a) => (
             <div
               key={a.id}
-              className={`article-row ${a.has_stats ? "has-stats" : ""}`}
-              onClick={() => setSelectedArticle(a)}
+              className={`article-row ${a.has_stats ? "has-stats" : ""} ${selectedIds.has(a.id) ? "selected" : ""}`}
             >
-              <div className="article-main">
+              {/* Чекбокс для выбора */}
+              {canEdit && (
+                <div className="article-checkbox" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(a.id)}
+                    onChange={() => toggleSelect(a.id)}
+                    style={{ width: 18, height: 18 }}
+                  />
+                </div>
+              )}
+              
+              <div className="article-main" onClick={() => setSelectedArticle(a)}>
                 <div className="article-title">
                   {getTitle(a)}
                   {a.title_ru && <span className="translate-badge" title="Есть перевод">🌐</span>}
@@ -645,34 +793,47 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
                   {a.publication_types?.map((pt) => (
                     <span key={pt} className="id-badge pub-type">{pt}</span>
                   ))}
-                  {a.stats_quality > 0 && (
+                  {(a.stats_quality ?? 0) > 0 && (
                     <span className={`id-badge stats-q${a.stats_quality}`}>
                       p&lt;{a.stats_quality === 3 ? "0.001" : a.stats_quality === 2 ? "0.01" : "0.05"}
                     </span>
                   )}
                 </div>
               </div>
+              
+              {/* Кнопки действий */}
               {canEdit && (
                 <div className="article-actions" onClick={(e) => e.stopPropagation()}>
-                  <select
-                    value={a.status}
-                    onChange={(e) =>
-                      handleStatusChange(a, e.target.value as any)
-                    }
-                    style={{ padding: "6px 8px", borderRadius: 6 }}
-                  >
-                    <option value="candidate">Кандидат</option>
-                    <option value="selected">✅ Отобрана</option>
-                    <option value="excluded">❌ Исключена</option>
-                  </select>
-                  <button
-                    className="btn secondary"
-                    onClick={() => handleRemove(a)}
-                    style={{ padding: "6px 10px", fontSize: 12 }}
-                    type="button"
-                  >
-                    🗑️
-                  </button>
+                  {a.status !== "selected" && (
+                    <button
+                      className="action-btn select"
+                      onClick={() => handleStatusChange(a, "selected")}
+                      title="Добавить в отобранные"
+                      type="button"
+                    >
+                      ✅
+                    </button>
+                  )}
+                  {a.status !== "excluded" && (
+                    <button
+                      className="action-btn exclude"
+                      onClick={() => handleStatusChange(a, "excluded")}
+                      title="Исключить из выборки"
+                      type="button"
+                    >
+                      ❌
+                    </button>
+                  )}
+                  {a.status !== "candidate" && (
+                    <button
+                      className="action-btn candidate"
+                      onClick={() => handleStatusChange(a, "candidate")}
+                      title="Вернуть в кандидаты"
+                      type="button"
+                    >
+                      ↩️
+                    </button>
+                  )}
                 </div>
               )}
             </div>
