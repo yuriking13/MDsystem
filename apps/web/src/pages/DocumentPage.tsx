@@ -229,12 +229,21 @@ export default function DocumentPage() {
   }
 
   return (
-    <div className="container" style={{ maxWidth: 1100 }}>
+    <div className="document-page-container">
       {/* Header */}
-      <div className="row space" style={{ marginBottom: 16 }}>
-        <button className="btn secondary" onClick={() => nav(`/projects/${projectId}`)}>
-          ← К проекту
-        </button>
+      <div className="document-header">
+        <div className="row gap">
+          <button className="btn secondary" onClick={() => nav(`/projects/${projectId}`)}>
+            ← К проекту
+          </button>
+          <input
+            className="doc-title-input"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={handleTitleBlur}
+            placeholder="Название документа"
+          />
+        </div>
         <div className="row gap">
           {saving && <span className="muted">Сохранение...</span>}
           {!saving && <span className="muted" style={{ color: "#4ade80" }}>✓ Сохранено</span>}
@@ -243,29 +252,10 @@ export default function DocumentPage() {
 
       {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
 
-      {/* Заголовок */}
-      <input
-        className="doc-title-input"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        onBlur={handleTitleBlur}
-        placeholder="Название документа"
-        style={{
-          fontSize: 24,
-          fontWeight: 600,
-          marginBottom: 16,
-          background: "transparent",
-          border: "none",
-          borderBottom: "2px solid transparent",
-          width: "100%",
-          color: "#e8eefc",
-          padding: "8px 0",
-        }}
-      />
-
-      {/* Редактор */}
-      <div className="row gap" style={{ alignItems: "flex-start" }}>
-        <div style={{ flex: 1 }}>
+      {/* Основной контент */}
+      <div className="document-content">
+        {/* Редактор */}
+        <div className="document-editor-wrapper">
           <Editor
             content={content}
             onChange={setContent}
@@ -275,13 +265,12 @@ export default function DocumentPage() {
               id: c.id,
               number: c.inline_number,
               note: c.note || undefined,
-              articleTitle: c.article.title_en, // Всегда язык оригинала
+              articleTitle: c.article.title_en,
             }))}
             placeholder="Начните писать текст диссертации..."
             projectId={projectId}
             documentId={docId}
             onStatisticCreated={(statId) => {
-              // Показываем уведомление пользователю
               const notification = document.createElement('div');
               notification.className = 'ok';
               notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 20px; border-radius: 12px;';
@@ -293,7 +282,7 @@ export default function DocumentPage() {
         </div>
 
         {/* Панель цитат */}
-        <div className="citations-panel">
+        <div className="citations-panel-fixed">
           <div className="row space" style={{ marginBottom: 8 }}>
             <h4 style={{ margin: 0 }}>Список литературы ({doc.citations?.length || 0})</h4>
             <span className="id-badge" title="Стиль цитирования">

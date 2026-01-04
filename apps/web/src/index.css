@@ -532,8 +532,334 @@ input::placeholder {
   border-radius: 4px;
 }
 
-/* ===== EDITOR ===== */
+/* ===== DOCUMENT PAGE LAYOUT ===== */
 
+.document-page-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  padding: 16px 24px;
+  box-sizing: border-box;
+  background: var(--bg-gradient);
+}
+
+.document-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.document-header .doc-title-input {
+  font-size: 20px;
+  font-weight: 600;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-primary);
+  padding: 8px 12px;
+  flex: 1;
+  max-width: 500px;
+  margin-left: 16px;
+}
+
+.document-header .doc-title-input:focus {
+  border-bottom-color: var(--accent);
+  outline: none;
+}
+
+.document-content {
+  display: flex;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.document-editor-wrapper {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.citations-panel-fixed {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  max-height: 100%;
+}
+
+.citations-panel-fixed h4 {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.citations-panel-fixed .citations-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.citations-panel-fixed .citation-list-item {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.citations-panel-fixed .citation-list-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.citations-panel-fixed .citation-number {
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.citations-panel-fixed .citation-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+/* ===== DOCUMENT EDITOR CONTAINER ===== */
+
+.document-editor-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px);
+  min-height: 500px;
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-glass);
+}
+
+/* Фиксированный тулбар */
+.editor-toolbar-fixed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid var(--border-glass);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 2px;
+}
+
+.toolbar-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-glass);
+  margin: 0 6px;
+  align-self: center;
+}
+
+.editor-toolbar-fixed button {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.editor-toolbar-fixed button:hover {
+  background: var(--bg-glass-light);
+  color: var(--text-primary);
+}
+
+.editor-toolbar-fixed button.active {
+  background: var(--accent);
+  color: white;
+}
+
+.editor-toolbar-fixed button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.editor-toolbar-fixed .citation-btn {
+  width: auto;
+  padding: 0 12px;
+  background: rgba(74, 222, 128, 0.2);
+  color: var(--success);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  font-size: 12px;
+}
+
+.editor-toolbar-fixed .citation-btn:hover {
+  background: rgba(74, 222, 128, 0.3);
+}
+
+/* Область прокрутки */
+.editor-scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.editor-scroll-area.scroll-mode {
+  background: transparent;
+  padding: 20px;
+}
+
+.editor-scroll-area.pages-mode {
+  background: linear-gradient(135deg, rgba(40, 50, 70, 0.9), rgba(30, 40, 60, 0.95));
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Страница/область ввода */
+.editor-page {
+  width: 100%;
+  max-width: 100%;
+}
+
+.editor-page.scroll-view {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.editor-page.page-view {
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  border-radius: 2px;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+/* Область контента */
+.editor-content-area {
+  min-height: 100%;
+  outline: none;
+}
+
+.editor-content-area .tiptap {
+  outline: none;
+  min-height: 300px;
+}
+
+.editor-content-area .tiptap p {
+  margin: 0 0 1em 0;
+}
+
+.editor-content-area .tiptap h1,
+.editor-content-area .tiptap h2,
+.editor-content-area .tiptap h3 {
+  margin: 1.5em 0 0.5em 0;
+  font-weight: 600;
+}
+
+.editor-content-area .tiptap h1 { font-size: 1.8em; }
+.editor-content-area .tiptap h2 { font-size: 1.5em; }
+.editor-content-area .tiptap h3 { font-size: 1.25em; }
+
+.editor-content-area .tiptap ul,
+.editor-content-area .tiptap ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.editor-content-area .tiptap blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1em;
+  margin: 1em 0;
+  font-style: italic;
+}
+
+/* Стили для page view */
+.editor-page.page-view .editor-content-area .tiptap {
+  color: #1a1a1a;
+}
+
+.editor-page.page-view .editor-content-area .tiptap p,
+.editor-page.page-view .editor-content-area .tiptap h1,
+.editor-page.page-view .editor-content-area .tiptap h2,
+.editor-page.page-view .editor-content-area .tiptap h3,
+.editor-page.page-view .editor-content-area .tiptap li,
+.editor-page.page-view .editor-content-area .tiptap blockquote {
+  color: #1a1a1a;
+}
+
+.editor-page.page-view .editor-content-area .tiptap a {
+  color: #2563eb;
+}
+
+.editor-page.page-view .editor-content-area .tiptap blockquote {
+  color: #555;
+  border-left-color: #4b74ff;
+}
+
+/* Статус-бар */
+.editor-status-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid var(--border-glass);
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* Settings dropdown */
+.settings-dropdown {
+  min-width: 200px;
+}
+
+.dropdown-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.dropdown-row span {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.dropdown-row select,
+.dropdown-row input {
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 4px;
+}
+
+.chart-create-btn {
+  background: rgba(74, 222, 128, 0.2) !important;
+  color: var(--success) !important;
+}
+
+/* Legacy editor styles for backwards compatibility */
 .editor-container {
   border: 1px solid var(--border-glass);
   border-radius: 16px;
@@ -549,11 +875,6 @@ input::placeholder {
   padding: 12px 16px;
   background: rgba(0, 0, 0, 0.2);
   border-bottom: 1px solid var(--border-glass);
-}
-
-.toolbar-group {
-  display: flex;
-  gap: 2px;
 }
 
 .editor-toolbar button {
@@ -613,8 +934,8 @@ input::placeholder {
   border-radius: 12px;
   padding: 8px;
   min-width: 180px;
-  z-index: 100;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
 .dropdown-header {
@@ -632,6 +953,7 @@ input::placeholder {
 
 .dropdown-menu button {
   width: 100%;
+  height: auto !important;
   text-align: left;
   padding: 8px 12px;
   background: transparent;
@@ -639,7 +961,7 @@ input::placeholder {
   color: var(--text-secondary);
   cursor: pointer;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .dropdown-menu button:hover {
@@ -647,22 +969,27 @@ input::placeholder {
   color: var(--text-primary);
 }
 
+.dropdown-menu button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .table-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   margin-bottom: 8px;
 }
 
 .table-cell-btn {
-  width: 36px !important;
+  width: 40px !important;
   height: 28px !important;
   font-size: 10px !important;
   padding: 0 !important;
   text-align: center !important;
 }
 
-/* Editor footer */
+/* Legacy editor footer - keep for compatibility */
 .editor-footer {
   display: flex;
   justify-content: flex-end;
@@ -676,11 +1003,8 @@ input::placeholder {
   color: var(--text-muted);
 }
 
+/* Legacy editor content - keep for compatibility */
 .editor-content {
-  padding: 20px 24px;
-  min-height: 350px;
-  max-height: 70vh;
-  overflow-y: auto;
   font-size: 16px;
   line-height: 1.8;
   color: var(--text-primary);
@@ -727,44 +1051,61 @@ input::placeholder {
 }
 
 /* Таблицы в редакторе - видимые границы */
+.editor-content-area .tiptap table,
+.editor-content-area .tiptap table.editor-table,
 .editor-content .tiptap table,
 .editor-content .tiptap table.editor-table {
   border-collapse: collapse;
   width: 100%;
   margin: 1em 0;
-  table-layout: fixed;
+  table-layout: auto;
   border: 2px solid rgba(75, 116, 255, 0.4);
   border-radius: 8px;
 }
 
+.editor-content-area .tiptap table th,
+.editor-content-area .tiptap table td,
 .editor-content .tiptap table th,
-.editor-content .tiptap table td,
-.editor-content .tiptap table.editor-table th,
-.editor-content .tiptap table.editor-table td {
+.editor-content .tiptap table td {
   border: 1px solid rgba(100, 130, 200, 0.5);
   padding: 10px 14px;
   text-align: left;
   vertical-align: top;
-  min-width: 80px;
+  min-width: 60px;
   position: relative;
 }
 
-.editor-content .tiptap table th,
-.editor-content .tiptap table.editor-table th {
+.editor-content-area .tiptap table th,
+.editor-content .tiptap table th {
   background: rgba(75, 116, 255, 0.25);
   font-weight: 600;
   color: var(--text-primary);
   border-bottom: 2px solid rgba(75, 116, 255, 0.5);
 }
 
-.editor-content .tiptap table td,
-.editor-content .tiptap table.editor-table td {
+.editor-content-area .tiptap table td,
+.editor-content .tiptap table td {
   background: rgba(20, 30, 60, 0.3);
 }
 
-.editor-content .tiptap table tr:hover td,
-.editor-content .tiptap table.editor-table tr:hover td {
+.editor-content-area .tiptap table tr:hover td,
+.editor-content .tiptap table tr:hover td {
   background: rgba(75, 116, 255, 0.1);
+}
+
+/* Page view table styles */
+.editor-page.page-view .tiptap table th,
+.editor-page.page-view .tiptap table td {
+  color: #1a1a1a;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.editor-page.page-view .tiptap table th {
+  background: rgba(75, 116, 255, 0.15);
+}
+
+.editor-page.page-view .tiptap table td {
+  background: rgba(0, 0, 0, 0.02);
 }
 
 /* Resize handles для таблиц */
@@ -803,6 +1144,7 @@ input::placeholder {
 }
 
 /* Контейнер графика в редакторе */
+.editor-content-area .chart-container,
 .editor-content .chart-container {
   margin: 1.5em 0;
   padding: 16px;
@@ -811,6 +1153,7 @@ input::placeholder {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.editor-content-area .chart-placeholder,
 .editor-content .chart-placeholder {
   display: flex;
   align-items: center;
@@ -1834,169 +2177,18 @@ select {
   border-left: 3px solid var(--warning);
 }
 
-/* ===== ENHANCED EDITOR ===== */
-
-/* Editor wrapper with sidebar support */
-.editor-wrapper {
-  display: flex;
-  gap: 16px;
-  width: 100%;
-}
-
-.editor-wrapper.scroll-mode .editor-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.editor-wrapper.page-mode .editor-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.editor-main {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border-glass);
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--bg-glass);
-  backdrop-filter: blur(20px);
-}
-
-/* Toolbar divider */
-.toolbar-divider {
-  width: 1px;
-  height: 24px;
-  background: var(--border-glass);
-  margin: 0 8px;
-}
-
-/* Editor content wrapper */
-.editor-content-wrapper {
-  flex: 1;
-  overflow-y: auto;
-  max-height: calc(100vh - 200px);
-}
-
-.editor-content-wrapper.scroll {
-  background: transparent;
-}
-
-.editor-content-wrapper.pages {
-  background: linear-gradient(135deg, rgba(40, 50, 70, 0.8), rgba(30, 40, 60, 0.9));
-  padding: 40px 20px;
-  display: flex;
-  justify-content: center;
-}
-
-/* Page wrapper for page view mode */
-.editor-content-page {
-  width: 100%;
-}
-
-.editor-content-page.scroll-view {
-  /* Normal scroll mode - no special styling */
-}
-
-.editor-content-page.page-view {
-  margin: 0 auto;
-  background: #ffffff;
-  color: #1a1a1a;
-  box-shadow: 
-    0 4px 30px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
-}
-
-.editor-content-page.page-view .editor-content {
-  padding: 0 !important;
-  background: transparent !important;
-  color: #1a1a1a !important;
-  min-height: auto;
-  max-height: none;
-}
-
-.editor-content-page.page-view .editor-content .tiptap {
-  color: #1a1a1a;
-}
-
-.editor-content-page.page-view .editor-content .tiptap p,
-.editor-content-page.page-view .editor-content .tiptap h1,
-.editor-content-page.page-view .editor-content .tiptap h2,
-.editor-content-page.page-view .editor-content .tiptap h3,
-.editor-content-page.page-view .editor-content .tiptap li {
-  color: #1a1a1a;
-}
-
-.editor-content-page.page-view .editor-content a {
-  color: #2563eb;
-}
-
-.editor-content-page.page-view .editor-content mark {
-  background: rgba(255, 235, 59, 0.6);
-}
-
-.editor-content-page.page-view .editor-content blockquote {
-  border-left-color: #4b74ff;
-  color: #555;
-}
-
-.editor-content-page.page-view .editor-content .muted {
-  color: #666;
-}
-
-/* Table styling in page view */
-.editor-content-page.page-view .editor-content table th,
-.editor-content-page.page-view .editor-content table td {
-  color: #1a1a1a;
-  border-color: rgba(0, 0, 0, 0.2);
-}
-
-.editor-content-page.page-view .editor-content table th {
-  background: rgba(75, 116, 255, 0.15);
-}
-
-.editor-content-page.page-view .editor-content table td {
-  background: rgba(0, 0, 0, 0.02);
-}
-
 /* Chart styling in page view */
-.editor-content-page.page-view .chart-container-live {
+.editor-page.page-view .chart-container-live {
   background: rgba(0, 0, 0, 0.03);
   border-color: rgba(0, 0, 0, 0.1);
 }
 
-.editor-content-page.page-view .chart-caption-label {
+.editor-page.page-view .chart-caption-label {
   color: #4b74ff;
 }
 
-.editor-content-page.page-view .chart-caption-title {
+.editor-page.page-view .chart-caption-title {
   color: #1a1a1a;
-}
-
-/* Legacy page mode styles - keep for backwards compatibility */
-.editor-wrapper.page-mode .editor-content {
-  background: white;
-  color: #1a1a1a;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
-  border-radius: 4px;
-}
-
-.editor-wrapper.page-mode .editor-content .tiptap {
-  min-height: 100%;
-}
-
-.editor-wrapper.page-mode .editor-content a {
-  color: #2563eb;
-}
-
-.editor-wrapper.page-mode .editor-content mark {
-  background: rgba(255, 235, 59, 0.4);
-}
-
-.editor-wrapper.page-mode .editor-content blockquote {
-  border-left-color: #4b74ff;
-  color: #555;
 }
 
 /* Dynamic paragraph styles */
