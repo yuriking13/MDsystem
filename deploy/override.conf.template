@@ -1,0 +1,9 @@
+[Service]
+Environment="NODE_ENV=production"
+Environment="HOST=127.0.0.1"
+Environment="PORT=3000"
+Environment="JWT_SECRET=__JWT_SECRET__"
+Environment="DATABASE_URL=__DATABASE_URL__"
+Environment="API_KEY_ENCRYPTION_SECRET=__API_KEY_ENCRYPTION_SECRET__"
+Environment="CORS_ORIGIN=__CORS_ORIGIN__"
+Environment="CROSSREF_MAILTO=__CROSSREF_MAILTO__"

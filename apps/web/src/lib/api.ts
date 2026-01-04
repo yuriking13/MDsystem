@@ -1,0 +1,90 @@
+import { getToken } from "./auth";
+
+type ApiErrorPayload = {
+  error?: string;
+  message?: string;
+};
+
+async function readJsonSafe(res: Response): Promise<any> {
+  const txt = await res.text();
+  try {
+    return txt ? JSON.parse(txt) : null;
+  } catch {
+    return txt;
+  }
+}
+
+export async function apiFetch<T>(
+  path: string,
+  init: RequestInit & { auth?: boolean } = {},
+): Promise<T> {
+  const headers = new Headers(init.headers);
+
+  if (!headers.has("content-type") && init.body) {
+    headers.set("content-type", "application/json");
+  }
+
+  const auth = init.auth ?? true;
+  if (auth) {
+    const token = getToken();
+    if (token) headers.set("authorization", `Bearer ${token}`);
+  }
+
+  const res = await fetch(path, {
+    ...init,
+    headers,
+  });
+
+  if (!res.ok) {
+    const payload = (await readJsonSafe(res)) as ApiErrorPayload | string | null;
+    const msg =
+      typeof payload === "string"
+        ? payload
+        : payload?.message || payload?.error || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return (await res.json()) as T;
+}
+
+export type AuthUser = { id: string; email: string };
+export type AuthResponse = { user: AuthUser; token: string };
+
+export async function apiRegister(email: string, password: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+    auth: false,
+  });
+}
+
+export async function apiLogin(email: string, password: string): Promise<AuthResponse> {
+  return apiFetch<AuthResponse>("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+    auth: false,
+  });
+}
+
+export async function apiMe(): Promise<{ user: AuthUser }> {
+  return apiFetch<{ user: AuthUser }>("/api/auth/me");
+}
+
+export type ApiKeysResponse = { keys: Record<string, boolean> };
+
+export async function apiGetApiKeys(): Promise<ApiKeysResponse> {
+  return apiFetch<ApiKeysResponse>("/api/user/api-keys");
+}
+
+export async function apiSaveApiKey(provider: string, key: string): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>("/api/user/api-keys", {
+    method: "POST",
+    body: JSON.stringify({ provider, key }),
+  });
+}
+
+export async function apiDeleteApiKey(provider: string): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(`/api/user/api-keys/${encodeURIComponent(provider)}`, {
+    method: "DELETE",
+  });
+}
