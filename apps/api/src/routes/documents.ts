@@ -502,6 +502,85 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       return { citationStyle, bibliography };
     }
   );
+  // GET /api/projects/:projectId/citation-graph - данные для графа цитирований
+  fastify.get(
+    "/projects/:projectId/citation-graph",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+
+      const access = await checkProjectAccess(paramsP.data.projectId, userId);
+      if (!access.ok) {
+        return reply.code(404).send({ error: "Project not found" });
+      }
+
+      // Получить все статьи проекта с их raw_json (Crossref данные)
+      const articlesRes = await pool.query(
+        `SELECT a.id, a.doi, a.title_en, a.authors, a.year, a.raw_json,
+                pa.status
+         FROM project_articles pa
+         JOIN articles a ON a.id = pa.article_id
+         WHERE pa.project_id = $1 AND pa.status != 'excluded'`,
+        [paramsP.data.projectId]
+      );
+
+      // Строим nodes и links
+      const nodes: { id: string; label: string; year: number | null; status: string; doi: string | null }[] = [];
+      const links: { source: string; target: string }[] = [];
+      const doiToId = new Map<string, string>();
+
+      // Создаём узлы из статей проекта
+      for (const article of articlesRes.rows) {
+        const shortTitle = article.title_en?.slice(0, 40) + (article.title_en?.length > 40 ? '...' : '');
+        const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
+        const label = `${firstAuthor} (${article.year || '?'})`;
+        
+        nodes.push({
+          id: article.id,
+          label,
+          year: article.year,
+          status: article.status,
+          doi: article.doi,
+        });
+
+        if (article.doi) {
+          doiToId.set(article.doi.toLowerCase(), article.id);
+        }
+      }
+
+      // Добавляем связи на основе references из Crossref
+      for (const article of articlesRes.rows) {
+        if (!article.raw_json?.references) continue;
+
+        for (const ref of article.raw_json.references) {
+          if (!ref.DOI) continue;
+
+          const targetId = doiToId.get(ref.DOI.toLowerCase());
+          if (targetId && targetId !== article.id) {
+            // Есть связь между статьями в проекте
+            links.push({
+              source: article.id,
+              target: targetId,
+            });
+          }
+        }
+      }
+
+      return {
+        nodes,
+        links,
+        stats: {
+          totalNodes: nodes.length,
+          totalLinks: links.length,
+        },
+      };
+    }
+  );
 };
 
 export default plugin;

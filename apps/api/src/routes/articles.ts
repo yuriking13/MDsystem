@@ -4,6 +4,7 @@ import { pool } from "../pg.js";
 import { pubmedFetchAll, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
 import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.js";
 import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
+import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
 
 // Схемы валидации
 const SearchBodySchema = z.object({
@@ -696,6 +697,145 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         total: toEnrich.rows.length,
         message: `Обогащено ${enriched} из ${toEnrich.rows.length} статей` 
       };
+    }
+  );
+
+  // GET /api/projects/:id/articles/:articleId/pdf-source - найти источник PDF
+  fastify.get(
+    "/projects/:id/articles/:articleId/pdf-source",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsSchema = z.object({
+        id: z.string().uuid(),
+        articleId: z.string().uuid(),
+      });
+      const paramsP = paramsSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid params" });
+      }
+
+      // Проверяем доступ к проекту
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [paramsP.data.id, userId]
+      );
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "Project not found" });
+      }
+
+      // Получаем статью
+      const article = await pool.query(
+        `SELECT a.doi, a.pmid FROM articles a
+         JOIN project_articles pa ON pa.article_id = a.id
+         WHERE a.id = $1 AND pa.project_id = $2`,
+        [paramsP.data.articleId, paramsP.data.id]
+      );
+
+      if (article.rowCount === 0) {
+        return reply.code(404).send({ error: "Article not found" });
+      }
+
+      const { doi, pmid } = article.rows[0];
+
+      // Получаем Wiley токен если есть
+      let wileyToken: string | undefined;
+      try {
+        wileyToken = await getUserApiKey(userId, "wiley") || undefined;
+      } catch (e) {
+        // Нет токена - не проблема
+      }
+
+      // Ищем источник PDF
+      const source = await findPdfSource(doi, pmid, wileyToken);
+
+      if (!source) {
+        return reply.code(404).send({ 
+          error: "PDF not found",
+          message: "Не удалось найти PDF. Попробуйте поискать через Google Scholar или на сайте журнала."
+        });
+      }
+
+      return {
+        source: source.source,
+        url: source.url,
+        isPdf: source.isPdf,
+        directDownload: source.source !== "wiley", // Wiley требует проксирования
+      };
+    }
+  );
+
+  // GET /api/projects/:id/articles/:articleId/pdf - скачать PDF
+  fastify.get(
+    "/projects/:id/articles/:articleId/pdf",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsSchema = z.object({
+        id: z.string().uuid(),
+        articleId: z.string().uuid(),
+      });
+      const paramsP = paramsSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid params" });
+      }
+
+      // Проверяем доступ к проекту
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [paramsP.data.id, userId]
+      );
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "Project not found" });
+      }
+
+      // Получаем статью
+      const article = await pool.query(
+        `SELECT a.doi, a.pmid, a.title_en FROM articles a
+         JOIN project_articles pa ON pa.article_id = a.id
+         WHERE a.id = $1 AND pa.project_id = $2`,
+        [paramsP.data.articleId, paramsP.data.id]
+      );
+
+      if (article.rowCount === 0) {
+        return reply.code(404).send({ error: "Article not found" });
+      }
+
+      const { doi, pmid, title_en } = article.rows[0];
+
+      // Получаем Wiley токен если есть
+      let wileyToken: string | undefined;
+      try {
+        wileyToken = await getUserApiKey(userId, "wiley") || undefined;
+      } catch (e) {}
+
+      // Ищем источник PDF
+      const source = await findPdfSource(doi, pmid, wileyToken);
+
+      if (!source) {
+        return reply.code(404).send({ error: "PDF not found" });
+      }
+
+      // Скачиваем PDF
+      const pdf = await downloadPdf(source, wileyToken);
+
+      if (!pdf) {
+        return reply.code(502).send({ error: "Failed to download PDF" });
+      }
+
+      // Формируем имя файла
+      const safeTitle = title_en
+        ?.replace(/[^a-zA-Z0-9\s]/g, "")
+        .replace(/\s+/g, "_")
+        .slice(0, 50) || "article";
+      const filename = `${safeTitle}.pdf`;
+
+      return reply
+        .header("Content-Type", pdf.contentType)
+        .header("Content-Disposition", `attachment; filename="${filename}"`)
+        .send(pdf.buffer);
     }
   );
 };

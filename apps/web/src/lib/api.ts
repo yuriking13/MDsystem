@@ -473,3 +473,53 @@ export type ExportResponse = {
 export async function apiExportProject(projectId: string): Promise<ExportResponse> {
   return apiFetch<ExportResponse>(`/api/projects/${projectId}/export`);
 }
+
+// ========== Citation Graph ==========
+
+export type GraphNode = {
+  id: string;
+  label: string;
+  year: number | null;
+  status: string;
+  doi: string | null;
+};
+
+export type GraphLink = {
+  source: string;
+  target: string;
+};
+
+export type CitationGraphResponse = {
+  nodes: GraphNode[];
+  links: GraphLink[];
+  stats: {
+    totalNodes: number;
+    totalLinks: number;
+  };
+};
+
+export async function apiGetCitationGraph(projectId: string): Promise<CitationGraphResponse> {
+  return apiFetch<CitationGraphResponse>(`/api/projects/${projectId}/citation-graph`);
+}
+
+// ========== PDF Download ==========
+
+export type PdfSourceResponse = {
+  source: string;
+  url: string;
+  isPdf: boolean;
+  directDownload: boolean;
+};
+
+export async function apiGetPdfSource(
+  projectId: string,
+  articleId: string
+): Promise<PdfSourceResponse> {
+  return apiFetch<PdfSourceResponse>(
+    `/api/projects/${projectId}/articles/${articleId}/pdf-source`
+  );
+}
+
+export function getPdfDownloadUrl(projectId: string, articleId: string): string {
+  return `/api/projects/${projectId}/articles/${articleId}/pdf`;
+}

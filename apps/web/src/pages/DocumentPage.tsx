@@ -15,6 +15,7 @@ import {
 } from "../lib/api";
 
 // Простое форматирование цитаты для отображения в панели
+// Всегда используем язык оригинала (английский)
 function formatCitationSimple(
   article: { 
     title_en: string; 
@@ -27,7 +28,8 @@ function formatCitationSimple(
 ): string {
   const authors = article.authors || [];
   const firstAuthor = authors[0] || 'Anonymous';
-  const title = article.title_ru || article.title_en;
+  // Всегда используем оригинальное название (английское)
+  const title = article.title_en;
   const year = article.year || 'n.d.';
   
   // Сокращаем имя первого автора
@@ -38,7 +40,8 @@ function formatCitationSimple(
   
   switch (style) {
     case 'gost':
-      return `${shortAuthor}${authors.length > 1 ? ' и др.' : ''} ${title.slice(0, 60)}${title.length > 60 ? '...' : ''} (${year})`;
+      // ГОСТ для иностранных источников использует оригинальный язык
+      return `${shortAuthor}${authors.length > 1 ? ' et al.' : ''} ${title.slice(0, 60)}${title.length > 60 ? '...' : ''} (${year})`;
     case 'apa':
       return `${shortAuthor}${authors.length > 1 ? ' et al.' : ''} (${year}). ${title.slice(0, 50)}...`;
     case 'vancouver':
