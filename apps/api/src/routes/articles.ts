@@ -114,7 +114,7 @@ async function findOrCreateArticle(article: PubMedArticle, publicationTypes?: st
   const res = await pool.query(
     `INSERT INTO articles (
       doi, pmid, title_en, abstract_en, authors, year, journal, url, source, 
-      has_stats, stats_json, stats_quality, publication_types, raw_json, fetched_at
+      has_stats, stats_json, stats_quality, publication_types, raw_json, created_at
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
     RETURNING id`,
     [
@@ -132,7 +132,7 @@ async function findOrCreateArticle(article: PubMedArticle, publicationTypes?: st
       statsQuality,
       pubTypes.length > 0 ? pubTypes : null,
       JSON.stringify(article),
-      new Date(), // fetched_at - дата обращения
+      new Date(), // created_at - дата обращения
     ]
   );
   
@@ -386,7 +386,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           a.abstract_en, a.abstract_ru,
           a.authors, a.year, a.journal, a.url, a.source,
           a.has_stats, a.stats_json, a.stats_quality, a.publication_types,
-          a.fetched_at,
+          a.created_at,
           pa.status, pa.notes, pa.tags, pa.added_at
           ${hasSourceQuery ? ', pa.source_query' : ''}
         FROM project_articles pa
