@@ -7,48 +7,172 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum ProjectRole {
-  owner
-  editor
-  viewer
-}
-
-enum ArticleState {
-  found
-  selected
-  excluded
-}
-
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
 
-  projectsOwned Project[] @relation("OwnerProjects")
-  memberships   ProjectMember[]
+  projectsOwned     Project[]          @relation("OwnerProjects")
+  memberships       ProjectMember[]
   createdStatistics ProjectStatistic[]
+  createdDocuments  Document[]
+  addedArticles     ProjectArticle[]
+  apiKeys           UserApiKey[]
+
+  @@map("users")
+}
+
+model UserApiKey {
+  id           Int      @id @default(autoincrement())
+  userId       String   @map("user_id")
+  provider     String
+  encryptedKey String   @map("encrypted_key")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@map("user_api_keys")
 }
 
 model Project {
-  id            String   @id @default(uuid())
-  title         String
-  citationStyle String   @default("gost-r-7-0-5-2008")
-  createdAt     DateTime @default(now())
+  id          String  @id @default(uuid())
+  name        String
+  description String?
 
-  ownerId String
-  owner   User     @relation("OwnerProjects", fields: [ownerId], references: [id])
+  createdBy String? @map("created_by")
+  owner     User?   @relation("OwnerProjects", fields: [createdBy], references: [id])
 
-  members  ProjectMember[]
-  queries  SearchQuery[]
-  states   ArticleProjectState[]
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at")
+  citationStyle String   @default("gost-r-7-0-5-2008") @map("citation_style")
+  language      String?  @default("ru")
+
+  // Research fields
+  researchType           String?  @map("research_type")
+  researchSubtype        String?  @map("research_subtype")
+  researchProtocol       String?  @map("research_protocol")
+  protocolCustomName     String?  @map("protocol_custom_name")
+  aiErrorAnalysisEnabled Boolean? @default(false) @map("ai_error_analysis_enabled")
+  aiProtocolCheckEnabled Boolean? @default(false) @map("ai_protocol_check_enabled")
+
+  members    ProjectMember[]
+  documents  Document[]
+  articles   ProjectArticle[]
   statistics ProjectStatistic[]
+  queries    SearchQuery[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  projectId String   @map("project_id")
+  userId    String   @map("user_id")
+  role      String   @default("viewer")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, userId])
+  @@map("project_members")
+}
+
+model Article {
+  id                  String    @id @default(uuid())
+  doi                 String?   @unique
+  pmid                String?   @unique
+  titleEn             String    @map("title_en")
+  abstractEn          String?   @map("abstract_en")
+  titleRu             String?   @map("title_ru")
+  abstractRu          String?   @map("abstract_ru")
+  authors             String[] // TEXT[]
+  year                Int?      @db.SmallInt
+  journal             String?
+  publicationType     String?   @map("publication_type")
+  publicationTypes    String[]  @default([]) @map("publication_types")
+  url                 String?
+  source              String
+  hasStats            Boolean   @default(false) @map("has_stats")
+  statsJson           Json?     @map("stats_json")
+  rawJson             Json?     @map("raw_json")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
+  referencePmids      String[]  @default([]) @map("reference_pmids")
+  citedByPmids        String[]  @default([]) @map("cited_by_pmids")
+  referencesFetchedAt DateTime? @map("references_fetched_at")
+  statsQuality        Int?      @default(0) @map("stats_quality")
+  volume              String?
+  issue               String?
+  pages               String?
+  searchQueries       String[]  @default([]) @map("search_queries")
+
+  projectArticles ProjectArticle[]
+  citations       Citation[]
+
+  @@map("articles")
+}
+
+model ProjectArticle {
+  projectId   String   @map("project_id")
+  articleId   String   @map("article_id")
+  status      String   @default("candidate")
+  notes       String?
+  tags        String[] @default([])
+  addedBy     String?  @map("added_by")
+  addedAt     DateTime @default(now()) @map("added_at")
+  sourceQuery String?  @map("source_query")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [addedBy], references: [id])
+
+  @@id([projectId, articleId])
+  @@map("project_articles")
+}
+
+model Document {
+  id         String   @id @default(uuid())
+  projectId  String   @map("project_id")
+  title      String
+  content    String? // TEXT
+  orderIndex Int      @default(0) @map("order_index")
+  parentId   String?  @map("parent_id")
+  createdBy  String?  @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  project Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent  Document? @relation("DocHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children Document[] @relation("DocHierarchy")
+  creator User?     @relation(fields: [createdBy], references: [id])
+  citations Citation[]
+
+  @@map("documents")
+}
+
+model Citation {
+  id           String   @id @default(uuid())
+  documentId   String   @map("document_id")
+  articleId    String   @map("article_id")
+  orderIndex   Int      @default(0) @map("order_index")
+  inlineNumber Int?     @map("inline_number")
+  subNumber    Int?     @default(1) @map("sub_number")
+  pageRange    String?  @map("page_range")
+  note         String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  article  Article  @relation(fields: [articleId], references: [id])
+
+  @@map("citations")
 }
 
 model ProjectStatistic {
   id                 String   @id @default(uuid())
   projectId          String   @map("project_id")
-  type               String   // chart, table
+  type               String // chart, table
   title              String
   description        String?
   config             Json
@@ -64,74 +188,22 @@ model ProjectStatistic {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   creator User?   @relation(fields: [createdBy], references: [id])
 
-  @@map("project_statistics")
   @@index([projectId])
   @@index([type])
   @@index([chartType])
-}
-
-model ProjectMember {
-  projectId String
-  userId    String
-  role      ProjectRole @default(editor)
-  createdAt DateTime    @default(now())
-
-  project Project @relation(fields: [projectId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
-
-  @@id([projectId, userId])
+  @@map("project_statistics")
 }
 
 model SearchQuery {
   id        String   @id @default(uuid())
-  projectId String
+  projectId String   @map("project_id")
   topic     String
   filters   Json
-  status    String   @default("queued") // queued|running|done|error
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  status    String   @default("queued")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  project Project @relation(fields: [projectId], references: [id])
-  states  ArticleProjectState[]
-}
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-model Article {
-  id        String   @id @default(uuid())
-  doi       String?  @unique
-  pmid      String?  @unique
-  titleEn   String
-  abstractEn String?
-  titleRu   String?
-  abstractRu String?
-  authors   String? // plain string for MVP
-  journal   String?
-  year      Int?
-  url       String?
-  source    String   // pubmed|crossref|wiley|...
-  studyTypes String[] // ["RCT", "SystematicReview", ...]
-  fulltextStatus String @default("none") // none|available|downloaded
-  stats     Json?
-  hasStats  Boolean @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  states ArticleProjectState[]
-}
-
-model ArticleProjectState {
-  projectId String
-  articleId String
-  state     ArticleState @default(found)
-  sourceQueryId String?
-  notes     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  project Project @relation(fields: [projectId], references: [id])
-  article Article @relation(fields: [articleId], references: [id])
-  query   SearchQuery? @relation(fields: [sourceQueryId], references: [id])
-
-  @@id([projectId, articleId])
-  @@index([projectId, state])
-  @@index([sourceQueryId])
+  @@map("search_queries")
 }
