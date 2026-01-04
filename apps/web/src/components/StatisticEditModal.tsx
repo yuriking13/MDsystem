@@ -369,7 +369,7 @@ export default function StatisticEditModal({ statistic, onClose, onSave }: Props
                 <thead>
                   <tr>
                     <th style={{ width: 40 }}>#</th>
-                    {tableData.headers.map((h, i) => (
+                    {tableData.headers.map((h: string, i: number) => (
                       <th key={i}>
                         <div className="row gap" style={{ alignItems: 'center' }}>
                           <input
@@ -395,7 +395,7 @@ export default function StatisticEditModal({ statistic, onClose, onSave }: Props
                   </tr>
                 </thead>
                 <tbody>
-                  {tableData.rows.map((row, ri) => (
+                  {tableData.rows.map((row: string[], ri: number) => (
                     <tr key={ri}>
                       <td style={{ textAlign: 'center' }}>
                         <div className="row gap" style={{ alignItems: 'center', justifyContent: 'center' }}>
@@ -412,7 +412,7 @@ export default function StatisticEditModal({ statistic, onClose, onSave }: Props
                           )}
                         </div>
                       </td>
-                      {row.map((cell, ci) => (
+                      {row.map((cell: string, ci: number) => (
                         <td key={ci}>
                           <input
                             type="text"

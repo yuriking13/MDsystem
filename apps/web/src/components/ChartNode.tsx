@@ -233,7 +233,7 @@ function ChartNodeView({ node, updateAttributes, editor }: { node: any; updateAt
             <table className="chart-source-table">
               <thead>
                 <tr>
-                  {displayData.headers.map((h, i) => (
+                  {displayData.headers.map((h: string, i: number) => (
                     <th key={i}>
                       {isEditing ? (
                         <input
@@ -250,9 +250,9 @@ function ChartNodeView({ node, updateAttributes, editor }: { node: any; updateAt
                 </tr>
               </thead>
               <tbody>
-                {displayData.rows.map((row, ri) => (
+                {displayData.rows.map((row: string[], ri: number) => (
                   <tr key={ri}>
-                    {row.map((cell, ci) => (
+                    {row.map((cell: string, ci: number) => (
                       <td key={ci}>
                         {isEditing ? (
                           <input
