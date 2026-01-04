@@ -7,6 +7,7 @@ import authPlugin from './auth.js';
 
 import { authRoutes } from './routes/auth.js';
 import settingsRoutes from './routes/settings.js';
+import projectsRoutes from './routes/projects.js';
 
 import envGuard from './plugins/00-env-guard.js';
 
@@ -23,6 +24,7 @@ await app.register(authPlugin);
 
 await authRoutes(app);
 await app.register(settingsRoutes, { prefix: '/api' });
+await app.register(projectsRoutes, { prefix: '/api' });
 
 app.get('/api/health', async () => ({ ok: true }));
 

@@ -1,77 +1,360 @@
-import { FastifyInstance } from 'fastify';
-import { z } from 'zod';
-import { prisma } from '../db.js';
+import type { FastifyPluginAsync } from "fastify";
+import { z } from "zod";
+import { pool } from "../pg.js";
 
-export async function projectRoutes(app: FastifyInstance) {
-  // app.get('/api/projects', { preHandler: [app.auth] }, async (req: any) => {
-  app.get('/api/projects', async (req: any) => {
-    const userId = req.user.sub as string;
+const CreateProjectSchema = z.object({
+  name: z.string().min(1).max(500),
+  description: z.string().max(2000).optional(),
+});
 
-    const memberships = await prisma.projectMember.findMany({
-      where: { userId },
-      include: { project: true }
-    });
+const UpdateProjectSchema = z.object({
+  name: z.string().min(1).max(500).optional(),
+  description: z.string().max(2000).optional(),
+});
 
-    // owner projects without membership row тоже возможны, но мы добавляем membership при создании
-    const projects = memberships.map((m: any) => ({
-      id: m.project.id,
-      title: m.project.title,
-      role: m.role,
-      createdAt: m.project.createdAt
-    }));
+const ProjectIdSchema = z.object({
+  id: z.string().uuid(),
+});
 
-    return { projects };
-  });
+const plugin: FastifyPluginAsync = async (fastify) => {
+  // GET /api/projects - list user's projects
+  fastify.get(
+    "/projects",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
 
-  // app.post('/api/projects', { preHandler: [app.auth] }, async (req: any) => {
-  app.post('/api/projects', async (req: any) => {
-    const userId = req.user.sub as string;
-    const body = z.object({
-      title: z.string().min(2),
-      citationStyle: z.string().optional()
-    }).parse(req.body);
+      const res = await pool.query(
+        `SELECT p.id, p.name, p.description, p.created_at, p.updated_at,
+                pm.role
+         FROM projects p
+         JOIN project_members pm ON pm.project_id = p.id
+         WHERE pm.user_id = $1
+         ORDER BY p.updated_at DESC`,
+        [userId]
+      );
 
-    const project = await prisma.project.create({
-      data: {
-        title: body.title,
-        citationStyle: body.citationStyle ?? 'gost-r-7-0-5-2008',
-        ownerId: userId,
-        members: {
-          create: {
-            userId,
-            role: 'owner'
-          }
-        }
-      },
-      select: { id: true, title: true, citationStyle: true, createdAt: true }
-    });
+      return { projects: res.rows };
+    }
+  );
 
-    return { project };
-  });
+  // POST /api/projects - create project
+  fastify.post(
+    "/projects",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      const parsed = CreateProjectSchema.safeParse(request.body);
+      
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "BadRequest", message: parsed.error.message });
+      }
 
-  // app.post('/api/projects/:id/add-member', { preHandler: [app.auth] }, async (req: any, reply) => {
-  app.post('/api/projects/:id/add-member', async (req: any, reply) => {
-    const userId = req.user.sub as string;
-    const projectId = req.params.id as string;
+      const { name, description } = parsed.data;
 
-    // Only owner can add members in MVP
-    const me = await prisma.projectMember.findUnique({ where: { projectId_userId: { projectId, userId } } });
-    if (!me || me.role !== 'owner') return reply.code(403).send({ error: 'Forbidden' });
+      // Create project and add creator as owner
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
 
-    const body = z.object({
-      email: z.string().email(),
-      role: z.enum(['editor', 'viewer']).default('editor')
-    }).parse(req.body);
+        const projectRes = await client.query(
+          `INSERT INTO projects (name, description, created_by)
+           VALUES ($1, $2, $3)
+           RETURNING id, name, description, created_at, updated_at`,
+          [name, description || null, userId]
+        );
 
-    const user = await prisma.user.findUnique({ where: { email: body.email } });
-    if (!user) return reply.code(404).send({ error: 'User not found (ask them to register first)' });
+        const project = projectRes.rows[0];
 
-    await prisma.projectMember.upsert({
-      where: { projectId_userId: { projectId, userId: user.id } },
-      create: { projectId, userId: user.id, role: body.role },
-      update: { role: body.role }
-    });
+        await client.query(
+          `INSERT INTO project_members (project_id, user_id, role)
+           VALUES ($1, $2, 'owner')`,
+          [project.id, userId]
+        );
 
-    return { ok: true };
-  });
-}
+        await client.query("COMMIT");
+
+        return { project: { ...project, role: "owner" } };
+      } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+  );
+
+  // GET /api/projects/:id - get single project
+  fastify.get(
+    "/projects/:id",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      const parsed = ProjectIdSchema.safeParse(request.params);
+      
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+      }
+
+      const res = await pool.query(
+        `SELECT p.id, p.name, p.description, p.created_at, p.updated_at,
+                pm.role
+         FROM projects p
+         JOIN project_members pm ON pm.project_id = p.id
+         WHERE p.id = $1 AND pm.user_id = $2`,
+        [parsed.data.id, userId]
+      );
+
+      if (res.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+      }
+
+      return { project: res.rows[0] };
+    }
+  );
+
+  // PATCH /api/projects/:id - update project
+  fastify.patch(
+    "/projects/:id",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+      }
+
+      const bodyP = UpdateProjectSchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "BadRequest", message: bodyP.error.message });
+      }
+
+      // Check access (owner or editor)
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [paramsP.data.id, userId]
+      );
+
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+      }
+
+      const role = access.rows[0].role;
+      if (role !== "owner" && role !== "editor") {
+        return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
+      }
+
+      const updates: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (bodyP.data.name !== undefined) {
+        updates.push(`name = $${idx++}`);
+        values.push(bodyP.data.name);
+      }
+      if (bodyP.data.description !== undefined) {
+        updates.push(`description = $${idx++}`);
+        values.push(bodyP.data.description);
+      }
+
+      if (updates.length === 0) {
+        return reply.code(400).send({ error: "BadRequest", message: "No fields to update" });
+      }
+
+      updates.push(`updated_at = now()`);
+      values.push(paramsP.data.id);
+
+      const res = await pool.query(
+        `UPDATE projects SET ${updates.join(", ")} WHERE id = $${idx}
+         RETURNING id, name, description, created_at, updated_at`,
+        values
+      );
+
+      return { project: { ...res.rows[0], role } };
+    }
+  );
+
+  // DELETE /api/projects/:id - delete project
+  fastify.delete(
+    "/projects/:id",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const parsed = ProjectIdSchema.safeParse(request.params);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+      }
+
+      // Check if owner
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [parsed.data.id, userId]
+      );
+
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+      }
+
+      if (access.rows[0].role !== "owner") {
+        return reply.code(403).send({ error: "Forbidden", message: "Only owner can delete" });
+      }
+
+      await pool.query(`DELETE FROM projects WHERE id = $1`, [parsed.data.id]);
+
+      return { ok: true };
+    }
+  );
+
+  // GET /api/projects/:id/members - list members
+  fastify.get(
+    "/projects/:id/members",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const parsed = ProjectIdSchema.safeParse(request.params);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+      }
+
+      // Check access
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [parsed.data.id, userId]
+      );
+
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+      }
+
+      const res = await pool.query(
+        `SELECT pm.user_id, pm.role, pm.joined_at, u.email
+         FROM project_members pm
+         JOIN users u ON u.id = pm.user_id
+         WHERE pm.project_id = $1
+         ORDER BY pm.joined_at`,
+        [parsed.data.id]
+      );
+
+      return { members: res.rows };
+    }
+  );
+
+  // POST /api/projects/:id/members - invite member by email
+  fastify.post(
+    "/projects/:id/members",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+      }
+
+      const bodySchema = z.object({
+        email: z.string().email(),
+        role: z.enum(["viewer", "editor"]).default("viewer"),
+      });
+
+      const bodyP = bodySchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "BadRequest", message: bodyP.error.message });
+      }
+
+      // Check if owner
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [paramsP.data.id, userId]
+      );
+
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+      }
+
+      if (access.rows[0].role !== "owner") {
+        return reply.code(403).send({ error: "Forbidden", message: "Only owner can invite" });
+      }
+
+      // Find user by email
+      const userRes = await pool.query(
+        `SELECT id FROM users WHERE email = $1`,
+        [bodyP.data.email]
+      );
+
+      if (userRes.rowCount === 0) {
+        return reply.code(404).send({ 
+          error: "NotFound", 
+          message: "User not found. They need to register first." 
+        });
+      }
+
+      const inviteeId = userRes.rows[0].id;
+
+      // Add member (or update role if already member)
+      await pool.query(
+        `INSERT INTO project_members (project_id, user_id, role)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (project_id, user_id)
+         DO UPDATE SET role = EXCLUDED.role`,
+        [paramsP.data.id, inviteeId, bodyP.data.role]
+      );
+
+      return { ok: true, userId: inviteeId };
+    }
+  );
+
+  // DELETE /api/projects/:id/members/:userId - remove member
+  fastify.delete(
+    "/projects/:id/members/:userId",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const currentUserId = (request as any).user.sub;
+      
+      const paramsSchema = z.object({
+        id: z.string().uuid(),
+        userId: z.string().uuid(),
+      });
+
+      const parsed = paramsSchema.safeParse(request.params);
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid params" });
+      }
+
+      // Check if owner
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [parsed.data.id, currentUserId]
+      );
+
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+      }
+
+      if (access.rows[0].role !== "owner") {
+        return reply.code(403).send({ error: "Forbidden", message: "Only owner can remove members" });
+      }
+
+      // Can't remove owner
+      const targetRole = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [parsed.data.id, parsed.data.userId]
+      );
+
+      if ((targetRole.rowCount ?? 0) > 0 && targetRole.rows[0].role === "owner") {
+        return reply.code(400).send({ error: "BadRequest", message: "Cannot remove owner" });
+      }
+
+      await pool.query(
+        `DELETE FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [parsed.data.id, parsed.data.userId]
+      );
+
+      return { ok: true };
+    }
+  );
+};
+
+export default plugin;
