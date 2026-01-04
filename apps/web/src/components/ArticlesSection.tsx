@@ -50,6 +50,7 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
   // Фильтр отображения
   const [viewStatus, setViewStatus] = useState<"candidate" | "selected" | "excluded" | "all">("candidate");
   const [showStatsOnly, setShowStatsOnly] = useState(false);
+  const [filterPubType, setFilterPubType] = useState<string | null>(null);
 
   // Поиск
   const [showSearch, setShowSearch] = useState(false);
@@ -75,10 +76,15 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
   
   // Перевод постфактум
   const [translating, setTranslating] = useState(false);
+  const [translatingOne, setTranslatingOne] = useState(false);
 
   // Выбранная статья для просмотра
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
+  
+  // Глобальные настройки отображения
+  const [listLang, setListLang] = useState<"ru" | "en">("ru"); // Язык в списке
+  const [highlightStats, setHighlightStats] = useState(true); // Подсветка статистики
 
   async function loadArticles() {
     setLoading(true);
@@ -207,10 +213,114 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
     }
   }
 
+  // Перевод одной статьи
+  async function handleTranslateOne(articleId: string) {
+    setTranslatingOne(true);
+    setError(null);
+    
+    try {
+      await apiTranslateArticles(projectId, [articleId], true);
+      await loadArticles();
+      // Обновить выбранную статью если она открыта
+      if (selectedArticle?.id === articleId) {
+        const updated = articles.find(a => a.id === articleId);
+        if (updated) setSelectedArticle(updated);
+      }
+    } catch (err: any) {
+      setError(err?.message || "Ошибка перевода");
+    } finally {
+      setTranslatingOne(false);
+    }
+  }
+
+  // Функция подсветки статистики в тексте
+  function highlightStatistics(text: string): React.ReactNode {
+    if (!highlightStats || !text) return text;
+    
+    // Паттерны для статистики
+    const patterns = [
+      // p-value с разной значимостью
+      { regex: /p\s*[<≤]\s*0\.001/gi, className: "stat-p001", label: "p<0.001" },
+      { regex: /p\s*[<≤]\s*0\.01(?![0-9])/gi, className: "stat-p01", label: "p<0.01" },
+      { regex: /p\s*[<≤]\s*0\.05(?![0-9])/gi, className: "stat-p05", label: "p<0.05" },
+      { regex: /p\s*=\s*0\.\d+/gi, className: "stat-pval", label: "p-value" },
+      // CI
+      { regex: /95%?\s*CI[:\s]*[\[\(]?[\d.,–-]+[\]\)]?/gi, className: "stat-ci", label: "CI" },
+      { regex: /CI[:\s]*[\d.]+[–-][\d.]+/gi, className: "stat-ci", label: "CI" },
+      // OR, RR, HR
+      { regex: /\b(OR|RR|HR)[:\s]*[\d.]+/gi, className: "stat-ratio", label: "ratio" },
+      // Размер выборки
+      { regex: /n\s*=\s*[\d,]+/gi, className: "stat-n", label: "n" },
+    ];
+    
+    // Применяем все паттерны
+    let result = text;
+    const replacements: Array<{ start: number; end: number; match: string; className: string }> = [];
+    
+    for (const { regex, className } of patterns) {
+      let match;
+      const r = new RegExp(regex.source, regex.flags);
+      while ((match = r.exec(text)) !== null) {
+        replacements.push({
+          start: match.index,
+          end: match.index + match[0].length,
+          match: match[0],
+          className,
+        });
+      }
+    }
+    
+    // Сортируем по позиции и удаляем пересечения
+    replacements.sort((a, b) => a.start - b.start);
+    const filtered: typeof replacements = [];
+    for (const r of replacements) {
+      const last = filtered[filtered.length - 1];
+      if (!last || r.start >= last.end) {
+        filtered.push(r);
+      }
+    }
+    
+    // Собираем результат
+    const parts: React.ReactNode[] = [];
+    let lastEnd = 0;
+    for (const r of filtered) {
+      if (r.start > lastEnd) {
+        parts.push(text.slice(lastEnd, r.start));
+      }
+      parts.push(
+        <span key={r.start} className={r.className}>
+          {r.match}
+        </span>
+      );
+      lastEnd = r.end;
+    }
+    if (lastEnd < text.length) {
+      parts.push(text.slice(lastEnd));
+    }
+    
+    return parts.length > 0 ? parts : text;
+  }
+
   const total = counts.candidate + counts.selected + counts.excluded;
   
   // Подсчёт непереведённых статей
   const untranslatedCount = articles.filter((a) => !a.title_ru).length;
+  
+  // Получить заголовок статьи в зависимости от выбранного языка
+  function getTitle(a: Article): string {
+    if (listLang === "ru" && a.title_ru) return a.title_ru;
+    return a.title_en;
+  }
+  
+  // Собрать уникальные типы публикаций из текущих статей
+  const availablePubTypes = Array.from(
+    new Set(articles.flatMap((a) => a.publication_types || []))
+  ).sort();
+  
+  // Фильтрация статей по типу публикации
+  const filteredArticles = filterPubType
+    ? articles.filter((a) => a.publication_types?.includes(filterPubType))
+    : articles;
 
   return (
     <div style={{ marginTop: 24 }}>
@@ -440,27 +550,77 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
         >
           Все ({total})
         </button>
-        <label className="row gap" style={{ alignItems: "center", marginLeft: 12 }}>
-          <input
-            type="checkbox"
-            checked={showStatsOnly}
-            onChange={(e) => setShowStatsOnly(e.target.checked)}
-            style={{ width: "auto" }}
-          />
-          <span className="muted">Только со статистикой</span>
-        </label>
+        
+        <div className="row gap" style={{ marginLeft: "auto", alignItems: "center" }}>
+          {/* Переключатель языка */}
+          <div className="lang-toggle">
+            <button
+              className={listLang === "ru" ? "active" : ""}
+              onClick={() => setListLang("ru")}
+              type="button"
+              title="Русский (если есть перевод)"
+            >
+              RU
+            </button>
+            <button
+              className={listLang === "en" ? "active" : ""}
+              onClick={() => setListLang("en")}
+              type="button"
+              title="Английский (оригинал)"
+            >
+              EN
+            </button>
+          </div>
+          
+          <label className="row gap" style={{ alignItems: "center" }}>
+            <input
+              type="checkbox"
+              checked={showStatsOnly}
+              onChange={(e) => setShowStatsOnly(e.target.checked)}
+              style={{ width: "auto" }}
+            />
+            <span className="muted">📊 Статистика</span>
+          </label>
+          
+          <label className="row gap" style={{ alignItems: "center" }}>
+            <input
+              type="checkbox"
+              checked={highlightStats}
+              onChange={(e) => setHighlightStats(e.target.checked)}
+              style={{ width: "auto" }}
+            />
+            <span className="muted">🎨 Подсветка</span>
+          </label>
+          
+          {/* Фильтр по типу публикации */}
+          {availablePubTypes.length > 0 && (
+            <select
+              value={filterPubType || ""}
+              onChange={(e) => setFilterPubType(e.target.value || null)}
+              style={{ padding: "4px 8px", borderRadius: 6, fontSize: 12 }}
+            >
+              <option value="">Все типы</option>
+              {availablePubTypes.map((pt) => (
+                <option key={pt} value={pt}>{pt}</option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
       {/* Таблица статей */}
       {loading ? (
         <div className="muted">Загрузка...</div>
-      ) : articles.length === 0 ? (
+      ) : filteredArticles.length === 0 ? (
         <div className="muted">
-          Нет статей. {canEdit && "Используйте поиск чтобы добавить статьи из PubMed."}
+          {articles.length === 0 
+            ? `Нет статей. ${canEdit ? "Используйте поиск чтобы добавить статьи из PubMed." : ""}`
+            : "Нет статей соответствующих фильтру."
+          }
         </div>
       ) : (
         <div className="articles-table">
-          {articles.map((a) => (
+          {filteredArticles.map((a) => (
             <div
               key={a.id}
               className={`article-row ${a.has_stats ? "has-stats" : ""}`}
@@ -468,9 +628,10 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
             >
               <div className="article-main">
                 <div className="article-title">
-                  {a.title_ru || a.title_en}
-                  {a.title_ru && <span className="translate-badge">🌐</span>}
-                  {a.has_stats && <span className="stats-badge">📊</span>}
+                  {getTitle(a)}
+                  {a.title_ru && <span className="translate-badge" title="Есть перевод">🌐</span>}
+                  {!a.title_ru && <span className="no-translate-badge" title="Нет перевода">EN</span>}
+                  {a.has_stats && <span className="stats-badge" title="Содержит статистику">📊</span>}
                 </div>
                 <div className="article-meta">
                   {a.authors?.slice(0, 3).join(", ")}
@@ -481,6 +642,14 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
                 <div className="article-ids">
                   {a.pmid && <span className="id-badge">PMID: {a.pmid}</span>}
                   {a.doi && <span className="id-badge">DOI: {a.doi}</span>}
+                  {a.publication_types?.map((pt) => (
+                    <span key={pt} className="id-badge pub-type">{pt}</span>
+                  ))}
+                  {a.stats_quality > 0 && (
+                    <span className={`id-badge stats-q${a.stats_quality}`}>
+                      p&lt;{a.stats_quality === 3 ? "0.001" : a.stats_quality === 2 ? "0.01" : "0.05"}
+                    </span>
+                  )}
                 </div>
               </div>
               {canEdit && (
@@ -573,14 +742,21 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="id-badge"
+                  style={{ marginRight: 8 }}
                 >
                   DOI ↗
                 </a>
               )}
-              {!selectedArticle.title_ru && (
-                <span className="id-badge" style={{ background: "#2a2a1a", color: "#d4a" }}>
-                  Нет перевода
-                </span>
+              {!selectedArticle.title_ru && canEdit && (
+                <button
+                  className="btn secondary"
+                  onClick={() => handleTranslateOne(selectedArticle.id)}
+                  disabled={translatingOne}
+                  style={{ fontSize: 12, padding: "4px 10px" }}
+                  type="button"
+                >
+                  {translatingOne ? "Переводим..." : "🌐 Перевести"}
+                </button>
               )}
             </div>
 
@@ -590,7 +766,20 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
               </div>
             )}
 
-            <h5>Абстракт</h5>
+            <div className="row space" style={{ alignItems: "center" }}>
+              <h5 style={{ margin: 0 }}>Абстракт</h5>
+              {selectedArticle.has_stats && (
+                <label className="row gap" style={{ alignItems: "center" }}>
+                  <input
+                    type="checkbox"
+                    checked={highlightStats}
+                    onChange={(e) => setHighlightStats(e.target.checked)}
+                    style={{ width: "auto" }}
+                  />
+                  <span className="muted" style={{ fontSize: 12 }}>Подсветка статистики</span>
+                </label>
+              )}
+            </div>
             <div
               className="abstract-text"
               style={{
@@ -601,11 +790,14 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
                 borderRadius: 8,
                 fontSize: 14,
                 lineHeight: 1.6,
+                marginTop: 8,
               }}
             >
-              {showOriginal || !selectedArticle.abstract_ru 
-                ? (selectedArticle.abstract_en || "Нет абстракта")
-                : selectedArticle.abstract_ru}
+              {highlightStatistics(
+                showOriginal || !selectedArticle.abstract_ru 
+                  ? (selectedArticle.abstract_en || "Нет абстракта")
+                  : selectedArticle.abstract_ru
+              )}
             </div>
             
             {selectedArticle.abstract_ru && !showOriginal && selectedArticle.abstract_en && (

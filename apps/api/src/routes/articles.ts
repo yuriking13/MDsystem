@@ -2,7 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { pubmedFetchAll, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
-import { extractStats, hasAnyStats } from "../lib/stats.js";
+import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.js";
 import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 
 // Схемы валидации
@@ -74,7 +74,7 @@ async function checkProjectAccess(
 }
 
 // Найти или создать статью по DOI/PMID
-async function findOrCreateArticle(article: PubMedArticle): Promise<string> {
+async function findOrCreateArticle(article: PubMedArticle, publicationTypes?: string[]): Promise<string> {
   // Сначала ищем по PMID
   if (article.pmid) {
     const existing = await pool.query(
@@ -100,17 +100,21 @@ async function findOrCreateArticle(article: PubMedArticle): Promise<string> {
   // Извлекаем статистику
   const stats = extractStats(article.abstract);
   const hasStats = hasAnyStats(stats);
+  const statsQuality = hasStats ? calculateStatsQuality(stats) : 0;
   
   // Создаём новую статью
   const authors = article.authors 
     ? article.authors.split(",").map(a => a.trim()).filter(Boolean)
     : null;
   
+  // Типы публикации из статьи или переданные
+  const pubTypes = publicationTypes || article.studyTypes || [];
+  
   const res = await pool.query(
     `INSERT INTO articles (
       doi, pmid, title_en, abstract_en, authors, year, journal, url, source, 
-      has_stats, stats_json, raw_json
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      has_stats, stats_json, stats_quality, publication_types, raw_json
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
     RETURNING id`,
     [
       article.doi?.toLowerCase() || null,
@@ -124,6 +128,8 @@ async function findOrCreateArticle(article: PubMedArticle): Promise<string> {
       "pubmed",
       hasStats,
       hasStats ? JSON.stringify(stats) : null,
+      statsQuality,
+      pubTypes.length > 0 ? pubTypes : null,
       JSON.stringify(article),
     ]
   );
@@ -220,9 +226,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const articleIds: string[] = [];
       const newArticleIds: string[] = []; // Новые статьи для перевода
       
+      // Типы публикации из фильтров поиска
+      const searchPubTypes = bodyP.data.filters?.publicationTypes || [];
+      
       for (const article of items) {
         try {
-          const articleId = await findOrCreateArticle(article);
+          const articleId = await findOrCreateArticle(article, searchPubTypes);
           articleIds.push(articleId);
           
           const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId);
@@ -337,7 +346,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           a.id, a.doi, a.pmid, a.title_en, a.title_ru, 
           a.abstract_en, a.abstract_ru,
           a.authors, a.year, a.journal, a.url, a.source,
-          a.has_stats, a.stats_json,
+          a.has_stats, a.stats_json, a.stats_quality, a.publication_types,
           pa.status, pa.notes, pa.tags, pa.added_at
         FROM project_articles pa
         JOIN articles a ON a.id = pa.article_id

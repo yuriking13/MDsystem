@@ -184,6 +184,8 @@ export type Article = {
   source: string;
   has_stats: boolean;
   stats_json: any;
+  stats_quality: number; // 0-3, качество статистики по p-value
+  publication_types: string[] | null;
   status: "candidate" | "selected" | "excluded";
   notes: string | null;
   tags: string[] | null;
