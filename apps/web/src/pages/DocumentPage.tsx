@@ -278,6 +278,8 @@ export default function DocumentPage() {
               articleTitle: c.article.title_en, // Всегда язык оригинала
             }))}
             placeholder="Начните писать текст диссертации..."
+            projectId={projectId}
+            documentId={docId}
           />
         </div>
 

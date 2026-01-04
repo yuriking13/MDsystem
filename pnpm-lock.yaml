@@ -65,6 +65,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@sgratzl/chartjs-chart-boxplot':
+        specifier: ^4.4.5
+        version: 4.4.5(chart.js@4.5.1)
       '@tanstack/react-query':
         specifier: ^5.62.7
         version: 5.90.16(react@18.3.1)
@@ -748,6 +751,14 @@ packages:
     resolution: {integrity: sha512-hYT5d3YNdSh3mbCU1gwQyPgQd3T2ne0A3KG8KSBdav5TiBg6eInVmV+TeR5uHufiIgSFg0XsOWGW5/RhNcSvPg==}
     cpu: [x64]
     os: [win32]
+
+  '@sgratzl/boxplots@2.0.0':
+    resolution: {integrity: sha512-XHQTNTk0OtDEZyT7v+BKNKt4OEXYhn4GtfI+iQ1eFiFsx8Aq/csz+mOJYbfpkiP8Popd/8Nky8vLh1zzkYn0gw==}
+
+  '@sgratzl/chartjs-chart-boxplot@4.4.5':
+    resolution: {integrity: sha512-hvHcUIPIyzNPRmvPNIbA/R68zZKv7XHUcNrYJZTB8QsVE0KKuuGuEK98yCeCy32vZXQBl/PrHGOYMXeuqZrU0w==}
+    peerDependencies:
+      chart.js: ^4.1.1
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
@@ -2430,6 +2441,13 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.54.0':
     optional: true
+
+  '@sgratzl/boxplots@2.0.0': {}
+
+  '@sgratzl/chartjs-chart-boxplot@4.4.5(chart.js@4.5.1)':
+    dependencies:
+      '@sgratzl/boxplots': 2.0.0
+      chart.js: 4.5.1
 
   '@standard-schema/spec@1.1.0': {}
 

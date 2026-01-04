@@ -9,6 +9,7 @@
     "lint": "node -e \"console.log('Add eslint later')\""
   },
   "dependencies": {
+    "@sgratzl/chartjs-chart-boxplot": "^4.4.5",
     "@tanstack/react-query": "^5.62.7",
     "@tiptap/extension-color": "^3.14.0",
     "@tiptap/extension-highlight": "^3.14.0",
