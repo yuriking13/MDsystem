@@ -236,17 +236,39 @@ export async function translateArticlesBatchOptimized(
       throw new Error("Empty response");
     }
 
-    // Парсим JSON ответ
-    const jsonMatch = content.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      throw new Error("No JSON array in response");
-    }
-
-    const translations = JSON.parse(jsonMatch[0]) as Array<{
+    // Парсим JSON ответ - пробуем разные варианты
+    let translations: Array<{
       idx: number;
       title_ru?: string;
       abstract_ru?: string;
-    }>;
+    }> = [];
+
+    try {
+      // Попытка 1: найти JSON массив
+      const jsonMatch = content.match(/\[[\s\S]*?\]/);
+      if (jsonMatch) {
+        translations = JSON.parse(jsonMatch[0]);
+      }
+    } catch {
+      // Попытка 2: исправить обрезанный JSON
+      try {
+        let fixed = content;
+        // Удаляем всё после последней закрывающей скобки объекта
+        const lastBrace = fixed.lastIndexOf("}");
+        if (lastBrace > 0) {
+          fixed = fixed.substring(0, lastBrace + 1) + "]";
+          // Находим начало массива
+          const firstBracket = fixed.indexOf("[");
+          if (firstBracket >= 0) {
+            fixed = fixed.substring(firstBracket);
+            translations = JSON.parse(fixed);
+          }
+        }
+      } catch {
+        console.error("Could not parse batch translation response, falling back to sequential");
+        throw new Error("JSON parse failed");
+      }
+    }
 
     const results = new Map<string, TranslationResult>();
     let translated = 0;
@@ -262,6 +284,11 @@ export async function translateArticlesBatchOptimized(
       }
     }
 
+    // Если ничего не перевелось пакетно, пробуем последовательно
+    if (translated === 0 && articles.length > 0) {
+      throw new Error("No translations in batch response");
+    }
+
     return {
       translated,
       failed: articles.length - translated,
@@ -270,6 +297,7 @@ export async function translateArticlesBatchOptimized(
   } catch (err) {
     console.error("Batch translation error:", err);
     // Фолбек на последовательный перевод
-    return translateArticlesBatch(apiKey, articles, { model });
+    console.log("Falling back to sequential translation...");
+    return translateArticlesBatch(apiKey, articles, { model, delayMs: 200 });
   }
 }
