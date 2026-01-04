@@ -310,16 +310,21 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
     
     // Паттерны для статистики (EN + RU)
     const patterns = [
-      // p-value с разной значимостью (разные форматы)
+      // p-value с разной значимостью (разные форматы, включая P = 0.xxx)
       { regex: /[PpРр]\s*[<≤]\s*0[.,]001/g, className: "stat-p001" },
       { regex: /[PpРр]\s*[<≤]\s*0[.,]01(?!\d)/g, className: "stat-p01" },
       { regex: /[PpРр]\s*[<≤]\s*0[.,]05(?!\d)/g, className: "stat-p05" },
       { regex: /[PpРр]\s*[=]\s*0[.,]\d+/g, className: "stat-pval" },
+      { regex: /[PpРр]\s*[>]\s*0[.,]05/g, className: "stat-pval" }, // P > 0.05
       // CI / ДИ (доверительный интервал) - разные форматы
       { regex: /95\s*%?\s*(?:CI|ДИ)[:\s]*[\d.,]+[\s–\-−—]+[\d.,]+/gi, className: "stat-ci" },
       { regex: /(?:CI|ДИ)[:;\s]+[\d.,]+[\s–\-−—]+[\d.,]+/gi, className: "stat-ci" },
-      // OR, RR, HR, aOR, aHR, SMD (отношения шансов/рисков, стандартизированная разность)
-      { regex: /\b(?:a?OR|a?RR|a?HR|SMD|ОШ|ОР)[:\s]+[\d.,]+/gi, className: "stat-ratio" },
+      // I² (гетерогенность) 
+      { regex: /I[²2]\s*[=]\s*[\d.,]+\s*%?/gi, className: "stat-ci" },
+      // OR, RR, HR с пробелами вокруг = или :
+      { regex: /\b(?:a?OR|a?RR|a?HR|SMD|ОШ|ОР)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
+      // Шкалы качества: NOS, AHRQ и др.
+      { regex: /\b(?:NOS|AHRQ|GRADE)[:\s]+[\d.,]+/gi, className: "stat-n" },
       // Размер выборки
       { regex: /\b[nN]\s*[=]\s*[\d,\s]+/g, className: "stat-n" },
       // Шаг для мета-анализа
