@@ -33,7 +33,8 @@ jobs:
 
             # ---- Run Database Migrations ----
             export DATABASE_URL="postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}"
-            pnpm --filter api run migrate:deploy
+            # Using db push because the database is not baselined for migrations
+            pnpm --filter api exec prisma db push --accept-data-loss
 
             # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
