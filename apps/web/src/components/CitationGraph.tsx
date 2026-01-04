@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import { apiGetCitationGraph, type GraphNode, type GraphLink } from "../lib/api";
+import { apiGetCitationGraph, apiFetchReferences, type GraphNode, type GraphLink } from "../lib/api";
 
 type Props = {
   projectId: string;
@@ -17,29 +17,47 @@ export default function CitationGraph({ projectId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({ totalNodes: 0, totalLinks: 0 });
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+  const [fetchingRefs, setFetchingRefs] = useState(false);
+  const [refsMessage, setRefsMessage] = useState<string | null>(null);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
 
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await apiGetCitationGraph(projectId);
-        setData({
-          nodes: res.nodes,
-          links: res.links,
-        });
-        setStats(res.stats);
-      } catch (err: any) {
-        setError(err?.message || "Ошибка загрузки графа");
-      } finally {
-        setLoading(false);
-      }
+  const loadGraph = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiGetCitationGraph(projectId);
+      setData({
+        nodes: res.nodes,
+        links: res.links,
+      });
+      setStats(res.stats);
+    } catch (err: any) {
+      setError(err?.message || "Ошибка загрузки графа");
+    } finally {
+      setLoading(false);
     }
-    load();
   }, [projectId]);
+
+  useEffect(() => {
+    loadGraph();
+  }, [loadGraph]);
+
+  const handleFetchReferences = async () => {
+    setFetchingRefs(true);
+    setRefsMessage(null);
+    try {
+      const res = await apiFetchReferences(projectId);
+      setRefsMessage(res.message);
+      // Перезагружаем граф после получения связей
+      await loadGraph();
+    } catch (err: any) {
+      setRefsMessage(err?.message || "Ошибка получения связей");
+    } finally {
+      setFetchingRefs(false);
+    }
+  };
 
   // Resize observer
   useEffect(() => {
@@ -108,7 +126,21 @@ export default function CitationGraph({ projectId }: Props) {
             📄 {hoveredNode.label} {hoveredNode.doi && `• DOI: ${hoveredNode.doi}`}
           </span>
         )}
+        <button
+          className="btn secondary"
+          style={{ marginLeft: 'auto', padding: '6px 14px', fontSize: 12 }}
+          onClick={handleFetchReferences}
+          disabled={fetchingRefs}
+        >
+          {fetchingRefs ? '⏳ Загрузка...' : '🔄 Обновить связи из PubMed'}
+        </button>
       </div>
+      
+      {refsMessage && (
+        <div className="ok" style={{ margin: '0 16px 8px', padding: 10, fontSize: 12 }}>
+          {refsMessage}
+        </div>
+      )}
       
       <div className="graph-legend">
         <span><span className="legend-dot selected"></span> Отобранные</span>

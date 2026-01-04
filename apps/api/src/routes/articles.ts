@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
-import { pubmedFetchAll, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
+import { pubmedFetchAll, enrichArticlesWithReferences, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
 import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.js";
 import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
@@ -696,6 +696,91 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         enriched, 
         total: toEnrich.rows.length,
         message: `Обогащено ${enriched} из ${toEnrich.rows.length} статей` 
+      };
+    }
+  );
+
+  // POST /api/projects/:id/articles/fetch-references - получить связи между статьями из PubMed
+  fastify.post(
+    "/projects/:id/articles/fetch-references",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+      
+      // Проверка доступа
+      const access = await checkProjectAccess(paramsP.data.id, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+      
+      // Получить API ключ PubMed
+      const apiKey = await getUserApiKey(userId, "pubmed");
+      
+      // Получить статьи проекта с PMID
+      const articlesRes = await pool.query(
+        `SELECT a.id, a.pmid 
+         FROM articles a
+         JOIN project_articles pa ON pa.article_id = a.id
+         WHERE pa.project_id = $1 
+           AND a.pmid IS NOT NULL
+           AND (a.references_fetched_at IS NULL OR a.references_fetched_at < now() - interval '7 days')
+         LIMIT 200`,
+        [paramsP.data.id]
+      );
+      
+      if (articlesRes.rows.length === 0) {
+        return { 
+          ok: true, 
+          updated: 0, 
+          message: "Нет статей для обновления связей или все связи уже актуальны" 
+        };
+      }
+      
+      // Собираем PMIDs
+      const pmids = articlesRes.rows.map(r => r.pmid);
+      const idByPmid = new Map<string, string>();
+      for (const row of articlesRes.rows) {
+        idByPmid.set(row.pmid, row.id);
+      }
+      
+      // Получаем references
+      const refsMap = await enrichArticlesWithReferences({
+        apiKey: apiKey || undefined,
+        pmids,
+        throttleMs: apiKey ? 100 : 400,
+      });
+      
+      // Обновляем статьи
+      let updated = 0;
+      for (const [pmid, refs] of refsMap) {
+        const articleId = idByPmid.get(pmid);
+        if (!articleId) continue;
+        
+        try {
+          await pool.query(
+            `UPDATE articles SET 
+              reference_pmids = $1,
+              cited_by_pmids = $2,
+              references_fetched_at = now()
+             WHERE id = $3`,
+            [refs.references, refs.citedBy, articleId]
+          );
+          updated++;
+        } catch (err) {
+          console.error(`Error updating references for ${pmid}:`, err);
+        }
+      }
+      
+      return { 
+        ok: true, 
+        updated, 
+        total: articlesRes.rows.length,
+        message: `Обновлены связи для ${updated} статей` 
       };
     }
   );

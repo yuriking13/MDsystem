@@ -231,3 +231,151 @@ export async function pubmedFetchAll(args: {
 
   return { count, items };
 }
+
+/**
+ * Получение связей (references) между статьями через PubMed eLink API
+ * Возвращает PMID статей, на которые ссылается данная статья (cited references)
+ * и статьи, которые её цитируют (citing articles)
+ */
+export type PubMedReferences = {
+  pmid: string;
+  references: string[];      // PMIDs статей, на которые ссылается (исходящие)
+  citedBy: string[];         // PMIDs статей, которые цитируют (входящие)
+};
+
+export async function pubmedGetReferences(args: {
+  apiKey?: string;
+  pmids: string[];
+  throttleMs?: number;
+}): Promise<PubMedReferences[]> {
+  if (args.pmids.length === 0) return [];
+  
+  const results: PubMedReferences[] = [];
+  const parser = new XMLParser({ ignoreAttributes: false });
+  
+  // Обрабатываем батчами по 100 (лимит eLink)
+  const BATCH_SIZE = 100;
+  
+  for (let i = 0; i < args.pmids.length; i += BATCH_SIZE) {
+    const batch = args.pmids.slice(i, i + BATCH_SIZE);
+    
+    // Получаем исходящие ссылки (references) - pubmed_pubmed_refs
+    const refsUrl = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi');
+    refsUrl.searchParams.set('dbfrom', 'pubmed');
+    refsUrl.searchParams.set('db', 'pubmed');
+    refsUrl.searchParams.set('linkname', 'pubmed_pubmed_refs');
+    refsUrl.searchParams.set('retmode', 'xml');
+    batch.forEach(pmid => refsUrl.searchParams.append('id', pmid));
+    if (args.apiKey) refsUrl.searchParams.set('api_key', args.apiKey);
+    
+    // Получаем входящие ссылки (cited by) - pubmed_pubmed_citedin
+    const citedByUrl = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi');
+    citedByUrl.searchParams.set('dbfrom', 'pubmed');
+    citedByUrl.searchParams.set('db', 'pubmed');
+    citedByUrl.searchParams.set('linkname', 'pubmed_pubmed_citedin');
+    citedByUrl.searchParams.set('retmode', 'xml');
+    batch.forEach(pmid => citedByUrl.searchParams.append('id', pmid));
+    if (args.apiKey) citedByUrl.searchParams.set('api_key', args.apiKey);
+    
+    try {
+      // Выполняем оба запроса параллельно
+      const [refsRes, citedByRes] = await Promise.all([
+        fetch(refsUrl.toString()),
+        fetch(citedByUrl.toString())
+      ]);
+      
+      if (!refsRes.ok || !citedByRes.ok) {
+        console.error('PubMed eLink error:', refsRes.status, citedByRes.status);
+        continue;
+      }
+      
+      const [refsXml, citedByXml] = await Promise.all([
+        refsRes.text(),
+        citedByRes.text()
+      ]);
+      
+      const refsData = parser.parse(refsXml);
+      const citedByData = parser.parse(citedByXml);
+      
+      // Парсим результаты
+      const refsMap = parseElinkResults(refsData);
+      const citedByMap = parseElinkResults(citedByData);
+      
+      // Собираем результаты для каждого PMID в батче
+      for (const pmid of batch) {
+        results.push({
+          pmid,
+          references: refsMap.get(pmid) || [],
+          citedBy: citedByMap.get(pmid) || [],
+        });
+      }
+      
+      if (args.throttleMs) await sleep(args.throttleMs);
+    } catch (err) {
+      console.error('PubMed eLink fetch error:', err);
+    }
+  }
+  
+  return results;
+}
+
+function parseElinkResults(data: any): Map<string, string[]> {
+  const result = new Map<string, string[]>();
+  
+  const linkSets = data?.eLinkResult?.LinkSet;
+  if (!linkSets) return result;
+  
+  const sets = Array.isArray(linkSets) ? linkSets : [linkSets];
+  
+  for (const set of sets) {
+    // IdList содержит исходный PMID
+    const sourceId = set?.IdList?.Id;
+    const sourcePmid = typeof sourceId === 'object' ? sourceId['#text'] : String(sourceId || '');
+    
+    if (!sourcePmid) continue;
+    
+    // LinkSetDb содержит связанные статьи
+    const linkDb = set?.LinkSetDb;
+    if (!linkDb) {
+      result.set(sourcePmid, []);
+      continue;
+    }
+    
+    const links = linkDb?.Link;
+    if (!links) {
+      result.set(sourcePmid, []);
+      continue;
+    }
+    
+    const linksArr = Array.isArray(links) ? links : [links];
+    const pmids: string[] = [];
+    
+    for (const link of linksArr) {
+      const id = link?.Id;
+      const pmid = typeof id === 'object' ? id['#text'] : String(id || '');
+      if (pmid && pmid !== sourcePmid) {
+        pmids.push(pmid);
+      }
+    }
+    
+    result.set(sourcePmid, pmids);
+  }
+  
+  return result;
+}
+
+/**
+ * Обогатить статьи данными о references
+ */
+export async function enrichArticlesWithReferences(args: {
+  apiKey?: string;
+  pmids: string[];
+  throttleMs?: number;
+}): Promise<Map<string, PubMedReferences>> {
+  const refs = await pubmedGetReferences(args);
+  const map = new Map<string, PubMedReferences>();
+  for (const r of refs) {
+    map.set(r.pmid, r);
+  }
+  return map;
+}
