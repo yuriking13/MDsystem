@@ -307,6 +307,21 @@ export async function apiTranslateArticles(
   );
 }
 
+// AI детекция статистики
+export type AIStatsResult = {
+  ok: true;
+  analyzed: number;
+  found: number;
+  message: string;
+};
+
+export async function apiDetectStatsWithAI(projectId: string): Promise<AIStatsResult> {
+  return apiFetch<AIStatsResult>(
+    `/api/projects/${projectId}/articles/ai-detect-stats`,
+    { method: "POST" }
+  );
+}
+
 // Обогащение статей через Crossref
 export type EnrichResult = {
   ok: true;

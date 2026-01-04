@@ -1025,6 +1025,97 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         .send(pdf.buffer);
     }
   );
+
+  // POST /api/projects/:id/articles/ai-detect-stats - AI детекция статистики
+  fastify.post(
+    "/projects/:id/articles/ai-detect-stats",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+      
+      const access = await checkProjectAccess(paramsP.data.id, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+      
+      // Получить ключ OpenRouter
+      const openrouterKey = await getUserApiKey(userId, "openrouter");
+      if (!openrouterKey) {
+        return reply.code(400).send({ 
+          error: "OpenRouter API ключ не настроен. Добавьте его в настройках." 
+        });
+      }
+      
+      // Импортируем функцию
+      const { detectStatsCombined } = await import("../lib/stats.js");
+      
+      // Получить статьи без статистики или с низким quality
+      const articlesRes = await pool.query(
+        `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality
+         FROM articles a
+         JOIN project_articles pa ON pa.article_id = a.id
+         WHERE pa.project_id = $1 
+           AND a.abstract_en IS NOT NULL
+           AND (a.has_stats = false OR a.stats_quality = 0)
+         LIMIT 20`,
+        [paramsP.data.id]
+      );
+      
+      if (articlesRes.rows.length === 0) {
+        return { 
+          ok: true, 
+          analyzed: 0, 
+          found: 0,
+          message: "Все статьи уже проанализированы" 
+        };
+      }
+      
+      let analyzed = 0;
+      let found = 0;
+      
+      for (const article of articlesRes.rows) {
+        try {
+          const result = await detectStatsCombined({
+            text: article.abstract_en,
+            openrouterKey,
+            useAI: true,
+          });
+          
+          if (result.hasStats) {
+            await pool.query(
+              `UPDATE articles SET 
+                has_stats = true,
+                stats_quality = GREATEST(stats_quality, $1),
+                stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
+               WHERE id = $3`,
+              [
+                result.quality,
+                JSON.stringify({ ai: result.aiStats }),
+                article.id
+              ]
+            );
+            found++;
+          }
+          
+          analyzed++;
+        } catch (err) {
+          console.error(`AI stats detection error for ${article.id}:`, err);
+        }
+      }
+      
+      return { 
+        ok: true, 
+        analyzed,
+        found,
+        message: `Проанализировано ${analyzed} статей. Найдена статистика в ${found} статьях.` 
+      };
+    }
+  );
 };
 
 export default plugin;

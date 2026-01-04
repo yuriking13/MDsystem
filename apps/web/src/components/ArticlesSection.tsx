@@ -5,6 +5,7 @@ import {
   apiUpdateArticleStatus,
   apiTranslateArticles,
   apiEnrichArticles,
+  apiDetectStatsWithAI,
   apiGetPdfSource,
   getPdfDownloadUrl,
   type Article,
@@ -61,6 +62,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   
+  // Мультипоиск - несколько запросов
+  const [multiQueries, setMultiQueries] = useState<Array<{ query: string; id: string }>>([]);
+  const [showMultiSearch, setShowMultiSearch] = useState(false);
+  
   // Период
   const [datePreset, setDatePreset] = useState("5y");
   const [customYearFrom, setCustomYearFrom] = useState<number>(2020);
@@ -85,6 +90,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   
   // Обогащение Crossref
   const [enriching, setEnriching] = useState(false);
+  
+  // AI детекция статистики
+  const [detectingStats, setDetectingStats] = useState(false);
 
   // Выбранная статья для просмотра
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -206,6 +214,77 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     }
   }
 
+  // Мультипоиск - добавить новый запрос
+  function addMultiQuery() {
+    if (!searchQuery.trim()) return;
+    setMultiQueries(prev => [...prev, { query: searchQuery.trim(), id: crypto.randomUUID() }]);
+    setSearchQuery("");
+  }
+
+  function removeMultiQuery(id: string) {
+    setMultiQueries(prev => prev.filter(q => q.id !== id));
+  }
+
+  // Выполнить мультипоиск
+  async function handleMultiSearch(e: React.FormEvent) {
+    e.preventDefault();
+    
+    const allQueries = [...multiQueries.map(q => q.query)];
+    if (searchQuery.trim()) {
+      allQueries.push(searchQuery.trim());
+    }
+    
+    if (allQueries.length === 0) return;
+
+    setSearching(true);
+    setError(null);
+    setOk(null);
+
+    const { yearFrom, yearTo } = getYearsFromPreset();
+    
+    const filters: SearchFilters = {
+      yearFrom,
+      yearTo,
+    };
+    
+    if (textAvailability === "free_full") {
+      filters.freeFullTextOnly = true;
+    } else if (textAvailability === "full") {
+      filters.fullTextOnly = true;
+    }
+    
+    if (pubTypes.length > 0) {
+      const pubmedTypes = PUBLICATION_TYPES
+        .filter((pt) => pubTypes.includes(pt.id))
+        .map((pt) => pt.pubmed);
+      filters.publicationTypes = pubmedTypes;
+      filters.publicationTypesLogic = pubTypesLogic;
+    }
+    
+    filters.translate = translateAfterSearch;
+
+    const results: string[] = [];
+    let totalFound = 0;
+    
+    try {
+      for (const query of allQueries) {
+        const res = await apiSearchArticles(projectId, query, filters, maxResults);
+        results.push(`${query}: ${res.message}`);
+        totalFound += res.added;
+      }
+      
+      setOk(`Мультипоиск завершён. Найдено: ${totalFound} статей.\n${results.join('\n')}`);
+      setShowSearch(false);
+      setMultiQueries([]);
+      setSearchQuery("");
+      await loadArticles();
+    } catch (err: any) {
+      setError(err?.message || "Ошибка поиска");
+    } finally {
+      setSearching(false);
+    }
+  }
+
   async function handleStatusChange(article: Article, newStatus: "candidate" | "selected" | "excluded" | "deleted") {
     try {
       await apiUpdateArticleStatus(projectId, article.id, newStatus);
@@ -264,6 +343,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       setError(err?.message || "Ошибка обогащения");
     } finally {
       setEnriching(false);
+    }
+  }
+  
+  // AI детекция статистики
+  async function handleAIDetectStats() {
+    setDetectingStats(true);
+    setError(null);
+    setOk(null);
+    
+    try {
+      const res = await apiDetectStatsWithAI(projectId);
+      setOk(res.message);
+      await loadArticles();
+    } catch (err: any) {
+      setError(err?.message || "Ошибка AI анализа статистики");
+    } finally {
+      setDetectingStats(false);
     }
   }
   
@@ -493,18 +589,67 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
       {/* Форма поиска */}
       {showSearch && (
-        <form onSubmit={handleSearch} className="card" style={{ marginBottom: 16 }}>
-          <h3>Поиск статей в PubMed</h3>
-          <div className="stack">
-            <label className="stack">
-              <span>Поисковый запрос *</span>
+        <form onSubmit={multiQueries.length > 0 ? handleMultiSearch : handleSearch} className="card" style={{ marginBottom: 16 }}>
+          <div className="row space" style={{ marginBottom: 12 }}>
+            <h3 style={{ margin: 0 }}>Поиск статей в PubMed</h3>
+            <label className="row gap" style={{ alignItems: "center" }}>
               <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder='например: "heart failure" AND "machine learning"'
-                required
+                type="checkbox"
+                checked={showMultiSearch}
+                onChange={(e) => setShowMultiSearch(e.target.checked)}
+                style={{ width: "auto" }}
               />
+              <span className="muted" style={{ fontSize: 12 }}>Мультипоиск</span>
             </label>
+          </div>
+          <div className="stack">
+            {/* Мультипоиск - список запросов */}
+            {showMultiSearch && multiQueries.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <span className="muted" style={{ fontSize: 12 }}>Запросы для мультипоиска:</span>
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {multiQueries.map((q, idx) => (
+                    <div key={q.id} className="row gap" style={{ alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: 8 }}>
+                      <span style={{ flex: 1, fontSize: 13 }}>
+                        <span className="muted">{idx + 1}.</span> {q.query}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeMultiQuery(q.id)}
+                        className="btn secondary"
+                        style={{ padding: '2px 8px', fontSize: 12 }}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="row gap" style={{ alignItems: 'flex-end' }}>
+              <label className="stack" style={{ flex: 1 }}>
+                <span>Поисковый запрос {multiQueries.length > 0 ? '' : '*'}</span>
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder='например: "heart failure" AND "machine learning"'
+                  required={multiQueries.length === 0}
+                />
+              </label>
+              {showMultiSearch && (
+                <button
+                  type="button"
+                  onClick={addMultiQuery}
+                  className="btn secondary"
+                  disabled={!searchQuery.trim()}
+                  style={{ padding: '10px 16px' }}
+                  title="Добавить запрос в список"
+                >
+                  + Добавить
+                </button>
+              )}
+            </div>
 
             {/* Период публикации */}
             <div>
@@ -644,11 +789,15 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
             <div className="row gap">
               <button className="btn" disabled={searching} type="submit">
-                {searching ? "Поиск..." : "Найти и добавить"}
+                {searching 
+                  ? "Поиск..." 
+                  : multiQueries.length > 0 
+                    ? `🔍 Мультипоиск (${multiQueries.length + (searchQuery.trim() ? 1 : 0)} запросов)` 
+                    : "Найти и добавить"}
               </button>
               <button
                 className="btn secondary"
-                onClick={() => setShowSearch(false)}
+                onClick={() => { setShowSearch(false); setMultiQueries([]); }}
                 type="button"
               >
                 Отмена
@@ -886,6 +1035,16 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
                 📚 Crossref
+              </button>
+              <button
+                className="btn secondary"
+                onClick={handleAIDetectStats}
+                disabled={detectingStats}
+                title="AI детекция статистики (OpenRouter)"
+                type="button"
+                style={{ padding: "4px 10px", fontSize: 12 }}
+              >
+                🤖 AI Статистика
               </button>
               {viewStatus !== "candidate" && viewStatus !== "deleted" && (
                 <button
