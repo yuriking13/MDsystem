@@ -143,40 +143,30 @@ export default function DocumentPage() {
     }
   }
 
-  // Добавить цитату
+  // Добавить цитату - всегда создаём новую запись (можно несколько цитат к одному источнику)
   async function handleAddCitation(article: Article) {
     if (!projectId || !docId) return;
 
     try {
-      // Проверяем, есть ли уже цитата на этот источник
-      const existingCitation = doc?.citations?.find(c => c.article_id === article.id);
+      // Всегда создаём новую цитату
+      const res = await apiAddCitation(projectId, docId, article.id);
       
-      if (existingCitation) {
-        // Если цитата уже есть - просто вставляем номер в текст
-        insertCitationToEditor(
-          existingCitation.inline_number,
-          existingCitation.id,
-          existingCitation.note || '',
-          article.title_ru || article.title_en
-        );
-        setShowCitationPicker(false);
-      } else {
-        // Новая цитата - добавляем в БД
-        const res = await apiAddCitation(projectId, docId, article.id);
-        // Вставить номер в текст с полными данными для тултипа
-        insertCitationToEditor(
-          res.citation.inline_number,
-          res.citation.id,
-          res.citation.note || '',
-          article.title_ru || article.title_en
-        );
-        
-        // Обновить документ
-        const updated = await apiGetDocument(projectId, docId);
-        setDoc(updated.document);
-        
-        setShowCitationPicker(false);
-      }
+      // sub_number используется для нумерации цитат
+      const subNumber = (res.citation as { sub_number?: number }).sub_number || 1;
+      
+      // Вставить номер в текст
+      insertCitationToEditor(
+        res.citation.inline_number,
+        res.citation.id,
+        res.citation.note || '',
+        article.title_ru || article.title_en
+      );
+      
+      // Обновить документ
+      const updated = await apiGetDocument(projectId, docId);
+      setDoc(updated.document);
+      
+      setShowCitationPicker(false);
     } catch (err: any) {
       setError(err?.message || "Ошибка добавления цитаты");
     }
@@ -301,19 +291,24 @@ export default function DocumentPage() {
           </div>
           {doc.citations && doc.citations.length > 0 ? (
             <ul className="citations-list">
-              {doc.citations.map((c) => (
+              {doc.citations.map((c) => {
+                // Формируем номер с учётом sub_number
+                const subNum = c.sub_number || 1;
+                const displayNum = subNum > 1 ? `${c.inline_number}.${subNum}` : String(c.inline_number);
+                
+                return (
                 <li key={c.id} id={`citation-${c.id}`} className="citation-list-item">
                   <div className="citation-item" style={{ flexDirection: 'column', gap: 8 }}>
                     <div className="row space" style={{ width: '100%' }}>
                       <span 
                         className="citation-number clickable"
-                        title="Скопировать ссылку [n] для вставки в текст"
+                        title="Скопировать ссылку для вставки в текст"
                         onClick={() => {
                           // Копируем формат цитаты для вставки
                           navigator.clipboard.writeText(`[${c.inline_number}]`);
                         }}
                       >
-                        [{c.inline_number}]
+                        [{displayNum}]
                       </span>
                       <button
                         className="btn secondary"
@@ -379,7 +374,8 @@ export default function DocumentPage() {
                     />
                   </div>
                 </li>
-              ))}
+              );
+              })}
             </ul>
           ) : (
             <div className="muted" style={{ fontSize: 13 }}>

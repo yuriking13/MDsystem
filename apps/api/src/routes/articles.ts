@@ -139,11 +139,12 @@ async function findOrCreateArticle(article: PubMedArticle, publicationTypes?: st
   return res.rows[0].id;
 }
 
-// Добавить статью в проект (с дедупликацией)
+// Добавить статью в проект (с дедупликацией и сохранением поискового запроса)
 async function addArticleToProject(
   projectId: string, 
   articleId: string, 
-  userId: string
+  userId: string,
+  sourceQuery?: string
 ): Promise<boolean> {
   // Проверяем, есть ли уже связь
   const existing = await pool.query(
@@ -155,11 +156,31 @@ async function addArticleToProject(
     return false; // Уже добавлена
   }
   
-  await pool.query(
-    `INSERT INTO project_articles (project_id, article_id, status, added_by)
-     VALUES ($1, $2, 'candidate', $3)`,
-    [projectId, articleId, userId]
-  );
+  // Проверяем наличие колонки source_query
+  let hasSourceQuery = false;
+  try {
+    const checkCol = await pool.query(
+      `SELECT column_name FROM information_schema.columns 
+       WHERE table_name = 'project_articles' AND column_name = 'source_query'`
+    );
+    hasSourceQuery = (checkCol.rowCount ?? 0) > 0;
+  } catch {
+    hasSourceQuery = false;
+  }
+  
+  if (hasSourceQuery && sourceQuery) {
+    await pool.query(
+      `INSERT INTO project_articles (project_id, article_id, status, added_by, source_query)
+       VALUES ($1, $2, 'candidate', $3, $4)`,
+      [projectId, articleId, userId, sourceQuery]
+    );
+  } else {
+    await pool.query(
+      `INSERT INTO project_articles (project_id, article_id, status, added_by)
+       VALUES ($1, $2, 'candidate', $3)`,
+      [projectId, articleId, userId]
+    );
+  }
   
   return true;
 }
@@ -231,12 +252,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Типы публикации из фильтров поиска
       const searchPubTypes = bodyP.data.filters?.publicationTypes || [];
       
+      // Сохраняем поисковый запрос для группировки
+      const searchQuery = bodyP.data.query;
+      
       for (const article of items) {
         try {
           const articleId = await findOrCreateArticle(article, searchPubTypes);
           articleIds.push(articleId);
           
-          const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId);
+          const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
           if (wasAdded) {
             added++;
             newArticleIds.push(articleId);
@@ -338,10 +362,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Project not found" });
       }
       
+      // Проверяем наличие колонки source_query
+      let hasSourceQuery = false;
+      try {
+        const checkCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'project_articles' AND column_name = 'source_query'`
+        );
+        hasSourceQuery = (checkCol.rowCount ?? 0) > 0;
+      } catch {
+        hasSourceQuery = false;
+      }
+      
       // Query params для фильтрации
       const query = request.query as any;
       const status = query.status; // candidate, selected, excluded
       const hasStats = query.hasStats === "true";
+      const sourceQuery = query.sourceQuery; // Фильтр по поисковому запросу
       
       let sql = `
         SELECT 
@@ -351,6 +388,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           a.has_stats, a.stats_json, a.stats_quality, a.publication_types,
           a.fetched_at,
           pa.status, pa.notes, pa.tags, pa.added_at
+          ${hasSourceQuery ? ', pa.source_query' : ''}
         FROM project_articles pa
         JOIN articles a ON a.id = pa.article_id
         WHERE pa.project_id = $1
@@ -367,6 +405,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         sql += ` AND a.has_stats = true`;
       }
       
+      // Фильтр по поисковому запросу
+      if (hasSourceQuery && sourceQuery) {
+        sql += ` AND pa.source_query = $${paramIdx++}`;
+        params.push(sourceQuery);
+      }
+      
       sql += ` ORDER BY pa.added_at DESC`;
       
       const res = await pool.query(sql, params);
@@ -380,6 +424,18 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         [paramsP.data.id]
       );
       
+      // Получить уникальные поисковые запросы
+      let searchQueries: string[] = [];
+      if (hasSourceQuery) {
+        const queriesRes = await pool.query(
+          `SELECT DISTINCT source_query FROM project_articles 
+           WHERE project_id = $1 AND source_query IS NOT NULL
+           ORDER BY source_query`,
+          [paramsP.data.id]
+        );
+        searchQueries = queriesRes.rows.map((r: { source_query: string }) => r.source_query);
+      }
+      
       const counts: Record<string, number> = {
         candidate: 0,
         selected: 0,
@@ -391,6 +447,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       
       return {
         articles: res.rows,
+        searchQueries,
         counts,
         total: res.rowCount,
       };

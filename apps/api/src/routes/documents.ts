@@ -87,6 +87,18 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Project not found" });
       }
 
+      // Проверяем есть ли колонка sub_number
+      let hasSubNumber = false;
+      try {
+        const checkCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'citations' AND column_name = 'sub_number'`
+        );
+        hasSubNumber = (checkCol.rowCount ?? 0) > 0;
+      } catch {
+        hasSubNumber = false;
+      }
+
       const res = await pool.query(
         `SELECT d.*, 
           (SELECT json_agg(json_build_object(
@@ -94,6 +106,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             'article_id', c.article_id,
             'order_index', c.order_index,
             'inline_number', c.inline_number,
+            'sub_number', ${hasSubNumber ? 'c.sub_number' : '1'},
             'page_range', c.page_range,
             'note', c.note,
             'article', json_build_object(
@@ -106,7 +119,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               'doi', a.doi,
               'pmid', a.pmid
             )
-          ) ORDER BY c.order_index)
+          ) ORDER BY c.inline_number, ${hasSubNumber ? 'c.sub_number' : 'c.order_index'})
           FROM citations c
           JOIN articles a ON a.id = c.article_id
           WHERE c.document_id = d.id
@@ -271,6 +284,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const bodySchema = z.object({
         articleId: z.string().uuid(),
         pageRange: z.string().max(50).optional(),
+        note: z.string().max(2000).optional(),
       });
 
       const bodyP = bodySchema.safeParse(request.body);
@@ -283,31 +297,89 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(403).send({ error: "No edit access" });
       }
 
-      // Получить следующий номер
+      // Проверяем, есть ли уже цитаты на этот источник
+      const existingCitations = await pool.query(
+        `SELECT inline_number FROM citations 
+         WHERE document_id = $1 AND article_id = $2 
+         ORDER BY inline_number LIMIT 1`,
+        [paramsP.data.docId, bodyP.data.articleId]
+      );
+
+      let inlineNumber: number;
+      let subNumber = 1;
+
+      if ((existingCitations.rowCount ?? 0) > 0) {
+        // Есть существующие цитаты - используем тот же номер, но новый sub_number
+        inlineNumber = existingCitations.rows[0].inline_number;
+        
+        // Получить следующий sub_number для этого источника
+        const maxSub = await pool.query(
+          `SELECT COALESCE(MAX(sub_number), 0) + 1 as next_sub
+           FROM citations WHERE document_id = $1 AND article_id = $2`,
+          [paramsP.data.docId, bodyP.data.articleId]
+        );
+        subNumber = maxSub.rows[0].next_sub;
+      } else {
+        // Новый источник - получить следующий inline_number
+        const maxNum = await pool.query(
+          `SELECT COALESCE(MAX(inline_number), 0) + 1 as next_number
+           FROM citations WHERE document_id = $1`,
+          [paramsP.data.docId]
+        );
+        inlineNumber = maxNum.rows[0].next_number;
+      }
+
+      // Получить следующий order_index
       const maxOrder = await pool.query(
-        `SELECT COALESCE(MAX(order_index), 0) + 1 as next_order,
-                COALESCE(MAX(inline_number), 0) + 1 as next_number
+        `SELECT COALESCE(MAX(order_index), 0) + 1 as next_order
          FROM citations WHERE document_id = $1`,
         [paramsP.data.docId]
       );
 
       try {
+        // Проверяем есть ли колонка sub_number
+        let hasSubNumber = false;
+        try {
+          const checkCol = await pool.query(
+            `SELECT column_name FROM information_schema.columns 
+             WHERE table_name = 'citations' AND column_name = 'sub_number'`
+          );
+          hasSubNumber = (checkCol.rowCount ?? 0) > 0;
+        } catch {
+          hasSubNumber = false;
+        }
+
         const res = await pool.query(
-          `INSERT INTO citations (document_id, article_id, order_index, inline_number, page_range)
-           VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (document_id, article_id) DO UPDATE SET page_range = EXCLUDED.page_range
-           RETURNING *`,
-          [
-            paramsP.data.docId,
-            bodyP.data.articleId,
-            maxOrder.rows[0].next_order,
-            maxOrder.rows[0].next_number,
-            bodyP.data.pageRange || null,
-          ]
+          hasSubNumber
+            ? `INSERT INTO citations (document_id, article_id, order_index, inline_number, sub_number, page_range, note)
+               VALUES ($1, $2, $3, $4, $5, $6, $7)
+               RETURNING *`
+            : `INSERT INTO citations (document_id, article_id, order_index, inline_number, page_range, note)
+               VALUES ($1, $2, $3, $4, $5, $6)
+               RETURNING *`,
+          hasSubNumber
+            ? [
+                paramsP.data.docId,
+                bodyP.data.articleId,
+                maxOrder.rows[0].next_order,
+                inlineNumber,
+                subNumber,
+                bodyP.data.pageRange || null,
+                bodyP.data.note || null,
+              ]
+            : [
+                paramsP.data.docId,
+                bodyP.data.articleId,
+                maxOrder.rows[0].next_order,
+                inlineNumber,
+                bodyP.data.pageRange || null,
+                bodyP.data.note || null,
+              ]
         );
 
-        return { citation: res.rows[0] };
+        return { citation: { ...res.rows[0], sub_number: subNumber } };
       } catch (err) {
+        console.error('Add citation error:', err);
         return reply.code(400).send({ error: "Failed to add citation" });
       }
     }
@@ -460,19 +532,43 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         [paramsP.data.projectId]
       );
 
+      // Проверяем существование колонок volume
+      let hasVolumeColumns = false;
+      try {
+        const checkCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'articles' AND column_name = 'volume'`
+        );
+        hasVolumeColumns = (checkCol.rowCount ?? 0) > 0;
+      } catch {
+        hasVolumeColumns = false;
+      }
+
       // Получить все уникальные цитаты из всех документов проекта
       const citationsRes = await pool.query(
-        `SELECT DISTINCT ON (a.id)
-           a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-           a.doi, a.pmid,
-           (a.raw_json->'crossref'->>'volume') as volume,
-           (a.raw_json->'crossref'->>'issue') as issue,
-           (a.raw_json->'crossref'->>'pages') as pages
-         FROM citations c
-         JOIN documents d ON d.id = c.document_id
-         JOIN articles a ON a.id = c.article_id
-         WHERE d.project_id = $1
-         ORDER BY a.id, c.order_index`,
+        hasVolumeColumns
+          ? `SELECT DISTINCT ON (a.id)
+               a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+               a.doi, a.pmid,
+               COALESCE(a.volume, a.raw_json->'crossref'->>'volume') as volume,
+               COALESCE(a.issue, a.raw_json->'crossref'->>'issue') as issue,
+               COALESCE(a.pages, a.raw_json->'crossref'->>'pages') as pages
+             FROM citations c
+             JOIN documents d ON d.id = c.document_id
+             JOIN articles a ON a.id = c.article_id
+             WHERE d.project_id = $1
+             ORDER BY a.id, c.order_index`
+          : `SELECT DISTINCT ON (a.id)
+               a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+               a.doi, a.pmid,
+               (a.raw_json->'crossref'->>'volume') as volume,
+               (a.raw_json->'crossref'->>'issue') as issue,
+               (a.raw_json->'crossref'->>'pages') as pages
+             FROM citations c
+             JOIN documents d ON d.id = c.document_id
+             JOIN articles a ON a.id = c.article_id
+             WHERE d.project_id = $1
+             ORDER BY a.id, c.order_index`,
         [paramsP.data.projectId]
       );
 
@@ -537,16 +633,37 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         || projectRes.rows[0]?.citation_style 
         || 'gost';
 
-      // Получить все уникальные цитаты
+      // Получить все уникальные цитаты (с проверкой существования колонок)
+      let hasVolumeColumns = false;
+      try {
+        const checkCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'articles' AND column_name = 'volume'`
+        );
+        hasVolumeColumns = (checkCol.rowCount ?? 0) > 0;
+      } catch {
+        hasVolumeColumns = false;
+      }
+
       const citationsRes = await pool.query(
-        `SELECT DISTINCT ON (a.id)
-           a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-           a.doi, a.pmid, a.volume, a.issue, a.pages
-         FROM citations c
-         JOIN documents d ON d.id = c.document_id
-         JOIN articles a ON a.id = c.article_id
-         WHERE d.project_id = $1
-         ORDER BY a.id`,
+        hasVolumeColumns
+          ? `SELECT DISTINCT ON (a.id)
+               a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+               a.doi, a.pmid, a.volume, a.issue, a.pages
+             FROM citations c
+             JOIN documents d ON d.id = c.document_id
+             JOIN articles a ON a.id = c.article_id
+             WHERE d.project_id = $1
+             ORDER BY a.id`
+          : `SELECT DISTINCT ON (a.id)
+               a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+               a.doi, a.pmid, 
+               NULL as volume, NULL as issue, NULL as pages
+             FROM citations c
+             JOIN documents d ON d.id = c.document_id
+             JOIN articles a ON a.id = c.article_id
+             WHERE d.project_id = $1
+             ORDER BY a.id`,
         [paramsP.data.projectId]
       );
 

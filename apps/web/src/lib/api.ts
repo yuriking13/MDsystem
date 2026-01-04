@@ -200,6 +200,7 @@ export type ArticlesResponse = {
   articles: Article[];
   counts: { candidate: number; selected: number; excluded: number };
   total: number;
+  searchQueries?: string[]; // Уникальные поисковые запросы для фильтрации
 };
 
 export type SearchFilters = {
@@ -344,6 +345,7 @@ export type Citation = {
   article_id: string;
   order_index: number;
   inline_number: number;
+  sub_number?: number; // Номер цитаты внутри источника (1, 2, 3...)
   page_range: string | null;
   note: string | null; // Прямая цитата из текста статьи
   article: {
