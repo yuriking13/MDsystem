@@ -268,25 +268,15 @@ export default function Editor({
   const insertCitation = useCallback(
     (citationNumber: number, citationId?: string, note?: string, articleTitle?: string) => {
       if (editor) {
-        // Вставляем как специальную метку с данными
+        // Вставляем как HTML span с data-атрибутами
+        const noteAttr = note ? ` data-note="${note.replace(/"/g, '&quot;')}"` : '';
+        const titleAttr = articleTitle ? ` data-article-title="${articleTitle.replace(/"/g, '&quot;')}"` : '';
+        const html = `<span class="citation-link" data-citation-number="${citationNumber}" data-citation-id="${citationId || `citation-${citationNumber}`}"${noteAttr}${titleAttr}>[${citationNumber}]</span>`;
+        
         editor
           .chain()
           .focus()
-          .insertContent({
-            type: 'text',
-            marks: [
-              {
-                type: 'citation',
-                attrs: {
-                  citationNumber,
-                  citationId: citationId || `citation-${citationNumber}`,
-                  note: note || '',
-                  articleTitle: articleTitle || '',
-                },
-              },
-            ],
-            text: `[${citationNumber}]`,
-          })
+          .insertContent(html)
           .run();
       }
     },

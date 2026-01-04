@@ -718,6 +718,22 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(403).send({ error: "No edit access" });
       }
       
+      // Проверяем существование колонок reference_pmids
+      try {
+        const checkCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'articles' AND column_name = 'reference_pmids'`
+        );
+        if ((checkCol.rowCount ?? 0) === 0) {
+          return reply.code(400).send({ 
+            error: "Требуется миграция базы данных",
+            message: "Выполните SQL миграцию add_article_references.sql для добавления колонок reference_pmids и cited_by_pmids" 
+          });
+        }
+      } catch {
+        return reply.code(500).send({ error: "Ошибка проверки схемы БД" });
+      }
+      
       // Получить API ключ PubMed
       const apiKey = await getUserApiKey(userId, "pubmed");
       
@@ -742,7 +758,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
       
       // Собираем PMIDs
-      const pmids = articlesRes.rows.map(r => r.pmid);
+      const pmids = articlesRes.rows.map((r: { pmid: string }) => r.pmid);
       const idByPmid = new Map<string, string>();
       for (const row of articlesRes.rows) {
         idByPmid.set(row.pmid, row.id);
