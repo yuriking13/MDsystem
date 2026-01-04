@@ -49,7 +49,6 @@ function Toolbar({
   onCreateChart?: () => void;
 }) {
   const [showTableMenu, setShowTableMenu] = useState(false);
-  const [showInsertMenu, setShowInsertMenu] = useState(false);
   
   if (!editor) return null;
 
@@ -71,6 +70,10 @@ function Toolbar({
     editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
     setShowTableMenu(false);
   };
+
+  // Проверяем есть ли выделенные ячейки для объединения
+  const canMergeCells = editor.can().mergeCells();
+  const canSplitCell = editor.can().splitCell();
 
   return (
     <div className="editor-toolbar">
@@ -255,7 +258,7 @@ function Toolbar({
             📊
           </button>
           {showTableMenu && (
-            <div className="dropdown-menu">
+            <div className="dropdown-menu" style={{ minWidth: 220 }}>
               <div className="dropdown-header">Вставить таблицу</div>
               <div className="table-grid">
                 {[2, 3, 4, 5].map(rows => (
@@ -274,12 +277,39 @@ function Toolbar({
               {editor.isActive("table") && (
                 <>
                   <div className="dropdown-divider" />
+                  <div className="dropdown-header">Редактирование</div>
                   <button onClick={() => { editor.chain().focus().addColumnAfter().run(); setShowTableMenu(false); }}>
                     + Столбец справа
                   </button>
                   <button onClick={() => { editor.chain().focus().addRowAfter().run(); setShowTableMenu(false); }}>
                     + Строка снизу
                   </button>
+                  <button onClick={() => { editor.chain().focus().addColumnBefore().run(); setShowTableMenu(false); }}>
+                    + Столбец слева
+                  </button>
+                  <button onClick={() => { editor.chain().focus().addRowBefore().run(); setShowTableMenu(false); }}>
+                    + Строка сверху
+                  </button>
+                  <div className="dropdown-divider" />
+                  <div className="dropdown-header">Объединение ячеек</div>
+                  <button 
+                    onClick={() => { editor.chain().focus().mergeCells().run(); setShowTableMenu(false); }}
+                    disabled={!canMergeCells}
+                    style={{ opacity: canMergeCells ? 1 : 0.5 }}
+                  >
+                    ⊞ Объединить ячейки
+                  </button>
+                  <button 
+                    onClick={() => { editor.chain().focus().splitCell().run(); setShowTableMenu(false); }}
+                    disabled={!canSplitCell}
+                    style={{ opacity: canSplitCell ? 1 : 0.5 }}
+                  >
+                    ⊟ Разделить ячейку
+                  </button>
+                  <button onClick={() => { editor.chain().focus().toggleHeaderCell().run(); setShowTableMenu(false); }}>
+                    ≡ Сделать заголовком
+                  </button>
+                  <div className="dropdown-divider" />
                   <button onClick={() => { editor.chain().focus().deleteColumn().run(); setShowTableMenu(false); }}>
                     − Удалить столбец
                   </button>
@@ -290,8 +320,11 @@ function Toolbar({
                     🗑️ Удалить таблицу
                   </button>
                   <div className="dropdown-divider" />
-                  <button onClick={() => { onCreateChart?.(); setShowTableMenu(false); }}>
-                    📈 Создать график
+                  <button 
+                    onClick={() => { onCreateChart?.(); setShowTableMenu(false); }}
+                    style={{ background: 'rgba(74, 222, 128, 0.2)', color: 'var(--success)' }}
+                  >
+                    📈 Создать график из таблицы
                   </button>
                 </>
               )}
@@ -360,6 +393,7 @@ export default function Editor({
   const [showChartModal, setShowChartModal] = useState(false);
   const [tableHtmlForChart, setTableHtmlForChart] = useState("");
   const [savingChart, setSavingChart] = useState(false);
+  const [currentTablePos, setCurrentTablePos] = useState<{ from: number; to: number } | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -389,6 +423,7 @@ export default function Editor({
       Color,
       Table.configure({
         resizable: true,
+        allowTableNodeSelection: true,
         HTMLAttributes: {
           class: 'editor-table',
         },
@@ -472,26 +507,94 @@ export default function Editor({
   const wordCount = editor?.state.doc.textContent.split(/\s+/).filter(Boolean).length || 0;
   const charCount = editor?.state.doc.textContent.length || 0;
 
+  // Найти позицию конца таблицы для вставки графика после неё
+  const findTableEndPosition = useCallback(() => {
+    if (!editor) return null;
+    
+    const { state } = editor;
+    const { selection } = state;
+    const { $from } = selection;
+    
+    // Ищем таблицу, которая содержит курсор
+    let tableNode = null;
+    let tablePos = 0;
+    
+    for (let d = $from.depth; d > 0; d--) {
+      const node = $from.node(d);
+      if (node.type.name === 'table') {
+        tableNode = node;
+        tablePos = $from.before(d);
+        break;
+      }
+    }
+    
+    if (tableNode) {
+      // Возвращаем позицию сразу после таблицы
+      return tablePos + tableNode.nodeSize;
+    }
+    
+    return null;
+  }, [editor]);
+
   // Функция для создания графика из текущей таблицы
   const handleCreateChart = useCallback(() => {
     if (!editor) return;
     
-    // Получаем HTML всего документа и ищем таблицу в позиции курсора
-    const html = editor.getHTML();
+    const { state } = editor;
+    const { selection } = state;
+    const { $from } = selection;
     
-    // Простой способ - ищем первую таблицу в документе
-    // В реальном случае нужно искать таблицу, в которой находится курсор
+    // Ищем таблицу, которая содержит курсор
+    let tableNode = null;
+    let tablePos = 0;
+    
+    for (let d = $from.depth; d > 0; d--) {
+      const node = $from.node(d);
+      if (node.type.name === 'table') {
+        tableNode = node;
+        tablePos = $from.before(d);
+        break;
+      }
+    }
+    
+    if (!tableNode) {
+      // Ищем любую таблицу в документе
+      const html = editor.getHTML();
+      const tableMatch = html.match(/<table[^>]*>[\s\S]*?<\/table>/i);
+      
+      if (tableMatch) {
+        setTableHtmlForChart(tableMatch[0]);
+        setCurrentTablePos(null);
+        setShowChartModal(true);
+      } else {
+        alert("Сначала создайте таблицу с данными в редакторе");
+      }
+      return;
+    }
+    
+    // Получаем HTML только выбранной таблицы
+    const tableEndPos = tablePos + tableNode.nodeSize;
+    setCurrentTablePos({ from: tablePos, to: tableEndPos });
+    
+    // Создаём временный div для получения HTML таблицы
+    const fragment = state.doc.slice(tablePos, tableEndPos);
+    const tempDiv = document.createElement('div');
+    const serializer = (window as any).DOMSerializer?.fromSchema?.(state.schema);
+    if (serializer) {
+      tempDiv.appendChild(serializer.serializeFragment(fragment.content));
+    }
+    
+    // Fallback: ищем таблицу в полном HTML
+    const html = editor.getHTML();
     const tableMatch = html.match(/<table[^>]*>[\s\S]*?<\/table>/i);
     
     if (tableMatch) {
       setTableHtmlForChart(tableMatch[0]);
       setShowChartModal(true);
-    } else {
-      alert("Сначала выберите таблицу в редакторе");
     }
   }, [editor]);
 
-  // Вставка графика в документ и сохранение в статистику проекта
+  // Вставка графика в документ ПОСЛЕ таблицы и сохранение в статистику проекта
   const handleInsertChart = useCallback(async (chartDataJson: string, chartId?: string) => {
     if (editor) {
       // Парсим JSON из HTML атрибута
@@ -499,11 +602,38 @@ export default function Editor({
       if (match) {
         const chartDataStr = match[1].replace(/&#39;/g, "'");
         
-        // Вставляем график в редактор
-        editor.chain().focus().insertContent({
-          type: 'chartNode',
-          attrs: { chartData: chartDataStr },
-        }).run();
+        // Находим позицию после таблицы
+        const tableEndPos = findTableEndPosition();
+        
+        if (tableEndPos !== null) {
+          // Вставляем график ПОСЛЕ таблицы, не внутри неё
+          editor
+            .chain()
+            .focus()
+            .insertContentAt(tableEndPos, [
+              { type: 'paragraph' }, // Пустая строка перед графиком
+              {
+                type: 'chartNode',
+                attrs: { chartData: chartDataStr },
+              },
+              { type: 'paragraph' }, // Пустая строка после графика
+            ])
+            .run();
+        } else {
+          // Если таблица не найдена, вставляем в конец документа
+          editor
+            .chain()
+            .focus()
+            .insertContent([
+              { type: 'paragraph' },
+              {
+                type: 'chartNode',
+                attrs: { chartData: chartDataStr },
+              },
+              { type: 'paragraph' },
+            ])
+            .run();
+        }
         
         // Сохраняем в статистику проекта если есть projectId
         if (projectId) {
@@ -525,6 +655,7 @@ export default function Editor({
             });
             
             onStatisticCreated?.(result.statistic.id);
+            console.log('Chart saved to statistics:', result.statistic.id);
           } catch (err) {
             console.error('Failed to save chart to statistics:', err);
           } finally {
@@ -535,7 +666,8 @@ export default function Editor({
     }
     setShowChartModal(false);
     setTableHtmlForChart("");
-  }, [editor, projectId, onStatisticCreated]);
+    setCurrentTablePos(null);
+  }, [editor, projectId, onStatisticCreated, findTableEndPosition]);
 
   return (
     <div className="editor-container">
@@ -551,6 +683,7 @@ export default function Editor({
         <div className="editor-footer">
           <span className="word-count">
             {wordCount} слов • {charCount} символов
+            {savingChart && ' • Сохранение графика...'}
           </span>
         </div>
       )}
@@ -559,7 +692,11 @@ export default function Editor({
       {showChartModal && (
         <ChartCreatorModal
           tableHtml={tableHtmlForChart}
-          onClose={() => setShowChartModal(false)}
+          onClose={() => {
+            setShowChartModal(false);
+            setTableHtmlForChart("");
+            setCurrentTablePos(null);
+          }}
           onInsert={handleInsertChart}
         />
       )}

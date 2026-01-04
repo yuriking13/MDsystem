@@ -691,9 +691,38 @@ export default function ProjectDetailPage() {
         {activeTab === "statistics" && id && (
           <div>
             <div className="row space" style={{ marginBottom: 16 }}>
-              <h2>Статистика проекта</h2>
-              <div className="muted" style={{ fontSize: 13 }}>
-                Графики и таблицы из документов проекта
+              <div>
+                <h2 style={{ margin: 0 }}>Статистика проекта</h2>
+                <div className="muted" style={{ fontSize: 13 }}>
+                  Графики и таблицы из документов проекта
+                </div>
+              </div>
+              <div className="row gap">
+                <button 
+                  className="btn secondary"
+                  onClick={loadStatistics}
+                  disabled={loadingStats}
+                  type="button"
+                >
+                  {loadingStats ? '⏳ Загрузка...' : '🔄 Обновить'}
+                </button>
+              </div>
+            </div>
+            
+            {/* Инструкция */}
+            <div className="card" style={{ marginBottom: 16, padding: 14 }}>
+              <div className="row gap" style={{ alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 24 }}>💡</span>
+                <div>
+                  <strong style={{ fontSize: 13 }}>Как создать график:</strong>
+                  <ol style={{ margin: '8px 0 0 0', paddingLeft: 20, fontSize: 12, color: 'var(--text-secondary)' }}>
+                    <li>Откройте документ и создайте таблицу с данными</li>
+                    <li>Нажмите на кнопку 📊 в панели инструментов</li>
+                    <li>Выберите «Создать график из таблицы»</li>
+                    <li>Настройте тип графика и данные</li>
+                    <li>График автоматически появится здесь и в документе</li>
+                  </ol>
+                </div>
               </div>
             </div>
             
@@ -707,6 +736,15 @@ export default function ProjectDetailPage() {
                   Создайте графики из таблиц в документах проекта.<br/>
                   Они автоматически появятся здесь.
                 </p>
+                {documents.length > 0 && (
+                  <button 
+                    className="btn"
+                    onClick={() => nav(`/projects/${id}/documents/${documents[0].id}`)}
+                    style={{ marginTop: 16 }}
+                  >
+                    📄 Открыть документ
+                  </button>
+                )}
               </div>
             ) : (
               <div className="statistics-grid">
@@ -763,6 +801,21 @@ export default function ProjectDetailPage() {
                       )}
                       
                       <div className="stat-item-actions">
+                        {documents.length > 0 && (
+                          <button 
+                            className="btn" 
+                            style={{ padding: '6px 12px', fontSize: 11 }}
+                            onClick={() => {
+                              // Копируем код для вставки в документ
+                              const chartCode = `[График: ${stat.title}]`;
+                              navigator.clipboard.writeText(chartCode);
+                              setOk(`Скопировано! Вставьте в документ или перейдите к редактированию.`);
+                            }}
+                            title="Скопировать ссылку на график"
+                          >
+                            📋 Копировать
+                          </button>
+                        )}
                         <button 
                           className="btn secondary" 
                           style={{ padding: '6px 12px', fontSize: 11 }}
