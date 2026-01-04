@@ -614,19 +614,20 @@ export default function Editor({
   }, [editor, projectId, onStatisticCreated]);
 
   // Вычисляем стили для режима страниц
+  const pageWidth = settings.pageSize === 'a4' ? PAGE_WIDTH_A4 : 816;
+  const pageHeight = settings.pageSize === 'a4' ? PAGE_HEIGHT_A4 : 1056;
+  
   const getPageStyle = (): React.CSSProperties => {
     if (settings.viewMode === 'pages') {
       return {
-        width: settings.pageSize === 'a4' ? PAGE_WIDTH_A4 : 816,
-        minHeight: settings.pageSize === 'a4' ? PAGE_HEIGHT_A4 : 1056,
-        padding: `${settings.marginTop}mm ${settings.marginRight}mm ${settings.marginBottom}mm ${settings.marginLeft}mm`,
-        // Используем переменные темы, но с приоритетом на "бумажный" вид
-        background: 'var(--editor-bg, #ffffff)',
-        color: 'var(--editor-text, #1a1a1a)',
-        margin: '20px auto',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-        lineHeight: settings.lineHeight,
-      };
+        '--page-width': `${pageWidth}px`,
+        '--page-height': `${pageHeight}px`,
+        '--page-margin-top': `${settings.marginTop}mm`,
+        '--page-margin-bottom': `${settings.marginBottom}mm`,
+        '--page-margin-left': `${settings.marginLeft}mm`,
+        '--page-margin-right': `${settings.marginRight}mm`,
+        '--line-height': settings.lineHeight,
+      } as React.CSSProperties;
     }
     return {
       lineHeight: settings.lineHeight,
@@ -650,10 +651,10 @@ export default function Editor({
       <div 
         className={`editor-scroll-area ${settings.viewMode === 'pages' ? 'pages-mode' : 'scroll-mode'}`}
         ref={editorContainerRef}
+        style={getPageStyle()}
       >
         <div 
           className={`editor-page ${settings.viewMode === 'pages' ? 'page-view' : 'scroll-view'}`}
-          style={getPageStyle()}
         >
           <EditorContent 
             editor={editor} 
