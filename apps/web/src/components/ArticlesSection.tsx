@@ -5,6 +5,8 @@ import {
   apiUpdateArticleStatus,
   apiTranslateArticles,
   apiEnrichArticles,
+  apiGetPdfSource,
+  getPdfDownloadUrl,
   type Article,
   type SearchFilters,
 } from "../lib/api";
@@ -952,6 +954,26 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   DOI ↗
                 </a>
               )}
+              <button
+                className="btn secondary"
+                onClick={async () => {
+                  try {
+                    const source = await apiGetPdfSource(projectId, selectedArticle.id);
+                    if (source.directDownload) {
+                      window.open(source.url, '_blank');
+                    } else {
+                      // Для Wiley и др. проксируем через наш API
+                      window.open(getPdfDownloadUrl(projectId, selectedArticle.id), '_blank');
+                    }
+                  } catch (err: any) {
+                    alert(err.message || 'PDF не найден. Попробуйте поискать на сайте журнала.');
+                  }
+                }}
+                style={{ fontSize: 12, padding: "4px 10px", marginRight: 8 }}
+                type="button"
+              >
+                📄 PDF
+              </button>
               {!selectedArticle.title_ru && canEdit && (
                 <button
                   className="btn secondary"

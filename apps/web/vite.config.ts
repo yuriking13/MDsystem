@@ -25,6 +25,10 @@ export default defineConfig({
           ],
           // React и роутер
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // Граф цитирований
+          'graph': ['react-force-graph-2d'],
+          // Word экспорт
+          'docx': ['docx', 'file-saver'],
         },
       },
     },

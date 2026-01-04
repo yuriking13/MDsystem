@@ -9,14 +9,20 @@ import {
   apiGetDocuments,
   apiCreateDocument,
   apiDeleteDocument,
+  apiGetBibliography,
+  apiExportProject,
   type Project,
   type ProjectMember,
   type Document,
+  type BibliographyItem,
+  type CitationStyle,
 } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 import ArticlesSection from "../components/ArticlesSection";
+import CitationGraph from "../components/CitationGraph";
+import { exportToWord } from "../lib/exportWord";
 
-type Tab = "articles" | "documents" | "team" | "settings";
+type Tab = "articles" | "documents" | "graph" | "team" | "settings";
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -52,6 +58,12 @@ export default function ProjectDetailPage() {
 
   // Подсчёт статей для вкладки
   const [articleCounts, setArticleCounts] = useState({ candidate: 0, selected: 0, excluded: 0, total: 0 });
+
+  // Библиография и экспорт
+  const [bibliography, setBibliography] = useState<BibliographyItem[]>([]);
+  const [loadingBib, setLoadingBib] = useState(false);
+  const [showBibliography, setShowBibliography] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   async function load() {
     if (!id) return;
@@ -162,6 +174,93 @@ export default function ProjectDetailPage() {
     }
   }
 
+  // Загрузка библиографии
+  async function handleLoadBibliography() {
+    if (!id) return;
+    setLoadingBib(true);
+    try {
+      const res = await apiGetBibliography(id);
+      setBibliography(res.bibliography);
+      setShowBibliography(true);
+    } catch (err: any) {
+      setError(err?.message || "Ошибка загрузки библиографии");
+    } finally {
+      setLoadingBib(false);
+    }
+  }
+
+  // Экспорт проекта в TXT
+  async function handleExportTxt() {
+    if (!id) return;
+    setExporting(true);
+    try {
+      const res = await apiExportProject(id);
+      
+      // Формируем текстовый документ
+      let content = `# ${res.projectName}\n\n`;
+      
+      // Добавляем все документы
+      res.documents.forEach((doc, idx) => {
+        content += `## ${idx + 1}. ${doc.title}\n\n`;
+        // Убираем HTML теги для простого текста
+        const plainText = doc.content?.replace(/<[^>]*>/g, '') || '';
+        content += plainText + '\n\n';
+      });
+      
+      // Добавляем список литературы
+      if (res.bibliography.length > 0) {
+        content += `## Список литературы\n\n`;
+        res.bibliography.forEach((item) => {
+          content += `${item.number}. ${item.formatted}\n`;
+        });
+      }
+      
+      // Скачиваем как текстовый файл
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${res.projectName.replace(/[^a-zA-Zа-яА-Я0-9]/g, '_')}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      setOk('Документ экспортирован в TXT');
+    } catch (err: any) {
+      setError(err?.message || "Ошибка экспорта");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  // Экспорт проекта в Word
+  async function handleExportWord() {
+    if (!id) return;
+    setExporting(true);
+    try {
+      const res = await apiExportProject(id);
+      
+      await exportToWord(
+        res.projectName,
+        res.documents.map(d => ({ title: d.title, content: d.content })),
+        res.bibliography,
+        res.citationStyle
+      );
+      
+      setOk('Документ экспортирован в Word');
+    } catch (err: any) {
+      setError(err?.message || "Ошибка экспорта");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  // Копировать библиографию в буфер
+  function handleCopyBibliography() {
+    const text = bibliography.map(item => `${item.number}. ${item.formatted}`).join('\n');
+    navigator.clipboard.writeText(text);
+    setOk('Список литературы скопирован в буфер');
+  }
+
   if (loading) {
     return (
       <div className="container">
@@ -212,6 +311,12 @@ export default function ProjectDetailPage() {
           onClick={() => setActiveTab("documents")}
         >
           📄 Документы ({documents.length})
+        </button>
+        <button
+          className={`tab ${activeTab === "graph" ? "active" : ""}`}
+          onClick={() => setActiveTab("graph")}
+        >
+          🔗 Граф цитирований
         </button>
         <button
           className={`tab ${activeTab === "team" ? "active" : ""}`}
@@ -315,17 +420,97 @@ export default function ProjectDetailPage() {
               </div>
             )}
 
-            {documents.length > 1 && (
-              <div className="card" style={{ marginTop: 16 }}>
-                <h4>Экспорт</h4>
-                <p className="muted" style={{ marginBottom: 12 }}>
-                  Собрать все документы в один файл с общим списком литературы
-                </p>
-                <button className="btn secondary" type="button">
-                  📥 Экспорт в Word (скоро)
+            {/* Библиография и экспорт */}
+            <div className="card" style={{ marginTop: 16 }}>
+              <div className="row space" style={{ marginBottom: 12 }}>
+                <h4 style={{ margin: 0 }}>📚 Библиография и экспорт</h4>
+                <span className="id-badge">
+                  {citationStyle.toUpperCase()}
+                </span>
+              </div>
+              
+              <div className="row gap" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
+                <button 
+                  className="btn secondary" 
+                  onClick={handleLoadBibliography}
+                  disabled={loadingBib}
+                  type="button"
+                >
+                  {loadingBib ? '⏳ Загрузка...' : '📋 Список литературы'}
+                </button>
+                <button 
+                  className="btn" 
+                  onClick={handleExportWord}
+                  disabled={exporting || documents.length === 0}
+                  type="button"
+                >
+                  {exporting ? '⏳ Экспорт...' : '📥 Экспорт в Word'}
+                </button>
+                <button 
+                  className="btn secondary" 
+                  onClick={handleExportTxt}
+                  disabled={exporting || documents.length === 0}
+                  type="button"
+                >
+                  📄 TXT
                 </button>
               </div>
-            )}
+
+              {showBibliography && (
+                <div style={{ marginTop: 12 }}>
+                  <div className="row space" style={{ marginBottom: 8 }}>
+                    <span className="muted">
+                      Всего источников: {bibliography.length}
+                    </span>
+                    <button 
+                      className="btn secondary" 
+                      onClick={handleCopyBibliography}
+                      style={{ padding: '4px 10px', fontSize: 12 }}
+                      type="button"
+                    >
+                      📋 Копировать
+                    </button>
+                  </div>
+                  
+                  {bibliography.length === 0 ? (
+                    <div className="muted">
+                      Нет цитат. Добавьте цитаты в документы.
+                    </div>
+                  ) : (
+                    <div className="bibliography-list">
+                      {bibliography.map((item) => (
+                        <div key={item.articleId} className="bibliography-item">
+                          <span className="bib-number">{item.number}.</span>
+                          <span className="bib-text">{item.formatted}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* === GRAPH TAB === */}
+        {activeTab === "graph" && id && (
+          <div>
+            <div className="row space" style={{ marginBottom: 16 }}>
+              <h2>Граф цитирований</h2>
+              <div className="muted" style={{ fontSize: 13 }}>
+                Визуализация связей между статьями проекта
+              </div>
+            </div>
+            <CitationGraph projectId={id} />
+            <div className="card" style={{ marginTop: 16 }}>
+              <h4>💡 Как работает граф</h4>
+              <ul style={{ margin: 0, paddingLeft: 20, color: '#a9b7da', fontSize: 13 }}>
+                <li>Каждый <strong>узел</strong> — статья из вашего проекта</li>
+                <li><strong>Стрелки</strong> показывают, какая статья цитирует какую</li>
+                <li>Данные о связях берутся из <strong>Crossref</strong> (обогатите статьи кнопкой "📚 Crossref")</li>
+                <li>Кликните на узел чтобы открыть статью по DOI</li>
+              </ul>
+            </div>
           </div>
         )}
 

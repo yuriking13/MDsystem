@@ -53,10 +53,14 @@ function formatAuthorsGOST(authors: string[] | null | undefined, isRussian: bool
 /**
  * Форматировать статью по ГОСТ Р 7.0.5-2008
  * Формат: Автор И.И. Название статьи // Название журнала. — Год. — Т. 1, № 2. — С. 10-20.
+ * 
+ * Для иностранных источников используется оригинальный язык (английский)
+ * согласно ГОСТ Р 7.0.5-2008 п. 7.1
  */
 export function formatGOST(article: BibliographyArticle): string {
-  const isRussian = !!article.title_ru;
-  const title = article.title_ru || article.title_en;
+  // Всегда используем оригинальный язык (английский) для библиографии
+  const isRussian = false; // Иностранные источники оформляются на языке оригинала
+  const title = article.title_en;
   const authors = formatAuthorsGOST(article.authors, isRussian);
   
   let result = '';
