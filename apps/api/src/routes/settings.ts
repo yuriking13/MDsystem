@@ -4,7 +4,7 @@ import { getDb } from "../utils/db.js";
 import { encryptApiKey } from "../utils/apiKeyCrypto.js";
 import { getAuthUser } from "../utils/authUser.js";
 
-const KnownProviders = ["pubmed", "wiley", "openrouter"] as const;
+const KnownProviders = ["pubmed", "wiley", "crossref", "openrouter"] as const;
 
 function normalizeProvider(p: string): string {
   return p.trim().toLowerCase();
@@ -28,18 +28,6 @@ function badRequest(reply: any, message: string) {
 }
 
 const plugin: FastifyPluginAsync = async (fastify) => {
-  // /api/auth/me
-  fastify.get(
-    "/auth/me",
-    { preHandler: fastify.authenticate },
-    async (request, reply) => {
-      const user = await getAuthUser(fastify, request);
-      if (!user) return reply.code(401).send({ error: "Unauthorized" });
-
-      return { user: { id: user.id, email: user.email } };
-    },
-  );
-
   // /api/user/api-keys
   fastify.get(
     "/user/api-keys",

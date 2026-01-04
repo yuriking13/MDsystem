@@ -52,7 +52,7 @@ export async function authRoutes(app: FastifyInstance) {
     return { user: { id: user.id, email: user.email }, token };
   });
 
-  app.get('/api/me', { preHandler: [app.auth] }, async (req: any) => {
+  app.get('/api/auth/me', { preHandler: [app.auth] }, async (req: any) => {
     return { user: { id: req.user.sub, email: req.user.email } };
   });
 }

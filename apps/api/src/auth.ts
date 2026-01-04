@@ -1,11 +1,12 @@
 import fp from 'fastify-plugin';
 import jwt from '@fastify/jwt';
-import { FastifyInstance } from 'fastify';
+import { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import { env } from './env.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    auth: any;
+    auth: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
+    authenticate: (req: FastifyRequest, reply: FastifyReply) => Promise<void>;
   }
 }
 
@@ -21,11 +22,16 @@ export default fp(async (app: FastifyInstance) => {
     secret: env.JWT_SECRET
   });
 
-  app.decorate('auth', async (req: any, reply: any) => {
+  const authHandler = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
       await req.jwtVerify();
     } catch {
       return reply.code(401).send({ error: 'Unauthorized' });
     }
-  });
+  };
+
+  // Декоратор auth (для обратной совместимости)
+  app.decorate('auth', authHandler);
+  // Декоратор authenticate (для settings.ts и новых routes)
+  app.decorate('authenticate', authHandler);
 });

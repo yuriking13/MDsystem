@@ -6,16 +6,13 @@ import { env } from './env.js';
 import authPlugin from './auth.js';
 
 import { authRoutes } from './routes/auth.js';
-import { userRoutes } from './routes/user.js';
+import settingsRoutes from './routes/settings.js';
 
 import envGuard from './plugins/00-env-guard.js';
-import jwtCompat from './plugins/jwt-compat.js';
-import settingsRoutes from './routes/settings.js';
 
 const app = Fastify({ logger: true });
 
 await app.register(envGuard);
-await app.register(jwtCompat);
 
 await app.register(cors, {
   origin: env.CORS_ORIGIN,
@@ -25,7 +22,6 @@ await app.register(sensible);
 await app.register(authPlugin);
 
 await authRoutes(app);
-await userRoutes(app);
 await app.register(settingsRoutes, { prefix: '/api' });
 
 app.get('/api/health', async () => ({ ok: true }));
