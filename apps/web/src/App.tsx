@@ -4,6 +4,7 @@ import LoginPage from "./pages/LoginPage";
 import SettingsPage from "./pages/SettingsPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
+import DocumentPage from "./pages/DocumentPage";
 import { RequireAuth, useAuth } from "./lib/AuthContext";
 
 export default function App() {
@@ -26,6 +27,14 @@ export default function App() {
         element={
           <RequireAuth>
             <ProjectDetailPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/projects/:projectId/documents/:docId"
+        element={
+          <RequireAuth>
+            <DocumentPage />
           </RequireAuth>
         }
       />

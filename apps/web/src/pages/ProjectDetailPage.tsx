@@ -6,8 +6,12 @@ import {
   apiGetProjectMembers,
   apiInviteProjectMember,
   apiRemoveProjectMember,
+  apiGetDocuments,
+  apiCreateDocument,
+  apiDeleteDocument,
   type Project,
   type ProjectMember,
+  type Document,
 } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 import ArticlesSection from "../components/ArticlesSection";
@@ -19,9 +23,15 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [members, setMembers] = useState<ProjectMember[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  
+  // Create document
+  const [showCreateDoc, setShowCreateDoc] = useState(false);
+  const [newDocTitle, setNewDocTitle] = useState("");
+  const [creatingDoc, setCreatingDoc] = useState(false);
 
   // Edit mode
   const [editing, setEditing] = useState(false);
@@ -40,12 +50,14 @@ export default function ProjectDetailPage() {
     setError(null);
     setLoading(true);
     try {
-      const [pRes, mRes] = await Promise.all([
+      const [pRes, mRes, dRes] = await Promise.all([
         apiGetProject(id),
         apiGetProjectMembers(id),
+        apiGetDocuments(id),
       ]);
       setProject(pRes.project);
       setMembers(mRes.members);
+      setDocuments(dRes.documents);
       setEditName(pRes.project.name);
       setEditDesc(pRes.project.description || "");
     } catch (err: any) {
@@ -111,6 +123,35 @@ export default function ProjectDetailPage() {
 
   const canEdit = project && (project.role === "owner" || project.role === "editor");
   const isOwner = project?.role === "owner";
+
+  async function handleCreateDocument(e: React.FormEvent) {
+    e.preventDefault();
+    if (!id || !newDocTitle.trim()) return;
+    setCreatingDoc(true);
+    try {
+      const res = await apiCreateDocument(id, newDocTitle.trim());
+      setDocuments([...documents, res.document]);
+      setNewDocTitle("");
+      setShowCreateDoc(false);
+      // Открыть новый документ
+      nav(`/projects/${id}/documents/${res.document.id}`);
+    } catch (err: any) {
+      setError(err?.message || "Failed to create document");
+    } finally {
+      setCreatingDoc(false);
+    }
+  }
+
+  async function handleDeleteDocument(docId: string, title: string) {
+    if (!id) return;
+    if (!confirm(`Удалить документ "${title}"?`)) return;
+    try {
+      await apiDeleteDocument(id, docId);
+      setDocuments(documents.filter((d) => d.id !== docId));
+    } catch (err: any) {
+      setError(err?.message || "Failed to delete document");
+    }
+  }
 
   if (loading) {
     return (
@@ -284,11 +325,80 @@ export default function ProjectDetailPage() {
         {/* Articles Database */}
         {id && <ArticlesSection projectId={id} canEdit={!!canEdit} />}
 
+        {/* Documents Section */}
         <div style={{ marginTop: 24 }}>
-          <h2>Documents</h2>
-          <p className="muted">
-            Coming soon: write your thesis with automatic citations and bibliography
-          </p>
+          <div className="row space" style={{ marginBottom: 12 }}>
+            <h2>Документы</h2>
+            {canEdit && (
+              <button
+                className="btn"
+                onClick={() => setShowCreateDoc(true)}
+                type="button"
+              >
+                + Новый документ
+              </button>
+            )}
+          </div>
+
+          {showCreateDoc && (
+            <form onSubmit={handleCreateDocument} className="card" style={{ marginBottom: 16 }}>
+              <div className="stack">
+                <label className="stack">
+                  <span>Название документа</span>
+                  <input
+                    value={newDocTitle}
+                    onChange={(e) => setNewDocTitle(e.target.value)}
+                    placeholder="Глава 1. Обзор литературы"
+                    required
+                  />
+                </label>
+                <div className="row gap">
+                  <button className="btn" disabled={creatingDoc} type="submit">
+                    {creatingDoc ? "Создание..." : "Создать"}
+                  </button>
+                  <button
+                    className="btn secondary"
+                    onClick={() => setShowCreateDoc(false)}
+                    type="button"
+                  >
+                    Отмена
+                  </button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {documents.length === 0 ? (
+            <div className="muted">
+              Нет документов. Создайте первый документ для написания текста диссертации.
+            </div>
+          ) : (
+            <div className="documents-list">
+              {documents.map((doc) => (
+                <div key={doc.id} className="document-item">
+                  <div
+                    className="document-title"
+                    onClick={() => nav(`/projects/${id}/documents/${doc.id}`)}
+                  >
+                    📄 {doc.title}
+                  </div>
+                  <div className="document-meta muted">
+                    Обновлено: {new Date(doc.updated_at).toLocaleString()}
+                  </div>
+                  {canEdit && (
+                    <button
+                      className="btn secondary"
+                      onClick={() => handleDeleteDocument(doc.id, doc.title)}
+                      style={{ padding: "4px 8px", fontSize: 11 }}
+                      type="button"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

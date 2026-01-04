@@ -321,3 +321,117 @@ export async function apiEnrichArticles(
     }
   );
 }
+
+// ========== Documents ==========
+
+export type Document = {
+  id: string;
+  project_id: string;
+  title: string;
+  content: string;
+  order_index: number;
+  parent_id: string | null;
+  created_at: string;
+  updated_at: string;
+  citations?: Citation[];
+};
+
+export type Citation = {
+  id: string;
+  article_id: string;
+  order_index: number;
+  inline_number: number;
+  page_range: string | null;
+  article: {
+    id: string;
+    title_en: string;
+    title_ru: string | null;
+    authors: string[] | null;
+    year: number | null;
+    journal: string | null;
+    doi: string | null;
+    pmid: string | null;
+  };
+};
+
+export async function apiGetDocuments(
+  projectId: string
+): Promise<{ documents: Document[] }> {
+  return apiFetch<{ documents: Document[] }>(
+    `/api/projects/${projectId}/documents`
+  );
+}
+
+export async function apiGetDocument(
+  projectId: string,
+  docId: string
+): Promise<{ document: Document }> {
+  return apiFetch<{ document: Document }>(
+    `/api/projects/${projectId}/documents/${docId}`
+  );
+}
+
+export async function apiCreateDocument(
+  projectId: string,
+  title: string,
+  content?: string,
+  parentId?: string
+): Promise<{ document: Document }> {
+  return apiFetch<{ document: Document }>(
+    `/api/projects/${projectId}/documents`,
+    {
+      method: "POST",
+      body: JSON.stringify({ title, content, parentId }),
+    }
+  );
+}
+
+export async function apiUpdateDocument(
+  projectId: string,
+  docId: string,
+  data: { title?: string; content?: string; orderIndex?: number }
+): Promise<{ document: Document }> {
+  return apiFetch<{ document: Document }>(
+    `/api/projects/${projectId}/documents/${docId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function apiDeleteDocument(
+  projectId: string,
+  docId: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/documents/${docId}`,
+    { method: "DELETE" }
+  );
+}
+
+export async function apiAddCitation(
+  projectId: string,
+  docId: string,
+  articleId: string,
+  pageRange?: string
+): Promise<{ citation: Citation }> {
+  return apiFetch<{ citation: Citation }>(
+    `/api/projects/${projectId}/documents/${docId}/citations`,
+    {
+      method: "POST",
+      body: JSON.stringify({ articleId, pageRange }),
+    }
+  );
+}
+
+export async function apiRemoveCitation(
+  projectId: string,
+  docId: string,
+  citationId: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/documents/${docId}/citations/${citationId}`,
+    { method: "DELETE" }
+  );
+}
