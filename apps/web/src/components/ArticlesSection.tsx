@@ -3,8 +3,8 @@ import {
   apiSearchArticles,
   apiGetArticles,
   apiUpdateArticleStatus,
-  apiRemoveArticle,
   apiTranslateArticles,
+  apiEnrichArticles,
   type Article,
   type SearchFilters,
 } from "../lib/api";
@@ -77,6 +77,9 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
   // Перевод постфактум
   const [translating, setTranslating] = useState(false);
   const [translatingOne, setTranslatingOne] = useState(false);
+  
+  // Обогащение Crossref
+  const [enriching, setEnriching] = useState(false);
 
   // Выбранная статья для просмотра
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -219,6 +222,25 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
     }
   }
   
+  // Обогащение через Crossref
+  async function handleEnrich() {
+    setEnriching(true);
+    setError(null);
+    setOk(null);
+    
+    try {
+      const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
+      const res = await apiEnrichArticles(projectId, ids);
+      setOk(res.message);
+      setSelectedIds(new Set());
+      await loadArticles();
+    } catch (err: any) {
+      setError(err?.message || "Ошибка обогащения");
+    } finally {
+      setEnriching(false);
+    }
+  }
+  
   // Выбрать/снять все
   function toggleSelectAll() {
     if (selectedIds.size === filteredArticles.length) {
@@ -289,19 +311,19 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
     // Паттерны для статистики (EN + RU)
     const patterns = [
       // p-value с разной значимостью (разные форматы)
-      { regex: /[pр]\s*[<≤<]\s*0[.,]001/gi, className: "stat-p001" },
-      { regex: /[pр]\s*[<≤<]\s*0[.,]01(?![0-9])/gi, className: "stat-p01" },
-      { regex: /[pр]\s*[<≤<]\s*0[.,]05(?![0-9])/gi, className: "stat-p05" },
-      { regex: /[pр]\s*[=＝]\s*0[.,]\d+/gi, className: "stat-pval" },
-      // CI / ДИ (доверительный интервал)
-      { regex: /95\s*%?\s*(?:CI|ДИ)[:\s]*[\[(]?[\d.,]+[\s–\-−—]+[\d.,]+[\])]?/gi, className: "stat-ci" },
-      { regex: /(?:CI|ДИ)\s*[\d.,]+[\s–\-−—]+[\d.,]+/gi, className: "stat-ci" },
-      // OR, RR, HR, aOR, aHR (отношения шансов/рисков)
-      { regex: /\b(?:a?OR|a?RR|a?HR|ОШ)\s*[=:\s]+[\d.,]+/gi, className: "stat-ratio" },
+      { regex: /[PpРр]\s*[<≤]\s*0[.,]001/g, className: "stat-p001" },
+      { regex: /[PpРр]\s*[<≤]\s*0[.,]01(?!\d)/g, className: "stat-p01" },
+      { regex: /[PpРр]\s*[<≤]\s*0[.,]05(?!\d)/g, className: "stat-p05" },
+      { regex: /[PpРр]\s*[=]\s*0[.,]\d+/g, className: "stat-pval" },
+      // CI / ДИ (доверительный интервал) - разные форматы
+      { regex: /95\s*%?\s*(?:CI|ДИ)[:\s]*[\d.,]+[\s–\-−—]+[\d.,]+/gi, className: "stat-ci" },
+      { regex: /(?:CI|ДИ)[:;\s]+[\d.,]+[\s–\-−—]+[\d.,]+/gi, className: "stat-ci" },
+      // OR, RR, HR, aOR, aHR, SMD (отношения шансов/рисков, стандартизированная разность)
+      { regex: /\b(?:a?OR|a?RR|a?HR|SMD|ОШ|ОР)[:\s]+[\d.,]+/gi, className: "stat-ratio" },
       // Размер выборки
-      { regex: /[nN]\s*[=＝]\s*[\d\s,]+/gi, className: "stat-n" },
-      // Шаг/Step для мета-анализа
-      { regex: /Шаг\s*\d+[:\s]+[^.]+/gi, className: "stat-ci" },
+      { regex: /\b[nN]\s*[=]\s*[\d,\s]+/g, className: "stat-n" },
+      // Шаг для мета-анализа
+      { regex: /Шаг\s*\d+:/gi, className: "stat-ci" },
     ];
     
     // Применяем все паттерны
@@ -583,8 +605,8 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
         </form>
       )}
 
-      {/* Фильтры */}
-      <div className="row gap" style={{ marginBottom: 12, flexWrap: "wrap" }}>
+      {/* Фильтры - строка 1: статусы */}
+      <div className="row gap" style={{ marginBottom: 8, flexWrap: "wrap" }}>
         <button
           className={viewStatus === "candidate" ? "btn" : "btn secondary"}
           onClick={() => setViewStatus("candidate")}
@@ -613,73 +635,74 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
         >
           Все ({total})
         </button>
-        
-        <div className="row gap" style={{ marginLeft: "auto", alignItems: "center" }}>
-          {/* Переключатель языка */}
-          <div className="lang-toggle">
-            <button
-              className={listLang === "ru" ? "active" : ""}
-              onClick={() => setListLang("ru")}
-              type="button"
-              title="Русский (если есть перевод)"
-            >
-              RU
-            </button>
-            <button
-              className={listLang === "en" ? "active" : ""}
-              onClick={() => setListLang("en")}
-              type="button"
-              title="Английский (оригинал)"
-            >
-              EN
-            </button>
-          </div>
-          
-          <label className="row gap" style={{ alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={showStatsOnly}
-              onChange={(e) => setShowStatsOnly(e.target.checked)}
-              style={{ width: "auto" }}
-            />
-            <span className="muted">📊 Статистика</span>
-          </label>
-          
-          <label className="row gap" style={{ alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={highlightStats}
-              onChange={(e) => setHighlightStats(e.target.checked)}
-              style={{ width: "auto" }}
-            />
-            <span className="muted">🎨 Подсветка</span>
-          </label>
-          
-          {/* Фильтр по типу публикации */}
-          {availablePubTypes.length > 0 && (
-            <select
-              value={filterPubType || ""}
-              onChange={(e) => setFilterPubType(e.target.value || null)}
-              style={{ padding: "4px 8px", borderRadius: 6, fontSize: 12 }}
-            >
-              <option value="">Все типы</option>
-              {availablePubTypes.map((pt) => (
-                <option key={pt} value={pt}>{pt}</option>
-              ))}
-            </select>
-          )}
-          
-          {/* Сортировка */}
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            style={{ padding: "4px 8px", borderRadius: 6, fontSize: 12 }}
+      </div>
+      
+      {/* Фильтры - строка 2: настройки отображения */}
+      <div className="row gap" style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+        {/* Переключатель языка */}
+        <div className="lang-toggle">
+          <button
+            className={listLang === "ru" ? "active" : ""}
+            onClick={() => setListLang("ru")}
+            type="button"
+            title="Русский (если есть перевод)"
           >
-            <option value="date">По дате</option>
-            <option value="stats">По статистике</option>
-            <option value="year">По году</option>
-          </select>
+            RU
+          </button>
+          <button
+            className={listLang === "en" ? "active" : ""}
+            onClick={() => setListLang("en")}
+            type="button"
+            title="Английский (оригинал)"
+          >
+            EN
+          </button>
         </div>
+        
+        <label className="row gap" style={{ alignItems: "center" }}>
+          <input
+            type="checkbox"
+            checked={showStatsOnly}
+            onChange={(e) => setShowStatsOnly(e.target.checked)}
+            style={{ width: "auto" }}
+          />
+          <span className="muted">📊 Статистика</span>
+        </label>
+        
+        <label className="row gap" style={{ alignItems: "center" }}>
+          <input
+            type="checkbox"
+            checked={highlightStats}
+            onChange={(e) => setHighlightStats(e.target.checked)}
+            style={{ width: "auto" }}
+          />
+          <span className="muted">🎨 Подсветка</span>
+        </label>
+        
+        {/* Фильтр по типу публикации */}
+        {availablePubTypes.length > 0 && (
+          <select
+            value={filterPubType || ""}
+            onChange={(e) => setFilterPubType(e.target.value || null)}
+            style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12 }}
+          >
+            <option value="">Все типы</option>
+            {availablePubTypes.map((pt) => (
+              <option key={pt} value={pt}>{pt}</option>
+            ))}
+          </select>
+        )}
+        
+        {/* Сортировка */}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as any)}
+          style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12 }}
+        >
+          <option value="date">По дате</option>
+          <option value="stats">По статистике</option>
+          <option value="year">По году</option>
+        </select>
       </div>
 
       {/* Панель массовых операций */}
@@ -728,6 +751,16 @@ export default function ArticlesSection({ projectId, canEdit }: Props) {
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
                 🌐 Перевести
+              </button>
+              <button
+                className="btn secondary"
+                onClick={handleEnrich}
+                disabled={enriching}
+                title="Обогатить данные через Crossref (DOI)"
+                type="button"
+                style={{ padding: "4px 10px", fontSize: 12 }}
+              >
+                📚 Crossref
               </button>
               {viewStatus !== "candidate" && (
                 <button

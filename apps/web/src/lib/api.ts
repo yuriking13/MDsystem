@@ -300,3 +300,24 @@ export async function apiTranslateArticles(
     }
   );
 }
+
+// Обогащение статей через Crossref
+export type EnrichResult = {
+  ok: true;
+  enriched: number;
+  total: number;
+  message: string;
+};
+
+export async function apiEnrichArticles(
+  projectId: string,
+  articleIds?: string[]
+): Promise<EnrichResult> {
+  return apiFetch<EnrichResult>(
+    `/api/projects/${projectId}/articles/enrich`,
+    {
+      method: "POST",
+      body: JSON.stringify({ articleIds }),
+    }
+  );
+}
