@@ -418,3 +418,53 @@ h3 {
   color: #4ade80;
   font-weight: 600;
 }
+
+/* Article row with checkbox */
+.article-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.article-row.selected {
+  background: #1a2a3a;
+  border-color: #4b74ff;
+}
+
+.article-checkbox {
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+/* Action buttons */
+.action-btn {
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.action-btn:hover {
+  background: #1e2a4a;
+}
+
+.action-btn.select:hover {
+  background: #1a3a1a;
+}
+
+.action-btn.exclude:hover {
+  background: #3a1a1a;
+}
+
+/* Bulk actions */
+.bulk-actions {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background: #0f1626;
+  border: 1px solid #223055;
+  border-radius: 8px;
+}
