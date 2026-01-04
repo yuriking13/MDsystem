@@ -200,7 +200,10 @@ export type SearchFilters = {
   yearFrom?: number;
   yearTo?: number;
   freeFullTextOnly?: boolean;
+  fullTextOnly?: boolean;
   publicationTypes?: string[];
+  publicationTypesLogic?: "or" | "and";
+  translate?: boolean;
 };
 
 export type SearchResult = {
@@ -269,6 +272,28 @@ export async function apiBulkUpdateStatus(
     {
       method: "POST",
       body: JSON.stringify({ articleIds, status }),
+    }
+  );
+}
+
+// Перевод статей
+export type TranslateResult = {
+  ok: true;
+  translated: number;
+  total: number;
+  message: string;
+};
+
+export async function apiTranslateArticles(
+  projectId: string,
+  articleIds?: string[],
+  untranslatedOnly = true
+): Promise<TranslateResult> {
+  return apiFetch<TranslateResult>(
+    `/api/projects/${projectId}/articles/translate`,
+    {
+      method: "POST",
+      body: JSON.stringify({ articleIds, untranslatedOnly }),
     }
   );
 }

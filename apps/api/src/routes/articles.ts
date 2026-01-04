@@ -3,6 +3,7 @@ import { z } from "zod";
 import { pool } from "../pg.js";
 import { pubmedFetchAll, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
 import { extractStats, hasAnyStats } from "../lib/stats.js";
+import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 
 // Схемы валидации
 const SearchBodySchema = z.object({
@@ -11,7 +12,10 @@ const SearchBodySchema = z.object({
     yearFrom: z.number().int().min(1900).max(2100).optional(),
     yearTo: z.number().int().min(1900).max(2100).optional(),
     freeFullTextOnly: z.boolean().optional(),
+    fullTextOnly: z.boolean().optional(),
     publicationTypes: z.array(z.string()).optional(),
+    publicationTypesLogic: z.enum(["or", "and"]).optional(),
+    translate: z.boolean().optional(),
   }).optional(),
   maxResults: z.number().int().min(1).max(500).default(100),
 });
@@ -190,9 +194,16 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (bodyP.data.filters?.freeFullTextOnly) {
         filters.freeFullTextOnly = true;
       }
+      if (bodyP.data.filters?.fullTextOnly) {
+        filters.fullTextOnly = true;
+      }
       if (bodyP.data.filters?.publicationTypes?.length) {
         filters.publicationTypes = bodyP.data.filters.publicationTypes;
+        filters.publicationTypesLogic = bodyP.data.filters.publicationTypesLogic || "or";
       }
+      
+      // Опция перевода
+      const shouldTranslate = bodyP.data.filters?.translate === true;
       
       // Выполняем поиск
       const { count, items } = await pubmedFetchAll({
@@ -207,6 +218,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let added = 0;
       let skipped = 0;
       const articleIds: string[] = [];
+      const newArticleIds: string[] = []; // Новые статьи для перевода
       
       for (const article of items) {
         try {
@@ -214,11 +226,61 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           articleIds.push(articleId);
           
           const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId);
-          if (wasAdded) added++;
-          else skipped++;
+          if (wasAdded) {
+            added++;
+            newArticleIds.push(articleId);
+          } else {
+            skipped++;
+          }
         } catch (err) {
           // Пропускаем ошибки отдельных статей
           console.error("Error saving article:", err);
+        }
+      }
+      
+      // Перевод если запрошен
+      let translated = 0;
+      if (shouldTranslate && newArticleIds.length > 0) {
+        const openrouterKey = await getUserApiKey(userId, "openrouter");
+        
+        if (openrouterKey) {
+          // Получаем статьи без переводов
+          const toTranslate = await pool.query(
+            `SELECT id, title_en, abstract_en FROM articles 
+             WHERE id = ANY($1) AND title_ru IS NULL`,
+            [newArticleIds]
+          );
+          
+          if (toTranslate.rows.length > 0) {
+            try {
+              // Переводим пакетами по 10 статей для оптимизации
+              const BATCH_SIZE = 10;
+              for (let i = 0; i < toTranslate.rows.length; i += BATCH_SIZE) {
+                const batch = toTranslate.rows.slice(i, i + BATCH_SIZE);
+                
+                const { results } = await translateArticlesBatchOptimized(
+                  openrouterKey,
+                  batch
+                );
+                
+                // Сохраняем переводы
+                for (const [articleId, tr] of results) {
+                  if (tr.title_ru || tr.abstract_ru) {
+                    await pool.query(
+                      `UPDATE articles SET 
+                        title_ru = COALESCE($1, title_ru), 
+                        abstract_ru = COALESCE($2, abstract_ru)
+                       WHERE id = $3`,
+                      [tr.title_ru || null, tr.abstract_ru || null, articleId]
+                    );
+                    translated++;
+                  }
+                }
+              }
+            } catch (err) {
+              console.error("Translation batch error:", err);
+            }
+          }
         }
       }
       
@@ -228,14 +290,21 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         [paramsP.data.id]
       );
       
+      let message = skipped > 0 
+        ? `${added} новых статей добавлено, ${skipped} уже были в проекте`
+        : `${added} статей добавлено`;
+      
+      if (translated > 0) {
+        message += `, ${translated} переведено`;
+      }
+      
       return {
         totalFound: count,
         fetched: items.length,
         added,
         skipped,
-        message: skipped > 0 
-          ? `${added} новых статей добавлено, ${skipped} уже были в проекте`
-          : `${added} статей добавлено`,
+        translated,
+        message,
       };
     }
   );
@@ -418,6 +487,111 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       );
       
       return { ok: true, updated: res.rowCount };
+    }
+  );
+
+  // POST /api/projects/:id/articles/translate - перевод статей
+  fastify.post(
+    "/projects/:id/articles/translate",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+      
+      const bodySchema = z.object({
+        articleIds: z.array(z.string().uuid()).min(1).max(50).optional(),
+        untranslatedOnly: z.boolean().default(true),
+      });
+      
+      const bodyP = bodySchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "Invalid body" });
+      }
+      
+      // Проверка доступа
+      const access = await checkProjectAccess(paramsP.data.id, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+      
+      // Получить ключ OpenRouter
+      const openrouterKey = await getUserApiKey(userId, "openrouter");
+      if (!openrouterKey) {
+        return reply.code(400).send({ 
+          error: "OpenRouter API ключ не настроен. Добавьте его в настройках." 
+        });
+      }
+      
+      // Получить статьи для перевода
+      let sql = `
+        SELECT a.id, a.title_en, a.abstract_en 
+        FROM articles a
+        JOIN project_articles pa ON pa.article_id = a.id
+        WHERE pa.project_id = $1
+      `;
+      const params: any[] = [paramsP.data.id];
+      
+      if (bodyP.data.articleIds?.length) {
+        sql += ` AND a.id = ANY($2)`;
+        params.push(bodyP.data.articleIds);
+      }
+      
+      if (bodyP.data.untranslatedOnly) {
+        sql += ` AND a.title_ru IS NULL`;
+      }
+      
+      sql += ` LIMIT 50`; // Ограничение для безопасности
+      
+      const toTranslate = await pool.query(sql, params);
+      
+      if (toTranslate.rows.length === 0) {
+        return { 
+          ok: true, 
+          translated: 0, 
+          message: "Нет статей для перевода" 
+        };
+      }
+      
+      // Переводим
+      let translated = 0;
+      const BATCH_SIZE = 10;
+      
+      for (let i = 0; i < toTranslate.rows.length; i += BATCH_SIZE) {
+        const batch = toTranslate.rows.slice(i, i + BATCH_SIZE);
+        
+        try {
+          const { results } = await translateArticlesBatchOptimized(
+            openrouterKey,
+            batch
+          );
+          
+          for (const [articleId, tr] of results) {
+            if (tr.title_ru || tr.abstract_ru) {
+              await pool.query(
+                `UPDATE articles SET 
+                  title_ru = COALESCE($1, title_ru), 
+                  abstract_ru = COALESCE($2, abstract_ru)
+                 WHERE id = $3`,
+                [tr.title_ru || null, tr.abstract_ru || null, articleId]
+              );
+              translated++;
+            }
+          }
+        } catch (err) {
+          console.error("Translation batch error:", err);
+        }
+      }
+      
+      return { 
+        ok: true, 
+        translated, 
+        total: toTranslate.rows.length,
+        message: `Переведено ${translated} из ${toTranslate.rows.length} статей` 
+      };
     }
   );
 };

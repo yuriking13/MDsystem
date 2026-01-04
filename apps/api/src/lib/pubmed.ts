@@ -5,7 +5,9 @@ export type PubMedFilters = {
   publishedFrom?: string; // YYYY-MM-DD
   publishedTo?: string;   // YYYY-MM-DD
   freeFullTextOnly?: boolean;
+  fullTextOnly?: boolean;
   publicationTypes?: string[]; // e.g. ["Systematic Review", "Meta-Analysis"]
+  publicationTypesLogic?: "or" | "and"; // default "or"
 };
 
 export type PubMedArticle = {
@@ -30,16 +32,21 @@ function buildPubmedTerm(topic: string, filters: PubMedFilters): string {
   // базовая тема
   terms.push(`(${topic})`);
 
-  // free full text
+  // free full text (бесплатный полный текст)
   if (filters.freeFullTextOnly) {
     terms.push(`free full text[sb]`);
   }
+  // full text (полный текст, включая платный)
+  else if (filters.fullTextOnly) {
+    terms.push(`full text[sb]`);
+  }
 
-  // publication types
+  // publication types с поддержкой AND/OR
   if (filters.publicationTypes?.length) {
+    const logic = filters.publicationTypesLogic === "and" ? " AND " : " OR ";
     const pt = filters.publicationTypes
       .map((t) => `"${t}"[pt]`)
-      .join(' OR ');
+      .join(logic);
     terms.push(`(${pt})`);
   }
 
