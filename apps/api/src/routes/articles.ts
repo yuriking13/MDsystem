@@ -605,6 +605,99 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       };
     }
   );
+
+  // POST /api/projects/:id/articles/enrich - обогащение данных через Crossref
+  fastify.post(
+    "/projects/:id/articles/enrich",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+      
+      const bodySchema = z.object({
+        articleIds: z.array(z.string().uuid()).min(1).max(50).optional(),
+      });
+      
+      const bodyP = bodySchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "Invalid body" });
+      }
+      
+      // Проверка доступа
+      const access = await checkProjectAccess(paramsP.data.id, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+      
+      // Импортируем Crossref
+      const { enrichArticleByDOI } = await import("../lib/crossref.js");
+      
+      // Получить статьи с DOI для обогащения
+      let sql = `
+        SELECT a.id, a.doi 
+        FROM articles a
+        JOIN project_articles pa ON pa.article_id = a.id
+        WHERE pa.project_id = $1 AND a.doi IS NOT NULL
+      `;
+      const params: any[] = [paramsP.data.id];
+      
+      if (bodyP.data.articleIds?.length) {
+        sql += ` AND a.id = ANY($2)`;
+        params.push(bodyP.data.articleIds);
+      }
+      
+      sql += ` LIMIT 50`;
+      
+      const toEnrich = await pool.query(sql, params);
+      
+      if (toEnrich.rows.length === 0) {
+        return { 
+          ok: true, 
+          enriched: 0, 
+          message: "Нет статей с DOI для обогащения" 
+        };
+      }
+      
+      // Обогащаем
+      let enriched = 0;
+      
+      for (const row of toEnrich.rows) {
+        try {
+          const data = await enrichArticleByDOI(row.doi);
+          
+          if (data) {
+            // Сохраняем обогащённые данные в raw_json
+            await pool.query(
+              `UPDATE articles SET 
+                raw_json = raw_json || $1::jsonb
+               WHERE id = $2`,
+              [
+                JSON.stringify({ crossref: data }),
+                row.id,
+              ]
+            );
+            enriched++;
+          }
+          
+          // Задержка чтобы не превысить лимиты API
+          await new Promise((r) => setTimeout(r, 100));
+        } catch (err) {
+          console.error(`Enrich error for ${row.doi}:`, err);
+        }
+      }
+      
+      return { 
+        ok: true, 
+        enriched, 
+        total: toEnrich.rows.length,
+        message: `Обогащено ${enriched} из ${toEnrich.rows.length} статей` 
+      };
+    }
+  );
 };
 
 export default plugin;
