@@ -233,7 +233,7 @@ export default function ProjectDetailPage() {
   }
 
   // Экспорт проекта в Word
-  async function handleExportWord() {
+  async function handleExportWord(merged = false) {
     if (!id) return;
     setExporting(true);
     try {
@@ -243,10 +243,13 @@ export default function ProjectDetailPage() {
         res.projectName,
         res.documents.map(d => ({ title: d.title, content: d.content })),
         res.bibliography,
-        res.citationStyle
+        res.citationStyle,
+        merged ? res.mergedContent : undefined
       );
       
-      setOk('Документ экспортирован в Word');
+      setOk(merged 
+        ? 'Объединённый документ экспортирован в Word' 
+        : 'Документ экспортирован в Word');
     } catch (err: any) {
       setError(err?.message || "Ошибка экспорта");
     } finally {
@@ -440,11 +443,21 @@ export default function ProjectDetailPage() {
                 </button>
                 <button 
                   className="btn" 
-                  onClick={handleExportWord}
+                  onClick={() => handleExportWord(false)}
                   disabled={exporting || documents.length === 0}
                   type="button"
+                  title="Экспорт глав по отдельности"
                 >
-                  {exporting ? '⏳ Экспорт...' : '📥 Экспорт в Word'}
+                  {exporting ? '⏳...' : '📥 Word (главы)'}
+                </button>
+                <button 
+                  className="btn" 
+                  onClick={() => handleExportWord(true)}
+                  disabled={exporting || documents.length === 0}
+                  type="button"
+                  title="Объединённый документ с общим списком литературы"
+                >
+                  {exporting ? '⏳...' : '📄 Word (объединённый)'}
                 </button>
                 <button 
                   className="btn secondary" 

@@ -113,12 +113,14 @@ function htmlToDocxParagraphs(html: string): Paragraph[] {
 
 /**
  * Экспортировать проект в Word документ
+ * @param mergedContent - если передан, экспортирует как единый документ с общей нумерацией цитат
  */
 export async function exportToWord(
   projectName: string,
   documents: ExportDocument[],
   bibliography: ExportBibItem[],
-  citationStyle: string
+  citationStyle: string,
+  mergedContent?: string
 ): Promise<void> {
   const sections: Paragraph[] = [];
   
@@ -181,27 +183,34 @@ export async function exportToWord(
   sections.push(new Paragraph({ children: [new PageBreak()] }));
   
   // Документы (главы)
-  documents.forEach((doc, idx) => {
-    // Заголовок главы
-    sections.push(
-      new Paragraph({
-        children: [new TextRun({ text: `${idx + 1}. ${doc.title}`, bold: true })],
-        heading: HeadingLevel.HEADING_1,
-        spacing: { before: 400, after: 200 },
-      })
-    );
-    
-    // Содержимое
-    if (doc.content) {
-      const contentParagraphs = htmlToDocxParagraphs(doc.content);
-      sections.push(...contentParagraphs);
-    }
-    
-    // Разрыв страницы после главы (кроме последней)
-    if (idx < documents.length - 1) {
-      sections.push(new Paragraph({ children: [new PageBreak()] }));
-    }
-  });
+  if (mergedContent) {
+    // Экспорт объединённого документа с общей нумерацией цитат
+    const contentParagraphs = htmlToDocxParagraphs(mergedContent);
+    sections.push(...contentParagraphs);
+  } else {
+    // Экспорт отдельных глав
+    documents.forEach((doc, idx) => {
+      // Заголовок главы
+      sections.push(
+        new Paragraph({
+          children: [new TextRun({ text: `${idx + 1}. ${doc.title}`, bold: true })],
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 400, after: 200 },
+        })
+      );
+      
+      // Содержимое
+      if (doc.content) {
+        const contentParagraphs = htmlToDocxParagraphs(doc.content);
+        sections.push(...contentParagraphs);
+      }
+      
+      // Разрыв страницы после главы (кроме последней)
+      if (idx < documents.length - 1) {
+        sections.push(new Paragraph({ children: [new PageBreak()] }));
+      }
+    });
+  }
   
   // Список литературы
   if (bibliography.length > 0) {

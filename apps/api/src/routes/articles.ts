@@ -617,7 +617,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         sql += ` AND a.title_ru IS NULL`;
       }
       
-      sql += ` LIMIT 50`; // Ограничение для безопасности
+      sql += ` LIMIT 200`; // Увеличенный лимит для перевода
       
       const toTranslate = await pool.query(sql, params);
       
@@ -712,7 +712,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         params.push(bodyP.data.articleIds);
       }
       
-      sql += ` LIMIT 50`;
+      sql += ` LIMIT 500`; // Увеличенный лимит
       
       const toEnrich = await pool.query(sql, params);
       
@@ -1062,7 +1062,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
          WHERE pa.project_id = $1 
            AND a.abstract_en IS NOT NULL
            AND (a.has_stats = false OR a.stats_quality = 0)
-         LIMIT 20`,
+         LIMIT 100`,
         [paramsP.data.id]
       );
       
