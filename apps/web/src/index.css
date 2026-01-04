@@ -767,6 +767,81 @@ input::placeholder {
   background: rgba(75, 116, 255, 0.1);
 }
 
+/* Resize handles для таблиц */
+.editor-content .tiptap .tableWrapper {
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.editor-content .tiptap table .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent);
+  cursor: col-resize;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.editor-content .tiptap table:hover .column-resize-handle,
+.editor-content .tiptap table .column-resize-handle:hover {
+  opacity: 1;
+}
+
+.editor-content .tiptap table .resize-cursor {
+  cursor: col-resize;
+}
+
+/* Улучшенные стили ячеек для resize */
+.editor-content .tiptap table th,
+.editor-content .tiptap table td {
+  position: relative;
+  overflow: visible;
+}
+
+/* Контейнер графика в редакторе */
+.editor-content .chart-container {
+  margin: 1.5em 0;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.editor-content .chart-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  font-size: 16px;
+  color: var(--text-secondary);
+  background: linear-gradient(135deg, rgba(75, 116, 255, 0.1), rgba(168, 85, 247, 0.1));
+  border-radius: 8px;
+}
+
+/* Live график в редакторе */
+.chart-node-wrapper {
+  margin: 1.5em 0;
+}
+
+.chart-container-live {
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chart-error {
+  padding: 40px;
+  text-align: center;
+  color: var(--danger);
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 8px;
+}
+
 /* Выделение ячеек таблицы */
 .editor-content .tiptap .selectedCell::after {
   content: "";
