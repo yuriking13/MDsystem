@@ -186,10 +186,11 @@ export default function TiptapEditor({
     setHeadings(newHeadings);
   }, []);
 
-  // Register global chart insert function
+  // Register global insert functions
   useEffect(() => {
     if (!editor) return;
     
+    // Insert chart function
     const insertChart = (chartData: ChartData) => {
       const chartHtml = `
         <div class="chart-container" data-chart='${JSON.stringify(chartData).replace(/'/g, "&#39;")}' data-chart-id="${chartData.id}">
@@ -200,10 +201,48 @@ export default function TiptapEditor({
       editor.chain().focus().insertContent(chartHtml).run();
     };
     
+    // Insert table function
+    const insertTable = (tableData: { headers: string[]; rows: string[][] }, title?: string) => {
+      const rows = tableData.rows || [];
+      const headers = tableData.headers || [];
+      
+      // Build table HTML
+      let tableHtml = '<table class="tiptap-table">';
+      
+      // Header row
+      if (headers.length > 0) {
+        tableHtml += '<tr>';
+        headers.forEach(h => {
+          tableHtml += `<th>${h}</th>`;
+        });
+        tableHtml += '</tr>';
+      }
+      
+      // Data rows
+      rows.forEach(row => {
+        tableHtml += '<tr>';
+        row.forEach(cell => {
+          tableHtml += `<td>${cell}</td>`;
+        });
+        tableHtml += '</tr>';
+      });
+      
+      tableHtml += '</table>';
+      
+      // Add title if provided
+      if (title) {
+        tableHtml = `<p><strong>${title}</strong></p>` + tableHtml;
+      }
+      
+      editor.chain().focus().insertContent(tableHtml).run();
+    };
+    
     (window as any).__editorInsertChart = insertChart;
+    (window as any).__editorInsertTable = insertTable;
     
     return () => {
       delete (window as any).__editorInsertChart;
+      delete (window as any).__editorInsertTable;
     };
   }, [editor]);
 
