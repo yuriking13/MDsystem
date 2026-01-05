@@ -23,7 +23,9 @@ import PageSettingsModal, { type PageSettings } from './PageSettingsModal';
 import { ChartNode, insertChartIntoEditor, type ChartNodeAttrs } from './extensions/ChartNode';
 import { CitationMark, type CitationAttrs } from './extensions/CitationMark';
 import { TableFigureNumbering } from './extensions/TableFigureNumbering';
-import TableEditorModal from './TableEditorModal';
+import StatisticEditModal from '../StatisticEditModal';
+import type { ProjectStatistic, DataClassification } from '../../lib/api';
+import type { TableData, ChartConfig } from '../ChartFromTable';
 import './TiptapEditor.css';
 
 import type { CitationStyle } from '../../lib/api';
@@ -142,17 +144,28 @@ interface TiptapEditorProps {
   onRemoveCitation?: (citationId: string) => void;
   onUpdateCitationNote?: (citationId: string, note: string) => void;
   onTableCreated?: (tableData: { rows: number; cols: number; data: any[][] }) => Promise<string | undefined>;
+  onLoadStatistic?: (statId: string) => Promise<ProjectStatistic | null>;
+  onSaveStatistic?: (
+    statId: string | null,
+    data: {
+      title?: string;
+      description?: string;
+      config?: Record<string, any>;
+      tableData?: TableData;
+      dataClassification?: DataClassification;
+      chartType?: string;
+    }
+  ) => Promise<string | null>;
   citations?: Citation[];
   citationStyle?: CitationStyle;
   editable?: boolean;
 }
 
-type TableEditState = {
-  data: string[][];
-  colWidths?: number[];
-  statisticId?: string | null;
+type StatEditorState = {
+  statistic: ProjectStatistic;
   tablePos: number;
   tableNodeSize: number;
+  colWidths?: number[];
 };
 
 export default function TiptapEditor({
@@ -164,6 +177,8 @@ export default function TiptapEditor({
   onRemoveCitation,
   onUpdateCitationNote,
   onTableCreated,
+  onLoadStatistic,
+  onSaveStatistic,
   citations = [],
   citationStyle = 'gost',
   editable = true,
@@ -171,8 +186,7 @@ export default function TiptapEditor({
   const [showOutline, setShowOutline] = useState(true);
   const [showBibliography, setShowBibliography] = useState(true);
   const [showPageSettings, setShowPageSettings] = useState(false);
-  const [showTableEditor, setShowTableEditor] = useState(false);
-  const [tableEditState, setTableEditState] = useState<TableEditState | null>(null);
+  const [statEditorState, setStatEditorState] = useState<StatEditorState | null>(null);
   const [headings, setHeadings] = useState<Array<{level: number; text: string; id: string}>>([]);
   const [currentStyle, setCurrentStyle] = useState<CitationStyle>(citationStyle);
   const styleConfig = STYLE_CONFIGS[currentStyle] || STYLE_CONFIGS.gost;
@@ -338,7 +352,7 @@ export default function TiptapEditor({
     return html;
   };
 
-  const handleOpenTableEditor = useCallback(() => {
+  const handleOpenTableEditor = useCallback(async () => {
     if (!editor || !editor.view) {
       alert('Редактор ещё не готов');
       return;
@@ -370,21 +384,92 @@ export default function TiptapEditor({
       }
     });
 
-    setTableEditState({
-      data: rowsData,
-      colWidths,
-      statisticId: dom?.getAttribute('data-statistic-id'),
+    const statisticId = dom?.getAttribute('data-statistic-id') || null;
+    const headers = rowsData[0] || [];
+    const dataRows = rowsData.slice(1);
+    const maxCols = headers.reduce((m, _, idx) => Math.max(m, idx + 1), dataRows.reduce((m, r) => Math.max(m, r.length), 0));
+    const normalizedHeaders = Array.from({ length: maxCols }, (_, i) => headers[i] || `Колонка ${i + 1}`);
+    const normalizedRows = dataRows.map((r) => Array.from({ length: maxCols }, (_, i) => r[i] || ''));
+
+    let baseStatistic: ProjectStatistic = {
+      id: statisticId || '',
+      type: 'table',
+      title: statisticId ? 'Таблица' : `Таблица ${new Date().toLocaleString('ru-RU')}`,
+      description: 'Автоматически создана в документе',
+      config: {
+        type: 'bar',
+        title: statisticId ? 'Таблица' : `Таблица ${new Date().toLocaleString('ru-RU')}`,
+        labelColumn: 0,
+        dataColumns: maxCols > 1 ? Array.from({ length: maxCols - 1 }, (_, i) => i + 1) : [0],
+        bins: 10,
+        xColumn: maxCols > 1 ? 1 : 0,
+        yColumn: maxCols > 2 ? 2 : 0,
+      } as ChartConfig,
+      table_data: {
+        headers: normalizedHeaders,
+        rows: normalizedRows,
+      },
+      data_classification: {
+        variableType: 'quantitative',
+        subType: 'continuous',
+      },
+      chart_type: 'bar',
+      order_index: 0,
+      created_at: '',
+      updated_at: '',
+    };
+
+    if (statisticId && onLoadStatistic) {
+      try {
+        const loaded = await onLoadStatistic(statisticId);
+        if (loaded) {
+          baseStatistic = loaded;
+        }
+      } catch (e) {
+        console.error('Failed to load statistic for editor', e);
+      }
+    }
+
+    setStatEditorState({
+      statistic: baseStatistic,
       tablePos: pos,
       tableNodeSize: node.nodeSize,
+      colWidths,
     });
-    setShowTableEditor(true);
-  }, [getSelectedTableInfo]);
+  }, [editor, getSelectedTableInfo, onLoadStatistic]);
 
-  const handleSaveTableEditor = useCallback(
-    (payload: { data: string[][]; colWidths?: number[] }) => {
-      if (!editor || !tableEditState) return;
-      const { tablePos, tableNodeSize, statisticId } = tableEditState;
-      const html = buildTableHtml(payload.data, payload.colWidths, statisticId);
+  const handleSaveStatisticEditor = useCallback(
+    async (updates: {
+      title?: string;
+      description?: string;
+      config?: Record<string, any>;
+      tableData?: TableData;
+      dataClassification?: DataClassification;
+      chartType?: string;
+    }) => {
+      if (!editor || !statEditorState) return;
+
+      const { statistic, tablePos, tableNodeSize, colWidths } = statEditorState;
+      const currentTableData = updates.tableData || (statistic.table_data as TableData);
+      const dataArray = [currentTableData.headers || [], ...(currentTableData.rows || [])];
+
+      let statisticId = statistic.id || null;
+      if (onSaveStatistic) {
+        try {
+          statisticId = await onSaveStatistic(statisticId, {
+            title: updates.title || statistic.title,
+            description: updates.description || statistic.description,
+            config: updates.config || (statistic.config as Record<string, any>),
+            tableData: currentTableData,
+            dataClassification: updates.dataClassification || statistic.data_classification,
+            chartType: updates.chartType || statistic.chart_type || 'bar',
+          });
+        } catch (e) {
+          console.error('Failed to save statistic', e);
+        }
+      }
+
+      const html = buildTableHtml(dataArray, colWidths, statisticId || statistic.id || null);
 
       editor
         .chain()
@@ -393,10 +478,9 @@ export default function TiptapEditor({
         .insertContent(html)
         .run();
 
-      setShowTableEditor(false);
-      setTableEditState(null);
+      setStatEditorState(null);
     },
-    [editor, tableEditState]
+    [editor, onSaveStatistic, statEditorState]
   );
 
   // Extract headings from document for outline
@@ -843,13 +927,13 @@ export default function TiptapEditor({
         onApply={handleApplyPageSettings}
         onApplyStyle={handleApplyStyle}
       />
-      <TableEditorModal
-        open={showTableEditor}
-        initialData={tableEditState?.data?.length ? tableEditState.data : [['', '']]}
-        initialColWidths={tableEditState?.colWidths}
-        onClose={() => { setShowTableEditor(false); setTableEditState(null); }}
-        onSave={handleSaveTableEditor}
-      />
+      {statEditorState && (
+        <StatisticEditModal
+          statistic={statEditorState.statistic}
+          onClose={() => setStatEditorState(null)}
+          onSave={handleSaveStatisticEditor}
+        />
+      )}
     </div>
   );
 }

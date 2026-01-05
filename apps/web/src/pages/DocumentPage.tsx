@@ -12,12 +12,15 @@ import {
   apiGetStatistics,
   apiMarkStatisticUsedInDocument,
   apiSyncStatistics,
+  apiGetStatistic,
+  apiUpdateStatistic,
   apiCreateStatistic,
   type Document,
   type Article,
   type Citation,
   type CitationStyle,
   type ProjectStatistic,
+  type DataClassification,
 } from "../lib/api";
 import ChartFromTable, { CHART_TYPE_INFO, ChartCreatorModal, type ChartType, type TableData } from "../components/ChartFromTable";
 
@@ -367,6 +370,65 @@ export default function DocumentPage() {
     }
   }
 
+  const handleLoadStatistic = useCallback(async (statId: string) => {
+    if (!projectId) return null;
+
+    try {
+      const res = await apiGetStatistic(projectId, statId);
+      return res.statistic;
+    } catch (err) {
+      console.error("Failed to load statistic:", err);
+      return null;
+    }
+  }, [projectId]);
+
+  const handleSaveStatistic = useCallback(async (
+    statId: string | null,
+    data: {
+      title?: string;
+      description?: string;
+      config?: Record<string, any>;
+      tableData?: TableData;
+      dataClassification?: DataClassification;
+      chartType?: string;
+    }
+  ) => {
+    if (!projectId || !docId) return null;
+
+    try {
+      if (statId) {
+        const res = await apiUpdateStatistic(projectId, statId, {
+          title: data.title,
+          description: data.description,
+          config: data.config,
+          tableData: data.tableData,
+          dataClassification: data.dataClassification,
+          chartType: data.chartType,
+        });
+
+        await apiMarkStatisticUsedInDocument(projectId, res.statistic.id, docId);
+        return res.statistic.id;
+      }
+
+      const res = await apiCreateStatistic(projectId, {
+        type: "table",
+        title: data.title || `Таблица ${new Date().toLocaleString('ru-RU')}`,
+        description: data.description,
+        config: data.config || {},
+        tableData: data.tableData,
+        dataClassification: data.dataClassification,
+        chartType: data.chartType || 'bar',
+      });
+
+      await apiMarkStatisticUsedInDocument(projectId, res.statistic.id, docId);
+      return res.statistic.id;
+    } catch (err: any) {
+      console.error("Failed to save statistic:", err);
+      setError(err?.message || "Не удалось сохранить таблицу");
+      return statId;
+    }
+  }, [projectId, docId]);
+
   // Автосохранение новой таблицы в Статистику
   const handleTableCreated = useCallback(async (tableData: { rows: number; cols: number; data: any[][] }) => {
     if (!projectId || !docId) return undefined;
@@ -569,6 +631,8 @@ export default function DocumentPage() {
             onRemoveCitation={handleRemoveCitation}
             onUpdateCitationNote={handleUpdateCitationNote}
             onTableCreated={handleTableCreated}
+            onLoadStatistic={handleLoadStatistic}
+            onSaveStatistic={handleSaveStatistic}
             citations={doc.citations || []}
             citationStyle={citationStyle}
           />
