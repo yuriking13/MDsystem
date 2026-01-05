@@ -17,7 +17,7 @@ type Props = {
     title?: string;
     description?: string;
     config?: Record<string, any>;
-    tableData?: Record<string, any>;
+    tableData?: TableData;
     dataClassification?: DataClassification;
     chartType?: string;
   }) => Promise<void>;
