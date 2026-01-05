@@ -24,6 +24,7 @@ import { CitationNode } from './nodes/CitationNode';
 import { ChartNode } from './nodes/ChartNode';
 import ToolbarPlugin from './plugins/ToolbarPlugin';
 import PagesPlugin from './plugins/PagesPlugin';
+import { DEFAULT_ZOOM } from './pageMetrics';
 
 import './LexicalEditor.css';
 
@@ -53,6 +54,7 @@ export default function LexicalEditor({
   documentId,
 }: LexicalEditorProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('scroll');
+  const [zoom, setZoom] = useState(DEFAULT_ZOOM);
 
   const initialConfig = {
     namespace: 'MDSystemEditor',
@@ -127,7 +129,7 @@ export default function LexicalEditor({
         <div className="lexical-content-wrapper">
           <div className={`lexical-editor-scroll ${viewMode === 'pages' ? 'pages-layout' : 'scroll-layout'}`}>
             {viewMode === 'pages' ? (
-              <PagesPlugin>
+              <PagesPlugin zoom={zoom} onZoomChange={setZoom}>
                 <RichTextPlugin
                   contentEditable={<ContentEditable className="lexical-content" />}
                   placeholder={<div className="lexical-placeholder">Начните писать...</div>}
