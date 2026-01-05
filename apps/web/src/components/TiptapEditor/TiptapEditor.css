@@ -152,7 +152,7 @@
 /* Editor content area */
 .tiptap-editor {
   width: 100%;
-  max-width: 794px;
+  /* Убираем max-width чтобы таблицы могли расширяться */
 }
 
 .tiptap-editor .tiptap {
@@ -618,10 +618,10 @@
 .tiptap-table {
   border-collapse: collapse !important;
   margin: 1em 0 !important;
-  /* table-layout: fixed НЕОБХОДИМ для работы ресайза через colwidth */
+  /* table-layout: fixed ОБЯЗАТЕЛЕН для ресайза через colwidth */
   table-layout: fixed !important;
   border: 2px solid #1e293b !important;
-  width: auto;
+  /* width НЕ устанавливаем - TipTap управляет через colwidth */
 }
 
 .tiptap-editor table td,
@@ -733,13 +733,13 @@
    TABLE RESIZE - TipTap specific
    ============================================ */
 
-/* Table wrapper для ресайза - ВАЖНО: overflow visible */
+/* Table wrapper для ресайза - ВАЖНО: width 100% для расширения */
 .tiptap-editor .tableWrapper,
 .ProseMirror .tableWrapper {
   overflow: visible !important;
   margin: 1em 0;
   position: relative;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
 }
 
@@ -748,7 +748,7 @@
 .ProseMirror .tableWrapper table {
   table-layout: fixed !important;
   overflow: visible;
-  width: auto;
+  /* width НЕ устанавливаем - пусть браузер использует colwidth */
 }
 
 /* Resize handle для колонок */

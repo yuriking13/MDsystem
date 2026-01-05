@@ -44,9 +44,14 @@ export const CustomTableHeader = TableHeader.extend({
       styles.push(`vertical-align: ${attrs.verticalAlign}`);
     }
     
+    // ВАЖНО: Сначала берем существующий style из HTMLAttributes (может содержать TipTap стили)
+    const existingStyle = HTMLAttributes.style || '';
+    const newStyle = styles.join('; ');
+    const combinedStyle = [existingStyle, newStyle].filter(s => s).join('; ');
+    
     const combinedAttrs: Record<string, any> = {
       ...HTMLAttributes,
-      ...(styles.length > 0 ? { style: styles.join('; ') } : {}),
+      ...(combinedStyle ? { style: combinedStyle } : {}),
       ...(attrs.backgroundColor ? { 'data-bgcolor': attrs.backgroundColor } : {}),
     };
     
