@@ -73,6 +73,7 @@ export default function DocumentPage() {
   const [error, setError] = useState<string | null>(null);
   const [citationStyle, setCitationStyle] = useState<CitationStyle>("gost");
   const hasSyncedStatistics = useRef(false);
+  const isSyncingStatistics = useRef(false);
 
   // Модальное окно выбора статьи для цитаты
   const [showCitationPicker, setShowCitationPicker] = useState(false);
@@ -282,6 +283,8 @@ export default function DocumentPage() {
   // Refresh document content with the latest data from Statistics (run once after load)
   const syncDocumentWithStatistics = useCallback(async () => {
     if (!projectId || !content) return;
+    if (isSyncingStatistics.current) return;
+    isSyncingStatistics.current = true;
 
     const parser = new DOMParser();
     const docDom = parser.parseFromString(content, "text/html");
@@ -292,7 +295,10 @@ export default function DocumentPage() {
       .map((el) => el.getAttribute('data-statistic-id'))
       .filter((id): id is string => !!id && uuidRegex.test(id))));
 
-    if (ids.length === 0) return;
+    if (ids.length === 0) {
+      isSyncingStatistics.current = false;
+      return;
+    }
 
     const statMap = new Map<string, TableData>();
     await Promise.allSettled(ids.map(async (id) => {
@@ -306,11 +312,28 @@ export default function DocumentPage() {
       }
     }));
 
+    // Determine which statistics were deleted server-side
+    const existingIds = new Set<string>();
+    try {
+      const list = await apiGetStatistics(projectId);
+      list.statistics.forEach((s) => existingIds.add(s.id));
+    } catch (err) {
+      console.warn('Failed to fetch statistics list for sync', err);
+    }
+
     let changed = false;
     tables.forEach((tableEl) => {
       const statId = tableEl.getAttribute('data-statistic-id');
       if (!statId) return;
       const data = statMap.get(statId);
+
+      // If statistic was removed, drop the table from the document
+      if (!data && existingIds.size > 0 && !existingIds.has(statId)) {
+        tableEl.remove();
+        changed = true;
+        return;
+      }
+
       if (!data) return;
 
       const newHtml = buildTableHtmlFromStatistic(data, statId);
@@ -329,6 +352,8 @@ export default function DocumentPage() {
       setDoc((prev) => prev ? { ...prev, content: updatedContent } : prev);
       await saveDocument(updatedContent);
     }
+
+    isSyncingStatistics.current = false;
   }, [buildTableHtmlFromStatistic, content, projectId, saveDocument]);
 
   // After initial load, refresh document tables from Statistics once
@@ -338,6 +363,15 @@ export default function DocumentPage() {
     hasSyncedStatistics.current = true;
     syncDocumentWithStatistics();
   }, [loading, content, syncDocumentWithStatistics]);
+
+  // Re-sync on window focus to capture external Statistic edits/deletions
+  useEffect(() => {
+    const handler = () => {
+      syncDocumentWithStatistics();
+    };
+    window.addEventListener('focus', handler);
+    return () => window.removeEventListener('focus', handler);
+  }, [syncDocumentWithStatistics]);
 
   // Debounced save
   useEffect(() => {
