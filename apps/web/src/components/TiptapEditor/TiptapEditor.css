@@ -769,6 +769,40 @@
   /* col наследует width от inline styles, установленные TipTap */
 }
 
+/* Override pagination styles that break colgroups/grids */
+.rm-with-pagination .tableWrapper {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.rm-with-pagination .tableWrapper table {
+  display: table !important;
+  width: auto !important;
+  max-width: 100%;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+}
+
+.rm-with-pagination .tableWrapper table > tr {
+  display: table-row !important;
+  min-width: unset !important;
+}
+
+.rm-with-pagination .tableWrapper tbody {
+  display: table-row-group !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.rm-with-pagination .tableWrapper colgroup {
+  display: table-column-group !important;
+}
+
+.rm-with-pagination .tableWrapper col {
+  display: table-column !important;
+  min-width: 50px;
+}
+
 /* Если col имеет width атрибут, уважаем его */
 .tiptap-editor .tableWrapper col[style*="width"],
 .ProseMirror .tableWrapper col[style*="width"] {
