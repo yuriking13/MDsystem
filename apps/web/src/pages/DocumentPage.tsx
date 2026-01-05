@@ -477,7 +477,7 @@ export default function DocumentPage() {
                       >
                         <div className="import-stat-header" style={{ marginBottom: 12 }}>
                           <div className="import-stat-title" style={{ fontSize: 15, fontWeight: 600 }}>
-                            {chartInfo?.icon || '📊'} {stat.title || 'Без названия'}
+                            {stat.title || 'Без названия'}
                           </div>
                           {stat.description && (
                             <div className="import-stat-desc muted" style={{ fontSize: 12, marginTop: 4 }}>

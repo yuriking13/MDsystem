@@ -3,6 +3,17 @@ import { Editor } from '@tiptap/react';
 import type { CitationStyle } from '../../lib/api';
 import { STYLE_CONFIGS } from './TiptapEditor';
 
+// Cell colors for table customization
+const CELL_COLORS = [
+  { name: 'Без цвета', value: '', class: '' },
+  { name: 'Синий', value: 'rgba(59, 130, 246, 0.15)', class: 'cell-blue' },
+  { name: 'Зелёный', value: 'rgba(34, 197, 94, 0.15)', class: 'cell-green' },
+  { name: 'Жёлтый', value: 'rgba(234, 179, 8, 0.15)', class: 'cell-yellow' },
+  { name: 'Красный', value: 'rgba(239, 68, 68, 0.15)', class: 'cell-red' },
+  { name: 'Фиолетовый', value: 'rgba(168, 85, 247, 0.15)', class: 'cell-purple' },
+  { name: 'Серый', value: 'rgba(100, 116, 139, 0.15)', class: 'cell-gray' },
+];
+
 interface TiptapToolbarProps {
   editor: Editor;
   onInsertCitation?: () => void;
@@ -10,6 +21,7 @@ interface TiptapToolbarProps {
   onToggleOutline?: () => void;
   onToggleBibliography?: () => void;
   onCreateChartFromTable?: (tableHtml: string) => void;
+  onOpenPageSettings?: () => void;
   showOutline?: boolean;
   showBibliography?: boolean;
   citationStyle?: CitationStyle;
@@ -22,14 +34,17 @@ export default function TiptapToolbar({
   onToggleOutline,
   onToggleBibliography,
   onCreateChartFromTable,
+  onOpenPageSettings,
   showOutline,
   showBibliography,
   citationStyle = 'gost',
 }: TiptapToolbarProps) {
   const [showTableMenu, setShowTableMenu] = useState(false);
   const [showTableEditMenu, setShowTableEditMenu] = useState(false);
+  const [showTableColorMenu, setShowTableColorMenu] = useState(false);
   const tableMenuRef = useRef<HTMLDivElement>(null);
   const tableEditMenuRef = useRef<HTMLDivElement>(null);
+  const tableColorMenuRef = useRef<HTMLDivElement>(null);
 
   const styleConfig = STYLE_CONFIGS[citationStyle];
 
@@ -41,6 +56,9 @@ export default function TiptapToolbar({
       }
       if (tableEditMenuRef.current && !tableEditMenuRef.current.contains(e.target as Node)) {
         setShowTableEditMenu(false);
+      }
+      if (tableColorMenuRef.current && !tableColorMenuRef.current.contains(e.target as Node)) {
+        setShowTableColorMenu(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -113,6 +131,37 @@ export default function TiptapToolbar({
   const insertTable = (rows: number, cols: number) => {
     editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
     setShowTableMenu(false);
+  };
+
+  // Apply cell background color
+  const applyCellColor = (color: string) => {
+    if (!color) {
+      editor.chain().focus().setCellAttribute('backgroundColor', '').run();
+    } else {
+      editor.chain().focus().setCellAttribute('backgroundColor', color).run();
+    }
+    setShowTableColorMenu(false);
+  };
+
+  // Check if cursor is in header row
+  const isInHeaderRow = () => {
+    try {
+      const { state } = editor;
+      const { $from } = state.selection;
+      let isHeader = false;
+      
+      // Check if current cell is a tableHeader
+      for (let depth = $from.depth; depth > 0; depth--) {
+        const node = $from.node(depth);
+        if (node.type.name === 'tableHeader') {
+          isHeader = true;
+          break;
+        }
+      }
+      return isHeader;
+    } catch {
+      return false;
+    }
   };
 
   const setLink = () => {
@@ -271,146 +320,216 @@ export default function TiptapToolbar({
 
       {/* Edit Table (when in table) */}
       {isInTable && (
-        <div style={{ position: 'relative' }} ref={tableEditMenuRef}>
-          <button 
-            style={btn(false, 'rgba(75,116,255,0.2)')} 
-            onClick={() => { setShowTableEditMenu(!showTableEditMenu); setShowTableMenu(false); }}
-            title="Редактировать таблицу"
-          >
-            ⚙
-          </button>
-          {showTableEditMenu && (
-            <div style={dropdownStyle}>
-              <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px', padding: '0 4px' }}>Строки</div>
-              <button 
-                onClick={() => { editor.chain().focus().addRowBefore().run(); setShowTableEditMenu(false); }}
-                style={dropdownItemStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                ↑ Добавить строку выше
-              </button>
-              <button 
-                onClick={() => { editor.chain().focus().addRowAfter().run(); setShowTableEditMenu(false); }}
-                style={dropdownItemStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                ↓ Добавить строку ниже
-              </button>
-              <button 
-                onClick={() => { editor.chain().focus().deleteRow().run(); setShowTableEditMenu(false); }}
-                style={{...dropdownItemStyle, color: '#f87171'}}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(248,113,113,0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                ✕ Удалить строку
-              </button>
-              
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '6px 0' }} />
-              
-              <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px', padding: '0 4px' }}>Столбцы</div>
-              <button 
-                onClick={() => { editor.chain().focus().addColumnBefore().run(); setShowTableEditMenu(false); }}
-                style={dropdownItemStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                ← Добавить столбец слева
-              </button>
-              <button 
-                onClick={() => { editor.chain().focus().addColumnAfter().run(); setShowTableEditMenu(false); }}
-                style={dropdownItemStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                → Добавить столбец справа
-              </button>
-              <button 
-                onClick={() => { editor.chain().focus().deleteColumn().run(); setShowTableEditMenu(false); }}
-                style={{...dropdownItemStyle, color: '#f87171'}}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(248,113,113,0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                ✕ Удалить столбец
-              </button>
+        <>
+          <div style={{ position: 'relative' }} ref={tableEditMenuRef}>
+            <button 
+              style={btn(false, 'rgba(75,116,255,0.2)')} 
+              onClick={() => { setShowTableEditMenu(!showTableEditMenu); setShowTableMenu(false); setShowTableColorMenu(false); }}
+              title="Редактировать таблицу"
+            >
+              ⚙
+            </button>
+            {showTableEditMenu && (
+              <div style={dropdownStyle}>
+                <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px', padding: '0 4px' }}>Строки</div>
+                <button 
+                  onClick={() => {
+                    // Защита заголовков - не добавлять строку выше если мы в заголовке
+                    if (isInHeaderRow()) {
+                      alert('Нельзя добавить строку выше заголовка таблицы');
+                      return;
+                    }
+                    editor.chain().focus().addRowBefore().run();
+                    setShowTableEditMenu(false);
+                  }}
+                  style={{...dropdownItemStyle, opacity: isInHeaderRow() ? 0.5 : 1}}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                  title={isInHeaderRow() ? 'Нельзя добавить строку выше заголовка' : ''}
+                >
+                  ↑ Добавить строку выше {isInHeaderRow() && '🔒'}
+                </button>
+                <button 
+                  onClick={() => { editor.chain().focus().addRowAfter().run(); setShowTableEditMenu(false); }}
+                  style={dropdownItemStyle}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ↓ Добавить строку ниже
+                </button>
+                <button 
+                  onClick={() => {
+                    // Защита заголовков - не удалять строку заголовка
+                    if (isInHeaderRow()) {
+                      alert('Нельзя удалить строку заголовка таблицы');
+                      return;
+                    }
+                    editor.chain().focus().deleteRow().run();
+                    setShowTableEditMenu(false);
+                  }}
+                  style={{...dropdownItemStyle, color: '#f87171', opacity: isInHeaderRow() ? 0.5 : 1}}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(248,113,113,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                  title={isInHeaderRow() ? 'Нельзя удалить строку заголовка' : ''}
+                >
+                  ✕ Удалить строку {isInHeaderRow() && '🔒'}
+                </button>
+                
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '6px 0' }} />
+                
+                <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px', padding: '0 4px' }}>Столбцы</div>
+                <button 
+                  onClick={() => { editor.chain().focus().addColumnBefore().run(); setShowTableEditMenu(false); }}
+                  style={dropdownItemStyle}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ← Добавить столбец слева
+                </button>
+                <button 
+                  onClick={() => { editor.chain().focus().addColumnAfter().run(); setShowTableEditMenu(false); }}
+                  style={dropdownItemStyle}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  → Добавить столбец справа
+                </button>
+                <button 
+                  onClick={() => { editor.chain().focus().deleteColumn().run(); setShowTableEditMenu(false); }}
+                  style={{...dropdownItemStyle, color: '#f87171'}}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(248,113,113,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ✕ Удалить столбец
+                </button>
 
-              <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '6px 0' }} />
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '6px 0' }} />
 
-              <button 
-                onClick={() => { editor.chain().focus().mergeCells().run(); setShowTableEditMenu(false); }}
-                style={dropdownItemStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                ⊞ Объединить ячейки
-              </button>
-              <button 
-                onClick={() => { editor.chain().focus().splitCell().run(); setShowTableEditMenu(false); }}
-                style={dropdownItemStyle}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                ⊟ Разделить ячейку
-              </button>
-              <button 
-                onClick={() => { editor.chain().focus().deleteTable().run(); setShowTableEditMenu(false); }}
-                style={{...dropdownItemStyle, color: '#f87171'}}
-                onMouseOver={(e) => e.currentTarget.style.background = 'rgba(248,113,113,0.2)'}
-                onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                🗑 Удалить таблицу
-              </button>
+                <button 
+                  onClick={() => { editor.chain().focus().mergeCells().run(); setShowTableEditMenu(false); }}
+                  style={dropdownItemStyle}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ⊞ Объединить ячейки
+                </button>
+                <button 
+                  onClick={() => { editor.chain().focus().splitCell().run(); setShowTableEditMenu(false); }}
+                  style={dropdownItemStyle}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ⊟ Разделить ячейку
+                </button>
+                <button 
+                  onClick={() => { editor.chain().focus().toggleHeaderRow().run(); setShowTableEditMenu(false); }}
+                  style={dropdownItemStyle}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  ⊟ Переключить заголовок строки
+                </button>
+                <button 
+                  onClick={() => { editor.chain().focus().deleteTable().run(); setShowTableEditMenu(false); }}
+                  style={{...dropdownItemStyle, color: '#f87171'}}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(248,113,113,0.2)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  🗑 Удалить таблицу
+                </button>
 
-              {onCreateChartFromTable && (
-                <>
-                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '6px 0' }} />
-                  <button 
-                    onClick={() => {
-                      // Get the table HTML from the editor
-                      const { state } = editor;
-                      const { from } = state.selection;
-                      let tableNode: any = null;
-                      
-                      state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
-                        if (node.type.name === 'table') {
-                          if (pos <= from && pos + node.nodeSize >= from) {
-                            tableNode = node;
-                          }
-                        }
-                      });
-                      
-                      if (tableNode) {
-                        // Create HTML from the table node
-                        const div = document.createElement('div');
-                        const tableEl = document.createElement('table');
+                {onCreateChartFromTable && (
+                  <>
+                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '6px 0' }} />
+                    <button 
+                      onClick={() => {
+                        // Get the table HTML from the editor
+                        const { state } = editor;
+                        const { from } = state.selection;
+                        let tableNode: any = null;
                         
-                        tableNode.content.forEach((row: any) => {
-                          const tr = document.createElement('tr');
-                          row.content.forEach((cell: any) => {
-                            const cellEl = document.createElement(cell.type.name === 'tableHeader' ? 'th' : 'td');
-                            cellEl.textContent = cell.textContent;
-                            tr.appendChild(cellEl);
-                          });
-                          tableEl.appendChild(tr);
+                        state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
+                          if (node.type.name === 'table') {
+                            if (pos <= from && pos + node.nodeSize >= from) {
+                              tableNode = node;
+                            }
+                          }
                         });
                         
-                        div.appendChild(tableEl);
-                        onCreateChartFromTable(div.innerHTML);
-                      }
-                      setShowTableEditMenu(false);
+                        if (tableNode) {
+                          // Create HTML from the table node
+                          const div = document.createElement('div');
+                          const tableEl = document.createElement('table');
+                          
+                          tableNode.content.forEach((row: any) => {
+                            const tr = document.createElement('tr');
+                            row.content.forEach((cell: any) => {
+                              const cellEl = document.createElement(cell.type.name === 'tableHeader' ? 'th' : 'td');
+                              cellEl.textContent = cell.textContent;
+                              tr.appendChild(cellEl);
+                            });
+                            tableEl.appendChild(tr);
+                          });
+                          
+                          div.appendChild(tableEl);
+                          onCreateChartFromTable(div.innerHTML);
+                        }
+                        setShowTableEditMenu(false);
+                      }}
+                      style={{...dropdownItemStyle, color: '#4ade80'}}
+                      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(74,222,128,0.2)'}
+                      onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      📈 Создать график
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Table Cell Color Menu */}
+          <div style={{ position: 'relative' }} ref={tableColorMenuRef}>
+            <button 
+              style={btn(false, 'rgba(75,116,255,0.2)')} 
+              onClick={() => { setShowTableColorMenu(!showTableColorMenu); setShowTableEditMenu(false); setShowTableMenu(false); }}
+              title="Цвет ячейки"
+            >
+              🎨
+            </button>
+            {showTableColorMenu && (
+              <div style={{...dropdownStyle, minWidth: '140px'}}>
+                <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px', padding: '0 4px' }}>
+                  Цвет ячейки
+                </div>
+                {CELL_COLORS.map((color) => (
+                  <button
+                    key={color.name}
+                    onClick={() => applyCellColor(color.value)}
+                    style={{
+                      ...dropdownItemStyle,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
                     }}
-                    style={{...dropdownItemStyle, color: '#4ade80'}}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(74,222,128,0.2)'}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(75,116,255,0.2)'}
                     onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
                   >
-                    📊 Создать график
+                    <span style={{
+                      width: '16px',
+                      height: '16px',
+                      borderRadius: '3px',
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      background: color.value || 'white',
+                      display: 'inline-block',
+                    }} />
+                    {color.name}
                   </button>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       <button 
@@ -482,8 +601,17 @@ export default function TiptapToolbar({
         </button>
       )}
 
-      {/* Style indicator */}
+      {/* Style indicator and page settings */}
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        {onOpenPageSettings && (
+          <button 
+            style={btn()} 
+            onClick={onOpenPageSettings}
+            title="Настройки страницы"
+          >
+            ⚙️
+          </button>
+        )}
         <span 
           className="style-badge"
           style={{
@@ -492,8 +620,10 @@ export default function TiptapToolbar({
             background: 'rgba(75,116,255,0.1)',
             borderRadius: '4px',
             color: '#64748b',
+            cursor: 'pointer',
           }}
-          title={`Стиль: ${styleConfig.name}`}
+          title={`Стиль: ${styleConfig.name}\nШрифт: ${styleConfig.fontSize}pt\nИнтервал: ${styleConfig.lineHeight}\nКликните для настройки`}
+          onClick={onOpenPageSettings}
         >
           {citationStyle.toUpperCase()}
         </span>

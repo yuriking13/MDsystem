@@ -764,7 +764,7 @@ export function ChartCreatorModal({ tableHtml, onClose, onInsert }: ChartModalPr
     const chartHtml = `
       <div class="chart-container" data-chart='${chartDataJson.replace(/'/g, "&#39;")}' data-chart-id="${chartId}">
         <div class="chart-placeholder">
-          📊 График: ${title || CHART_TYPE_INFO[chartType].name}
+          График: ${title || CHART_TYPE_INFO[chartType].name}
         </div>
       </div>
     `;

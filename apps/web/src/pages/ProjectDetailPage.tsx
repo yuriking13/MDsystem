@@ -30,7 +30,13 @@ import CitationGraph from "../components/CitationGraph";
 import ChartFromTable, { CHART_TYPE_INFO, type ChartType, type TableData } from "../components/ChartFromTable";
 import StatisticEditModal from "../components/StatisticEditModal";
 import CreateStatisticModal from "../components/CreateStatisticModal";
-import { exportToWord } from "../lib/exportWord";
+import { 
+  exportToWord, 
+  exportToPdf, 
+  exportBibliographyToWord, 
+  exportBibliographyToTxt, 
+  exportBibliographyToPdf 
+} from "../lib/exportWord";
 
 type Tab = "articles" | "documents" | "statistics" | "graph" | "team" | "settings";
 
@@ -702,75 +708,172 @@ export default function ProjectDetailPage() {
                 </span>
               </div>
               
-              <div className="row gap" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
-                <button 
-                  className="btn secondary" 
-                  onClick={handleLoadBibliography}
-                  disabled={loadingBib}
-                  type="button"
-                >
-                  {loadingBib ? '⏳ Загрузка...' : '📋 Список литературы'}
-                </button>
-                <button 
-                  className="btn" 
-                  onClick={() => handleExportWord(false)}
-                  disabled={exporting || documents.length === 0}
-                  type="button"
-                  title="Экспорт глав по отдельности"
-                >
-                  {exporting ? '⏳...' : '📥 Word (главы)'}
-                </button>
-                <button 
-                  className="btn" 
-                  onClick={() => handleExportWord(true)}
-                  disabled={exporting || documents.length === 0}
-                  type="button"
-                  title="Объединённый документ с общим списком литературы"
-                >
-                  {exporting ? '⏳...' : '📄 Word (объединённый)'}
-                </button>
-                <button 
-                  className="btn secondary" 
-                  onClick={handleExportTxt}
-                  disabled={exporting || documents.length === 0}
-                  type="button"
-                >
-                  📄 TXT
-                </button>
-              </div>
-
-              {showBibliography && (
-                <div style={{ marginTop: 12 }}>
-                  <div className="row space" style={{ marginBottom: 8 }}>
-                    <span className="muted">
-                      Всего источников: {bibliography.length}
-                    </span>
-                    <button 
-                      className="btn secondary" 
-                      onClick={handleCopyBibliography}
-                      style={{ padding: '4px 10px', fontSize: 12 }}
-                      type="button"
-                    >
-                      📋 Копировать
-                    </button>
-                  </div>
-                  
-                  {bibliography.length === 0 ? (
-                    <div className="muted">
-                      Нет цитат. Добавьте цитаты в документы.
-                    </div>
-                  ) : (
-                    <div className="bibliography-list">
-                      {bibliography.map((item) => (
-                        <div key={item.articleId} className="bibliography-item">
-                          <span className="bib-number">{item.number}.</span>
-                          <span className="bib-text">{item.formatted}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              {/* Экспорт документа */}
+              <div style={{ marginBottom: 16 }}>
+                <div className="muted" style={{ fontSize: 11, marginBottom: 8 }}>Экспорт документа проекта</div>
+                <div className="row gap" style={{ flexWrap: 'wrap' }}>
+                  <button 
+                    className="btn" 
+                    onClick={() => handleExportWord(false)}
+                    disabled={exporting || documents.length === 0}
+                    type="button"
+                    title="Экспорт глав по отдельности"
+                  >
+                    {exporting ? '⏳...' : '📥 Word (главы)'}
+                  </button>
+                  <button 
+                    className="btn" 
+                    onClick={() => handleExportWord(true)}
+                    disabled={exporting || documents.length === 0}
+                    type="button"
+                    title="Объединённый документ с общим списком литературы"
+                  >
+                    {exporting ? '⏳...' : '📄 Word (объединённый)'}
+                  </button>
+                  <button 
+                    className="btn secondary" 
+                    onClick={async () => {
+                      if (!id) return;
+                      setExporting(true);
+                      try {
+                        const res = await apiExportProject(id);
+                        exportToPdf(
+                          res.projectName,
+                          res.documents.map(d => ({ title: d.title, content: d.content })),
+                          res.bibliography,
+                          res.citationStyle,
+                          res.mergedContent
+                        );
+                        setOk('Открыто окно печати PDF');
+                      } catch (err: any) {
+                        setError(err?.message || "Ошибка экспорта");
+                      } finally {
+                        setExporting(false);
+                      }
+                    }}
+                    disabled={exporting || documents.length === 0}
+                    type="button"
+                    title="Печать в PDF"
+                  >
+                    🖨️ PDF
+                  </button>
+                  <button 
+                    className="btn secondary" 
+                    onClick={handleExportTxt}
+                    disabled={exporting || documents.length === 0}
+                    type="button"
+                  >
+                    📄 TXT
+                  </button>
                 </div>
-              )}
+              </div>
+              
+              {/* Библиография */}
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 16 }}>
+                <div className="muted" style={{ fontSize: 11, marginBottom: 8 }}>Список литературы</div>
+                <div className="row gap" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
+                  <button 
+                    className="btn secondary" 
+                    onClick={handleLoadBibliography}
+                    disabled={loadingBib}
+                    type="button"
+                  >
+                    {loadingBib ? '⏳ Загрузка...' : '📋 Показать'}
+                  </button>
+                  <button 
+                    className="btn secondary" 
+                    onClick={async () => {
+                      if (!id) return;
+                      setExporting(true);
+                      try {
+                        const res = await apiGetBibliography(id);
+                        exportBibliographyToWord(project?.name || 'Проект', res.bibliography, citationStyle);
+                        setOk('Список литературы экспортирован в Word');
+                      } catch (err: any) {
+                        setError(err?.message || "Ошибка экспорта");
+                      } finally {
+                        setExporting(false);
+                      }
+                    }}
+                    disabled={exporting}
+                    type="button"
+                    title="Экспорт только списка литературы в Word"
+                  >
+                    📥 Word
+                  </button>
+                  <button 
+                    className="btn secondary" 
+                    onClick={async () => {
+                      if (!id) return;
+                      setExporting(true);
+                      try {
+                        const res = await apiGetBibliography(id);
+                        exportBibliographyToPdf(project?.name || 'Проект', res.bibliography, citationStyle);
+                        setOk('Открыто окно печати PDF');
+                      } catch (err: any) {
+                        setError(err?.message || "Ошибка экспорта");
+                      } finally {
+                        setExporting(false);
+                      }
+                    }}
+                    disabled={exporting}
+                    type="button"
+                    title="Экспорт только списка литературы в PDF"
+                  >
+                    🖨️ PDF
+                  </button>
+                  <button 
+                    className="btn secondary" 
+                    onClick={async () => {
+                      if (!id) return;
+                      try {
+                        const res = await apiGetBibliography(id);
+                        exportBibliographyToTxt(project?.name || 'Проект', res.bibliography, citationStyle);
+                        setOk('Список литературы экспортирован в TXT');
+                      } catch (err: any) {
+                        setError(err?.message || "Ошибка экспорта");
+                      }
+                    }}
+                    type="button"
+                    title="Экспорт только списка литературы в TXT"
+                  >
+                    📄 TXT
+                  </button>
+                </div>
+
+                {showBibliography && (
+                  <div style={{ marginTop: 12 }}>
+                    <div className="row space" style={{ marginBottom: 8 }}>
+                      <span className="muted">
+                        Всего источников: {bibliography.length}
+                      </span>
+                      <button 
+                        className="btn secondary" 
+                        onClick={handleCopyBibliography}
+                        style={{ padding: '4px 10px', fontSize: 12 }}
+                        type="button"
+                      >
+                        📋 Копировать
+                      </button>
+                    </div>
+                    
+                    {bibliography.length === 0 ? (
+                      <div className="muted">
+                        Нет цитат. Добавьте цитаты в документы.
+                      </div>
+                    ) : (
+                      <div className="bibliography-list">
+                        {bibliography.map((item) => (
+                          <div key={item.articleId} className="bibliography-item">
+                            <span className="bib-number">{item.number}.</span>
+                            <span className="bib-text">{item.formatted}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
