@@ -15,40 +15,34 @@ export default function PagesPlugin({
   const viewportRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const [pageCount, setPageCount] = useState(1);
-  const [columns, setColumns] = useState<1 | 2>(1);
 
-  // Calculate number of pages based on content height
+  // Calculate number of pages based on content scrollWidth (horizontal due to columns)
   const calculatePages = useCallback(() => {
     if (!contentRef.current) return;
     
-    // Force layout recalculation
-    const contentHeight = contentRef.current.scrollHeight;
-    const pageHeight = PAGE_CONTENT.heightPx;
-    const newPageCount = Math.max(1, Math.ceil(contentHeight / pageHeight));
+    // With CSS columns, scrollWidth tells us total horizontal extent
+    const scrollWidth = contentRef.current.scrollWidth;
+    const columnWidth = PAGE_CONTENT.widthPx;
+    const gap = 24; // column gap
     
-    setPageCount(newPageCount);
-  }, []);
-
-  // Update columns based on viewport width
-  const updateColumns = useCallback(() => {
-    if (!viewportRef.current) return;
+    // Calculate how many columns (pages) we have
+    const newPageCount = Math.max(1, Math.ceil(scrollWidth / (columnWidth + gap)));
     
-    const viewportWidth = viewportRef.current.clientWidth;
-    setColumns(canFitTwoPages(viewportWidth, zoom) ? 2 : 1);
-  }, [zoom]);
+    if (newPageCount !== pageCount) {
+      setPageCount(newPageCount);
+    }
+  }, [pageCount]);
 
   // Observe content changes
   useEffect(() => {
     const el = contentRef.current;
     if (!el) return;
 
-    // Use ResizeObserver for size changes
     const resizeObserver = new ResizeObserver(() => {
       requestAnimationFrame(calculatePages);
     });
     resizeObserver.observe(el);
 
-    // Use MutationObserver for DOM changes
     const mutationObserver = new MutationObserver(() => {
       requestAnimationFrame(calculatePages);
     });
@@ -59,8 +53,8 @@ export default function PagesPlugin({
       attributes: true,
     });
 
-    // Initial calculation
-    calculatePages();
+    // Initial calculation with delay for rendering
+    setTimeout(calculatePages, 100);
 
     return () => {
       resizeObserver.disconnect();
@@ -68,38 +62,22 @@ export default function PagesPlugin({
     };
   }, [calculatePages]);
 
-  // Observe viewport for column layout
+  // Recalculate on zoom change
   useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
+    setTimeout(calculatePages, 50);
+  }, [zoom, calculatePages]);
 
-    const resizeObserver = new ResizeObserver(updateColumns);
-    resizeObserver.observe(el);
-    updateColumns();
+  const pageWidthScaled = A4.widthPx * zoom;
+  const pageHeightScaled = A4.heightPx * zoom;
+  const contentWidthScaled = PAGE_CONTENT.widthPx * zoom;
+  const contentHeightScaled = PAGE_CONTENT.heightPx * zoom;
+  const gap = 24;
 
-    return () => resizeObserver.disconnect();
-  }, [updateColumns]);
-
-  // CSS variables for page dimensions
-  const cssVars = {
-    '--page-width': `${A4.widthPx}px`,
-    '--page-height': `${A4.heightPx}px`,
-    '--page-content-width': `${PAGE_CONTENT.widthPx}px`,
-    '--page-content-height': `${PAGE_CONTENT.heightPx}px`,
-    '--margin-top': `${PAGE_MARGIN.top}px`,
-    '--margin-right': `${PAGE_MARGIN.right}px`,
-    '--margin-bottom': `${PAGE_MARGIN.bottom}px`,
-    '--margin-left': `${PAGE_MARGIN.left}px`,
-    '--zoom': zoom,
-    '--page-count': pageCount,
-  } as React.CSSProperties;
+  // Total width for all pages in a row
+  const totalWidth = pageCount * pageWidthScaled + (pageCount - 1) * gap;
 
   return (
-    <div 
-      ref={viewportRef}
-      className={`pages-viewport cols-${columns}`}
-      style={cssVars}
-    >
+    <div ref={viewportRef} className="pages-viewport">
       {/* Zoom controls */}
       <div className="pages-zoom-controls">
         <button 
@@ -130,29 +108,59 @@ export default function PagesPlugin({
         </span>
       </div>
 
-      {/* Pages grid with CSS columns for content flow */}
-      <div className="pages-grid">
-        <div className="pages-paper-stack">
-          {/* Background pages (visual only) */}
+      {/* Scrollable pages area */}
+      <div className="pages-scroll-area">
+        <div 
+          className="pages-container"
+          style={{
+            width: totalWidth,
+            minHeight: pageHeightScaled,
+          }}
+        >
+          {/* Page backgrounds */}
           {Array.from({ length: pageCount }, (_, i) => (
-            <div key={i} className="page-background" data-page={i + 1}>
-              <div className="page-header">
-                {i > 0 && <span className="page-number-header">{i + 1}</span>}
-              </div>
+            <div 
+              key={i} 
+              className="page-paper"
+              style={{
+                width: pageWidthScaled,
+                height: pageHeightScaled,
+                left: i * (pageWidthScaled + gap),
+              }}
+            >
               <div className="page-footer">
-                <span className="page-number-footer">Страница {i + 1}</span>
+                Страница {i + 1}
               </div>
             </div>
           ))}
-          
-          {/* Content layer with CSS columns */}
-          <div className="pages-content-layer">
-            <div 
-              ref={contentRef}
-              className="pages-content-flow"
-            >
-              {children}
-            </div>
+
+          {/* Single content area with CSS columns */}
+          <div 
+            ref={contentRef}
+            className="pages-content"
+            style={{
+              // Position content within page margins
+              position: 'absolute',
+              top: PAGE_MARGIN.top * zoom,
+              left: PAGE_MARGIN.left * zoom,
+              
+              // Height matches content area of ONE page
+              height: contentHeightScaled,
+              
+              // Width spans all pages
+              width: pageCount * contentWidthScaled + (pageCount - 1) * (PAGE_MARGIN.right + gap + PAGE_MARGIN.left) * zoom,
+              
+              // CSS columns for automatic content flow
+              columnWidth: contentWidthScaled,
+              columnGap: (PAGE_MARGIN.right + gap + PAGE_MARGIN.left) * zoom,
+              columnFill: 'auto',
+              
+              // Scale content
+              fontSize: `${15 * zoom}px`,
+              lineHeight: 1.7,
+            }}
+          >
+            {children}
           </div>
         </div>
       </div>
