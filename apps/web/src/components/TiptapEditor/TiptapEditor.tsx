@@ -13,14 +13,65 @@ import TableHeader from '@tiptap/extension-table-header';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
+import Paragraph from '@tiptap/extension-paragraph';
 import { PaginationPlus } from 'tiptap-pagination-plus';
 
 import TiptapToolbar from './TiptapToolbar';
 import DocumentOutline from './DocumentOutline';
 import { ChartNode, insertChartIntoEditor, type ChartNodeAttrs } from './extensions/ChartNode';
+import { CitationMark, type CitationAttrs } from './extensions/CitationMark';
+import { TableFigureNumbering } from './extensions/TableFigureNumbering';
 import './TiptapEditor.css';
 
 import type { CitationStyle } from '../../lib/api';
+import type { Citation } from '../../lib/api';
+
+// Custom Paragraph extension with indent support
+const CustomParagraph = Paragraph.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      indent: {
+        default: false,
+        parseHTML: (element: HTMLElement) => element.classList.contains('indent'),
+        renderHTML: (attributes: any) => {
+          if (!attributes.indent) {
+            return {};
+          }
+          return {
+            class: 'indent',
+          };
+        },
+      },
+    };
+  },
+
+  addCommands() {
+    return {
+      ...this.parent?.(),
+      toggleIndent:
+        () =>
+        ({ commands }: any) => {
+          return commands.updateAttributes('paragraph', {
+            indent: (attrs: any) => !attrs.indent,
+          });
+        },
+      setIndent:
+        (indent: boolean) =>
+        ({ commands }: any) => {
+          return commands.updateAttributes('paragraph', { indent });
+        },
+    };
+  },
+
+  addKeyboardShortcuts() {
+    return {
+      ...this.parent?.(),
+      Tab: () => (this.editor.commands as any).toggleIndent(),
+      'Shift-Tab': () => (this.editor.commands as any).setIndent(false),
+    };
+  },
+});
 
 // Style configurations for different citation formats
 export const STYLE_CONFIGS = {
@@ -85,6 +136,8 @@ interface TiptapEditorProps {
   onInsertCitation?: () => void;
   onImportStatistic?: () => void;
   onCreateChartFromTable?: (tableHtml: string) => void;
+  onRemoveCitation?: (citationId: string) => void;
+  citations?: Citation[];
   citationStyle?: CitationStyle;
   editable?: boolean;
 }
@@ -95,10 +148,13 @@ export default function TiptapEditor({
   onInsertCitation,
   onImportStatistic,
   onCreateChartFromTable,
+  onRemoveCitation,
+  citations = [],
   citationStyle = 'gost',
   editable = true,
 }: TiptapEditorProps) {
   const [showOutline, setShowOutline] = useState(true);
+  const [showBibliography, setShowBibliography] = useState(true);
   const [headings, setHeadings] = useState<Array<{level: number; text: string; id: string}>>([]);
   const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
   
@@ -108,7 +164,9 @@ export default function TiptapEditor({
         heading: {
           levels: [1, 2, 3],
         },
+        paragraph: false, // Отключаем стандартный paragraph
       }),
+      CustomParagraph, // Используем свой paragraph с indent
       Underline,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
@@ -143,6 +201,8 @@ export default function TiptapEditor({
         multicolor: true,
       }),
       ChartNode,
+      CitationMark,
+      TableFigureNumbering,
       PaginationPlus.configure({
         pageHeight: styleConfig.pageHeight,
         pageWidth: styleConfig.pageWidth,
@@ -191,6 +251,11 @@ export default function TiptapEditor({
   // Register global insert functions
   useEffect(() => {
     if (!editor) return;
+    
+    // Insert citation function
+    const insertCitation = (citationAttrs: CitationAttrs) => {
+      editor.commands.setCitation(citationAttrs);
+    };
     
     // Insert chart function - uses the new ChartNode extension
     const insertChart = (chartData: ChartData) => {
@@ -256,10 +321,12 @@ export default function TiptapEditor({
       }, 100);
     };
     
+    (window as any).__editorInsertCitation = insertCitation;
     (window as any).__editorInsertChart = insertChart;
     (window as any).__editorInsertTable = insertTable;
     
     return () => {
+      delete (window as any).__editorInsertCitation;
       delete (window as any).__editorInsertChart;
       delete (window as any).__editorInsertTable;
     };
@@ -338,21 +405,83 @@ export default function TiptapEditor({
           onImportStatistic={onImportStatistic}
           onCreateChartFromTable={onCreateChartFromTable}
           onToggleOutline={() => setShowOutline(!showOutline)}
+          onToggleBibliography={() => setShowBibliography(!showBibliography)}
           showOutline={showOutline}
+          showBibliography={showBibliography}
           citationStyle={citationStyle}
         />
       )}
       <div className="tiptap-main-area">
-        {showOutline && headings.length > 0 && (
+        {/* Левый сайдбар - Содержание */}
+        {showOutline && (
           <DocumentOutline 
             headings={headings} 
             onNavigate={scrollToHeading}
             onClose={() => setShowOutline(false)}
           />
         )}
+        
+        {/* Центральная область с редактором */}
         <div className={`tiptap-content-wrapper ${citationStyle}-style`}>
           <EditorContent editor={editor} className="tiptap-editor" />
         </div>
+        
+        {/* Правый сайдбар - Список литературы */}
+        {showBibliography && citations.length > 0 && (
+          <div className="bibliography-sidebar">
+            <div className="bibliography-header">
+              <span className="bibliography-title">📚 Список литературы ({citations.length})</span>
+              <button 
+                className="bibliography-close" 
+                onClick={() => setShowBibliography(false)}
+                title="Скрыть список литературы"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="bibliography-list">
+              {citations.map((citation) => {
+                const subNum = citation.sub_number || 1;
+                const displayNum = subNum > 1 ? `${citation.inline_number}.${subNum}` : String(citation.inline_number);
+                
+                return (
+                  <div key={citation.id} className="bibliography-item" id={`bib-${citation.id}`}>
+                    <span className="bib-number">[{displayNum}]</span>
+                    <div className="bib-content">
+                      <div className="bib-article-info">
+                        {citation.article?.authors && citation.article.authors.length > 0 && (
+                          <div className="bib-authors">
+                            {citation.article.authors.slice(0, 3).join(', ')}
+                            {citation.article.authors.length > 3 && ' et al.'}
+                          </div>
+                        )}
+                        <div className="bib-title">{citation.article?.title_en || 'Без названия'}</div>
+                        {citation.article?.journal && (
+                          <div className="bib-journal">{citation.article.journal}</div>
+                        )}
+                        {citation.article?.year && (
+                          <div className="bib-year">{citation.article.year}</div>
+                        )}
+                      </div>
+                      {citation.note && (
+                        <div className="bib-note">{citation.note}</div>
+                      )}
+                      {onRemoveCitation && (
+                        <button
+                          className="bib-remove"
+                          onClick={() => onRemoveCitation(citation.id)}
+                          title="Удалить цитату"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

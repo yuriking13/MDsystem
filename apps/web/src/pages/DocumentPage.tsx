@@ -266,17 +266,16 @@ export default function DocumentPage() {
       // Всегда создаём новую цитату
       const res = await apiAddCitation(projectId, docId, article.id);
       
-      // sub_number используется для нумерации цитат
-      const subNumber = (res.citation as { sub_number?: number }).sub_number || 1;
-      
-      // TODO: Implement citation insertion for Lexical editor
-      // Need to add editorRef to LexicalEditor component and create insertCitation method
-      // insertCitationToEditor(
-      //   res.citation.inline_number,
-      //   res.citation.id,
-      //   res.citation.note || '',
-      //   article.title_en // Всегда язык оригинала (английский)
-      // );
+      // Вставить цитату в редактор
+      const fn = (window as any).__editorInsertCitation;
+      if (fn) {
+        fn({
+          citationId: res.citation.id,
+          citationNumber: res.citation.inline_number,
+          articleId: article.id,
+          note: res.citation.note || '',
+        });
+      }
       
       // Обновить документ
       const updated = await apiGetDocument(projectId, docId);
@@ -370,7 +369,7 @@ export default function DocumentPage() {
 
       {/* Основной контент */}
       <div className="document-content">
-        {/* Редактор */}
+        {/* Редактор с встроенными сайдбарами */}
         <div className="document-editor-wrapper">
           <TiptapEditor
             content={content}
@@ -378,111 +377,10 @@ export default function DocumentPage() {
             onInsertCitation={openCitationPicker}
             onImportStatistic={openImportModal}
             onCreateChartFromTable={openChartModal}
+            onRemoveCitation={handleRemoveCitation}
+            citations={doc.citations || []}
             citationStyle={citationStyle}
           />
-        </div>
-
-        {/* Панель цитат */}
-        <div className="citations-panel-fixed">
-          <div className="row space" style={{ marginBottom: 8 }}>
-            <h4 style={{ margin: 0 }}>Список литературы ({doc.citations?.length || 0})</h4>
-            <span className="id-badge" title="Стиль цитирования">
-              {citationStyle.toUpperCase()}
-            </span>
-          </div>
-          {doc.citations && doc.citations.length > 0 ? (
-            <ul className="citations-list">
-              {doc.citations.map((c) => {
-                // Формируем номер с учётом sub_number
-                const subNum = c.sub_number || 1;
-                const displayNum = subNum > 1 ? `${c.inline_number}.${subNum}` : String(c.inline_number);
-                
-                return (
-                <li key={c.id} id={`citation-${c.id}`} className="citation-list-item">
-                  <div className="citation-item" style={{ flexDirection: 'column', gap: 8 }}>
-                    <div className="row space" style={{ width: '100%' }}>
-                      <span 
-                        className="citation-number clickable"
-                        title="Скопировать ссылку для вставки в текст"
-                        onClick={() => {
-                          // Копируем формат цитаты для вставки
-                          navigator.clipboard.writeText(`[${c.inline_number}]`);
-                        }}
-                      >
-                        [{displayNum}]
-                      </span>
-                      <button
-                        className="btn secondary"
-                        onClick={() => handleRemoveCitation(c.id)}
-                        style={{ padding: "2px 6px", fontSize: 10 }}
-                        title="Удалить цитату"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div 
-                      className="citation-text"
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => {
-                        if (c.article.doi) {
-                          window.open(`https://doi.org/${c.article.doi}`, '_blank');
-                        } else if (c.article.pmid) {
-                          window.open(`https://pubmed.ncbi.nlm.nih.gov/${c.article.pmid}`, '_blank');
-                        }
-                      }}
-                      title="Открыть оригинал статьи"
-                    >
-                      {formatCitationSimple(c.article, citationStyle)}
-                    </div>
-                    {c.note && (
-                      <div 
-                        className="citation-quote"
-                        style={{
-                          fontSize: 11,
-                          fontStyle: 'italic',
-                          color: 'var(--text-muted)',
-                          borderLeft: '2px solid var(--accent)',
-                          paddingLeft: 8,
-                          marginTop: 4,
-                        }}
-                      >
-                        "{c.note}"
-                      </div>
-                    )}
-                    <input
-                      placeholder="+ Добавить цитату из текста..."
-                      defaultValue={c.note || ''}
-                      onBlur={async (e) => {
-                        const newNote = e.target.value.trim();
-                        if (newNote !== (c.note || '')) {
-                          try {
-                            await apiUpdateCitation(projectId!, docId!, c.id, { note: newNote });
-                            // Обновляем локально
-                            const updated = await apiGetDocument(projectId!, docId!);
-                            setDoc(updated.document);
-                          } catch (err) {
-                            console.error('Update note error:', err);
-                          }
-                        }
-                      }}
-                      style={{
-                        fontSize: 11,
-                        padding: '6px 8px',
-                        background: 'var(--bg-glass-light)',
-                        border: '1px solid var(--border-glass)',
-                        borderRadius: 6,
-                      }}
-                    />
-                  </div>
-                </li>
-              );
-              })}
-            </ul>
-          ) : (
-            <div className="muted" style={{ fontSize: 13 }}>
-              Нажмите "📖 Цитата" в редакторе чтобы добавить ссылки на литературу
-            </div>
-          )}
         </div>
       </div>
 

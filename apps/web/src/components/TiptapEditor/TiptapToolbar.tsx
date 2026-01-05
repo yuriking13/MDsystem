@@ -8,8 +8,10 @@ interface TiptapToolbarProps {
   onInsertCitation?: () => void;
   onImportStatistic?: () => void;
   onToggleOutline?: () => void;
+  onToggleBibliography?: () => void;
   onCreateChartFromTable?: (tableHtml: string) => void;
   showOutline?: boolean;
+  showBibliography?: boolean;
   citationStyle?: CitationStyle;
 }
 
@@ -18,8 +20,10 @@ export default function TiptapToolbar({
   onInsertCitation,
   onImportStatistic,
   onToggleOutline,
+  onToggleBibliography,
   onCreateChartFromTable,
   showOutline,
+  showBibliography,
   citationStyle = 'gost',
 }: TiptapToolbarProps) {
   const [showTableMenu, setShowTableMenu] = useState(false);
@@ -133,6 +137,15 @@ export default function TiptapToolbar({
       >
         📑
       </button>
+      
+      {/* Bibliography toggle */}
+      <button 
+        style={btn(showBibliography, showBibliography ? 'rgba(75,116,255,0.2)' : undefined)} 
+        onClick={onToggleBibliography}
+        title="Список литературы"
+      >
+        📚
+      </button>
 
       <div style={divider} />
 
@@ -192,10 +205,10 @@ export default function TiptapToolbar({
       </button>
       <button 
         style={btn()} 
-        onClick={() => editor.chain().focus().setParagraph().run()}
-        title="Абзац"
+        onClick={() => (editor.chain().focus() as any).toggleIndent().run()}
+        title="Отступ первой строки (Tab)"
       >
-        ¶
+        ⇥
       </button>
 
       <div style={divider} />

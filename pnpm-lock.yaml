@@ -8,6 +8,18 @@ importers:
 
   .:
     dependencies:
+      '@tiptap/extension-paragraph':
+        specifier: ^3.14.0
+        version: 3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))
+      prosemirror-model:
+        specifier: ^1.25.4
+        version: 1.25.4
+      prosemirror-state:
+        specifier: ^1.4.4
+        version: 1.4.4
+      prosemirror-view:
+        specifier: ^1.41.4
+        version: 1.41.4
       tiptap-pagination-plus:
         specifier: ^3.0.3
         version: 3.0.3(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))(@tiptap/pm@3.14.0)

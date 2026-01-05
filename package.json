@@ -8,6 +8,10 @@
     "lint": "pnpm -r lint"
   },
   "dependencies": {
+    "@tiptap/extension-paragraph": "^3.14.0",
+    "prosemirror-model": "^1.25.4",
+    "prosemirror-state": "^1.4.4",
+    "prosemirror-view": "^1.41.4",
     "tiptap-pagination-plus": "^3.0.3"
   }
 }

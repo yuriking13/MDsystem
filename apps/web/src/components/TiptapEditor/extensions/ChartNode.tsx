@@ -35,7 +35,6 @@ function ChartNodeView({ node }: { node: any }) {
     <NodeViewWrapper className="chart-node-wrapper" data-chart-id={attrs.chartId}>
       <div className="chart-node-container">
         <div className="chart-node-header">
-          <span className="chart-node-icon">{chartInfo?.icon || '📊'}</span>
           <span className="chart-node-title">{title || config.title || 'График'}</span>
         </div>
         <div className="chart-node-content">
