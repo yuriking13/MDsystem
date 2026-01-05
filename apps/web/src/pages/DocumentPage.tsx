@@ -210,7 +210,7 @@ export default function DocumentPage() {
   // Вставить график из таблицы
   function handleInsertChartFromTable(chartHtml: string, chartId?: string) {
     const fn = (window as any).__editorInsertChart;
-    if (fn && chartId) {
+    if (fn) {
       // Parse the chart data from HTML
       const parser = new DOMParser();
       const doc = parser.parseFromString(chartHtml, 'text/html');
@@ -219,7 +219,13 @@ export default function DocumentPage() {
       
       if (chartDataStr) {
         try {
-          const chartData = JSON.parse(chartDataStr.replace(/&#39;/g, "'"));
+          const rawData = JSON.parse(chartDataStr.replace(/&#39;/g, "'"));
+          // Convert to the format expected by __editorInsertChart
+          const chartData = {
+            id: rawData.chartId || chartId || `chart_${Date.now()}`,
+            config: rawData.config,
+            table_data: rawData.tableData,
+          };
           fn(chartData);
         } catch (err) {
           console.error("Failed to parse chart data:", err);
