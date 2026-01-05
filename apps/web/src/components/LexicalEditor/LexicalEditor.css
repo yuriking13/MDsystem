@@ -22,118 +22,133 @@
 
 /* ===== TOOLBAR ===== */
 .lexical-toolbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: rgba(0, 0, 0, 0.25);
-  border-bottom: 1px solid var(--border-glass);
-  flex-shrink: 0;
-  flex-wrap: wrap;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 8px 12px !important;
+  background: rgba(0, 0, 0, 0.25) !important;
+  border-bottom: 1px solid var(--border-glass) !important;
+  flex-shrink: 0 !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  min-height: 48px !important;
 }
 
-.toolbar-group {
-  display: flex;
-  align-items: center;
-  gap: 2px;
+.lexical-toolbar .toolbar-group {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 2px !important;
+  flex-shrink: 0 !important;
 }
 
-.toolbar-divider {
-  width: 1px;
-  height: 24px;
-  background: var(--border-glass-light);
-  margin: 0 6px;
+.lexical-toolbar .toolbar-divider {
+  width: 1px !important;
+  height: 24px !important;
+  background: var(--border-glass-light) !important;
+  margin: 0 4px !important;
+  flex-shrink: 0 !important;
 }
 
-.toolbar-spacer {
-  flex: 1;
+.lexical-toolbar .toolbar-spacer {
+  flex: 1 !important;
+  min-width: 8px !important;
 }
 
 /* Toolbar buttons */
-.toolbar-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.15s ease;
+.lexical-toolbar .toolbar-btn {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  padding: 0 8px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  cursor: pointer !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  transition: all 0.15s ease !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
-.toolbar-btn:hover {
-  background: var(--bg-glass-light);
-  color: var(--text-primary);
+.lexical-toolbar .toolbar-btn:hover {
+  background: var(--bg-glass-light) !important;
+  color: var(--text-primary) !important;
 }
 
-.toolbar-btn.active {
-  background: var(--accent);
-  color: white;
+.lexical-toolbar .toolbar-btn.active {
+  background: var(--accent) !important;
+  color: white !important;
 }
 
-.toolbar-btn.accent {
-  background: rgba(75, 116, 255, 0.15);
-  color: var(--accent);
-  border: 1px solid rgba(75, 116, 255, 0.3);
+.lexical-toolbar .toolbar-btn.accent {
+  background: rgba(75, 116, 255, 0.15) !important;
+  color: var(--accent) !important;
+  border: 1px solid rgba(75, 116, 255, 0.3) !important;
 }
 
-.toolbar-btn.accent:hover {
-  background: rgba(75, 116, 255, 0.25);
+.lexical-toolbar .toolbar-btn.accent:hover {
+  background: rgba(75, 116, 255, 0.25) !important;
 }
 
-.toolbar-btn.success {
-  background: rgba(74, 222, 128, 0.15);
-  color: var(--success);
-  border: 1px solid rgba(74, 222, 128, 0.3);
+.lexical-toolbar .toolbar-btn.success {
+  background: rgba(74, 222, 128, 0.15) !important;
+  color: var(--success) !important;
+  border: 1px solid rgba(74, 222, 128, 0.3) !important;
 }
 
-.toolbar-btn.success:hover {
-  background: rgba(74, 222, 128, 0.25);
+.lexical-toolbar .toolbar-btn.success:hover {
+  background: rgba(74, 222, 128, 0.25) !important;
 }
 
-.toolbar-btn-label {
-  font-size: 12px;
-  margin-left: 2px;
+.lexical-toolbar .toolbar-btn-label {
+  font-size: 12px !important;
+  margin-left: 2px !important;
 }
 
 /* View mode toggle */
-.view-mode-group {
-  background: var(--bg-glass);
-  border: 1px solid var(--border-glass);
-  border-radius: 8px;
-  padding: 2px;
-  gap: 0;
+.lexical-toolbar .view-mode-group {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  background: var(--bg-glass) !important;
+  border: 1px solid var(--border-glass) !important;
+  border-radius: 8px !important;
+  padding: 2px !important;
+  gap: 0 !important;
+  flex-shrink: 0 !important;
 }
 
-.view-mode-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  transition: all 0.15s ease;
+.lexical-toolbar .view-mode-btn {
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 6px 10px !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-secondary) !important;
+  cursor: pointer !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
 }
 
-.view-mode-btn:hover {
-  color: var(--text-primary);
+.lexical-toolbar .view-mode-btn:hover {
+  color: var(--text-primary) !important;
 }
 
-.view-mode-btn.active {
-  background: var(--accent);
-  color: white;
+.lexical-toolbar .view-mode-btn.active {
+  background: var(--accent) !important;
+  color: white !important;
 }
 
 /* ===== SCROLL AREA ===== */
@@ -158,6 +173,7 @@
   border-radius: 12px;
   border: 1px solid var(--border-glass);
   min-height: calc(100% - 48px);
+  position: relative;
 }
 
 /* Pages layout */
@@ -178,14 +194,14 @@
 
 .page-sheet {
   position: relative;
-  width: 794px; /* A4 width at 96 DPI */
-  min-height: 1123px; /* A4 height at 96 DPI */
+  width: 794px;
+  min-height: 1123px;
   max-width: calc(100vw - 48px);
   background: #ffffff;
   box-shadow:
     0 4px 25px rgba(0, 0, 0, 0.4),
     0 0 0 1px rgba(0, 0, 0, 0.08);
-  padding: 72px 85px 72px 56px; /* ~20mm 30mm 20mm 15mm in pixels */
+  padding: 72px 85px 72px 56px;
   box-sizing: border-box;
   border-radius: 2px;
   transition: box-shadow 0.2s ease;
@@ -229,21 +245,11 @@
   overflow: hidden;
   position: absolute;
   text-overflow: ellipsis;
-  top: 0;
-  left: 0;
+  top: 32px;
+  left: 40px;
   user-select: none;
   pointer-events: none;
   font-size: 15px;
-}
-
-/* Position placeholder properly in scroll mode */
-.lexical-scroll-container {
-  position: relative;
-}
-
-.lexical-scroll-container .lexical-placeholder {
-  top: 32px;
-  left: 40px;
 }
 
 /* Position placeholder in pages mode */
@@ -518,30 +524,13 @@
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .lexical-toolbar {
-    gap: 6px;
-    padding: 8px 12px;
+    overflow-x: auto !important;
   }
   
-  .toolbar-btn {
-    min-width: 28px;
-    height: 28px;
-    font-size: 13px;
-  }
-  
-  .toolbar-btn-label {
-    display: none;
-  }
-  
-  .toolbar-divider {
-    margin: 0 4px;
-    height: 20px;
-  }
-  
-  .view-mode-btn {
-    padding: 5px 8px;
-    font-size: 11px;
+  .lexical-toolbar .toolbar-btn-label {
+    display: none !important;
   }
   
   .pages-layout {
