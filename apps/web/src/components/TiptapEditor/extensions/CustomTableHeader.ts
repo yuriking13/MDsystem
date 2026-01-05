@@ -44,11 +44,22 @@ export const CustomTableHeader = TableHeader.extend({
       styles.push(`vertical-align: ${attrs.verticalAlign}`);
     }
     
-    const combinedAttrs = {
+    const combinedAttrs: Record<string, any> = {
       ...HTMLAttributes,
       ...(styles.length > 0 ? { style: styles.join('; ') } : {}),
       ...(attrs.backgroundColor ? { 'data-bgcolor': attrs.backgroundColor } : {}),
     };
+    
+    // КРИТИЧНО: сохраняем colwidth для ресайза
+    if (attrs.colwidth) {
+      combinedAttrs.colwidth = attrs.colwidth;
+    }
+    if (attrs.colspan) {
+      combinedAttrs.colspan = attrs.colspan;
+    }
+    if (attrs.rowspan) {
+      combinedAttrs.rowspan = attrs.rowspan;
+    }
     
     return ['th', combinedAttrs, 0];
   },
