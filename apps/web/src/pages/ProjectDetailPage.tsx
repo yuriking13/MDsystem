@@ -300,9 +300,16 @@ export default function ProjectDetailPage() {
     
     // Проверяем, что ID - это валидный UUID
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(statId)) {
-      setError("Невозможно удалить: недействительный ID статистики. Эта запись может быть повреждена.");
-      console.error("Invalid statistic ID:", statId);
+    const isValidUuid = uuidRegex.test(statId);
+    
+    if (!isValidUuid) {
+      // Для невалидных ID предлагаем принудительное удаление
+      if (!confirm("Эта статистика имеет недействительный ID и не может быть удалена через API. Удалить её из списка локально?")) {
+        return;
+      }
+      // Удаляем только локально
+      setStatistics(statistics.filter(s => s.id !== statId));
+      setOk("Элемент удалён из списка");
       return;
     }
     

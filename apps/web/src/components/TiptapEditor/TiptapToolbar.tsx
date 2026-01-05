@@ -129,7 +129,12 @@ export default function TiptapToolbar({
   };
 
   const insertTable = (rows: number, cols: number) => {
-    editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
+    const createTableFn = (window as any).__editorCreateTable;
+    if (createTableFn) {
+      createTableFn(rows, cols);
+    } else {
+      editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
+    }
     setShowTableMenu(false);
   };
 

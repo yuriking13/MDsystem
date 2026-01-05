@@ -759,8 +759,8 @@
   cursor: col-resize;
   z-index: 20;
   pointer-events: auto !important;
-  opacity: 0;
-  transition: opacity 0.2s, background 0.2s;
+  opacity: 0.3;
+  transition: opacity 0.15s, background 0.15s, width 0.15s;
 }
 
 /* Показываем ручку при наведении на ячейку */

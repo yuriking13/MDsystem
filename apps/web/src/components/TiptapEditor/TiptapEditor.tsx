@@ -220,6 +220,7 @@ export default function TiptapEditor({
       Table.configure({
         resizable: true,
         allowTableNodeSelection: true,
+        lastColumnResizable: true,
         HTMLAttributes: {
           class: 'tiptap-table',
         },
@@ -431,87 +432,68 @@ export default function TiptapEditor({
       .run();
   }, [citationStyle, editor, styleConfig]);
 
-  // Auto-save newly created tables to Statistics
+  // Auto-save newly created tables to Statistics - only when created via toolbar
   useEffect(() => {
     if (!editor || !onTableCreated) return;
 
-    const processedTables = new Set<string>();
-    let processingInProgress = false;
+    const originalInsertTable = (window as any).__editorCreateTable;
+    
+    (window as any).__editorCreateTable = async (rows: number, cols: number) => {
+      // Insert table first
+      editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
 
-    const handleUpdate = async () => {
-      if (processingInProgress) return;
-      processingInProgress = true;
+      // Wait for DOM update
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      try {
-        // Find tables without data-statistic-id
-        const doc = editor.state.doc;
-        const tablesToSave: Array<{ pos: number; node: any; key: string }> = [];
-
-        doc.descendants((node: any, pos: number) => {
-          if (node.type.name === 'table') {
-            const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
-            
-            if (tableElement && !tableElement.hasAttribute('data-statistic-id')) {
-              // Generate unique key for this table position and content
-              const tableKey = `${pos}_${node.nodeSize}_${node.childCount}`;
-              
-              if (!processedTables.has(tableKey)) {
-                tablesToSave.push({ pos, node, key: tableKey });
-              }
-            }
-          }
-        });
-
-        // Process each table without ID
-        for (const { pos, node, key } of tablesToSave) {
-          // Mark as processing to avoid duplicates
-          processedTables.add(key);
+      // Find the newly created table without data-statistic-id
+      const { state } = editor;
+      const { $from } = state.selection;
+      
+      // Find parent table
+      for (let depth = $from.depth; depth > 0; depth--) {
+        const node = $from.node(depth);
+        if (node.type.name === 'table') {
+          const pos = $from.before(depth);
+          const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
           
-          // Extract table data
-          const rows: string[][] = [];
-          let cols = 0;
+          // Only process if no data-statistic-id
+          if (tableElement && !tableElement.hasAttribute('data-statistic-id')) {
+            // Extract table data
+            const tableRows: string[][] = [];
+            let tableCols = 0;
 
-          node.forEach((rowNode: any) => {
-            if (rowNode.type.name === 'tableRow') {
-              const rowData: string[] = [];
-              rowNode.forEach((cellNode: any) => {
-                if (cellNode.type.name === 'tableCell' || cellNode.type.name === 'tableHeader') {
-                  rowData.push(cellNode.textContent || '');
-                }
-              });
-              rows.push(rowData);
-              cols = Math.max(cols, rowData.length);
-            }
-          });
+            node.forEach((rowNode: any) => {
+              if (rowNode.type.name === 'tableRow') {
+                const rowData: string[] = [];
+                rowNode.forEach((cellNode: any) => {
+                  if (cellNode.type.name === 'tableCell' || cellNode.type.name === 'tableHeader') {
+                    rowData.push(cellNode.textContent || '');
+                  }
+                });
+                tableRows.push(rowData);
+                tableCols = Math.max(tableCols, rowData.length);
+              }
+            });
 
-          // Only save tables with at least 2 rows (header + data)
-          if (rows.length < 2) continue;
+            // Save to Statistics
+            const statisticId = await onTableCreated({
+              rows: tableRows.length,
+              cols: tableCols,
+              data: tableRows,
+            });
 
-          // Call the callback to save to Statistics
-          const statisticId = await onTableCreated({
-            rows: rows.length,
-            cols,
-            data: rows,
-          });
-
-          // Update table with the statistic ID
-          if (statisticId) {
-            const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
-            if (tableElement) {
+            // Update table with the statistic ID
+            if (statisticId && tableElement) {
               tableElement.setAttribute('data-statistic-id', statisticId);
             }
           }
+          break;
         }
-      } finally {
-        processingInProgress = false;
       }
     };
 
-    editor.on('update', handleUpdate);
-
     return () => {
-      editor.off('update', handleUpdate);
-      processedTables.clear();
+      (window as any).__editorCreateTable = originalInsertTable;
     };
   }, [editor, onTableCreated]);
 
