@@ -11,18 +11,6 @@ export const TableFigureNumbering = Extension.create({
       new Plugin({
         key: new PluginKey('tableFigureNumbering'),
         
-        state: {
-          init: () => {
-            return {
-              tableCount: 0,
-              figureCount: 0,
-            };
-          },
-          apply: (tr, value) => {
-            return value;
-          },
-        },
-
         props: {
           decorations: (state) => {
             const decorations: Decoration[] = [];
@@ -33,12 +21,15 @@ export const TableFigureNumbering = Extension.create({
               // Нумерация таблиц
               if (node.type.name === 'table') {
                 tableNumber++;
+                // Важно: захватываем текущее значение в локальную переменную
+                const currentTableNumber = tableNumber;
+                
                 const decoration = Decoration.widget(
                   pos,
                   () => {
                     const el = document.createElement('div');
-                    el.className = 'table-number';
-                    el.textContent = `Таблица ${tableNumber}`;
+                    el.className = 'table-number-label';
+                    el.textContent = `Таблица ${currentTableNumber}`;
                     el.contentEditable = 'false';
                     el.style.cssText = `
                       font-weight: bold;
@@ -47,10 +38,11 @@ export const TableFigureNumbering = Extension.create({
                       color: #1e293b;
                       font-size: 14px;
                       user-select: none;
+                      pointer-events: none;
                     `;
                     return el;
                   },
-                  { side: -1 }
+                  { side: -1, key: `table-${pos}` }
                 );
                 decorations.push(decoration);
               }
@@ -58,24 +50,29 @@ export const TableFigureNumbering = Extension.create({
               // Нумерация графиков (chartNode)
               if (node.type.name === 'chartNode') {
                 figureNumber++;
+                // Важно: захватываем текущее значение в локальную переменную
+                const currentFigureNumber = figureNumber;
+                
                 const decoration = Decoration.widget(
-                  pos,
+                  pos + node.nodeSize,
                   () => {
                     const el = document.createElement('div');
-                    el.className = 'figure-number';
-                    el.textContent = `Рисунок ${figureNumber}`;
+                    el.className = 'figure-number-label';
+                    el.textContent = `Рисунок ${currentFigureNumber}`;
                     el.contentEditable = 'false';
                     el.style.cssText = `
                       font-weight: bold;
                       text-align: center;
                       margin-top: 8px;
+                      margin-bottom: 16px;
                       color: #1e293b;
                       font-size: 14px;
                       user-select: none;
+                      pointer-events: none;
                     `;
                     return el;
                   },
-                  { side: 1 }
+                  { side: 1, key: `figure-${pos}` }
                 );
                 decorations.push(decoration);
               }

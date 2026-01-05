@@ -453,6 +453,19 @@ export async function apiUpdateDocument(
   );
 }
 
+export async function apiReorderDocuments(
+  projectId: string,
+  documentIds: string[]
+): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(
+    `/api/projects/${projectId}/documents/reorder`,
+    {
+      method: "PUT",
+      body: JSON.stringify({ documentIds }),
+    }
+  );
+}
+
 export async function apiDeleteDocument(
   projectId: string,
   docId: string
@@ -742,6 +755,48 @@ export async function apiMarkStatisticUsed(
     {
       method: "POST",
       body: JSON.stringify({ documentId }),
+    }
+  );
+}
+
+export async function apiUnmarkStatisticUsed(
+  projectId: string,
+  statId: string,
+  documentId: string
+): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(
+    `/api/projects/${projectId}/statistics/${statId}/use`,
+    {
+      method: "DELETE",
+      body: JSON.stringify({ documentId }),
+    }
+  );
+}
+
+export type SyncStatisticsData = {
+  documentId: string;
+  tables: Array<{
+    id: string;
+    title?: string;
+    tableData: Record<string, any>;
+  }>;
+  charts: Array<{
+    id: string;
+    title?: string;
+    config: Record<string, any>;
+    tableData?: Record<string, any>;
+  }>;
+};
+
+export async function apiSyncStatistics(
+  projectId: string,
+  data: SyncStatisticsData
+): Promise<{ ok: boolean; created: number; statistics: ProjectStatistic[] }> {
+  return apiFetch<{ ok: boolean; created: number; statistics: ProjectStatistic[] }>(
+    `/api/projects/${projectId}/statistics/sync`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
     }
   );
 }

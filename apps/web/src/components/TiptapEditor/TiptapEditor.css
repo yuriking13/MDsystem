@@ -489,6 +489,96 @@
   background: rgba(239, 68, 68, 0.2);
 }
 
+/* Note editing */
+.bib-note-edit {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bib-note-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid rgba(75, 116, 255, 0.3);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  color: #e2e8f0;
+  font-size: 11px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 60px;
+}
+
+.bib-note-input:focus {
+  outline: none;
+  border-color: #4b74ff;
+}
+
+.bib-note-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.bib-note-save,
+.bib-note-cancel {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.bib-note-save {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+
+.bib-note-save:hover {
+  background: rgba(74, 222, 128, 0.3);
+}
+
+.bib-note-cancel {
+  background: rgba(100, 116, 139, 0.2);
+  color: #94a3b8;
+}
+
+.bib-note-cancel:hover {
+  background: rgba(100, 116, 139, 0.3);
+}
+
+.bib-add-note-btn {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 6px;
+  border: 1px dashed rgba(75, 116, 255, 0.3);
+  border-radius: 4px;
+  background: transparent;
+  color: #64748b;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.bib-add-note-btn:hover {
+  border-color: #4b74ff;
+  color: #4b74ff;
+  background: rgba(75, 116, 255, 0.1);
+}
+
+.bib-note {
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.bib-note:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
 /* ============================================
    TABLES - FIXED BORDERS (applies to ALL tables)
    ============================================ */

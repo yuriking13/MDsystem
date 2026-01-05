@@ -402,7 +402,10 @@ export async function exportToWord(
   
   // Генерируем и скачиваем
   const blob = await Packer.toBlob(doc);
-  const filename = `${projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_")}.docx`;
+  const baseFilename = projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_");
+  const filename = mergedContent 
+    ? `${baseFilename}_объединённый.docx`
+    : `${baseFilename}_главы.docx`;
   saveAs(blob, filename);
 }
 
@@ -646,40 +649,57 @@ export function generatePrintHtml(
 }
 
 /**
- * Экспорт в PDF через печать браузера
+ * Экспорт в PDF - прямое скачивание
  */
-export function exportToPdf(
+export async function exportToPdf(
   projectName: string,
   documents: ExportDocument[],
   bibliography: ExportBibItem[],
   citationStyle: string,
   mergedContent?: string
-): void {
+): Promise<void> {
   const html = generatePrintHtml(projectName, documents, bibliography, citationStyle, mergedContent);
+  const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
   
-  // Открываем новое окно с HTML и вызываем печать
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
+  // Создаём временный элемент для рендеринга
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  document.body.appendChild(container);
+  
+  try {
+    // Динамический импорт html2pdf
+    const html2pdf = (await import('html2pdf.js')).default;
     
-    // Ждём загрузки и вызываем печать
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
+    const baseFilename = projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_");
+    const filename = mergedContent 
+      ? `${baseFilename}_объединённый.pdf`
+      : `${baseFilename}_главы.pdf`;
+    
+    const opt = {
+      margin: [styleConfig.marginTop, styleConfig.marginRight, styleConfig.marginBottom, styleConfig.marginLeft],
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
     };
+    
+    await html2pdf().set(opt).from(container).save();
+  } finally {
+    document.body.removeChild(container);
   }
 }
 
 /**
  * Экспорт только библиографии в PDF
  */
-export function exportBibliographyToPdf(
+export async function exportBibliographyToPdf(
   projectName: string,
   bibliography: ExportBibItem[],
   citationStyle: string
-): void {
+): Promise<void> {
   const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
   
   const html = `<!DOCTYPE html>
@@ -688,10 +708,6 @@ export function exportBibliographyToPdf(
   <meta charset="UTF-8">
   <title>${projectName} - Список литературы</title>
   <style>
-    @page {
-      size: A4;
-      margin: ${styleConfig.marginTop}mm ${styleConfig.marginRight}mm ${styleConfig.marginBottom}mm ${styleConfig.marginLeft}mm;
-    }
     body {
       font-family: 'Times New Roman', Times, serif;
       font-size: ${styleConfig.fontSize}pt;
@@ -708,9 +724,6 @@ export function exportBibliographyToPdf(
       text-indent: -1cm;
       padding-left: 1cm;
     }
-    @media print {
-      body { padding: 0; }
-    }
   </style>
 </head>
 <body>
@@ -719,15 +732,29 @@ export function exportBibliographyToPdf(
   ${bibliography.map(item => `<div class="bib-item">${item.number}. ${item.formatted}</div>`).join('\n')}
 </body>
 </html>`;
+
+  // Создаём временный элемент для рендеринга
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  document.body.appendChild(container);
   
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.write(html);
-    printWindow.document.close();
-    printWindow.onload = () => {
-      setTimeout(() => {
-        printWindow.print();
-      }, 500);
+  try {
+    const html2pdf = (await import('html2pdf.js')).default;
+    
+    const filename = `${projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_")}_bibliography.pdf`;
+    
+    const opt = {
+      margin: [styleConfig.marginTop, styleConfig.marginRight, styleConfig.marginBottom, styleConfig.marginLeft],
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
     };
+    
+    await html2pdf().set(opt).from(container).save();
+  } finally {
+    document.body.removeChild(container);
   }
 }
