@@ -314,9 +314,6 @@ export default function DocumentPage() {
             projectId={projectId}
             documentId={docId}
           />
-            }}
-            onImportFromStats={openImportModal}
-          />
         </div>
 
         {/* Панель цитат */}
