@@ -370,27 +370,59 @@ export default function DocumentPage() {
   // Автосохранение новой таблицы в Статистику
   const handleTableCreated = useCallback(async (tableData: { rows: number; cols: number; data: any[][] }) => {
     if (!projectId || !docId) return undefined;
-    
+
+    // Подготовим данные и дефолтную конфигурацию графика, чтобы карточка в статистике сразу была рабочей
+    const rawRows = tableData.data || [];
+    const headerRow = rawRows[0] || [];
+    const maxCols = rawRows.reduce((m, r) => Math.max(m, r?.length || 0), headerRow.length);
+    const headers = Array.from({ length: maxCols }, (_, idx) => {
+      const h = headerRow[idx];
+      return h && String(h).trim().length > 0 ? String(h) : `Колонка ${idx + 1}`;
+    });
+
+    const rows = rawRows.slice(1).map((row = []) => {
+      const padded = Array.from({ length: maxCols }, (_, idx) => {
+        const v = row[idx];
+        return v === undefined || v === null ? '' : String(v);
+      });
+      return padded;
+    });
+
+    // Выбираем столбцы для графика: первая колонка — подписи, остальные — данные
+    const labelColumn = 0;
+    const dataColumns = maxCols > 1 ? Array.from({ length: maxCols - 1 }, (_, i) => i + 1) : [0];
+    const xColumn = maxCols > 1 ? 1 : 0;
+    const yColumn = maxCols > 2 ? 2 : dataColumns[0];
+
+    const classification = {
+      variableType: "quantitative" as const,
+      subType: "continuous" as const,
+    };
+
     try {
-      // Создаём статистику из таблицы
       const result = await apiCreateStatistic(projectId, {
         type: "table",
         title: `Таблица ${new Date().toLocaleString('ru-RU')}`,
         description: "Автоматически создана в документе",
-        config: {},
+        config: {
+          type: "bar",
+          title: `Таблица ${new Date().toLocaleString('ru-RU')}`,
+          labelColumn,
+          dataColumns,
+          bins: 10,
+          xColumn,
+          yColumn,
+          dataClassification: classification,
+        },
         tableData: {
-          headers: tableData.data[0] || [],
-          rows: tableData.data.slice(1) || [],
+          headers,
+          rows,
         },
-        dataClassification: {
-          variableType: "quantitative",
-          subType: "continuous",
-        },
+        dataClassification: classification,
+        chartType: "bar",
       });
-      
-      // Отмечаем как используемую в документе
+
       await apiMarkStatisticUsedInDocument(projectId, result.statistic.id, docId);
-      
       console.log('Table auto-saved to Statistics:', result.statistic.id);
       return result.statistic.id;
     } catch (err) {
