@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import LexicalEditor from "../components/LexicalEditor/LexicalEditor";
+import TiptapEditor from "../components/TiptapEditor/TiptapEditor";
 import {
   apiGetDocument,
   apiUpdateDocument,
@@ -308,13 +308,11 @@ export default function DocumentPage() {
       <div className="document-content">
         {/* Редактор */}
         <div className="document-editor-wrapper">
-          <LexicalEditor
+          <TiptapEditor
             content={content}
             onChange={setContent}
             onInsertCitation={openCitationPicker}
             onImportStatistic={openImportModal}
-            projectId={projectId}
-            documentId={docId}
           />
         </div>
 
