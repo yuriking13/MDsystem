@@ -373,10 +373,21 @@ export const ChartNode = Node.create({
 
 // Helper function to insert chart (instead of command)
 export function insertChartIntoEditor(editor: Editor, attrs: ChartNodeAttrs) {
-  editor.chain().focus().insertContent({
-    type: 'chartNode',
-    attrs,
-  }).run();
+  if (!editor || !editor.view || editor.isDestroyed) {
+    console.error('Editor is not available or has been destroyed');
+    return false;
+  }
+  
+  try {
+    editor.chain().focus().insertContent({
+      type: 'chartNode',
+      attrs,
+    }).run();
+    return true;
+  } catch (error) {
+    console.error('Failed to insert chart:', error);
+    return false;
+  }
 }
 
 export default ChartNode;

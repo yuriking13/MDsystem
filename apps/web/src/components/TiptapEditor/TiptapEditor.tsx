@@ -290,12 +290,21 @@ export default function TiptapEditor({
     
     // Insert citation function
     const insertCitation = (citationAttrs: CitationAttrs) => {
+      if (!editor.isEditable || !editor.view || editor.isDestroyed) {
+        console.warn('Editor is not ready for citation insertion');
+        return;
+      }
       editor.commands.setCitation(citationAttrs);
     };
     
     // Insert chart function - uses the new ChartNode extension
     // If we're inside a table, insert AFTER the table
     const insertChart = (chartData: ChartData) => {
+      if (!editor.isEditable || !editor.view || editor.isDestroyed) {
+        console.warn('Editor is not ready for chart insertion');
+        return;
+      }
+      
       const attrs: ChartNodeAttrs = {
         chartId: chartData.id || `chart_${Date.now()}`,
         tableData: chartData.table_data,
@@ -334,6 +343,11 @@ export default function TiptapEditor({
     
     // Insert table function - improved version
     const insertTable = (tableData: { headers: string[]; rows: string[][] }, title?: string) => {
+      if (!editor.isEditable || !editor.view || editor.isDestroyed) {
+        console.warn('Editor is not ready for table insertion');
+        return;
+      }
+      
       // Validate data
       const headers = tableData.headers || [];
       const dataRows = tableData.rows || [];

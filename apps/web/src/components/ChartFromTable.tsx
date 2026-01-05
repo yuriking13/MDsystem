@@ -307,7 +307,33 @@ function calculateBoxplotStats(values: number[]) {
 }
 
 export default function ChartFromTable({ tableData, config, width, height }: Props) {
+  // Проверка наличия данных
+  if (!tableData || !tableData.headers || !tableData.rows) {
+    return (
+      <div style={{ width: width || '100%', height: height || 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6b6b' }}>
+        <div>⚠️ Ошибка: данные таблицы отсутствуют</div>
+      </div>
+    );
+  }
+  
+  if (!config || !config.type) {
+    return (
+      <div style={{ width: width || '100%', height: height || 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6b6b' }}>
+        <div>⚠️ Ошибка: конфигурация графика отсутствует</div>
+      </div>
+    );
+  }
+  
   const { type, title, labelColumn, dataColumns, colors = DEFAULT_COLORS, bins = 10 } = config;
+  
+  // Проверка валидности индексов колонок
+  if (!dataColumns || dataColumns.length === 0) {
+    return (
+      <div style={{ width: width || '100%', height: height || 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6b6b' }}>
+        <div>⚠️ Ошибка: не выбраны колонки данных</div>
+      </div>
+    );
+  }
   
   // Базовые опции для всех графиков
   const baseOptions = {
@@ -350,9 +376,18 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
   // Обработка разных типов графиков
   if (type === 'histogram') {
     // Гистограмма - берём все числовые значения из первой колонки данных
+    const firstDataColumn = dataColumns[0];
+    if (firstDataColumn === undefined || firstDataColumn >= tableData.headers.length) {
+      return (
+        <div style={{ width: width || '100%', height: height || 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6b6b' }}>
+          <div>⚠️ Ошибка: неверный индекс колонки данных</div>
+        </div>
+      );
+    }
+    
     const values = tableData.rows
       .map(row => {
-        const val = row[dataColumns[0]]?.replace(/[,\s]/g, '') || '0';
+        const val = row[firstDataColumn]?.replace(/[,\s]/g, '') || '0';
         return parseFloat(val);
       })
       .filter(v => !isNaN(v));
@@ -362,7 +397,7 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
     const chartData = {
       labels,
       datasets: [{
-        label: tableData.headers[dataColumns[0]] || 'Частота',
+        label: tableData.headers[firstDataColumn] || 'Частота',
         data,
         backgroundColor: colors[0],
         borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -387,22 +422,25 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
   
   if (type === 'stacked') {
     // Stacked Bar - несколько серий данных
-    const labels = tableData.rows.map(row => row[labelColumn] || '');
+    const validLabelColumn = labelColumn >= 0 && labelColumn < tableData.headers.length ? labelColumn : 0;
+    const labels = tableData.rows.map(row => row[validLabelColumn] || '');
     
-    const datasets = dataColumns.map((colIdx, i) => {
-      const data = tableData.rows.map(row => {
-        const val = row[colIdx]?.replace(/[,\s]/g, '') || '0';
-        return parseFloat(val) || 0;
-      });
+    const datasets = dataColumns
+      .filter(colIdx => colIdx >= 0 && colIdx < tableData.headers.length)
+      .map((colIdx, i) => {
+        const data = tableData.rows.map(row => {
+          const val = row[colIdx]?.replace(/[,\s]/g, '') || '0';
+          return parseFloat(val) || 0;
+        });
       
-      return {
-        label: tableData.headers[colIdx] || `Данные ${i + 1}`,
-        data,
-        backgroundColor: colors[i % colors.length],
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderWidth: 1,
-      };
-    });
+        return {
+          label: tableData.headers[colIdx] || `Данные ${i + 1}`,
+          data,
+          backgroundColor: colors[i % colors.length],
+          borderColor: 'rgba(255, 255, 255, 0.2)',
+          borderWidth: 1,
+        };
+      });
     
     const chartData = { labels, datasets };
     
@@ -425,7 +463,17 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
   
   if (type === 'boxplot') {
     // Box Plot
-    const datasets = dataColumns.map((colIdx, i) => {
+    const validDataColumns = dataColumns.filter(colIdx => colIdx >= 0 && colIdx < tableData.headers.length);
+    
+    if (validDataColumns.length === 0) {
+      return (
+        <div style={{ width: width || '100%', height: height || 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6b6b' }}>
+          <div>⚠️ Ошибка: нет валидных колонок для boxplot</div>
+        </div>
+      );
+    }
+    
+    const datasets = validDataColumns.map((colIdx, i) => {
       const values = tableData.rows
         .map(row => {
           const val = row[colIdx]?.replace(/[,\s]/g, '') || '0';
@@ -446,13 +494,13 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
     });
     
     const chartData = {
-      labels: dataColumns.map(i => tableData.headers[i] || `Колонка ${i + 1}`),
+      labels: validDataColumns.map(i => tableData.headers[i] || `Колонка ${i + 1}`),
       datasets,
     };
     
     // Используем обычный Bar с визуализацией статистики, т.к. boxplot требует специальной библиотеки
     // Упрощённая визуализация - показываем min, q1, median, q3, max как stacked bar
-    const boxData = dataColumns.map((colIdx) => {
+    const boxData = validDataColumns.map((colIdx) => {
       const values = tableData.rows
         .map(row => {
           const val = row[colIdx]?.replace(/[,\s]/g, '') || '0';
@@ -463,7 +511,7 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
       return calculateBoxplotStats(values);
     });
     
-    const labels = dataColumns.map(i => tableData.headers[i] || `Колонка ${i + 1}`);
+    const labels = validDataColumns.map(i => tableData.headers[i] || `Колонка ${i + 1}`);
     
     // Создаём визуализацию box plot через комбинацию элементов
     const boxChartData = {
@@ -543,6 +591,15 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
     const xCol = config.xColumn ?? dataColumns[0] ?? 1;
     const yCol = config.yColumn ?? dataColumns[1] ?? 2;
     
+    // Проверка валидности колонок
+    if (xCol < 0 || xCol >= tableData.headers.length || yCol < 0 || yCol >= tableData.headers.length) {
+      return (
+        <div style={{ width: width || '100%', height: height || 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6b6b' }}>
+          <div>⚠️ Ошибка: неверные индексы колонок для scatter plot</div>
+        </div>
+      );
+    }
+    
     const data = tableData.rows.map(row => {
       const x = parseFloat(row[xCol]?.replace(/[,\s]/g, '') || '0') || 0;
       const y = parseFloat(row[yCol]?.replace(/[,\s]/g, '') || '0') || 0;
@@ -591,9 +648,20 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
   }
   
   // Стандартные типы графиков (bar, line, pie, doughnut)
-  const labels = tableData.rows.map(row => row[labelColumn] || '');
+  const validLabelColumn = labelColumn >= 0 && labelColumn < tableData.headers.length ? labelColumn : 0;
+  const labels = tableData.rows.map(row => row[validLabelColumn] || '');
   
-  const datasets = dataColumns.map((colIdx, i) => {
+  const validDataColumns = dataColumns.filter(colIdx => colIdx >= 0 && colIdx < tableData.headers.length);
+  
+  if (validDataColumns.length === 0) {
+    return (
+      <div style={{ width: width || '100%', height: height || 300, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6b6b' }}>
+        <div>⚠️ Ошибка: нет валидных колонок данных</div>
+      </div>
+    );
+  }
+  
+  const datasets = validDataColumns.map((colIdx, i) => {
     const data = tableData.rows.map(row => {
       const val = row[colIdx]?.replace(/[,\s]/g, '') || '0';
       return parseFloat(val) || 0;
