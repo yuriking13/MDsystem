@@ -460,6 +460,7 @@ export default function Editor({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        link: false, // Отключаем встроенный link из StarterKit
       }),
       Placeholder.configure({ placeholder }),
       Link.configure({

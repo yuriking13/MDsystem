@@ -76,6 +76,43 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // GET /api/projects/:id/statistics/:statId - get single statistic
+  fastify.get(
+    "/projects/:id/statistics/:statId",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      const parsed = StatIdSchema.safeParse(request.params);
+
+      if (!parsed.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid IDs" });
+      }
+
+      // Check access
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [parsed.data.id, userId]
+      );
+
+      if (access.rows.length === 0) {
+        return reply.code(403).send({ error: "Forbidden" });
+      }
+
+      // Get the statistic
+      const res = await pool.query(
+        `SELECT * FROM project_statistics 
+         WHERE id = $1 AND project_id = $2`,
+        [parsed.data.statId, parsed.data.id]
+      );
+
+      if (res.rows.length === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Statistic not found" });
+      }
+
+      return { statistic: res.rows[0] };
+    }
+  );
+
   // POST /api/projects/:id/statistics - create statistic item
   fastify.post(
     "/projects/:id/statistics",
@@ -294,11 +331,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       await pool.query(
         `UPDATE project_statistics 
          SET used_in_documents = array_append(
-           COALESCE(used_in_documents, ARRAY[]::uuid[]), 
-           $1::uuid
+           COALESCE(used_in_documents, ARRAY[]::text[]), 
+           $1::text
          )
          WHERE id = $2 AND project_id = $3
-         AND NOT ($1::uuid = ANY(COALESCE(used_in_documents, ARRAY[]::uuid[])))`,
+         AND NOT ($1::text = ANY(COALESCE(used_in_documents, ARRAY[]::text[])))`,
         [bodyP.data.documentId, paramsP.data.statId, paramsP.data.id]
       );
 
