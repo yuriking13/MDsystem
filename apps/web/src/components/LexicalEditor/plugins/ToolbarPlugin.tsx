@@ -1,26 +1,9 @@
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import { $getSelection, $isRangeSelection, FORMAT_TEXT_COMMAND, FORMAT_ELEMENT_COMMAND } from 'lexical';
 import { $setBlocksType } from '@lexical/selection';
-import { $createHeadingNode, $createQuoteNode } from '@lexical/rich-text';
+import { $createHeadingNode } from '@lexical/rich-text';
 import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND } from '@lexical/list';
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  HiBold,
-  HiItalic,
-} from 'react-icons/hi2';
-import { 
-  MdFormatUnderlined, 
-  MdStrikethroughS,
-  MdFormatAlignLeft, 
-  MdFormatAlignCenter, 
-  MdFormatAlignRight,
-  MdFormatListBulleted,
-  MdFormatListNumbered,
-  MdFormatQuote,
-  MdCode,
-  MdLink,
-  MdHorizontalRule,
-} from 'react-icons/md';
 
 type ViewMode = 'scroll' | 'pages';
 
@@ -31,35 +14,116 @@ interface ToolbarPluginProps {
   onImportStatistic?: () => void;
 }
 
-interface ToolbarButtonProps {
-  onClick: () => void;
-  isActive?: boolean;
-  title: string;
-  children: React.ReactNode;
-  variant?: 'default' | 'accent' | 'success';
-}
+// Inline styles to guarantee horizontal layout
+const toolbarStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '8px 12px',
+  background: 'rgba(0, 0, 0, 0.25)',
+  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+  flexShrink: 0,
+  flexWrap: 'nowrap',
+  overflowX: 'auto',
+  minHeight: '48px',
+};
 
-function ToolbarButton({ onClick, isActive, title, children, variant = 'default' }: ToolbarButtonProps) {
-  let className = 'toolbar-btn';
-  if (isActive) className += ' active';
-  if (variant === 'accent') className += ' accent';
-  if (variant === 'success') className += ' success';
-  
-  return (
-    <button
-      type="button"
-      className={className}
-      onClick={onClick}
-      title={title}
-    >
-      {children}
-    </button>
-  );
-}
+const groupStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: '2px',
+  flexShrink: 0,
+};
 
-function ToolbarDivider() {
-  return <div className="toolbar-divider" />;
-}
+const dividerStyle: React.CSSProperties = {
+  width: '1px',
+  height: '24px',
+  background: 'rgba(255, 255, 255, 0.12)',
+  margin: '0 4px',
+  flexShrink: 0,
+};
+
+const spacerStyle: React.CSSProperties = {
+  flex: 1,
+  minWidth: '8px',
+};
+
+const btnBaseStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '4px',
+  minWidth: '32px',
+  height: '32px',
+  padding: '0 8px',
+  border: 'none',
+  background: 'transparent',
+  color: 'rgba(169, 183, 218, 1)',
+  cursor: 'pointer',
+  borderRadius: '6px',
+  fontSize: '14px',
+  fontWeight: 500,
+  transition: 'all 0.15s ease',
+  flexShrink: 0,
+  whiteSpace: 'nowrap',
+};
+
+const btnActiveStyle: React.CSSProperties = {
+  ...btnBaseStyle,
+  background: '#4b74ff',
+  color: 'white',
+};
+
+const btnSuccessStyle: React.CSSProperties = {
+  ...btnBaseStyle,
+  background: 'rgba(74, 222, 128, 0.15)',
+  color: '#4ade80',
+  border: '1px solid rgba(74, 222, 128, 0.3)',
+};
+
+const btnAccentStyle: React.CSSProperties = {
+  ...btnBaseStyle,
+  background: 'rgba(75, 116, 255, 0.15)',
+  color: '#4b74ff',
+  border: '1px solid rgba(75, 116, 255, 0.3)',
+};
+
+const viewModeGroupStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  flexDirection: 'row',
+  background: 'rgba(20, 30, 50, 0.6)',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  borderRadius: '8px',
+  padding: '2px',
+  gap: '0',
+  flexShrink: 0,
+};
+
+const viewModeBtnStyle: React.CSSProperties = {
+  display: 'inline-flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: '4px',
+  padding: '6px 10px',
+  border: 'none',
+  background: 'transparent',
+  color: 'rgba(169, 183, 218, 1)',
+  cursor: 'pointer',
+  borderRadius: '6px',
+  fontSize: '12px',
+  fontWeight: 500,
+  transition: 'all 0.15s ease',
+  whiteSpace: 'nowrap',
+};
+
+const viewModeBtnActiveStyle: React.CSSProperties = {
+  ...viewModeBtnStyle,
+  background: '#4b74ff',
+  color: 'white',
+};
 
 export default function ToolbarPlugin({
   viewMode,
@@ -116,115 +180,127 @@ export default function ToolbarPlugin({
     editor.dispatchCommand(FORMAT_ELEMENT_COMMAND, align);
   };
 
+  const getButtonStyle = (isActive: boolean, variant?: 'success' | 'accent') => {
+    if (isActive) return btnActiveStyle;
+    if (variant === 'success') return btnSuccessStyle;
+    if (variant === 'accent') return btnAccentStyle;
+    return btnBaseStyle;
+  };
+
   return (
-    <div className="lexical-toolbar">
+    <div style={toolbarStyle}>
       {/* Text formatting */}
-      <div className="toolbar-group">
-        <ToolbarButton 
-          onClick={() => formatText('bold')} 
-          isActive={isBold}
-          title="Жирный (Ctrl+B)"
-        >
-          <HiBold />
-        </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => formatText('italic')} 
-          isActive={isItalic}
-          title="Курсив (Ctrl+I)"
-        >
-          <HiItalic />
-        </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => formatText('underline')} 
-          isActive={isUnderline}
-          title="Подчёркнутый (Ctrl+U)"
-        >
-          <MdFormatUnderlined />
-        </ToolbarButton>
-        <ToolbarButton 
-          onClick={() => formatText('strikethrough')} 
-          isActive={isStrikethrough}
-          title="Зачёркнутый"
-        >
-          <MdStrikethroughS />
-        </ToolbarButton>
-      </div>
-
-      <ToolbarDivider />
-
-      {/* Headings */}
-      <div className="toolbar-group">
-        <ToolbarButton onClick={() => formatHeading('h1')} title="Заголовок 1">
-          H1
-        </ToolbarButton>
-        <ToolbarButton onClick={() => formatHeading('h2')} title="Заголовок 2">
-          H2
-        </ToolbarButton>
-        <ToolbarButton onClick={() => formatHeading('h3')} title="Заголовок 3">
-          H3
-        </ToolbarButton>
-      </div>
-
-      <ToolbarDivider />
-
-      {/* Lists */}
-      <div className="toolbar-group">
-        <ToolbarButton onClick={() => formatList('bullet')} title="Маркированный список">
-          <MdFormatListBulleted />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => formatList('number')} title="Нумерованный список">
-          <MdFormatListNumbered />
-        </ToolbarButton>
-      </div>
-
-      <ToolbarDivider />
-
-      {/* Alignment */}
-      <div className="toolbar-group">
-        <ToolbarButton onClick={() => formatAlignment('left')} title="По левому краю">
-          <MdFormatAlignLeft />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => formatAlignment('center')} title="По центру">
-          <MdFormatAlignCenter />
-        </ToolbarButton>
-        <ToolbarButton onClick={() => formatAlignment('right')} title="По правому краю">
-          <MdFormatAlignRight />
-        </ToolbarButton>
-      </div>
-
-      <ToolbarDivider />
-
-      {/* Citation & Import buttons */}
-      <div className="toolbar-group">
-        {onInsertCitation && (
-          <ToolbarButton 
-            onClick={onInsertCitation} 
-            title="Вставить цитату"
-            variant="success"
-          >
-            <MdFormatQuote />
-            <span className="toolbar-btn-label">Цитата</span>
-          </ToolbarButton>
-        )}
-        {onImportStatistic && (
-          <ToolbarButton 
-            onClick={onImportStatistic} 
-            title="Импорт из статистики"
-            variant="accent"
-          >
-            📊
-            <span className="toolbar-btn-label">Импорт</span>
-          </ToolbarButton>
-        )}
-      </div>
-
-      {/* View mode toggle - pushed to the right */}
-      <div className="toolbar-spacer" />
-      
-      <div className="toolbar-group view-mode-group">
+      <div style={groupStyle}>
         <button
           type="button"
-          className={`view-mode-btn ${viewMode === 'scroll' ? 'active' : ''}`}
+          style={getButtonStyle(isBold)}
+          onClick={() => formatText('bold')}
+          title="Жирный (Ctrl+B)"
+        >
+          <b>B</b>
+        </button>
+        <button
+          type="button"
+          style={getButtonStyle(isItalic)}
+          onClick={() => formatText('italic')}
+          title="Курсив (Ctrl+I)"
+        >
+          <i>I</i>
+        </button>
+        <button
+          type="button"
+          style={getButtonStyle(isUnderline)}
+          onClick={() => formatText('underline')}
+          title="Подчёркнутый (Ctrl+U)"
+        >
+          <u>U</u>
+        </button>
+        <button
+          type="button"
+          style={getButtonStyle(isStrikethrough)}
+          onClick={() => formatText('strikethrough')}
+          title="Зачёркнутый"
+        >
+          <s>S</s>
+        </button>
+      </div>
+
+      <div style={dividerStyle} />
+
+      {/* Headings */}
+      <div style={groupStyle}>
+        <button type="button" style={btnBaseStyle} onClick={() => formatHeading('h1')} title="Заголовок 1">
+          H1
+        </button>
+        <button type="button" style={btnBaseStyle} onClick={() => formatHeading('h2')} title="Заголовок 2">
+          H2
+        </button>
+        <button type="button" style={btnBaseStyle} onClick={() => formatHeading('h3')} title="Заголовок 3">
+          H3
+        </button>
+      </div>
+
+      <div style={dividerStyle} />
+
+      {/* Lists */}
+      <div style={groupStyle}>
+        <button type="button" style={btnBaseStyle} onClick={() => formatList('bullet')} title="Маркированный список">
+          •
+        </button>
+        <button type="button" style={btnBaseStyle} onClick={() => formatList('number')} title="Нумерованный список">
+          1.
+        </button>
+      </div>
+
+      <div style={dividerStyle} />
+
+      {/* Alignment */}
+      <div style={groupStyle}>
+        <button type="button" style={btnBaseStyle} onClick={() => formatAlignment('left')} title="По левому краю">
+          ≡
+        </button>
+        <button type="button" style={btnBaseStyle} onClick={() => formatAlignment('center')} title="По центру">
+          ≡
+        </button>
+        <button type="button" style={btnBaseStyle} onClick={() => formatAlignment('right')} title="По правому краю">
+          ≡
+        </button>
+      </div>
+
+      <div style={dividerStyle} />
+
+      {/* Citation & Import buttons */}
+      <div style={groupStyle}>
+        {onInsertCitation && (
+          <button
+            type="button"
+            style={btnSuccessStyle}
+            onClick={onInsertCitation}
+            title="Вставить цитату"
+          >
+            ❝ Цитата
+          </button>
+        )}
+        {onImportStatistic && (
+          <button
+            type="button"
+            style={btnAccentStyle}
+            onClick={onImportStatistic}
+            title="Импорт из статистики"
+          >
+            📊 Импорт
+          </button>
+        )}
+      </div>
+
+      {/* Spacer */}
+      <div style={spacerStyle} />
+
+      {/* View mode toggle */}
+      <div style={viewModeGroupStyle}>
+        <button
+          type="button"
+          style={viewMode === 'scroll' ? viewModeBtnActiveStyle : viewModeBtnStyle}
           onClick={() => onViewModeChange('scroll')}
           title="Режим ленты"
         >
@@ -232,7 +308,7 @@ export default function ToolbarPlugin({
         </button>
         <button
           type="button"
-          className={`view-mode-btn ${viewMode === 'pages' ? 'active' : ''}`}
+          style={viewMode === 'pages' ? viewModeBtnActiveStyle : viewModeBtnStyle}
           onClick={() => onViewModeChange('pages')}
           title="Режим страниц"
         >
