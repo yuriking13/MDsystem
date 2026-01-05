@@ -756,6 +756,19 @@ input::placeholder {
   background: rgba(74, 222, 128, 0.3);
 }
 
+.editor-toolbar-fixed .import-stats-btn {
+  width: auto;
+  padding: 0 12px;
+  background: rgba(75, 116, 255, 0.2);
+  color: var(--accent);
+  border: 1px solid rgba(75, 116, 255, 0.3);
+  font-size: 12px;
+}
+
+.editor-toolbar-fixed .import-stats-btn:hover {
+  background: rgba(75, 116, 255, 0.3);
+}
+
 /* Область прокрутки */
 .editor-scroll-area {
   flex: 1;
@@ -1244,6 +1257,57 @@ input::placeholder {
   font-weight: 600;
   color: var(--accent);
   font-size: 13px;
+}
+
+/* Автоматическая нумерация рисунков и таблиц */
+.editor-content-area .tiptap {
+  counter-reset: figure-counter table-counter;
+}
+
+.editor-content-area .tiptap .chart-node-wrapper {
+  counter-increment: figure-counter;
+}
+
+.editor-content-area .tiptap .chart-caption-label.numbered::after {
+  content: " " counter(figure-counter) ".";
+}
+
+/* Нумерация таблиц */
+.editor-content-area .tiptap table {
+  counter-increment: table-counter;
+}
+
+/* Подпись таблицы */
+.table-caption {
+  display: block;
+  text-align: center;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.table-caption::before {
+  content: "Таблица " counter(table-counter) ". ";
+  color: var(--accent);
+}
+
+/* Страничный режим - тоже нумерация */
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap {
+  counter-reset: figure-counter table-counter;
+}
+
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap .chart-node-wrapper {
+  counter-increment: figure-counter;
+}
+
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap .chart-caption-label.numbered::after {
+  content: " " counter(figure-counter) ".";
+  color: var(--accent);
+}
+
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap table {
+  counter-increment: table-counter;
 }
 
 .chart-caption-title {
@@ -2210,9 +2274,37 @@ input::placeholder {
   color: var(--text-primary);
 }
 
+.stat-card-documents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .stat-card-document {
   font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 2px 8px;
+  background: rgba(75, 116, 255, 0.1);
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.stat-card-document:hover {
+  background: rgba(75, 116, 255, 0.2);
+  text-decoration: underline;
+}
+
+.stat-card-document.not-used {
   color: var(--text-muted);
+  background: transparent;
+  cursor: default;
+  padding: 0;
+}
+
+.stat-card-document.not-used:hover {
+  background: transparent;
+  text-decoration: none;
 }
 
 .stat-card-type-badge {
@@ -2320,14 +2412,6 @@ input::placeholder {
 /* ===== EDITOR PAGES MODE FIX ===== */
 
 .editor-scroll-area.pages-mode {
-  --page-width: 794px;
-  --page-height: 1123px;
-  --page-margin-top: 20mm;
-  --page-margin-bottom: 20mm;
-  --page-margin-left: 30mm;
-  --page-margin-right: 15mm;
-  --line-height: 1.5;
-  
   background: linear-gradient(135deg, #3a4a6a 0%, #2a3a5a 100%);
   padding: 40px 20px;
   min-height: 100%;
@@ -2336,59 +2420,51 @@ input::placeholder {
   align-items: center;
 }
 
-/* Page container - the white "paper" */
+/* Page container - the white "paper" - FIXED WIDTH for all content */
 .editor-scroll-area.pages-mode .editor-page.page-view {
-  width: var(--page-width);
-  min-width: var(--page-width);
-  max-width: var(--page-width);
-  min-height: var(--page-height);
-  padding: var(--page-margin-top) var(--page-margin-right) var(--page-margin-bottom) var(--page-margin-left);
-  background: var(--editor-bg, #ffffff) !important;
-  color: var(--editor-text, #1a1a1a) !important;
+  width: 794px !important;
+  min-width: 794px !important;
+  max-width: 794px !important;
+  min-height: 1123px;
+  padding: 20mm 15mm 20mm 30mm;
+  background: #ffffff !important;
+  color: #1a1a1a !important;
   box-shadow: 
     0 4px 25px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(0, 0, 0, 0.1);
   margin: 0 auto 40px auto;
   border-radius: 2px;
-  line-height: var(--line-height);
+  line-height: 1.5;
   position: relative;
+  box-sizing: border-box;
 }
 
-/* Page break indicator - visual separator between pages */
-.editor-scroll-area.pages-mode .editor-page.page-view::after {
-  content: '';
-  display: block;
-  position: absolute;
-  bottom: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-}
-
-/* Ensure the entire content area inside the page has white background */
+/* Ensure the content area has the same fixed width */
 .editor-scroll-area.pages-mode .editor-page.page-view .editor-content-area {
-  background: var(--editor-bg, #ffffff) !important;
-  color: var(--editor-text, #1a1a1a) !important;
-  min-height: calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom));
-  width: 100%;
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  min-height: calc(1123px - 40mm);
+  width: 100% !important;
+  box-sizing: border-box;
 }
 
-/* ProseMirror/TipTap editor core */
+/* ProseMirror/TipTap editor core - CRITICAL: same width as page */
 .editor-scroll-area.pages-mode .editor-page.page-view .ProseMirror,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap {
-  background: var(--editor-bg, #ffffff) !important;
-  color: var(--editor-text, #1a1a1a) !important;
-  min-height: calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 20px);
-  width: 100%;
+  background: #ffffff !important;
+  color: #1a1a1a !important;
+  min-height: calc(1123px - 40mm - 20px);
+  width: 100% !important;
+  max-width: 100% !important;
   outline: none;
+  box-sizing: border-box;
 }
 
-/* All text elements inherit white background context */
+/* All text elements inherit page styles */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap > * {
   background: transparent;
-  color: var(--editor-text, #1a1a1a) !important;
+  color: #1a1a1a !important;
+  max-width: 100%;
 }
 
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap p,
@@ -2404,7 +2480,7 @@ input::placeholder {
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap blockquote,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap pre,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap code {
-  color: var(--editor-text, #1a1a1a) !important;
+  color: #1a1a1a !important;
 }
 
 /* Tables in pages mode */
@@ -2416,13 +2492,13 @@ input::placeholder {
 
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap table th {
   background: #f5f5f5;
-  color: var(--editor-text, #1a1a1a) !important;
+  color: #1a1a1a !important;
   border-color: #ddd;
 }
 
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap table td {
   background: transparent;
-  color: var(--editor-text, #1a1a1a) !important;
+  color: #1a1a1a !important;
   border-color: #ddd;
 }
 
@@ -2453,18 +2529,18 @@ input::placeholder {
   color: #999;
 }
 
-/* Simulated page breaks using CSS - every ~page-height content gets a visual break */
+/* Visual page break indicators - dashed lines every ~page height */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap {
-  /* Add subtle page break lines every ~1000px of content */
   background-image: repeating-linear-gradient(
     to bottom,
     transparent 0,
-    transparent calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 60px),
-    rgba(75, 116, 255, 0.1) calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 60px),
-    rgba(75, 116, 255, 0.1) calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 58px),
-    transparent calc(var(--page-height) - var(--page-margin-top) - var(--page-margin-bottom) - 58px)
+    transparent 1043px,
+    #e0e0e0 1043px,
+    #e0e0e0 1045px,
+    transparent 1045px,
+    transparent 1083px
   );
-  background-color: var(--editor-bg, #ffffff);
+  background-color: #ffffff;
 }
 
 /* Article picker item */
@@ -2519,6 +2595,73 @@ input::placeholder {
 @keyframes citation-pulse {
   0%, 100% { background: transparent; }
   50% { background: var(--accent-glow); }
+}
+
+/* Import from Statistics modal */
+.import-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.import-stat-item {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  background: var(--bg-glass-light);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.import-stat-item:hover {
+  border-color: var(--accent);
+  background: var(--bg-glass);
+}
+
+.import-stat-preview {
+  width: 120px;
+  height: 80px;
+  flex-shrink: 0;
+  background: var(--bg-glass);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.import-stat-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.import-stat-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.import-stat-type {
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.import-stat-desc {
+  font-size: 11px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.import-stat-btn {
+  padding: 8px 16px !important;
+  font-size: 12px !important;
+  flex-shrink: 0;
 }
 
 /* Clickable citation number */

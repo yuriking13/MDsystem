@@ -9,11 +9,14 @@ import {
   apiRemoveCitation,
   apiUpdateCitation,
   apiGetProject,
+  apiGetStatistics,
   type Document,
   type Article,
   type Citation,
   type CitationStyle,
+  type ProjectStatistic,
 } from "../lib/api";
+import ChartFromTable, { CHART_TYPE_INFO, type ChartType, type TableData } from "../components/ChartFromTable";
 
 // Простое форматирование цитаты для отображения в панели
 // Всегда используем язык оригинала (английский)
@@ -68,6 +71,11 @@ export default function DocumentPage() {
   const [showCitationPicker, setShowCitationPicker] = useState(false);
   const [articles, setArticles] = useState<Article[]>([]);
   const [searchArticle, setSearchArticle] = useState("");
+  
+  // Модальное окно импорта из статистики
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [statistics, setStatistics] = useState<ProjectStatistic[]>([]);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   // Загрузка документа и проекта
   useEffect(() => {
@@ -141,6 +149,43 @@ export default function DocumentPage() {
     } catch (err) {
       console.error("Load articles error:", err);
     }
+  }
+  
+  // Открыть модал импорта из статистики
+  async function openImportModal() {
+    if (!projectId) return;
+    setShowImportModal(true);
+    setLoadingStats(true);
+    
+    try {
+      const res = await apiGetStatistics(projectId);
+      setStatistics(res.statistics);
+    } catch (err) {
+      console.error("Load statistics error:", err);
+    } finally {
+      setLoadingStats(false);
+    }
+  }
+  
+  // Вставить статистику в редактор
+  function handleInsertStatistic(stat: ProjectStatistic) {
+    if (!stat.table_data || !stat.config) return;
+    
+    // Используем глобальную функцию вставки графика
+    const fn = (window as any).__editorInsertChart;
+    if (fn) {
+      fn(stat);
+    } else {
+      // Fallback - напрямую вставляем через content update
+      const chartHtml = `<div class="chart-container" data-chart='${JSON.stringify({
+        config: stat.config,
+        tableData: stat.table_data
+      })}' data-statistic-id="${stat.id}" data-project-id="${projectId}"></div>`;
+      
+      setContent(prev => prev + chartHtml);
+    }
+    
+    setShowImportModal(false);
   }
 
   // Добавить цитату - всегда создаём новую запись (можно несколько цитат к одному источнику)
@@ -278,6 +323,7 @@ export default function DocumentPage() {
               document.body.appendChild(notification);
               setTimeout(() => notification.remove(), 3000);
             }}
+            onImportFromStats={openImportModal}
           />
         </div>
 
@@ -427,6 +473,78 @@ export default function DocumentPage() {
                     </div>
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Модалка импорта из статистики */}
+      {showImportModal && (
+        <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
+          <div className="modal" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()}>
+            <div className="row space" style={{ marginBottom: 16 }}>
+              <h3 style={{ margin: 0 }}>📥 Импорт из Статистики</h3>
+              <button
+                className="btn secondary"
+                onClick={() => setShowImportModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
+              Выберите таблицу или график для вставки в документ
+            </p>
+
+            <div style={{ maxHeight: 450, overflow: "auto" }}>
+              {loadingStats ? (
+                <div className="muted">Загрузка...</div>
+              ) : statistics.length === 0 ? (
+                <div className="muted" style={{ textAlign: 'center', padding: 40 }}>
+                  Нет доступных графиков.<br/>
+                  Создайте их в разделе Статистика проекта.
+                </div>
+              ) : (
+                <div className="import-stats-list">
+                  {statistics.map((stat) => {
+                    const chartInfo = stat.chart_type ? CHART_TYPE_INFO[stat.chart_type as ChartType] : null;
+                    
+                    return (
+                      <div
+                        key={stat.id}
+                        className="import-stat-item"
+                        onClick={() => handleInsertStatistic(stat)}
+                      >
+                        <div className="import-stat-preview">
+                          {stat.table_data && stat.config && (
+                            <ChartFromTable 
+                              tableData={stat.table_data as TableData} 
+                              config={stat.config as any} 
+                              height={100} 
+                            />
+                          )}
+                        </div>
+                        <div className="import-stat-info">
+                          <div className="import-stat-title">
+                            {chartInfo?.icon || '📊'} {stat.title || 'Без названия'}
+                          </div>
+                          <div className="import-stat-type">
+                            {chartInfo?.name || 'График'}
+                          </div>
+                          {stat.description && (
+                            <div className="import-stat-desc muted">
+                              {stat.description}
+                            </div>
+                          )}
+                        </div>
+                        <button className="btn import-stat-btn">
+                          Вставить
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>

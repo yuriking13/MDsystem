@@ -66,6 +66,7 @@ type Props = {
   documentId?: string;
   onStatisticCreated?: (statId: string) => void;
   onTablesUpdated?: (tables: TableData[]) => void;
+  onImportFromStats?: () => void;
 };
 
 // Панель инструментов - фиксированная сверху
@@ -73,12 +74,14 @@ function Toolbar({
   editor, 
   onInsertCitation,
   onCreateChart,
+  onImportFromStats,
   settings,
   onSettingsChange,
 }: { 
   editor: TipTapEditor | null;
   onInsertCitation?: () => void;
   onCreateChart?: () => void;
+  onImportFromStats?: () => void;
   settings: EditorSettings;
   onSettingsChange: (s: EditorSettings) => void;
 }) {
@@ -415,6 +418,20 @@ function Toolbar({
           </button>
         </div>
       )}
+      
+      {/* Импорт из статистики */}
+      {onImportFromStats && (
+        <div className="toolbar-group">
+          <button
+            type="button"
+            onClick={onImportFromStats}
+            className="import-stats-btn"
+            title="Импорт таблицы/графика из Статистики"
+          >
+            📥 Импорт
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -431,6 +448,7 @@ export default function Editor({
   documentId,
   onStatisticCreated,
   onTablesUpdated,
+  onImportFromStats,
 }: Props) {
   const [showChartModal, setShowChartModal] = useState(false);
   const [tableHtmlForChart, setTableHtmlForChart] = useState("");
@@ -616,23 +634,6 @@ export default function Editor({
   // Вычисляем стили для режима страниц
   const pageWidth = settings.pageSize === 'a4' ? PAGE_WIDTH_A4 : 816;
   const pageHeight = settings.pageSize === 'a4' ? PAGE_HEIGHT_A4 : 1056;
-  
-  const getPageStyle = (): React.CSSProperties => {
-    if (settings.viewMode === 'pages') {
-      return {
-        '--page-width': `${pageWidth}px`,
-        '--page-height': `${pageHeight}px`,
-        '--page-margin-top': `${settings.marginTop}mm`,
-        '--page-margin-bottom': `${settings.marginBottom}mm`,
-        '--page-margin-left': `${settings.marginLeft}mm`,
-        '--page-margin-right': `${settings.marginRight}mm`,
-        '--line-height': settings.lineHeight,
-      } as React.CSSProperties;
-    }
-    return {
-      lineHeight: settings.lineHeight,
-    };
-  };
 
   return (
     <div className="document-editor-container">
@@ -642,6 +643,7 @@ export default function Editor({
           editor={editor} 
           onInsertCitation={onInsertCitation}
           onCreateChart={handleCreateChart}
+          onImportFromStats={onImportFromStats}
           settings={settings}
           onSettingsChange={setSettings}
         />
@@ -651,10 +653,19 @@ export default function Editor({
       <div 
         className={`editor-scroll-area ${settings.viewMode === 'pages' ? 'pages-mode' : 'scroll-mode'}`}
         ref={editorContainerRef}
-        style={getPageStyle()}
       >
         <div 
           className={`editor-page ${settings.viewMode === 'pages' ? 'page-view' : 'scroll-view'}`}
+          style={settings.viewMode === 'pages' ? {
+            width: pageWidth,
+            minWidth: pageWidth,
+            maxWidth: pageWidth,
+            minHeight: pageHeight,
+            padding: `${settings.marginTop}mm ${settings.marginRight}mm ${settings.marginBottom}mm ${settings.marginLeft}mm`,
+            lineHeight: settings.lineHeight,
+          } : {
+            lineHeight: settings.lineHeight,
+          }}
         >
           <EditorContent 
             editor={editor} 

@@ -866,9 +866,14 @@ export default function ProjectDetailPage() {
               <div className="statistics-list">
                 {statistics.map(stat => {
                   const chartInfo = stat.chart_type ? CHART_TYPE_INFO[stat.chart_type as ChartType] : null;
-                  const usedInDoc = stat.used_in_documents?.[0];
                   const tableData = stat.table_data as TableData | undefined;
                   const showAsTable = statisticsView === 'tables';
+                  
+                  // Находим документы, в которых используется этот график
+                  const usedInDocIds = stat.used_in_documents || [];
+                  const usedInDocuments = usedInDocIds.map(docId => 
+                    documents.find(d => d.id === docId)
+                  ).filter(Boolean);
                   
                   return (
                     <div key={stat.id} className="stat-card">
@@ -879,9 +884,25 @@ export default function ProjectDetailPage() {
                           </span>
                           <div className="stat-card-title-info">
                             <h4 className="stat-card-title">{stat.title || 'Без названия'}</h4>
-                            {usedInDoc && (
-                              <span className="stat-card-document">
-                                📄 {typeof usedInDoc === 'object' ? (usedInDoc as any).title : 'Документ'}
+                            {usedInDocuments.length > 0 ? (
+                              <div className="stat-card-documents">
+                                {usedInDocuments.map((doc, i) => (
+                                  <span 
+                                    key={doc!.id} 
+                                    className="stat-card-document"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      nav(`/projects/${id}/documents/${doc!.id}`);
+                                    }}
+                                    title="Открыть документ"
+                                  >
+                                    📄 {doc!.title}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="stat-card-document not-used">
+                                Не используется в документах
                               </span>
                             )}
                           </div>
