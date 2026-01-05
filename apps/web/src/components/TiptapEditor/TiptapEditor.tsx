@@ -278,15 +278,48 @@ export default function TiptapEditor({
             const firstRow = rows[0];
             if (firstRow) {
               const cells = firstRow.querySelectorAll('td, th');
+              
+              // CRITICAL: Check if we need to add missing col elements
+              if (cols.length < cells.length) {
+                console.warn(`Colgroup has ${cols.length} cols but ${cells.length} cells - adding missing cols`);
+                // Add missing col elements
+                for (let i = cols.length; i < cells.length; i++) {
+                  const newCol = document.createElement('col');
+                  const cellWidth = (cells[i] as HTMLElement)?.offsetWidth || 100;
+                  newCol.style.width = `${cellWidth}px`;
+                  colgroup.appendChild(newCol);
+                }
+              }
+              
+              // Sync col widths with cell colwidth attributes
               cells.forEach((cell, idx) => {
-                const col = cols[idx];
+                const col = colgroup.querySelector(`col:nth-child(${idx + 1})`) as HTMLElement;
                 if (col && cell instanceof HTMLElement) {
                   const colwidth = cell.getAttribute('colwidth');
-                  if (colwidth && !col.style.width) {
-                    col.style.width = `${colwidth}px`;
+                  if (colwidth) {
+                    col.setAttribute('data-colwidth', colwidth);
+                    if (!col.style.width || col.style.width === 'auto' || col.style.width === '0px') {
+                      col.style.width = `${colwidth}px`;
+                    }
                   }
                 }
               });
+            }
+          } else if (table instanceof HTMLTableElement) {
+            // If there's no colgroup at all, create one
+            console.warn('Table has no colgroup - creating one');
+            const newColgroup = document.createElement('colgroup');
+            const cells = table.querySelector('tr')?.querySelectorAll('td, th');
+            if (cells) {
+              cells.forEach((cell) => {
+                const col = document.createElement('col');
+                const cellWidth = (cell as HTMLElement)?.offsetWidth || 100;
+                col.style.width = `${cellWidth}px`;
+                newColgroup.appendChild(col);
+              });
+            }
+            if (table.tBodies[0]) {
+              table.insertBefore(newColgroup, table.tBodies[0]);
             }
           }
         });
