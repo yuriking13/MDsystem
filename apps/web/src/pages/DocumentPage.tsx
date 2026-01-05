@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TiptapEditor from "../components/TiptapEditor/TiptapEditor";
 import {
@@ -72,6 +72,7 @@ export default function DocumentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [citationStyle, setCitationStyle] = useState<CitationStyle>("gost");
+  const hasSyncedStatistics = useRef(false);
 
   // Модальное окно выбора статьи для цитаты
   const [showCitationPicker, setShowCitationPicker] = useState(false);
@@ -111,6 +112,7 @@ export default function DocumentPage() {
 
     load();
   }, [projectId, docId]);
+
 
   // Парсинг таблиц и графиков из HTML контента
   const parseStatisticsFromContent = useCallback((htmlContent: string): { 
@@ -215,6 +217,22 @@ export default function DocumentPage() {
             console.warn("Statistics sync warning:", syncErr);
             // Don't fail the save if sync fails
           }
+
+          // Push updated table data back to Statistics so external views stay in sync
+          const tableUpdates = tables
+            .filter((t) => t.id && Array.isArray((t.tableData as any)?.headers))
+            .map(async (t) => {
+              try {
+                await apiUpdateStatistic(projectId, t.id, {
+                  tableData: t.tableData as TableData,
+                });
+              } catch (updateErr) {
+                console.warn("Failed to update statistic from document table", t.id, updateErr);
+              }
+            });
+          if (tableUpdates.length) {
+            await Promise.allSettled(tableUpdates);
+          }
         }
       } catch (err) {
         console.error("Save error:", err);
@@ -224,6 +242,102 @@ export default function DocumentPage() {
     },
     [projectId, docId, parseStatisticsFromContent]
   );
+
+  // Build table HTML from statistic data (used to refresh document tables from Statistics)
+  const buildTableHtmlFromStatistic = useCallback((tableData: TableData, statisticId?: string | null) => {
+    const cols = Math.max(tableData.headers?.length || 0, ...(tableData.rows || []).map((r) => r.length));
+    let html = '<table class="tiptap-table"';
+    if (statisticId) {
+      html += ` data-statistic-id="${statisticId}"`;
+    }
+    html += '>';
+
+    html += '<colgroup>';
+    for (let c = 0; c < cols; c++) {
+      html += '<col />';
+    }
+    html += '</colgroup>';
+
+    const safeHeaders = tableData.headers || Array.from({ length: cols }, (_, i) => `Колонка ${i + 1}`);
+    html += '<tr>';
+    for (let c = 0; c < cols; c++) {
+      const text = safeHeaders[c] ?? '';
+      html += `<th><p>${text}</p></th>`;
+    }
+    html += '</tr>';
+
+    (tableData.rows || []).forEach((row) => {
+      html += '<tr>';
+      for (let c = 0; c < cols; c++) {
+        const text = row[c] ?? '';
+        html += `<td><p>${text}</p></td>`;
+      }
+      html += '</tr>';
+    });
+
+    html += '</table>';
+    return html;
+  }, []);
+
+  // Refresh document content with the latest data from Statistics (run once after load)
+  const syncDocumentWithStatistics = useCallback(async () => {
+    if (!projectId || !content) return;
+
+    const parser = new DOMParser();
+    const docDom = parser.parseFromString(content, "text/html");
+
+    const tables = Array.from(docDom.querySelectorAll('table[data-statistic-id]')) as HTMLElement[];
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const ids = Array.from(new Set(tables
+      .map((el) => el.getAttribute('data-statistic-id'))
+      .filter((id): id is string => !!id && uuidRegex.test(id))));
+
+    if (ids.length === 0) return;
+
+    const statMap = new Map<string, TableData>();
+    await Promise.allSettled(ids.map(async (id) => {
+      try {
+        const res = await apiGetStatistic(projectId, id);
+        if (res.statistic.table_data) {
+          statMap.set(id, res.statistic.table_data as TableData);
+        }
+      } catch (err) {
+        console.warn('Failed to load statistic for sync', id, err);
+      }
+    }));
+
+    let changed = false;
+    tables.forEach((tableEl) => {
+      const statId = tableEl.getAttribute('data-statistic-id');
+      if (!statId) return;
+      const data = statMap.get(statId);
+      if (!data) return;
+
+      const newHtml = buildTableHtmlFromStatistic(data, statId);
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = newHtml;
+      const newTable = wrapper.firstElementChild;
+      if (newTable && newTable.outerHTML !== tableEl.outerHTML) {
+        tableEl.replaceWith(newTable);
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      const updatedContent = docDom.body.innerHTML;
+      setContent(updatedContent);
+      setDoc((prev) => prev ? { ...prev, content: updatedContent } : prev);
+      await saveDocument(updatedContent);
+    }
+  }, [buildTableHtmlFromStatistic, content, projectId, saveDocument]);
+
+  // After initial load, refresh document tables from Statistics once
+  useEffect(() => {
+    if (loading || hasSyncedStatistics.current) return;
+    if (!content) return;
+    hasSyncedStatistics.current = true;
+    syncDocumentWithStatistics();
+  }, [loading, content, syncDocumentWithStatistics]);
 
   // Debounced save
   useEffect(() => {
