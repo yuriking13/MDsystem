@@ -286,74 +286,73 @@ export default function DocumentPage() {
     if (isSyncingStatistics.current) return;
     isSyncingStatistics.current = true;
 
-    const parser = new DOMParser();
-    const docDom = parser.parseFromString(content, "text/html");
-
-    const tables = Array.from(docDom.querySelectorAll('table[data-statistic-id]')) as HTMLElement[];
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const ids = Array.from(new Set(tables
-      .map((el) => el.getAttribute('data-statistic-id'))
-      .filter((id): id is string => !!id && uuidRegex.test(id))));
-
-    if (ids.length === 0) {
-      isSyncingStatistics.current = false;
-      return;
-    }
-
-    const statMap = new Map<string, TableData>();
-    await Promise.allSettled(ids.map(async (id) => {
-      try {
-        const res = await apiGetStatistic(projectId, id);
-        if (res.statistic.table_data) {
-          statMap.set(id, res.statistic.table_data as TableData);
-        }
-      } catch (err) {
-        console.warn('Failed to load statistic for sync', id, err);
-      }
-    }));
-
-    // Determine which statistics were deleted server-side
-    const existingIds = new Set<string>();
     try {
-      const list = await apiGetStatistics(projectId);
-      list.statistics.forEach((s) => existingIds.add(s.id));
-    } catch (err) {
-      console.warn('Failed to fetch statistics list for sync', err);
-    }
+      const parser = new DOMParser();
+      const docDom = parser.parseFromString(content, "text/html");
 
-    let changed = false;
-    tables.forEach((tableEl) => {
-      const statId = tableEl.getAttribute('data-statistic-id');
-      if (!statId) return;
-      const data = statMap.get(statId);
+      const tables = Array.from(docDom.querySelectorAll('table[data-statistic-id]')) as HTMLElement[];
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const ids = Array.from(new Set(tables
+        .map((el) => el.getAttribute('data-statistic-id'))
+        .filter((id): id is string => !!id && uuidRegex.test(id))));
 
-      // If statistic was removed, drop the table from the document
-      if (!data && existingIds.size > 0 && !existingIds.has(statId)) {
-        tableEl.remove();
-        changed = true;
-        return;
+      if (ids.length === 0) return;
+
+      const statMap = new Map<string, TableData>();
+      await Promise.allSettled(ids.map(async (id) => {
+        try {
+          const res = await apiGetStatistic(projectId, id);
+          if (res.statistic.table_data) {
+            statMap.set(id, res.statistic.table_data as TableData);
+          }
+        } catch (err) {
+          console.warn('Failed to load statistic for sync', id, err);
+        }
+      }));
+
+      // Determine which statistics were deleted server-side
+      const existingIds = new Set<string>();
+      try {
+        const list = await apiGetStatistics(projectId);
+        list.statistics.forEach((s) => existingIds.add(s.id));
+      } catch (err) {
+        console.warn('Failed to fetch statistics list for sync', err);
       }
 
-      if (!data) return;
+      let changed = false;
+      tables.forEach((tableEl) => {
+        const statId = tableEl.getAttribute('data-statistic-id');
+        if (!statId) return;
+        const data = statMap.get(statId);
 
-      const newHtml = buildTableHtmlFromStatistic(data, statId);
-      const wrapper = document.createElement('div');
-      wrapper.innerHTML = newHtml;
-      const newTable = wrapper.firstElementChild;
-      if (newTable && newTable.outerHTML !== tableEl.outerHTML) {
-        tableEl.replaceWith(newTable);
-        changed = true;
+        // If statistic was removed, drop the table from the document
+        if (!data && existingIds.size > 0 && !existingIds.has(statId)) {
+          tableEl.remove();
+          changed = true;
+          return;
+        }
+
+        if (!data) return;
+
+        const newHtml = buildTableHtmlFromStatistic(data, statId);
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = newHtml;
+        const newTable = wrapper.firstElementChild;
+        if (newTable && newTable.outerHTML !== tableEl.outerHTML) {
+          tableEl.replaceWith(newTable);
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        const updatedContent = docDom.body.innerHTML;
+        setContent(updatedContent);
+        setDoc((prev) => prev ? { ...prev, content: updatedContent } : prev);
+        await saveDocument(updatedContent);
       }
-    });
-
-    if (changed) {
-      const updatedContent = docDom.body.innerHTML;
-      setContent(updatedContent);
-      setDoc((prev) => prev ? { ...prev, content: updatedContent } : prev);
-      await saveDocument(updatedContent);
+    } finally {
+      isSyncingStatistics.current = false;
     }
-
-    isSyncingStatistics.current = false;
   }, [buildTableHtmlFromStatistic, content, projectId, saveDocument]);
 
   // After initial load, refresh document tables from Statistics once
@@ -371,6 +370,14 @@ export default function DocumentPage() {
     };
     window.addEventListener('focus', handler);
     return () => window.removeEventListener('focus', handler);
+  }, [syncDocumentWithStatistics]);
+
+  // Periodic sync (fallback) to catch changes while window stays focused
+  useEffect(() => {
+    const interval = setInterval(() => {
+      syncDocumentWithStatistics();
+    }, 20000);
+    return () => clearInterval(interval);
   }, [syncDocumentWithStatistics]);
 
   // Debounced save
