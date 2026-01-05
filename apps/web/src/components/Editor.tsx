@@ -686,8 +686,10 @@ export default function Editor({
         <div 
           className={`editor-page ${settings.viewMode === 'pages' ? 'page-view' : 'scroll-view'}`}
           style={settings.viewMode === 'pages' ? {
-            width: '100%',
+            width: pageWidth,
+            minWidth: pageWidth,
             maxWidth: pageWidth,
+            margin: '0 auto',
             minHeight: pageHeight,
             padding: `${settings.marginTop}mm ${settings.marginRight}mm ${settings.marginBottom}mm ${settings.marginLeft}mm`,
             lineHeight: settings.lineHeight,
