@@ -443,8 +443,8 @@ export default function TiptapEditor({
       // Insert table first
       editor.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
 
-      // Wait for DOM update
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Wait for DOM update and additional render cycles
+      await new Promise(resolve => setTimeout(resolve, 250));
 
       // Find the newly created table without data-statistic-id
       const { state } = editor;
@@ -457,18 +457,40 @@ export default function TiptapEditor({
           const pos = $from.before(depth);
           const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
           
-          // DEBUG: Log table structure
+          // DEBUG: Log table structure WITH DETAILED ANALYSIS
           if (tableElement) {
-            console.log('TABLE STRUCTURE DEBUG:', {
-              hasColgroup: !!tableElement.querySelector('colgroup'),
-              colElements: tableElement.querySelectorAll('col').length,
-              tableHTML: tableElement.outerHTML.substring(0, 500),
-              innerElements: {
-                colgroup: tableElement.querySelector('colgroup')?.outerHTML,
-                firstCol: tableElement.querySelector('col')?.outerHTML,
-                firstCell: tableElement.querySelector('td, th')?.outerHTML,
+            const colgroup = tableElement.querySelector('colgroup');
+            const cols = tableElement.querySelectorAll('col');
+            const firstCell = tableElement.querySelector('td, th');
+            const firstCellHTML = firstCell?.outerHTML || 'NO CELL';
+            
+            console.log('═══ TABLE STRUCTURE DEBUG ═══', {
+              hasColgroupTag: !!colgroup,
+              colgroupElement: colgroup?.outerHTML.substring(0, 200),
+              numberOfCols: cols.length,
+              colElements: Array.from(cols).map(col => ({
+                style: col.getAttribute('style'),
+                width: col.style.width,
+                minWidth: col.style.minWidth,
+              })),
+              firstCellHTML: firstCellHTML.substring(0, 200),
+              tableStyle: tableElement.getAttribute('style'),
+              tableClassList: tableElement.className,
+              wrapper: {
+                hasWrapper: !!tableElement.parentElement?.classList.contains('tableWrapper'),
+                wrapperClass: tableElement.parentElement?.className,
               }
             });
+            
+            // CRITICAL: Check if colgroup is in DOM tree
+            if (colgroup) {
+              const colgroupParent = colgroup.parentElement;
+              console.log('Colgroup parent element:', {
+                tagName: colgroupParent?.tagName,
+                isTable: colgroupParent?.tagName === 'TABLE',
+                displayStyle: colgroupParent?.style.display,
+              });
+            }
           }
           
           // Only process if no data-statistic-id

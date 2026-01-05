@@ -10,63 +10,40 @@ export const CustomTableHeader = TableHeader.extend({
           return element.style.backgroundColor || element.getAttribute('data-bgcolor') || null;
         },
         renderHTML: (attributes) => {
-          return {};  // Handled in combined style below
+          if (!attributes.backgroundColor) {
+            return {};
+          }
+          return {
+            'data-bgcolor': attributes.backgroundColor,
+            style: `background-color: ${attributes.backgroundColor}`,
+          };
         },
       },
       textAlign: {
         default: null,
         parseHTML: (element) => element.style.textAlign || null,
         renderHTML: (attributes) => {
-          return {};  // Handled in combined style below
+          if (!attributes.textAlign || attributes.textAlign === 'left') {
+            return {};
+          }
+          return {
+            style: `text-align: ${attributes.textAlign}`,
+          };
         },
       },
       verticalAlign: {
         default: null,
         parseHTML: (element) => element.style.verticalAlign || null,
         renderHTML: (attributes) => {
-          return {};  // Handled in combined style below
+          if (!attributes.verticalAlign || attributes.verticalAlign === 'top') {
+            return {};
+          }
+          return {
+            style: `vertical-align: ${attributes.verticalAlign}`,
+          };
         },
       },
     };
-  },
-
-  renderHTML({ node, HTMLAttributes }) {
-    const attrs = node.attrs;
-    const styles: string[] = [];
-    
-    if (attrs.backgroundColor) {
-      styles.push(`background-color: ${attrs.backgroundColor}`);
-    }
-    if (attrs.textAlign && attrs.textAlign !== 'left') {
-      styles.push(`text-align: ${attrs.textAlign}`);
-    }
-    if (attrs.verticalAlign && attrs.verticalAlign !== 'top') {
-      styles.push(`vertical-align: ${attrs.verticalAlign}`);
-    }
-    
-    // ВАЖНО: Сначала берем существующий style из HTMLAttributes (может содержать TipTap стили)
-    const existingStyle = HTMLAttributes.style || '';
-    const newStyle = styles.join('; ');
-    const combinedStyle = [existingStyle, newStyle].filter(s => s).join('; ');
-    
-    const combinedAttrs: Record<string, any> = {
-      ...HTMLAttributes,
-      ...(combinedStyle ? { style: combinedStyle } : {}),
-      ...(attrs.backgroundColor ? { 'data-bgcolor': attrs.backgroundColor } : {}),
-    };
-    
-    // КРИТИЧНО: сохраняем colwidth для ресайза
-    if (attrs.colwidth) {
-      combinedAttrs.colwidth = attrs.colwidth;
-    }
-    if (attrs.colspan) {
-      combinedAttrs.colspan = attrs.colspan;
-    }
-    if (attrs.rowspan) {
-      combinedAttrs.rowspan = attrs.rowspan;
-    }
-    
-    return ['th', combinedAttrs, 0];
   },
 });
 
