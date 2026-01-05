@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    dependencies:
+      tiptap-pagination-plus:
+        specifier: ^3.0.3
+        version: 3.0.3(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))(@tiptap/pm@3.14.0)
 
   apps/api:
     dependencies:
