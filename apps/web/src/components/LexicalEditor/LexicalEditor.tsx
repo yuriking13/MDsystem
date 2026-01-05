@@ -79,6 +79,8 @@ export default function LexicalEditor({
       table: 'lexical-table',
       tableCell: 'lexical-table-cell',
       tableCellHeader: 'lexical-table-cell-header',
+      code: 'lexical-code-block',
+      quote: 'lexical-quote',
     },
     onError,
     nodes: [
@@ -107,35 +109,41 @@ export default function LexicalEditor({
   };
 
   return (
-    <div className="lexical-editor-card">
+    <div className="lexical-editor-wrapper">
       <LexicalComposer initialConfig={initialConfig}>
+        {/* Fixed toolbar */}
         {editable && (
-          <ToolbarPlugin
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-            onInsertCitation={onInsertCitation}
-            onImportStatistic={onImportStatistic}
-          />
+          <div className="lexical-toolbar-container">
+            <ToolbarPlugin
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+              onInsertCitation={onInsertCitation}
+              onImportStatistic={onImportStatistic}
+            />
+          </div>
         )}
         
-        <div className={`lexical-editor-scroll ${viewMode === 'pages' ? 'pages-layout' : 'scroll-layout'}`}>
-          {viewMode === 'pages' ? (
-            <PagesPlugin>
-              <RichTextPlugin
-                contentEditable={<ContentEditable className="lexical-content" />}
-                placeholder={<div className="lexical-placeholder">Начните писать...</div>}
-                ErrorBoundary={LexicalErrorBoundary}
-              />
-            </PagesPlugin>
-          ) : (
-            <div className="lexical-scroll-container">
-              <RichTextPlugin
-                contentEditable={<ContentEditable className="lexical-content" />}
-                placeholder={<div className="lexical-placeholder">Начните писать...</div>}
-                ErrorBoundary={LexicalErrorBoundary}
-              />
-            </div>
-          )}
+        {/* Scrollable content area */}
+        <div className="lexical-content-wrapper">
+          <div className={`lexical-editor-scroll ${viewMode === 'pages' ? 'pages-layout' : 'scroll-layout'}`}>
+            {viewMode === 'pages' ? (
+              <PagesPlugin>
+                <RichTextPlugin
+                  contentEditable={<ContentEditable className="lexical-content" />}
+                  placeholder={<div className="lexical-placeholder">Начните писать...</div>}
+                  ErrorBoundary={LexicalErrorBoundary}
+                />
+              </PagesPlugin>
+            ) : (
+              <div className="lexical-scroll-container">
+                <RichTextPlugin
+                  contentEditable={<ContentEditable className="lexical-content" />}
+                  placeholder={<div className="lexical-placeholder">Начните писать...</div>}
+                  ErrorBoundary={LexicalErrorBoundary}
+                />
+              </div>
+            )}
+          </div>
         </div>
 
         <HistoryPlugin />
