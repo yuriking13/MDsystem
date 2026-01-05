@@ -2426,12 +2426,14 @@ input::placeholder {
 .editor-scroll-area.pages-mode .editor-page.page-view {
   background: #ffffff !important;
   box-sizing: border-box;
-  width: 820px;
+  width: 794px;
   max-width: 100%;
+  margin: 0 auto 30px;
   box-shadow:
     0 4px 25px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(0, 0, 0, 0.08);
-  margin-bottom: 30px;
+  position: relative;
+  overflow: visible;
 }
 
 .editor-scroll-area.pages-mode .editor-page.page-view .editor-content-area {
@@ -2447,6 +2449,22 @@ input::placeholder {
   min-height: inherit;
   padding: 0 !important;
   margin: 0 !important;
+  
+  /* Prevent content from breaking across page boundaries */
+  column-break-inside: avoid;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+/* Prevent elements from breaking across pages */
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap p,
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap h1,
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap h2,
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap h3,
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap table,
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap .chart-node-wrapper {
+  page-break-inside: avoid;
+  break-inside: avoid;
 }
 
 @media (max-width: 900px) {
@@ -2465,9 +2483,9 @@ input::placeholder {
   background: linear-gradient(180deg, #3a4a6a 0%, #2a3a5a 50%, #3a4a6a 100%);
   padding: 40px 20px;
   min-height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: block;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* The white "paper" container */
