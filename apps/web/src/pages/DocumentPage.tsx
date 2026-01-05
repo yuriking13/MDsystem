@@ -109,9 +109,17 @@ export default function DocumentPage() {
   }, [projectId, docId]);
 
   // Парсинг таблиц и графиков из HTML контента
-  const parseStatisticsFromContent = useCallback((htmlContent: string) => {
+  const parseStatisticsFromContent = useCallback((htmlContent: string): { 
+    tables: Array<{ id: string; title?: string; tableData: Record<string, any> }>;
+    charts: Array<{ id: string; title?: string; config: Record<string, any>; tableData?: Record<string, any> }>;
+  } => {
+    // Защита от undefined/null контента
+    if (!htmlContent) {
+      return { tables: [], charts: [] };
+    }
+    
     const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent || "<div></div>", "text/html");
+    const doc = parser.parseFromString(htmlContent, "text/html");
     
     const tables: Array<{ id: string; title?: string; tableData: Record<string, any> }> = [];
     const charts: Array<{ id: string; title?: string; config: Record<string, any>; tableData?: Record<string, any> }> = [];
@@ -187,7 +195,10 @@ export default function DocumentPage() {
         await apiUpdateDocument(projectId, docId, { content: newContent });
         
         // Sync statistics (tables and charts) from document content
-        const { tables, charts } = parseStatisticsFromContent(newContent);
+        const result = parseStatisticsFromContent(newContent);
+        const tables = result?.tables || [];
+        const charts = result?.charts || [];
+        
         if (tables.length > 0 || charts.length > 0) {
           try {
             await apiSyncStatistics(projectId, {

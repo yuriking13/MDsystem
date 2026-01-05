@@ -466,6 +466,17 @@ export async function apiReorderDocuments(
   );
 }
 
+export async function apiRenumberCitations(
+  projectId: string
+): Promise<{ ok: boolean; renumbered: number; documents: Document[] }> {
+  return apiFetch<{ ok: boolean; renumbered: number; documents: Document[] }>(
+    `/api/projects/${projectId}/renumber-citations`,
+    {
+      method: "POST",
+    }
+  );
+}
+
 export async function apiDeleteDocument(
   projectId: string,
   docId: string

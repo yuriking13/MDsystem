@@ -254,6 +254,24 @@
   outline-offset: 1px;
 }
 
+/* Citation highlight animation - при переходе из списка литературы */
+.tiptap-editor .citation-ref.citation-highlight {
+  background: rgba(59, 130, 246, 0.4);
+  animation: citation-pulse 0.5s ease-in-out 3;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+}
+
+@keyframes citation-pulse {
+  0%, 100% {
+    background: rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.6);
+  }
+  50% {
+    background: rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 4px rgba(59, 130, 246, 0.3);
+  }
+}
+
 /* GOST style headings - centered, no dot */
 .gost-style .tiptap-editor h1,
 .gost-style .tiptap-editor h2,
@@ -425,6 +443,19 @@
   font-size: 11px;
 }
 
+/* Кликабельный номер цитаты - переход в текст */
+.bib-number-clickable {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.bib-number-clickable:hover {
+  background: rgba(75, 116, 255, 0.2);
+  color: #6d8aff;
+}
+
 .bib-content {
   flex: 1;
   color: #a9b7da;
@@ -588,7 +619,8 @@
   border-collapse: collapse !important;
   width: 100% !important;
   margin: 1em 0 !important;
-  table-layout: fixed !important;
+  /* Убираем table-layout: fixed чтобы работал resize */
+  table-layout: auto;
   border: 2px solid #1e293b !important;
 }
 
@@ -600,8 +632,8 @@
 .tiptap-table th {
   border: 1px solid #1e293b !important;
   padding: 8px 12px !important;
-  text-align: left !important;
-  vertical-align: top !important;
+  text-align: left;
+  vertical-align: top;
   position: relative;
   min-width: 50px;
 }
@@ -609,17 +641,36 @@
 .tiptap-editor table th,
 .tiptap-editor .tiptap table th,
 .tiptap-table th {
-  background: #f1f5f9 !important;
+  background: #f1f5f9;
   font-weight: 600 !important;
   color: #1e293b !important;
   border: 1px solid #1e293b !important;
 }
 
+/* Ячейки без кастомного цвета - белый фон */
 .tiptap-editor table td,
 .tiptap-editor .tiptap table td,
 .tiptap-table td {
-  background: white !important;
+  background: white;
   color: #1e293b !important;
+}
+
+/* Ячейки с кастомным цветом - разрешаем inline style переопределять */
+.tiptap-editor table td[data-bgcolor],
+.tiptap-editor table th[data-bgcolor],
+.tiptap-editor .tiptap table td[data-bgcolor],
+.tiptap-editor .tiptap table th[data-bgcolor],
+.tiptap-table td[data-bgcolor],
+.tiptap-table th[data-bgcolor] {
+  background: unset;
+}
+
+/* Ячейки с inline style background */
+.tiptap-editor table td[style*="background"],
+.tiptap-editor table th[style*="background"],
+.tiptap-editor .tiptap table td[style*="background"],
+.tiptap-editor .tiptap table th[style*="background"] {
+  background: unset;
 }
 
 /* Table cell selection - improved visibility */
@@ -637,36 +688,23 @@
 .tiptap-editor table th:focus {
   outline: 2px solid #2563eb !important;
   outline-offset: -1px;
-  background: rgba(59, 130, 246, 0.1) !important;
 }
 
 /* Table header row styling - protected header */
-.tiptap-editor table tr:first-child th,
-.tiptap-editor table thead th {
-  background: #e2e8f0 !important;
+.tiptap-editor table tr:first-child th:not([data-bgcolor]),
+.tiptap-editor table thead th:not([data-bgcolor]) {
+  background: #e2e8f0;
   font-weight: 700 !important;
   border-bottom: 2px solid #1e293b !important;
 }
 
-/* Row hover for better UX */
-.tiptap-editor table tr:hover td {
-  background: rgba(0, 0, 0, 0.02) !important;
+/* Row hover for better UX - only for cells without custom background */
+.tiptap-editor table tr:hover td:not([data-bgcolor]):not([style*="background"]) {
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .tiptap-editor table tr:hover td.selectedCell {
   background: rgba(59, 130, 246, 0.35) !important;
-}
-
-/* Custom cell background colors - using inline styles */
-.tiptap-editor table td[style*="background"],
-.tiptap-editor table th[style*="background"] {
-  /* Allow inline background-color to override defaults */
-}
-
-/* Override default white background when cell has custom color */
-.tiptap-editor table td[data-bgcolor]:not([data-bgcolor=""]),
-.tiptap-editor table th[data-bgcolor]:not([data-bgcolor=""]) {
-  background: inherit !important;
 }
 
 /* Table cell with custom color class */
@@ -677,19 +715,25 @@
 .tiptap-editor table .cell-purple { background: rgba(168, 85, 247, 0.15) !important; }
 .tiptap-editor table .cell-gray { background: rgba(100, 116, 139, 0.15) !important; }
 
-/* Table resize handles - TipTap specific */
+/* ============================================
+   TABLE RESIZE - TipTap specific
+   ============================================ */
+
+/* Table wrapper для скролла */
 .tiptap-editor .tableWrapper {
   overflow-x: auto;
   margin: 1em 0;
+  position: relative;
 }
 
-/* Remove table-layout fixed to allow resize */
-.tiptap-editor table.resizable,
+/* Таблица внутри wrapper - разрешаем resize */
 .tiptap-editor .tableWrapper table {
-  table-layout: auto !important;
+  table-layout: auto;
+  overflow: visible;
 }
 
-.tiptap-editor table .column-resize-handle,
+/* Resize handle для колонок */
+.tiptap-editor .column-resize-handle,
 .tiptap-table .column-resize-handle,
 .tableWrapper .column-resize-handle {
   position: absolute;
@@ -700,24 +744,35 @@
   background: #3b82f6;
   cursor: col-resize;
   z-index: 20;
+  pointer-events: auto;
 }
 
+/* Ячейки должны быть relative для resize handle */
 .tiptap-editor table td,
 .tiptap-editor table th {
   position: relative;
+  overflow: visible;
 }
 
-/* Resize cursor when hovering resize handle */
-.tiptap-editor .resize-cursor {
-  cursor: col-resize;
+/* Resize cursor при перетаскивании */
+.tiptap-editor .resize-cursor,
+.tiptap-editor.resize-cursor {
+  cursor: col-resize !important;
 }
 
-/* Show resize handle on hover */
+/* Активный resize handle */
 .tiptap-editor table td:hover .column-resize-handle,
 .tiptap-editor table th:hover .column-resize-handle,
 .tiptap-table td:hover .column-resize-handle,
 .tiptap-table th:hover .column-resize-handle {
   background: #2563eb;
+}
+
+/* Во время resize - показываем handle ярче */
+.tiptap-editor .column-resize-handle:active,
+.tiptap-editor .column-resize-handle:hover {
+  background: #1d4ed8;
+  width: 5px;
 }
 
 /* Table numbering */

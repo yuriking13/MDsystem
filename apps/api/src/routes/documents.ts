@@ -310,6 +310,138 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // POST /api/projects/:projectId/renumber-citations - перенумерация цитат после изменения порядка документов
+  fastify.post(
+    "/projects/:projectId/renumber-citations",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+
+      const access = await checkProjectAccess(paramsP.data.projectId, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+
+      const projectId = paramsP.data.projectId;
+
+      // 1. Получить все документы в правильном порядке
+      const docsRes = await pool.query(
+        `SELECT id, content FROM documents 
+         WHERE project_id = $1 
+         ORDER BY order_index, created_at`,
+        [projectId]
+      );
+
+      // 2. Получить все цитаты проекта с article_id
+      const citationsRes = await pool.query(
+        `SELECT c.id, c.document_id, c.article_id, c.inline_number
+         FROM citations c
+         JOIN documents d ON d.id = c.document_id
+         WHERE d.project_id = $1
+         ORDER BY d.order_index, c.inline_number`,
+        [projectId]
+      );
+
+      // 3. Создаём глобальную нумерацию: article_id -> глобальный номер
+      const articleToGlobalNumber = new Map<string, number>();
+      let globalNumber = 1;
+      
+      // Обходим документы в порядке их order_index
+      for (const doc of docsRes.rows) {
+        // Получаем цитаты этого документа
+        const docCitations = citationsRes.rows.filter(c => c.document_id === doc.id);
+        
+        // Сортируем по inline_number (порядок появления в документе)
+        docCitations.sort((a, b) => a.inline_number - b.inline_number);
+        
+        for (const citation of docCitations) {
+          if (!articleToGlobalNumber.has(citation.article_id)) {
+            articleToGlobalNumber.set(citation.article_id, globalNumber);
+            globalNumber++;
+          }
+        }
+      }
+
+      // 4. Обновляем inline_number для всех цитат
+      const oldToNewMapping = new Map<string, { oldNum: number; newNum: number; docId: string }>();
+      
+      for (const citation of citationsRes.rows) {
+        const newNum = articleToGlobalNumber.get(citation.article_id);
+        if (newNum !== undefined && newNum !== citation.inline_number) {
+          oldToNewMapping.set(citation.id, {
+            oldNum: citation.inline_number,
+            newNum,
+            docId: citation.document_id,
+          });
+          
+          await pool.query(
+            `UPDATE citations SET inline_number = $1 WHERE id = $2`,
+            [newNum, citation.id]
+          );
+        }
+      }
+
+      // 5. Обновляем контент документов - заменяем номера цитат в HTML
+      for (const doc of docsRes.rows) {
+        let content = doc.content || '';
+        let updated = false;
+        
+        // Получаем все изменения для этого документа
+        const docChanges = Array.from(oldToNewMapping.entries())
+          .filter(([, v]) => v.docId === doc.id)
+          .map(([citationId, v]) => ({ citationId, ...v }));
+        
+        if (docChanges.length === 0) continue;
+
+        // Заменяем data-citation-number и текст [n] для каждой цитаты
+        for (const change of docChanges) {
+          // Заменяем data-citation-number в атрибуте
+          const oldAttrPattern = new RegExp(
+            `(<span[^>]*data-citation-id="${change.citationId}"[^>]*)data-citation-number="${change.oldNum}"`,
+            'g'
+          );
+          content = content.replace(oldAttrPattern, `$1data-citation-number="${change.newNum}"`);
+          
+          // Заменяем текст [n] внутри span с этим citation-id
+          const oldTextPattern = new RegExp(
+            `(<span[^>]*data-citation-id="${change.citationId}"[^>]*>)\\[${change.oldNum}\\](<\\/span>)`,
+            'g'
+          );
+          content = content.replace(oldTextPattern, `$1[${change.newNum}]$2`);
+          
+          updated = true;
+        }
+
+        if (updated) {
+          await pool.query(
+            `UPDATE documents SET content = $1, updated_at = NOW() WHERE id = $2`,
+            [content, doc.id]
+          );
+        }
+      }
+
+      // 6. Возвращаем обновлённые документы
+      const updatedDocsRes = await pool.query(
+        `SELECT id, title, content, order_index, created_at, updated_at
+         FROM documents
+         WHERE project_id = $1
+         ORDER BY order_index, created_at`,
+        [projectId]
+      );
+
+      return { 
+        ok: true, 
+        renumbered: oldToNewMapping.size,
+        documents: updatedDocsRes.rows,
+      };
+    }
+  );
+
   // POST /api/projects/:projectId/documents/:docId/citations - добавить цитату
   fastify.post(
     "/projects/:projectId/documents/:docId/citations",
