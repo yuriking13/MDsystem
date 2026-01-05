@@ -287,11 +287,16 @@ export default function DocumentPage() {
         table_data: stat.table_data
       });
       
-      // Отмечаем статистику как используемую в этом документе
-      try {
-        await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
-      } catch (err) {
-        console.error("Failed to mark statistic as used:", err);
+      // Отмечаем статистику как используемую в этом документе (только если ID валидный UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(stat.id)) {
+        try {
+          await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
+        } catch (err) {
+          console.error("Failed to mark statistic as used:", err);
+        }
+      } else {
+        console.warn("Skipping usage marking - invalid statistic ID:", stat.id);
       }
     } else {
       console.warn("Chart insertion function not available");
@@ -344,11 +349,16 @@ export default function DocumentPage() {
     if (fn) {
       fn(tableData, stat.title);
       
-      // Отмечаем статистику как используемую
-      try {
-        await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
-      } catch (err) {
-        console.error("Failed to mark statistic as used:", err);
+      // Отмечаем статистику как используемую (только если ID валидный UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(stat.id)) {
+        try {
+          await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
+        } catch (err) {
+          console.error("Failed to mark statistic as used:", err);
+        }
+      } else {
+        console.warn("Skipping usage marking - invalid statistic ID:", stat.id);
       }
     } else {
       console.warn("Table insertion function not available");

@@ -1049,12 +1049,19 @@ export default function ProjectDetailPage() {
                       
                       <div className="stat-card-preview">
                         {/* Режим графиков - показываем график */}
-                        {!showAsTable && stat.table_data && stat.config && (
+                        {!showAsTable && tableData && stat.config && stat.config.type && (
                           <ChartFromTable 
-                            tableData={stat.table_data as any} 
+                            tableData={tableData} 
                             config={stat.config as any} 
                             height={180} 
                           />
+                        )}
+                        
+                        {/* Если нет конфигурации в режиме графика */}
+                        {!showAsTable && tableData && (!stat.config || !stat.config.type) && (
+                          <div className="stat-no-data" style={{ color: '#ff6b6b' }}>
+                            ⚠️ Конфигурация графика отсутствует или повреждена
+                          </div>
                         )}
                         
                         {/* Режим таблиц - показываем исходную таблицу данных */}
