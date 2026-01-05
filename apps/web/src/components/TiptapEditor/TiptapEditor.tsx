@@ -343,7 +343,7 @@ export default function TiptapEditor({
     };
     
     // Insert table function - improved version
-    const insertTable = (tableData: { headers: string[]; rows: string[][] }, title?: string) => {
+    const insertTable = (tableData: { headers: string[]; rows: string[][] }, title?: string, statisticId?: string) => {
       if (!editor.isEditable || !editor.view || editor.isDestroyed) {
         console.warn('Editor is not ready for table insertion');
         return;
@@ -362,7 +362,11 @@ export default function TiptapEditor({
       const numRows = dataRows.length + 1; // +1 for header row
       
       // Build table HTML manually for more reliable insertion
-      let tableHtml = '<table class="tiptap-table">';
+      let tableHtml = '<table class="tiptap-table"';
+      if (statisticId) {
+        tableHtml += ` data-statistic-id="${statisticId}"`;
+      }
+      tableHtml += '>';
       
       // Header row
       tableHtml += '<tr>';

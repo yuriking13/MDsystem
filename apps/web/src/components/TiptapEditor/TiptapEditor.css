@@ -744,7 +744,19 @@
   background: #3b82f6;
   cursor: col-resize;
   z-index: 20;
-  pointer-events: auto;
+  pointer-events: auto !important;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+}
+
+/* Показываем ручку при наведении на ячейку */
+.tiptap-editor table td:hover .column-resize-handle,
+.tiptap-editor table th:hover .column-resize-handle,
+.tiptap-table td:hover .column-resize-handle,
+.tiptap-table th:hover .column-resize-handle,
+.tiptap-editor .selectedCell .column-resize-handle {
+  opacity: 1;
+  background: #2563eb;
 }
 
 /* Ячейки должны быть relative для resize handle */
@@ -756,23 +768,18 @@
 
 /* Resize cursor при перетаскивании */
 .tiptap-editor .resize-cursor,
-.tiptap-editor.resize-cursor {
+.tiptap-editor.resize-cursor,
+.tiptap-editor.ProseMirror-resizing {
   cursor: col-resize !important;
-}
-
-/* Активный resize handle */
-.tiptap-editor table td:hover .column-resize-handle,
-.tiptap-editor table th:hover .column-resize-handle,
-.tiptap-table td:hover .column-resize-handle,
-.tiptap-table th:hover .column-resize-handle {
-  background: #2563eb;
 }
 
 /* Во время resize - показываем handle ярче */
 .tiptap-editor .column-resize-handle:active,
-.tiptap-editor .column-resize-handle:hover {
+.tiptap-editor .column-resize-handle:hover,
+.tiptap-editor .column-resize-handle.dragging {
+  opacity: 1 !important;
   background: #1d4ed8;
-  width: 5px;
+  width: 6px;
 }
 
 /* Table numbering */

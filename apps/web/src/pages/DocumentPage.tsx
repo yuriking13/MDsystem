@@ -124,9 +124,15 @@ export default function DocumentPage() {
     const tables: Array<{ id: string; title?: string; tableData: Record<string, any> }> = [];
     const charts: Array<{ id: string; title?: string; config: Record<string, any>; tableData?: Record<string, any> }> = [];
     
-    // Find tables
-    doc.querySelectorAll('table').forEach((table, index) => {
-      const tableId = table.getAttribute('data-table-id') || `table_${Date.now()}_${index}`;
+    // Find tables - only those with valid statistic IDs
+    doc.querySelectorAll('table[data-statistic-id]').forEach((table, index) => {
+      const tableId = table.getAttribute('data-statistic-id');
+      if (!tableId) return;
+      
+      // Validate UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(tableId)) return;
+      
       const headers: string[] = [];
       const rows: string[][] = [];
       
@@ -142,11 +148,6 @@ export default function DocumentPage() {
           rows.push(cells);
         }
       });
-      
-      // Set ID on table if not present
-      if (!table.getAttribute('data-table-id')) {
-        table.setAttribute('data-table-id', tableId);
-      }
       
       tables.push({
         id: tableId,
@@ -347,7 +348,7 @@ export default function DocumentPage() {
     const fn = (window as any).__editorInsertTable;
     
     if (fn) {
-      fn(tableData, stat.title);
+      fn(tableData, stat.title, stat.id);
       
       // Отмечаем статистику как используемую (только если ID валидный UUID)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
