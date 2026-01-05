@@ -228,6 +228,29 @@ export default function DocumentPage() {
     }
     setShowChartModal(false);
   }
+  
+  // Вставить таблицу из статистики
+  async function handleInsertTable(stat: ProjectStatistic) {
+    if (!stat.table_data || !projectId || !docId) return;
+    
+    setShowImportModal(false);
+    
+    const tableData = stat.table_data as TableData;
+    const fn = (window as any).__editorInsertTable;
+    
+    if (fn) {
+      fn(tableData, stat.title);
+      
+      // Отмечаем статистику как используемую
+      try {
+        await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
+      } catch (err) {
+        console.error("Failed to mark statistic as used:", err);
+      }
+    } else {
+      console.warn("Table insertion function not available");
+    }
+  }
 
   // Добавить цитату - всегда создаём новую запись (можно несколько цитат к одному источнику)
   async function handleAddCitation(article: Article) {
@@ -508,7 +531,7 @@ export default function DocumentPage() {
       {/* Модалка импорта из статистики */}
       {showImportModal && (
         <div className="modal-overlay" onClick={() => setShowImportModal(false)}>
-          <div className="modal" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()}>
+          <div className="modal" style={{ maxWidth: 800 }} onClick={(e) => e.stopPropagation()}>
             <div className="row space" style={{ marginBottom: 16 }}>
               <h3 style={{ margin: 0 }}>📥 Импорт из Статистики</h3>
               <button
@@ -520,53 +543,132 @@ export default function DocumentPage() {
             </div>
             
             <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
-              Выберите таблицу или график для вставки в документ
+              Выберите что вставить: таблицу с данными или график
             </p>
 
-            <div style={{ maxHeight: 450, overflow: "auto" }}>
+            <div style={{ maxHeight: 500, overflow: "auto" }}>
               {loadingStats ? (
                 <div className="muted">Загрузка...</div>
               ) : statistics.length === 0 ? (
                 <div className="muted" style={{ textAlign: 'center', padding: 40 }}>
-                  Нет доступных графиков.<br/>
+                  Нет доступных данных.<br/>
                   Создайте их в разделе Статистика проекта.
                 </div>
               ) : (
                 <div className="import-stats-list">
                   {statistics.map((stat) => {
                     const chartInfo = stat.chart_type ? CHART_TYPE_INFO[stat.chart_type as ChartType] : null;
+                    const tableData = stat.table_data as TableData | null;
                     
                     return (
                       <div
                         key={stat.id}
-                        className="import-stat-item"
-                        onClick={() => handleInsertStatistic(stat)}
+                        className="import-stat-item-expanded"
+                        style={{
+                          background: 'rgba(0,0,0,0.2)',
+                          borderRadius: 12,
+                          padding: 16,
+                          marginBottom: 16,
+                        }}
                       >
-                        <div className="import-stat-preview">
-                          {stat.table_data && stat.config && (
-                            <ChartFromTable 
-                              tableData={stat.table_data as TableData} 
-                              config={stat.config as any} 
-                              height={100} 
-                            />
-                          )}
-                        </div>
-                        <div className="import-stat-info">
-                          <div className="import-stat-title">
+                        <div className="import-stat-header" style={{ marginBottom: 12 }}>
+                          <div className="import-stat-title" style={{ fontSize: 15, fontWeight: 600 }}>
                             {chartInfo?.icon || '📊'} {stat.title || 'Без названия'}
                           </div>
-                          <div className="import-stat-type">
-                            {chartInfo?.name || 'График'}
-                          </div>
                           {stat.description && (
-                            <div className="import-stat-desc muted">
+                            <div className="import-stat-desc muted" style={{ fontSize: 12, marginTop: 4 }}>
                               {stat.description}
                             </div>
                           )}
                         </div>
-                        <button className="btn import-stat-btn">
-                          Вставить
-                        </button>
+                        
+                        <div className="row gap" style={{ alignItems: 'flex-start' }}>
+                          {/* Таблица */}
+                          {tableData && (
+                            <div style={{ flex: 1, background: 'white', borderRadius: 8, padding: 12 }}>
+                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>
+                                Таблица ({tableData.rows?.length || 0} строк)
+                              </div>
+                              <div style={{ maxHeight: 150, overflow: 'auto', fontSize: 11 }}>
+                                <table style={{ 
+                                  width: '100%', 
+                                  borderCollapse: 'collapse',
+                                  color: '#1e293b',
+                                }}>
+                                  <thead>
+                                    <tr>
+                                      {tableData.headers?.map((h, i) => (
+                                        <th key={i} style={{ 
+                                          border: '1px solid #d1d5db', 
+                                          padding: '4px 8px',
+                                          background: '#f3f4f6',
+                                          fontWeight: 600,
+                                        }}>
+                                          {h}
+                                        </th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {tableData.rows?.slice(0, 5).map((row, i) => (
+                                      <tr key={i}>
+                                        {row.map((cell, j) => (
+                                          <td key={j} style={{ 
+                                            border: '1px solid #d1d5db', 
+                                            padding: '4px 8px',
+                                          }}>
+                                            {cell}
+                                          </td>
+                                        ))}
+                                      </tr>
+                                    ))}
+                                    {(tableData.rows?.length || 0) > 5 && (
+                                      <tr>
+                                        <td colSpan={tableData.headers?.length || 1} style={{
+                                          textAlign: 'center',
+                                          color: '#64748b',
+                                          padding: 4,
+                                        }}>
+                                          ... ещё {(tableData.rows?.length || 0) - 5} строк
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </tbody>
+                                </table>
+                              </div>
+                              <button 
+                                className="btn secondary"
+                                style={{ marginTop: 12, width: '100%' }}
+                                onClick={() => handleInsertTable(stat)}
+                              >
+                                📋 Вставить таблицу
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* График */}
+                          {stat.config && tableData && (
+                            <div style={{ flex: 1, background: 'rgba(0,0,0,0.3)', borderRadius: 8, padding: 12 }}>
+                              <div style={{ fontSize: 11, color: '#64748b', marginBottom: 8 }}>
+                                {chartInfo?.name || 'График'}
+                              </div>
+                              <div style={{ height: 150 }}>
+                                <ChartFromTable 
+                                  tableData={tableData} 
+                                  config={stat.config as any} 
+                                  height={150} 
+                                />
+                              </div>
+                              <button 
+                                className="btn"
+                                style={{ marginTop: 12, width: '100%' }}
+                                onClick={() => handleInsertStatistic(stat)}
+                              >
+                                📊 Вставить график
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
