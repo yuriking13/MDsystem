@@ -532,11 +532,54 @@
   color: #1e293b !important;
 }
 
-/* Table cell selection */
+/* Table cell selection - improved visibility */
 .tiptap-editor table .selectedCell,
-.tiptap-table .selectedCell {
-  background: rgba(59, 130, 246, 0.15) !important;
+.tiptap-table .selectedCell,
+.tiptap-editor table td.selectedCell,
+.tiptap-editor table th.selectedCell {
+  background: rgba(59, 130, 246, 0.3) !important;
+  outline: 2px solid #3b82f6 !important;
+  outline-offset: -2px;
 }
+
+/* Current cell focus */
+.tiptap-editor table td:focus,
+.tiptap-editor table th:focus {
+  outline: 2px solid #2563eb !important;
+  outline-offset: -1px;
+  background: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Table header row styling - protected header */
+.tiptap-editor table tr:first-child th,
+.tiptap-editor table thead th {
+  background: #e2e8f0 !important;
+  font-weight: 700 !important;
+  border-bottom: 2px solid #1e293b !important;
+}
+
+/* Row hover for better UX */
+.tiptap-editor table tr:hover td {
+  background: rgba(0, 0, 0, 0.02) !important;
+}
+
+.tiptap-editor table tr:hover td.selectedCell {
+  background: rgba(59, 130, 246, 0.35) !important;
+}
+
+/* Custom cell background colors */
+.tiptap-editor table td[data-bgcolor],
+.tiptap-editor table th[data-bgcolor] {
+  background-color: attr(data-bgcolor) !important;
+}
+
+/* Table cell with custom color class */
+.tiptap-editor table .cell-blue { background: rgba(59, 130, 246, 0.15) !important; }
+.tiptap-editor table .cell-green { background: rgba(34, 197, 94, 0.15) !important; }
+.tiptap-editor table .cell-yellow { background: rgba(234, 179, 8, 0.15) !important; }
+.tiptap-editor table .cell-red { background: rgba(239, 68, 68, 0.15) !important; }
+.tiptap-editor table .cell-purple { background: rgba(168, 85, 247, 0.15) !important; }
+.tiptap-editor table .cell-gray { background: rgba(100, 116, 139, 0.15) !important; }
 
 /* Table resize handles - TipTap specific */
 .tiptap-editor .tableWrapper {

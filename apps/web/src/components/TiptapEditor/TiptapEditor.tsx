@@ -18,6 +18,7 @@ import { PaginationPlus } from 'tiptap-pagination-plus';
 
 import TiptapToolbar from './TiptapToolbar';
 import DocumentOutline from './DocumentOutline';
+import PageSettingsModal, { type PageSettings } from './PageSettingsModal';
 import { ChartNode, insertChartIntoEditor, type ChartNodeAttrs } from './extensions/ChartNode';
 import { CitationMark, type CitationAttrs } from './extensions/CitationMark';
 import { TableFigureNumbering } from './extensions/TableFigureNumbering';
@@ -155,8 +156,40 @@ export default function TiptapEditor({
 }: TiptapEditorProps) {
   const [showOutline, setShowOutline] = useState(true);
   const [showBibliography, setShowBibliography] = useState(true);
+  const [showPageSettings, setShowPageSettings] = useState(false);
   const [headings, setHeadings] = useState<Array<{level: number; text: string; id: string}>>([]);
-  const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
+  const [currentStyle, setCurrentStyle] = useState<CitationStyle>(citationStyle);
+  const styleConfig = STYLE_CONFIGS[currentStyle] || STYLE_CONFIGS.gost;
+  
+  // Custom page settings (can override style defaults)
+  const [pageSettings, setPageSettings] = useState<PageSettings>({
+    marginTop: styleConfig.marginTop,
+    marginBottom: styleConfig.marginBottom,
+    marginLeft: styleConfig.marginLeft,
+    marginRight: styleConfig.marginRight,
+    fontSize: styleConfig.fontSize,
+    lineHeight: styleConfig.lineHeight,
+    paragraphIndent: styleConfig.paragraphIndent,
+    fontFamily: styleConfig.fontFamily,
+    textAlign: styleConfig.textAlign,
+  });
+  
+  // Update page settings when citation style changes
+  useEffect(() => {
+    const config = STYLE_CONFIGS[citationStyle];
+    setCurrentStyle(citationStyle);
+    setPageSettings({
+      marginTop: config.marginTop,
+      marginBottom: config.marginBottom,
+      marginLeft: config.marginLeft,
+      marginRight: config.marginRight,
+      fontSize: config.fontSize,
+      lineHeight: config.lineHeight,
+      paragraphIndent: config.paragraphIndent,
+      fontFamily: config.fontFamily,
+      textAlign: config.textAlign,
+    });
+  }, [citationStyle]);
   
   const editor = useEditor({
     extensions: [
@@ -269,56 +302,49 @@ export default function TiptapEditor({
       insertChartIntoEditor(editor, attrs);
     };
     
-    // Insert table function
+    // Insert table function - improved version
     const insertTable = (tableData: { headers: string[]; rows: string[][] }, title?: string) => {
-      // Use TipTap's built-in table insertion
-      const rows = tableData.rows?.length || 3;
-      const cols = tableData.headers?.length || 3;
+      // Validate data
+      const headers = tableData.headers || [];
+      const dataRows = tableData.rows || [];
       
-      editor.chain().focus().insertTable({ rows: rows + 1, cols, withHeaderRow: true }).run();
+      if (headers.length === 0 && dataRows.length === 0) {
+        console.warn('No table data to insert');
+        return;
+      }
       
-      // Fill in the data
-      setTimeout(() => {
-        // Get the table node and fill it
-        const { state } = editor;
-        let tablePos = -1;
-        
-        state.doc.descendants((node, pos) => {
-          if (node.type.name === 'table' && tablePos === -1) {
-            tablePos = pos;
-          }
-        });
-        
-        if (tablePos >= 0) {
-          // Fill headers
-          let cellIndex = 0;
-          const headers = tableData.headers || [];
-          const dataRows = tableData.rows || [];
-          
-          state.doc.nodesBetween(tablePos, state.doc.content.size, (node, pos) => {
-            if (node.type.name === 'tableHeader' || node.type.name === 'tableCell') {
-              const rowIdx = Math.floor(cellIndex / cols);
-              const colIdx = cellIndex % cols;
-              
-              let text = '';
-              if (rowIdx === 0 && colIdx < headers.length) {
-                text = headers[colIdx];
-              } else if (rowIdx > 0 && rowIdx - 1 < dataRows.length && colIdx < dataRows[rowIdx - 1].length) {
-                text = dataRows[rowIdx - 1][colIdx];
-              }
-              
-              if (text) {
-                editor.chain()
-                  .setTextSelection(pos + 1)
-                  .insertContent(text)
-                  .run();
-              }
-              
-              cellIndex++;
-            }
-          });
+      const numCols = headers.length || (dataRows[0]?.length || 3);
+      const numRows = dataRows.length + 1; // +1 for header row
+      
+      // Build table HTML manually for more reliable insertion
+      let tableHtml = '<table class="tiptap-table">';
+      
+      // Header row
+      tableHtml += '<tr>';
+      for (let i = 0; i < numCols; i++) {
+        const headerText = headers[i] || `Колонка ${i + 1}`;
+        tableHtml += `<th>${headerText}</th>`;
+      }
+      tableHtml += '</tr>';
+      
+      // Data rows
+      for (let rowIdx = 0; rowIdx < dataRows.length; rowIdx++) {
+        const row = dataRows[rowIdx] || [];
+        tableHtml += '<tr>';
+        for (let colIdx = 0; colIdx < numCols; colIdx++) {
+          const cellText = row[colIdx] || '';
+          tableHtml += `<td>${cellText}</td>`;
         }
-      }, 100);
+        tableHtml += '</tr>';
+      }
+      
+      tableHtml += '</table>';
+      
+      // Insert the table
+      editor.chain()
+        .focus()
+        .insertContent(tableHtml)
+        .run();
     };
     
     (window as any).__editorInsertCitation = insertCitation;
@@ -387,13 +413,59 @@ export default function TiptapEditor({
     return <div className="tiptap-loading">Загрузка редактора...</div>;
   }
 
-  // CSS variables for styling based on citation style
+  // Apply page settings (custom or style defaults)
+  const handleApplyPageSettings = useCallback((settings: PageSettings) => {
+    setPageSettings(settings);
+    
+    // Update editor margins via PaginationPlus
+    if (editor) {
+      editor.chain()
+        .updateMargins({
+          top: settings.marginTop,
+          bottom: settings.marginBottom,
+          left: settings.marginLeft,
+          right: settings.marginRight,
+        })
+        .run();
+    }
+  }, [editor]);
+
+  // Apply style preset
+  const handleApplyStyle = useCallback((style: CitationStyle) => {
+    setCurrentStyle(style);
+    const config = STYLE_CONFIGS[style];
+    const newSettings: PageSettings = {
+      marginTop: config.marginTop,
+      marginBottom: config.marginBottom,
+      marginLeft: config.marginLeft,
+      marginRight: config.marginRight,
+      fontSize: config.fontSize,
+      lineHeight: config.lineHeight,
+      paragraphIndent: config.paragraphIndent,
+      fontFamily: config.fontFamily,
+      textAlign: config.textAlign,
+    };
+    setPageSettings(newSettings);
+    
+    if (editor) {
+      editor.chain()
+        .updateMargins({
+          top: config.marginTop,
+          bottom: config.marginBottom,
+          left: config.marginLeft,
+          right: config.marginRight,
+        })
+        .run();
+    }
+  }, [editor]);
+
+  // CSS variables for styling based on page settings
   const styleVars = {
-    '--editor-font-size': `${styleConfig.fontSize}pt`,
-    '--editor-line-height': styleConfig.lineHeight,
-    '--editor-paragraph-indent': styleConfig.paragraphIndent,
-    '--editor-font-family': styleConfig.fontFamily,
-    '--editor-text-align': styleConfig.textAlign,
+    '--editor-font-size': `${pageSettings.fontSize}pt`,
+    '--editor-line-height': pageSettings.lineHeight,
+    '--editor-paragraph-indent': pageSettings.paragraphIndent,
+    '--editor-font-family': pageSettings.fontFamily,
+    '--editor-text-align': pageSettings.textAlign,
   } as React.CSSProperties;
 
   return (
@@ -406,9 +478,10 @@ export default function TiptapEditor({
           onCreateChartFromTable={onCreateChartFromTable}
           onToggleOutline={() => setShowOutline(!showOutline)}
           onToggleBibliography={() => setShowBibliography(!showBibliography)}
+          onOpenPageSettings={() => setShowPageSettings(true)}
           showOutline={showOutline}
           showBibliography={showBibliography}
-          citationStyle={citationStyle}
+          citationStyle={currentStyle}
         />
       )}
       <div className="tiptap-main-area">
@@ -430,7 +503,7 @@ export default function TiptapEditor({
         {showBibliography && citations.length > 0 && (
           <div className="bibliography-sidebar">
             <div className="bibliography-header">
-              <span className="bibliography-title">📚 Список литературы ({citations.length})</span>
+              <span className="bibliography-title">Список литературы ({citations.length})</span>
               <button 
                 className="bibliography-close" 
                 onClick={() => setShowBibliography(false)}
@@ -483,6 +556,16 @@ export default function TiptapEditor({
           </div>
         )}
       </div>
+      
+      {/* Page Settings Modal */}
+      <PageSettingsModal
+        isOpen={showPageSettings}
+        onClose={() => setShowPageSettings(false)}
+        citationStyle={currentStyle}
+        currentSettings={pageSettings}
+        onApply={handleApplyPageSettings}
+        onApplyStyle={handleApplyStyle}
+      />
     </div>
   );
 }
