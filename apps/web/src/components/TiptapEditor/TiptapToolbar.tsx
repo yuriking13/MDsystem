@@ -1,21 +1,33 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Editor } from '@tiptap/react';
+import type { CitationStyle } from '../../lib/api';
+import { STYLE_CONFIGS } from './TiptapEditor';
 
 interface TiptapToolbarProps {
   editor: Editor;
   onInsertCitation?: () => void;
   onImportStatistic?: () => void;
+  onToggleOutline?: () => void;
+  onCreateChartFromTable?: (tableHtml: string) => void;
+  showOutline?: boolean;
+  citationStyle?: CitationStyle;
 }
 
 export default function TiptapToolbar({ 
   editor, 
   onInsertCitation,
-  onImportStatistic 
+  onImportStatistic,
+  onToggleOutline,
+  onCreateChartFromTable,
+  showOutline,
+  citationStyle = 'gost',
 }: TiptapToolbarProps) {
   const [showTableMenu, setShowTableMenu] = useState(false);
   const [showTableEditMenu, setShowTableEditMenu] = useState(false);
   const tableMenuRef = useRef<HTMLDivElement>(null);
   const tableEditMenuRef = useRef<HTMLDivElement>(null);
+
+  const styleConfig = STYLE_CONFIGS[citationStyle];
 
   // Close menus on outside click
   useEffect(() => {
@@ -100,14 +112,30 @@ export default function TiptapToolbar({
   };
 
   const setLink = () => {
-    const url = prompt('Введите URL:', 'https://');
-    if (url) {
+    const previousUrl = editor.getAttributes('link').href;
+    const url = prompt('Введите URL:', previousUrl || 'https://');
+    if (url === null) return;
+    
+    if (url === '') {
+      editor.chain().focus().unsetLink().run();
+    } else {
       editor.chain().focus().setLink({ href: url }).run();
     }
   };
 
   return (
     <div className="tiptap-toolbar">
+      {/* Outline toggle */}
+      <button 
+        style={btn(showOutline, showOutline ? 'rgba(75,116,255,0.2)' : undefined)} 
+        onClick={onToggleOutline}
+        title="Содержание документа"
+      >
+        📑
+      </button>
+
+      <div style={divider} />
+
       {/* Text formatting */}
       <button 
         style={btn(editor.isActive('bold'))} 
@@ -320,6 +348,53 @@ export default function TiptapToolbar({
               >
                 🗑 Удалить таблицу
               </button>
+
+              {onCreateChartFromTable && (
+                <>
+                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '6px 0' }} />
+                  <button 
+                    onClick={() => {
+                      // Get the table HTML from the editor
+                      const { state } = editor;
+                      const { from } = state.selection;
+                      let tableNode: any = null;
+                      
+                      state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
+                        if (node.type.name === 'table') {
+                          if (pos <= from && pos + node.nodeSize >= from) {
+                            tableNode = node;
+                          }
+                        }
+                      });
+                      
+                      if (tableNode) {
+                        // Create HTML from the table node
+                        const div = document.createElement('div');
+                        const tableEl = document.createElement('table');
+                        
+                        tableNode.content.forEach((row: any) => {
+                          const tr = document.createElement('tr');
+                          row.content.forEach((cell: any) => {
+                            const cellEl = document.createElement(cell.type.name === 'tableHeader' ? 'th' : 'td');
+                            cellEl.textContent = cell.textContent;
+                            tr.appendChild(cellEl);
+                          });
+                          tableEl.appendChild(tr);
+                        });
+                        
+                        div.appendChild(tableEl);
+                        onCreateChartFromTable(div.innerHTML);
+                      }
+                      setShowTableEditMenu(false);
+                    }}
+                    style={{...dropdownItemStyle, color: '#4ade80'}}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(74,222,128,0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    📊 Создать график
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
@@ -388,11 +463,28 @@ export default function TiptapToolbar({
         <button 
           style={btnWide('rgba(75,116,255,0.3)', '#4b74ff')} 
           onClick={onImportStatistic}
-          title="Импорт"
+          title="Импорт графика"
         >
           📊 Импорт
         </button>
       )}
+
+      {/* Style indicator */}
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span 
+          className="style-badge"
+          style={{
+            fontSize: '10px',
+            padding: '4px 8px',
+            background: 'rgba(75,116,255,0.1)',
+            borderRadius: '4px',
+            color: '#64748b',
+          }}
+          title={`Стиль: ${styleConfig.name}`}
+        >
+          {citationStyle.toUpperCase()}
+        </span>
+      </div>
     </div>
   );
 }
