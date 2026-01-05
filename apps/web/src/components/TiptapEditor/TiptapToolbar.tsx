@@ -493,12 +493,12 @@ export default function TiptapToolbar({
             <button 
               style={btn(false, 'rgba(75,116,255,0.2)')} 
               onClick={() => { setShowTableColorMenu(!showTableColorMenu); setShowTableEditMenu(false); setShowTableMenu(false); }}
-              title="Цвет ячейки"
+              title="Стиль ячейки (цвет, выравнивание)"
             >
               🎨
             </button>
             {showTableColorMenu && (
-              <div style={{...dropdownStyle, minWidth: '140px'}}>
+              <div style={{...dropdownStyle, minWidth: '180px'}}>
                 <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px', padding: '0 4px' }}>
                   Цвет ячейки
                 </div>
@@ -526,6 +526,64 @@ export default function TiptapToolbar({
                     {color.name}
                   </button>
                 ))}
+                
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '8px 0' }} />
+                
+                <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px', padding: '0 4px' }}>
+                  Выравнивание текста в ячейке
+                </div>
+                <div style={{ display: 'flex', gap: '4px', padding: '0 4px' }}>
+                  <button
+                    onClick={() => { editor.chain().focus().setCellAttribute('textAlign', 'left').run(); setShowTableColorMenu(false); }}
+                    style={{...btn(), flex: 1}}
+                    title="По левому краю"
+                  >
+                    ⫷
+                  </button>
+                  <button
+                    onClick={() => { editor.chain().focus().setCellAttribute('textAlign', 'center').run(); setShowTableColorMenu(false); }}
+                    style={{...btn(), flex: 1}}
+                    title="По центру"
+                  >
+                    ☰
+                  </button>
+                  <button
+                    onClick={() => { editor.chain().focus().setCellAttribute('textAlign', 'right').run(); setShowTableColorMenu(false); }}
+                    style={{...btn(), flex: 1}}
+                    title="По правому краю"
+                  >
+                    ⫸
+                  </button>
+                </div>
+                
+                <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '8px 0' }} />
+                
+                <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px', padding: '0 4px' }}>
+                  Вертикальное выравнивание
+                </div>
+                <div style={{ display: 'flex', gap: '4px', padding: '0 4px' }}>
+                  <button
+                    onClick={() => { editor.chain().focus().setCellAttribute('verticalAlign', 'top').run(); setShowTableColorMenu(false); }}
+                    style={{...btn(), flex: 1, fontSize: '10px'}}
+                    title="Сверху"
+                  >
+                    ⬆
+                  </button>
+                  <button
+                    onClick={() => { editor.chain().focus().setCellAttribute('verticalAlign', 'middle').run(); setShowTableColorMenu(false); }}
+                    style={{...btn(), flex: 1, fontSize: '10px'}}
+                    title="По центру"
+                  >
+                    ⬌
+                  </button>
+                  <button
+                    onClick={() => { editor.chain().focus().setCellAttribute('verticalAlign', 'bottom').run(); setShowTableColorMenu(false); }}
+                    style={{...btn(), flex: 1, fontSize: '10px'}}
+                    title="Снизу"
+                  >
+                    ⬇
+                  </button>
+                </div>
               </div>
             )}
           </div>

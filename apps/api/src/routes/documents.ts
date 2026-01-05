@@ -269,6 +269,47 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
 
+  // PUT /api/projects/:projectId/documents/reorder - обновить порядок документов
+  fastify.put(
+    "/projects/:projectId/documents/reorder",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+
+      const bodySchema = z.object({
+        documentIds: z.array(z.string().uuid()),
+      });
+
+      const bodyP = bodySchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "Invalid body", message: bodyP.error.message });
+      }
+
+      const access = await checkProjectAccess(paramsP.data.projectId, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+
+      const { documentIds } = bodyP.data;
+
+      // Update order_index for each document
+      for (let i = 0; i < documentIds.length; i++) {
+        await pool.query(
+          `UPDATE documents SET order_index = $1, updated_at = NOW()
+           WHERE id = $2 AND project_id = $3`,
+          [i, documentIds[i], paramsP.data.projectId]
+        );
+      }
+
+      return { ok: true };
+    }
+  );
+
   // POST /api/projects/:projectId/documents/:docId/citations - добавить цитату
   fastify.post(
     "/projects/:projectId/documents/:docId/citations",

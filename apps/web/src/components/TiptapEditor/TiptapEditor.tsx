@@ -8,8 +8,8 @@ import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
-import TableCell from '@tiptap/extension-table-cell';
-import TableHeader from '@tiptap/extension-table-header';
+import { CustomTableCell } from './extensions/CustomTableCell';
+import { CustomTableHeader } from './extensions/CustomTableHeader';
 import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
@@ -18,6 +18,7 @@ import { PaginationPlus } from 'tiptap-pagination-plus';
 
 import TiptapToolbar from './TiptapToolbar';
 import DocumentOutline from './DocumentOutline';
+import BibliographySidebar from './BibliographySidebar';
 import PageSettingsModal, { type PageSettings } from './PageSettingsModal';
 import { ChartNode, insertChartIntoEditor, type ChartNodeAttrs } from './extensions/ChartNode';
 import { CitationMark, type CitationAttrs } from './extensions/CitationMark';
@@ -138,6 +139,7 @@ interface TiptapEditorProps {
   onImportStatistic?: () => void;
   onCreateChartFromTable?: (tableHtml: string) => void;
   onRemoveCitation?: (citationId: string) => void;
+  onUpdateCitationNote?: (citationId: string, note: string) => void;
   citations?: Citation[];
   citationStyle?: CitationStyle;
   editable?: boolean;
@@ -150,6 +152,7 @@ export default function TiptapEditor({
   onImportStatistic,
   onCreateChartFromTable,
   onRemoveCitation,
+  onUpdateCitationNote,
   citations = [],
   citationStyle = 'gost',
   editable = true,
@@ -226,8 +229,8 @@ export default function TiptapEditor({
         },
       }),
       TableRow,
-      TableCell,
-      TableHeader,
+      CustomTableCell,
+      CustomTableHeader,
       TextStyle,
       Color,
       Highlight.configure({
@@ -291,6 +294,7 @@ export default function TiptapEditor({
     };
     
     // Insert chart function - uses the new ChartNode extension
+    // If we're inside a table, insert AFTER the table
     const insertChart = (chartData: ChartData) => {
       const attrs: ChartNodeAttrs = {
         chartId: chartData.id || `chart_${Date.now()}`,
@@ -299,7 +303,33 @@ export default function TiptapEditor({
         title: chartData.config?.title,
       };
       
-      insertChartIntoEditor(editor, attrs);
+      // Check if we're inside a table
+      const { state } = editor;
+      const { $from } = state.selection;
+      let tableEndPos = -1;
+      
+      // Find if we're inside a table and get its end position
+      for (let depth = $from.depth; depth > 0; depth--) {
+        const node = $from.node(depth);
+        if (node.type.name === 'table') {
+          // Found a table, get its end position
+          const tableStart = $from.before(depth);
+          tableEndPos = tableStart + node.nodeSize;
+          break;
+        }
+      }
+      
+      if (tableEndPos > 0) {
+        // We're inside a table - insert chart after the table
+        editor.chain()
+          .focus()
+          .setTextSelection(tableEndPos)
+          .insertContent({ type: 'chartNode', attrs })
+          .run();
+      } else {
+        // Not in a table, insert at current position
+        insertChartIntoEditor(editor, attrs);
+      }
     };
     
     // Insert table function - improved version
@@ -501,59 +531,12 @@ export default function TiptapEditor({
         
         {/* Правый сайдбар - Список литературы */}
         {showBibliography && citations.length > 0 && (
-          <div className="bibliography-sidebar">
-            <div className="bibliography-header">
-              <span className="bibliography-title">Список литературы ({citations.length})</span>
-              <button 
-                className="bibliography-close" 
-                onClick={() => setShowBibliography(false)}
-                title="Скрыть список литературы"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="bibliography-list">
-              {citations.map((citation) => {
-                const subNum = citation.sub_number || 1;
-                const displayNum = subNum > 1 ? `${citation.inline_number}.${subNum}` : String(citation.inline_number);
-                
-                return (
-                  <div key={citation.id} className="bibliography-item" id={`bib-${citation.id}`}>
-                    <span className="bib-number">[{displayNum}]</span>
-                    <div className="bib-content">
-                      <div className="bib-article-info">
-                        {citation.article?.authors && citation.article.authors.length > 0 && (
-                          <div className="bib-authors">
-                            {citation.article.authors.slice(0, 3).join(', ')}
-                            {citation.article.authors.length > 3 && ' et al.'}
-                          </div>
-                        )}
-                        <div className="bib-title">{citation.article?.title_en || 'Без названия'}</div>
-                        {citation.article?.journal && (
-                          <div className="bib-journal">{citation.article.journal}</div>
-                        )}
-                        {citation.article?.year && (
-                          <div className="bib-year">{citation.article.year}</div>
-                        )}
-                      </div>
-                      {citation.note && (
-                        <div className="bib-note">{citation.note}</div>
-                      )}
-                      {onRemoveCitation && (
-                        <button
-                          className="bib-remove"
-                          onClick={() => onRemoveCitation(citation.id)}
-                          title="Удалить цитату"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <BibliographySidebar
+            citations={citations}
+            onClose={() => setShowBibliography(false)}
+            onRemoveCitation={onRemoveCitation}
+            onUpdateCitationNote={onUpdateCitationNote}
+          />
         )}
       </div>
       

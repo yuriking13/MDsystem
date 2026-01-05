@@ -11,6 +11,7 @@ import {
   apiGetProject,
   apiGetStatistics,
   apiMarkStatisticUsedInDocument,
+  apiSyncStatistics,
   type Document,
   type Article,
   type Citation,
@@ -107,6 +108,76 @@ export default function DocumentPage() {
     load();
   }, [projectId, docId]);
 
+  // Парсинг таблиц и графиков из HTML контента
+  const parseStatisticsFromContent = useCallback((htmlContent: string) => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlContent || "<div></div>", "text/html");
+    
+    const tables: Array<{ id: string; title?: string; tableData: Record<string, any> }> = [];
+    const charts: Array<{ id: string; title?: string; config: Record<string, any>; tableData?: Record<string, any> }> = [];
+    
+    // Find tables
+    doc.querySelectorAll('table').forEach((table, index) => {
+      const tableId = table.getAttribute('data-table-id') || `table_${Date.now()}_${index}`;
+      const headers: string[] = [];
+      const rows: string[][] = [];
+      
+      table.querySelectorAll('tr').forEach((tr, rowIdx) => {
+        const cells: string[] = [];
+        tr.querySelectorAll('th, td').forEach(cell => {
+          cells.push(cell.textContent || '');
+        });
+        
+        if (rowIdx === 0 && tr.querySelector('th')) {
+          headers.push(...cells);
+        } else {
+          rows.push(cells);
+        }
+      });
+      
+      // Set ID on table if not present
+      if (!table.getAttribute('data-table-id')) {
+        table.setAttribute('data-table-id', tableId);
+      }
+      
+      tables.push({
+        id: tableId,
+        title: `Таблица ${index + 1}`,
+        tableData: { headers, rows },
+      });
+    });
+    
+    // Find charts (chartNode elements)
+    doc.querySelectorAll('[data-chart-id]').forEach((chartEl) => {
+      const chartId = chartEl.getAttribute('data-chart-id');
+      const chartDataStr = chartEl.getAttribute('data-chart') || chartEl.getAttribute('data-config');
+      
+      if (chartId) {
+        let config: Record<string, any> = {};
+        let tableData: Record<string, any> | undefined;
+        
+        if (chartDataStr) {
+          try {
+            const parsed = JSON.parse(chartDataStr.replace(/&#39;/g, "'"));
+            config = parsed.config || parsed;
+            tableData = parsed.tableData;
+          } catch {
+            // ignore parse errors
+          }
+        }
+        
+        charts.push({
+          id: chartId,
+          title: chartEl.querySelector('.chart-node-title')?.textContent || 'График',
+          config,
+          tableData,
+        });
+      }
+    });
+    
+    return { tables, charts };
+  }, []);
+
   // Автосохранение при изменении контента
   const saveDocument = useCallback(
     async (newContent: string) => {
@@ -114,13 +185,28 @@ export default function DocumentPage() {
       setSaving(true);
       try {
         await apiUpdateDocument(projectId, docId, { content: newContent });
+        
+        // Sync statistics (tables and charts) from document content
+        const { tables, charts } = parseStatisticsFromContent(newContent);
+        if (tables.length > 0 || charts.length > 0) {
+          try {
+            await apiSyncStatistics(projectId, {
+              documentId: docId,
+              tables,
+              charts,
+            });
+          } catch (syncErr) {
+            console.warn("Statistics sync warning:", syncErr);
+            // Don't fail the save if sync fails
+          }
+        }
       } catch (err) {
         console.error("Save error:", err);
       } finally {
         setSaving(false);
       }
     },
-    [projectId, docId]
+    [projectId, docId, parseStatisticsFromContent]
   );
 
   // Debounced save
@@ -315,6 +401,20 @@ export default function DocumentPage() {
     }
   }
 
+  // Обновить note (прямую цитату) для цитаты
+  async function handleUpdateCitationNote(citationId: string, note: string) {
+    if (!projectId || !docId) return;
+    
+    try {
+      await apiUpdateCitation(projectId, docId, citationId, { note });
+      // Обновить документ
+      const updated = await apiGetDocument(projectId, docId);
+      setDoc(updated.document);
+    } catch (err: any) {
+      setError(err?.message || "Ошибка обновления цитаты");
+    }
+  }
+
   // Фильтр статей
   const filteredArticles = searchArticle
     ? articles.filter(
@@ -378,6 +478,7 @@ export default function DocumentPage() {
             onImportStatistic={openImportModal}
             onCreateChartFromTable={openChartModal}
             onRemoveCitation={handleRemoveCitation}
+            onUpdateCitationNote={handleUpdateCitationNote}
             citations={doc.citations || []}
             citationStyle={citationStyle}
           />

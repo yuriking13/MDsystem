@@ -342,6 +342,216 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       return { ok: true };
     }
   );
+
+  // DELETE /api/projects/:id/statistics/:statId/use - remove document link from statistic
+  fastify.delete(
+    "/projects/:id/statistics/:statId/use",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      const paramsP = StatIdSchema.safeParse(request.params);
+      
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid params" });
+      }
+
+      const bodySchema = z.object({
+        documentId: z.string().uuid(),
+      });
+
+      const bodyP = bodySchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "BadRequest", message: bodyP.error.message });
+      }
+
+      // Check access
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [paramsP.data.id, userId]
+      );
+
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+      }
+
+      await pool.query(
+        `UPDATE project_statistics 
+         SET used_in_documents = array_remove(
+           COALESCE(used_in_documents, ARRAY[]::text[]), 
+           $1::text
+         )
+         WHERE id = $2 AND project_id = $3`,
+        [bodyP.data.documentId, paramsP.data.statId, paramsP.data.id]
+      );
+
+      return { ok: true };
+    }
+  );
+
+  // POST /api/projects/:id/statistics/sync - sync statistics from document content
+  // This creates new statistics for tables/charts found in document and removes outdated links
+  fastify.post(
+    "/projects/:id/statistics/sync",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+      }
+
+      const bodySchema = z.object({
+        documentId: z.string().uuid(),
+        tables: z.array(z.object({
+          id: z.string(),
+          title: z.string().optional(),
+          tableData: z.record(z.any()),
+        })),
+        charts: z.array(z.object({
+          id: z.string(),
+          title: z.string().optional(),
+          config: z.record(z.any()),
+          tableData: z.record(z.any()).optional(),
+        })),
+      });
+
+      const bodyP = bodySchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "BadRequest", message: bodyP.error.message });
+      }
+
+      // Check edit access
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [paramsP.data.id, userId]
+      );
+
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+      }
+
+      const role = access.rows[0].role;
+      if (role !== "owner" && role !== "editor") {
+        return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
+      }
+
+      const { documentId, tables, charts } = bodyP.data;
+      const allItemIds = [...tables.map(t => t.id), ...charts.map(c => c.id)];
+
+      // Get existing statistics linked to this document
+      const existingRes = await pool.query(
+        `SELECT id FROM project_statistics 
+         WHERE project_id = $1 AND $2 = ANY(COALESCE(used_in_documents, ARRAY[]::text[]))`,
+        [paramsP.data.id, documentId]
+      );
+      const existingIds = new Set(existingRes.rows.map((r: any) => r.id));
+
+      // Remove document link from statistics that are no longer in the document
+      for (const existingId of existingIds) {
+        if (!allItemIds.includes(existingId)) {
+          await pool.query(
+            `UPDATE project_statistics 
+             SET used_in_documents = array_remove(
+               COALESCE(used_in_documents, ARRAY[]::text[]), 
+               $1::text
+             )
+             WHERE id = $2 AND project_id = $3`,
+            [documentId, existingId, paramsP.data.id]
+          );
+        }
+      }
+
+      const createdStats: any[] = [];
+
+      // Process tables
+      for (const table of tables) {
+        // Check if statistic with this ID already exists
+        const existsRes = await pool.query(
+          `SELECT id FROM project_statistics WHERE id = $1 AND project_id = $2`,
+          [table.id, paramsP.data.id]
+        );
+
+        if (existsRes.rowCount === 0) {
+          // Create new statistic
+          const insertRes = await pool.query(
+            `INSERT INTO project_statistics 
+             (id, project_id, type, title, table_data, config, used_in_documents, created_by)
+             VALUES ($1, $2, 'table', $3, $4, $5, ARRAY[$6::text], $7)
+             RETURNING *`,
+            [
+              table.id,
+              paramsP.data.id,
+              table.title || 'Таблица из документа',
+              JSON.stringify(table.tableData),
+              JSON.stringify({}),
+              documentId,
+              userId
+            ]
+          );
+          createdStats.push(insertRes.rows[0]);
+        } else {
+          // Update link if not already linked
+          await pool.query(
+            `UPDATE project_statistics 
+             SET used_in_documents = array_append(
+               COALESCE(used_in_documents, ARRAY[]::text[]), 
+               $1::text
+             )
+             WHERE id = $2 AND project_id = $3
+             AND NOT ($1::text = ANY(COALESCE(used_in_documents, ARRAY[]::text[])))`,
+            [documentId, table.id, paramsP.data.id]
+          );
+        }
+      }
+
+      // Process charts
+      for (const chart of charts) {
+        const existsRes = await pool.query(
+          `SELECT id FROM project_statistics WHERE id = $1 AND project_id = $2`,
+          [chart.id, paramsP.data.id]
+        );
+
+        if (existsRes.rowCount === 0) {
+          // Create new statistic
+          const insertRes = await pool.query(
+            `INSERT INTO project_statistics 
+             (id, project_id, type, title, config, table_data, used_in_documents, created_by)
+             VALUES ($1, $2, 'chart', $3, $4, $5, ARRAY[$6::text], $7)
+             RETURNING *`,
+            [
+              chart.id,
+              paramsP.data.id,
+              chart.title || 'График из документа',
+              JSON.stringify(chart.config),
+              chart.tableData ? JSON.stringify(chart.tableData) : null,
+              documentId,
+              userId
+            ]
+          );
+          createdStats.push(insertRes.rows[0]);
+        } else {
+          // Update link if not already linked
+          await pool.query(
+            `UPDATE project_statistics 
+             SET used_in_documents = array_append(
+               COALESCE(used_in_documents, ARRAY[]::text[]), 
+               $1::text
+             )
+             WHERE id = $2 AND project_id = $3
+             AND NOT ($1::text = ANY(COALESCE(used_in_documents, ARRAY[]::text[])))`,
+            [documentId, chart.id, paramsP.data.id]
+          );
+        }
+      }
+
+      return { 
+        ok: true,
+        created: createdStats.length,
+        statistics: createdStats
+      };
+    }
+  );
 };
 
 export default plugin;

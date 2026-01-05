@@ -9,6 +9,7 @@ import {
   apiGetDocuments,
   apiCreateDocument,
   apiDeleteDocument,
+  apiReorderDocuments,
   apiGetBibliography,
   apiExportProject,
   apiGetStatistics,
@@ -631,17 +632,29 @@ export default function ProjectDetailPage() {
                     onDragLeave={(e) => {
                       e.currentTarget.classList.remove('drag-over');
                     }}
-                    onDrop={(e) => {
+                    onDrop={async (e) => {
                       e.preventDefault();
                       e.currentTarget.classList.remove('drag-over');
                       const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
                       const toIdx = idx;
-                      if (fromIdx !== toIdx) {
+                      if (fromIdx !== toIdx && id) {
                         const newDocs = [...documents];
                         const [moved] = newDocs.splice(fromIdx, 1);
                         newDocs.splice(toIdx, 0, moved);
                         setDocuments(newDocs);
-                        // TODO: Save order to backend
+                        
+                        // Save new order to backend
+                        try {
+                          await apiReorderDocuments(id, newDocs.map(d => d.id));
+                          // Reload bibliography since citation numbers may have changed
+                          setBibliography([]);
+                          setOk('Порядок документов обновлён. Номера цитат пересчитаны.');
+                        } catch (err: any) {
+                          setError(err?.message || 'Ошибка сохранения порядка');
+                          // Revert on error
+                          const revertedDocs = await apiGetDocuments(id);
+                          setDocuments(revertedDocs.documents);
+                        }
                       }
                     }}
                   >
