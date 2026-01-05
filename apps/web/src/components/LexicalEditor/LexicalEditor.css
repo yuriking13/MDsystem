@@ -23,7 +23,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Important for flex scroll */
+  min-height: 0;
 }
 
 .lexical-editor-scroll {
@@ -32,7 +32,7 @@
   overflow-x: hidden;
 }
 
-/* ===== SCROLL LAYOUT ===== */
+/* ===== SCROLL LAYOUT (Лента) ===== */
 .scroll-layout {
   padding: 20px;
   min-height: 100%;
@@ -47,81 +47,233 @@
   border: 1px solid var(--border-glass);
   min-height: calc(100% - 40px);
   position: relative;
-  
-  /* Table counter reset */
   counter-reset: table-counter figure-counter;
 }
 
-/* ===== PAGES LAYOUT ===== */
+/* ===== PAGES LAYOUT (Страницы) ===== */
 .pages-layout {
-  background: linear-gradient(180deg, #3a4a6a 0%, #2a3a5a 100%);
-  padding: 24px;
+  background: #4a5568;
   min-height: 100%;
+  padding: 0;
 }
 
-/* ===== PAGES PLUGIN ===== */
-.pages-plugin-container {
-  width: 100%;
+/* ===== PAGES VIEWPORT ===== */
+.pages-viewport {
+  --page-width: 794px;
+  --page-height: 1123px;
+  --page-content-height: 979px;
+  --zoom: 0.75;
+  --gap: 24px;
+  
   display: flex;
   flex-direction: column;
+  min-height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Zoom controls */
+.pages-zoom-controls {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
   align-items: center;
-  gap: 24px;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(30, 41, 59, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  width: fit-content;
+  align-self: center;
+}
+
+.zoom-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.zoom-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.zoom-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zoom-value {
+  color: #fff;
+  font-size: 13px;
+  min-width: 45px;
+  text-align: center;
+}
+
+.pages-info {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Pages grid */
+.pages-grid {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+}
+
+.pages-paper-stack {
+  position: relative;
+  width: calc(var(--page-width) * var(--zoom));
+  min-height: calc(var(--page-height) * var(--zoom) * var(--page-count, 1));
+}
+
+/* Support for 2-column layout */
+.pages-viewport.cols-2 .pages-paper-stack {
+  width: calc(var(--page-width) * var(--zoom) * 2 + var(--gap));
+}
+
+/* Background pages (visual paper sheets) */
+.page-background {
+  position: absolute;
+  left: 0;
+  width: calc(var(--page-width) * var(--zoom));
+  height: calc(var(--page-height) * var(--zoom));
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
+.page-background:nth-child(odd) {
+  top: calc((var(--page-height) * var(--zoom) + var(--gap)) * calc((attr(data-page) - 1) / 2));
+}
+
+/* Position pages vertically */
+.page-background[data-page="1"] { top: 0; }
+.page-background[data-page="2"] { top: calc((var(--page-height) * var(--zoom)) + var(--gap)); }
+.page-background[data-page="3"] { top: calc((var(--page-height) * var(--zoom) + var(--gap)) * 2); }
+.page-background[data-page="4"] { top: calc((var(--page-height) * var(--zoom) + var(--gap)) * 3); }
+.page-background[data-page="5"] { top: calc((var(--page-height) * var(--zoom) + var(--gap)) * 4); }
+.page-background[data-page="6"] { top: calc((var(--page-height) * var(--zoom) + var(--gap)) * 5); }
+.page-background[data-page="7"] { top: calc((var(--page-height) * var(--zoom) + var(--gap)) * 6); }
+.page-background[data-page="8"] { top: calc((var(--page-height) * var(--zoom) + var(--gap)) * 7); }
+.page-background[data-page="9"] { top: calc((var(--page-height) * var(--zoom) + var(--gap)) * 8); }
+.page-background[data-page="10"] { top: calc((var(--page-height) * var(--zoom) + var(--gap)) * 9); }
+
+/* 2-column layout positioning */
+.pages-viewport.cols-2 .page-background:nth-child(odd) {
+  left: 0;
+}
+
+.pages-viewport.cols-2 .page-background:nth-child(even) {
+  left: calc(var(--page-width) * var(--zoom) + var(--gap));
+}
+
+.pages-viewport.cols-2 .page-background[data-page="1"],
+.pages-viewport.cols-2 .page-background[data-page="2"] { top: 0; }
+
+.pages-viewport.cols-2 .page-background[data-page="3"],
+.pages-viewport.cols-2 .page-background[data-page="4"] { top: calc((var(--page-height) * var(--zoom)) + var(--gap)); }
+
+.pages-viewport.cols-2 .page-background[data-page="5"],
+.pages-viewport.cols-2 .page-background[data-page="6"] { top: calc((var(--page-height) * var(--zoom) + var(--gap)) * 2); }
+
+/* Page header/footer */
+.page-header, .page-footer {
+  position: absolute;
+  left: calc(56px * var(--zoom));
+  right: calc(85px * var(--zoom));
+  text-align: center;
+  font-size: calc(11px * var(--zoom));
+  color: #666;
+}
+
+.page-header {
+  top: calc(30px * var(--zoom));
+}
+
+.page-footer {
+  bottom: calc(30px * var(--zoom));
+}
+
+.page-number-header, .page-number-footer {
+  color: #999;
+}
+
+/* Content layer */
+.pages-content-layer {
+  position: absolute;
+  top: calc(72px * var(--zoom));
+  left: calc(56px * var(--zoom));
+  right: calc(85px * var(--zoom));
   
-  /* Table counter reset */
+  /* CSS columns for automatic content flow */
+  column-width: calc(var(--page-content-width, 653px) * var(--zoom));
+  column-gap: calc((56px + 85px + var(--gap)) * var(--zoom));
+  column-fill: auto;
+  
+  /* Height for column flow */
+  height: calc(var(--page-content-height) * var(--zoom) * var(--page-count, 1) + var(--gap) * (var(--page-count, 1) - 1));
+}
+
+.pages-content-flow {
+  transform: scale(var(--zoom));
+  transform-origin: top left;
+  width: calc(100% / var(--zoom));
+  color: #1a1a1a;
+  font-size: 15px;
+  line-height: 1.7;
+  
+  /* Counter reset for tables/figures */
   counter-reset: table-counter figure-counter;
 }
 
-.page-sheet {
-  position: relative;
-  width: 794px;
-  min-height: 1123px;
-  max-width: calc(100vw - 48px);
-  background: #ffffff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  padding: 60px 70px 60px 50px;
-  box-sizing: border-box;
-  border-radius: 2px;
-}
-
-.page-number-badge {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  font-size: 10px;
-  padding: 3px 8px;
-  background: rgba(0, 0, 0, 0.05);
-  color: #666;
-  border-radius: 4px;
-}
-
-.page-content {
-  position: relative;
-  min-height: 300px;
+/* Prevent breaks inside elements */
+.pages-content-flow p,
+.pages-content-flow h1,
+.pages-content-flow h2,
+.pages-content-flow h3,
+.pages-content-flow li,
+.pages-content-flow table,
+.pages-content-flow .chart-node-wrapper {
+  break-inside: avoid;
+  page-break-inside: avoid;
 }
 
 /* ===== CONTENT EDITABLE ===== */
 .lexical-content {
   outline: none;
-  min-height: 300px;
-  color: var(--text-primary);
-  font-size: 15px;
-  line-height: 1.7;
+  min-height: 200px;
 }
 
 .lexical-placeholder {
-  color: var(--text-muted);
+  color: #999;
   position: absolute;
-  top: 24px;
-  left: 32px;
   user-select: none;
   pointer-events: none;
   font-size: 15px;
 }
 
-.pages-layout .lexical-placeholder {
-  color: #999;
-  top: 0;
-  left: 0;
+.scroll-layout .lexical-placeholder {
+  color: var(--text-muted);
+  top: 24px;
+  left: 32px;
 }
 
 /* ===== TYPOGRAPHY - SCROLL MODE ===== */
@@ -149,12 +301,14 @@
 .scroll-layout .lexical-paragraph {
   margin: 0 0 0.7em 0;
   line-height: 1.7;
+  color: var(--text-primary);
 }
 
 .scroll-layout .lexical-list-ul,
 .scroll-layout .lexical-list-ol {
   margin: 0.5em 0;
   padding-left: 1.5em;
+  color: var(--text-primary);
 }
 
 .scroll-layout .lexical-list-item {
@@ -162,40 +316,36 @@
 }
 
 /* ===== TYPOGRAPHY - PAGES MODE ===== */
-.pages-layout .lexical-content {
-  color: #1a1a1a !important;
-}
-
-.pages-layout .lexical-heading-h1 {
+.pages-content-flow .lexical-heading-h1 {
   font-size: 1.75em;
   font-weight: 700;
   color: #1a1a1a;
   margin: 1em 0 0.5em 0;
 }
 
-.pages-layout .lexical-heading-h2 {
+.pages-content-flow .lexical-heading-h2 {
   font-size: 1.4em;
   font-weight: 600;
   color: #2a2a2a;
   margin: 0.8em 0 0.4em 0;
 }
 
-.pages-layout .lexical-heading-h3 {
+.pages-content-flow .lexical-heading-h3 {
   font-size: 1.15em;
   font-weight: 600;
   color: #3a3a3a;
   margin: 0.7em 0 0.3em 0;
 }
 
-.pages-layout .lexical-paragraph {
+.pages-content-flow .lexical-paragraph {
   margin: 0 0 0.7em 0;
   line-height: 1.7;
   color: #1a1a1a;
   text-align: justify;
 }
 
-.pages-layout .lexical-list-ul,
-.pages-layout .lexical-list-ol {
+.pages-content-flow .lexical-list-ul,
+.pages-content-flow .lexical-list-ol {
   margin: 0.5em 0;
   padding-left: 1.5em;
   color: #1a1a1a;
@@ -216,6 +366,11 @@
   font-size: 0.9em;
 }
 
+.pages-content-flow .lexical-text-code {
+  background: rgba(0, 0, 0, 0.06);
+  color: #d63384;
+}
+
 /* ===== CODE BLOCK ===== */
 .lexical-code-block {
   background: #1e1e1e;
@@ -229,7 +384,7 @@
   margin: 1em 0;
 }
 
-.pages-layout .lexical-code-block {
+.pages-content-flow .lexical-code-block {
   background: #f5f5f5;
   color: #333;
 }
@@ -243,7 +398,7 @@
   color: var(--text-secondary);
 }
 
-.pages-layout .lexical-quote {
+.pages-content-flow .lexical-quote {
   border-left-color: #4b74ff;
   color: #555;
 }
@@ -255,7 +410,7 @@
   cursor: pointer;
 }
 
-.pages-layout .lexical-link {
+.pages-content-flow .lexical-link {
   color: #2563eb;
 }
 
@@ -268,7 +423,6 @@
   border: 1px solid var(--border-glass);
 }
 
-/* Table caption/number - using ::before on table wrapper */
 .lexical-table::before {
   content: "Таблица " counter(table-counter);
   display: block;
@@ -277,6 +431,14 @@
   color: var(--text-secondary);
   margin-bottom: 8px;
   text-align: center;
+}
+
+.pages-content-flow .lexical-table {
+  border-color: #ddd;
+}
+
+.pages-content-flow .lexical-table::before {
+  color: #333;
 }
 
 .lexical-table-cell,
@@ -292,33 +454,14 @@
   font-weight: 600;
 }
 
-/* Table hover effect for editing */
-.lexical-table-cell:hover,
-.lexical-table-cell-header:hover {
-  background: rgba(75, 116, 255, 0.1);
-}
-
-.pages-layout .lexical-table {
-  border-color: #ddd;
-}
-
-.pages-layout .lexical-table::before {
-  color: #333;
-}
-
-.pages-layout .lexical-table-cell,
-.pages-layout .lexical-table-cell-header {
+.pages-content-flow .lexical-table-cell,
+.pages-content-flow .lexical-table-cell-header {
   border-color: #ddd;
   color: #1a1a1a;
 }
 
-.pages-layout .lexical-table-cell-header {
+.pages-content-flow .lexical-table-cell-header {
   background: #f5f5f5;
-}
-
-.pages-layout .lexical-table-cell:hover,
-.pages-layout .lexical-table-cell-header:hover {
-  background: rgba(75, 116, 255, 0.1);
 }
 
 /* ===== CITATION & CHART NODES ===== */
@@ -332,20 +475,13 @@
   border-radius: 3px;
 }
 
-.citation-inline:hover {
-  background: var(--accent-glow);
-  text-decoration: underline;
-}
-
-.pages-layout .citation-inline {
+.pages-content-flow .citation-inline {
   color: #2563eb;
 }
 
-/* Charts with auto-numbering */
 .chart-node-wrapper {
   counter-increment: figure-counter;
   margin: 1em 0;
-  page-break-inside: avoid;
 }
 
 .chart-node-container {
@@ -360,44 +496,34 @@
   display: block;
   font-weight: 600;
   font-size: 13px;
-  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
-.pages-layout .chart-node-container {
+.pages-content-flow .chart-node-container {
   background: #f9fafb;
   border-color: #e5e7eb;
 }
 
-.pages-layout .chart-node-container::before {
+.pages-content-flow .chart-node-container::before {
   color: #333;
 }
 
-.chart-title {
-  font-weight: 600;
-  margin-bottom: 8px;
-}
-
-.chart-placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 150px;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 6px;
-  color: var(--text-muted);
-  font-size: 14px;
-}
-
 /* ===== RESPONSIVE ===== */
-@media (max-width: 768px) {
-  .page-sheet {
-    width: 100%;
-    padding: 24px;
-    min-height: auto;
+@media (max-width: 900px) {
+  .pages-viewport {
+    --zoom: 0.5 !important;
   }
   
-  .lexical-scroll-container {
-    padding: 16px;
+  .pages-viewport.cols-2 {
+    /* Force single column on small screens */
+  }
+  
+  .pages-viewport.cols-2 .pages-paper-stack {
+    width: calc(var(--page-width) * var(--zoom));
+  }
+  
+  .pages-viewport.cols-2 .page-background:nth-child(even) {
+    left: 0;
+    top: calc((var(--page-height) * var(--zoom) + var(--gap)) * (attr(data-page) - 1));
   }
 }
