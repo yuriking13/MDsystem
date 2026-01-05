@@ -13,7 +13,6 @@ import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import type { EditorState, LexicalEditor as Editor } from 'lexical';
 import { $generateHtmlFromNodes } from '@lexical/html';
-import { Card } from 'flowbite-react';
 
 import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import { TableCellNode, TableNode, TableRowNode } from '@lexical/table';
@@ -34,6 +33,7 @@ interface LexicalEditorProps {
   content?: string;
   onChange?: (html: string) => void;
   onInsertCitation?: () => void;
+  onImportStatistic?: () => void;
   editable?: boolean;
   projectId?: string;
   documentId?: string;
@@ -47,6 +47,7 @@ export default function LexicalEditor({
   content = '',
   onChange,
   onInsertCitation,
+  onImportStatistic,
   editable = true,
   projectId,
   documentId,
@@ -106,13 +107,14 @@ export default function LexicalEditor({
   };
 
   return (
-    <Card className="lexical-editor-card">
+    <div className="lexical-editor-card">
       <LexicalComposer initialConfig={initialConfig}>
         {editable && (
           <ToolbarPlugin
             viewMode={viewMode}
             onViewModeChange={setViewMode}
             onInsertCitation={onInsertCitation}
+            onImportStatistic={onImportStatistic}
           />
         )}
         
@@ -147,6 +149,6 @@ export default function LexicalEditor({
           <OnChangePlugin onChange={handleEditorChange} />
         )}
       </LexicalComposer>
-    </Card>
+    </div>
   );
 }
