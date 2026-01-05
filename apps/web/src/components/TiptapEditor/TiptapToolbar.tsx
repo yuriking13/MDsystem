@@ -8,6 +8,7 @@ interface TiptapToolbarProps {
   onInsertCitation?: () => void;
   onImportStatistic?: () => void;
   onToggleOutline?: () => void;
+  onCreateChartFromTable?: (tableHtml: string) => void;
   showOutline?: boolean;
   citationStyle?: CitationStyle;
 }
@@ -17,6 +18,7 @@ export default function TiptapToolbar({
   onInsertCitation,
   onImportStatistic,
   onToggleOutline,
+  onCreateChartFromTable,
   showOutline,
   citationStyle = 'gost',
 }: TiptapToolbarProps) {
@@ -346,6 +348,53 @@ export default function TiptapToolbar({
               >
                 🗑 Удалить таблицу
               </button>
+
+              {onCreateChartFromTable && (
+                <>
+                  <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '6px 0' }} />
+                  <button 
+                    onClick={() => {
+                      // Get the table HTML from the editor
+                      const { state } = editor;
+                      const { from } = state.selection;
+                      let tableNode: any = null;
+                      
+                      state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
+                        if (node.type.name === 'table') {
+                          if (pos <= from && pos + node.nodeSize >= from) {
+                            tableNode = node;
+                          }
+                        }
+                      });
+                      
+                      if (tableNode) {
+                        // Create HTML from the table node
+                        const div = document.createElement('div');
+                        const tableEl = document.createElement('table');
+                        
+                        tableNode.content.forEach((row: any) => {
+                          const tr = document.createElement('tr');
+                          row.content.forEach((cell: any) => {
+                            const cellEl = document.createElement(cell.type.name === 'tableHeader' ? 'th' : 'td');
+                            cellEl.textContent = cell.textContent;
+                            tr.appendChild(cellEl);
+                          });
+                          tableEl.appendChild(tr);
+                        });
+                        
+                        div.appendChild(tableEl);
+                        onCreateChartFromTable(div.innerHTML);
+                      }
+                      setShowTableEditMenu(false);
+                    }}
+                    style={{...dropdownItemStyle, color: '#4ade80'}}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(74,222,128,0.2)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    📊 Создать график
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>

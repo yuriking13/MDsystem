@@ -17,7 +17,7 @@ import {
   type CitationStyle,
   type ProjectStatistic,
 } from "../lib/api";
-import ChartFromTable, { CHART_TYPE_INFO, type ChartType, type TableData } from "../components/ChartFromTable";
+import ChartFromTable, { CHART_TYPE_INFO, ChartCreatorModal, type ChartType, type TableData } from "../components/ChartFromTable";
 
 // Простое форматирование цитаты для отображения в панели
 // Всегда используем язык оригинала (английский)
@@ -77,6 +77,10 @@ export default function DocumentPage() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [statistics, setStatistics] = useState<ProjectStatistic[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
+  
+  // Модальное окно создания графика из таблицы
+  const [showChartModal, setShowChartModal] = useState(false);
+  const [chartTableHtml, setChartTableHtml] = useState("");
 
   // Загрузка документа и проекта
   useEffect(() => {
@@ -195,6 +199,34 @@ export default function DocumentPage() {
     } else {
       console.warn("Chart insertion function not available");
     }
+  }
+  
+  // Открыть модал создания графика из таблицы
+  function openChartModal(tableHtml: string) {
+    setChartTableHtml(tableHtml);
+    setShowChartModal(true);
+  }
+  
+  // Вставить график из таблицы
+  function handleInsertChartFromTable(chartHtml: string, chartId?: string) {
+    const fn = (window as any).__editorInsertChart;
+    if (fn && chartId) {
+      // Parse the chart data from HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(chartHtml, 'text/html');
+      const chartContainer = doc.querySelector('.chart-container');
+      const chartDataStr = chartContainer?.getAttribute('data-chart');
+      
+      if (chartDataStr) {
+        try {
+          const chartData = JSON.parse(chartDataStr.replace(/&#39;/g, "'"));
+          fn(chartData);
+        } catch (err) {
+          console.error("Failed to parse chart data:", err);
+        }
+      }
+    }
+    setShowChartModal(false);
   }
 
   // Добавить цитату - всегда создаём новую запись (можно несколько цитат к одному источнику)
@@ -316,6 +348,7 @@ export default function DocumentPage() {
             onChange={setContent}
             onInsertCitation={openCitationPicker}
             onImportStatistic={openImportModal}
+            onCreateChartFromTable={openChartModal}
             citationStyle={citationStyle}
           />
         </div>
@@ -542,6 +575,15 @@ export default function DocumentPage() {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Модалка создания графика из таблицы */}
+      {showChartModal && chartTableHtml && (
+        <ChartCreatorModal
+          tableHtml={chartTableHtml}
+          onClose={() => setShowChartModal(false)}
+          onInsert={handleInsertChartFromTable}
+        />
       )}
     </div>
   );

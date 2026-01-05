@@ -83,6 +83,7 @@ interface TiptapEditorProps {
   onChange?: (html: string) => void;
   onInsertCitation?: () => void;
   onImportStatistic?: () => void;
+  onCreateChartFromTable?: (tableHtml: string) => void;
   citationStyle?: CitationStyle;
   editable?: boolean;
 }
@@ -92,6 +93,7 @@ export default function TiptapEditor({
   onChange,
   onInsertCitation,
   onImportStatistic,
+  onCreateChartFromTable,
   citationStyle = 'gost',
   editable = true,
 }: TiptapEditorProps) {
@@ -276,6 +278,7 @@ export default function TiptapEditor({
           editor={editor} 
           onInsertCitation={onInsertCitation}
           onImportStatistic={onImportStatistic}
+          onCreateChartFromTable={onCreateChartFromTable}
           onToggleOutline={() => setShowOutline(!showOutline)}
           showOutline={showOutline}
           citationStyle={citationStyle}
