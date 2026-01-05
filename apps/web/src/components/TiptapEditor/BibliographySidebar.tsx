@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { Citation } from '../../lib/api';
 
 interface BibliographySidebarProps {
@@ -38,6 +38,27 @@ export default function BibliographySidebar({
     setNoteText('');
   };
 
+  // Переход к цитате в тексте при клике
+  const handleCitationClick = useCallback((citationId: string) => {
+    // Ищем элемент цитаты в редакторе по data-citation-id
+    const citationEl = document.querySelector(
+      `.citation-ref[data-citation-id="${citationId}"]`
+    );
+    
+    if (citationEl) {
+      // Скроллим к элементу
+      citationEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Добавляем подсветку
+      citationEl.classList.add('citation-highlight');
+      
+      // Убираем подсветку через 2 секунды
+      setTimeout(() => {
+        citationEl.classList.remove('citation-highlight');
+      }, 2000);
+    }
+  }, []);
+
   return (
     <div className="bibliography-sidebar">
       <div className="bibliography-header">
@@ -58,7 +79,13 @@ export default function BibliographySidebar({
           
           return (
             <div key={citation.id} className="bibliography-item" id={`bib-${citation.id}`}>
-              <span className="bib-number">[{displayNum}]</span>
+              <span 
+                className="bib-number bib-number-clickable"
+                onClick={() => handleCitationClick(citation.id)}
+                title="Перейти к цитате в тексте"
+              >
+                [{displayNum}]
+              </span>
               <div className="bib-content">
                 <div className="bib-article-info">
                   {citation.article?.authors && citation.article.authors.length > 0 && (

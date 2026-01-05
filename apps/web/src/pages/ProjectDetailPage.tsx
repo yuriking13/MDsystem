@@ -10,6 +10,7 @@ import {
   apiCreateDocument,
   apiDeleteDocument,
   apiReorderDocuments,
+  apiRenumberCitations,
   apiGetBibliography,
   apiExportProject,
   apiGetStatistics,
@@ -646,9 +647,23 @@ export default function ProjectDetailPage() {
                         // Save new order to backend
                         try {
                           await apiReorderDocuments(id, newDocs.map(d => d.id));
-                          // Reload bibliography since citation numbers may have changed
+                          
+                          // Перенумеровать цитаты в реальном времени
+                          const renumberResult = await apiRenumberCitations(id);
+                          
+                          // Обновить документы с новым контентом (перенумерованные цитаты)
+                          if (renumberResult.documents) {
+                            setDocuments(renumberResult.documents);
+                          }
+                          
+                          // Сбросить библиографию для перезагрузки
                           setBibliography([]);
-                          setOk('Порядок документов обновлён. При экспорте объединённого документа номера источников будут пересчитаны в соответствии с новым порядком.');
+                          
+                          if (renumberResult.renumbered > 0) {
+                            setOk(`Порядок документов обновлён. Перенумеровано ${renumberResult.renumbered} цитат.`);
+                          } else {
+                            setOk('Порядок документов обновлён.');
+                          }
                         } catch (err: any) {
                           setError(err?.message || 'Ошибка сохранения порядка');
                           // Revert on error
