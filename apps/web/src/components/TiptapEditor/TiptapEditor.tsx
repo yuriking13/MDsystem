@@ -221,6 +221,7 @@ export default function TiptapEditor({
         resizable: true,
         allowTableNodeSelection: true,
         lastColumnResizable: true,
+        cellMinWidth: 50,
         HTMLAttributes: {
           class: 'tiptap-table',
         },
