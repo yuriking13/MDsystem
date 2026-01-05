@@ -530,7 +530,7 @@ export default function TiptapEditor({
         </div>
         
         {/* Правый сайдбар - Список литературы */}
-        {showBibliography && citations.length > 0 && (
+        {showBibliography && citations && citations.length > 0 && (
           <BibliographySidebar
             citations={citations}
             onClose={() => setShowBibliography(false)}

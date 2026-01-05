@@ -649,57 +649,60 @@ export function generatePrintHtml(
 }
 
 /**
- * Экспорт в PDF - прямое скачивание
+ * Экспорт в PDF через новое окно браузера
+ * Открывает окно с готовым документом, пользователь выбирает "Сохранить как PDF" в диалоге печати
  */
-export async function exportToPdf(
+export function exportToPdf(
   projectName: string,
   documents: ExportDocument[],
   bibliography: ExportBibItem[],
   citationStyle: string,
   mergedContent?: string
-): Promise<void> {
+): void {
   const html = generatePrintHtml(projectName, documents, bibliography, citationStyle, mergedContent);
-  const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
   
-  // Создаём временный элемент для рендеринга
-  const container = document.createElement('div');
-  container.innerHTML = html;
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  document.body.appendChild(container);
-  
-  try {
-    // Динамический импорт html2pdf
-    const html2pdf = (await import('html2pdf.js')).default;
+  // Открываем новое окно с документом
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
     
+    // Устанавливаем заголовок окна
     const baseFilename = projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_");
     const filename = mergedContent 
-      ? `${baseFilename}_объединённый.pdf`
-      : `${baseFilename}_главы.pdf`;
+      ? `${baseFilename}_объединённый`
+      : `${baseFilename}_главы`;
+    printWindow.document.title = filename;
     
-    const opt = {
-      margin: [styleConfig.marginTop, styleConfig.marginRight, styleConfig.marginBottom, styleConfig.marginLeft],
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+    // Ждём полной загрузки и открываем диалог печати
+    printWindow.onload = () => {
+      setTimeout(() => {
+        // Добавляем подсказку для пользователя
+        const hint = printWindow.document.createElement('div');
+        hint.innerHTML = `
+          <div style="position: fixed; top: 0; left: 0; right: 0; background: #1e40af; color: white; padding: 10px; text-align: center; z-index: 10000; font-family: sans-serif;">
+            💡 Для сохранения как PDF: выберите "Сохранить как PDF" в качестве принтера
+            <button onclick="this.parentElement.remove(); window.print();" style="margin-left: 20px; padding: 5px 15px; cursor: pointer; border: none; border-radius: 4px; background: white; color: #1e40af;">
+              Печать / Сохранить PDF
+            </button>
+          </div>
+        `;
+        printWindow.document.body.insertBefore(hint, printWindow.document.body.firstChild);
+      }, 300);
     };
-    
-    await html2pdf().set(opt).from(container).save();
-  } finally {
-    document.body.removeChild(container);
+  } else {
+    alert('Не удалось открыть окно для печати. Проверьте блокировщик всплывающих окон.');
   }
 }
 
 /**
  * Экспорт только библиографии в PDF
  */
-export async function exportBibliographyToPdf(
+export function exportBibliographyToPdf(
   projectName: string,
   bibliography: ExportBibItem[],
   citationStyle: string
-): Promise<void> {
+): void {
   const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
   
   const html = `<!DOCTYPE html>
@@ -708,6 +711,10 @@ export async function exportBibliographyToPdf(
   <meta charset="UTF-8">
   <title>${projectName} - Список литературы</title>
   <style>
+    @page {
+      size: A4;
+      margin: ${styleConfig.marginTop}mm ${styleConfig.marginRight}mm ${styleConfig.marginBottom}mm ${styleConfig.marginLeft}mm;
+    }
     body {
       font-family: 'Times New Roman', Times, serif;
       font-size: ${styleConfig.fontSize}pt;
@@ -724,6 +731,10 @@ export async function exportBibliographyToPdf(
       text-indent: -1cm;
       padding-left: 1cm;
     }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none !important; }
+    }
   </style>
 </head>
 <body>
@@ -733,28 +744,28 @@ export async function exportBibliographyToPdf(
 </body>
 </html>`;
 
-  // Создаём временный элемент для рендеринга
-  const container = document.createElement('div');
-  container.innerHTML = html;
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  document.body.appendChild(container);
-  
-  try {
-    const html2pdf = (await import('html2pdf.js')).default;
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.document.title = `${projectName}_bibliography`;
     
-    const filename = `${projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_")}_bibliography.pdf`;
-    
-    const opt = {
-      margin: [styleConfig.marginTop, styleConfig.marginRight, styleConfig.marginBottom, styleConfig.marginLeft],
-      filename,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' as const },
+    printWindow.onload = () => {
+      setTimeout(() => {
+        const hint = printWindow.document.createElement('div');
+        hint.className = 'no-print';
+        hint.innerHTML = `
+          <div style="position: fixed; top: 0; left: 0; right: 0; background: #1e40af; color: white; padding: 10px; text-align: center; z-index: 10000; font-family: sans-serif;">
+            💡 Для сохранения как PDF: выберите "Сохранить как PDF" в качестве принтера
+            <button onclick="this.parentElement.remove(); window.print();" style="margin-left: 20px; padding: 5px 15px; cursor: pointer; border: none; border-radius: 4px; background: white; color: #1e40af;">
+              Печать / Сохранить PDF
+            </button>
+          </div>
+        `;
+        printWindow.document.body.insertBefore(hint, printWindow.document.body.firstChild);
+      }, 300);
     };
-    
-    await html2pdf().set(opt).from(container).save();
-  } finally {
-    document.body.removeChild(container);
+  } else {
+    alert('Не удалось открыть окно для печати. Проверьте блокировщик всплывающих окон.');
   }
 }

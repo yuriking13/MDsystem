@@ -648,7 +648,7 @@ export default function ProjectDetailPage() {
                           await apiReorderDocuments(id, newDocs.map(d => d.id));
                           // Reload bibliography since citation numbers may have changed
                           setBibliography([]);
-                          setOk('Порядок документов обновлён. Номера цитат пересчитаны.');
+                          setOk('Порядок документов обновлён. При экспорте объединённого документа номера источников будут пересчитаны в соответствии с новым порядком.');
                         } catch (err: any) {
                           setError(err?.message || 'Ошибка сохранения порядка');
                           // Revert on error
