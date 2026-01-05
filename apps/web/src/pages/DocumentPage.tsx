@@ -299,14 +299,16 @@ export default function DocumentPage() {
       if (ids.length === 0) return;
 
       const statMap = new Map<string, TableData>();
+      const missingIds = new Set<string>();
       await Promise.allSettled(ids.map(async (id) => {
         try {
           const res = await apiGetStatistic(projectId, id);
           if (res.statistic.table_data) {
             statMap.set(id, res.statistic.table_data as TableData);
           }
-        } catch (err) {
+        } catch (err: any) {
           console.warn('Failed to load statistic for sync', id, err);
+          missingIds.add(id);
         }
       }));
 
@@ -325,8 +327,8 @@ export default function DocumentPage() {
         if (!statId) return;
         const data = statMap.get(statId);
 
-        // If statistic was removed, drop the table from the document
-        if (!data && existingIds.size > 0 && !existingIds.has(statId)) {
+        // If statistic was removed or missing, drop the table from the document
+        if (!data && ((existingIds.size > 0 && !existingIds.has(statId)) || missingIds.has(statId))) {
           tableEl.remove();
           changed = true;
           return;
@@ -376,7 +378,7 @@ export default function DocumentPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       syncDocumentWithStatistics();
-    }, 20000);
+    }, 2000);
     return () => clearInterval(interval);
   }, [syncDocumentWithStatistics]);
 
