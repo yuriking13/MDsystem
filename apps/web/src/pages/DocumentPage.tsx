@@ -10,6 +10,7 @@ import {
   apiUpdateCitation,
   apiGetProject,
   apiGetStatistics,
+  apiMarkStatisticUsedInDocument,
   type Document,
   type Article,
   type Citation,
@@ -168,21 +169,26 @@ export default function DocumentPage() {
   }
   
   // Вставить статистику в редактор
-  function handleInsertStatistic(stat: ProjectStatistic) {
-    if (!stat.table_data || !stat.config) return;
+  async function handleInsertStatistic(stat: ProjectStatistic) {
+    if (!stat.table_data || !stat.config || !projectId || !docId) return;
     
     // Используем глобальную функцию вставки графика
     const fn = (window as any).__editorInsertChart;
     if (fn) {
-      fn(stat);
-    } else {
-      // Fallback - напрямую вставляем через content update
-      const chartHtml = `<div class="chart-container" data-chart='${JSON.stringify({
+      fn({
+        id: stat.id,
         config: stat.config,
-        tableData: stat.table_data
-      })}' data-statistic-id="${stat.id}" data-project-id="${projectId}"></div>`;
+        table_data: stat.table_data
+      });
       
-      setContent(prev => prev + chartHtml);
+      // Отмечаем статистику как используемую в этом документе
+      try {
+        await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
+      } catch (err) {
+        console.error("Failed to mark statistic as used:", err);
+      }
+    } else {
+      setError("Ошибка вставки графика. Попробуйте обновить страницу.");
     }
     
     setShowImportModal(false);
