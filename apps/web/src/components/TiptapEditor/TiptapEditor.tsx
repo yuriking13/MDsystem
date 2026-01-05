@@ -222,6 +222,7 @@ export default function TiptapEditor({
         allowTableNodeSelection: true,
         lastColumnResizable: true,
         cellMinWidth: 50,
+        renderWrapper: true,  // ВАЖНО: TipTap должна обернуть таблицу в div.tableWrapper
         HTMLAttributes: {
           class: 'tiptap-table',
         },
