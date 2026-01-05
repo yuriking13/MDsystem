@@ -21,6 +21,7 @@ interface TiptapToolbarProps {
   onToggleOutline?: () => void;
   onToggleBibliography?: () => void;
   onCreateChartFromTable?: (tableHtml: string) => void;
+  onOpenTableEditor?: () => void;
   onOpenPageSettings?: () => void;
   showOutline?: boolean;
   showBibliography?: boolean;
@@ -34,6 +35,7 @@ export default function TiptapToolbar({
   onToggleOutline,
   onToggleBibliography,
   onCreateChartFromTable,
+  onOpenTableEditor,
   onOpenPageSettings,
   showOutline,
   showBibliography,
@@ -336,6 +338,19 @@ export default function TiptapToolbar({
             </button>
             {showTableEditMenu && (
               <div style={dropdownStyle}>
+                {onOpenTableEditor && (
+                  <>
+                    <button
+                      onClick={() => { onOpenTableEditor(); setShowTableEditMenu(false); }}
+                      style={{ ...dropdownItemStyle, color: '#4b74ff' }}
+                      onMouseOver={(e) => (e.currentTarget.style.background = 'rgba(75,116,255,0.2)')}
+                      onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      🗖 Редактор таблицы
+                    </button>
+                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '6px 0' }} />
+                  </>
+                )}
                 <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '4px', padding: '0 4px' }}>Строки</div>
                 <button 
                   onClick={() => {

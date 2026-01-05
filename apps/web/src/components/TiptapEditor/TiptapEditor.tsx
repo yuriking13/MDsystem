@@ -23,6 +23,7 @@ import PageSettingsModal, { type PageSettings } from './PageSettingsModal';
 import { ChartNode, insertChartIntoEditor, type ChartNodeAttrs } from './extensions/ChartNode';
 import { CitationMark, type CitationAttrs } from './extensions/CitationMark';
 import { TableFigureNumbering } from './extensions/TableFigureNumbering';
+import TableEditorModal from './TableEditorModal';
 import './TiptapEditor.css';
 
 import type { CitationStyle } from '../../lib/api';
@@ -146,6 +147,14 @@ interface TiptapEditorProps {
   editable?: boolean;
 }
 
+type TableEditState = {
+  data: string[][];
+  colWidths?: number[];
+  statisticId?: string | null;
+  tablePos: number;
+  tableNodeSize: number;
+};
+
 export default function TiptapEditor({
   content = '',
   onChange,
@@ -162,6 +171,8 @@ export default function TiptapEditor({
   const [showOutline, setShowOutline] = useState(true);
   const [showBibliography, setShowBibliography] = useState(true);
   const [showPageSettings, setShowPageSettings] = useState(false);
+  const [showTableEditor, setShowTableEditor] = useState(false);
+  const [tableEditState, setTableEditState] = useState<TableEditState | null>(null);
   const [headings, setHeadings] = useState<Array<{level: number; text: string; id: string}>>([]);
   const [currentStyle, setCurrentStyle] = useState<CitationStyle>(citationStyle);
   const styleConfig = STYLE_CONFIGS[currentStyle] || STYLE_CONFIGS.gost;
@@ -268,6 +279,120 @@ export default function TiptapEditor({
       updateHeadings(editor);
     },
   });
+
+  // ===========================
+  // Table external editor helpers
+  // ===========================
+  const getSelectedTableInfo = useCallback(() => {
+    if (!editor) return null;
+    const { state } = editor;
+    const { $from } = state.selection;
+    for (let depth = $from.depth; depth > 0; depth--) {
+      const node = $from.node(depth);
+      if (node.type.name === 'table') {
+        const pos = $from.before(depth);
+        const dom = editor.view.nodeDOM(pos) as HTMLElement | null;
+        return { node, pos, dom };
+      }
+    }
+    return null;
+  }, [editor]);
+
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+  const buildTableHtml = (data: string[][], widths?: number[], statisticId?: string | null) => {
+    const cols = data.reduce((m, r) => Math.max(m, r.length), 0);
+    let html = '<table class="tiptap-table"';
+    if (statisticId) {
+      html += ` data-statistic-id="${statisticId}"`;
+    }
+    html += '>';
+
+    html += '<colgroup>';
+    for (let c = 0; c < cols; c++) {
+      const w = widths?.[c];
+      const px = w ? Math.max(40, Math.round(w)) : 100;
+      html += `<col style="width: ${px}px;" />`;
+    }
+    html += '</colgroup>';
+
+    data.forEach((row, rowIdx) => {
+      html += '<tr>';
+      for (let c = 0; c < cols; c++) {
+        const text = row[c] ?? '';
+        const tag = rowIdx === 0 ? 'th' : 'td';
+        const w = widths?.[c];
+        const cwAttr = w ? ` colwidth="${Math.max(40, Math.round(w))}"` : '';
+        html += `<${tag}${cwAttr}><p>${escapeHtml(text)}</p></${tag}>`;
+      }
+      html += '</tr>';
+    });
+
+    html += '</table>';
+    return html;
+  };
+
+  const handleOpenTableEditor = useCallback(() => {
+    const info = getSelectedTableInfo();
+    if (!info) {
+      alert('Курсор должен быть внутри таблицы');
+      return;
+    }
+
+    const { node, pos, dom } = info;
+    const rowsData: string[][] = [];
+    const colWidths: number[] = [];
+
+    node.forEach((rowNode: any) => {
+      if (rowNode.type.name === 'tableRow') {
+        const rowArr: string[] = [];
+        rowNode.forEach((cellNode: any, colIdx: number) => {
+          if (cellNode.type.name === 'tableCell' || cellNode.type.name === 'tableHeader') {
+            rowArr.push(cellNode.textContent || '');
+            const cw = cellNode.attrs?.colwidth?.[0];
+            if (cw) {
+              colWidths[colIdx] = cw;
+            }
+          }
+        });
+        rowsData.push(rowArr);
+      }
+    });
+
+    setTableEditState({
+      data: rowsData,
+      colWidths,
+      statisticId: dom?.getAttribute('data-statistic-id'),
+      tablePos: pos,
+      tableNodeSize: node.nodeSize,
+    });
+    setShowTableEditor(true);
+  }, [getSelectedTableInfo]);
+
+  const handleSaveTableEditor = useCallback(
+    (payload: { data: string[][]; colWidths?: number[] }) => {
+      if (!editor || !tableEditState) return;
+      const { tablePos, tableNodeSize, statisticId } = tableEditState;
+      const html = buildTableHtml(payload.data, payload.colWidths, statisticId);
+
+      editor
+        .chain()
+        .focus()
+        .setTextSelection({ from: tablePos, to: tablePos + tableNodeSize })
+        .insertContent(html)
+        .run();
+
+      setShowTableEditor(false);
+      setTableEditState(null);
+    },
+    [editor, tableEditState]
+  );
 
   // Extract headings from document for outline
   const updateHeadings = useCallback((editorInstance: any) => {
@@ -669,6 +794,7 @@ export default function TiptapEditor({
           onInsertCitation={onInsertCitation}
           onImportStatistic={onImportStatistic}
           onCreateChartFromTable={onCreateChartFromTable}
+          onOpenTableEditor={handleOpenTableEditor}
           onToggleOutline={() => setShowOutline(!showOutline)}
           onToggleBibliography={() => setShowBibliography(!showBibliography)}
           onOpenPageSettings={() => setShowPageSettings(true)}
@@ -711,6 +837,13 @@ export default function TiptapEditor({
         currentSettings={pageSettings}
         onApply={handleApplyPageSettings}
         onApplyStyle={handleApplyStyle}
+      />
+      <TableEditorModal
+        open={showTableEditor}
+        initialData={tableEditState?.data?.length ? tableEditState.data : [['', '']]}
+        initialColWidths={tableEditState?.colWidths}
+        onClose={() => { setShowTableEditor(false); setTableEditState(null); }}
+        onSave={handleSaveTableEditor}
       />
     </div>
   );

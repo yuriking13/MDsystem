@@ -1,0 +1,19 @@
+.tabulator-modal .modal-body {
+  padding-top: 0.5rem;
+}
+
+.tabulator-container {
+  width: 100%;
+  min-height: 320px;
+}
+
+.tabulator-controls {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.tabulator-buttons {
+  display: flex;
+  gap: 8px;
+}
