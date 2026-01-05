@@ -203,16 +203,9 @@ export default function TiptapEditor({
         paragraph: false, // Отключаем стандартный paragraph
       }),
       CustomParagraph, // Используем свой paragraph с indent
-      Underline,
       TextAlign.configure({
         types: ['heading', 'paragraph'],
         alignments: ['left', 'center', 'right', 'justify'],
-      }),
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'tiptap-link',
-        },
       }),
       Image.configure({
         HTMLAttributes: {
@@ -224,6 +217,7 @@ export default function TiptapEditor({
       }),
       Table.configure({
         resizable: true,
+        allowTableNodeSelection: true,
         HTMLAttributes: {
           class: 'tiptap-table',
         },
@@ -239,6 +233,13 @@ export default function TiptapEditor({
       ChartNode,
       CitationMark,
       TableFigureNumbering,
+      Underline,
+      Link.configure({
+        openOnClick: false,
+        HTMLAttributes: {
+          class: 'tiptap-link',
+        },
+      }),
       PaginationPlus.configure({
         pageHeight: styleConfig.pageHeight,
         pageWidth: styleConfig.pageWidth,

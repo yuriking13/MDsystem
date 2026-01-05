@@ -297,6 +297,15 @@ export default function ProjectDetailPage() {
   
   async function handleDeleteStatistic(statId: string) {
     if (!id) return;
+    
+    // Проверяем, что ID - это валидный UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(statId)) {
+      setError("Невозможно удалить: недействительный ID статистики. Эта запись может быть повреждена.");
+      console.error("Invalid statistic ID:", statId);
+      return;
+    }
+    
     if (!confirm("Удалить этот элемент статистики?")) return;
     try {
       await apiDeleteStatistic(id, statId);
@@ -1000,6 +1009,10 @@ export default function ProjectDetailPage() {
                   const tableData = stat.table_data as TableData | undefined;
                   const showAsTable = statisticsView === 'tables';
                   
+                  // Проверяем, валиден ли ID
+                  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                  const isValidId = uuidRegex.test(stat.id);
+                  
                   // Находим документы, в которых используется этот график
                   const usedInDocIds = stat.used_in_documents || [];
                   const usedInDocuments = usedInDocIds.map(docId => 
@@ -1007,7 +1020,19 @@ export default function ProjectDetailPage() {
                   ).filter(Boolean);
                   
                   return (
-                    <div key={stat.id} className="stat-card">
+                    <div key={stat.id} className="stat-card" style={!isValidId ? { border: '2px solid #ff6b6b', opacity: 0.7 } : undefined}>
+                      {!isValidId && (
+                        <div style={{ 
+                          padding: '8px 12px', 
+                          background: '#ff6b6b', 
+                          color: 'white', 
+                          fontSize: '12px',
+                          borderRadius: '4px 4px 0 0',
+                          marginBottom: '8px'
+                        }}>
+                          ⚠️ Поврежденная запись: невалидный ID. Удаление и редактирование недоступны.
+                        </div>
+                      )}
                       <div className="stat-card-header">
                         <div className="stat-card-title-row">
                           <span className="stat-card-icon">
@@ -1111,7 +1136,8 @@ export default function ProjectDetailPage() {
                         <button 
                           className="btn stat-action-btn" 
                           onClick={() => setEditingStat(stat)}
-                          title="Редактировать"
+                          title={!isValidId ? "Редактирование недоступно для поврежденных записей" : "Редактировать"}
+                          disabled={!isValidId}
                         >
                           ✏️ Редактировать
                         </button>
@@ -1131,7 +1157,8 @@ export default function ProjectDetailPage() {
                         <button 
                           className="btn secondary stat-action-btn stat-delete-btn" 
                           onClick={() => handleDeleteStatistic(stat.id)}
-                          title="Удалить"
+                          title={!isValidId ? "Удаление недоступно для поврежденных записей" : "Удалить"}
+                          disabled={!isValidId}
                         >
                           🗑️
                         </button>
