@@ -10,40 +10,50 @@ export const CustomTableHeader = TableHeader.extend({
           return element.style.backgroundColor || element.getAttribute('data-bgcolor') || null;
         },
         renderHTML: (attributes) => {
-          if (!attributes.backgroundColor) {
-            return {};
-          }
-          return {
-            'data-bgcolor': attributes.backgroundColor,
-            style: `background-color: ${attributes.backgroundColor}`,
-          };
+          return {};
         },
       },
       textAlign: {
         default: null,
         parseHTML: (element) => element.style.textAlign || null,
         renderHTML: (attributes) => {
-          if (!attributes.textAlign || attributes.textAlign === 'left') {
-            return {};
-          }
-          return {
-            style: `text-align: ${attributes.textAlign}`,
-          };
+          return {};
         },
       },
       verticalAlign: {
         default: null,
         parseHTML: (element) => element.style.verticalAlign || null,
         renderHTML: (attributes) => {
-          if (!attributes.verticalAlign || attributes.verticalAlign === 'top') {
-            return {};
-          }
-          return {
-            style: `vertical-align: ${attributes.verticalAlign}`,
-          };
+          return {};
         },
       },
     };
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    const attrs = node.attrs;
+    const styleParts: string[] = [];
+
+    if (HTMLAttributes.style) {
+      styleParts.push(HTMLAttributes.style as string);
+    }
+    if (attrs.backgroundColor) {
+      styleParts.push(`background-color: ${attrs.backgroundColor}`);
+    }
+    if (attrs.textAlign && attrs.textAlign !== 'left') {
+      styleParts.push(`text-align: ${attrs.textAlign}`);
+    }
+    if (attrs.verticalAlign && attrs.verticalAlign !== 'top') {
+      styleParts.push(`vertical-align: ${attrs.verticalAlign}`);
+    }
+
+    const mergedAttrs: Record<string, any> = {
+      ...HTMLAttributes,
+      ...(styleParts.length ? { style: styleParts.join('; ') } : {}),
+      ...(attrs.backgroundColor ? { 'data-bgcolor': attrs.backgroundColor } : {}),
+    };
+
+    return ['th', mergedAttrs, 0];
   },
 });
 

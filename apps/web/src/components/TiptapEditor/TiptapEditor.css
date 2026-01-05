@@ -735,25 +735,23 @@
    TABLE RESIZE - TipTap specific
    ============================================ */
 
-/* Table wrapper для ресайза - ВАЖНО: позволяем расширяться */
+/* Table wrapper для ресайза - фиксируем ширину контейнера и оставляем overflow видимым */
 .tiptap-editor .tableWrapper,
 .ProseMirror .tableWrapper {
-  overflow: auto;
+  overflow: visible !important;
   margin: 1em 0;
   position: relative;
-  width: auto;
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
   display: block;
-  /* Позволяет таблице расширяться и скроллироваться если нужно */
 }
 
-/* Таблица внутри wrapper - разрешаем resize */
+/* Таблица внутри wrapper - разрешаем resize, ширина под контейнер */
 .tiptap-editor .tableWrapper table,
 .ProseMirror .tableWrapper table {
   table-layout: fixed !important;
   display: table;
-  width: auto;
-  min-width: 100%;
+  width: 100%;
   overflow: visible;
   border-collapse: collapse;
   /* width управляется через colwidth атрибуты на ячейках и col элементы */
