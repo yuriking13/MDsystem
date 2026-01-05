@@ -708,6 +708,20 @@ export async function apiUpdateStatistic(
   );
 }
 
+export async function apiMarkStatisticUsedInDocument(
+  projectId: string,
+  statId: string,
+  documentId: string
+): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(
+    `/api/projects/${projectId}/statistics/${statId}/use`,
+    {
+      method: "POST",
+      body: JSON.stringify({ documentId }),
+    }
+  );
+}
+
 export async function apiDeleteStatistic(
   projectId: string,
   statId: string

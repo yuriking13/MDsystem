@@ -559,6 +559,34 @@ export default function Editor({
 
   (window as any).__editorInsertCitation = insertCitation;
 
+  // Функция для вставки графика из статистики (импорт)
+  const insertChartFromStatistic = useCallback(
+    (stat: { id: string; config: any; table_data: any }) => {
+      if (editor && projectId) {
+        const chartDataStr = JSON.stringify({
+          config: stat.config,
+          tableData: stat.table_data
+        });
+        
+        editor.chain().focus().insertContent([
+          { type: 'paragraph' },
+          { 
+            type: 'chartNode', 
+            attrs: { 
+              chartData: chartDataStr,
+              statisticId: stat.id,
+              projectId: projectId
+            } 
+          },
+          { type: 'paragraph' },
+        ]).run();
+      }
+    },
+    [editor, projectId]
+  );
+
+  (window as any).__editorInsertChart = insertChartFromStatistic;
+
   // Статистика документа
   const wordCount = editor?.state.doc.textContent.split(/\s+/).filter(Boolean).length || 0;
   const charCount = editor?.state.doc.textContent.length || 0;
@@ -663,6 +691,7 @@ export default function Editor({
             minHeight: pageHeight,
             padding: `${settings.marginTop}mm ${settings.marginRight}mm ${settings.marginBottom}mm ${settings.marginLeft}mm`,
             lineHeight: settings.lineHeight,
+            background: '#ffffff',
           } : {
             lineHeight: settings.lineHeight,
           }}

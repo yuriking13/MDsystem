@@ -813,6 +813,12 @@ input::placeholder {
 .editor-content-area {
   min-height: 100%;
   outline: none;
+  width: 100%;
+}
+
+/* В режиме страниц - белый фон */
+.editor-page.page-view .editor-content-area {
+  background: #ffffff;
 }
 
 .editor-content-area .tiptap {
@@ -851,6 +857,7 @@ input::placeholder {
 /* Стили для page view */
 .editor-page.page-view .editor-content-area .tiptap {
   color: var(--editor-text);
+  background: #ffffff;
 }
 
 .editor-page.page-view .editor-content-area .tiptap p,
@@ -2409,10 +2416,10 @@ input::placeholder {
   border-color: var(--danger) !important;
 }
 
-/* ===== EDITOR PAGES MODE FIX ===== */
+/* ===== EDITOR PAGES MODE ===== */
 
 .editor-scroll-area.pages-mode {
-  background: linear-gradient(135deg, #3a4a6a 0%, #2a3a5a 100%);
+  background: linear-gradient(180deg, #3a4a6a 0%, #2a3a5a 50%, #3a4a6a 100%);
   padding: 40px 20px;
   min-height: 100%;
   display: flex;
@@ -2420,53 +2427,35 @@ input::placeholder {
   align-items: center;
 }
 
-/* Page container - the white "paper" - FIXED WIDTH for all content */
+/* The white "paper" container */
 .editor-scroll-area.pages-mode .editor-page.page-view {
-  width: 794px !important;
-  min-width: 794px !important;
-  max-width: 794px !important;
-  min-height: 1123px;
-  padding: 20mm 15mm 20mm 30mm;
   background: #ffffff !important;
-  color: #1a1a1a !important;
   box-shadow: 
     0 4px 25px rgba(0, 0, 0, 0.5),
     0 0 0 1px rgba(0, 0, 0, 0.1);
-  margin: 0 auto 40px auto;
   border-radius: 2px;
-  line-height: 1.5;
-  position: relative;
   box-sizing: border-box;
+  /* Width and height set via inline styles from Editor component */
 }
 
-/* Ensure the content area has the same fixed width */
+/* Content area inside the page - MUST have white background */
 .editor-scroll-area.pages-mode .editor-page.page-view .editor-content-area {
   background: #ffffff !important;
-  color: #1a1a1a !important;
-  min-height: calc(1123px - 40mm);
   width: 100% !important;
-  box-sizing: border-box;
+  min-height: 100%;
 }
 
-/* ProseMirror/TipTap editor core - CRITICAL: same width as page */
+/* TipTap editor - white background, dark text */
 .editor-scroll-area.pages-mode .editor-page.page-view .ProseMirror,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap {
   background: #ffffff !important;
   color: #1a1a1a !important;
-  min-height: calc(1123px - 40mm - 20px);
-  width: 100% !important;
-  max-width: 100% !important;
   outline: none;
-  box-sizing: border-box;
+  width: 100% !important;
+  min-height: 800px;
 }
 
-/* All text elements inherit page styles */
-.editor-scroll-area.pages-mode .editor-page.page-view .tiptap > * {
-  background: transparent;
-  color: #1a1a1a !important;
-  max-width: 100%;
-}
-
+/* All text in pages mode */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap p,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap h1,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap h2,
@@ -2479,68 +2468,57 @@ input::placeholder {
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap ol,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap blockquote,
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap pre,
-.editor-scroll-area.pages-mode .editor-page.page-view .tiptap code {
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap code,
+.editor-scroll-area.pages-mode .editor-page.page-view .tiptap > * {
   color: #1a1a1a !important;
+  background: transparent;
 }
 
 /* Tables in pages mode */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap table {
-  border-color: #ddd;
-  width: 100%;
-  max-width: 100%;
+  border-color: #ddd !important;
+  background: #ffffff !important;
 }
 
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap table th {
-  background: #f5f5f5;
+  background: #f5f5f5 !important;
   color: #1a1a1a !important;
-  border-color: #ddd;
+  border-color: #ddd !important;
 }
 
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap table td {
-  background: transparent;
+  background: #ffffff !important;
   color: #1a1a1a !important;
-  border-color: #ddd;
+  border-color: #ddd !important;
 }
 
-/* Links in pages mode */
+/* Links, blockquotes, citations in pages mode */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap a {
   color: #2563eb !important;
 }
 
-/* Blockquote in pages mode */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap blockquote {
-  border-left-color: #4b74ff;
+  border-left-color: #4b74ff !important;
   color: #555 !important;
 }
 
-/* Citation refs in pages mode */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap .citation-ref {
   color: #2563eb !important;
 }
 
 /* Chart containers in pages mode */
 .editor-scroll-area.pages-mode .editor-page.page-view .chart-container-live {
-  background: #f9f9f9;
-  border-color: #ddd;
+  background: #f9f9f9 !important;
+  border-color: #ddd !important;
 }
 
-/* Placeholder text in pages mode */
+.editor-scroll-area.pages-mode .editor-page.page-view .chart-node-wrapper {
+  background: #ffffff !important;
+}
+
+/* Placeholder text */
 .editor-scroll-area.pages-mode .editor-page.page-view .tiptap .is-editor-empty:first-child::before {
-  color: #999;
-}
-
-/* Visual page break indicators - dashed lines every ~page height */
-.editor-scroll-area.pages-mode .editor-page.page-view .tiptap {
-  background-image: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent 1043px,
-    #e0e0e0 1043px,
-    #e0e0e0 1045px,
-    transparent 1045px,
-    transparent 1083px
-  );
-  background-color: #ffffff;
+  color: #999 !important;
 }
 
 /* Article picker item */
