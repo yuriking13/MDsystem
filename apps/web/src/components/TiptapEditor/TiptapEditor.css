@@ -777,6 +777,12 @@
   display: table-column;
 }
 
+/* Все col элементы должны иметь явный width или min-width для правильной работы resize */
+.tiptap-editor .tableWrapper col {
+  /* Если нет width, используем min-width по умолчанию */
+  min-width: 50px;
+}
+
 /* Resize handle для колонок */
 .tiptap-editor .column-resize-handle,
 .tiptap-table .column-resize-handle,

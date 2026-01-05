@@ -458,38 +458,76 @@ export default function TiptapEditor({
           const pos = $from.before(depth);
           const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
           
-          // DEBUG: Log table structure WITH DETAILED ANALYSIS
+          // DEBUG: Log DETAILED table structure WITH COL WIDTHS
           if (tableElement) {
+            const wrapper = tableElement.parentElement;
             const colgroup = tableElement.querySelector('colgroup');
-            const cols = tableElement.querySelectorAll('col');
+            const colsArray = Array.from(tableElement.querySelectorAll('col'));
             const firstCell = tableElement.querySelector('td, th');
-            const firstCellHTML = firstCell?.outerHTML || 'NO CELL';
+            const allCells = tableElement.querySelectorAll('td, th');
             
-            console.log('═══ TABLE STRUCTURE DEBUG ═══', {
-              hasColgroupTag: !!colgroup,
-              colgroupElement: colgroup?.outerHTML.substring(0, 200),
-              numberOfCols: cols.length,
-              colElements: Array.from(cols).map(col => ({
+            // Log actual computed widths
+            const colWidths = colsArray.map((col, idx) => {
+              const computedStyle = window.getComputedStyle(col);
+              return {
+                index: idx,
                 style: col.getAttribute('style'),
                 width: col.style.width,
                 minWidth: col.style.minWidth,
-              })),
-              firstCellHTML: firstCellHTML.substring(0, 200),
-              tableStyle: tableElement.getAttribute('style'),
-              tableClassList: tableElement.className,
-              wrapper: {
-                hasWrapper: !!tableElement.parentElement?.classList.contains('tableWrapper'),
-                wrapperClass: tableElement.parentElement?.className,
-              }
+                computedWidth: computedStyle.width,
+              };
             });
             
-            // CRITICAL: Check if colgroup is in DOM tree
-            if (colgroup) {
-              const colgroupParent = colgroup.parentElement;
-              console.log('Colgroup parent element:', {
-                tagName: colgroupParent?.tagName,
-                isTable: colgroupParent?.tagName === 'TABLE',
-                displayStyle: colgroupParent?.style.display,
+            // Log cell colwidth attributes
+            const cellColwidths = Array.from(allCells).slice(0, 5).map((cell, idx) => ({
+              index: idx,
+              colwidth: cell.getAttribute('colwidth'),
+              colspan: cell.getAttribute('colspan'),
+              tag: cell.tagName,
+            }));
+            
+            console.log('═══ DETAILED TABLE STRUCTURE ═══', {
+              hasWrapper: !!wrapper,
+              wrapperClass: wrapper?.className,
+              wrapperDisplay: wrapper?.style.display,
+              hasColgroupTag: !!colgroup,
+              colgroupHTML: colgroup?.outerHTML.substring(0, 300),
+              numberOfColElements: colsArray.length,
+              expectedCols: cols + 1, // +1 for header
+              colWidths: colWidths,
+              cellColwidths: cellColwidths,
+              tableStyle: tableElement.getAttribute('style'),
+              tableWidth: tableElement.style.width,
+              tableLayout: window.getComputedStyle(tableElement).tableLayout,
+              totalCells: allCells.length,
+            });
+          }
+          
+          // CRITICAL FIX: Ensure all col elements have width for resize to work
+          if (tableElement) {
+            const colgroup = tableElement.querySelector('colgroup');
+            const colElements = tableElement.querySelectorAll('col');
+            const headerCells = tableElement.querySelectorAll('thead th, tbody tr:first-child th');
+            
+            // If colgroup doesn't exist or is incomplete, create/fix it
+            if (!colgroup || colElements.length === 0 || colElements.length < headerCells.length) {
+              console.warn('Colgroup is incomplete, attempting to fix...', {
+                hasColgroupTag: !!colgroup,
+                colCount: colElements.length,
+                expectedCount: headerCells.length,
+              });
+              
+              // This would require more complex logic to rebuild colgroup
+              // For now, we'll try to ensure each col has a width
+              colElements.forEach((col, idx) => {
+                const currentWidth = col.style.width;
+                if (!currentWidth || currentWidth === 'auto' || currentWidth === '0px') {
+                  // Set a default width if none exists
+                  const headerCell = headerCells[idx] as HTMLElement;
+                  const cellWidth = headerCell?.offsetWidth || 100;
+                  col.style.width = `${cellWidth}px`;
+                  console.log(`Fixed col ${idx} width to ${cellWidth}px`);
+                }
               });
             }
           }
