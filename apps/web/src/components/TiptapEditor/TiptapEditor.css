@@ -617,11 +617,11 @@
 .tiptap-editor .tiptap table,
 .tiptap-table {
   border-collapse: collapse !important;
-  width: 100% !important;
   margin: 1em 0 !important;
-  /* Убираем table-layout: fixed чтобы работал resize */
+  /* table-layout: auto для поддержки ресайза */
   table-layout: auto;
   border: 2px solid #1e293b !important;
+  min-width: 100%;
 }
 
 .tiptap-editor table td,
@@ -733,17 +733,20 @@
    TABLE RESIZE - TipTap specific
    ============================================ */
 
-/* Table wrapper для скролла */
+/* Table wrapper для ресайза */
 .tiptap-editor .tableWrapper {
-  overflow-x: auto;
+  overflow: visible;
   margin: 1em 0;
   position: relative;
+  width: 100%;
 }
 
 /* Таблица внутри wrapper - разрешаем resize */
 .tiptap-editor .tableWrapper table {
   table-layout: auto;
   overflow: visible;
+  width: auto;
+  min-width: 100%;
 }
 
 /* Resize handle для колонок */
