@@ -339,6 +339,11 @@ export default function TiptapEditor({
   };
 
   const handleOpenTableEditor = useCallback(() => {
+    if (!editor || !editor.view) {
+      alert('Редактор ещё не готов');
+      return;
+    }
+
     const info = getSelectedTableInfo();
     if (!info) {
       alert('Курсор должен быть внутри таблицы');

@@ -68,6 +68,9 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
   const tableRef = useRef<any | null>(null);
   const [columnsCount, setColumnsCount] = useState<number>(0);
   const ModalAny = Modal as any;
+  const ModalHeader = ModalAny?.Header || ((props: any) => <div {...props} />);
+  const ModalBody = ModalAny?.Body || ((props: any) => <div {...props} />);
+  const ModalFooter = ModalAny?.Footer || ((props: any) => <div {...props} />);
 
   // Initialize table on open
   useEffect(() => {
@@ -147,8 +150,8 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
 
   return (
     <Modal show={open} size="6xl" dismissible onClose={onClose} className="tabulator-modal">
-      <ModalAny.Header>Редактирование таблицы</ModalAny.Header>
-      <ModalAny.Body>
+      <ModalHeader>Редактирование таблицы</ModalHeader>
+      <ModalBody>
         <div className="tabulator-controls">
           <div className="tabulator-buttons">
             <Button size="sm" color="gray" onClick={handleAddRow}>
@@ -160,13 +163,13 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
           </div>
         </div>
         <div className="tabulator-container" ref={containerRef} />
-      </ModalAny.Body>
-      <ModalAny.Footer>
+      </ModalBody>
+      <ModalFooter>
         <Button color="light" onClick={onClose}>
           Отмена
         </Button>
         <Button onClick={handleSave}>Сохранить</Button>
-      </ModalAny.Footer>
+      </ModalFooter>
     </Modal>
   );
 };
