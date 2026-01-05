@@ -266,6 +266,31 @@ export default function TiptapEditor({
       const html = editor.getHTML();
       onChange?.(html);
       updateHeadings(editor);
+      
+      // REPAIR: Fix col widths on every table update to ensure resize consistency
+      if (editable) {
+        const tables = document.querySelectorAll('.tiptap .tableWrapper table');
+        tables.forEach((table) => {
+          const colgroup = table.querySelector('colgroup');
+          if (colgroup) {
+            const cols = colgroup.querySelectorAll('col');
+            const rows = table.querySelectorAll('tr');
+            const firstRow = rows[0];
+            if (firstRow) {
+              const cells = firstRow.querySelectorAll('td, th');
+              cells.forEach((cell, idx) => {
+                const col = cols[idx];
+                if (col && cell instanceof HTMLElement) {
+                  const colwidth = cell.getAttribute('colwidth');
+                  if (colwidth && !col.style.width) {
+                    col.style.width = `${colwidth}px`;
+                  }
+                }
+              });
+            }
+          }
+        });
+      }
     },
   });
 
