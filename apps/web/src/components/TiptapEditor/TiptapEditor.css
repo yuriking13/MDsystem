@@ -678,9 +678,23 @@
 .tiptap-table .selectedCell,
 .tiptap-editor table td.selectedCell,
 .tiptap-editor table th.selectedCell {
-  background: rgba(59, 130, 246, 0.3) !important;
-  outline: 2px solid #3b82f6 !important;
-  outline-offset: -2px;
+  background: rgba(59, 130, 246, 0.25) !important;
+  box-shadow: inset 0 0 0 2px #3b82f6 !important;
+  position: relative;
+}
+
+.tiptap-editor table .selectedCell::after,
+.tiptap-editor table td.selectedCell::after,
+.tiptap-editor table th.selectedCell::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid #3b82f6;
+  pointer-events: none;
+  z-index: 1;
 }
 
 /* Current cell focus */

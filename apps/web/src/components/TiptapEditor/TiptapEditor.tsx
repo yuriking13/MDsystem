@@ -140,6 +140,7 @@ interface TiptapEditorProps {
   onCreateChartFromTable?: (tableHtml: string) => void;
   onRemoveCitation?: (citationId: string) => void;
   onUpdateCitationNote?: (citationId: string, note: string) => void;
+  onTableCreated?: (tableData: { rows: number; cols: number; data: any[][] }) => Promise<string | undefined>;
   citations?: Citation[];
   citationStyle?: CitationStyle;
   editable?: boolean;
@@ -153,6 +154,7 @@ export default function TiptapEditor({
   onCreateChartFromTable,
   onRemoveCitation,
   onUpdateCitationNote,
+  onTableCreated,
   citations = [],
   citationStyle = 'gost',
   editable = true,
@@ -428,6 +430,90 @@ export default function TiptapEditor({
       })
       .run();
   }, [citationStyle, editor, styleConfig]);
+
+  // Auto-save newly created tables to Statistics
+  useEffect(() => {
+    if (!editor || !onTableCreated) return;
+
+    const processedTables = new Set<string>();
+    let processingInProgress = false;
+
+    const handleUpdate = async () => {
+      if (processingInProgress) return;
+      processingInProgress = true;
+
+      try {
+        // Find tables without data-statistic-id
+        const doc = editor.state.doc;
+        const tablesToSave: Array<{ pos: number; node: any; key: string }> = [];
+
+        doc.descendants((node: any, pos: number) => {
+          if (node.type.name === 'table') {
+            const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
+            
+            if (tableElement && !tableElement.hasAttribute('data-statistic-id')) {
+              // Generate unique key for this table position and content
+              const tableKey = `${pos}_${node.nodeSize}_${node.childCount}`;
+              
+              if (!processedTables.has(tableKey)) {
+                tablesToSave.push({ pos, node, key: tableKey });
+              }
+            }
+          }
+        });
+
+        // Process each table without ID
+        for (const { pos, node, key } of tablesToSave) {
+          // Mark as processing to avoid duplicates
+          processedTables.add(key);
+          
+          // Extract table data
+          const rows: string[][] = [];
+          let cols = 0;
+
+          node.forEach((rowNode: any) => {
+            if (rowNode.type.name === 'tableRow') {
+              const rowData: string[] = [];
+              rowNode.forEach((cellNode: any) => {
+                if (cellNode.type.name === 'tableCell' || cellNode.type.name === 'tableHeader') {
+                  rowData.push(cellNode.textContent || '');
+                }
+              });
+              rows.push(rowData);
+              cols = Math.max(cols, rowData.length);
+            }
+          });
+
+          // Only save tables with at least 2 rows (header + data)
+          if (rows.length < 2) continue;
+
+          // Call the callback to save to Statistics
+          const statisticId = await onTableCreated({
+            rows: rows.length,
+            cols,
+            data: rows,
+          });
+
+          // Update table with the statistic ID
+          if (statisticId) {
+            const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
+            if (tableElement) {
+              tableElement.setAttribute('data-statistic-id', statisticId);
+            }
+          }
+        }
+      } finally {
+        processingInProgress = false;
+      }
+    };
+
+    editor.on('update', handleUpdate);
+
+    return () => {
+      editor.off('update', handleUpdate);
+      processedTables.clear();
+    };
+  }, [editor, onTableCreated]);
 
   // Navigate to heading
   const scrollToHeading = useCallback((headingId: string) => {

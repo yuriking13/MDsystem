@@ -12,6 +12,7 @@ import {
   apiGetStatistics,
   apiMarkStatisticUsedInDocument,
   apiSyncStatistics,
+  apiCreateStatistic,
   type Document,
   type Article,
   type Citation,
@@ -366,6 +367,38 @@ export default function DocumentPage() {
     }
   }
 
+  // Автосохранение новой таблицы в Статистику
+  const handleTableCreated = useCallback(async (tableData: { rows: number; cols: number; data: any[][] }) => {
+    if (!projectId || !docId) return undefined;
+    
+    try {
+      // Создаём статистику из таблицы
+      const result = await apiCreateStatistic(projectId, {
+        type: "table",
+        title: `Таблица ${new Date().toLocaleString('ru-RU')}`,
+        description: "Автоматически создана в документе",
+        config: {},
+        tableData: {
+          headers: tableData.data[0] || [],
+          rows: tableData.data.slice(1) || [],
+        },
+        dataClassification: {
+          variableType: "quantitative",
+          subType: "continuous",
+        },
+      });
+      
+      // Отмечаем как используемую в документе
+      await apiMarkStatisticUsedInDocument(projectId, result.statistic.id, docId);
+      
+      console.log('Table auto-saved to Statistics:', result.statistic.id);
+      return result.statistic.id;
+    } catch (err) {
+      console.error("Failed to auto-save table:", err);
+      return undefined;
+    }
+  }, [projectId, docId]);
+
   // Добавить цитату - всегда создаём новую запись (можно несколько цитат к одному источнику)
   // Модальное окно НЕ закрывается, чтобы можно было добавить несколько цитат
   async function handleAddCitation(article: Article) {
@@ -503,6 +536,7 @@ export default function DocumentPage() {
             onCreateChartFromTable={openChartModal}
             onRemoveCitation={handleRemoveCitation}
             onUpdateCitationNote={handleUpdateCitationNote}
+            onTableCreated={handleTableCreated}
             citations={doc.citations || []}
             citationStyle={citationStyle}
           />
