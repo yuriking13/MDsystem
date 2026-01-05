@@ -32,21 +32,26 @@ export const CustomTableCell = TableCell.extend({
 
   renderHTML({ node, HTMLAttributes }) {
     const attrs = node.attrs;
-    const styles: string[] = [];
+    const customStyles: string[] = [];
     
     if (attrs.backgroundColor) {
-      styles.push(`background-color: ${attrs.backgroundColor}`);
+      customStyles.push(`background-color: ${attrs.backgroundColor}`);
     }
     if (attrs.textAlign && attrs.textAlign !== 'left') {
-      styles.push(`text-align: ${attrs.textAlign}`);
+      customStyles.push(`text-align: ${attrs.textAlign}`);
     }
     if (attrs.verticalAlign && attrs.verticalAlign !== 'top') {
-      styles.push(`vertical-align: ${attrs.verticalAlign}`);
+      customStyles.push(`vertical-align: ${attrs.verticalAlign}`);
     }
+    
+    // Объединяем стили от TipTap (с шириной) и наши пользовательские стили
+    const existingStyle = HTMLAttributes.style || '';
+    const newStyle = customStyles.join('; ');
+    const combinedStyle = [existingStyle, newStyle].filter(s => s?.trim()).join('; ');
     
     const combinedAttrs: Record<string, any> = {
       ...HTMLAttributes,
-      ...(styles.length > 0 ? { style: styles.join('; ') } : {}),
+      ...(combinedStyle ? { style: combinedStyle } : {}),
       ...(attrs.backgroundColor ? { 'data-bgcolor': attrs.backgroundColor } : {}),
     };
     

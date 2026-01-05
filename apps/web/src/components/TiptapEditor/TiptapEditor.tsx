@@ -457,6 +457,20 @@ export default function TiptapEditor({
           const pos = $from.before(depth);
           const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
           
+          // DEBUG: Log table structure
+          if (tableElement) {
+            console.log('TABLE STRUCTURE DEBUG:', {
+              hasColgroup: !!tableElement.querySelector('colgroup'),
+              colElements: tableElement.querySelectorAll('col').length,
+              tableHTML: tableElement.outerHTML.substring(0, 500),
+              innerElements: {
+                colgroup: tableElement.querySelector('colgroup')?.outerHTML,
+                firstCol: tableElement.querySelector('col')?.outerHTML,
+                firstCell: tableElement.querySelector('td, th')?.outerHTML,
+              }
+            });
+          }
+          
           // Only process if no data-statistic-id
           if (tableElement && !tableElement.hasAttribute('data-statistic-id')) {
             // Extract table data

@@ -621,7 +621,7 @@
   /* table-layout: fixed ОБЯЗАТЕЛЕН для ресайза через colwidth */
   table-layout: fixed !important;
   border: 2px solid #1e293b !important;
-  /* width НЕ устанавливаем - TipTap управляет через colwidth */
+  /* Позволяем таблице расширяться через inline style min-width */
 }
 
 .tiptap-editor table td,
@@ -635,7 +635,7 @@
   text-align: left;
   vertical-align: top;
   position: relative;
-  min-width: 50px;
+  /* БЕЗ min-width - TipTap управляет через colwidth */
 }
 
 .tiptap-editor table th,
@@ -741,14 +741,37 @@
   position: relative;
   width: 100%;
   max-width: 100%;
+  display: block;
+  /* Позволяет таблице расширяться сверх контейнера если нужно */
 }
 
 /* Таблица внутри wrapper - разрешаем resize */
 .tiptap-editor .tableWrapper table,
 .ProseMirror .tableWrapper table {
   table-layout: fixed !important;
+  display: table;
+  width: 100%;
   overflow: visible;
-  /* width НЕ устанавливаем - пусть браузер использует colwidth */
+  border-collapse: collapse;
+  /* width управляется через colwidth атрибуты на ячейках и col элементы */
+}
+
+/* colgroup и col для управления шириной колонок при resize */
+.tiptap-editor .tableWrapper colgroup,
+.ProseMirror .tableWrapper colgroup {
+  display: table-column-group;
+}
+
+.tiptap-editor .tableWrapper col,
+.ProseMirror .tableWrapper col {
+  display: table-column;
+  /* col наследует width от inline styles, установленные TipTap */
+}
+
+/* Если col имеет width атрибут, уважаем его */
+.tiptap-editor .tableWrapper col[style*="width"],
+.ProseMirror .tableWrapper col[style*="width"] {
+  display: table-column;
 }
 
 /* Resize handle для колонок */
@@ -784,6 +807,9 @@
 .tiptap-editor table th {
   position: relative;
   overflow: visible;
+  padding: 8px;
+  /* Ширина управляется через colwidth атрибут и col элементы */
+  /* БЕЗ width свойства - пусть браузер использует colwidth */
 }
 
 /* Resize cursor при перетаскивании */
