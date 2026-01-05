@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -17,6 +17,7 @@ import { PaginationPlus } from 'tiptap-pagination-plus';
 
 import TiptapToolbar from './TiptapToolbar';
 import DocumentOutline from './DocumentOutline';
+import { ChartNode, insertChartIntoEditor, type ChartNodeAttrs } from './extensions/ChartNode';
 import './TiptapEditor.css';
 
 import type { CitationStyle } from '../../lib/api';
@@ -141,6 +142,7 @@ export default function TiptapEditor({
       Highlight.configure({
         multicolor: true,
       }),
+      ChartNode,
       PaginationPlus.configure({
         pageHeight: styleConfig.pageHeight,
         pageWidth: styleConfig.pageWidth,
@@ -190,51 +192,68 @@ export default function TiptapEditor({
   useEffect(() => {
     if (!editor) return;
     
-    // Insert chart function
+    // Insert chart function - uses the new ChartNode extension
     const insertChart = (chartData: ChartData) => {
-      const chartHtml = `
-        <div class="chart-container" data-chart='${JSON.stringify(chartData).replace(/'/g, "&#39;")}' data-chart-id="${chartData.id}">
-          <p class="chart-placeholder">📊 График: ${chartData.config?.title || 'Без названия'}</p>
-        </div>
-      `;
+      const attrs: ChartNodeAttrs = {
+        chartId: chartData.id || `chart_${Date.now()}`,
+        tableData: chartData.table_data,
+        config: chartData.config,
+        title: chartData.config?.title,
+      };
       
-      editor.chain().focus().insertContent(chartHtml).run();
+      insertChartIntoEditor(editor, attrs);
     };
     
     // Insert table function
     const insertTable = (tableData: { headers: string[]; rows: string[][] }, title?: string) => {
-      const rows = tableData.rows || [];
-      const headers = tableData.headers || [];
+      // Use TipTap's built-in table insertion
+      const rows = tableData.rows?.length || 3;
+      const cols = tableData.headers?.length || 3;
       
-      // Build table HTML
-      let tableHtml = '<table class="tiptap-table">';
+      editor.chain().focus().insertTable({ rows: rows + 1, cols, withHeaderRow: true }).run();
       
-      // Header row
-      if (headers.length > 0) {
-        tableHtml += '<tr>';
-        headers.forEach(h => {
-          tableHtml += `<th>${h}</th>`;
+      // Fill in the data
+      setTimeout(() => {
+        // Get the table node and fill it
+        const { state } = editor;
+        let tablePos = -1;
+        
+        state.doc.descendants((node, pos) => {
+          if (node.type.name === 'table' && tablePos === -1) {
+            tablePos = pos;
+          }
         });
-        tableHtml += '</tr>';
-      }
-      
-      // Data rows
-      rows.forEach(row => {
-        tableHtml += '<tr>';
-        row.forEach(cell => {
-          tableHtml += `<td>${cell}</td>`;
-        });
-        tableHtml += '</tr>';
-      });
-      
-      tableHtml += '</table>';
-      
-      // Add title if provided
-      if (title) {
-        tableHtml = `<p><strong>${title}</strong></p>` + tableHtml;
-      }
-      
-      editor.chain().focus().insertContent(tableHtml).run();
+        
+        if (tablePos >= 0) {
+          // Fill headers
+          let cellIndex = 0;
+          const headers = tableData.headers || [];
+          const dataRows = tableData.rows || [];
+          
+          state.doc.nodesBetween(tablePos, state.doc.content.size, (node, pos) => {
+            if (node.type.name === 'tableHeader' || node.type.name === 'tableCell') {
+              const rowIdx = Math.floor(cellIndex / cols);
+              const colIdx = cellIndex % cols;
+              
+              let text = '';
+              if (rowIdx === 0 && colIdx < headers.length) {
+                text = headers[colIdx];
+              } else if (rowIdx > 0 && rowIdx - 1 < dataRows.length && colIdx < dataRows[rowIdx - 1].length) {
+                text = dataRows[rowIdx - 1][colIdx];
+              }
+              
+              if (text) {
+                editor.chain()
+                  .setTextSelection(pos + 1)
+                  .insertContent(text)
+                  .run();
+              }
+              
+              cellIndex++;
+            }
+          });
+        }
+      }, 100);
     };
     
     (window as any).__editorInsertChart = insertChart;
