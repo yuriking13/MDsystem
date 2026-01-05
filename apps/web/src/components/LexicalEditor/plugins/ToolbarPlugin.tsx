@@ -77,10 +77,10 @@ export default function ToolbarPlugin({
 
   return (
     <div className="lexical-toolbar">
-      <div className="toolbar-group">
+      <ButtonGroup>
         <Tooltip content="Жирный (Ctrl+B)">
           <Button
-            size="xs"
+            size="sm"
             color={isBold ? 'blue' : 'gray'}
             onClick={() => formatText('bold')}
           >
@@ -90,7 +90,7 @@ export default function ToolbarPlugin({
 
         <Tooltip content="Курсив (Ctrl+I)">
           <Button
-            size="xs"
+            size="sm"
             color={isItalic ? 'blue' : 'gray'}
             onClick={() => formatText('italic')}
           >
@@ -100,81 +100,82 @@ export default function ToolbarPlugin({
 
         <Tooltip content="Подчеркнутый (Ctrl+U)">
           <Button
-            size="xs"
+            size="sm"
             color={isUnderline ? 'blue' : 'gray'}
             onClick={() => formatText('underline')}
           >
             <MdFormatUnderlined className="h-4 w-4" />
           </Button>
         </Tooltip>
-      </div>
+      </ButtonGroup>
 
       <div className="toolbar-divider" />
 
-      <div className="toolbar-group">
+      <ButtonGroup>
         <Tooltip content="Заголовок 1">
-          <Button size="xs" color="gray" onClick={() => formatHeading('h1')}>
+          <Button size="sm" color="gray" onClick={() => formatHeading('h1')}>
             H1
           </Button>
         </Tooltip>
 
         <Tooltip content="Заголовок 2">
-          <Button size="xs" color="gray" onClick={() => formatHeading('h2')}>
+          <Button size="sm" color="gray" onClick={() => formatHeading('h2')}>
             H2
           </Button>
         </Tooltip>
 
         <Tooltip content="Заголовок 3">
-          <Button size="xs" color="gray" onClick={() => formatHeading('h3')}>
+          <Button size="sm" color="gray" onClick={() => formatHeading('h3')}>
             H3
           </Button>
         </Tooltip>
-      </div>
+      </ButtonGroup>
 
       <div className="toolbar-divider" />
 
-      <div className="toolbar-group">
+      <ButtonGroup>
         <Tooltip content="Маркированный список">
-          <Button size="xs" color="gray" onClick={() => formatList('bullet')}>
+          <Button size="sm" color="gray" onClick={() => formatList('bullet')}>
             <HiOutlineListBullet className="h-4 w-4" />
           </Button>
         </Tooltip>
 
         <Tooltip content="Нумерованный список">
-          <Button size="xs" color="gray" onClick={() => formatList('number')}>
+          <Button size="sm" color="gray" onClick={() => formatList('number')}>
             <HiOutlineNumberedList className="h-4 w-4" />
           </Button>
         </Tooltip>
-      </div>
+      </ButtonGroup>
 
       <div className="toolbar-divider" />
 
-      <div className="toolbar-group">
+      <ButtonGroup>
         <Tooltip content="Выровнять слева">
-          <Button size="xs" color="gray" onClick={() => formatAlignment('left')}>
+          <Button size="sm" color="gray" onClick={() => formatAlignment('left')}>
             <MdFormatAlignLeft className="h-4 w-4" />
           </Button>
         </Tooltip>
 
         <Tooltip content="Выровнять по центру">
-          <Button size="xs" color="gray" onClick={() => formatAlignment('center')}>
+          <Button size="sm" color="gray" onClick={() => formatAlignment('center')}>
             <MdFormatAlignCenter className="h-4 w-4" />
           </Button>
         </Tooltip>
 
         <Tooltip content="Выровнять справа">
-          <Button size="xs" color="gray" onClick={() => formatAlignment('right')}>
+          <Button size="sm" color="gray" onClick={() => formatAlignment('right')}>
             <MdFormatAlignRight className="h-4 w-4" />
           </Button>
         </Tooltip>
-      </div>
+      </ButtonGroup>
 
       <div className="toolbar-divider" />
 
       {onInsertCitation && (
         <Tooltip content="Вставить цитату">
-          <Button size="xs" color="green" onClick={onInsertCitation}>
-            <HiQuestionMarkCircle className="h-4 w-4" />
+          <Button size="sm" color="purple" onClick={onInsertCitation}>
+            <HiQuestionMarkCircle className="h-4 w-4 mr-1" />
+            Цитата
           </Button>
         </Tooltip>
       )}
@@ -182,14 +183,14 @@ export default function ToolbarPlugin({
       <div className="ml-auto flex gap-2">
         <ButtonGroup>
           <Button
-            size="xs"
+            size="sm"
             color={viewMode === 'scroll' ? 'blue' : 'gray'}
             onClick={() => onViewModeChange('scroll')}
           >
             📜 Лента
           </Button>
           <Button
-            size="xs"
+            size="sm"
             color={viewMode === 'pages' ? 'blue' : 'gray'}
             onClick={() => onViewModeChange('pages')}
           >
