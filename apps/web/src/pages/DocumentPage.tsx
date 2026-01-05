@@ -312,6 +312,7 @@ export default function DocumentPage() {
             content={content}
             onChange={setContent}
             onInsertCitation={openCitationPicker}
+            onImportStatistic={openImportModal}
             projectId={projectId}
             documentId={docId}
           />
