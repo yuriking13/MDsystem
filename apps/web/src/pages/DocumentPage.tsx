@@ -172,6 +172,11 @@ export default function DocumentPage() {
   async function handleInsertStatistic(stat: ProjectStatistic) {
     if (!stat.table_data || !stat.config || !projectId || !docId) return;
     
+    setShowImportModal(false);
+    
+    // Небольшая задержка чтобы редактор успел зарегистрировать функцию
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Используем глобальную функцию вставки графика
     const fn = (window as any).__editorInsertChart;
     if (fn) {
@@ -188,10 +193,8 @@ export default function DocumentPage() {
         console.error("Failed to mark statistic as used:", err);
       }
     } else {
-      setError("Ошибка вставки графика. Попробуйте обновить страницу.");
+      console.warn("Chart insertion function not available");
     }
-    
-    setShowImportModal(false);
   }
 
   // Добавить цитату - всегда создаём новую запись (можно несколько цитат к одному источнику)
@@ -313,6 +316,7 @@ export default function DocumentPage() {
             onChange={setContent}
             onInsertCitation={openCitationPicker}
             onImportStatistic={openImportModal}
+            citationStyle={citationStyle}
           />
         </div>
 
