@@ -205,13 +205,14 @@ export default function DocumentPage() {
       // sub_number используется для нумерации цитат
       const subNumber = (res.citation as { sub_number?: number }).sub_number || 1;
       
-      // Вставить номер в текст (всегда английское название для тултипа)
-      insertCitationToEditor(
-        res.citation.inline_number,
-        res.citation.id,
-        res.citation.note || '',
-        article.title_en // Всегда язык оригинала (английский)
-      );
+      // TODO: Implement citation insertion for Lexical editor
+      // Need to add editorRef to LexicalEditor component and create insertCitation method
+      // insertCitationToEditor(
+      //   res.citation.inline_number,
+      //   res.citation.id,
+      //   res.citation.note || '',
+      //   article.title_en // Всегда язык оригинала (английский)
+      // );
       
       // Обновить документ
       const updated = await apiGetDocument(projectId, docId);

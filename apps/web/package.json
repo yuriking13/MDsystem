@@ -11,6 +11,7 @@
   "dependencies": {
     "@lexical/code": "^0.39.0",
     "@lexical/history": "^0.39.0",
+    "@lexical/html": "^0.39.0",
     "@lexical/link": "^0.39.0",
     "@lexical/list": "^0.39.0",
     "@lexical/markdown": "^0.39.0",

@@ -3,7 +3,7 @@ import { $getSelection, $isRangeSelection, FORMAT_TEXT_COMMAND, FORMAT_ELEMENT_C
 import { $setBlocksType } from '@lexical/selection';
 import { $createHeadingNode, $createQuoteNode } from '@lexical/rich-text';
 import { INSERT_ORDERED_LIST_COMMAND, INSERT_UNORDERED_LIST_COMMAND, REMOVE_LIST_COMMAND } from '@lexical/list';
-import { Button, Tooltip } from 'flowbite-react';
+import { Button, Tooltip, ButtonGroup } from 'flowbite-react';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   HiBold,
@@ -11,7 +11,6 @@ import {
   HiOutlineLink,
   HiOutlineListBullet,
   HiOutlineNumberedList,
-  HiOutlineTable,
   HiQuestionMarkCircle,
 } from 'react-icons/hi2';
 import { MdFormatUnderlined, MdFormatAlignLeft, MdFormatAlignCenter, MdFormatAlignRight } from 'react-icons/md';
@@ -181,7 +180,7 @@ export default function ToolbarPlugin({
       )}
 
       <div className="ml-auto flex gap-2">
-        <Button.Group>
+        <ButtonGroup>
           <Button
             size="xs"
             color={viewMode === 'scroll' ? 'blue' : 'gray'}
@@ -196,7 +195,7 @@ export default function ToolbarPlugin({
           >
             📄 Страницы
           </Button>
-        </Button.Group>
+        </ButtonGroup>
       </div>
     </div>
   );

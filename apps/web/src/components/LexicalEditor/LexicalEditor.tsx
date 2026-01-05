@@ -12,6 +12,7 @@ import { TablePlugin } from '@lexical/react/LexicalTablePlugin';
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
 import type { EditorState, LexicalEditor as Editor } from 'lexical';
+import { $generateHtmlFromNodes } from '@lexical/html';
 
 import { HeadingNode, QuoteNode } from '@lexical/rich-text';
 import { TableCellNode, TableNode, TableRowNode } from '@lexical/table';
@@ -98,7 +99,7 @@ export default function LexicalEditor({
 
   const handleEditorChange = (editorState: EditorState, editor: Editor) => {
     editorState.read(() => {
-      const html = editor.getHTML ? editor.getHTML() : '';
+      const html = $generateHtmlFromNodes(editor, null);
       onChange?.(html);
     });
   };
