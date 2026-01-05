@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import Editor, { insertCitationToEditor } from "../components/Editor";
+import LexicalEditor from "../components/LexicalEditor/LexicalEditor";
 import {
   apiGetDocument,
   apiUpdateDocument,
@@ -307,27 +307,13 @@ export default function DocumentPage() {
       <div className="document-content">
         {/* Редактор */}
         <div className="document-editor-wrapper">
-          <Editor
+          <LexicalEditor
             content={content}
             onChange={setContent}
             onInsertCitation={openCitationPicker}
-            onCitationClick={handleCitationClick}
-            citations={doc.citations?.map(c => ({
-              id: c.id,
-              number: c.inline_number,
-              note: c.note || undefined,
-              articleTitle: c.article.title_en,
-            }))}
-            placeholder="Начните писать текст диссертации..."
             projectId={projectId}
             documentId={docId}
-            onStatisticCreated={(statId) => {
-              const notification = document.createElement('div');
-              notification.className = 'ok';
-              notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 20px; border-radius: 12px;';
-              notification.textContent = '📊 График добавлен в статистику проекта';
-              document.body.appendChild(notification);
-              setTimeout(() => notification.remove(), 3000);
+          />
             }}
             onImportFromStats={openImportModal}
           />
