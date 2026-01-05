@@ -657,10 +657,16 @@
   background: rgba(59, 130, 246, 0.35) !important;
 }
 
-/* Custom cell background colors */
-.tiptap-editor table td[data-bgcolor],
-.tiptap-editor table th[data-bgcolor] {
-  background-color: attr(data-bgcolor) !important;
+/* Custom cell background colors - using inline styles */
+.tiptap-editor table td[style*="background"],
+.tiptap-editor table th[style*="background"] {
+  /* Allow inline background-color to override defaults */
+}
+
+/* Override default white background when cell has custom color */
+.tiptap-editor table td[data-bgcolor]:not([data-bgcolor=""]),
+.tiptap-editor table th[data-bgcolor]:not([data-bgcolor=""]) {
+  background: inherit !important;
 }
 
 /* Table cell with custom color class */
@@ -677,8 +683,15 @@
   margin: 1em 0;
 }
 
+/* Remove table-layout fixed to allow resize */
+.tiptap-editor table.resizable,
+.tiptap-editor .tableWrapper table {
+  table-layout: auto !important;
+}
+
 .tiptap-editor table .column-resize-handle,
-.tiptap-table .column-resize-handle {
+.tiptap-table .column-resize-handle,
+.tableWrapper .column-resize-handle {
   position: absolute;
   right: -2px;
   top: 0;

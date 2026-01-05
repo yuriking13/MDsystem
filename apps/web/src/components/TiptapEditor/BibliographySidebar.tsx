@@ -9,13 +9,16 @@ interface BibliographySidebarProps {
 }
 
 export default function BibliographySidebar({
-  citations,
+  citations = [],
   onClose,
   onRemoveCitation,
   onUpdateCitationNote,
 }: BibliographySidebarProps) {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [noteText, setNoteText] = useState('');
+  
+  // Защита от undefined/null
+  const safeCitations = citations || [];
 
   const startEditNote = (citation: Citation) => {
     setEditingNoteId(citation.id);
@@ -38,7 +41,7 @@ export default function BibliographySidebar({
   return (
     <div className="bibliography-sidebar">
       <div className="bibliography-header">
-        <span className="bibliography-title">Список литературы ({citations.length})</span>
+        <span className="bibliography-title">Список литературы ({safeCitations.length})</span>
         <button 
           className="bibliography-close" 
           onClick={onClose}
@@ -48,7 +51,7 @@ export default function BibliographySidebar({
         </button>
       </div>
       <div className="bibliography-list">
-        {citations.map((citation) => {
+        {safeCitations.map((citation) => {
           const subNum = citation.sub_number || 1;
           const displayNum = subNum > 1 ? `${citation.inline_number}.${subNum}` : String(citation.inline_number);
           const isEditingNote = editingNoteId === citation.id;

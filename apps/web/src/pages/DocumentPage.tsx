@@ -345,6 +345,7 @@ export default function DocumentPage() {
   }
 
   // Добавить цитату - всегда создаём новую запись (можно несколько цитат к одному источнику)
+  // Модальное окно НЕ закрывается, чтобы можно было добавить несколько цитат
   async function handleAddCitation(article: Article) {
     if (!projectId || !docId) return;
 
@@ -367,7 +368,8 @@ export default function DocumentPage() {
       const updated = await apiGetDocument(projectId, docId);
       setDoc(updated.document);
       
-      setShowCitationPicker(false);
+      // НЕ закрываем модальное окно - пользователь может добавить ещё цитаты
+      // setShowCitationPicker(false);
     } catch (err: any) {
       setError(err?.message || "Ошибка добавления цитаты");
     }

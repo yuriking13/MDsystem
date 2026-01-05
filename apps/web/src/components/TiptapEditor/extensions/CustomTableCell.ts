@@ -6,42 +6,51 @@ export const CustomTableCell = TableCell.extend({
       ...this.parent?.(),
       backgroundColor: {
         default: null,
-        parseHTML: (element) => element.style.backgroundColor || element.getAttribute('data-bgcolor'),
+        parseHTML: (element) => {
+          return element.style.backgroundColor || element.getAttribute('data-bgcolor') || null;
+        },
         renderHTML: (attributes) => {
-          if (!attributes.backgroundColor) {
-            return {};
-          }
-          return {
-            'data-bgcolor': attributes.backgroundColor,
-            style: `background-color: ${attributes.backgroundColor}`,
-          };
+          return {};  // Handled in combined style below
         },
       },
       textAlign: {
-        default: 'left',
-        parseHTML: (element) => element.style.textAlign || 'left',
+        default: null,
+        parseHTML: (element) => element.style.textAlign || null,
         renderHTML: (attributes) => {
-          if (!attributes.textAlign || attributes.textAlign === 'left') {
-            return {};
-          }
-          return {
-            style: `text-align: ${attributes.textAlign}`,
-          };
+          return {};  // Handled in combined style below
         },
       },
       verticalAlign: {
-        default: 'top',
-        parseHTML: (element) => element.style.verticalAlign || 'top',
+        default: null,
+        parseHTML: (element) => element.style.verticalAlign || null,
         renderHTML: (attributes) => {
-          if (!attributes.verticalAlign || attributes.verticalAlign === 'top') {
-            return {};
-          }
-          return {
-            style: `vertical-align: ${attributes.verticalAlign}`,
-          };
+          return {};  // Handled in combined style below
         },
       },
     };
+  },
+
+  renderHTML({ node, HTMLAttributes }) {
+    const attrs = node.attrs;
+    const styles: string[] = [];
+    
+    if (attrs.backgroundColor) {
+      styles.push(`background-color: ${attrs.backgroundColor}`);
+    }
+    if (attrs.textAlign && attrs.textAlign !== 'left') {
+      styles.push(`text-align: ${attrs.textAlign}`);
+    }
+    if (attrs.verticalAlign && attrs.verticalAlign !== 'top') {
+      styles.push(`vertical-align: ${attrs.verticalAlign}`);
+    }
+    
+    const combinedAttrs = {
+      ...HTMLAttributes,
+      ...(styles.length > 0 ? { style: styles.join('; ') } : {}),
+      ...(attrs.backgroundColor ? { 'data-bgcolor': attrs.backgroundColor } : {}),
+    };
+    
+    return ['td', combinedAttrs, 0];
   },
 });
 
