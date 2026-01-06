@@ -1228,7 +1228,7 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
 
   const level = node.graphLevel ?? 1;
   
-  // Проверяем есть ли русский перевод для переключателя
+  // Проверяем есть ли русский перевод
   const hasRussian = !!(displayData.title_ru || displayData.abstract_ru);
 
   return (
@@ -1239,42 +1239,55 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
           <div className="node-level-badge" style={{ backgroundColor: getLevelColor(level) }}>
             {getLevelName(level)}
           </div>
-          {/* Language Toggle (local override) */}
-          {hasRussian && (
-            <div className="language-toggle" style={{ display: 'flex', gap: 2, padding: 2, background: 'rgba(255,255,255,0.1)', borderRadius: 6 }}>
-              <button
-                onClick={() => setLocalLanguage(localLanguage === 'en' ? null : 'en')}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: 11,
-                  fontWeight: language === 'en' ? 600 : 400,
-                  background: language === 'en' ? 'var(--accent)' : 'transparent',
-                  color: language === 'en' ? 'white' : 'var(--text-secondary)',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                }}
-              >
-                EN
-              </button>
-              <button
-                onClick={() => setLocalLanguage(localLanguage === 'ru' ? null : 'ru')}
-                style={{
-                  padding: '4px 8px',
-                  fontSize: 11,
-                  fontWeight: language === 'ru' ? 600 : 400,
-                  background: language === 'ru' ? 'var(--accent)' : 'transparent',
-                  color: language === 'ru' ? 'white' : 'var(--text-secondary)',
-                  border: 'none',
-                  borderRadius: 4,
-                  cursor: 'pointer',
-                }}
-              >
-                RU
-              </button>
-            </div>
-          )}
+          {/* Language Toggle - показываем всегда */}
+          <div className="language-toggle" style={{ display: 'flex', gap: 2, padding: 2, background: 'rgba(255,255,255,0.1)', borderRadius: 6 }}>
+            <button
+              onClick={() => setLocalLanguage(localLanguage === 'en' ? null : 'en')}
+              style={{
+                padding: '4px 8px',
+                fontSize: 11,
+                fontWeight: language === 'en' ? 600 : 400,
+                background: language === 'en' ? 'var(--accent)' : 'transparent',
+                color: language === 'en' ? 'white' : 'var(--text-secondary)',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer',
+              }}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => setLocalLanguage(localLanguage === 'ru' ? null : 'ru')}
+              style={{
+                padding: '4px 8px',
+                fontSize: 11,
+                fontWeight: language === 'ru' ? 600 : 400,
+                background: language === 'ru' ? (hasRussian ? 'var(--accent)' : 'rgba(239, 68, 68, 0.5)') : 'transparent',
+                color: language === 'ru' ? 'white' : 'var(--text-secondary)',
+                border: 'none',
+                borderRadius: 4,
+                cursor: 'pointer',
+                opacity: hasRussian ? 1 : 0.7,
+              }}
+              title={hasRussian ? 'Русский перевод' : 'Перевод недоступен'}
+            >
+              RU
+            </button>
+          </div>
         </div>
+        
+        {/* Сообщение если выбран RU но перевода нет */}
+        {language === 'ru' && !hasRussian && (
+          <div style={{ 
+            padding: '6px 12px', 
+            background: 'rgba(251, 191, 36, 0.1)', 
+            fontSize: 11, 
+            color: '#fbbf24',
+            borderBottom: '1px solid var(--border-glass)'
+          }}>
+            Перевод недоступен. Показан оригинал.
+          </div>
+        )}
         
         {loadingData ? (
           <div className="node-title" style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
