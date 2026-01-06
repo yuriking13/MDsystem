@@ -347,6 +347,51 @@ export default function DocumentPage() {
         console.warn('[SYNC] Failed to fetch statistics list:', err);
       }
 
+      // Helper to extract cell data from a table element
+      const extractTableData = (tableEl: HTMLElement): { headers: string[]; rows: string[][] } => {
+        const headers: string[] = [];
+        const rows: string[][] = [];
+        const trs = tableEl.querySelectorAll('tr');
+        trs.forEach((tr, rowIdx) => {
+          const cells: string[] = [];
+          tr.querySelectorAll('th, td').forEach((cell) => {
+            cells.push((cell.textContent || '').trim());
+          });
+          if (rowIdx === 0 && tr.querySelector('th')) {
+            headers.push(...cells);
+          } else if (cells.length > 0) {
+            rows.push(cells);
+          }
+        });
+        return { headers, rows };
+      };
+
+      // Helper to compare table data (ignores formatting, styles, structure)
+      const isTableDataEqual = (tableEl: HTMLElement, statData: TableData): boolean => {
+        const docData = extractTableData(tableEl);
+        const statHeaders = statData.headers || [];
+        const statRows = statData.rows || [];
+        
+        // Compare headers
+        if (docData.headers.length !== statHeaders.length) return false;
+        for (let i = 0; i < docData.headers.length; i++) {
+          if (docData.headers[i] !== (statHeaders[i] || '').trim()) return false;
+        }
+        
+        // Compare rows
+        if (docData.rows.length !== statRows.length) return false;
+        for (let r = 0; r < docData.rows.length; r++) {
+          const docRow = docData.rows[r];
+          const statRow = statRows[r] || [];
+          if (docRow.length !== statRow.length) return false;
+          for (let c = 0; c < docRow.length; c++) {
+            if (docRow[c] !== (statRow[c] || '').trim()) return false;
+          }
+        }
+        
+        return true;
+      };
+
       let changed = false;
       tables.forEach((tableEl) => {
         const statId = tableEl.getAttribute('data-statistic-id');
@@ -363,16 +408,21 @@ export default function DocumentPage() {
 
         if (!data) return;
 
-        const newHtml = buildTableHtmlFromStatistic(data, statId);
-        const wrapper = document.createElement('div');
-        wrapper.innerHTML = newHtml;
-        const newTable = wrapper.firstElementChild;
-        if (newTable && newTable.outerHTML !== tableEl.outerHTML) {
-          console.log('[SYNC] Updating table:', statId);
-          console.log('[SYNC] Old HTML:', tableEl.outerHTML.substring(0, 200));
-          console.log('[SYNC] New HTML:', newTable.outerHTML.substring(0, 200));
-          tableEl.replaceWith(newTable);
-          changed = true;
+        // Compare only the DATA, not the HTML structure/styles
+        if (!isTableDataEqual(tableEl, data)) {
+          console.log('[SYNC] Data changed for table:', statId);
+          const docData = extractTableData(tableEl);
+          console.log('[SYNC] Doc data:', JSON.stringify(docData));
+          console.log('[SYNC] Stat data:', JSON.stringify({ headers: data.headers, rows: data.rows }));
+          
+          const newHtml = buildTableHtmlFromStatistic(data, statId);
+          const wrapper = document.createElement('div');
+          wrapper.innerHTML = newHtml;
+          const newTable = wrapper.firstElementChild;
+          if (newTable) {
+            tableEl.replaceWith(newTable);
+            changed = true;
+          }
         }
       });
 
