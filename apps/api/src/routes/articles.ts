@@ -858,14 +858,39 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       
       try {
         fastify.log.info({ jobId, projectId: paramsP.data.id }, '[fetch-references] Attempting to send job to pg-boss');
-        const sendResult = await boss.send('graph:fetch-references', {
+        const jobData = {
           projectId: paramsP.data.id,
           jobId,
           userId,
-        });
-        fastify.log.info({ jobId, sendResult, sendResultType: typeof sendResult }, '[fetch-references] Job sent to pg-boss, result type: ' + typeof sendResult);
+        };
+        fastify.log.info({ jobData }, '[fetch-references] Job data prepared');
+        
+        const sendResult = await boss.send('graph:fetch-references', jobData);
+        
+        fastify.log.info({ 
+          jobId, 
+          sendResult, 
+          sendResultType: typeof sendResult,
+          sendResultValue: JSON.stringify(sendResult)
+        }, '[fetch-references] Job send completed');
+        
+        // Double-check: query boss.job directly
+        const jobCheckRes = await pool.query(
+          `SELECT id, state, name FROM boss.job WHERE id = $1 LIMIT 1`,
+          [sendResult]
+        );
+        fastify.log.info({ 
+          jobId,
+          jobCheckCount: jobCheckRes.rowCount,
+          jobCheckRows: jobCheckRes.rows
+        }, '[fetch-references] Checked boss.job table');
       } catch (err) {
-        fastify.log.error({ err, jobId, errMessage: err instanceof Error ? err.message : String(err) }, '[fetch-references] Failed to enqueue graph:fetch-references job');
+        fastify.log.error({ 
+          err, 
+          jobId, 
+          errMessage: err instanceof Error ? err.message : String(err),
+          errStack: err instanceof Error ? err.stack : undefined
+        }, '[fetch-references] Failed to enqueue graph:fetch-references job');
         return reply.code(500).send({ error: 'Failed to enqueue background job' });
       }
       
