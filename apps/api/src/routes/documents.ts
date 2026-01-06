@@ -936,15 +936,20 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   );
   // GET /api/projects/:projectId/citation-graph - данные для графа цитирований
   // Query параметры:
+  // - mode: 'lite' | 'mega' (по умолчанию 'lite')
+  //   lite = облегчённый граф с лимитами (макс 10 связей на узел, макс 500 узлов)
+  //   mega = полный граф без лимитов (может быть очень тяжёлым!)
   // - filter: 'all' | 'selected' | 'excluded' (по умолчанию 'all')
   // - sourceQueries: JSON массив строк запросов для фильтрации
   // - depth: 1 | 2 | 3 - уровень глубины графа (по умолчанию 1)
-  //   1 = только статьи из поиска
-  //   2 = + статьи, на которые ссылаются найденные
-  //   3 = + статьи, которые цитируют найденные
+  //   1 = только статьи проекта + связи между ними
+  //   2 = + статьи, на которые ссылаются (references) - топ N
+  //   3 = + статьи, которые цитируют (cited_by) - топ N
   // - yearFrom: минимальный год публикации
   // - yearTo: максимальный год публикации
-  // - statsQuality: минимальное качество статистики (0-3, где 0=нет, 1=низкое, 2=среднее, 3=высокое)
+  // - statsQuality: минимальное качество статистики (0-3)
+  // - maxLinksPerNode: макс связей на узел (только для lite, по умолчанию 10)
+  // - maxTotalNodes: макс узлов в графе (только для lite, по умолчанию 500)
   fastify.get(
     "/projects/:projectId/citation-graph",
     { preHandler: [fastify.authenticate] },
@@ -963,18 +968,31 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Параметры фильтрации
       const query = request.query as { 
+        mode?: string;
         filter?: string; 
         sourceQueries?: string;
         depth?: string;
         yearFrom?: string;
         yearTo?: string;
         statsQuality?: string;
+        maxLinksPerNode?: string;
+        maxTotalNodes?: string;
       };
+      
+      const mode = (query.mode === 'mega') ? 'mega' : 'lite';
       const filter = query.filter || 'all';
       const depth = Math.min(3, Math.max(1, parseInt(query.depth || '1', 10) || 1));
       const yearFrom = query.yearFrom ? parseInt(query.yearFrom, 10) : undefined;
       const yearTo = query.yearTo ? parseInt(query.yearTo, 10) : undefined;
       const statsQuality = query.statsQuality ? parseInt(query.statsQuality, 10) : undefined;
+      
+      // Лимиты для lite режима
+      const maxLinksPerNode = mode === 'lite' 
+        ? Math.min(50, Math.max(1, parseInt(query.maxLinksPerNode || '10', 10) || 10))
+        : Infinity;
+      const maxTotalNodes = mode === 'lite'
+        ? Math.min(2000, Math.max(10, parseInt(query.maxTotalNodes || '500', 10) || 500))
+        : Infinity;
       
       let sourceQueries: string[] = [];
       if (query.sourceQueries) {
@@ -1145,10 +1163,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (depth >= 2) {
         for (const article of articlesRes.rows) {
           const refPmids = article.reference_pmids || [];
+          let addedForThisArticle = 0;
           for (const refPmid of refPmids) {
+            // В lite режиме ограничиваем количество связей на статью
+            if (addedForThisArticle >= maxLinksPerNode) break;
             if (!pmidToId.has(refPmid)) {
               level2Pmids.add(refPmid);
               level1ToLevel2Links.push({ sourceId: article.id, targetPmid: refPmid });
+              addedForThisArticle++;
             }
           }
         }
@@ -1158,10 +1180,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (depth >= 3) {
         for (const article of articlesRes.rows) {
           const citedByPmids = article.cited_by_pmids || [];
+          let addedForThisArticle = 0;
           for (const citingPmid of citedByPmids) {
+            // В lite режиме ограничиваем количество связей на статью
+            if (addedForThisArticle >= maxLinksPerNode) break;
             if (!pmidToId.has(citingPmid)) {
               level0Pmids.add(citingPmid);
               level0ToLevel1Links.push({ sourcePmid: citingPmid, targetId: article.id });
+              addedForThisArticle++;
             }
           }
         }
@@ -1171,8 +1197,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const level2InDb = new Map<string, any>(); // pmid -> article data
       const level2NotInDb = new Set<string>(); // PMIDs не в БД
       
+      // Вычисляем сколько узлов уже есть и сколько можно добавить
+      const currentNodeCount = () => addedNodeIds.size;
+      const canAddMore = () => currentNodeCount() < maxTotalNodes;
+      
       if (depth >= 2 && level2Pmids.size > 0) {
-        const level2PmidsArr = Array.from(level2Pmids);
+        // В lite режиме ограничиваем количество PMIDs для загрузки
+        const remainingSlots = Math.max(0, maxTotalNodes - currentNodeCount());
+        const level2PmidsArr = Array.from(level2Pmids).slice(0, remainingSlots);
         
         // Строим условия фильтрации для уровня 2
         let level2YearCondition = '';
@@ -1279,8 +1311,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const level0InDb = new Map<string, any>(); // pmid -> article data
       const level0NotInDb = new Set<string>(); // PMIDs не в БД
       
-      if (depth >= 3 && level0Pmids.size > 0) {
-        const level0PmidsArr = Array.from(level0Pmids);
+      if (depth >= 3 && level0Pmids.size > 0 && canAddMore()) {
+        // В lite режиме ограничиваем количество PMIDs для загрузки
+        const remainingSlotsL0 = Math.max(0, maxTotalNodes - currentNodeCount());
+        const level0PmidsArr = Array.from(level0Pmids).slice(0, remainingSlotsL0);
         
         // Строим условия фильтрации для уровня 0
         let level0YearCondition = '';
@@ -1385,10 +1419,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       
       // ===== УРОВЕНЬ 3: Статьи, которые тоже ссылаются на level 2 (связанные работы) =====
       // Это статьи, которые цитируют те же references что и мы - т.е. похожие исследования
+      // ПРИМЕЧАНИЕ: в lite режиме уровень 3 отключён для производительности
       const level3InDb = new Map<string, any>();
       const level3NotInDb = new Set<string>();
       
-      if (depth >= 3 && level2Articles.length > 0) {
+      // В lite режиме пропускаем уровень 3 (слишком много данных)
+      if (depth >= 3 && level2Articles.length > 0 && mode === 'mega') {
         // Собираем PMIDs статей, которые цитируют наши references (level 2)
         for (const level2Article of level2Articles) {
           const citedByPmids = level2Article.cited_by_pmids || [];
@@ -1401,7 +1437,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
         
         // Ограничиваем количество для производительности
-        const level3PmidsArr = Array.from(level3Pmids).slice(0, 200);
+        const remainingSlotsL3 = Math.max(0, maxTotalNodes - currentNodeCount());
+        const level3PmidsArr = Array.from(level3Pmids).slice(0, Math.min(200, remainingSlotsL3));
         
         if (level3PmidsArr.length > 0) {
           // Строим условия фильтрации для уровня 3
@@ -1654,6 +1691,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         availableQueries,
         yearRange,
         currentDepth: depth,
+        mode,
+        limits: mode === 'lite' ? { maxLinksPerNode, maxTotalNodes } : null,
       };
     }
   );

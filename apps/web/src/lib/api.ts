@@ -610,12 +610,15 @@ export type CitationGraphResponse = {
 };
 
 export type GraphFilterOptions = {
+  mode?: 'lite' | 'mega'; // lite = облегчённый с лимитами, mega = полный граф
   filter?: 'all' | 'selected' | 'excluded';
   sourceQueries?: string[];
   depth?: 1 | 2 | 3; // Уровень глубины графа
   yearFrom?: number;
   yearTo?: number;
   statsQuality?: number; // Минимальное качество статистики (0-3)
+  maxLinksPerNode?: number; // Макс связей на узел (только для lite)
+  maxTotalNodes?: number; // Макс узлов (только для lite)
 };
 
 export async function apiGetCitationGraph(
@@ -623,6 +626,9 @@ export async function apiGetCitationGraph(
   options?: GraphFilterOptions
 ): Promise<CitationGraphResponse> {
   const params = new URLSearchParams();
+  if (options?.mode) {
+    params.set('mode', options.mode);
+  }
   if (options?.filter) {
     params.set('filter', options.filter);
   }
@@ -640,6 +646,12 @@ export async function apiGetCitationGraph(
   }
   if (options?.statsQuality !== undefined) {
     params.set('statsQuality', String(options.statsQuality));
+  }
+  if (options?.maxLinksPerNode !== undefined) {
+    params.set('maxLinksPerNode', String(options.maxLinksPerNode));
+  }
+  if (options?.maxTotalNodes !== undefined) {
+    params.set('maxTotalNodes', String(options.maxTotalNodes));
   }
   const queryString = params.toString();
   const url = `/api/projects/${projectId}/citation-graph${queryString ? `?${queryString}` : ''}`;
