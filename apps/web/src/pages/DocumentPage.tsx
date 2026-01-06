@@ -203,6 +203,8 @@ export default function DocumentPage() {
       setSaving(true);
       try {
         await apiUpdateDocument(projectId, docId, { content: newContent });
+        // Keep local doc state in sync so we don't think there are pending edits after save
+        setDoc((prev) => (prev ? { ...prev, content: newContent } : prev));
         
         // Sync statistics (tables and charts) from document content
         const result = parseStatisticsFromContent(newContent);
