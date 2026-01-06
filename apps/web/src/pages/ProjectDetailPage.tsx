@@ -211,6 +211,8 @@ export default function ProjectDetailPage() {
   const [loadingBib, setLoadingBib] = useState(false);
   const [showBibliography, setShowBibliography] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [bibliographyLastUpdated, setBibliographyLastUpdated] = useState<number>(0);
+  const [updatingBibliography, setUpdatingBibliography] = useState(false);
 
   async function load() {
     if (!id) return;
@@ -425,6 +427,7 @@ export default function ProjectDetailPage() {
     try {
       const res = await apiGetBibliography(id);
       setBibliography(res.bibliography);
+      setBibliographyLastUpdated(Date.now());
       setShowBibliography(true);
     } catch (err: any) {
       setError(err?.message || "Ошибка загрузки библиографии");
@@ -433,11 +436,33 @@ export default function ProjectDetailPage() {
     }
   }
 
+  // Автоматическое обновление библиографии (вызывается после перестановки документов и т.д.)
+  async function refreshBibliography(silent = false) {
+    if (!id) return;
+    if (!silent) {
+      setUpdatingBibliography(true);
+    }
+    try {
+      const res = await apiGetBibliography(id);
+      setBibliography(res.bibliography);
+      setBibliographyLastUpdated(Date.now());
+    } catch (err: any) {
+      console.error("Ошибка обновления библиографии:", err);
+    } finally {
+      if (!silent) {
+        setUpdatingBibliography(false);
+      }
+    }
+  }
+
   // Экспорт проекта в TXT
   async function handleExportTxt() {
     if (!id) return;
     setExporting(true);
     try {
+      // Обновляем нумерацию цитат перед экспортом
+      await apiRenumberCitations(id);
+      
       const res = await apiExportProject(id);
       
       // Формируем текстовый документ
@@ -468,6 +493,10 @@ export default function ProjectDetailPage() {
       a.click();
       URL.revokeObjectURL(url);
       
+      // Обновляем локальную библиографию
+      setBibliography(res.bibliography);
+      setBibliographyLastUpdated(Date.now());
+      
       setOk('Документ экспортирован в TXT');
     } catch (err: any) {
       setError(err?.message || "Ошибка экспорта");
@@ -476,11 +505,15 @@ export default function ProjectDetailPage() {
     }
   }
 
-  // Экспорт проекта в Word
+  // Экспорт проекта в Word (всегда получает свежую библиографию)
   async function handleExportWord(merged = false) {
     if (!id) return;
     setExporting(true);
     try {
+      // Обновляем нумерацию цитат перед экспортом
+      await apiRenumberCitations(id);
+      
+      // Получаем свежие данные для экспорта
       const res = await apiExportProject(id);
       
       await exportToWord(
@@ -490,6 +523,10 @@ export default function ProjectDetailPage() {
         res.citationStyle,
         merged ? res.mergedContent : undefined
       );
+      
+      // Обновляем локальную библиографию
+      setBibliography(res.bibliography);
+      setBibliographyLastUpdated(Date.now());
       
       setOk(merged 
         ? 'Объединённый документ экспортирован в Word' 
@@ -707,8 +744,8 @@ export default function ProjectDetailPage() {
                             setDocuments(renumberResult.documents);
                           }
                           
-                          // Сбросить библиографию для перезагрузки
-                          setBibliography([]);
+                          // Автоматически обновить библиографию после перестановки
+                          await refreshBibliography();
                           
                           if (renumberResult.renumbered > 0) {
                             setOk(`Порядок документов обновлён. Перенумеровано ${renumberResult.renumbered} цитат.`);
@@ -815,6 +852,9 @@ export default function ProjectDetailPage() {
                       if (!id) return;
                       setExporting(true);
                       try {
+                        // Обновляем нумерацию цитат перед экспортом
+                        await apiRenumberCitations(id);
+                        
                         const res = await apiExportProject(id);
                         exportToPdf(
                           res.projectName,
@@ -823,6 +863,11 @@ export default function ProjectDetailPage() {
                           res.citationStyle,
                           res.mergedContent
                         );
+                        
+                        // Обновляем локальную библиографию
+                        setBibliography(res.bibliography);
+                        setBibliographyLastUpdated(Date.now());
+                        
                         setOk('Открыто окно печати PDF');
                       } catch (err: any) {
                         setError(err?.message || "Ошибка экспорта");
@@ -865,7 +910,11 @@ export default function ProjectDetailPage() {
                       if (!id) return;
                       setExporting(true);
                       try {
+                        // Обновляем нумерацию перед экспортом библиографии
+                        await apiRenumberCitations(id);
                         const res = await apiGetBibliography(id);
+                        setBibliography(res.bibliography);
+                        setBibliographyLastUpdated(Date.now());
                         exportBibliographyToWord(project?.name || 'Проект', res.bibliography, citationStyle);
                         setOk('Список литературы экспортирован в Word');
                       } catch (err: any) {
@@ -886,7 +935,10 @@ export default function ProjectDetailPage() {
                       if (!id) return;
                       setExporting(true);
                       try {
+                        await apiRenumberCitations(id);
                         const res = await apiGetBibliography(id);
+                        setBibliography(res.bibliography);
+                        setBibliographyLastUpdated(Date.now());
                         exportBibliographyToPdf(project?.name || 'Проект', res.bibliography, citationStyle);
                         setOk('Открыто окно печати PDF');
                       } catch (err: any) {
@@ -906,7 +958,10 @@ export default function ProjectDetailPage() {
                     onClick={async () => {
                       if (!id) return;
                       try {
+                        await apiRenumberCitations(id);
                         const res = await apiGetBibliography(id);
+                        setBibliography(res.bibliography);
+                        setBibliographyLastUpdated(Date.now());
                         exportBibliographyToTxt(project?.name || 'Проект', res.bibliography, citationStyle);
                         setOk('Список литературы экспортирован в TXT');
                       } catch (err: any) {
@@ -923,12 +978,23 @@ export default function ProjectDetailPage() {
                 {showBibliography && (
                   <div style={{ marginTop: 12 }}>
                     <div className="row space" style={{ marginBottom: 8 }}>
-                      <span className="muted">
-                        Всего источников: {bibliography.length}
-                      </span>
+                      <div className="row gap" style={{ alignItems: 'center' }}>
+                        <span className="muted">
+                          Всего источников: {bibliography.length}
+                        </span>
+                        {updatingBibliography && (
+                          <span className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#3b82f6' }}>
+                            <svg className="icon-sm loading-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 12, height: 12 }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            обновление...
+                          </span>
+                        )}
+                      </div>
                       <button 
                         className="btn secondary" 
                         onClick={handleCopyBibliography}
+                        disabled={bibliography.length === 0}
                         style={{ padding: '4px 10px', fontSize: 12 }}
                         type="button"
                       >
@@ -937,8 +1003,18 @@ export default function ProjectDetailPage() {
                     </div>
                     
                     {bibliography.length === 0 ? (
-                      <div className="muted">
-                        Нет цитат. Добавьте цитаты в документы.
+                      <div className="empty-state-bibliography" style={{ 
+                        textAlign: 'center', 
+                        padding: '24px 16px', 
+                        background: 'rgba(255,255,255,0.03)', 
+                        borderRadius: 8 
+                      }}>
+                        <svg className="icon-lg" style={{ width: 32, height: 32, margin: '0 auto 8px', opacity: 0.3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
+                        <div className="muted" style={{ fontSize: 13 }}>
+                          Нет цитат. Добавьте цитаты в документы проекта.
+                        </div>
                       </div>
                     ) : (
                       <div className="bibliography-list">
