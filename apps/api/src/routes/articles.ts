@@ -847,11 +847,16 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       
       // Запускаем фоновый воркер
       const boss = getBoss();
-      await boss.send('graph:fetch-references', {
-        projectId: paramsP.data.id,
-        jobId,
-        userId,
-      });
+      try {
+        await boss.send('graph:fetch-references', {
+          projectId: paramsP.data.id,
+          jobId,
+          userId,
+        });
+      } catch (err) {
+        fastify.log.error({ err }, 'Failed to enqueue graph:fetch-references job');
+        return reply.code(500).send({ error: 'Failed to enqueue background job' });
+      }
       
       // Оценка времени: ~0.5 сек на статью для references + ~0.3 сек на PMID для кэша
       const estimatedSeconds = Math.ceil(totalArticles * 0.8);
