@@ -84,26 +84,51 @@ async function checkProjectAccess(
 }
 
 // Найти или создать статью по DOI/PMID
+// publicationTypes - типы, которые нужно ДОБАВИТЬ к существующим (не заменить)
 async function findOrCreateArticle(article: PubMedArticle, publicationTypes?: string[]): Promise<string> {
   // Сначала ищем по PMID
   if (article.pmid) {
     const existing = await pool.query(
-      `SELECT id FROM articles WHERE pmid = $1`,
+      `SELECT id, publication_types FROM articles WHERE pmid = $1`,
       [article.pmid]
     );
     if ((existing.rowCount ?? 0) > 0) {
-      return existing.rows[0].id;
+      const articleId = existing.rows[0].id;
+      // Если есть новые типы публикации - добавляем их к существующим
+      if (publicationTypes && publicationTypes.length > 0) {
+        const existingTypes: string[] = existing.rows[0].publication_types || [];
+        const newTypes = [...new Set([...existingTypes, ...publicationTypes])];
+        if (newTypes.length > existingTypes.length) {
+          await pool.query(
+            `UPDATE articles SET publication_types = $1 WHERE id = $2`,
+            [newTypes, articleId]
+          );
+        }
+      }
+      return articleId;
     }
   }
   
   // Потом по DOI
   if (article.doi) {
     const existing = await pool.query(
-      `SELECT id FROM articles WHERE doi = $1`,
+      `SELECT id, publication_types FROM articles WHERE doi = $1`,
       [article.doi.toLowerCase()]
     );
     if ((existing.rowCount ?? 0) > 0) {
-      return existing.rows[0].id;
+      const articleId = existing.rows[0].id;
+      // Если есть новые типы публикации - добавляем их к существующим
+      if (publicationTypes && publicationTypes.length > 0) {
+        const existingTypes: string[] = existing.rows[0].publication_types || [];
+        const newTypes = [...new Set([...existingTypes, ...publicationTypes])];
+        if (newTypes.length > existingTypes.length) {
+          await pool.query(
+            `UPDATE articles SET publication_types = $1 WHERE id = $2`,
+            [newTypes, articleId]
+          );
+        }
+      }
+      return articleId;
     }
   }
   
@@ -235,28 +260,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (bodyP.data.filters?.fullTextOnly) {
         filters.fullTextOnly = true;
       }
-      if (bodyP.data.filters?.publicationTypes?.length) {
-        filters.publicationTypes = bodyP.data.filters.publicationTypes;
-        filters.publicationTypesLogic = bodyP.data.filters.publicationTypesLogic || "or";
-      }
-      
       // Опция перевода
       const shouldTranslate = bodyP.data.filters?.translate === true;
-      
-      // Выполняем поиск
-      const { count, items } = await pubmedFetchAll({
-        apiKey: apiKey || undefined,
-        topic: bodyP.data.query,
-        filters,
-        maxTotal: bodyP.data.maxResults,
-        throttleMs: apiKey ? 100 : 350, // С ключом можно быстрее
-      });
-      
-      // Сохраняем статьи и добавляем в проект
-      let added = 0;
-      let skipped = 0;
-      const articleIds: string[] = [];
-      const newArticleIds: string[] = []; // Новые статьи для перевода
       
       // Типы публикации из фильтров поиска
       const searchPubTypes = bodyP.data.filters?.publicationTypes || [];
@@ -264,21 +269,95 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Сохраняем поисковый запрос для группировки
       const searchQuery = bodyP.data.query;
       
-      for (const article of items) {
-        try {
-          const articleId = await findOrCreateArticle(article, searchPubTypes);
-          articleIds.push(articleId);
+      // Сохраняем статьи и добавляем в проект
+      let added = 0;
+      let skipped = 0;
+      let totalCount = 0;
+      let totalFetched = 0;
+      const articleIds: string[] = [];
+      const newArticleIds: string[] = []; // Новые статьи для перевода
+      const processedPmids = new Set<string>(); // Для дедупликации между поисками
+      
+      // Если выбрано несколько типов публикации - делаем ОТДЕЛЬНЫЙ поиск для каждого типа
+      // Это позволяет точно определить, какие статьи соответствуют каким типам
+      if (searchPubTypes.length > 1) {
+        // Для каждого типа публикации - отдельный поиск
+        for (const pubType of searchPubTypes) {
+          const typeFilters = { ...filters, publicationTypes: [pubType] };
           
-          const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
-          if (wasAdded) {
-            added++;
-            newArticleIds.push(articleId);
-          } else {
-            skipped++;
+          try {
+            const { count, items } = await pubmedFetchAll({
+              apiKey: apiKey || undefined,
+              topic: bodyP.data.query,
+              filters: typeFilters,
+              maxTotal: Math.ceil(bodyP.data.maxResults / searchPubTypes.length), // Делим лимит между типами
+              throttleMs: apiKey ? 100 : 350,
+            });
+            
+            totalCount += count;
+            totalFetched += items.length;
+            
+            for (const article of items) {
+              try {
+                // Пропускаем уже обработанные статьи (но типы добавятся в findOrCreateArticle)
+                const pmid = article.pmid;
+                const isNew = pmid ? !processedPmids.has(pmid) : true;
+                if (pmid) processedPmids.add(pmid);
+                
+                // Передаём ТОЛЬКО тот тип, по которому статья найдена
+                const articleId = await findOrCreateArticle(article, [pubType]);
+                
+                if (isNew) {
+                  articleIds.push(articleId);
+                  const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
+                  if (wasAdded) {
+                    added++;
+                    newArticleIds.push(articleId);
+                  } else {
+                    skipped++;
+                  }
+                }
+              } catch (err) {
+                console.error("Error saving article:", err);
+              }
+            }
+          } catch (err) {
+            console.error(`Error searching for ${pubType}:`, err);
           }
-        } catch (err) {
-          // Пропускаем ошибки отдельных статей
-          console.error("Error saving article:", err);
+        }
+      } else {
+        // Один тип публикации или без фильтра - обычный поиск
+        if (searchPubTypes.length === 1) {
+          filters.publicationTypes = searchPubTypes;
+        }
+        
+        const { count, items } = await pubmedFetchAll({
+          apiKey: apiKey || undefined,
+          topic: bodyP.data.query,
+          filters,
+          maxTotal: bodyP.data.maxResults,
+          throttleMs: apiKey ? 100 : 350,
+        });
+        
+        totalCount = count;
+        totalFetched = items.length;
+        
+        for (const article of items) {
+          try {
+            // Если выбран 1 тип - передаём его, иначе null (статья не фильтровалась по типу)
+            const articleId = await findOrCreateArticle(article, searchPubTypes.length === 1 ? searchPubTypes : undefined);
+            articleIds.push(articleId);
+            
+            const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
+            if (wasAdded) {
+              added++;
+              newArticleIds.push(articleId);
+            } else {
+              skipped++;
+            }
+          } catch (err) {
+            console.error("Error saving article:", err);
+          }
         }
       }
       
@@ -343,8 +422,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
       
       return {
-        totalFound: count,
-        fetched: items.length,
+        totalFound: totalCount,
+        fetched: totalFetched,
         added,
         skipped,
         translated,

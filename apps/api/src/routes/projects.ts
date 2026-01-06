@@ -225,6 +225,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   );
 
   // DELETE /api/projects/:id - delete project
+  // Полностью удаляет проект и ВСЕ связанные данные:
+  // - project_articles, project_members, project_statistics (каскад через FK)
+  // - documents, citations (каскад через FK)
+  // - graph_fetch_jobs (каскад через FK)
+  // - graph_cache (ручная очистка - нет FK)
+  // - boss.job записи с данными проекта (ручная очистка)
+  // - search_queries (каскад через FK)
   fastify.delete(
     "/projects/:id",
     { preHandler: [fastify.authenticate] },
@@ -236,10 +243,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
       }
 
+      const projectId = parsed.data.id;
+
       // Check if owner
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [parsed.data.id, userId]
+        [projectId, userId]
       );
 
       if (access.rowCount === 0) {
@@ -250,9 +259,27 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(403).send({ error: "Forbidden", message: "Only owner can delete" });
       }
 
-      await pool.query(`DELETE FROM projects WHERE id = $1`, [parsed.data.id]);
+      // 1. Очищаем graph_cache для этого проекта (нет FK, нужно вручную)
+      await pool.query(`DELETE FROM graph_cache WHERE project_id = $1`, [projectId]);
+      
+      // 2. Очищаем boss.job записи связанные с проектом
+      // boss jobs хранят projectId в data jsonb
+      try {
+        await pool.query(
+          `DELETE FROM boss.job WHERE data->>'projectId' = $1`,
+          [projectId]
+        );
+      } catch (err) {
+        // Игнорируем если boss схема не существует
+        console.log('[project-delete] Boss schema cleanup skipped:', err instanceof Error ? err.message : err);
+      }
 
-      return { ok: true };
+      // 3. Удаляем проект - всё остальное удалится каскадно через FK
+      // (project_articles, project_members, project_statistics, documents, 
+      //  citations, graph_fetch_jobs, search_queries)
+      await pool.query(`DELETE FROM projects WHERE id = $1`, [projectId]);
+
+      return { ok: true, message: 'Project and all related data deleted' };
     }
   );
 

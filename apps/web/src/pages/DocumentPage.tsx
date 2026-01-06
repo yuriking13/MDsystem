@@ -207,21 +207,23 @@ export default function DocumentPage() {
         setDoc((prev) => (prev ? { ...prev, content: newContent } : prev));
         
         // Sync statistics (tables and charts) from document content
+        // ALWAYS call sync to remove links when tables/charts are deleted from document
         const result = parseStatisticsFromContent(newContent);
         const tables = result?.tables || [];
         const charts = result?.charts || [];
         
+        try {
+          await apiSyncStatistics(projectId, {
+            documentId: docId,
+            tables,
+            charts,
+          });
+        } catch (syncErr) {
+          console.warn("Statistics sync warning:", syncErr);
+          // Don't fail the save if sync fails
+        }
+        
         if (tables.length > 0 || charts.length > 0) {
-          try {
-            await apiSyncStatistics(projectId, {
-              documentId: docId,
-              tables,
-              charts,
-            });
-          } catch (syncErr) {
-            console.warn("Statistics sync warning:", syncErr);
-            // Don't fail the save if sync fails
-          }
 
           // Push updated table data back to Statistics so external views stay in sync
           const tableUpdates = tables
