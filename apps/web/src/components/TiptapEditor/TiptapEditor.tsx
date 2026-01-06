@@ -228,8 +228,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     });
   }, [citationStyle]);
   
-  const editor = useEditor({
-    extensions: [
+  const extensions = [
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3],
@@ -291,7 +290,15 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
         footerLeft: citationStyle === 'gost' ? '{page}' : '',
         pageBreakBackground: '#4a5568',
       }),
-    ],
+    ];
+
+  // Deduplicate extensions by name to silence duplicate warnings
+  const uniqueExtensions = extensions.filter((ext, idx) =>
+    extensions.findIndex((e) => e.name === ext.name) === idx
+  );
+
+  const editor = useEditor({
+    extensions: uniqueExtensions,
     content,
     editable,
     onUpdate: ({ editor }) => {
@@ -514,23 +521,12 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   // Expose imperative methods to parent via ref
   useImperativeHandle(ref, () => ({
     forceSetContent: (html: string) => {
-      console.log('[TiptapEditor] forceSetContent called, html length:', html?.length);
-      console.log('[TiptapEditor] editor available:', !!editor);
       if (editor) {
-        console.log('[TiptapEditor] Calling editor.commands.setContent...');
-        const result = editor.commands.setContent(html);
-        console.log('[TiptapEditor] setContent result:', result);
+        editor.commands.setContent(html);
         updateHeadings(editor);
-        console.log('[TiptapEditor] updateHeadings called');
-      } else {
-        console.log('[TiptapEditor] WARNING: editor is null in forceSetContent!');
       }
     },
-    getHTML: () => {
-      const html = editor?.getHTML() || '';
-      console.log('[TiptapEditor] getHTML called, returning length:', html.length);
-      return html;
-    },
+    getHTML: () => editor?.getHTML() || '',
   }), [editor, updateHeadings]);
 
   // Register global insert functions
@@ -592,7 +588,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     
     // Insert table function - improved version
     const insertTable = (tableData: { headers: string[]; rows: string[][] }, title?: string, statisticId?: string) => {
-      console.log('[insertTable] Called with statisticId:', statisticId);
       if (!editor.isEditable || !editor.view || editor.isDestroyed) {
         console.warn('Editor is not ready for table insertion');
         return;
@@ -638,19 +633,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
       
       tableHtml += '</table>';
       
-      console.log('[insertTable] Generated HTML:', tableHtml.substring(0, 200));
-      
       // Insert the table
       editor.chain()
         .focus()
         .insertContent(tableHtml)
         .run();
-      
-      // Verify the insertion
-      setTimeout(() => {
-        const html = editor.getHTML();
-        console.log('[insertTable] After insert, editor HTML contains data-statistic-id:', html.includes('data-statistic-id'));
-      }, 100);
     };
     
     (window as any).__editorInsertCitation = insertCitation;

@@ -63,6 +63,27 @@ export default function StatisticEditModal({ statistic, onClose, onSave }: Props
   const [editingData, setEditingData] = useState(false);
   const [activeTab, setActiveTab] = useState<'chart' | 'table' | 'classification'>('chart');
 
+  // Ensure new columns are auto-selected (all except label) and indexes stay in bounds
+  useEffect(() => {
+    if (!tableData) return;
+    const colCount = tableData.headers?.length || 0;
+    if (colCount === 0) return;
+
+    // Clamp label/x/y columns inside bounds
+    if (labelColumn >= colCount) setLabelColumn(Math.max(0, colCount - 1));
+    if (xColumn >= colCount) setXColumn(Math.max(0, colCount - 1));
+    if (yColumn >= colCount) setYColumn(Math.max(0, colCount - 1));
+
+    // Auto-select all data columns except the label
+    const target = Array.from({ length: colCount }, (_, i) => i).filter((i) => i !== labelColumn);
+    setDataColumns((prev) => {
+      if (prev.length === target.length && prev.every((v, idx) => v === target[idx])) {
+        return prev;
+      }
+      return target;
+    });
+  }, [tableData, labelColumn, xColumn, yColumn]);
+
   const classification: DataClassification = { variableType, subType, isNormalDistribution };
   const recommendedTypes = getRecommendedChartTypes(classification);
   const recommendedMethod = getRecommendedStatMethod(classification);
