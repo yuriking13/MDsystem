@@ -574,11 +574,19 @@ export type GraphNode = {
   doi: string | null;
   pmid?: string | null;
   citedByCount?: number;
+  graphLevel?: number; // 1 = найденные, 2 = references, 3 = citing
+  statsQuality?: number; // 0-3, качество статистики по p-value
 };
 
 export type GraphLink = {
   source: string;
   target: string;
+};
+
+export type LevelCounts = {
+  level1: number;
+  level2: number;
+  level3: number;
 };
 
 export type CitationGraphResponse = {
@@ -587,13 +595,23 @@ export type CitationGraphResponse = {
   stats: {
     totalNodes: number;
     totalLinks: number;
+    levelCounts?: LevelCounts;
   };
   availableQueries?: string[];
+  yearRange?: {
+    min: number | null;
+    max: number | null;
+  };
+  currentDepth?: number;
 };
 
 export type GraphFilterOptions = {
   filter?: 'all' | 'selected' | 'excluded';
   sourceQueries?: string[];
+  depth?: 1 | 2 | 3; // Уровень глубины графа
+  yearFrom?: number;
+  yearTo?: number;
+  statsQuality?: number; // Минимальное качество статистики (0-3)
 };
 
 export async function apiGetCitationGraph(
@@ -606,6 +624,18 @@ export async function apiGetCitationGraph(
   }
   if (options?.sourceQueries && options.sourceQueries.length > 0) {
     params.set('sourceQueries', JSON.stringify(options.sourceQueries));
+  }
+  if (options?.depth) {
+    params.set('depth', String(options.depth));
+  }
+  if (options?.yearFrom !== undefined) {
+    params.set('yearFrom', String(options.yearFrom));
+  }
+  if (options?.yearTo !== undefined) {
+    params.set('yearTo', String(options.yearTo));
+  }
+  if (options?.statsQuality !== undefined) {
+    params.set('statsQuality', String(options.statsQuality));
   }
   const queryString = params.toString();
   const url = `/api/projects/${projectId}/citation-graph${queryString ? `?${queryString}` : ''}`;
