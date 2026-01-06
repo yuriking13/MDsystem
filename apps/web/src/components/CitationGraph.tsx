@@ -69,7 +69,7 @@ export default function CitationGraph({ projectId }: Props) {
   const [statsQuality, setStatsQuality] = useState<number>(0);
   
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 800, height: 500 });
+  const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   const loadGraph = useCallback(async (options?: GraphFilterOptions) => {
     setLoading(true);
@@ -200,25 +200,38 @@ export default function CitationGraph({ projectId }: Props) {
   const handleFetchReferences = async () => {
     setFetchingRefs(true);
     setRefsMessage(null);
+    
+    // Сразу показываем прогресс-бар
+    setFetchJobStatus({
+      isRunning: true,
+      progress: 0,
+      elapsedSeconds: 0,
+      totalArticles: 0,
+      processedArticles: 0,
+      message: 'Запуск загрузки...',
+    });
+    
     try {
       const res = await apiFetchReferences(projectId);
       
       if (res.jobId) {
-        // Фоновая загрузка запущена
+        // Фоновая загрузка запущена - обновляем данные
         setFetchJobStatus({
           isRunning: true,
           progress: 0,
           elapsedSeconds: 0,
           totalArticles: res.totalArticles,
+          processedArticles: 0,
           message: res.message,
         });
-        setRefsMessage(`⏳ ${res.message}`);
         startStatusPolling();
       } else {
-        setRefsMessage(res.message);
+        setFetchJobStatus(null);
+        setRefsMessage(res.message || 'Загрузка не требуется');
         setFetchingRefs(false);
       }
     } catch (err: any) {
+      setFetchJobStatus(null);
       setRefsMessage(err?.message || "Ошибка запуска загрузки");
       setFetchingRefs(false);
     }
@@ -269,8 +282,8 @@ export default function CitationGraph({ projectId }: Props) {
     const updateSize = () => {
       if (containerRef.current) {
         setDimensions({
-          width: Math.max(800, containerRef.current.offsetWidth - 320), // Больше места для графа
-          height: Math.max(800, window.innerHeight - 100), // Максимальный размер
+          width: Math.max(1000, containerRef.current.offsetWidth - 350), // Больше места для графа
+          height: Math.max(600, window.innerHeight - 280), // Учитываем все панели
         });
       }
     };
