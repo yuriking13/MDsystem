@@ -149,8 +149,9 @@ export default function DocumentPage() {
         tr.querySelectorAll('th, td').forEach(cell => {
           cells.push(cell.textContent || '');
         });
-        
-            // console.log('Table auto-saved to Statistics:', result.statistic.id);
+
+        // First row with th cells is treated as headers
+        if (rowIdx === 0 && tr.querySelector('th')) {
           headers.push(...cells);
         } else {
           rows.push(cells);
