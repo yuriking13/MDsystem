@@ -233,7 +233,25 @@ export type ArticlesResponse = {
   searchQueries?: string[]; // Уникальные поисковые запросы для фильтрации
 };
 
+// Поля поиска PubMed
+export const PUBMED_SEARCH_FIELDS = [
+  { value: 'All Fields', label: 'Все поля', labelEn: 'All Fields' },
+  { value: 'Title', label: 'Заголовок', labelEn: 'Title' },
+  { value: 'Title/Abstract', label: 'Заголовок/Аннотация', labelEn: 'Title/Abstract' },
+  { value: 'Text Word', label: 'Текст статьи', labelEn: 'Text Word' },
+  { value: 'Author', label: 'Автор', labelEn: 'Author' },
+  { value: 'Author - First', label: 'Первый автор', labelEn: 'First Author' },
+  { value: 'Author - Last', label: 'Последний автор', labelEn: 'Last Author' },
+  { value: 'Journal', label: 'Журнал', labelEn: 'Journal' },
+  { value: 'MeSH Terms', label: 'MeSH термины', labelEn: 'MeSH Terms' },
+  { value: 'MeSH Major Topic', label: 'MeSH основная тема', labelEn: 'MeSH Major Topic' },
+  { value: 'Affiliation', label: 'Аффилиация', labelEn: 'Affiliation' },
+  { value: 'Publication Type', label: 'Тип публикации', labelEn: 'Publication Type' },
+  { value: 'Language', label: 'Язык', labelEn: 'Language' },
+] as const;
+
 export type SearchFilters = {
+  searchField?: string; // Поле поиска PubMed
   yearFrom?: number;
   yearTo?: number;
   freeFullTextOnly?: boolean;
@@ -610,15 +628,14 @@ export type CitationGraphResponse = {
 };
 
 export type GraphFilterOptions = {
-  mode?: 'lite' | 'mega'; // lite = облегчённый с лимитами, mega = полный граф
   filter?: 'all' | 'selected' | 'excluded';
   sourceQueries?: string[];
   depth?: 1 | 2 | 3; // Уровень глубины графа
   yearFrom?: number;
   yearTo?: number;
   statsQuality?: number; // Минимальное качество статистики (0-3)
-  maxLinksPerNode?: number; // Макс связей на узел (только для lite)
-  maxTotalNodes?: number; // Макс узлов (только для lite)
+  maxLinksPerNode?: number; // Макс связей на узел (по умолчанию 10)
+  maxTotalNodes?: number; // Макс узлов (по умолчанию 500)
 };
 
 export async function apiGetCitationGraph(
@@ -626,9 +643,6 @@ export async function apiGetCitationGraph(
   options?: GraphFilterOptions
 ): Promise<CitationGraphResponse> {
   const params = new URLSearchParams();
-  if (options?.mode) {
-    params.set('mode', options.mode);
-  }
   if (options?.filter) {
     params.set('filter', options.filter);
   }

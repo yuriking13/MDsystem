@@ -8,6 +8,7 @@ import {
   apiDetectStatsWithAI,
   apiGetPdfSource,
   getPdfDownloadUrl,
+  PUBMED_SEARCH_FIELDS,
   type Article,
   type SearchFilters,
 } from "../lib/api";
@@ -61,6 +62,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   // Поиск
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Поле поиска PubMed
+  const [searchField, setSearchField] = useState<string>("All Fields");
   
   // Мультипоиск - несколько запросов
   const [multiQueries, setMultiQueries] = useState<Array<{ query: string; id: string }>>([]);
@@ -183,6 +187,11 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       yearTo,
     };
     
+    // Поле поиска PubMed
+    if (searchField && searchField !== "All Fields") {
+      filters.searchField = searchField;
+    }
+    
     // Доступность текста
     if (textAvailability === "free_full") {
       filters.freeFullTextOnly = true;
@@ -246,6 +255,11 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       yearFrom,
       yearTo,
     };
+    
+    // Поле поиска PubMed
+    if (searchField && searchField !== "All Fields") {
+      filters.searchField = searchField;
+    }
     
     if (textAvailability === "free_full") {
       filters.freeFullTextOnly = true;
@@ -649,6 +663,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   required={multiQueries.length === 0}
                 />
               </label>
+              
+              {/* Поле поиска PubMed */}
+              <label className="stack" style={{ minWidth: 180 }}>
+                <span>Искать в поле:</span>
+                <select
+                  value={searchField}
+                  onChange={(e) => setSearchField(e.target.value)}
+                  style={{ padding: '8px 12px' }}
+                >
+                  {PUBMED_SEARCH_FIELDS.map((field) => (
+                    <option key={field.value} value={field.value}>
+                      {field.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              
               {showMultiSearch && (
                 <button
                   type="button"

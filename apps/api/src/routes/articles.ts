@@ -8,10 +8,19 @@ import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
 import { getCrossrefByDOI } from "../lib/crossref.js";
 import { getBoss, startBoss } from "../worker/boss.js";
 
+// Поля поиска PubMed
+const PUBMED_SEARCH_FIELDS = [
+  'All Fields', 'Title', 'Title/Abstract', 'Text Word',
+  'Author', 'Author - First', 'Author - Last',
+  'Journal', 'MeSH Terms', 'MeSH Major Topic',
+  'Affiliation', 'Publication Type', 'Language'
+] as const;
+
 // Схемы валидации
 const SearchBodySchema = z.object({
   query: z.string().min(1).max(1000),
   filters: z.object({
+    searchField: z.enum(PUBMED_SEARCH_FIELDS).optional(), // Поле поиска PubMed
     yearFrom: z.number().int().min(1900).max(2100).optional(),
     yearTo: z.number().int().min(1900).max(2100).optional(),
     freeFullTextOnly: z.boolean().optional(),
@@ -248,6 +257,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       
       // Формируем фильтры PubMed
       const filters: PubMedFilters = {};
+      
+      // Поле поиска (Title, Abstract, Author и т.д.)
+      if (bodyP.data.filters?.searchField) {
+        filters.searchField = bodyP.data.filters.searchField as PubMedFilters['searchField'];
+      }
+      
       if (bodyP.data.filters?.yearFrom) {
         filters.publishedFrom = `${bodyP.data.filters.yearFrom}/01/01`;
       }
@@ -269,6 +284,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Сохраняем поисковый запрос для группировки
       const searchQuery = bodyP.data.query;
       
+      // Получаем PMIDs статей, которые УЖЕ есть в проекте
+      // Это позволяет искать действительно НОВЫЕ статьи для проекта
+      const existingInProjectRes = await pool.query(
+        `SELECT a.pmid FROM project_articles pa
+         JOIN articles a ON a.id = pa.article_id
+         WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`,
+        [paramsP.data.id]
+      );
+      const existingPmidsInProject = new Set<string>(
+        existingInProjectRes.rows.map((r: { pmid: string }) => r.pmid)
+      );
+      
+      // Запрашиваем больше статей из PubMed, так как часть может быть уже в проекте
+      // Множитель зависит от размера проекта
+      const searchMultiplier = Math.min(5, Math.max(2, Math.ceil(existingPmidsInProject.size / bodyP.data.maxResults) + 1));
+      const pubmedMaxTotal = bodyP.data.maxResults * searchMultiplier;
+      
       // Сохраняем статьи и добавляем в проект
       let added = 0;
       let skipped = 0;
@@ -278,19 +310,28 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const newArticleIds: string[] = []; // Новые статьи для перевода
       const processedPmids = new Set<string>(); // Для дедупликации между поисками
       
+      // Целевое количество НОВЫХ статей для проекта
+      const targetNewArticles = bodyP.data.maxResults;
+      
       // Если выбрано несколько типов публикации - делаем ОТДЕЛЬНЫЙ поиск для каждого типа
       // Это позволяет точно определить, какие статьи соответствуют каким типам
       if (searchPubTypes.length > 1) {
         // Для каждого типа публикации - отдельный поиск
         for (const pubType of searchPubTypes) {
+          // Если уже добавили достаточно - останавливаемся
+          if (added >= targetNewArticles) break;
+          
           const typeFilters = { ...filters, publicationTypes: [pubType] };
           
           try {
+            // Запрашиваем больше статей, учитывая возможные дубликаты
+            const maxForType = Math.ceil(pubmedMaxTotal / searchPubTypes.length);
+            
             const { count, items } = await pubmedFetchAll({
               apiKey: apiKey || undefined,
               topic: bodyP.data.query,
               filters: typeFilters,
-              maxTotal: Math.ceil(bodyP.data.maxResults / searchPubTypes.length), // Делим лимит между типами
+              maxTotal: maxForType,
               throttleMs: apiKey ? 100 : 350,
             });
             
@@ -298,24 +339,35 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             totalFetched += items.length;
             
             for (const article of items) {
+              // Если уже добавили достаточно - останавливаемся
+              if (added >= targetNewArticles) break;
+              
               try {
-                // Пропускаем уже обработанные статьи (но типы добавятся в findOrCreateArticle)
                 const pmid = article.pmid;
-                const isNew = pmid ? !processedPmids.has(pmid) : true;
-                if (pmid) processedPmids.add(pmid);
+                
+                // Пропускаем статьи без PMID или уже обработанные в этом поиске
+                if (!pmid || processedPmids.has(pmid)) continue;
+                processedPmids.add(pmid);
+                
+                // Пропускаем статьи, которые УЖЕ в проекте (но обновляем их типы)
+                if (existingPmidsInProject.has(pmid)) {
+                  // Обновляем типы публикации для существующей статьи
+                  await findOrCreateArticle(article, [pubType]);
+                  skipped++;
+                  continue;
+                }
                 
                 // Передаём ТОЛЬКО тот тип, по которому статья найдена
                 const articleId = await findOrCreateArticle(article, [pubType]);
+                articleIds.push(articleId);
                 
-                if (isNew) {
-                  articleIds.push(articleId);
-                  const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
-                  if (wasAdded) {
-                    added++;
-                    newArticleIds.push(articleId);
-                  } else {
-                    skipped++;
-                  }
+                const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
+                if (wasAdded) {
+                  added++;
+                  newArticleIds.push(articleId);
+                  existingPmidsInProject.add(pmid); // Помечаем как добавленную
+                } else {
+                  skipped++;
                 }
               } catch (err) {
                 console.error("Error saving article:", err);
@@ -335,7 +387,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           apiKey: apiKey || undefined,
           topic: bodyP.data.query,
           filters,
-          maxTotal: bodyP.data.maxResults,
+          maxTotal: pubmedMaxTotal, // Запрашиваем больше для учёта дубликатов
           throttleMs: apiKey ? 100 : 350,
         });
         
@@ -343,7 +395,33 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         totalFetched = items.length;
         
         for (const article of items) {
+          // Если уже добавили достаточно - останавливаемся
+          if (added >= targetNewArticles) break;
+          
           try {
+            const pmid = article.pmid;
+            
+            // Пропускаем статьи без PMID
+            if (!pmid) {
+              // Для статей без PMID пробуем добавить как есть
+              const articleId = await findOrCreateArticle(article, searchPubTypes.length === 1 ? searchPubTypes : undefined);
+              articleIds.push(articleId);
+              const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
+              if (wasAdded) {
+                added++;
+                newArticleIds.push(articleId);
+              } else {
+                skipped++;
+              }
+              continue;
+            }
+            
+            // Пропускаем статьи, которые УЖЕ в проекте
+            if (existingPmidsInProject.has(pmid)) {
+              skipped++;
+              continue;
+            }
+            
             // Если выбран 1 тип - передаём его, иначе null (статья не фильтровалась по типу)
             const articleId = await findOrCreateArticle(article, searchPubTypes.length === 1 ? searchPubTypes : undefined);
             articleIds.push(articleId);
@@ -352,6 +430,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             if (wasAdded) {
               added++;
               newArticleIds.push(articleId);
+              existingPmidsInProject.add(pmid); // Помечаем как добавленную
             } else {
               skipped++;
             }

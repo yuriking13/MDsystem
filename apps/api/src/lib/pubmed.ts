@@ -46,7 +46,24 @@ function decodeHtmlEntities(text: string): string {
     .replace(/&larr;/g, '←');
 }
 
+// PubMed search fields - https://pubmed.ncbi.nlm.nih.gov/help/#search-tags
+export type PubMedSearchField = 
+  | 'All Fields'        // [All Fields] - по умолчанию
+  | 'Title'             // [Title] - только заголовок
+  | 'Title/Abstract'    // [Title/Abstract] - заголовок и аннотация
+  | 'Text Word'         // [tw] - текст статьи
+  | 'Author'            // [Author]
+  | 'Author - First'    // [1au] - первый автор
+  | 'Author - Last'     // [lastau] - последний автор
+  | 'Journal'           // [Journal]
+  | 'MeSH Terms'        // [MeSH Terms]
+  | 'MeSH Major Topic'  // [MeSH Major Topic]
+  | 'Affiliation'       // [Affiliation]
+  | 'Publication Type'  // [pt]
+  | 'Language';         // [Language]
+
 export type PubMedFilters = {
+  searchField?: PubMedSearchField; // Поле для поиска (по умолчанию All Fields)
   publishedFrom?: string; // YYYY-MM-DD
   publishedTo?: string;   // YYYY-MM-DD
   freeFullTextOnly?: boolean;
@@ -71,11 +88,34 @@ function encodeTerm(term: string): string {
   return encodeURIComponent(term);
 }
 
+// Маппинг полей поиска на PubMed теги
+const SEARCH_FIELD_TAGS: Record<PubMedSearchField, string> = {
+  'All Fields': '',           // Без тега - PubMed ищет везде
+  'Title': '[ti]',
+  'Title/Abstract': '[tiab]',
+  'Text Word': '[tw]',
+  'Author': '[au]',
+  'Author - First': '[1au]',
+  'Author - Last': '[lastau]',
+  'Journal': '[ta]',
+  'MeSH Terms': '[mh]',
+  'MeSH Major Topic': '[majr]',
+  'Affiliation': '[ad]',
+  'Publication Type': '[pt]',
+  'Language': '[la]',
+};
+
 function buildPubmedTerm(topic: string, filters: PubMedFilters): string {
   const terms: string[] = [];
 
-  // базовая тема
-  terms.push(`(${topic})`);
+  // базовая тема с полем поиска
+  const fieldTag = filters.searchField ? SEARCH_FIELD_TAGS[filters.searchField] || '' : '';
+  if (fieldTag) {
+    // Если поле указано, добавляем тег к теме
+    terms.push(`(${topic})${fieldTag}`);
+  } else {
+    terms.push(`(${topic})`);
+  }
 
   // free full text (бесплатный полный текст)
   if (filters.freeFullTextOnly) {
