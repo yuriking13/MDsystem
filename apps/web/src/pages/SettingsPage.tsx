@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { apiDeleteApiKey, apiGetApiKeys, apiSaveApiKey } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 
-const Providers = ["pubmed", "crossref", "wiley", "openrouter"] as const;
+const Providers = ["pubmed", "doaj", "wiley", "openrouter"] as const;
 
 export default function SettingsPage() {
   const nav = useNavigate();

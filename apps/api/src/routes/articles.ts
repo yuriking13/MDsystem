@@ -929,6 +929,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /api/projects/:id/articles/fetch-references - запуск фоновой загрузки связей
+  // Body: { selectedOnly?: boolean, articleIds?: string[] }
+  // - selectedOnly: загружать связи только для отобранных (selected) статей
+  // - articleIds: загружать связи только для указанных статей
   fastify.post(
     "/projects/:id/articles/fetch-references",
     { preHandler: [fastify.authenticate] },
@@ -939,6 +942,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (!paramsP.success) {
         return reply.code(400).send({ error: "Invalid project ID" });
       }
+      
+      // Парсим body для дополнительных параметров
+      const bodySchema = z.object({
+        selectedOnly: z.boolean().optional(),
+        articleIds: z.array(z.string().uuid()).optional(),
+      });
+      const bodyP = bodySchema.safeParse(request.body || {});
+      const selectedOnly = bodyP.success ? bodyP.data.selectedOnly : false;
+      const articleIds = bodyP.success ? bodyP.data.articleIds : undefined;
       
       // Проверка доступа
       const access = await checkProjectAccess(paramsP.data.id, userId, true);
@@ -978,13 +990,22 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         });
       }
       
-      // Подсчитываем статьи для оценки времени
-      const countRes = await pool.query(
-        `SELECT COUNT(*) as cnt FROM articles a
+      // Подсчитываем статьи для оценки времени (с учётом фильтров)
+      let countSql = `SELECT COUNT(*) as cnt FROM articles a
          JOIN project_articles pa ON pa.article_id = a.id
-         WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`,
-        [paramsP.data.id]
-      );
+         WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`;
+      const countParams: any[] = [paramsP.data.id];
+      let paramIdx = 2;
+      
+      if (selectedOnly) {
+        countSql += ` AND pa.status = 'selected'`;
+      }
+      if (articleIds && articleIds.length > 0) {
+        countSql += ` AND a.id = ANY($${paramIdx++})`;
+        countParams.push(articleIds);
+      }
+      
+      const countRes = await pool.query(countSql, countParams);
       const totalArticles = parseInt(countRes.rows[0]?.cnt || '0');
       
       if (totalArticles === 0) {
@@ -1020,6 +1041,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           projectId: paramsP.data.id,
           jobId,
           userId,
+          selectedOnly: selectedOnly || false,
+          articleIds: articleIds || null,
         };
         fastify.log.info({ jobData }, '[fetch-references] Job data prepared');
         
