@@ -116,14 +116,33 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
       console.log(`[GraphFetch] Article ${pmid}: ${refs.references.length} refs, ${refs.citedBy.length} cited_by`);
       
       // Обновляем статью
+      // Убедимся что массивы корректные
+      const refArray = Array.isArray(refs.references) ? refs.references : [];
+      const citedByArray = Array.isArray(refs.citedBy) ? refs.citedBy : [];
+      
+      // Логируем первые несколько референсов для отладки
+      if (refArray.length > 0 && processedArticles < 3) {
+        console.log(`[GraphFetch] Sample refs for ${pmid}: ${refArray.slice(0, 5).join(', ')}${refArray.length > 5 ? '...' : ''}`);
+      }
+      
       await pool.query(
         `UPDATE articles SET 
-          reference_pmids = $1,
-          cited_by_pmids = $2,
+          reference_pmids = $1::text[],
+          cited_by_pmids = $2::text[],
           references_fetched_at = now()
          WHERE id = $3`,
-        [refs.references, refs.citedBy, articleId]
+        [refArray, citedByArray, articleId]
       );
+      
+      // Verify the update worked
+      if (processedArticles === 0) {
+        const verifyRes = await pool.query(
+          `SELECT reference_pmids, array_length(reference_pmids, 1) as ref_count 
+           FROM articles WHERE id = $1`,
+          [articleId]
+        );
+        console.log(`[GraphFetch] Verify first article saved: ref_count=${verifyRes.rows[0]?.ref_count || 0}`);
+      }
       
       // Добавляем PMIDs в список для кэширования
       refs.references.forEach(p => allPmidsToCache.add(p));

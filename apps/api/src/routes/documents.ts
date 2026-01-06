@@ -1108,13 +1108,31 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const pmidToId = new Map<string, string>();
       const addedNodeIds = new Set<string>();
 
+      // Debug: Log first article's reference_pmids to verify data structure
+      if (articlesRes.rows.length > 0) {
+        const firstArticle = articlesRes.rows[0];
+        console.log(`[CitationGraph] First article PMID: ${firstArticle.pmid}`);
+        console.log(`[CitationGraph] reference_pmids type: ${typeof firstArticle.reference_pmids}`);
+        console.log(`[CitationGraph] reference_pmids isArray: ${Array.isArray(firstArticle.reference_pmids)}`);
+        console.log(`[CitationGraph] reference_pmids value: ${JSON.stringify(firstArticle.reference_pmids)?.slice(0, 200)}`);
+        console.log(`[CitationGraph] references_fetched_at: ${firstArticle.references_fetched_at}`);
+      }
+      
       // Создаём узлы из статей проекта (Уровень 1)
       for (const article of articlesRes.rows) {
         const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
         const label = `${firstAuthor} (${article.year || '?'})`;
         
+        // Handle cited_by_pmids that might be string or array
+        let citedByPmidsForCount: string[] = [];
+        if (Array.isArray(article.cited_by_pmids)) {
+          citedByPmidsForCount = article.cited_by_pmids;
+        } else if (typeof article.cited_by_pmids === 'string' && article.cited_by_pmids.startsWith('{')) {
+          citedByPmidsForCount = article.cited_by_pmids.slice(1, -1).split(',').filter(Boolean);
+        }
+        
         // Количество цитирований - берём максимум из PubMed cited_by и Europe PMC
-        const pubmedCitedBy = article.cited_by_pmids?.length || 0;
+        const pubmedCitedBy = citedByPmidsForCount.length;
         const europePMCCitations = article.raw_json?.europePMCCitations || 0;
         const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
         
@@ -1157,26 +1175,28 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let level2Articles: any[] = [];
       let level3Articles: any[] = [];
       
-      // Собираем PMIDs для references_fetched_at чтобы исключить уже проанализированные статьи
-      const analyzedPmids = new Set<string>();
-      for (const article of articlesRes.rows) {
-        // Если статья уже проанализирована (references_fetched_at IS NOT NULL),
-        // её ссылки НЕ добавляем для расширения графа (на неё могут ссылаться, она - нет)
-        if (article.references_fetched_at) {
-          if (article.pmid) analyzedPmids.add(article.pmid);
-        }
-      }
+      // Для расширения графа используем ТОЛЬКО статьи с загруженными ссылками
+      // (references_fetched_at IS NOT NULL означает что reference_pmids заполнены)
       
       if (depth >= 2) {
         for (const article of articlesRes.rows) {
-          // Пропускаем уже проанализированные статьи - не расширяем их ссылки
-          if (article.references_fetched_at) continue;
+          // Используем ТОЛЬКО статьи с загруженными ссылками
+          // (references_fetched_at установлен после загрузки из PubMed)
+          // if (!article.references_fetched_at) continue; // Можно включить для строгой проверки
           
-          const refPmids = article.reference_pmids || [];
+          // Parse reference_pmids properly
+          let refPmids: string[] = [];
+          if (Array.isArray(article.reference_pmids)) {
+            refPmids = article.reference_pmids;
+          } else if (typeof article.reference_pmids === 'string' && article.reference_pmids.startsWith('{')) {
+            refPmids = article.reference_pmids.slice(1, -1).split(',').filter(Boolean);
+          }
+          
           let addedForThisArticle = 0;
           for (const refPmid of refPmids) {
             // Ограничиваем количество связей на статью
             if (addedForThisArticle >= maxLinksPerNode) break;
+            // Добавляем в level2 только PMIDs, которых ещё нет в проекте
             if (!pmidToId.has(refPmid)) {
               level2Pmids.add(refPmid);
               level1ToLevel2Links.push({ sourceId: article.id, targetPmid: refPmid });
@@ -1184,15 +1204,20 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             }
           }
         }
+        console.log(`[CitationGraph] Depth ${depth}: collected ${level2Pmids.size} external reference PMIDs`);
       }
       
       // Уровень 0 (cited_by) загружаем при depth >= 3
       if (depth >= 3) {
         for (const article of articlesRes.rows) {
-          // Пропускаем уже проанализированные статьи
-          if (article.references_fetched_at) continue;
+          // Parse cited_by_pmids properly
+          let citedByPmids: string[] = [];
+          if (Array.isArray(article.cited_by_pmids)) {
+            citedByPmids = article.cited_by_pmids;
+          } else if (typeof article.cited_by_pmids === 'string' && article.cited_by_pmids.startsWith('{')) {
+            citedByPmids = article.cited_by_pmids.slice(1, -1).split(',').filter(Boolean);
+          }
           
-          const citedByPmids = article.cited_by_pmids || [];
           let addedForThisArticle = 0;
           for (const citingPmid of citedByPmids) {
             // Ограничиваем количество связей на статью
@@ -1204,6 +1229,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             }
           }
         }
+        console.log(`[CitationGraph] Depth ${depth}: collected ${level0Pmids.size} citing article PMIDs`);
       }
 
       // Загружаем статьи уровня 2 (references) - сначала ищем в БД
@@ -1574,15 +1600,60 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       };
 
+      // Debug: Log reference data for project articles
+      let totalRefPmids = 0;
+      let articlesWithRefs = 0;
+      let matchedInternalRefs = 0;
+      const projectPmids = new Set(pmidToId.keys());
+      
       // Обрабатываем все статьи для создания связей на основе PubMed данных
       for (const article of allArticles) {
-        const refPmids = article.reference_pmids || [];
-        const citedByPmids = article.cited_by_pmids || [];
+        // PostgreSQL returns arrays as arrays, but let's handle edge cases
+        let refPmids: string[] = [];
+        let citedByPmids: string[] = [];
+        
+        // Handle reference_pmids - might be array, string, or null
+        if (Array.isArray(article.reference_pmids)) {
+          refPmids = article.reference_pmids;
+        } else if (typeof article.reference_pmids === 'string') {
+          // PostgreSQL array might be returned as string like "{pmid1,pmid2}"
+          try {
+            if (article.reference_pmids.startsWith('{')) {
+              refPmids = article.reference_pmids.slice(1, -1).split(',').filter(Boolean);
+            } else {
+              refPmids = JSON.parse(article.reference_pmids);
+            }
+          } catch {
+            refPmids = [];
+          }
+        }
+        
+        // Handle cited_by_pmids similarly
+        if (Array.isArray(article.cited_by_pmids)) {
+          citedByPmids = article.cited_by_pmids;
+        } else if (typeof article.cited_by_pmids === 'string') {
+          try {
+            if (article.cited_by_pmids.startsWith('{')) {
+              citedByPmids = article.cited_by_pmids.slice(1, -1).split(',').filter(Boolean);
+            } else {
+              citedByPmids = JSON.parse(article.cited_by_pmids);
+            }
+          } catch {
+            citedByPmids = [];
+          }
+        }
+        
+        // Count for debugging
+        if (refPmids.length > 0) {
+          articlesWithRefs++;
+          totalRefPmids += refPmids.length;
+        }
         
         // Исходящие связи (эта статья ссылается на другие статьи)
         for (const refPmid of refPmids) {
           const targetId = pmidToId.get(refPmid);
           if (targetId) {
+            matchedInternalRefs++;
             addLink(article.id, targetId);
           }
         }
@@ -1595,6 +1666,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
         }
       }
+      
+      // Log debug info
+      console.log(`[CitationGraph] Project has ${projectPmids.size} articles with PMIDs`);
+      console.log(`[CitationGraph] Found ${articlesWithRefs} articles with reference_pmids (${totalRefPmids} total refs)`);
+      console.log(`[CitationGraph] Matched ${matchedInternalRefs} internal references (links between project articles)`);
+      console.log(`[CitationGraph] Created ${links.length} links`)
 
       // Добавляем связи на основе references из Crossref (для всех статей уровня 1)
       for (const article of articlesRes.rows) {
@@ -1648,13 +1725,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         level3: nodes.filter(n => n.graphLevel === 3).length, // Связанные
       };
       
-      // Подсчёт потенциальных ссылок (для отладки)
-      let totalRefPmids = 0;
-      let totalCitedByPmids = 0;
-      for (const article of articlesRes.rows) {
-        totalRefPmids += (article.reference_pmids || []).length;
-        totalCitedByPmids += (article.cited_by_pmids || []).length;
-      }
+      // Note: totalRefPmids and articlesWithRefs are now calculated above in the link creation loop
 
       // Автоматическое обогащение узлов, которых нет в БД (pmid:xxxxx)
       // Загружаем полную информацию из PubMed для отображения в sidebar
@@ -1698,7 +1769,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           levelCounts,
           // Информация о доступных ссылках для расширения графа
           availableReferences: totalRefPmids,
-          availableCiting: totalCitedByPmids,
+          availableCiting: 0, // Будет добавлено позже
+          // Отладочная информация
+          articlesWithRefs,
+          matchedInternalRefs,
         },
         availableQueries,
         yearRange,
