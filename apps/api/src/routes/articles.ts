@@ -865,25 +865,38 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         };
         fastify.log.info({ jobData }, '[fetch-references] Job data prepared');
         
-        const sendResult = await boss.send('graph:fetch-references', jobData);
-        
-        fastify.log.info({ 
-          jobId, 
-          sendResult, 
-          sendResultType: typeof sendResult,
-          sendResultValue: JSON.stringify(sendResult)
-        }, '[fetch-references] Job send completed');
+        let sendResult;
+        try {
+          sendResult = await boss.send('graph:fetch-references', jobData);
+          fastify.log.info({ 
+            jobId, 
+            sendResult, 
+            sendResultType: typeof sendResult,
+            sendResultValue: JSON.stringify(sendResult)
+          }, '[fetch-references] Job send completed');
+        } catch (sendErr) {
+          fastify.log.error({
+            sendErr,
+            sendErrMessage: sendErr instanceof Error ? sendErr.message : String(sendErr),
+            sendErrStack: sendErr instanceof Error ? sendErr.stack : undefined
+          }, '[fetch-references] boss.send() threw an error');
+          throw sendErr;
+        }
         
         // Double-check: query boss.job directly
-        const jobCheckRes = await pool.query(
-          `SELECT id, state, name FROM boss.job WHERE id = $1 LIMIT 1`,
-          [sendResult]
-        );
-        fastify.log.info({ 
-          jobId,
-          jobCheckCount: jobCheckRes.rowCount,
-          jobCheckRows: jobCheckRes.rows
-        }, '[fetch-references] Checked boss.job table');
+        if (sendResult) {
+          const jobCheckRes = await pool.query(
+            `SELECT id, state, name FROM boss.job WHERE id = $1 LIMIT 1`,
+            [sendResult]
+          );
+          fastify.log.info({ 
+            jobId,
+            jobCheckCount: jobCheckRes.rowCount,
+            jobCheckRows: jobCheckRes.rows
+          }, '[fetch-references] Checked boss.job table');
+        } else {
+          fastify.log.warn({ jobId }, '[fetch-references] sendResult is null, skipping job table check');
+        }
       } catch (err) {
         fastify.log.error({ 
           err, 
