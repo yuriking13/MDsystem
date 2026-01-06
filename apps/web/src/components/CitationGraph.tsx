@@ -18,7 +18,13 @@ export default function CitationGraph({ projectId }: Props) {
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<{ totalNodes: number; totalLinks: number; levelCounts?: LevelCounts }>({ totalNodes: 0, totalLinks: 0 });
+  const [stats, setStats] = useState<{ 
+    totalNodes: number; 
+    totalLinks: number; 
+    levelCounts?: LevelCounts;
+    availableReferences?: number;
+    availableCiting?: number;
+  }>({ totalNodes: 0, totalLinks: 0 });
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [fetchingRefs, setFetchingRefs] = useState(false);
   const [refsMessage, setRefsMessage] = useState<string | null>(null);
@@ -419,11 +425,19 @@ export default function CitationGraph({ projectId }: Props) {
         {stats.levelCounts && (
           <>
             <span style={{ color: '#4b74ff' }}>🔵 Поиск: {stats.levelCounts.level1}</span>
-            {stats.levelCounts.level2 > 0 && (
-              <span style={{ color: '#f59e0b' }}>🟠 Ссылки: {stats.levelCounts.level2}</span>
+            {depth >= 2 && (
+              <span style={{ color: '#f59e0b' }}>
+                🟠 Ссылки: {stats.levelCounts.level2}
+                {stats.availableReferences !== undefined && stats.availableReferences > 0 && 
+                  ` (всего: ${stats.availableReferences})`}
+              </span>
             )}
-            {stats.levelCounts.level3 > 0 && (
-              <span style={{ color: '#a855f7' }}>🟣 Цитирующие: {stats.levelCounts.level3}</span>
+            {depth >= 3 && (
+              <span style={{ color: '#a855f7' }}>
+                🟣 Цитирующие: {stats.levelCounts.level3}
+                {stats.availableCiting !== undefined && stats.availableCiting > 0 && 
+                  ` (всего: ${stats.availableCiting})`}
+              </span>
             )}
           </>
         )}
@@ -436,6 +450,19 @@ export default function CitationGraph({ projectId }: Props) {
           </span>
         )}
       </div>
+      
+      {/* Подсказка если нет связей */}
+      {depth >= 2 && stats.availableReferences === 0 && stats.availableCiting === 0 && (
+        <div style={{ 
+          padding: '8px 16px', 
+          background: 'rgba(251, 191, 36, 0.1)', 
+          borderBottom: '1px solid var(--border-glass)',
+          fontSize: 12,
+          color: '#fbbf24'
+        }}>
+          ⚠️ Данные о ссылках не загружены. Нажмите "Обновить связи из PubMed" для загрузки информации о цитированиях.
+        </div>
+      )}
       
       <div className="graph-legend" style={{ padding: '4px 16px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         <span style={{ fontWeight: 500, fontSize: 11 }}>Уровень 1:</span>

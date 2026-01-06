@@ -1126,12 +1126,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const level2Pmids = new Set<string>(); // Статьи, на которые ссылаются (references)
       const level3Pmids = new Set<string>(); // Статьи, которые цитируют (cited_by)
       
+      // Сохраняем связи между статьями уровня 1 и PMIDs уровней 2/3
+      const level1ToLevel2Links: { sourceId: string; targetPmid: string }[] = [];
+      const level3ToLevel1Links: { sourcePmid: string; targetId: string }[] = [];
+      
       if (depth >= 2) {
         for (const article of articlesRes.rows) {
           const refPmids = article.reference_pmids || [];
           for (const refPmid of refPmids) {
             if (!pmidToId.has(refPmid)) {
               level2Pmids.add(refPmid);
+              level1ToLevel2Links.push({ sourceId: article.id, targetPmid: refPmid });
             }
           }
         }
@@ -1143,12 +1148,16 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           for (const citingPmid of citedByPmids) {
             if (!pmidToId.has(citingPmid) && !level2Pmids.has(citingPmid)) {
               level3Pmids.add(citingPmid);
+              level3ToLevel1Links.push({ sourcePmid: citingPmid, targetId: article.id });
             }
           }
         }
       }
 
-      // Загружаем статьи уровня 2 (references) из БД, если они там есть
+      // Загружаем статьи уровня 2 (references) - сначала ищем в БД
+      const level2InDb = new Map<string, any>(); // pmid -> article data
+      const level2NotInDb = new Set<string>(); // PMIDs не в БД
+      
       if (depth >= 2 && level2Pmids.size > 0) {
         const level2PmidsArr = Array.from(level2Pmids);
         
@@ -1180,6 +1189,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           level2Params
         );
         
+        // Помечаем найденные в БД
+        for (const article of level2Res.rows) {
+          level2InDb.set(article.pmid, article);
+        }
+        
+        // Определяем какие PMIDs не в БД (но только если нет фильтров по году/stats)
+        const hasFilters = (yearFrom !== undefined) || (yearTo !== undefined) || 
+                          (statsQuality !== undefined && statsQuality > 0);
+        if (!hasFilters) {
+          for (const pmid of level2PmidsArr) {
+            if (!level2InDb.has(pmid)) {
+              level2NotInDb.add(pmid);
+            }
+          }
+        }
+        
+        // Добавляем узлы для статей из БД
         for (const article of level2Res.rows) {
           if (addedNodeIds.has(article.id)) continue;
           
@@ -1209,9 +1235,32 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             pmidToId.set(article.pmid, article.id);
           }
         }
+        
+        // Добавляем узлы для PMIDs которых нет в БД (показываем как "неизвестные")
+        for (const pmid of level2NotInDb) {
+          const nodeId = `pmid:${pmid}`; // Используем специальный ID
+          if (addedNodeIds.has(nodeId)) continue;
+          
+          nodes.push({
+            id: nodeId,
+            label: `PMID:${pmid}`,
+            year: null,
+            status: 'reference',
+            doi: null,
+            pmid: pmid,
+            citedByCount: 0,
+            graphLevel: 2,
+            statsQuality: 0,
+          });
+          addedNodeIds.add(nodeId);
+          pmidToId.set(pmid, nodeId);
+        }
       }
 
-      // Загружаем статьи уровня 3 (citing articles) из БД, если они там есть
+      // Загружаем статьи уровня 3 (citing articles) - сначала ищем в БД
+      const level3InDb = new Map<string, any>(); // pmid -> article data
+      const level3NotInDb = new Set<string>(); // PMIDs не в БД
+      
       if (depth >= 3 && level3Pmids.size > 0) {
         const level3PmidsArr = Array.from(level3Pmids);
         
@@ -1243,6 +1292,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           level3Params
         );
         
+        // Помечаем найденные в БД
+        for (const article of level3Res.rows) {
+          level3InDb.set(article.pmid, article);
+        }
+        
+        // Определяем какие PMIDs не в БД (но только если нет фильтров по году/stats)
+        const hasFilters = (yearFrom !== undefined) || (yearTo !== undefined) || 
+                          (statsQuality !== undefined && statsQuality > 0);
+        if (!hasFilters) {
+          for (const pmid of level3PmidsArr) {
+            if (!level3InDb.has(pmid)) {
+              level3NotInDb.add(pmid);
+            }
+          }
+        }
+        
+        // Добавляем узлы для статей из БД
         for (const article of level3Res.rows) {
           if (addedNodeIds.has(article.id)) continue;
           
@@ -1272,43 +1338,68 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             pmidToId.set(article.pmid, article.id);
           }
         }
+        
+        // Добавляем узлы для PMIDs которых нет в БД (показываем как "неизвестные")
+        for (const pmid of level3NotInDb) {
+          const nodeId = `pmid:${pmid}`; // Используем специальный ID
+          if (addedNodeIds.has(nodeId)) continue;
+          
+          nodes.push({
+            id: nodeId,
+            label: `PMID:${pmid}`,
+            year: null,
+            status: 'citing',
+            doi: null,
+            pmid: pmid,
+            citedByCount: 0,
+            graphLevel: 3,
+            statsQuality: 0,
+          });
+          addedNodeIds.add(nodeId);
+          pmidToId.set(pmid, nodeId);
+        }
+      }
+      
+      // Добавляем связи уровень 1 -> уровень 2 (references)
+      for (const link of level1ToLevel2Links) {
+        const targetId = pmidToId.get(link.targetPmid);
+        if (targetId && addedNodeIds.has(targetId)) {
+          const linkKey = `${link.sourceId}->${targetId}`;
+          if (!linksSet.has(linkKey)) {
+            linksSet.add(linkKey);
+            links.push({
+              source: link.sourceId,
+              target: targetId,
+            });
+          }
+        }
+      }
+      
+      // Добавляем связи уровень 3 -> уровень 1 (citing)
+      for (const link of level3ToLevel1Links) {
+        const sourceId = pmidToId.get(link.sourcePmid);
+        if (sourceId && addedNodeIds.has(sourceId)) {
+          const linkKey = `${sourceId}->${link.targetId}`;
+          if (!linksSet.has(linkKey)) {
+            linksSet.add(linkKey);
+            links.push({
+              source: sourceId,
+              target: link.targetId,
+            });
+          }
+        }
       }
 
-      // Добавляем связи на основе references из PubMed (первый приоритет)
-      // Теперь включаем все уровни
-      const allArticles = [...articlesRes.rows];
-      
-      // Добавляем статьи уровней 2 и 3 для построения связей
-      if (depth >= 2 && level2Pmids.size > 0) {
-        const level2PmidsArr = Array.from(level2Pmids);
-        const level2Res = await pool.query(
-          `SELECT id, pmid, reference_pmids, cited_by_pmids, raw_json
-           FROM articles WHERE pmid = ANY($1)`,
-          [level2PmidsArr]
-        );
-        allArticles.push(...level2Res.rows.filter(a => addedNodeIds.has(a.id)));
-      }
-      
-      if (depth >= 3 && level3Pmids.size > 0) {
-        const level3PmidsArr = Array.from(level3Pmids);
-        const level3Res = await pool.query(
-          `SELECT id, pmid, reference_pmids, cited_by_pmids, raw_json
-           FROM articles WHERE pmid = ANY($1)`,
-          [level3PmidsArr]
-        );
-        allArticles.push(...level3Res.rows.filter(a => addedNodeIds.has(a.id)));
-      }
-      
-      for (const article of allArticles) {
-        if (!addedNodeIds.has(article.id)) continue;
-        
+      // Добавляем связи между статьями уровня 1 на основе references из PubMed
+      for (const article of articlesRes.rows) {
         const refPmids = article.reference_pmids || [];
         const citedByPmids = article.cited_by_pmids || [];
         
-        // Исходящие связи (эта статья ссылается на другие)
+        // Исходящие связи (эта статья ссылается на другие статьи уровня 1)
         for (const refPmid of refPmids) {
           const targetId = pmidToId.get(refPmid);
-          if (targetId && targetId !== article.id && addedNodeIds.has(targetId)) {
+          // Только связи к статьям уровня 1 (которые уже были в проекте)
+          if (targetId && targetId !== article.id && !targetId.startsWith('pmid:')) {
             const linkKey = `${article.id}->${targetId}`;
             if (!linksSet.has(linkKey)) {
               linksSet.add(linkKey);
@@ -1320,10 +1411,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
         }
         
-        // Входящие связи (другие статьи ссылаются на эту)
+        // Входящие связи от других статей уровня 1
         for (const citingPmid of citedByPmids) {
           const sourceId = pmidToId.get(citingPmid);
-          if (sourceId && sourceId !== article.id && addedNodeIds.has(sourceId)) {
+          if (sourceId && sourceId !== article.id && !sourceId.startsWith('pmid:')) {
             const linkKey = `${sourceId}->${article.id}`;
             if (!linksSet.has(linkKey)) {
               linksSet.add(linkKey);
@@ -1336,10 +1427,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      // Добавляем связи на основе references из Crossref (второй приоритет - fallback)
-      for (const article of allArticles) {
-        if (!addedNodeIds.has(article.id)) continue;
-        
+      // Добавляем связи на основе references из Crossref (для статей уровня 1)
+      for (const article of articlesRes.rows) {
         // Crossref данные хранятся в raw_json.crossref
         const crossrefData = article.raw_json?.crossref;
         const references = crossrefData?.references || crossrefData?.reference || [];
@@ -1397,6 +1486,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         level2: nodes.filter(n => n.graphLevel === 2).length,
         level3: nodes.filter(n => n.graphLevel === 3).length,
       };
+      
+      // Подсчёт потенциальных ссылок (для отладки)
+      let totalRefPmids = 0;
+      let totalCitedByPmids = 0;
+      for (const article of articlesRes.rows) {
+        totalRefPmids += (article.reference_pmids || []).length;
+        totalCitedByPmids += (article.cited_by_pmids || []).length;
+      }
 
       return {
         nodes,
@@ -1405,6 +1502,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           totalNodes: nodes.length,
           totalLinks: links.length,
           levelCounts,
+          // Информация о доступных ссылках для расширения графа
+          availableReferences: totalRefPmids,
+          availableCiting: totalCitedByPmids,
         },
         availableQueries,
         yearRange,
