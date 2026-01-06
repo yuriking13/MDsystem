@@ -14,14 +14,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Paragraph from '@tiptap/extension-paragraph';
-
-// Import PaginationPlus with error handling
-let PaginationPlus: any = null;
-try {
-  PaginationPlus = require('tiptap-pagination-plus').PaginationPlus;
-} catch (e) {
-  console.warn('PaginationPlus not available:', e);
-}
+import { PaginationPlus } from 'tiptap-pagination-plus';
 
 import TiptapToolbar from './TiptapToolbar';
 import DocumentOutline from './DocumentOutline';
@@ -286,35 +279,31 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
         class: 'tiptap-link',
       },
     }),
-    // Add PaginationPlus only if available and configuration succeeds
-    ...(PaginationPlus ? [(() => {
-      try {
-        return PaginationPlus.configure({
-          pageHeight: styleConfig.pageHeight,
-          pageWidth: styleConfig.pageWidth,
-          pageGap: PAGE_GAP,
-          marginTop: styleConfig.marginTop,
-          marginRight: styleConfig.marginRight,
-          marginBottom: styleConfig.marginBottom,
-          marginLeft: styleConfig.marginLeft,
-          headerRight: citationStyle === 'gost' ? '' : '{page}',
-          headerLeft: '',
-          footerRight: '',
-          footerLeft: citationStyle === 'gost' ? '{page}' : '',
-          pageBreakBackground: '#4a5568',
-        });
-      } catch (e) {
-        console.warn('PaginationPlus configuration failed:', e);
-        return null;
-      }
-    })()] : []).filter(Boolean),
+    PaginationPlus.configure({
+      pageHeight: styleConfig.pageHeight,
+      pageWidth: styleConfig.pageWidth,
+      pageGap: PAGE_GAP,
+      marginTop: styleConfig.marginTop,
+      marginRight: styleConfig.marginRight,
+      marginBottom: styleConfig.marginBottom,
+      marginLeft: styleConfig.marginLeft,
+      headerRight: citationStyle === 'gost' ? '' : '{page}',
+      headerLeft: '',
+      footerRight: '',
+      footerLeft: citationStyle === 'gost' ? '{page}' : '',
+      pageBreakBackground: '#4a5568',
+    }),
   ], [citationStyle, styleConfig]);
 
   // Deduplicate extensions by name to avoid TipTap warnings
   const uniqueExtensions = useMemo(() => {
     const seen = new Set<string>();
     return extensions.filter((ext) => {
-      if (!ext?.name) return true;
+      // Filter out null/undefined extensions
+      if (!ext) return false;
+      // If extension has no name, include it (custom extensions)
+      if (!ext.name) return true;
+      // Skip duplicates
       if (seen.has(ext.name)) return false;
       seen.add(ext.name);
       return true;
@@ -687,18 +676,15 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   useEffect(() => {
     if (!editor) return;
     
-    // Only update margins if PaginationPlus is available
     try {
-      if (PaginationPlus && (editor.commands as any).updateMargins) {
-        (editor.chain() as any)
-          .updateMargins({
-            top: styleConfig.marginTop,
-            bottom: styleConfig.marginBottom,
-            left: styleConfig.marginLeft,
-            right: styleConfig.marginRight,
-          })
-          .run();
-      }
+      (editor.chain() as any)
+        .updateMargins({
+          top: styleConfig.marginTop,
+          bottom: styleConfig.marginBottom,
+          left: styleConfig.marginLeft,
+          right: styleConfig.marginRight,
+        })
+        .run();
     } catch (e) {
       console.warn('Failed to update margins:', e);
     }
@@ -870,19 +856,17 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   const handleApplyPageSettings = useCallback((settings: PageSettings) => {
     setPageSettings(settings);
     
-    // Update editor margins via PaginationPlus (if available)
+    // Update editor margins via PaginationPlus
     if (editor) {
       try {
-        if (PaginationPlus && (editor.commands as any).updateMargins) {
-          (editor.chain() as any)
-            .updateMargins({
-              top: settings.marginTop,
-              bottom: settings.marginBottom,
-              left: settings.marginLeft,
-              right: settings.marginRight,
-            })
-            .run();
-        }
+        (editor.chain() as any)
+          .updateMargins({
+            top: settings.marginTop,
+            bottom: settings.marginBottom,
+            left: settings.marginLeft,
+            right: settings.marginRight,
+          })
+          .run();
       } catch (e) {
         console.warn('Failed to update margins:', e);
       }
@@ -908,16 +892,14 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     
     if (editor) {
       try {
-        if (PaginationPlus && (editor.commands as any).updateMargins) {
-          (editor.chain() as any)
-            .updateMargins({
-              top: config.marginTop,
-              bottom: config.marginBottom,
-              left: config.marginLeft,
-              right: config.marginRight,
-            })
-            .run();
-        }
+        (editor.chain() as any)
+          .updateMargins({
+            top: config.marginTop,
+            bottom: config.marginBottom,
+            left: config.marginLeft,
+            right: config.marginRight,
+          })
+          .run();
       } catch (e) {
         console.warn('Failed to update margins:', e);
       }
