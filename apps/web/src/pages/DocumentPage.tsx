@@ -227,8 +227,24 @@ export default function DocumentPage() {
             .filter((t) => t.id && Array.isArray((t.tableData as any)?.headers))
             .map(async (t) => {
               try {
+                const td = t.tableData as TableData;
+                const headers = td.headers || [];
+                const cols = Math.max(headers.length, ...(td.rows || []).map((r) => r.length));
+                const labelColumn = 0;
+                const dataColumns = Array.from({ length: cols }, (_, i) => i).filter((i) => i !== labelColumn);
+                const xColumn = dataColumns[0] ?? 0;
+                const yColumn = dataColumns[1] ?? dataColumns[0] ?? 0;
+
                 await apiUpdateStatistic(projectId, t.id, {
-                  tableData: t.tableData as TableData,
+                  tableData: td,
+                  config: {
+                    ...(({} as any)),
+                    title: t.title,
+                    labelColumn,
+                    dataColumns,
+                    xColumn,
+                    yColumn,
+                  },
                 });
               } catch (updateErr) {
                 console.warn("Failed to update statistic from document table", t.id, updateErr);

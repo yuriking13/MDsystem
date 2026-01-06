@@ -234,6 +234,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
           levels: [1, 2, 3],
         },
         paragraph: false, // Отключаем стандартный paragraph
+        link: false, // avoid duplicate Link extension
       }),
       CustomParagraph, // Используем свой paragraph с indent
       TextAlign.configure({
