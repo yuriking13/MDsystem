@@ -178,12 +178,17 @@ function htmlTableToDocxTable(tableEl: Element, styleConfig: CitationStyleConfig
 /**
  * Конвертировать data URL в буфер для изображения
  */
-function dataUrlToBuffer(dataUrl: string): { buffer: Buffer | Uint8Array; type: string } | null {
+function dataUrlToBuffer(dataUrl: string): { buffer: Buffer | Uint8Array; type: 'png' | 'jpg' | 'gif' | 'bmp' } | null {
   try {
-    const matches = dataUrl.match(/^data:image\/(png|jpeg|jpg|gif|webp);base64,(.+)$/);
+    const matches = dataUrl.match(/^data:image\/(png|jpeg|jpg|gif|webp|bmp);base64,(.+)$/);
     if (!matches) return null;
     
-    const type = matches[1];
+    let type = matches[1];
+    // Normalize jpeg to jpg for docx library compatibility
+    if (type === 'jpeg') type = 'jpg';
+    // webp is not supported, skip
+    if (type === 'webp') return null;
+    
     const base64 = matches[2];
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
@@ -192,7 +197,7 @@ function dataUrlToBuffer(dataUrl: string): { buffer: Buffer | Uint8Array; type: 
       bytes[i] = binaryString.charCodeAt(i);
     }
     
-    return { buffer: bytes, type };
+    return { buffer: bytes, type: type as 'png' | 'jpg' | 'gif' | 'bmp' };
   } catch (e) {
     console.error('Error converting data URL to buffer:', e);
     return null;
@@ -382,7 +387,7 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
                     width: 500,
                     height: 300,
                   },
-                  type: imageData.type as 'png' | 'jpeg' | 'gif' | 'bmp',
+                  type: imageData.type,
                 });
                 elements.push(new Paragraph({
                   children: [imageRun],
