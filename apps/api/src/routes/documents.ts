@@ -2,6 +2,7 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { formatCitation, type CitationStyle, type BibliographyArticle } from "../lib/bibliography.js";
+import { pubmedFetchByPmids } from "../lib/pubmed.js";
 
 const ProjectIdSchema = z.object({
   projectId: z.string().uuid(),
@@ -1493,6 +1494,38 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       for (const article of articlesRes.rows) {
         totalRefPmids += (article.reference_pmids || []).length;
         totalCitedByPmids += (article.cited_by_pmids || []).length;
+      }
+
+      // Автоматическое обогащение узлов, которых нет в БД (pmid:xxxxx)
+      // Важно: ограничиваем количество, чтобы не перегружать PubMed и не тормозить UI.
+      const placeholderPmids = nodes
+        .filter((n) => typeof n.id === 'string' && n.id.startsWith('pmid:') && typeof n.pmid === 'string' && n.pmid)
+        .map((n) => String(n.pmid));
+
+      const uniquePlaceholderPmids = Array.from(new Set(placeholderPmids)).slice(0, 25);
+      if (uniquePlaceholderPmids.length > 0) {
+        try {
+          const fetched = await pubmedFetchByPmids({
+            pmids: uniquePlaceholderPmids,
+            throttleMs: 250,
+          });
+
+          const byPmid = new Map(fetched.map((a) => [a.pmid, a] as const));
+          for (const n of nodes) {
+            if (!n.id.startsWith('pmid:') || !n.pmid) continue;
+            const a = byPmid.get(n.pmid);
+            if (!a) continue;
+
+            const firstAuthor = (a.authors || '').split(',')[0]?.split(' ')[0]?.trim() || 'Unknown';
+            const year = a.year ?? null;
+            n.year = year;
+            n.doi = a.doi ?? n.doi;
+            n.label = `${firstAuthor} (${year || '?'})`;
+          }
+        } catch (err) {
+          // не падаем, если PubMed недоступен/лимит
+          console.error('Citation graph enrichment (PubMed) error:', err);
+        }
       }
 
       return {

@@ -1,10 +1,11 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
-import { pubmedFetchAll, enrichArticlesWithReferences, europePMCGetCitationCounts, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
+import { pubmedFetchAll, enrichArticlesWithReferences, europePMCGetCitationCounts, pubmedFetchByPmids, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
 import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.js";
 import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
+import { getCrossrefByDOI } from "../lib/crossref.js";
 
 // Схемы валидации
 const SearchBodySchema = z.object({
@@ -33,6 +34,13 @@ const ProjectIdSchema = z.object({
 const ArticleIdSchema = z.object({
   id: z.string().uuid(),
   articleId: z.string().uuid(),
+});
+
+const ImportFromGraphSchema = z.object({
+  pmids: z.array(z.string().trim()).max(100).optional(),
+  dois: z.array(z.string().trim()).max(100).optional(),
+}).refine((data) => (data.pmids?.length || 0) + (data.dois?.length || 0) > 0, {
+  message: "Передайте хотя бы один PMID или DOI",
 });
 
 // Получить API ключ пользователя для провайдера
@@ -883,6 +891,137 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         updated, 
         total: articlesRes.rows.length,
         message: `Обновлены связи для ${updated} статей` 
+      };
+    }
+  );
+
+  // POST /api/projects/:id/articles/import-from-graph - добавить статьи, найденные в графе, в кандидаты
+  fastify.post(
+    "/projects/:id/articles/import-from-graph",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+
+      const bodyP = ImportFromGraphSchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "Invalid body", details: bodyP.error.message });
+      }
+
+      // Проверка доступа (нужен edit)
+      const access = await checkProjectAccess(paramsP.data.id, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+
+      const pmids = Array.from(new Set((bodyP.data.pmids || []).map((p) => p.trim()).filter(Boolean))).slice(0, 100);
+      const dois = Array.from(new Set((bodyP.data.dois || []).map((d) => d.trim().toLowerCase()).filter(Boolean))).slice(0, 100);
+
+      if (pmids.length === 0 && dois.length === 0) {
+        return reply.code(400).send({ error: "Ничего не передано" });
+      }
+
+      const apiKey = await getUserApiKey(userId, "pubmed");
+
+      let added = 0;
+      let skipped = 0;
+
+      // Для отслеживания уже обработанных DOI (могут прийти из PubMed)
+      const handledDois = new Set<string>();
+
+      // Обработчик добавления в проект
+      const handleArticle = async (article: PubMedArticle) => {
+        const articleId = await findOrCreateArticle(article);
+        if (article.doi) handledDois.add(article.doi.toLowerCase());
+
+        const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, "citation-graph");
+        if (wasAdded) {
+          added++;
+        } else {
+          skipped++;
+        }
+      };
+
+      // 1) PMIDs через PubMed
+      if (pmids.length > 0) {
+        try {
+          const pubmedArticles = await pubmedFetchByPmids({
+            pmids,
+            apiKey: apiKey || undefined,
+            throttleMs: apiKey ? 80 : 250,
+          });
+
+          for (const article of pubmedArticles) {
+            await handleArticle(article);
+          }
+        } catch (err) {
+          console.error("Import from graph (PubMed) error:", err);
+        }
+      }
+
+      // 2) DOIs через Crossref (которые ещё не обработаны из PubMed)
+      for (const doi of dois) {
+        if (handledDois.has(doi)) {
+          continue;
+        }
+
+        try {
+          const work = await getCrossrefByDOI(doi);
+          if (!work) {
+            skipped++;
+            continue;
+          }
+
+          const title = work.title?.[0]?.trim();
+          if (!title) {
+            skipped++;
+            continue;
+          }
+
+          const authors = (work.author || [])
+            .map((a) => [a.family, a.given].filter(Boolean).join(" "))
+            .filter(Boolean)
+            .join(", ");
+
+          const year = work.issued?.["date-parts"]?.[0]?.[0]
+            ?? work.published?.["date-parts"]?.[0]?.[0]
+            ?? undefined;
+
+          const abstract = typeof work.abstract === "string"
+            ? work.abstract.replace(/<[^>]+>/g, "").trim()
+            : undefined;
+
+          const article: PubMedArticle = {
+            pmid: "",
+            doi,
+            title,
+            abstract,
+            authors: authors || undefined,
+            journal: work["container-title"]?.[0] || undefined,
+            year,
+            url: `https://doi.org/${doi}`,
+            studyTypes: work.subject || [],
+          };
+
+          await handleArticle(article);
+        } catch (err) {
+          console.error("Import from graph (Crossref) error for", doi, err);
+          skipped++;
+        }
+      }
+
+      // Обновляем updated_at проекта
+      await pool.query(`UPDATE projects SET updated_at = now() WHERE id = $1`, [paramsP.data.id]);
+
+      return {
+        ok: true,
+        added,
+        skipped,
+        message: `Добавлено ${added}, пропущено ${skipped}`,
       };
     }
   );

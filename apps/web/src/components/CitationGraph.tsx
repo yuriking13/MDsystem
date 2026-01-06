@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import { apiGetCitationGraph, apiFetchReferences, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts } from "../lib/api";
+import { apiGetCitationGraph, apiFetchReferences, apiImportFromGraph, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts } from "../lib/api";
 
 type Props = {
   projectId: string;
@@ -28,6 +28,10 @@ export default function CitationGraph({ projectId }: Props) {
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
   const [fetchingRefs, setFetchingRefs] = useState(false);
   const [refsMessage, setRefsMessage] = useState<string | null>(null);
+
+  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
+  const [importing, setImporting] = useState(false);
+  const [importMessage, setImportMessage] = useState<string | null>(null);
   
   // Фильтры
   const [filter, setFilter] = useState<FilterType>('all');
@@ -60,6 +64,16 @@ export default function CitationGraph({ projectId }: Props) {
       if (res.yearRange) {
         setYearRange(res.yearRange);
       }
+
+      // Если граф перезагрузился, убираем выбор узлов, которых больше нет
+      setSelectedNodeIds((prev) => {
+        const next = new Set<string>();
+        const ids = new Set(res.nodes.map((n) => n.id));
+        for (const id of prev) {
+          if (ids.has(id)) next.add(id);
+        }
+        return next;
+      });
     } catch (err: any) {
       setError(err?.message || "Ошибка загрузки графа");
     } finally {
@@ -103,6 +117,44 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
+  const buildImportPayload = useCallback(() => {
+    if (!data) return { pmids: [], dois: [] };
+
+    const selected = new Set(selectedNodeIds);
+    const pmids: string[] = [];
+    const dois: string[] = [];
+
+    for (const n of data.nodes) {
+      if (!selected.has(n.id)) continue;
+      if (n.pmid) pmids.push(String(n.pmid));
+      if (n.doi) dois.push(String(n.doi));
+    }
+
+    return {
+      pmids: Array.from(new Set(pmids)).slice(0, 100),
+      dois: Array.from(new Set(dois.map((d) => d.toLowerCase()))).slice(0, 100),
+    };
+  }, [data, selectedNodeIds]);
+
+  const handleImportSelected = async () => {
+    setImporting(true);
+    setImportMessage(null);
+    try {
+      const payload = buildImportPayload();
+      if ((payload.pmids?.length || 0) === 0 && (payload.dois?.length || 0) === 0) {
+        setImportMessage('Не выбрано ни одного узла с PMID/DOI');
+        return;
+      }
+      const res = await apiImportFromGraph(projectId, payload);
+      setImportMessage(res.message);
+      setSelectedNodeIds(new Set());
+    } catch (err: any) {
+      setImportMessage(err?.message || 'Ошибка импорта в кандидаты');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   // Resize observer
   useEffect(() => {
     if (!containerRef.current) return;
@@ -124,6 +176,10 @@ export default function CitationGraph({ projectId }: Props) {
   const nodeColor = useCallback((node: any) => {
     const status = node.status;
     const level = node.graphLevel || 1;
+
+    if (selectedNodeIds.has(node.id)) {
+      return '#22c55e';
+    }
     
     // Уровень 1 (найденные статьи) - стандартные цвета по статусу
     if (level === 1) {
@@ -288,8 +344,18 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Кнопка обновления PubMed */}
         <button
-          className="btn secondary"
+          className="btn"
           style={{ marginLeft: 'auto', padding: '6px 14px', fontSize: 12 }}
+          onClick={handleImportSelected}
+          disabled={importing || selectedNodeIds.size === 0}
+          title="Добавить выбранные статьи из графа в кандидаты"
+        >
+          {importing ? `⏳ Импорт...` : `➕ В кандидаты (${selectedNodeIds.size})`}
+        </button>
+
+        <button
+          className="btn secondary"
+          style={{ padding: '6px 14px', fontSize: 12 }}
           onClick={handleFetchReferences}
           disabled={fetchingRefs}
         >
@@ -418,6 +484,12 @@ export default function CitationGraph({ projectId }: Props) {
         </div>
       )}
 
+      {importMessage && (
+        <div className="ok" style={{ margin: '8px 16px', padding: 10, fontSize: 12 }}>
+          {importMessage}
+        </div>
+      )}
+
       {/* Статистика */}
       <div className="graph-stats" style={{ padding: '8px 16px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         <span>📊 Всего узлов: {stats.totalNodes}</span>
@@ -503,7 +575,29 @@ export default function CitationGraph({ projectId }: Props) {
           cooldownTicks={200}
           warmupTicks={100}
           onNodeHover={(node: any) => setHoveredNode(node)}
-          onNodeClick={(node: any) => {
+          onNodeClick={(node: any, event: any) => {
+            // Alt+клик всегда открывает первоисточник
+            if (event?.altKey) {
+              if (node.doi) {
+                window.open(`https://doi.org/${node.doi}`, '_blank');
+              } else if (node.pmid) {
+                window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
+              }
+              return;
+            }
+
+            // Обычный клик: для уровней 2/3 — выбор узла, для уровня 1 — открытие
+            const level = node.graphLevel || 1;
+            if (level >= 2) {
+              setSelectedNodeIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(node.id)) next.delete(node.id);
+                else next.add(node.id);
+                return next;
+              });
+              return;
+            }
+
             if (node.doi) {
               window.open(`https://doi.org/${node.doi}`, '_blank');
             } else if (node.pmid) {
@@ -514,7 +608,7 @@ export default function CitationGraph({ projectId }: Props) {
       )}
       
       <div className="muted" style={{ fontSize: 11, marginTop: 8, padding: '0 16px 12px' }}>
-        💡 Наведите на узел для подробностей. Клик откроет DOI/PubMed.
+        💡 Наведите на узел для подробностей. Клик по уровням 2/3 выбирает узел, Alt+клик открывает DOI/PubMed.
       </div>
     </div>
   );

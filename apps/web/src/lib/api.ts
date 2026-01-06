@@ -644,6 +644,32 @@ export async function apiGetCitationGraph(
   return apiFetch<CitationGraphResponse>(url);
 }
 
+export type ImportFromGraphPayload = {
+  pmids?: string[];
+  dois?: string[];
+};
+
+export type ImportFromGraphResponse = {
+  ok: boolean;
+  added: number;
+  skipped: number;
+  message: string;
+};
+
+export async function apiImportFromGraph(
+  projectId: string,
+  payload: ImportFromGraphPayload
+): Promise<ImportFromGraphResponse> {
+  return apiFetch<ImportFromGraphResponse>(
+    `/api/projects/${projectId}/articles/import-from-graph`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }
+  );
+}
+
 // Получение связей между статьями из PubMed
 export type FetchReferencesResult = {
   ok: true;

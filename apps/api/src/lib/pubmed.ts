@@ -242,6 +242,100 @@ export async function pubmedEFetchBatch(args: {
   return out;
 }
 
+export async function pubmedFetchByPmids(args: {
+  pmids: string[];
+  apiKey?: string;
+  throttleMs?: number;
+}): Promise<PubMedArticle[]> {
+  if (!args.pmids.length) return [];
+
+  const url = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi');
+  url.searchParams.set('db', 'pubmed');
+  url.searchParams.set('id', args.pmids.join(','));
+  url.searchParams.set('retmode', 'xml');
+
+  if (args.apiKey) url.searchParams.set('api_key', args.apiKey);
+  if (args.throttleMs) await sleep(args.throttleMs);
+
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`PubMed efetch by pmid HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
+
+  const xml = await res.text();
+  const parser = new XMLParser({ ignoreAttributes: false });
+  const obj = parser.parse(xml);
+
+  const articles = obj?.PubmedArticleSet?.PubmedArticle ?? [];
+  const arr = Array.isArray(articles) ? articles : [articles];
+
+  const out: PubMedArticle[] = [];
+
+  for (const a of arr) {
+    try {
+      const mc = a?.MedlineCitation;
+      const art = mc?.Article;
+      const pmid = String(mc?.PMID?.['#text'] ?? mc?.PMID ?? '').trim();
+      if (!pmid) continue;
+
+      const title = decodeHtmlEntities(String(art?.ArticleTitle ?? '').replace(/\s+/g, ' ').trim());
+
+      let abstract = '';
+      const abs = art?.Abstract?.AbstractText;
+      if (Array.isArray(abs)) abstract = abs.map((x: any) => (typeof x === 'string' ? x : x?.['#text'] ?? '')).join(' ');
+      else if (typeof abs === 'string') abstract = abs;
+      else if (abs?.['#text']) abstract = abs['#text'];
+      abstract = decodeHtmlEntities(abstract.replace(/\s+/g, ' ').trim());
+
+      const yearStr = art?.Journal?.JournalIssue?.PubDate?.Year
+        ?? art?.ArticleDate?.Year
+        ?? undefined;
+      const year = yearStr ? Number(yearStr) : undefined;
+
+      const authList = art?.AuthorList?.Author;
+      let authors = '';
+      if (Array.isArray(authList)) {
+        authors = authList
+          .map((au: any) => {
+            const ln = decodeHtmlEntities(String(au?.LastName ?? ''));
+            const ini = decodeHtmlEntities(String(au?.Initials ?? ''));
+            return `${ln} ${ini}`.trim();
+          })
+          .filter(Boolean)
+          .join(', ');
+      }
+
+      const ids = a?.PubmedData?.ArticleIdList?.ArticleId;
+      let doi: string | undefined;
+      const idsArr = Array.isArray(ids) ? ids : (ids ? [ids] : []);
+      for (const id of idsArr) {
+        if (id?.['@_IdType'] === 'doi') {
+          doi = String(id?.['#text'] ?? id).trim().toLowerCase();
+        }
+      }
+
+      const urlPubmed = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
+
+      out.push({
+        pmid,
+        doi,
+        title,
+        abstract: abstract || undefined,
+        authors: authors || undefined,
+        journal: String(art?.Journal?.Title ?? '').trim() || undefined,
+        year: Number.isFinite(year) ? year : undefined,
+        url: urlPubmed,
+        studyTypes: [],
+      });
+    } catch {
+      // skip bad article
+    }
+  }
+
+  return out;
+}
+
 export async function pubmedFetchAll(args: {
   apiKey?: string;
   topic: string;
