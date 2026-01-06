@@ -236,16 +236,22 @@ export default function DocumentPage() {
                 const xColumn = dataColumns[0] ?? 0;
                 const yColumn = dataColumns[1] ?? dataColumns[0] ?? 0;
 
+                const existingStat = statistics.find((s) => s.id === t.id);
+                const baseConfig = (existingStat?.config as Record<string, any>) || {};
+                const chartType = baseConfig.type || existingStat?.chart_type || 'bar';
+
                 await apiUpdateStatistic(projectId, t.id, {
                   tableData: td,
                   config: {
-                    ...(({} as any)),
+                    ...baseConfig,
                     title: t.title,
                     labelColumn,
                     dataColumns,
                     xColumn,
                     yColumn,
+                    type: chartType,
                   },
+                  chartType,
                 });
               } catch (updateErr) {
                 console.warn("Failed to update statistic from document table", t.id, updateErr);
@@ -261,7 +267,7 @@ export default function DocumentPage() {
         setSaving(false);
       }
     },
-    [projectId, docId, parseStatisticsFromContent]
+    [projectId, docId, parseStatisticsFromContent, statistics]
   );
 
   // Build table HTML from statistic data (used to refresh document tables from Statistics)
