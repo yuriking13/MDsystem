@@ -865,38 +865,32 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         };
         fastify.log.info({ jobData }, '[fetch-references] Job data prepared');
         
-        let sendResult;
-        try {
-          sendResult = await boss.send('graph:fetch-references', jobData);
-          fastify.log.info({ 
-            jobId, 
-            sendResult, 
-            sendResultType: typeof sendResult,
-            sendResultValue: JSON.stringify(sendResult)
-          }, '[fetch-references] Job send completed');
-        } catch (sendErr) {
-          fastify.log.error({
-            sendErr,
-            sendErrMessage: sendErr instanceof Error ? sendErr.message : String(sendErr),
-            sendErrStack: sendErr instanceof Error ? sendErr.stack : undefined
-          }, '[fetch-references] boss.send() threw an error');
-          throw sendErr;
-        }
+        fastify.log.info('[fetch-references] Calling boss.send()...');
+        const sendResult = await boss.send('graph:fetch-references', jobData);
+        fastify.log.info({ 
+          jobId, 
+          sendResult, 
+          sendResultType: typeof sendResult,
+          sendResultKeys: sendResult ? Object.keys(sendResult) : null,
+          sendResultValue: JSON.stringify(sendResult, null, 2)
+        }, '[fetch-references] boss.send() completed');
         
-        // Double-check: query boss.job directly
-        if (sendResult) {
-          const jobCheckRes = await pool.query(
-            `SELECT id, state, name FROM boss.job WHERE id = $1 LIMIT 1`,
-            [sendResult]
-          );
-          fastify.log.info({ 
-            jobId,
-            jobCheckCount: jobCheckRes.rowCount,
-            jobCheckRows: jobCheckRes.rows
-          }, '[fetch-references] Checked boss.job table');
-        } else {
-          fastify.log.warn({ jobId }, '[fetch-references] sendResult is null, skipping job table check');
-        }
+        // Verify: check all tables in boss schema
+        const tableCheck = await pool.query(
+          `SELECT tablename FROM pg_tables WHERE schemaname = 'boss' ORDER BY tablename`
+        );
+        fastify.log.info({ 
+          tables: tableCheck.rows.map(r => r.tablename)
+        }, '[fetch-references] Boss tables');
+        
+        // Check if job was inserted into any table
+        const jobCount = await pool.query(
+          `SELECT COUNT(*) as cnt FROM boss.job`
+        );
+        fastify.log.info({ 
+          jobCount: jobCount.rows[0].cnt
+        }, '[fetch-references] Total jobs in boss.job');
+        
       } catch (err) {
         fastify.log.error({ 
           err, 
