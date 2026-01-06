@@ -61,8 +61,8 @@ export default function CitationGraph({ projectId }: Props) {
   const [availableQueries, setAvailableQueries] = useState<string[]>([]);
   const [selectedQueries, setSelectedQueries] = useState<string[]>([]);
   
-  // Режим графа: lite (облегчённый с лимитами) или mega (полный)
-  const [mode, setMode] = useState<'lite' | 'mega'>('lite');
+  // Режим графа: всегда lite (облегчённый с лимитами)
+  // mega режим отключён для стабильности
   
   // Новые фильтры
   const [depth, setDepth] = useState<DepthType>(1);
@@ -110,7 +110,6 @@ export default function CitationGraph({ projectId }: Props) {
   // Перезагрузка при изменении фильтров
   useEffect(() => {
     const options: GraphFilterOptions = { 
-      mode,
       filter,
       depth,
     };
@@ -127,7 +126,7 @@ export default function CitationGraph({ projectId }: Props) {
       options.statsQuality = statsQuality;
     }
     loadGraph(options);
-  }, [loadGraph, mode, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality]);
+  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality]);
 
   // Проверка статуса загрузки при монтировании
   useEffect(() => {
@@ -425,32 +424,6 @@ export default function CitationGraph({ projectId }: Props) {
         borderBottom: '1px solid var(--border-glass)',
         alignItems: 'center'
       }}>
-        {/* Переключатель режима */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>⚡ Режим:</span>
-          <button
-            className={`btn ${mode === 'lite' ? '' : 'secondary'}`}
-            style={{ padding: '4px 10px', fontSize: 11 }}
-            onClick={() => setMode('lite')}
-            title="Облегчённый граф с лимитами (макс 10 связей на статью, макс 500 узлов)"
-          >
-            🚀 Lite
-          </button>
-          <button
-            className={`btn ${mode === 'mega' ? '' : 'secondary'}`}
-            style={{ padding: '4px 10px', fontSize: 11, background: mode === 'mega' ? 'var(--danger)' : undefined }}
-            onClick={() => {
-              if (mode !== 'mega' && !confirm('⚠️ Режим MEGA может загрузить тысячи узлов и сильно нагрузить браузер. Продолжить?')) {
-                return;
-              }
-              setMode('mega');
-            }}
-            title="Полный граф без лимитов (может быть очень тяжёлым!)"
-          >
-            🔥 Mega
-          </button>
-        </div>
-        
         {/* Фильтр по уровню глубины */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>📊 Уровень:</span>
