@@ -868,12 +868,13 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
             {/* Дополнительные опции */}
             <div className="row gap" style={{ flexWrap: "wrap", alignItems: "center" }}>
-              <label className="stack" style={{ minWidth: 150 }}>
-                <span>Макс. результатов</span>
+              <label className="stack" style={{ minWidth: 180 }}>
+                <span>Макс. результатов на источник</span>
                 <select
                   value={maxResults}
                   onChange={(e) => setMaxResults(Number(e.target.value))}
                   style={{ padding: "10px 12px", borderRadius: 10 }}
+                  title="Лимит применяется к каждому выбранному источнику отдельно"
                 >
                   <option value={10}>10 (тест)</option>
                   <option value={50}>50</option>

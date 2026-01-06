@@ -47,17 +47,22 @@ export async function wileySearch(args: {
   // Build CrossRef API URL
   const params = new URLSearchParams();
   params.set('query', topic);
-  params.set('filter', 'member:311'); // Wiley member ID
   params.set('rows', String(rows));
   params.set('offset', String(offset));
   
+  // Build filter parameter - CrossRef expects comma-separated values in a single filter param
+  const filterParts: string[] = ['member:311']; // Wiley member ID
+  
   // Date filters
   if (filters.publishedFrom) {
-    params.append('filter', `from-pub-date:${filters.publishedFrom}`);
+    filterParts.push(`from-pub-date:${filters.publishedFrom}`);
   }
   if (filters.publishedTo) {
-    params.append('filter', `until-pub-date:${filters.publishedTo}`);
+    filterParts.push(`until-pub-date:${filters.publishedTo}`);
   }
+  
+  // Set combined filter
+  params.set('filter', filterParts.join(','));
   
   const url = `https://api.crossref.org/works?${params.toString()}`;
   
