@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TiptapEditor, { TiptapEditorHandle } from "../components/TiptapEditor/TiptapEditor";
 import {
@@ -15,6 +15,7 @@ import {
   apiGetStatistic,
   apiUpdateStatistic,
   apiCreateStatistic,
+  apiRenumberCitations,
   type Document,
   type Article,
   type Citation,
@@ -89,6 +90,9 @@ export default function DocumentPage() {
   // Модальное окно создания графика из таблицы
   const [showChartModal, setShowChartModal] = useState(false);
   const [chartTableHtml, setChartTableHtml] = useState("");
+  
+  // Состояние для обновления библиографии проекта
+  const [updatingBibliography, setUpdatingBibliography] = useState(false);
 
   // Загрузка документа и проекта
   useEffect(() => {
@@ -115,6 +119,38 @@ export default function DocumentPage() {
     load();
   }, [projectId, docId]);
 
+
+  // Извлечение ID цитат из HTML контента
+  const parseCitationsFromContent = useCallback((htmlContent: string): Set<string> => {
+    if (!htmlContent) return new Set();
+    
+    const parser = new DOMParser();
+    const parsedDoc = parser.parseFromString(htmlContent, "text/html");
+    const citationIds = new Set<string>();
+    
+    // Находим все элементы с data-citation-id
+    parsedDoc.querySelectorAll('[data-citation-id]').forEach((el) => {
+      const citationId = el.getAttribute('data-citation-id');
+      if (citationId) {
+        citationIds.add(citationId);
+      }
+    });
+    
+    return citationIds;
+  }, []);
+
+  // Фильтрация цитат на основе текущего содержимого
+  const visibleCitations = useMemo(() => {
+    const citationIdsInContent = parseCitationsFromContent(content);
+    
+    // Если нет цитат в контенте, показываем пустой список
+    if (citationIdsInContent.size === 0) {
+      return [];
+    }
+    
+    // Фильтруем цитаты, оставляя только те, что есть в контенте
+    return (doc?.citations || []).filter(citation => citationIdsInContent.has(citation.id));
+  }, [content, doc?.citations, parseCitationsFromContent]);
 
   // Парсинг таблиц и графиков из HTML контента
   const parseStatisticsFromContent = useCallback((htmlContent: string): { 
@@ -202,9 +238,38 @@ export default function DocumentPage() {
       if (!projectId || !docId) return;
       setSaving(true);
       try {
+        // Проверяем, изменились ли цитаты
+        const oldCitationIds = doc?.content ? parseCitationsFromContent(doc.content) : new Set<string>();
+        const newCitationIds = parseCitationsFromContent(newContent);
+        const citationsChanged = oldCitationIds.size !== newCitationIds.size ||
+          [...oldCitationIds].some(id => !newCitationIds.has(id));
+        
         await apiUpdateDocument(projectId, docId, { content: newContent });
         // Keep local doc state in sync so we don't think there are pending edits after save
         setDoc((prev) => (prev ? { ...prev, content: newContent } : prev));
+        
+        // Если цитаты изменились, перенумеровываем их
+        if (citationsChanged) {
+          try {
+            setUpdatingBibliography(true);
+            const renumberResult = await apiRenumberCitations(projectId);
+            if (renumberResult.documents) {
+              // Находим обновленный текущий документ
+              const updatedDoc = renumberResult.documents.find(d => d.id === docId);
+              if (updatedDoc) {
+                setDoc(updatedDoc);
+                if (editorRef.current && updatedDoc.content !== newContent) {
+                  editorRef.current.forceSetContent(updatedDoc.content);
+                  setContent(updatedDoc.content);
+                }
+              }
+            }
+          } catch (renumberErr) {
+            console.warn("Renumber citations warning:", renumberErr);
+          } finally {
+            setUpdatingBibliography(false);
+          }
+        }
         
         // Sync statistics (tables and charts) from document content
         // ALWAYS call sync to remove links when tables/charts are deleted from document
@@ -269,7 +334,7 @@ export default function DocumentPage() {
         setSaving(false);
       }
     },
-    [projectId, docId, parseStatisticsFromContent, statistics]
+    [projectId, docId, doc?.content, parseStatisticsFromContent, parseCitationsFromContent, statistics]
   );
 
   // Build table HTML from statistic data (used to refresh document tables from Statistics)
@@ -604,7 +669,17 @@ export default function DocumentPage() {
   const handleContentChange = useCallback((html: string) => {
     lastUserEditRef.current = Date.now();
     setContent(html);
-  }, []);
+    
+    // Проверяем, изменились ли цитаты в контенте
+    const newCitationIds = parseCitationsFromContent(html);
+    const oldCitationIds = parseCitationsFromContent(content);
+    
+    // Если количество цитат изменилось, планируем обновление
+    if (newCitationIds.size !== oldCitationIds.size) {
+      // Цитаты изменились - UI обновится автоматически через visibleCitations
+      console.log('Citations changed:', oldCitationIds.size, '->', newCitationIds.size);
+    }
+  }, [content, parseCitationsFromContent]);
   
   // Вставить таблицу из статистики
   async function handleInsertTable(stat: ProjectStatistic) {
@@ -873,9 +948,17 @@ export default function DocumentPage() {
             placeholder="Название документа"
           />
         </div>
-        <div className="row gap">
+        <div className="row gap" style={{ alignItems: 'center' }}>
+          {updatingBibliography && (
+            <span className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#3b82f6' }}>
+              <svg className="icon-sm loading-spinner" style={{ width: 12, height: 12 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              обновление библиографии...
+            </span>
+          )}
           {saving && <span className="muted">Сохранение...</span>}
-          {!saving && <span className="muted" style={{ color: "#4ade80" }}>✓ Сохранено</span>}
+          {!saving && !updatingBibliography && <span className="muted" style={{ color: "#4ade80" }}>✓ Сохранено</span>}
         </div>
       </div>
 
@@ -897,7 +980,7 @@ export default function DocumentPage() {
             onTableCreated={handleTableCreated}
             onLoadStatistic={handleLoadStatistic}
             onSaveStatistic={handleSaveStatistic}
-            citations={doc.citations || []}
+            citations={visibleCitations}
             citationStyle={citationStyle}
           />
         </div>

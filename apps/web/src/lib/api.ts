@@ -692,6 +692,7 @@ export async function apiGetCitationGraph(
 export type ImportFromGraphPayload = {
   pmids?: string[];
   dois?: string[];
+  status?: "candidate" | "selected";
 };
 
 export type ImportFromGraphResponse = {

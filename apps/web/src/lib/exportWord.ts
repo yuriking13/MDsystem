@@ -12,6 +12,13 @@ import {
   Header,
   PageNumber,
   TextDirection,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  ImageRun,
+  VerticalAlign,
 } from "docx";
 import { saveAs } from "file-saver";
 
@@ -82,10 +89,168 @@ function cmToTwip(cm: number): number {
 }
 
 /**
- * Конвертировать HTML контент в параграфы Word
+ * Конвертировать HTML таблицу в docx Table
  */
-function htmlToDocxParagraphs(html: string, styleConfig: CitationStyleConfig): Paragraph[] {
-  const paragraphs: Paragraph[] = [];
+function htmlTableToDocxTable(tableEl: Element, styleConfig: CitationStyleConfig): Table {
+  const rows: TableRow[] = [];
+  const tableRows = tableEl.querySelectorAll('tr');
+  
+  // Определяем количество колонок
+  let maxCols = 0;
+  tableRows.forEach(row => {
+    let colCount = 0;
+    row.querySelectorAll('th, td').forEach(cell => {
+      const colspan = parseInt((cell as HTMLElement).getAttribute('colspan') || '1', 10);
+      colCount += colspan;
+    });
+    maxCols = Math.max(maxCols, colCount);
+  });
+  
+  if (maxCols === 0) maxCols = 1;
+  const colWidth = Math.floor(9000 / maxCols); // Примерная ширина в twips
+  
+  tableRows.forEach((row, rowIdx) => {
+    const cells: TableCell[] = [];
+    const cellElements = row.querySelectorAll('th, td');
+    
+    cellElements.forEach(cellEl => {
+      const isHeader = cellEl.tagName.toLowerCase() === 'th';
+      const colspan = parseInt((cellEl as HTMLElement).getAttribute('colspan') || '1', 10);
+      const rowspan = parseInt((cellEl as HTMLElement).getAttribute('rowspan') || '1', 10);
+      const text = cellEl.textContent || '';
+      
+      const cellChildren: Paragraph[] = [
+        new Paragraph({
+          children: [
+            new TextRun({
+              text,
+              bold: isHeader,
+              size: styleConfig.fontSize * 2,
+            }),
+          ],
+          alignment: AlignmentType.LEFT,
+        }),
+      ];
+      
+      cells.push(
+        new TableCell({
+          children: cellChildren,
+          width: { size: colWidth * colspan, type: WidthType.DXA },
+          columnSpan: colspan > 1 ? colspan : undefined,
+          rowSpan: rowspan > 1 ? rowspan : undefined,
+          shading: isHeader ? { fill: 'f3f4f6' } : undefined,
+          verticalAlign: VerticalAlign.CENTER,
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+            left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+            right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+          },
+        })
+      );
+    });
+    
+    // Добавляем пустые ячейки если нужно
+    while (cells.length < maxCols) {
+      cells.push(
+        new TableCell({
+          children: [new Paragraph({ children: [] })],
+          width: { size: colWidth, type: WidthType.DXA },
+          borders: {
+            top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+            left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+            right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+          },
+        })
+      );
+    }
+    
+    rows.push(new TableRow({ children: cells }));
+  });
+  
+  return new Table({
+    rows,
+    width: { size: 100, type: WidthType.PERCENTAGE },
+  });
+}
+
+/**
+ * Конвертировать data URL в буфер для изображения
+ */
+function dataUrlToBuffer(dataUrl: string): { buffer: Buffer | Uint8Array; type: string } | null {
+  try {
+    const matches = dataUrl.match(/^data:image\/(png|jpeg|jpg|gif|webp);base64,(.+)$/);
+    if (!matches) return null;
+    
+    const type = matches[1];
+    const base64 = matches[2];
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    
+    return { buffer: bytes, type };
+  } catch (e) {
+    console.error('Error converting data URL to buffer:', e);
+    return null;
+  }
+}
+
+/**
+ * Рендерить график (canvas) в изображение
+ */
+async function renderChartToImage(chartEl: Element): Promise<string | null> {
+  try {
+    const canvas = chartEl.querySelector('canvas');
+    if (canvas && canvas instanceof HTMLCanvasElement) {
+      return canvas.toDataURL('image/png');
+    }
+    return null;
+  } catch (e) {
+    console.error('Error rendering chart to image:', e);
+    return null;
+  }
+}
+
+/**
+ * Подготовить HTML контент для экспорта (заменить графики на изображения)
+ */
+export async function prepareHtmlForExport(html: string): Promise<string> {
+  if (typeof window === 'undefined' || !html) return html;
+  
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  
+  // Находим все графики и заменяем их на изображения
+  const chartNodes = doc.querySelectorAll('.chart-node, [data-chart-id]');
+  
+  for (const chartNode of Array.from(chartNodes)) {
+    const canvas = chartNode.querySelector('canvas');
+    if (canvas && canvas instanceof HTMLCanvasElement) {
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        const img = doc.createElement('img');
+        img.src = dataUrl;
+        img.style.maxWidth = '100%';
+        img.setAttribute('data-chart-image', 'true');
+        chartNode.replaceWith(img);
+      } catch (e) {
+        console.error('Error converting chart to image:', e);
+      }
+    }
+  }
+  
+  return doc.body.innerHTML;
+}
+
+/**
+ * Конвертировать HTML контент в элементы Word (параграфы, таблицы, изображения)
+ */
+function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Paragraph | Table)[] {
+  const elements: (Paragraph | Table)[] = [];
   
   // Простой парсер HTML
   const parser = new DOMParser();
@@ -184,55 +349,176 @@ function htmlToDocxParagraphs(html: string, styleConfig: CitationStyleConfig): P
     return alignMap[styleConfig.textAlign];
   };
   
-  // Обрабатываем каждый блочный элемент
-  const body = doc.body;
-  const blockElements = body.querySelectorAll("p, h1, h2, h3, li, blockquote");
+  // Обработка всех элементов по порядку, включая таблицы и изображения
+  const processBodyChildren = () => {
+    const body = doc.body;
+    
+    // Проходим по всем дочерним элементам в порядке их появления
+    const walk = (parent: Element) => {
+      const children = Array.from(parent.children);
+      
+      for (const child of children) {
+        const tagName = child.tagName.toLowerCase();
+        
+        // Обработка таблиц
+        if (tagName === 'table') {
+          const table = htmlTableToDocxTable(child, styleConfig);
+          elements.push(table);
+          // Добавляем пустой параграф после таблицы
+          elements.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+          continue;
+        }
+        
+        // Обработка изображений
+        if (tagName === 'img') {
+          const src = child.getAttribute('src');
+          if (src && src.startsWith('data:image')) {
+            const imageData = dataUrlToBuffer(src);
+            if (imageData) {
+              try {
+                const imageRun = new ImageRun({
+                  data: imageData.buffer,
+                  transformation: {
+                    width: 500,
+                    height: 300,
+                  },
+                  type: imageData.type as 'png' | 'jpeg' | 'gif' | 'bmp',
+                });
+                elements.push(new Paragraph({
+                  children: [imageRun],
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 200, after: 200 },
+                }));
+              } catch (e) {
+                console.error('Error adding image to docx:', e);
+                // Добавляем placeholder текст если изображение не удалось вставить
+                elements.push(new Paragraph({
+                  children: [new TextRun({ text: '[Изображение]', italics: true, color: '666666' })],
+                  alignment: AlignmentType.CENTER,
+                }));
+              }
+            }
+          }
+          continue;
+        }
+        
+        // Обработка div-ов с графиками
+        if (tagName === 'div' && (child.classList.contains('chart-node') || child.hasAttribute('data-chart-id'))) {
+          // Ищем canvas внутри и пытаемся получить изображение
+          const canvas = child.querySelector('canvas');
+          const title = child.querySelector('.chart-node-title')?.textContent || 'График';
+          
+          // Добавляем placeholder с названием графика
+          elements.push(new Paragraph({
+            children: [new TextRun({ text: `[${title}]`, italics: true, color: '666666' })],
+            alignment: AlignmentType.CENTER,
+            spacing: { before: 200, after: 200 },
+          }));
+          continue;
+        }
+        
+        // Обработка параграфов и заголовков
+        if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
+          const runs = processNode(child);
+          
+          let heading: (typeof HeadingLevel)[keyof typeof HeadingLevel] | undefined;
+          if (tagName === "h1") heading = HeadingLevel.HEADING_1;
+          if (tagName === "h2") heading = HeadingLevel.HEADING_2;
+          if (tagName === "h3") heading = HeadingLevel.HEADING_3;
+          
+          const hasIndent = child.classList.contains('indent');
+          
+          elements.push(
+            new Paragraph({
+              children: runs.length > 0 ? runs : [new TextRun({ text: '' })],
+              heading,
+              alignment: getAlignment(child),
+              spacing: {
+                line: styleConfig.lineSpacing * 240,
+                after: 120,
+              },
+              indent: hasIndent ? {
+                firstLine: cmToTwip(styleConfig.paragraphIndent),
+              } : undefined,
+            })
+          );
+          continue;
+        }
+        
+        // Обработка списков
+        if (tagName === 'ul' || tagName === 'ol') {
+          const items = child.querySelectorAll('li');
+          items.forEach((item, idx) => {
+            const runs = processNode(item);
+            const bullet = tagName === 'ul' ? '• ' : `${idx + 1}. `;
+            elements.push(
+              new Paragraph({
+                children: [
+                  new TextRun({ text: bullet, size: styleConfig.fontSize * 2 }),
+                  ...runs,
+                ],
+                spacing: { line: styleConfig.lineSpacing * 240, after: 60 },
+                indent: { left: cmToTwip(0.5) },
+              })
+            );
+          });
+          continue;
+        }
+        
+        // Обработка blockquote
+        if (tagName === 'blockquote') {
+          const runs = processNode(child);
+          elements.push(
+            new Paragraph({
+              children: runs,
+              spacing: { line: styleConfig.lineSpacing * 240, after: 120 },
+              indent: { left: cmToTwip(1), right: cmToTwip(1) },
+              shading: { fill: 'f5f5f5' },
+            })
+          );
+          continue;
+        }
+        
+        // Обработка вложенных div
+        if (tagName === 'div') {
+          walk(child);
+          continue;
+        }
+        
+        // Для остальных элементов пробуем обработать как текст
+        const runs = processNode(child);
+        if (runs.length > 0) {
+          elements.push(
+            new Paragraph({
+              children: runs,
+              alignment: getAlignment(child),
+              spacing: { line: styleConfig.lineSpacing * 240, after: 120 },
+            })
+          );
+        }
+      }
+    };
+    
+    walk(body);
+  };
   
-  if (blockElements.length === 0) {
-    // Если нет блочных элементов, обрабатываем весь body
-    const runs = processNode(body);
-    if (runs.length > 0) {
-      paragraphs.push(new Paragraph({ 
-        children: runs,
-        alignment: getAlignment(body),
-        spacing: {
-          line: styleConfig.lineSpacing * 240, // 240 = single spacing
-        },
-      }));
-    }
-  } else {
-    blockElements.forEach((block) => {
-      const tagName = block.tagName.toLowerCase();
-      const runs = processNode(block);
-      
-      if (runs.length === 0 && tagName !== 'p') return;
-      
-      let heading: (typeof HeadingLevel)[keyof typeof HeadingLevel] | undefined;
-      
-      if (tagName === "h1") heading = HeadingLevel.HEADING_1;
-      if (tagName === "h2") heading = HeadingLevel.HEADING_2;
-      if (tagName === "h3") heading = HeadingLevel.HEADING_3;
-      
-      const hasIndent = block.classList.contains('indent');
-      
-      paragraphs.push(
-        new Paragraph({
-          children: runs.length > 0 ? runs : [new TextRun({ text: '' })],
-          heading,
-          alignment: getAlignment(block),
-          spacing: {
-            line: styleConfig.lineSpacing * 240,
-            after: 120, // Small space after paragraph
-          },
-          indent: hasIndent ? {
-            firstLine: cmToTwip(styleConfig.paragraphIndent),
-          } : undefined,
-        })
-      );
-    });
+  processBodyChildren();
+  
+  // Если ничего не обработано, добавляем пустой параграф
+  if (elements.length === 0) {
+    elements.push(new Paragraph({ children: [] }));
   }
   
-  return paragraphs;
+  return elements;
+}
+
+/**
+ * Конвертировать HTML контент в параграфы Word (обратная совместимость)
+ */
+function htmlToDocxParagraphs(html: string, styleConfig: CitationStyleConfig): Paragraph[] {
+  const elements = htmlToDocxElements(html, styleConfig);
+  // Возвращаем только параграфы для обратной совместимости
+  return elements.filter((el): el is Paragraph => el instanceof Paragraph);
 }
 
 /**
@@ -246,7 +532,7 @@ export async function exportToWord(
   mergedContent?: string
 ): Promise<void> {
   const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
-  const sections: Paragraph[] = [];
+  const sections: (Paragraph | Table)[] = [];
   
   // Титульная страница
   sections.push(
@@ -315,8 +601,8 @@ export async function exportToWord(
   // Документы (главы)
   if (mergedContent) {
     // Экспорт объединённого документа с общей нумерацией цитат
-    const contentParagraphs = htmlToDocxParagraphs(mergedContent, styleConfig);
-    sections.push(...contentParagraphs);
+    const contentElements = htmlToDocxElements(mergedContent, styleConfig);
+    sections.push(...contentElements);
   } else {
     // Экспорт отдельных глав
     documents.forEach((doc, idx) => {
@@ -329,10 +615,10 @@ export async function exportToWord(
         })
       );
       
-      // Содержимое
+      // Содержимое (теперь с поддержкой таблиц и изображений)
       if (doc.content) {
-        const contentParagraphs = htmlToDocxParagraphs(doc.content, styleConfig);
-        sections.push(...contentParagraphs);
+        const contentElements = htmlToDocxElements(doc.content, styleConfig);
+        sections.push(...contentElements);
       }
       
       // Разрыв страницы после главы (кроме последней)
@@ -555,13 +841,43 @@ export function generatePrintHtml(
       border-collapse: collapse;
       width: 100%;
       margin: 1em 0;
+      page-break-inside: avoid;
     }
     th, td {
       border: 1px solid #1e293b;
-      padding: 8px;
+      padding: 8px 12px;
       text-align: left;
+      vertical-align: top;
     }
-    th { background: #f1f5f9; font-weight: 600; }
+    th { 
+      background: #f1f5f9; 
+      font-weight: 600; 
+      text-align: center;
+    }
+    tr:nth-child(even) td {
+      background: #f9fafb;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 1em auto;
+      page-break-inside: avoid;
+    }
+    .chart-node, [data-chart-id] {
+      page-break-inside: avoid;
+      margin: 1em 0;
+    }
+    figure {
+      margin: 1em 0;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+    figcaption {
+      font-size: 0.9em;
+      color: #64748b;
+      margin-top: 0.5em;
+    }
     .title-page {
       text-align: center;
       padding-top: 200px;

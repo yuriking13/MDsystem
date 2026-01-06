@@ -54,6 +54,7 @@ export default function CitationGraph({ projectId }: Props) {
 
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
+  const [importingSelected, setImportingSelected] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   
   // Опция загрузки связей только для отобранных
@@ -304,7 +305,7 @@ export default function CitationGraph({ projectId }: Props) {
     };
   }, [data, selectedNodeIds]);
 
-  const handleImportSelected = async () => {
+  const handleImportAsCandidates = async () => {
     setImporting(true);
     setImportMessage(null);
     try {
@@ -313,13 +314,32 @@ export default function CitationGraph({ projectId }: Props) {
         setImportMessage('Не выбрано ни одного узла с PMID/DOI');
         return;
       }
-      const res = await apiImportFromGraph(projectId, payload);
+      const res = await apiImportFromGraph(projectId, { ...payload, status: 'candidate' });
       setImportMessage(res.message);
       setSelectedNodeIds(new Set());
     } catch (err: any) {
       setImportMessage(err?.message || 'Ошибка импорта в кандидаты');
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleImportAsSelected = async () => {
+    setImportingSelected(true);
+    setImportMessage(null);
+    try {
+      const payload = buildImportPayload();
+      if ((payload.pmids?.length || 0) === 0 && (payload.dois?.length || 0) === 0) {
+        setImportMessage('Не выбрано ни одного узла с PMID/DOI');
+        return;
+      }
+      const res = await apiImportFromGraph(projectId, { ...payload, status: 'selected' });
+      setImportMessage(res.message);
+      setSelectedNodeIds(new Set());
+    } catch (err: any) {
+      setImportMessage(err?.message || 'Ошибка импорта в отобранные');
+    } finally {
+      setImportingSelected(false);
     }
   };
 
@@ -613,16 +633,28 @@ export default function CitationGraph({ projectId }: Props) {
         {/* Action Buttons */}
         <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
           <button
-            className="btn"
+            className="btn secondary"
             style={{ padding: '8px 16px', fontSize: 12 }}
-            onClick={handleImportSelected}
-            disabled={importing || selectedNodeIds.size === 0}
+            onClick={handleImportAsCandidates}
+            disabled={importing || importingSelected || selectedNodeIds.size === 0}
             title="Добавить выбранные статьи из графа в кандидаты"
           >
             <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
-            {importing ? 'Импорт...' : `В кандидаты (${selectedNodeIds.size})`}
+            {importing ? 'Импорт...' : `В Кандидаты (${selectedNodeIds.size})`}
+          </button>
+          <button
+            className="btn"
+            style={{ padding: '8px 16px', fontSize: 12, background: '#22c55e', borderColor: '#16a34a' }}
+            onClick={handleImportAsSelected}
+            disabled={importing || importingSelected || selectedNodeIds.size === 0}
+            title="Добавить выбранные статьи из графа в отобранные"
+          >
+            <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {importingSelected ? 'Импорт...' : `В Отобранные (${selectedNodeIds.size})`}
           </button>
         </div>
       </div>
@@ -1142,6 +1174,7 @@ export default function CitationGraph({ projectId }: Props) {
 // Компонент для отображения информации о узле
 function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node: any; projectId: string; onRefresh?: () => void; globalLang?: 'en' | 'ru' }) {
   const [adding, setAdding] = useState(false);
+  const [addingToSelected, setAddingToSelected] = useState(false);
   const [addMessage, setAddMessage] = useState<string | null>(null);
   const [localLanguage, setLocalLanguage] = useState<'en' | 'ru' | null>(null); // null = используем global
   const [loadingData, setLoadingData] = useState(false);
@@ -1253,7 +1286,7 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
   const displayTitle = language === 'ru' && displayData.title_ru ? displayData.title_ru : displayData.title;
   const displayAbstract = language === 'ru' && displayData.abstract_ru ? displayData.abstract_ru : displayData.abstract;
 
-  const handleAddToProject = async () => {
+  const handleAddToProject = async (status: 'candidate' | 'selected') => {
     const pmid = node.pmid;
     const doi = displayData.doi;
     
@@ -1262,15 +1295,21 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
       return;
     }
 
-    setAdding(true);
+    if (status === 'selected') {
+      setAddingToSelected(true);
+    } else {
+      setAdding(true);
+    }
     setAddMessage(null);
     try {
       const payload = {
         pmids: pmid ? [pmid] : [],
         dois: doi ? [doi] : [],
+        status,
       };
       const res = await apiImportFromGraph(projectId, payload);
-      setAddMessage(res.message || 'Статья добавлена в проект!');
+      const statusLabel = status === 'selected' ? 'Отобранные' : 'Кандидаты';
+      setAddMessage(res.message || `Статья добавлена в ${statusLabel}!`);
       if (onRefresh) {
         setTimeout(() => onRefresh(), 500);
       }
@@ -1278,6 +1317,7 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
       setAddMessage(err?.message || 'Ошибка добавления');
     } finally {
       setAdding(false);
+      setAddingToSelected(false);
     }
   };
 
@@ -1504,27 +1544,50 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
         </div>
       )}
 
-      {/* Add Button */}
+      {/* Add Buttons */}
       {(node.graphLevel === 2 || node.graphLevel === 3 || node.graphLevel === 0) && (
-        <button
-          onClick={handleAddToProject}
-          disabled={adding}
-          className="node-add-btn"
-        >
-          {adding ? (
-            <>
-              <span className="loading-spinner" style={{ width: 14, height: 14, marginRight: 8, display: 'inline-block', verticalAlign: 'middle' }} />
-              Добавляю...
-            </>
-          ) : (
-            <>
-              <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Добавить в проект
-            </>
-          )}
-        </button>
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <button
+            onClick={() => handleAddToProject('candidate')}
+            disabled={adding || addingToSelected}
+            className="node-add-btn"
+            style={{ flex: 1, background: 'var(--accent)', borderColor: 'var(--accent)' }}
+          >
+            {adding ? (
+              <>
+                <span className="loading-spinner" style={{ width: 14, height: 14, marginRight: 8, display: 'inline-block', verticalAlign: 'middle' }} />
+                Добавляю...
+              </>
+            ) : (
+              <>
+                <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                В Кандидаты
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => handleAddToProject('selected')}
+            disabled={adding || addingToSelected}
+            className="node-add-btn"
+            style={{ flex: 1, background: '#22c55e', borderColor: '#16a34a' }}
+          >
+            {addingToSelected ? (
+              <>
+                <span className="loading-spinner" style={{ width: 14, height: 14, marginRight: 8, display: 'inline-block', verticalAlign: 'middle' }} />
+                Добавляю...
+              </>
+            ) : (
+              <>
+                <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                В Отобранные
+              </>
+            )}
+          </button>
+        </div>
       )}
 
       {addMessage && (

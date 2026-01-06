@@ -56,6 +56,7 @@ const ArticleIdSchema = z.object({
 const ImportFromGraphSchema = z.object({
   pmids: z.array(z.string().trim()).max(100).optional(),
   dois: z.array(z.string().trim()).max(100).optional(),
+  status: z.enum(["candidate", "selected"]).optional().default("candidate"),
 }).refine((data) => (data.pmids?.length || 0) + (data.dois?.length || 0) > 0, {
   message: "Передайте хотя бы один PMID или DOI",
 });
@@ -340,7 +341,8 @@ async function addArticleToProject(
   projectId: string, 
   articleId: string, 
   userId: string,
-  sourceQuery?: string
+  sourceQuery?: string,
+  status: "candidate" | "selected" = "candidate"
 ): Promise<boolean> {
   // Проверяем, есть ли уже связь
   const existing = await pool.query(
@@ -367,14 +369,14 @@ async function addArticleToProject(
   if (hasSourceQuery && sourceQuery) {
     await pool.query(
       `INSERT INTO project_articles (project_id, article_id, status, added_by, source_query)
-       VALUES ($1, $2, 'candidate', $3, $4)`,
-      [projectId, articleId, userId, sourceQuery]
+       VALUES ($1, $2, $3, $4, $5)`,
+      [projectId, articleId, status, userId, sourceQuery]
     );
   } else {
     await pool.query(
       `INSERT INTO project_articles (project_id, article_id, status, added_by)
-       VALUES ($1, $2, 'candidate', $3)`,
-      [projectId, articleId, userId]
+       VALUES ($1, $2, $3, $4)`,
+      [projectId, articleId, status, userId]
     );
   }
   
@@ -1460,7 +1462,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // POST /api/projects/:id/articles/import-from-graph - добавить статьи, найденные в графе, в кандидаты
+  // POST /api/projects/:id/articles/import-from-graph - добавить статьи, найденные в графе, в кандидаты или отобранные
   fastify.post(
     "/projects/:id/articles/import-from-graph",
     { preHandler: [fastify.authenticate] },
@@ -1485,6 +1487,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const pmids = Array.from(new Set((bodyP.data.pmids || []).map((p) => p.trim()).filter(Boolean))).slice(0, 100);
       const dois = Array.from(new Set((bodyP.data.dois || []).map((d) => d.trim().toLowerCase()).filter(Boolean))).slice(0, 100);
+      const importStatus = bodyP.data.status || "candidate";
 
       if (pmids.length === 0 && dois.length === 0) {
         return reply.code(400).send({ error: "Ничего не передано" });
@@ -1503,7 +1506,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         const articleId = await findOrCreateArticle(article);
         if (article.doi) handledDois.add(article.doi.toLowerCase());
 
-        const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, "citation-graph");
+        const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, "citation-graph", importStatus);
         if (wasAdded) {
           added++;
         } else {
