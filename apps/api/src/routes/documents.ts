@@ -937,6 +937,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   // Query параметры:
   // - filter: 'all' | 'selected' | 'excluded' (по умолчанию 'all')
   // - sourceQueries: JSON массив строк запросов для фильтрации
+  // - depth: 1 | 2 | 3 - уровень глубины графа (по умолчанию 1)
+  //   1 = только статьи из поиска
+  //   2 = + статьи, на которые ссылаются найденные
+  //   3 = + статьи, которые цитируют найденные
+  // - yearFrom: минимальный год публикации
+  // - yearTo: максимальный год публикации
+  // - statsQuality: минимальное качество статистики (0-3, где 0=нет, 1=низкое, 2=среднее, 3=высокое)
   fastify.get(
     "/projects/:projectId/citation-graph",
     { preHandler: [fastify.authenticate] },
@@ -954,8 +961,20 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Параметры фильтрации
-      const query = request.query as { filter?: string; sourceQueries?: string };
+      const query = request.query as { 
+        filter?: string; 
+        sourceQueries?: string;
+        depth?: string;
+        yearFrom?: string;
+        yearTo?: string;
+        statsQuality?: string;
+      };
       const filter = query.filter || 'all';
+      const depth = Math.min(3, Math.max(1, parseInt(query.depth || '1', 10) || 1));
+      const yearFrom = query.yearFrom ? parseInt(query.yearFrom, 10) : undefined;
+      const yearTo = query.yearTo ? parseInt(query.yearTo, 10) : undefined;
+      const statsQuality = query.statsQuality ? parseInt(query.statsQuality, 10) : undefined;
+      
       let sourceQueries: string[] = [];
       if (query.sourceQueries) {
         try {
@@ -965,9 +984,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      // Проверяем существование колонок reference_pmids и source_query
+      // Проверяем существование колонок reference_pmids, source_query и stats_quality
       let hasRefColumns = false;
       let hasSourceQueryCol = false;
+      let hasStatsQuality = false;
       try {
         const checkCol = await pool.query(
           `SELECT column_name FROM information_schema.columns 
@@ -980,9 +1000,16 @@ const plugin: FastifyPluginAsync = async (fastify) => {
            WHERE table_name = 'project_articles' AND column_name = 'source_query'`
         );
         hasSourceQueryCol = (checkSqCol.rowCount ?? 0) > 0;
+        
+        const checkStatsCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'articles' AND column_name = 'stats_quality'`
+        );
+        hasStatsQuality = (checkStatsCol.rowCount ?? 0) > 0;
       } catch {
         hasRefColumns = false;
         hasSourceQueryCol = false;
+        hasStatsQuality = false;
       }
 
       // Строим условие WHERE (никогда не показываем удалённые в графе)
@@ -996,40 +1023,75 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       
       // Условие по source_query
       let sourceQueryCondition = '';
-      const queryParams: (string | string[])[] = [paramsP.data.projectId];
+      const queryParams: any[] = [paramsP.data.projectId];
+      let paramIdx = 2;
       if (hasSourceQueryCol && sourceQueries.length > 0) {
         queryParams.push(sourceQueries);
-        sourceQueryCondition = ` AND pa.source_query = ANY($2)`;
+        sourceQueryCondition = ` AND pa.source_query = ANY($${paramIdx++})`;
+      }
+      
+      // Условие по году публикации
+      let yearCondition = '';
+      if (yearFrom !== undefined && !isNaN(yearFrom)) {
+        queryParams.push(yearFrom);
+        yearCondition += ` AND a.year >= $${paramIdx++}`;
+      }
+      if (yearTo !== undefined && !isNaN(yearTo)) {
+        queryParams.push(yearTo);
+        yearCondition += ` AND a.year <= $${paramIdx++}`;
+      }
+      
+      // Условие по качеству статистики (stats_quality / p-value)
+      let statsCondition = '';
+      if (hasStatsQuality && statsQuality !== undefined && !isNaN(statsQuality) && statsQuality > 0) {
+        queryParams.push(statsQuality);
+        statsCondition = ` AND COALESCE(a.stats_quality, 0) >= $${paramIdx++}`;
       }
 
-      // Получить все статьи проекта с их данными о references
+      // Получить все статьи проекта (Уровень 1) с их данными о references
       const articlesRes = await pool.query(
         hasRefColumns
           ? `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
                     a.raw_json, a.reference_pmids, a.cited_by_pmids,
-                    pa.status${hasSourceQueryCol ? ', pa.source_query' : ''}
+                    ${hasStatsQuality ? 'COALESCE(a.stats_quality, 0) as stats_quality,' : '0 as stats_quality,'}
+                    pa.status${hasSourceQueryCol ? ', pa.source_query' : ''},
+                    1 as graph_level
              FROM project_articles pa
              JOIN articles a ON a.id = pa.article_id
-             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}`
+             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}${yearCondition}${statsCondition}`
           : `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
                     a.raw_json, 
                     ARRAY[]::text[] as reference_pmids, 
                     ARRAY[]::text[] as cited_by_pmids,
-                    pa.status${hasSourceQueryCol ? ', pa.source_query' : ''}
+                    ${hasStatsQuality ? 'COALESCE(a.stats_quality, 0) as stats_quality,' : '0 as stats_quality,'}
+                    pa.status${hasSourceQueryCol ? ', pa.source_query' : ''},
+                    1 as graph_level
              FROM project_articles pa
              JOIN articles a ON a.id = pa.article_id
-             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}`,
+             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}${yearCondition}${statsCondition}`,
         queryParams
       );
 
       // Строим nodes и links
-      const nodes: { id: string; label: string; year: number | null; status: string; doi: string | null; pmid: string | null; citedByCount: number }[] = [];
+      type GraphNodeInternal = {
+        id: string;
+        label: string;
+        year: number | null;
+        status: string;
+        doi: string | null;
+        pmid: string | null;
+        citedByCount: number;
+        graphLevel: number;
+        statsQuality: number;
+      };
+      const nodes: GraphNodeInternal[] = [];
       const links: { source: string; target: string }[] = [];
       const linksSet = new Set<string>(); // Для дедупликации
       const doiToId = new Map<string, string>();
       const pmidToId = new Map<string, string>();
+      const addedNodeIds = new Set<string>();
 
-      // Создаём узлы из статей проекта
+      // Создаём узлы из статей проекта (Уровень 1)
       for (const article of articlesRes.rows) {
         const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
         const label = `${firstAuthor} (${article.year || '?'})`;
@@ -1047,7 +1109,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           doi: article.doi,
           pmid: article.pmid,
           citedByCount,
+          graphLevel: 1,
+          statsQuality: article.stats_quality || 0,
         });
+        addedNodeIds.add(article.id);
 
         if (article.doi) {
           doiToId.set(article.doi.toLowerCase(), article.id);
@@ -1057,15 +1122,193 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
+      // Собираем PMIDs для уровней 2 и 3
+      const level2Pmids = new Set<string>(); // Статьи, на которые ссылаются (references)
+      const level3Pmids = new Set<string>(); // Статьи, которые цитируют (cited_by)
+      
+      if (depth >= 2) {
+        for (const article of articlesRes.rows) {
+          const refPmids = article.reference_pmids || [];
+          for (const refPmid of refPmids) {
+            if (!pmidToId.has(refPmid)) {
+              level2Pmids.add(refPmid);
+            }
+          }
+        }
+      }
+      
+      if (depth >= 3) {
+        for (const article of articlesRes.rows) {
+          const citedByPmids = article.cited_by_pmids || [];
+          for (const citingPmid of citedByPmids) {
+            if (!pmidToId.has(citingPmid) && !level2Pmids.has(citingPmid)) {
+              level3Pmids.add(citingPmid);
+            }
+          }
+        }
+      }
+
+      // Загружаем статьи уровня 2 (references) из БД, если они там есть
+      if (depth >= 2 && level2Pmids.size > 0) {
+        const level2PmidsArr = Array.from(level2Pmids);
+        
+        // Строим условия фильтрации для уровня 2
+        let level2YearCondition = '';
+        let level2StatsCondition = '';
+        const level2Params: any[] = [level2PmidsArr];
+        let level2ParamIdx = 2;
+        
+        if (yearFrom !== undefined && !isNaN(yearFrom)) {
+          level2Params.push(yearFrom);
+          level2YearCondition += ` AND year >= $${level2ParamIdx++}`;
+        }
+        if (yearTo !== undefined && !isNaN(yearTo)) {
+          level2Params.push(yearTo);
+          level2YearCondition += ` AND year <= $${level2ParamIdx++}`;
+        }
+        if (hasStatsQuality && statsQuality !== undefined && !isNaN(statsQuality) && statsQuality > 0) {
+          level2Params.push(statsQuality);
+          level2StatsCondition = ` AND COALESCE(stats_quality, 0) >= $${level2ParamIdx++}`;
+        }
+        
+        const level2Res = await pool.query(
+          `SELECT id, doi, pmid, title_en, authors, year, raw_json,
+                  ${hasRefColumns ? 'reference_pmids, cited_by_pmids,' : "ARRAY[]::text[] as reference_pmids, ARRAY[]::text[] as cited_by_pmids,"}
+                  ${hasStatsQuality ? 'COALESCE(stats_quality, 0) as stats_quality' : '0 as stats_quality'}
+           FROM articles 
+           WHERE pmid = ANY($1)${level2YearCondition}${level2StatsCondition}`,
+          level2Params
+        );
+        
+        for (const article of level2Res.rows) {
+          if (addedNodeIds.has(article.id)) continue;
+          
+          const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
+          const label = `${firstAuthor} (${article.year || '?'})`;
+          const pubmedCitedBy = article.cited_by_pmids?.length || 0;
+          const europePMCCitations = article.raw_json?.europePMCCitations || 0;
+          const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
+          
+          nodes.push({
+            id: article.id,
+            label,
+            year: article.year,
+            status: 'reference', // Особый статус для статей уровня 2
+            doi: article.doi,
+            pmid: article.pmid,
+            citedByCount,
+            graphLevel: 2,
+            statsQuality: article.stats_quality || 0,
+          });
+          addedNodeIds.add(article.id);
+          
+          if (article.doi) {
+            doiToId.set(article.doi.toLowerCase(), article.id);
+          }
+          if (article.pmid) {
+            pmidToId.set(article.pmid, article.id);
+          }
+        }
+      }
+
+      // Загружаем статьи уровня 3 (citing articles) из БД, если они там есть
+      if (depth >= 3 && level3Pmids.size > 0) {
+        const level3PmidsArr = Array.from(level3Pmids);
+        
+        // Строим условия фильтрации для уровня 3
+        let level3YearCondition = '';
+        let level3StatsCondition = '';
+        const level3Params: any[] = [level3PmidsArr];
+        let level3ParamIdx = 2;
+        
+        if (yearFrom !== undefined && !isNaN(yearFrom)) {
+          level3Params.push(yearFrom);
+          level3YearCondition += ` AND year >= $${level3ParamIdx++}`;
+        }
+        if (yearTo !== undefined && !isNaN(yearTo)) {
+          level3Params.push(yearTo);
+          level3YearCondition += ` AND year <= $${level3ParamIdx++}`;
+        }
+        if (hasStatsQuality && statsQuality !== undefined && !isNaN(statsQuality) && statsQuality > 0) {
+          level3Params.push(statsQuality);
+          level3StatsCondition = ` AND COALESCE(stats_quality, 0) >= $${level3ParamIdx++}`;
+        }
+        
+        const level3Res = await pool.query(
+          `SELECT id, doi, pmid, title_en, authors, year, raw_json,
+                  ${hasRefColumns ? 'reference_pmids, cited_by_pmids,' : "ARRAY[]::text[] as reference_pmids, ARRAY[]::text[] as cited_by_pmids,"}
+                  ${hasStatsQuality ? 'COALESCE(stats_quality, 0) as stats_quality' : '0 as stats_quality'}
+           FROM articles 
+           WHERE pmid = ANY($1)${level3YearCondition}${level3StatsCondition}`,
+          level3Params
+        );
+        
+        for (const article of level3Res.rows) {
+          if (addedNodeIds.has(article.id)) continue;
+          
+          const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
+          const label = `${firstAuthor} (${article.year || '?'})`;
+          const pubmedCitedBy = article.cited_by_pmids?.length || 0;
+          const europePMCCitations = article.raw_json?.europePMCCitations || 0;
+          const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
+          
+          nodes.push({
+            id: article.id,
+            label,
+            year: article.year,
+            status: 'citing', // Особый статус для статей уровня 3
+            doi: article.doi,
+            pmid: article.pmid,
+            citedByCount,
+            graphLevel: 3,
+            statsQuality: article.stats_quality || 0,
+          });
+          addedNodeIds.add(article.id);
+          
+          if (article.doi) {
+            doiToId.set(article.doi.toLowerCase(), article.id);
+          }
+          if (article.pmid) {
+            pmidToId.set(article.pmid, article.id);
+          }
+        }
+      }
+
       // Добавляем связи на основе references из PubMed (первый приоритет)
-      for (const article of articlesRes.rows) {
+      // Теперь включаем все уровни
+      const allArticles = [...articlesRes.rows];
+      
+      // Добавляем статьи уровней 2 и 3 для построения связей
+      if (depth >= 2 && level2Pmids.size > 0) {
+        const level2PmidsArr = Array.from(level2Pmids);
+        const level2Res = await pool.query(
+          `SELECT id, pmid, reference_pmids, cited_by_pmids, raw_json
+           FROM articles WHERE pmid = ANY($1)`,
+          [level2PmidsArr]
+        );
+        allArticles.push(...level2Res.rows.filter(a => addedNodeIds.has(a.id)));
+      }
+      
+      if (depth >= 3 && level3Pmids.size > 0) {
+        const level3PmidsArr = Array.from(level3Pmids);
+        const level3Res = await pool.query(
+          `SELECT id, pmid, reference_pmids, cited_by_pmids, raw_json
+           FROM articles WHERE pmid = ANY($1)`,
+          [level3PmidsArr]
+        );
+        allArticles.push(...level3Res.rows.filter(a => addedNodeIds.has(a.id)));
+      }
+      
+      for (const article of allArticles) {
+        if (!addedNodeIds.has(article.id)) continue;
+        
         const refPmids = article.reference_pmids || [];
         const citedByPmids = article.cited_by_pmids || [];
         
         // Исходящие связи (эта статья ссылается на другие)
         for (const refPmid of refPmids) {
           const targetId = pmidToId.get(refPmid);
-          if (targetId && targetId !== article.id) {
+          if (targetId && targetId !== article.id && addedNodeIds.has(targetId)) {
             const linkKey = `${article.id}->${targetId}`;
             if (!linksSet.has(linkKey)) {
               linksSet.add(linkKey);
@@ -1080,7 +1323,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         // Входящие связи (другие статьи ссылаются на эту)
         for (const citingPmid of citedByPmids) {
           const sourceId = pmidToId.get(citingPmid);
-          if (sourceId && sourceId !== article.id) {
+          if (sourceId && sourceId !== article.id && addedNodeIds.has(sourceId)) {
             const linkKey = `${sourceId}->${article.id}`;
             if (!linksSet.has(linkKey)) {
               linksSet.add(linkKey);
@@ -1094,7 +1337,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Добавляем связи на основе references из Crossref (второй приоритет - fallback)
-      for (const article of articlesRes.rows) {
+      for (const article of allArticles) {
+        if (!addedNodeIds.has(article.id)) continue;
+        
         // Crossref данные хранятся в raw_json.crossref
         const crossrefData = article.raw_json?.crossref;
         const references = crossrefData?.references || crossrefData?.reference || [];
@@ -1107,7 +1352,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           if (!refDoi) continue;
 
           const targetId = doiToId.get(refDoi.toLowerCase());
-          if (targetId && targetId !== article.id) {
+          if (targetId && targetId !== article.id && addedNodeIds.has(targetId)) {
             const linkKey = `${article.id}->${targetId}`;
             if (!linksSet.has(linkKey)) {
               linksSet.add(linkKey);
@@ -1133,14 +1378,37 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         availableQueries = queriesRes.rows.map((r: { source_query: string }) => r.source_query);
       }
 
+      // Получаем диапазон годов для фильтра
+      const yearsRes = await pool.query(
+        `SELECT MIN(a.year) as min_year, MAX(a.year) as max_year
+         FROM project_articles pa
+         JOIN articles a ON a.id = pa.article_id
+         WHERE pa.project_id = $1 AND a.year IS NOT NULL`,
+        [paramsP.data.projectId]
+      );
+      const yearRange = {
+        min: yearsRes.rows[0]?.min_year || null,
+        max: yearsRes.rows[0]?.max_year || null,
+      };
+
+      // Подсчёт статей по уровням
+      const levelCounts = {
+        level1: nodes.filter(n => n.graphLevel === 1).length,
+        level2: nodes.filter(n => n.graphLevel === 2).length,
+        level3: nodes.filter(n => n.graphLevel === 3).length,
+      };
+
       return {
         nodes,
         links,
         stats: {
           totalNodes: nodes.length,
           totalLinks: links.length,
+          levelCounts,
         },
         availableQueries,
+        yearRange,
+        currentDepth: depth,
       };
     }
   );
