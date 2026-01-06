@@ -585,9 +585,10 @@ export type GraphLink = {
 };
 
 export type LevelCounts = {
-  level1: number;
-  level2: number;
-  level3: number;
+  level0?: number; // Цитирующие нас (citing)
+  level1: number;  // Статьи в проекте
+  level2: number;  // References
+  level3?: number; // Связанные (также ссылаются на level2)
 };
 
 export type CitationGraphResponse = {

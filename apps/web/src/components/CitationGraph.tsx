@@ -163,8 +163,8 @@ export default function CitationGraph({ projectId }: Props) {
     const updateSize = () => {
       if (containerRef.current) {
         setDimensions({
-          width: Math.max(600, containerRef.current.offsetWidth - 380), // Оставляем место для sidebar
-          height: Math.max(700, window.innerHeight - 150), // Большой размер
+          width: Math.max(800, containerRef.current.offsetWidth - 320), // Больше места для графа
+          height: Math.max(800, window.innerHeight - 100), // Максимальный размер
         });
       }
     };
@@ -176,72 +176,82 @@ export default function CitationGraph({ projectId }: Props) {
 
   const nodeColor = useCallback((node: any) => {
     const status = node.status;
-    const level = node.graphLevel || 1;
+    const level = node.graphLevel ?? 1;
 
     // Если выбран - яркий зелёный
     if (selectedNodeIds.has(node.id)) {
       return '#10b981';
     }
     
+    // Уровень 0 (citing - статьи, которые цитируют наши) - фиолетовый
+    if (level === 0) {
+      return '#a855f7'; // Фиолетовый
+    }
+    
     // Уровень 1 (найденные статьи) - стандартные цвета по статусу
     if (level === 1) {
-      if (status === 'selected') return '#34d399'; // Яркий зелёный
+      if (status === 'selected') return '#22c55e'; // Яркий зелёный
       if (status === 'excluded') return '#ef4444'; // Красный
       return '#3b82f6'; // Синий (кандидаты)
     }
     
     // Уровень 2 (references - статьи, на которые ссылаются)
     if (level === 2) {
-      return '#f97316'; // Насыщенный оранжевый
+      return '#f97316'; // Оранжевый
     }
     
-    // Уровень 3 (citing - статьи, которые цитируют)
+    // Уровень 3 (статьи, которые тоже ссылаются на level 2)
     if (level === 3) {
-      return '#d946ef'; // Насыщенный розово-фиолетовый
+      return '#06b6d4'; // Голубой/циан
     }
     
-    return '#3b82f6';
+    return '#6b7280'; // Серый по умолчанию
   }, [selectedNodeIds]);
 
   const nodeLabel = useCallback((node: any) => {
     const citedByCount = node.citedByCount || 0;
-    const level = node.graphLevel || 1;
+    const level = node.graphLevel ?? 1;
     const statsQ = node.statsQuality || 0;
     
     let levelText = '';
-    if (level === 2) levelText = ' [Ссылка]';
-    else if (level === 3) levelText = ' [Цитирующая]';
+    if (level === 0) levelText = ' [Цитирует нас]';
+    else if (level === 2) levelText = ' [Ссылка]';
+    else if (level === 3) levelText = ' [Связанная]';
     
     let statsText = '';
     if (statsQ > 0) statsText = ` • P-value: ${'★'.repeat(statsQ)}`;
     
-    return `${node.label}${levelText}${citedByCount > 0 ? ` (цитирований: ${citedByCount})` : ''}${statsText}`;
+    return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ''}${statsText}`;
   }, []);
 
-  // Размер узла зависит от количества цитирований, уровня графа и качества статистики
+  // Размер узла зависит от количества цитирований - как в ResearchRabbit
   const nodeVal = useCallback((node: any) => {
     const citedByCount = node.citedByCount || 0;
-    const level = node.graphLevel || 1;
+    const level = node.graphLevel ?? 1;
     const statsQ = node.statsQuality || 0;
     
-    // Базовый размер ЗНАЧИТЕЛЬНО УВЕЛИЧЕН для отличной видимости
+    // Логарифмическая шкала для пропорционального отображения цитирований
+    // Минимальный размер 4, максимальный ~40 для самых цитируемых
     let baseSize: number;
-    if (citedByCount === 0) baseSize = 20;
-    else if (citedByCount <= 3) baseSize = 25 + citedByCount * 3;
-    else if (citedByCount <= 10) baseSize = 34 + (citedByCount - 3) * 4;
-    else if (citedByCount <= 30) baseSize = 62 + (citedByCount - 10) * 2.5;
-    else if (citedByCount <= 100) baseSize = 112 + (citedByCount - 30) * 1;
-    else baseSize = 182 + Math.log10(citedByCount - 99) * 15;
+    if (citedByCount === 0) {
+      baseSize = 4;
+    } else if (citedByCount <= 10) {
+      baseSize = 4 + citedByCount * 0.6; // 4-10
+    } else if (citedByCount <= 100) {
+      baseSize = 10 + Math.log10(citedByCount) * 5; // 10-20
+    } else if (citedByCount <= 1000) {
+      baseSize = 20 + Math.log10(citedByCount) * 4; // 20-32
+    } else {
+      baseSize = 32 + Math.log10(citedByCount) * 2; // 32-40+
+    }
     
-    // Коэффициент по уровню графа (разные размеры для разных уровней)
-    let levelMultiplier = 1;
-    if (level === 2) levelMultiplier = 0.85;
-    if (level === 3) levelMultiplier = 0.75;
+    // Уровень 1 (наши статьи) немного крупнее для выделения
+    if (level === 1) baseSize *= 1.3;
     
     // Бонус за качество статистики
     const statsBonus = statsQ > 0 ? 0.1 * statsQ : 0;
     
-    return baseSize * levelMultiplier * (1 + statsBonus);
+    return baseSize * (1 + statsBonus);
   }, []);
 
   // Обработчики фильтров
@@ -497,34 +507,27 @@ export default function CitationGraph({ projectId }: Props) {
 
       {/* Статистика */}
       <div className="graph-stats" style={{ padding: '8px 16px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', borderBottom: '1px solid var(--border-glass)' }}>
-        <span style={{ fontWeight: 600 }}>📊 Всего узлов: <span style={{ color: '#3b82f6' }}>{stats.totalNodes}</span></span>
+        <span style={{ fontWeight: 600 }}>📊 Узлов: <span style={{ color: '#3b82f6' }}>{stats.totalNodes}</span></span>
         <span style={{ fontWeight: 600 }}>🔗 Связей: <span style={{ color: '#10b981' }}>{stats.totalLinks}</span></span>
         {stats.levelCounts && (
           <>
-            <span style={{ color: '#3b82f6', fontWeight: 500 }}>🔵 Поиск: {stats.levelCounts.level1}</span>
+            {depth >= 3 && stats.levelCounts.level0 !== undefined && stats.levelCounts.level0 > 0 && (
+              <span style={{ color: '#a855f7', fontWeight: 500 }}>
+                🟣 Цитируют нас: {stats.levelCounts.level0}
+              </span>
+            )}
+            <span style={{ color: '#3b82f6', fontWeight: 500 }}>🔵 В проекте: {stats.levelCounts.level1}</span>
             {depth >= 2 && (
               <span style={{ color: '#f97316', fontWeight: 500 }}>
                 🟠 Ссылки: {stats.levelCounts.level2}
-                {stats.availableReferences !== undefined && stats.availableReferences > 0 && 
-                  ` (доступно: ${stats.availableReferences})`}
               </span>
             )}
-            {depth >= 3 && (
-              <span style={{ color: '#d946ef', fontWeight: 500 }}>
-                🟣 Цитирующие: {stats.levelCounts.level3}
-                {stats.availableCiting !== undefined && stats.availableCiting > 0 && 
-                  ` (доступно: ${stats.availableCiting})`}
+            {depth >= 3 && stats.levelCounts.level3 !== undefined && stats.levelCounts.level3 > 0 && (
+              <span style={{ color: '#06b6d4', fontWeight: 500 }}>
+                🔷 Связанные: {stats.levelCounts.level3}
               </span>
             )}
           </>
-        )}
-        {hoveredNode && (
-          <span className="hovered-info" style={{ color: 'var(--text-muted)', fontSize: 12, marginLeft: 'auto' }}>
-            📄 {hoveredNode.label} 
-            {hoveredNode.graphLevel && hoveredNode.graphLevel > 1 && ` [Уровень ${hoveredNode.graphLevel}]`}
-            {hoveredNode.doi && ` • DOI: ${hoveredNode.doi}`}
-            {hoveredNode.statsQuality !== undefined && hoveredNode.statsQuality > 0 && ` • P-value: ★${'★'.repeat(hoveredNode.statsQuality - 1)}`}
-          </span>
         )}
       </div>
       
@@ -541,21 +544,23 @@ export default function CitationGraph({ projectId }: Props) {
         </div>
       )}
       
-      <div className="graph-legend" style={{ padding: '4px 16px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: 500, fontSize: 11 }}>🔵 Уровень 1:</span>
-        <span><span className="legend-dot selected"></span> Отобранные</span>
-        <span><span className="legend-dot candidate"></span> Кандидаты</span>
-        <span><span className="legend-dot excluded"></span> Исключённые</span>
+      <div className="graph-legend" style={{ padding: '4px 16px', display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 11 }}>
+        {depth >= 3 && (
+          <>
+            <span><span className="legend-dot" style={{ background: '#a855f7' }}></span> Цитируют нас</span>
+          </>
+        )}
+        <span><span className="legend-dot" style={{ background: '#22c55e' }}></span> Отобранные</span>
+        <span><span className="legend-dot" style={{ background: '#3b82f6' }}></span> Кандидаты</span>
+        <span><span className="legend-dot" style={{ background: '#ef4444' }}></span> Исключённые</span>
         {depth >= 2 && (
           <>
-            <span style={{ marginLeft: 8, fontWeight: 500, fontSize: 11 }}>🟠 Уровень 2:</span>
-            <span><span className="legend-dot" style={{ background: '#f97316' }}></span> Ссылки (references)</span>
+            <span><span className="legend-dot" style={{ background: '#f97316' }}></span> Ссылки</span>
           </>
         )}
         {depth >= 3 && (
           <>
-            <span style={{ marginLeft: 8, fontWeight: 500, fontSize: 11 }}>🟣 Уровень 3:</span>
-            <span><span className="legend-dot" style={{ background: '#d946ef' }}></span> Цитирующие (cited-by)</span>
+            <span><span className="legend-dot" style={{ background: '#06b6d4' }}></span> Связанные</span>
           </>
         )}
       </div>
@@ -652,7 +657,11 @@ export default function CitationGraph({ projectId }: Props) {
           fontSize: 13
         }}>
           {selectedNodeForDisplay || hoveredNode ? (
-            <NodeInfoPanel node={selectedNodeForDisplay || hoveredNode} projectId={projectId} />
+            <NodeInfoPanel 
+              node={selectedNodeForDisplay || hoveredNode} 
+              projectId={projectId} 
+              onRefresh={() => loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality })}
+            />
           ) : (
             <div style={{ color: 'var(--text-muted)', textAlign: 'center', paddingTop: '40px' }}>
               👈 Наведите или кликните на узел
@@ -665,7 +674,7 @@ export default function CitationGraph({ projectId }: Props) {
 }
 
 // Компонент для отображения информации о узле
-function NodeInfoPanel({ node, projectId }: { node: any; projectId: string }) {
+function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: string; onRefresh?: () => void }) {
   const [adding, setAdding] = useState(false);
   const [addMessage, setAddMessage] = useState<string | null>(null);
 
@@ -676,9 +685,20 @@ function NodeInfoPanel({ node, projectId }: { node: any; projectId: string }) {
     }
 
     setAdding(true);
+    setAddMessage(null);
     try {
-      // TODO: реализовать API для добавления статьи в проект
-      setAddMessage('Функция в разработке');
+      const payload = {
+        pmids: node.pmid ? [node.pmid] : [],
+        dois: node.doi ? [node.doi] : [],
+      };
+      const res = await apiImportFromGraph(projectId, payload);
+      setAddMessage(res.message || 'Статья добавлена в проект!');
+      // Обновляем граф после добавления
+      if (onRefresh) {
+        setTimeout(() => onRefresh(), 500);
+      }
+    } catch (err: any) {
+      setAddMessage(err?.message || 'Ошибка добавления');
     } finally {
       setAdding(false);
     }
@@ -686,21 +706,25 @@ function NodeInfoPanel({ node, projectId }: { node: any; projectId: string }) {
 
   const getLevelColor = (level: number) => {
     switch(level) {
-      case 1: return '#3b82f6';
-      case 2: return '#f97316';
-      case 3: return '#d946ef';
-      default: return '#gray';
+      case 0: return '#a855f7'; // Фиолетовый - цитирует нас
+      case 1: return '#3b82f6'; // Синий - наши статьи
+      case 2: return '#f97316'; // Оранжевый - references
+      case 3: return '#06b6d4'; // Голубой - связанные
+      default: return '#6b7280';
     }
   };
 
   const getLevelName = (level: number) => {
     switch(level) {
-      case 1: return 'Поиск (найдена)';
-      case 2: return 'Ссылка (references)';
-      case 3: return 'Цитирующая (cited-by)';
+      case 0: return 'Цитирует нас';
+      case 1: return 'В проекте';
+      case 2: return 'Ссылка (reference)';
+      case 3: return 'Связанная работа';
       default: return `Уровень ${level}`;
     }
   };
+
+  const level = node.graphLevel ?? 1;
 
   return (
     <div>
@@ -710,19 +734,19 @@ function NodeInfoPanel({ node, projectId }: { node: any; projectId: string }) {
           backgroundColor: 'var(--bg-primary)',
           borderRadius: '8px',
           marginBottom: '12px',
-          border: `2px solid ${getLevelColor(node.graphLevel || 1)}`
+          border: `2px solid ${getLevelColor(level)}`
         }}>
           <div style={{ 
             display: 'inline-block',
             padding: '4px 10px',
-            backgroundColor: getLevelColor(node.graphLevel || 1),
+            backgroundColor: getLevelColor(level),
             color: 'white',
             borderRadius: '4px',
             fontSize: 11,
             fontWeight: 600,
             marginBottom: '10px'
           }}>
-            {getLevelName(node.graphLevel || 1)}
+            {getLevelName(level)}
           </div>
           
           {/* Название (label) */}
@@ -815,7 +839,7 @@ function NodeInfoPanel({ node, projectId }: { node: any; projectId: string }) {
         </div>
       )}
 
-      {node.graphLevel === 2 || node.graphLevel === 3 ? (
+      {node.graphLevel === 2 || node.graphLevel === 3 || node.graphLevel === 0 ? (
         <button
           onClick={handleAddToProject}
           disabled={adding}
@@ -826,14 +850,14 @@ function NodeInfoPanel({ node, projectId }: { node: any; projectId: string }) {
             color: 'white',
             border: 'none',
             borderRadius: '6px',
-            cursor: 'pointer',
+            cursor: adding ? 'wait' : 'pointer',
             fontWeight: 600,
             fontSize: 12,
             marginTop: '16px',
             opacity: adding ? 0.6 : 1
           }}
         >
-          {adding ? '⏳ Добавляю...' : '➕ Добавить в базу'}
+          {adding ? '⏳ Добавляю...' : '➕ Добавить в проект'}
         </button>
       ) : null}
 
