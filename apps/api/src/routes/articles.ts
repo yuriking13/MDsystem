@@ -6,7 +6,7 @@ import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.j
 import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
 import { getCrossrefByDOI } from "../lib/crossref.js";
-import { getBoss } from "../worker/boss.js";
+import { getBoss, startBoss } from "../worker/boss.js";
 
 // Схемы валидации
 const SearchBodySchema = z.object({
@@ -846,15 +846,24 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const jobId = jobRes.rows[0].id;
       
       // Запускаем фоновый воркер
-      const boss = getBoss();
+      let boss;
       try {
-        await boss.send('graph:fetch-references', {
+        boss = await startBoss();
+      } catch (err) {
+        fastify.log.error({ err }, 'Failed to start pg-boss');
+        return reply.code(500).send({ error: 'Failed to start background job queue' });
+      }
+      
+      try {
+        fastify.log.info({ jobId, projectId: paramsP.data.id }, 'Attempting to send job to pg-boss');
+        const sendResult = await boss.send('graph:fetch-references', {
           projectId: paramsP.data.id,
           jobId,
           userId,
         });
+        fastify.log.info({ jobId, sendResult }, 'Job sent to pg-boss successfully');
       } catch (err) {
-        fastify.log.error({ err }, 'Failed to enqueue graph:fetch-references job');
+        fastify.log.error({ err, jobId }, 'Failed to enqueue graph:fetch-references job');
         return reply.code(500).send({ error: 'Failed to enqueue background job' });
       }
       
