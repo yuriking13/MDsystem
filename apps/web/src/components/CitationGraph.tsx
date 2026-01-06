@@ -429,7 +429,7 @@ export default function CitationGraph({ projectId }: Props) {
   }
 
   return (
-    <div className="graph-container" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 200px)' }}>
+    <div className="graph-container" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', minHeight: '800px' }}>
       {/* Header Panel */}
       <div className="graph-header-panel">
         <div className="graph-header-title">
@@ -440,6 +440,16 @@ export default function CitationGraph({ projectId }: Props) {
             <h3>Граф цитирований</h3>
             <span className="graph-header-subtitle">Визуализация связей между статьями проекта</span>
           </div>
+        </div>
+        
+        {/* How graph works - inline help */}
+        <div className="graph-help-inline">
+          <span title="Каждый узел — статья. Стрелки показывают цитирования. Кликните на узел для просмотра информации. Alt+клик открывает источник.">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Как работает
+          </span>
         </div>
       </div>
 
@@ -830,109 +840,91 @@ export default function CitationGraph({ projectId }: Props) {
         )}
       </div>
 
-      {/* Main Graph + Sidebar Container */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Graph Area - scrollable 2000x2000 canvas */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-          {(!data || data.nodes.length === 0) ? (
-            <div className="muted" style={{ padding: 60, textAlign: 'center' }}>
-              <svg className="icon-lg" style={{ margin: '0 auto 16px', opacity: 0.5, width: 48, height: 48 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <p>Нет данных для графа с текущими фильтрами.</p>
-            </div>
-          ) : (
-            <div style={{ overflow: 'auto', flex: 1, position: 'relative' }}>
-              <ForceGraph2D
-                graphData={data}
-                width={dimensions.width}
-                height={dimensions.height}
-                nodeColor={nodeColor}
-                nodeLabel={nodeLabel}
-                nodeVal={nodeVal}
-                nodeRelSize={6}
-                nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
-                  const size = Math.sqrt(node.val || 20) * 1.5;
-                  
-                  ctx.fillStyle = nodeColor(node);
-                  ctx.beginPath();
-                  ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
-                  ctx.fill();
-                  
-                  if (selectedNodeIds.has(node.id)) {
-                    ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
-                    ctx.lineWidth = size * 0.4;
-                    ctx.stroke();
+      {/* Main Graph Area - full width, no sidebar */}
+      <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+        {(!data || data.nodes.length === 0) ? (
+          <div className="muted" style={{ padding: 60, textAlign: 'center' }}>
+            <svg className="icon-lg" style={{ margin: '0 auto 16px', opacity: 0.5, width: 48, height: 48 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <p>Нет данных для графа с текущими фильтрами.</p>
+          </div>
+        ) : (
+          <div style={{ width: dimensions.width, height: dimensions.height, minWidth: '100%', minHeight: '600px' }}>
+            <ForceGraph2D
+              graphData={data}
+              width={dimensions.width}
+              height={dimensions.height}
+              nodeColor={nodeColor}
+              nodeLabel={nodeLabel}
+              nodeVal={nodeVal}
+              nodeRelSize={6}
+              nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
+                const size = Math.sqrt(node.val || 20) * 1.5;
+                
+                ctx.fillStyle = nodeColor(node);
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                ctx.fill();
+                
+                if (selectedNodeIds.has(node.id)) {
+                  ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
+                  ctx.lineWidth = size * 0.4;
+                  ctx.stroke();
+                }
+                
+                if ((node.citedByCount || 0) > 20) {
+                  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                  ctx.lineWidth = size * 0.15;
+                  ctx.stroke();
+                }
+              }}
+              linkColor={() => 'rgba(100, 120, 150, 0.3)'}
+              linkWidth={0.8}
+              linkDirectionalArrowLength={3}
+              linkDirectionalArrowRelPos={0.95}
+              backgroundColor="#0b0f19"
+              d3AlphaDecay={0.015}
+              d3VelocityDecay={0.25}
+              cooldownTicks={250}
+              warmupTicks={120}
+              onNodeHover={(node: any) => setHoveredNode(node)}
+              onNodeClick={(node: any, event: any) => {
+                if (event?.altKey) {
+                  if (node.doi) {
+                    window.open(`https://doi.org/${node.doi}`, '_blank');
+                  } else if (node.pmid) {
+                    window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
                   }
-                  
-                  if ((node.citedByCount || 0) > 20) {
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                    ctx.lineWidth = size * 0.15;
-                    ctx.stroke();
-                  }
-                }}
-                linkColor={() => 'rgba(100, 120, 150, 0.3)'}
-                linkWidth={0.8}
-                linkDirectionalArrowLength={3}
-                linkDirectionalArrowRelPos={0.95}
-                backgroundColor="#0b0f19"
-                d3AlphaDecay={0.015}
-                d3VelocityDecay={0.25}
-                cooldownTicks={250}
-                warmupTicks={120}
-                onNodeHover={(node: any) => setHoveredNode(node)}
-                onNodeClick={(node: any, event: any) => {
-                  if (event?.altKey) {
-                    if (node.doi) {
-                      window.open(`https://doi.org/${node.doi}`, '_blank');
-                    } else if (node.pmid) {
-                      window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
-                    }
-                    return;
-                  }
-                  setSelectedNodeForDisplay(selectedNodeForDisplay?.id === node.id ? null : node);
-                }}
-              />
-            </div>
-          )}
-        </div>
+                  return;
+                }
+                setSelectedNodeForDisplay(selectedNodeForDisplay?.id === node.id ? null : node);
+              }}
+            />
+          </div>
+        )}
+      </div>
 
-        {/* Sidebar */}
-        <div className="graph-sidebar">
-          {selectedNodeForDisplay || hoveredNode ? (
+      {/* Node Info Modal Popup */}
+      {selectedNodeForDisplay && (
+        <div className="node-info-modal-overlay" onClick={() => setSelectedNodeForDisplay(null)}>
+          <div className="node-info-modal" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="node-info-modal-close"
+              onClick={() => setSelectedNodeForDisplay(null)}
+            >
+              <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
             <NodeInfoPanel 
-              node={selectedNodeForDisplay || hoveredNode} 
+              node={selectedNodeForDisplay} 
               projectId={projectId} 
               onRefresh={() => loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality })}
             />
-          ) : (
-            <div className="graph-sidebar-empty">
-              <div>
-                <svg className="icon-lg" style={{ margin: '0 auto 12px', opacity: 0.5 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
-                </svg>
-                <p style={{ margin: 0 }}>Наведите или кликните на узел для просмотра информации</p>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
-      
-      {/* Footer with instructions */}
-      <div className="graph-footer">
-        <div className="graph-footer-title">
-          <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <span>Как работает граф</span>
-        </div>
-        <ul className="graph-footer-list">
-          <li>Каждый <strong>узел</strong> — статья из вашего проекта</li>
-          <li><strong>Стрелки</strong> показывают, какая статья цитирует какую</li>
-          <li>Данные о связях берутся из <strong>Crossref</strong> (обогатите статьи кнопкой "Crossref")</li>
-          <li>Кликните на узел чтобы открыть статью по DOI. <strong>Alt+клик</strong> открывает источник напрямую.</li>
-        </ul>
-      </div>
+      )}
     </div>
   );
 }
