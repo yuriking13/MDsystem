@@ -215,7 +215,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   
   // Update page settings when citation style changes
   useEffect(() => {
-    const config = STYLE_CONFIGS[citationStyle];
+    const config = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
     setCurrentStyle(citationStyle);
     setPageSettings({
       marginTop: config.marginTop,
@@ -961,7 +961,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   // Apply style preset
   const handleApplyStyle = useCallback((style: CitationStyle) => {
     setCurrentStyle(style);
-    const config = STYLE_CONFIGS[style];
+    const config = STYLE_CONFIGS[style] || STYLE_CONFIGS.gost;
     const newSettings: PageSettings = {
       marginTop: config.marginTop,
       marginBottom: config.marginBottom,
