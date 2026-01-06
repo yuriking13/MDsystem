@@ -1269,7 +1269,18 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         });
       }
       
-      // Подсчитываем статьи для оценки времени (с учётом фильтров)
+      // Подсчитываем ВСЕ статьи проекта и статьи с PMID отдельно
+      let totalCountSql = `SELECT COUNT(*) as cnt FROM project_articles pa WHERE pa.project_id = $1`;
+      const totalCountParams: any[] = [paramsP.data.id];
+      
+      if (selectedOnly) {
+        totalCountSql += ` AND pa.status = 'selected'`;
+      }
+      
+      const totalCountRes = await pool.query(totalCountSql, totalCountParams);
+      const totalProjectArticles = parseInt(totalCountRes.rows[0]?.cnt || '0');
+      
+      // Подсчитываем статьи с PMID для оценки времени (с учётом фильтров)
       let countSql = `SELECT COUNT(*) as cnt FROM articles a
          JOIN project_articles pa ON pa.article_id = a.id
          WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`;
@@ -1287,10 +1298,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const countRes = await pool.query(countSql, countParams);
       const totalArticles = parseInt(countRes.rows[0]?.cnt || '0');
       
+      // Статьи без PMID (из DOAJ, Wiley, Crossref и т.д.)
+      const articlesWithoutPmid = totalProjectArticles - totalArticles;
+      
       if (totalArticles === 0) {
         return { 
           ok: true, 
-          message: "Нет статей с PMID для загрузки связей" 
+          message: articlesWithoutPmid > 0
+            ? `Нет статей с PMID для загрузки связей. ${articlesWithoutPmid} статей из других источников (DOAJ, Wiley, Crossref) не имеют PMID.`
+            : "Нет статей с PMID для загрузки связей"
         };
       }
       
@@ -1364,12 +1380,21 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Оценка времени: ~0.5 сек на статью для references + ~0.3 сек на PMID для кэша
       const estimatedSeconds = Math.ceil(totalArticles * 0.8);
       
+      // Формируем сообщение с учётом статей без PMID
+      let message = `Запущена фоновая загрузка связей для ${totalArticles} статей с PMID.`;
+      if (articlesWithoutPmid > 0) {
+        message += ` ${articlesWithoutPmid} статей без PMID (DOAJ, Wiley, Crossref) пропущено.`;
+      }
+      message += ` Примерное время: ${Math.ceil(estimatedSeconds / 60)} мин.`;
+      
       return { 
         ok: true, 
         jobId,
         totalArticles,
+        totalProjectArticles,
+        articlesWithoutPmid,
         estimatedSeconds,
-        message: `Запущена фоновая загрузка связей для ${totalArticles} статей. Примерное время: ${Math.ceil(estimatedSeconds / 60)} мин.` 
+        message
       };
     }
   );

@@ -715,6 +715,8 @@ export type FetchReferencesResult = {
   ok: true;
   jobId?: string;
   totalArticles?: number;
+  totalProjectArticles?: number;
+  articlesWithoutPmid?: number;
   estimatedSeconds?: number;
   message: string;
 };

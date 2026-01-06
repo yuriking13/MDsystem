@@ -187,8 +187,33 @@ export default function CitationGraph({ projectId }: Props) {
           
           if (status.status === 'completed') {
             setRefsMessage('✅ Загрузка связей завершена! Граф обновляется...');
-            // Перезагружаем граф
-            await loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality });
+            // Небольшая задержка перед обновлением графа, чтобы БД успела записать данные
+            setTimeout(async () => {
+              try {
+                // Принудительно перезагружаем граф с текущими фильтрами
+                const options: GraphFilterOptions = { 
+                  filter,
+                  depth,
+                };
+                if (selectedQueries.length > 0) {
+                  options.sourceQueries = selectedQueries;
+                }
+                if (yearFrom !== undefined) {
+                  options.yearFrom = yearFrom;
+                }
+                if (yearTo !== undefined) {
+                  options.yearTo = yearTo;
+                }
+                if (statsQuality > 0) {
+                  options.statsQuality = statsQuality;
+                }
+                await loadGraph(options);
+                setRefsMessage('✅ Граф успешно обновлён!');
+              } catch (refreshErr) {
+                console.error('Error refreshing graph:', refreshErr);
+                setRefsMessage('✅ Загрузка связей завершена! Обновите страницу для просмотра графа.');
+              }
+            }, 1000);
           } else if (status.status === 'failed') {
             setRefsMessage(`❌ Ошибка: ${status.errorMessage || 'Неизвестная ошибка'}`);
           }
@@ -237,6 +262,10 @@ export default function CitationGraph({ projectId }: Props) {
           processedArticles: 0,
           message: res.message,
         });
+        // Показываем сообщение о статьях без PMID если есть
+        if (res.articlesWithoutPmid && res.articlesWithoutPmid > 0) {
+          setRefsMessage(`ℹ️ ${res.articlesWithoutPmid} статей без PMID (DOAJ, Wiley, Crossref) пропущено — связи доступны только для PubMed.`);
+        }
         startStatusPolling();
       } else {
         setFetchJobStatus(null);
