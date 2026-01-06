@@ -148,7 +148,7 @@ export default function PageSettingsModal({
 
   if (!isOpen) return null;
 
-  const styleRule = STYLE_RULES[citationStyle];
+  const styleRule = STYLE_RULES[citationStyle] || STYLE_RULES.gost;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -171,7 +171,7 @@ export default function PageSettingsModal({
                 onClick={() => applyStylePreset(style)}
                 style={{ flex: 1, minWidth: '150px' }}
               >
-                {STYLE_RULES[style].name}
+                {(STYLE_RULES[style] || STYLE_RULES.gost).name}
               </button>
             ))}
           </div>

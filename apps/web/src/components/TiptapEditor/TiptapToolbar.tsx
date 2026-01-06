@@ -48,7 +48,7 @@ export default function TiptapToolbar({
   const tableEditMenuRef = useRef<HTMLDivElement>(null);
   const tableColorMenuRef = useRef<HTMLDivElement>(null);
 
-  const styleConfig = STYLE_CONFIGS[citationStyle];
+  const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
 
   // Close menus on outside click
   useEffect(() => {
