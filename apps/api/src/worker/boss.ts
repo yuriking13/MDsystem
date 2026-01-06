@@ -10,6 +10,8 @@ export function getBoss(): PgBoss {
     boss = new PgBoss({
       connectionString: env.DATABASE_URL,
       schema: 'boss',
+      archiveCompletedAfterSeconds: 60 * 60 * 24,
+      deleteAfterSeconds: 60 * 60 * 24 * 7,
     });
   }
   return boss;
@@ -22,14 +24,21 @@ export async function startBoss(): Promise<PgBoss> {
   }
 
   const b = getBoss();
-  startPromise = b.start().then(() => {
-    console.log('[pg-boss] Started successfully');
-    return b;
-  }).catch((err) => {
-    console.error('[pg-boss] Failed to start:', err);
-    startPromise = null;
-    throw err;
-  });
+  startPromise = (async () => {
+    try {
+      console.log('[pg-boss] Calling start()...');
+      await b.start();
+      console.log('[pg-boss] Started successfully');
+      return b;
+    } catch (err) {
+      console.error('[pg-boss] Failed to start:', err instanceof Error ? err.message : String(err));
+      if (err instanceof Error && err.stack) {
+        console.error('[pg-boss] Stack:', err.stack);
+      }
+      startPromise = null;
+      throw err;
+    }
+  })();
 
   return startPromise;
 }
