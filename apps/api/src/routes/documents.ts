@@ -1383,12 +1383,134 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
       
+      // ===== УРОВЕНЬ 3: Статьи, которые тоже ссылаются на level 2 (связанные работы) =====
+      // Это статьи, которые цитируют те же references что и мы - т.е. похожие исследования
+      const level3InDb = new Map<string, any>();
+      const level3NotInDb = new Set<string>();
+      
+      if (depth >= 3 && level2Articles.length > 0) {
+        // Собираем PMIDs статей, которые цитируют наши references (level 2)
+        for (const level2Article of level2Articles) {
+          const citedByPmids = level2Article.cited_by_pmids || [];
+          for (const citingPmid of citedByPmids) {
+            // Исключаем статьи которые уже в графе
+            if (!pmidToId.has(citingPmid) && !level0Pmids.has(citingPmid)) {
+              level3Pmids.add(citingPmid);
+            }
+          }
+        }
+        
+        // Ограничиваем количество для производительности
+        const level3PmidsArr = Array.from(level3Pmids).slice(0, 200);
+        
+        if (level3PmidsArr.length > 0) {
+          // Строим условия фильтрации для уровня 3
+          let level3YearCondition = '';
+          let level3StatsCondition = '';
+          const level3Params: any[] = [level3PmidsArr];
+          let level3ParamIdx = 2;
+          
+          if (yearFrom !== undefined && !isNaN(yearFrom)) {
+            level3Params.push(yearFrom);
+            level3YearCondition += ` AND year >= $${level3ParamIdx++}`;
+          }
+          if (yearTo !== undefined && !isNaN(yearTo)) {
+            level3Params.push(yearTo);
+            level3YearCondition += ` AND year <= $${level3ParamIdx++}`;
+          }
+          if (hasStatsQuality && statsQuality !== undefined && !isNaN(statsQuality) && statsQuality > 0) {
+            level3Params.push(statsQuality);
+            level3StatsCondition = ` AND COALESCE(stats_quality, 0) >= $${level3ParamIdx++}`;
+          }
+          
+          const level3Res = await pool.query(
+            `SELECT id, doi, pmid, title_en, authors, year, raw_json,
+                    ${hasRefColumns ? 'reference_pmids, cited_by_pmids,' : "ARRAY[]::text[] as reference_pmids, ARRAY[]::text[] as cited_by_pmids,"}
+                    ${hasStatsQuality ? 'COALESCE(stats_quality, 0) as stats_quality' : '0 as stats_quality'}
+             FROM articles 
+             WHERE pmid = ANY($1)${level3YearCondition}${level3StatsCondition}`,
+            level3Params
+          );
+          
+          level3Articles = level3Res.rows;
+          
+          for (const article of level3Res.rows) {
+            level3InDb.set(article.pmid, article);
+          }
+          
+          // Определяем какие PMIDs не в БД
+          const hasFilters = (yearFrom !== undefined) || (yearTo !== undefined) || 
+                            (statsQuality !== undefined && statsQuality > 0);
+          if (!hasFilters) {
+            for (const pmid of level3PmidsArr) {
+              if (!level3InDb.has(pmid)) {
+                level3NotInDb.add(pmid);
+              }
+            }
+          }
+          
+          // Добавляем узлы для статей уровня 3 из БД
+          for (const article of level3Res.rows) {
+            if (addedNodeIds.has(article.id)) continue;
+            
+            const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
+            const label = `${firstAuthor} (${article.year || '?'})`;
+            const pubmedCitedBy = article.cited_by_pmids?.length || 0;
+            const europePMCCitations = article.raw_json?.europePMCCitations || 0;
+            const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
+            
+            nodes.push({
+              id: article.id,
+              label,
+              title: article.title_en || null,
+              year: article.year,
+              status: 'related', // Связанная работа
+              doi: article.doi,
+              pmid: article.pmid,
+              citedByCount,
+              graphLevel: 3,
+              statsQuality: article.stats_quality || 0,
+            });
+            addedNodeIds.add(article.id);
+            
+            if (article.doi) {
+              doiToId.set(article.doi.toLowerCase(), article.id);
+            }
+            if (article.pmid) {
+              pmidToId.set(article.pmid, article.id);
+            }
+          }
+          
+          // Добавляем узлы для PMIDs которых нет в БД
+          for (const pmid of level3NotInDb) {
+            const nodeId = `pmid:${pmid}`;
+            if (addedNodeIds.has(nodeId)) continue;
+            
+            nodes.push({
+              id: nodeId,
+              label: `PMID:${pmid}`,
+              title: null,
+              year: null,
+              status: 'related',
+              doi: null,
+              pmid: pmid,
+              citedByCount: 0,
+              graphLevel: 3,
+              statsQuality: 0,
+            });
+            addedNodeIds.add(nodeId);
+            pmidToId.set(pmid, nodeId);
+          }
+        }
+      }
+      
       // ===== ЕДИНАЯ ЛОГИКА СОЗДАНИЯ ВСЕХ СВЯЗЕЙ =====
       // Собираем все статьи (все уровни) для обработки связей
       const allArticles = [
         ...articlesRes.rows,        // уровень 1
         ...level0Articles,           // уровень 0 (citing)
         ...level2Articles,           // уровень 2
+        ...level3Articles,           // уровень 3 (related)
       ];
 
       // Функция для добавления связи
