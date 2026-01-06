@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiImportFromGraph, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts } from "../lib/api";
+import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiImportFromGraph, apiGetArticleByPmid, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts } from "../lib/api";
 
 type Props = {
   projectId: string;
@@ -79,6 +79,9 @@ export default function CitationGraph({ projectId }: Props) {
   
   // Модальное окно "Как это работает"
   const [showHelpModal, setShowHelpModal] = useState(false);
+  
+  // Глобальный язык для всех узлов графа
+  const [globalLang, setGlobalLang] = useState<'en' | 'ru'>('en');
   
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
@@ -382,15 +385,19 @@ export default function CitationGraph({ projectId }: Props) {
     const statsQ = node.statsQuality || 0;
     
     let levelText = '';
-    if (level === 0) levelText = ' [Цитирует нас]';
+    if (level === 0) levelText = ' [Цитирует статью]';
     else if (level === 2) levelText = ' [Ссылка]';
     else if (level === 3) levelText = ' [Связанная]';
     
     let statsText = '';
     if (statsQ > 0) statsText = ` • P-value: ${'★'.repeat(statsQ)}`;
     
-    return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ''}${statsText}`;
-  }, []);
+    // Показываем название если есть (с учётом языка)
+    const title = globalLang === 'ru' && node.title_ru ? node.title_ru : node.title;
+    const displayTitle = title ? `\n${title.substring(0, 100)}${title.length > 100 ? '...' : ''}` : '';
+    
+    return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ''}${statsText}${displayTitle}`;
+  }, [globalLang]);
 
   // Размер узла зависит от количества цитирований - как в ResearchRabbit
   const nodeVal = useCallback((node: any) => {
@@ -570,6 +577,32 @@ export default function CitationGraph({ projectId }: Props) {
               onClick={() => handleFilterChange('excluded')}
             >
               Исключённые
+            </button>
+          </div>
+        </div>
+
+        {/* Language Toggle */}
+        <div className="graph-filter-group">
+          <div className="graph-filter-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+            </svg>
+            <span>Язык:</span>
+          </div>
+          <div className="lang-toggle">
+            <button
+              className={globalLang === 'en' ? 'active' : ''}
+              onClick={() => setGlobalLang('en')}
+              title="Английский"
+            >
+              EN
+            </button>
+            <button
+              className={globalLang === 'ru' ? 'active' : ''}
+              onClick={() => setGlobalLang('ru')}
+              title="Русский (если есть)"
+            >
+              RU
             </button>
           </div>
         </div>
@@ -875,7 +908,7 @@ export default function CitationGraph({ projectId }: Props) {
           <span><span className="legend-dot" style={{ background: '#fbbf24' }}></span> P-value</span>
         )}
         {depth >= 3 && (
-          <span><span className="legend-dot" style={{ background: '#a855f7' }}></span> Цитируют нас</span>
+          <span><span className="legend-dot" style={{ background: '#a855f7' }}></span> Цитируют статью из базы</span>
         )}
         <span><span className="legend-dot" style={{ background: '#22c55e' }}></span> Отобранные</span>
         <span><span className="legend-dot" style={{ background: '#3b82f6' }}></span> Кандидаты</span>
@@ -969,6 +1002,7 @@ export default function CitationGraph({ projectId }: Props) {
               node={selectedNodeForDisplay} 
               projectId={projectId} 
               onRefresh={() => loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality })}
+              globalLang={globalLang}
             />
           </div>
         </div>
@@ -1030,7 +1064,7 @@ export default function CitationGraph({ projectId }: Props) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#a855f7', flexShrink: 0 }}></span>
-                    <span>Фиолетовый — статьи, которые цитируют нас</span>
+                    <span>Фиолетовый — статьи, цитирующие статью из базы</span>
                   </div>
                 </div>
               </div>
@@ -1078,12 +1112,77 @@ export default function CitationGraph({ projectId }: Props) {
 }
 
 // Компонент для отображения информации о узле
-function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: string; onRefresh?: () => void }) {
+function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node: any; projectId: string; onRefresh?: () => void; globalLang?: 'en' | 'ru' }) {
   const [adding, setAdding] = useState(false);
   const [addMessage, setAddMessage] = useState<string | null>(null);
+  const [localLanguage, setLocalLanguage] = useState<'en' | 'ru' | null>(null); // null = используем global
+  const [loadingData, setLoadingData] = useState(false);
+  
+  // Используем локальный язык если задан, иначе глобальный
+  const language = localLanguage ?? globalLang;
+  const [enrichedData, setEnrichedData] = useState<{
+    title: string | null;
+    title_ru: string | null;
+    abstract: string | null;
+    abstract_ru: string | null;
+    authors: string | null;
+    journal: string | null;
+    year: number | null;
+    doi: string | null;
+    citedByCount: number;
+  } | null>(null);
+
+  // Загружаем полные данные если у узла нет title (placeholder)
+  useEffect(() => {
+    if (!node.title && node.pmid && !enrichedData && !loadingData) {
+      setLoadingData(true);
+      apiGetArticleByPmid(node.pmid)
+        .then((res) => {
+          if (res.ok && res.article) {
+            setEnrichedData({
+              title: res.article.title,
+              title_ru: res.article.title_ru,
+              abstract: res.article.abstract,
+              abstract_ru: res.article.abstract_ru,
+              authors: res.article.authors,
+              journal: res.article.journal,
+              year: res.article.year,
+              doi: res.article.doi,
+              citedByCount: res.article.citedByCount || 0,
+            });
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load article data:', err);
+        })
+        .finally(() => {
+          setLoadingData(false);
+        });
+    }
+  }, [node.pmid, node.title, enrichedData, loadingData]);
+
+  // Объединяем данные узла и обогащенные данные
+  const displayData = {
+    title: enrichedData?.title || node.title || null,
+    title_ru: enrichedData?.title_ru || node.title_ru || null,
+    abstract: enrichedData?.abstract || node.abstract || null,
+    abstract_ru: enrichedData?.abstract_ru || node.abstract_ru || null,
+    authors: enrichedData?.authors || node.authors || null,
+    journal: enrichedData?.journal || node.journal || null,
+    year: enrichedData?.year || node.year || null,
+    doi: enrichedData?.doi || node.doi || null,
+    citedByCount: enrichedData?.citedByCount || node.citedByCount || 0,
+  };
+
+  // Выбираем текст в зависимости от языка
+  const displayTitle = language === 'ru' && displayData.title_ru ? displayData.title_ru : displayData.title;
+  const displayAbstract = language === 'ru' && displayData.abstract_ru ? displayData.abstract_ru : displayData.abstract;
 
   const handleAddToProject = async () => {
-    if (!node.pmid && !node.doi) {
+    const pmid = node.pmid;
+    const doi = displayData.doi;
+    
+    if (!pmid && !doi) {
       setAddMessage('Нет PMID или DOI для добавления');
       return;
     }
@@ -1092,8 +1191,8 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
     setAddMessage(null);
     try {
       const payload = {
-        pmids: node.pmid ? [node.pmid] : [],
-        dois: node.doi ? [node.doi] : [],
+        pmids: pmid ? [pmid] : [],
+        dois: doi ? [doi] : [],
       };
       const res = await apiImportFromGraph(projectId, payload);
       setAddMessage(res.message || 'Статья добавлена в проект!');
@@ -1119,7 +1218,7 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
 
   const getLevelName = (level: number) => {
     switch(level) {
-      case 0: return 'Цитирует нас';
+      case 0: return 'Цитирует статью из базы';
       case 1: return 'В проекте';
       case 2: return 'Ссылка (reference)';
       case 3: return 'Связанная работа';
@@ -1128,22 +1227,95 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
   };
 
   const level = node.graphLevel ?? 1;
+  
+  // Проверяем есть ли русский перевод для переключателя
+  const hasRussian = !!(displayData.title_ru || displayData.abstract_ru);
 
   return (
     <div className="node-info-panel">
       {/* Header Card */}
       <div className="node-info-header" style={{ borderLeftColor: getLevelColor(level) }}>
-        <div className="node-level-badge" style={{ backgroundColor: getLevelColor(level) }}>
-          {getLevelName(level)}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+          <div className="node-level-badge" style={{ backgroundColor: getLevelColor(level) }}>
+            {getLevelName(level)}
+          </div>
+          {/* Language Toggle (local override) */}
+          {hasRussian && (
+            <div className="language-toggle" style={{ display: 'flex', gap: 2, padding: 2, background: 'rgba(255,255,255,0.1)', borderRadius: 6 }}>
+              <button
+                onClick={() => setLocalLanguage(localLanguage === 'en' ? null : 'en')}
+                style={{
+                  padding: '4px 8px',
+                  fontSize: 11,
+                  fontWeight: language === 'en' ? 600 : 400,
+                  background: language === 'en' ? 'var(--accent)' : 'transparent',
+                  color: language === 'en' ? 'white' : 'var(--text-secondary)',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLocalLanguage(localLanguage === 'ru' ? null : 'ru')}
+                style={{
+                  padding: '4px 8px',
+                  fontSize: 11,
+                  fontWeight: language === 'ru' ? 600 : 400,
+                  background: language === 'ru' ? 'var(--accent)' : 'transparent',
+                  color: language === 'ru' ? 'white' : 'var(--text-secondary)',
+                  border: 'none',
+                  borderRadius: 4,
+                  cursor: 'pointer',
+                }}
+              >
+                RU
+              </button>
+            </div>
+          )}
         </div>
-        <div className="node-title">{node.label}</div>
-        {node.title && node.title !== node.label && (
-          <div className="node-full-title">{node.title}</div>
+        
+        {loadingData ? (
+          <div className="node-title" style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>
+            Загрузка данных...
+          </div>
+        ) : (
+          <>
+            <div className="node-title">{displayTitle || node.label}</div>
+            {displayData.authors && (
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 6 }}>
+                {displayData.authors}
+              </div>
+            )}
+            {displayData.journal && (
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontStyle: 'italic' }}>
+                {displayData.journal}
+              </div>
+            )}
+          </>
         )}
       </div>
 
+      {/* Abstract */}
+      {displayAbstract && (
+        <div style={{ 
+          padding: '12px 16px', 
+          borderBottom: '1px solid var(--border-glass)',
+          maxHeight: 200,
+          overflowY: 'auto',
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Аннотация
+          </div>
+          <div style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text-primary)' }}>
+            {displayAbstract}
+          </div>
+        </div>
+      )}
+
       {/* Info Rows */}
-      {node.year && (
+      {displayData.year && (
         <div className="node-info-row">
           <div className="node-info-label">
             <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1151,7 +1323,7 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
             </svg>
             Год
           </div>
-          <div className="node-info-value">{node.year}</div>
+          <div className="node-info-value">{displayData.year}</div>
         </div>
       )}
 
@@ -1174,7 +1346,7 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
         </div>
       )}
 
-      {node.doi && (
+      {displayData.doi && (
         <div className="node-info-row">
           <div className="node-info-label">
             <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1183,18 +1355,18 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
             DOI
           </div>
           <a 
-            href={`https://doi.org/${node.doi}`}
+            href={`https://doi.org/${displayData.doi}`}
             target="_blank"
             rel="noopener noreferrer"
             className="node-info-link"
             style={{ wordBreak: 'break-all' }}
           >
-            {node.doi} ↗
+            {displayData.doi} ↗
           </a>
         </div>
       )}
 
-      {(node.citedByCount !== undefined && node.citedByCount > 0) && (
+      {(displayData.citedByCount > 0) && (
         <div className="node-info-row">
           <div className="node-info-label">
             <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1202,7 +1374,7 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
             </svg>
             Цитирований
           </div>
-          <div className="node-info-value" style={{ color: '#10b981' }}>{node.citedByCount}</div>
+          <div className="node-info-value" style={{ color: '#10b981' }}>{displayData.citedByCount}</div>
         </div>
       )}
 

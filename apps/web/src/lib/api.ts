@@ -599,13 +599,18 @@ export async function apiExportProject(projectId: string): Promise<ExportRespons
 export type GraphNode = {
   id: string;
   label: string;
-  title?: string; // Полное название статьи
+  title?: string; // Полное название статьи (EN)
+  title_ru?: string; // Название на русском
+  abstract?: string; // Аннотация (EN)
+  abstract_ru?: string; // Аннотация на русском
+  authors?: string; // Авторы
+  journal?: string; // Журнал
   year: number | null;
   status: string;
   doi: string | null;
   pmid?: string | null;
   citedByCount?: number;
-  graphLevel?: number; // 1 = найденные, 2 = references, 3 = citing
+  graphLevel?: number; // 0 = citing, 1 = в проекте, 2 = references, 3 = related
   statsQuality?: number; // 0-3, качество статистики по p-value
 };
 
@@ -943,4 +948,28 @@ export async function apiSyncStatistics(
       body: JSON.stringify(data),
     }
   );
+}
+
+// =====================================================
+// Получение данных статьи по PMID (для узлов графа без полных данных)
+// =====================================================
+export type ArticleByPmidResult = {
+  ok: boolean;
+  source: 'database' | 'pubmed';
+  article: {
+    pmid: string | null;
+    doi: string | null;
+    title: string | null;
+    title_ru: string | null;
+    abstract: string | null;
+    abstract_ru: string | null;
+    authors: string | null;
+    journal: string | null;
+    year: number | null;
+    citedByCount: number;
+  };
+};
+
+export async function apiGetArticleByPmid(pmid: string): Promise<ArticleByPmidResult> {
+  return apiFetch<ArticleByPmidResult>(`/api/articles/by-pmid/${pmid}`);
 }
