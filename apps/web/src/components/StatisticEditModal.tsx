@@ -251,23 +251,26 @@ export default function StatisticEditModal({ statistic, onClose, onSave }: Props
               <div style={{ marginBottom: 12 }}>
                 <span className="muted" style={{ display: 'block', marginBottom: 8 }}>Тип графика</span>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                  {allChartTypes.map(t => (
-                    <button
-                      key={t}
-                      className={`btn ${chartType === t ? '' : 'secondary'}`}
-                      onClick={() => setChartType(t)}
-                      style={{ 
-                        padding: '6px 10px', 
-                        fontSize: 11,
-                        border: recommendedTypes.includes(t) ? '2px solid var(--success)' : undefined,
-                      }}
-                      title={CHART_TYPE_INFO[t].description}
-                    >
-                      {CHART_TYPE_INFO[t].icon} {CHART_TYPE_INFO[t].name.length > 12 
-                        ? CHART_TYPE_INFO[t].name.slice(0, 10) + '...' 
-                        : CHART_TYPE_INFO[t].name}
-                    </button>
-                  ))}
+                  {allChartTypes.map(t => {
+                    const info = CHART_TYPE_INFO[t] ?? { name: String(t), icon: '📊', description: '' };
+                    return (
+                      <button
+                        key={t}
+                        className={`btn ${chartType === t ? '' : 'secondary'}`}
+                        onClick={() => setChartType(t)}
+                        style={{ 
+                          padding: '6px 10px', 
+                          fontSize: 11,
+                          border: recommendedTypes.includes(t) ? '2px solid var(--success)' : undefined,
+                        }}
+                        title={info.description}
+                      >
+                        {info.icon} {info.name.length > 12 
+                          ? info.name.slice(0, 10) + '...' 
+                          : info.name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -305,21 +305,24 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
               <div style={{ marginBottom: 16 }}>
                 <span className="muted" style={{ display: 'block', marginBottom: 8 }}>Выберите тип графика</span>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                  {allChartTypes.map(t => (
-                    <button
-                      key={t}
-                      className={`btn ${chartType === t ? '' : 'secondary'}`}
-                      onClick={() => setChartType(t)}
-                      style={{ 
-                        padding: '8px 12px', 
-                        fontSize: 12,
-                        border: recommendedTypes.includes(t) ? '2px solid var(--success)' : undefined,
-                      }}
-                      title={CHART_TYPE_INFO[t].description}
-                    >
-                      {CHART_TYPE_INFO[t].icon} {CHART_TYPE_INFO[t].name}
-                    </button>
-                  ))}
+                  {allChartTypes.map(t => {
+                    const info = CHART_TYPE_INFO[t] ?? { name: String(t), icon: '📊', description: '' };
+                    return (
+                      <button
+                        key={t}
+                        className={`btn ${chartType === t ? '' : 'secondary'}`}
+                        onClick={() => setChartType(t)}
+                        style={{ 
+                          padding: '8px 12px', 
+                          fontSize: 12,
+                          border: recommendedTypes.includes(t) ? '2px solid var(--success)' : undefined,
+                        }}
+                        title={info.description}
+                      >
+                        {info.icon} {info.name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

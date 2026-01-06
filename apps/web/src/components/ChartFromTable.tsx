@@ -713,7 +713,7 @@ type ChartTypeHintProps = {
 };
 
 export function ChartTypeHint({ type, compact = false }: ChartTypeHintProps) {
-  const info = CHART_TYPE_INFO[type];
+  const info = CHART_TYPE_INFO[type] ?? { name: String(type), icon: '📊', description: '', whenToUse: '', specialValue: '', dataTypes: [] };
   
   if (compact) {
     return (

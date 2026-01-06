@@ -992,16 +992,19 @@ export default function ProjectDetailPage() {
                 </button>
               </div>
               <div className="chart-types-grid" style={{ marginTop: 16 }}>
-                {(['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter'] as ChartType[]).map(type => (
-                  <div 
-                    key={type} 
-                    className="chart-type-card chart-type-hint"
-                    title={CHART_TYPE_INFO[type].description}
-                  >
-                    <span className="chart-type-icon">{CHART_TYPE_INFO[type].icon}</span>
-                    <span className="chart-type-name">{CHART_TYPE_INFO[type].name}</span>
-                  </div>
-                ))}
+                {(['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter'] as ChartType[]).map(type => {
+                  const info = CHART_TYPE_INFO[type] ?? { name: String(type), icon: '📊', description: '' };
+                  return (
+                    <div 
+                      key={type} 
+                      className="chart-type-card chart-type-hint"
+                      title={info.description}
+                    >
+                      <span className="chart-type-icon">{info.icon}</span>
+                      <span className="chart-type-name">{info.name}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             
