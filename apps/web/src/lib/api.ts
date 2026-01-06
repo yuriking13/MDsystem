@@ -250,6 +250,15 @@ export const PUBMED_SEARCH_FIELDS = [
   { value: 'Language', label: 'Язык', labelEn: 'Language' },
 ] as const;
 
+// Источники поиска
+export type SearchSource = 'pubmed' | 'doaj' | 'wiley';
+
+export const SEARCH_SOURCES: { value: SearchSource; label: string; description: string }[] = [
+  { value: 'pubmed', label: 'PubMed', description: 'Биомедицинская база данных NIH' },
+  { value: 'doaj', label: 'DOAJ', description: 'Журналы открытого доступа' },
+  { value: 'wiley', label: 'Wiley', description: 'Научное издательство Wiley' },
+];
+
 export type SearchFilters = {
   searchField?: string; // Поле поиска PubMed
   yearFrom?: number;
@@ -266,6 +275,8 @@ export type SearchResult = {
   fetched: number;
   added: number;
   skipped: number;
+  translated?: number;
+  sources?: Record<string, { count: number; added: number }>;
   message: string;
 };
 
@@ -273,11 +284,12 @@ export async function apiSearchArticles(
   projectId: string,
   query: string,
   filters?: SearchFilters,
-  maxResults = 100
+  maxResults = 100,
+  sources: SearchSource[] = ['pubmed']
 ): Promise<SearchResult> {
   return apiFetch<SearchResult>(`/api/projects/${projectId}/search`, {
     method: "POST",
-    body: JSON.stringify({ query, filters, maxResults }),
+    body: JSON.stringify({ query, filters, maxResults, sources }),
   });
 }
 

@@ -2,6 +2,8 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { pubmedFetchAll, enrichArticlesWithReferences, europePMCGetCitationCounts, pubmedFetchByPmids, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
+import { doajFetchAll, type DOAJArticle } from "../lib/doaj.js";
+import { wileyFetchAll, type WileyArticle } from "../lib/wiley.js";
 import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.js";
 import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
@@ -16,9 +18,14 @@ const PUBMED_SEARCH_FIELDS = [
   'Affiliation', 'Publication Type', 'Language'
 ] as const;
 
+// Источники поиска
+const SEARCH_SOURCES = ['pubmed', 'doaj', 'wiley'] as const;
+type SearchSource = typeof SEARCH_SOURCES[number];
+
 // Схемы валидации
 const SearchBodySchema = z.object({
   query: z.string().min(1).max(1000),
+  sources: z.array(z.enum(SEARCH_SOURCES)).min(1).default(['pubmed']),
   filters: z.object({
     searchField: z.enum(PUBMED_SEARCH_FIELDS).optional(), // Поле поиска PubMed
     yearFrom: z.number().int().min(1900).max(2100).optional(),
@@ -90,6 +97,66 @@ async function checkProjectAccess(
   if (requireEdit && role === "viewer") return { ok: false, role };
   
   return { ok: true, role };
+}
+
+// Universal article type for all sources
+type UniversalArticle = {
+  pmid?: string;
+  doi?: string;
+  title: string;
+  abstract?: string;
+  authors?: string;
+  journal?: string;
+  year?: number;
+  url: string;
+  studyTypes?: string[];
+  keywords?: string[];
+  source: 'pubmed' | 'doaj' | 'wiley';
+};
+
+// Convert PubMed article to universal format
+function pubmedToUniversal(article: PubMedArticle): UniversalArticle {
+  return {
+    pmid: article.pmid,
+    doi: article.doi,
+    title: article.title,
+    abstract: article.abstract,
+    authors: article.authors,
+    journal: article.journal,
+    year: article.year,
+    url: article.url,
+    studyTypes: article.studyTypes,
+    source: 'pubmed',
+  };
+}
+
+// Convert DOAJ article to universal format
+function doajToUniversal(article: DOAJArticle): UniversalArticle {
+  return {
+    doi: article.doi,
+    title: article.title,
+    abstract: article.abstract,
+    authors: article.authors,
+    journal: article.journal,
+    year: article.year,
+    url: article.url,
+    keywords: article.keywords,
+    source: 'doaj',
+  };
+}
+
+// Convert Wiley article to universal format
+function wileyToUniversal(article: WileyArticle): UniversalArticle {
+  return {
+    doi: article.doi,
+    title: article.title,
+    abstract: article.abstract,
+    authors: article.authors,
+    journal: article.journal,
+    year: article.year,
+    url: article.url,
+    source: 'wiley',
+  };
 }
 
 // Найти или создать статью по DOI/PMID
@@ -182,6 +249,92 @@ async function findOrCreateArticle(article: PubMedArticle, publicationTypes?: st
   return res.rows[0].id;
 }
 
+// Find or create article from universal format
+async function findOrCreateUniversalArticle(article: UniversalArticle, publicationTypes?: string[]): Promise<string> {
+  // First search by PMID
+  if (article.pmid) {
+    const existing = await pool.query(
+      `SELECT id, publication_types FROM articles WHERE pmid = $1`,
+      [article.pmid]
+    );
+    if ((existing.rowCount ?? 0) > 0) {
+      const articleId = existing.rows[0].id;
+      if (publicationTypes && publicationTypes.length > 0) {
+        const existingTypes: string[] = existing.rows[0].publication_types || [];
+        const newTypes = [...new Set([...existingTypes, ...publicationTypes])];
+        if (newTypes.length > existingTypes.length) {
+          await pool.query(
+            `UPDATE articles SET publication_types = $1 WHERE id = $2`,
+            [newTypes, articleId]
+          );
+        }
+      }
+      return articleId;
+    }
+  }
+  
+  // Then by DOI
+  if (article.doi) {
+    const existing = await pool.query(
+      `SELECT id, publication_types FROM articles WHERE doi = $1`,
+      [article.doi.toLowerCase()]
+    );
+    if ((existing.rowCount ?? 0) > 0) {
+      const articleId = existing.rows[0].id;
+      if (publicationTypes && publicationTypes.length > 0) {
+        const existingTypes: string[] = existing.rows[0].publication_types || [];
+        const newTypes = [...new Set([...existingTypes, ...publicationTypes])];
+        if (newTypes.length > existingTypes.length) {
+          await pool.query(
+            `UPDATE articles SET publication_types = $1 WHERE id = $2`,
+            [newTypes, articleId]
+          );
+        }
+      }
+      return articleId;
+    }
+  }
+  
+  // Extract statistics
+  const stats = extractStats(article.abstract);
+  const hasStats = hasAnyStats(stats);
+  const statsQuality = hasStats ? calculateStatsQuality(stats) : 0;
+  
+  // Create new article
+  const authors = article.authors 
+    ? article.authors.split(",").map(a => a.trim()).filter(Boolean)
+    : null;
+  
+  const pubTypes = publicationTypes || article.studyTypes || [];
+  
+  const res = await pool.query(
+    `INSERT INTO articles (
+      doi, pmid, title_en, abstract_en, authors, year, journal, url, source, 
+      has_stats, stats_json, stats_quality, publication_types, raw_json, created_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+    RETURNING id`,
+    [
+      article.doi?.toLowerCase() || null,
+      article.pmid || null,
+      article.title,
+      article.abstract || null,
+      authors,
+      article.year || null,
+      article.journal || null,
+      article.url,
+      article.source,
+      hasStats,
+      hasStats ? JSON.stringify(stats) : null,
+      statsQuality,
+      pubTypes.length > 0 ? pubTypes : null,
+      JSON.stringify(article),
+      new Date(),
+    ]
+  );
+  
+  return res.rows[0].id;
+}
+
 // Добавить статью в проект (с дедупликацией и сохранением поискового запроса)
 async function addArticleToProject(
   projectId: string, 
@@ -255,6 +408,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Получить API ключ пользователя
       const apiKey = await getUserApiKey(userId, "pubmed");
       
+      // Выбранные источники поиска
+      const sources = bodyP.data.sources || ['pubmed'];
+      
       // Формируем фильтры PubMed
       const filters: PubMedFilters = {};
       
@@ -284,22 +440,24 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Сохраняем поисковый запрос для группировки
       const searchQuery = bodyP.data.query;
       
-      // Получаем PMIDs статей, которые УЖЕ есть в проекте
-      // Это позволяет искать действительно НОВЫЕ статьи для проекта
+      // Получаем PMIDs и DOIs статей, которые УЖЕ есть в проекте
       const existingInProjectRes = await pool.query(
-        `SELECT a.pmid FROM project_articles pa
+        `SELECT a.pmid, a.doi FROM project_articles pa
          JOIN articles a ON a.id = pa.article_id
-         WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`,
+         WHERE pa.project_id = $1`,
         [paramsP.data.id]
       );
       const existingPmidsInProject = new Set<string>(
-        existingInProjectRes.rows.map((r: { pmid: string }) => r.pmid)
+        existingInProjectRes.rows.map((r: { pmid: string | null }) => r.pmid).filter(Boolean) as string[]
+      );
+      const existingDoisInProject = new Set<string>(
+        existingInProjectRes.rows.map((r: { doi: string | null }) => r.doi?.toLowerCase()).filter(Boolean) as string[]
       );
       
-      // Запрашиваем больше статей из PubMed, так как часть может быть уже в проекте
-      // Множитель зависит от размера проекта
-      const searchMultiplier = Math.min(5, Math.max(2, Math.ceil(existingPmidsInProject.size / bodyP.data.maxResults) + 1));
-      const pubmedMaxTotal = bodyP.data.maxResults * searchMultiplier;
+      // Запрашиваем больше статей, так как часть может быть уже в проекте
+      const existingCount = existingPmidsInProject.size + existingDoisInProject.size;
+      const searchMultiplier = Math.min(5, Math.max(2, Math.ceil(existingCount / bodyP.data.maxResults) + 1));
+      const maxPerSource = Math.ceil(bodyP.data.maxResults / sources.length) * searchMultiplier;
       
       // Сохраняем статьи и добавляем в проект
       let added = 0;
@@ -309,63 +467,119 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const articleIds: string[] = [];
       const newArticleIds: string[] = []; // Новые статьи для перевода
       const processedPmids = new Set<string>(); // Для дедупликации между поисками
+      const processedDois = new Set<string>(); // Для дедупликации по DOI
       
       // Целевое количество НОВЫХ статей для проекта
       const targetNewArticles = bodyP.data.maxResults;
       
-      // Если выбрано несколько типов публикации - делаем ОТДЕЛЬНЫЙ поиск для каждого типа
-      // Это позволяет точно определить, какие статьи соответствуют каким типам
-      if (searchPubTypes.length > 1) {
-        // Для каждого типа публикации - отдельный поиск
-        for (const pubType of searchPubTypes) {
-          // Если уже добавили достаточно - останавливаемся
-          if (added >= targetNewArticles) break;
-          
-          const typeFilters = { ...filters, publicationTypes: [pubType] };
+      // Результаты по источникам
+      const sourceResults: Record<string, { count: number; added: number }> = {};
+      
+      // ============ PUBMED SEARCH ============
+      if (sources.includes('pubmed')) {
+        sourceResults.pubmed = { count: 0, added: 0 };
+        
+        // Если выбрано несколько типов публикации - делаем ОТДЕЛЬНЫЙ поиск для каждого типа
+        if (searchPubTypes.length > 1) {
+          for (const pubType of searchPubTypes) {
+            if (added >= targetNewArticles) break;
+            
+            const typeFilters = { ...filters, publicationTypes: [pubType] };
+            
+            try {
+              const maxForType = Math.ceil(maxPerSource / searchPubTypes.length);
+              
+              const { count, items } = await pubmedFetchAll({
+                apiKey: apiKey || undefined,
+                topic: bodyP.data.query,
+                filters: typeFilters,
+                maxTotal: maxForType,
+                throttleMs: apiKey ? 100 : 350,
+              });
+              
+              sourceResults.pubmed.count += count;
+              totalCount += count;
+              totalFetched += items.length;
+              
+              for (const article of items) {
+                if (added >= targetNewArticles) break;
+                
+                try {
+                  const pmid = article.pmid;
+                  
+                  if (!pmid || processedPmids.has(pmid)) continue;
+                  processedPmids.add(pmid);
+                  if (article.doi) processedDois.add(article.doi.toLowerCase());
+                  
+                  if (existingPmidsInProject.has(pmid)) {
+                    await findOrCreateArticle(article, [pubType]);
+                    skipped++;
+                    continue;
+                  }
+                  
+                  const articleId = await findOrCreateArticle(article, [pubType]);
+                  articleIds.push(articleId);
+                  
+                  const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
+                  if (wasAdded) {
+                    added++;
+                    sourceResults.pubmed.added++;
+                    newArticleIds.push(articleId);
+                    existingPmidsInProject.add(pmid);
+                  } else {
+                    skipped++;
+                  }
+                } catch (err) {
+                  console.error("Error saving article:", err);
+                }
+              }
+            } catch (err) {
+              console.error(`Error searching PubMed for ${pubType}:`, err);
+            }
+          }
+        } else {
+          if (searchPubTypes.length === 1) {
+            filters.publicationTypes = searchPubTypes;
+          }
           
           try {
-            // Запрашиваем больше статей, учитывая возможные дубликаты
-            const maxForType = Math.ceil(pubmedMaxTotal / searchPubTypes.length);
-            
             const { count, items } = await pubmedFetchAll({
               apiKey: apiKey || undefined,
               topic: bodyP.data.query,
-              filters: typeFilters,
-              maxTotal: maxForType,
+              filters,
+              maxTotal: maxPerSource,
               throttleMs: apiKey ? 100 : 350,
             });
             
+            sourceResults.pubmed.count = count;
             totalCount += count;
             totalFetched += items.length;
             
             for (const article of items) {
-              // Если уже добавили достаточно - останавливаемся
               if (added >= targetNewArticles) break;
               
               try {
                 const pmid = article.pmid;
                 
-                // Пропускаем статьи без PMID или уже обработанные в этом поиске
-                if (!pmid || processedPmids.has(pmid)) continue;
-                processedPmids.add(pmid);
-                
-                // Пропускаем статьи, которые УЖЕ в проекте (но обновляем их типы)
-                if (existingPmidsInProject.has(pmid)) {
-                  // Обновляем типы публикации для существующей статьи
-                  await findOrCreateArticle(article, [pubType]);
-                  skipped++;
-                  continue;
+                if (pmid) {
+                  if (processedPmids.has(pmid)) continue;
+                  processedPmids.add(pmid);
+                  if (existingPmidsInProject.has(pmid)) {
+                    skipped++;
+                    continue;
+                  }
                 }
+                if (article.doi) processedDois.add(article.doi.toLowerCase());
                 
-                // Передаём ТОЛЬКО тот тип, по которому статья найдена
-                const articleId = await findOrCreateArticle(article, [pubType]);
+                const articleId = await findOrCreateArticle(article, searchPubTypes.length === 1 ? searchPubTypes : undefined);
                 articleIds.push(articleId);
                 
                 const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
                 if (wasAdded) {
                   added++;
+                  sourceResults.pubmed.added++;
                   newArticleIds.push(articleId);
-                  existingPmidsInProject.add(pmid); // Помечаем как добавленную
+                  if (pmid) existingPmidsInProject.add(pmid);
                 } else {
                   skipped++;
                 }
@@ -374,69 +588,120 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               }
             }
           } catch (err) {
-            console.error(`Error searching for ${pubType}:`, err);
+            console.error("Error searching PubMed:", err);
           }
         }
-      } else {
-        // Один тип публикации или без фильтра - обычный поиск
-        if (searchPubTypes.length === 1) {
-          filters.publicationTypes = searchPubTypes;
-        }
+      }
+      
+      // ============ DOAJ SEARCH ============
+      if (sources.includes('doaj') && added < targetNewArticles) {
+        sourceResults.doaj = { count: 0, added: 0 };
         
-        const { count, items } = await pubmedFetchAll({
-          apiKey: apiKey || undefined,
-          topic: bodyP.data.query,
-          filters,
-          maxTotal: pubmedMaxTotal, // Запрашиваем больше для учёта дубликатов
-          throttleMs: apiKey ? 100 : 350,
-        });
-        
-        totalCount = count;
-        totalFetched = items.length;
-        
-        for (const article of items) {
-          // Если уже добавили достаточно - останавливаемся
-          if (added >= targetNewArticles) break;
+        try {
+          const doajFilters = {
+            publishedFrom: bodyP.data.filters?.yearFrom ? `${bodyP.data.filters.yearFrom}-01-01` : undefined,
+            publishedTo: bodyP.data.filters?.yearTo ? `${bodyP.data.filters.yearTo}-12-31` : undefined,
+          };
           
-          try {
-            const pmid = article.pmid;
+          const { count, items } = await doajFetchAll({
+            topic: bodyP.data.query,
+            filters: doajFilters,
+            maxTotal: maxPerSource,
+            throttleMs: 500,
+          });
+          
+          sourceResults.doaj.count = count;
+          totalCount += count;
+          totalFetched += items.length;
+          
+          for (const article of items) {
+            if (added >= targetNewArticles) break;
             
-            // Пропускаем статьи без PMID
-            if (!pmid) {
-              // Для статей без PMID пробуем добавить как есть
-              const articleId = await findOrCreateArticle(article, searchPubTypes.length === 1 ? searchPubTypes : undefined);
+            try {
+              const doi = article.doi?.toLowerCase();
+              
+              // Skip if already processed or exists
+              if (doi && (processedDois.has(doi) || existingDoisInProject.has(doi))) {
+                skipped++;
+                continue;
+              }
+              if (doi) processedDois.add(doi);
+              
+              const universal = doajToUniversal(article);
+              const articleId = await findOrCreateUniversalArticle(universal);
               articleIds.push(articleId);
-              const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
+              
+              const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, `${searchQuery} [DOAJ]`);
               if (wasAdded) {
                 added++;
+                sourceResults.doaj.added++;
                 newArticleIds.push(articleId);
+                if (doi) existingDoisInProject.add(doi);
               } else {
                 skipped++;
               }
-              continue;
+            } catch (err) {
+              console.error("Error saving DOAJ article:", err);
             }
-            
-            // Пропускаем статьи, которые УЖЕ в проекте
-            if (existingPmidsInProject.has(pmid)) {
-              skipped++;
-              continue;
-            }
-            
-            // Если выбран 1 тип - передаём его, иначе null (статья не фильтровалась по типу)
-            const articleId = await findOrCreateArticle(article, searchPubTypes.length === 1 ? searchPubTypes : undefined);
-            articleIds.push(articleId);
-            
-            const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, searchQuery);
-            if (wasAdded) {
-              added++;
-              newArticleIds.push(articleId);
-              existingPmidsInProject.add(pmid); // Помечаем как добавленную
-            } else {
-              skipped++;
-            }
-          } catch (err) {
-            console.error("Error saving article:", err);
           }
+        } catch (err) {
+          console.error("Error searching DOAJ:", err);
+        }
+      }
+      
+      // ============ WILEY SEARCH ============
+      if (sources.includes('wiley') && added < targetNewArticles) {
+        sourceResults.wiley = { count: 0, added: 0 };
+        
+        try {
+          const wileyFilters = {
+            publishedFrom: bodyP.data.filters?.yearFrom ? `${bodyP.data.filters.yearFrom}-01-01` : undefined,
+            publishedTo: bodyP.data.filters?.yearTo ? `${bodyP.data.filters.yearTo}-12-31` : undefined,
+          };
+          
+          const { count, items } = await wileyFetchAll({
+            topic: bodyP.data.query,
+            filters: wileyFilters,
+            maxTotal: maxPerSource,
+            throttleMs: 500,
+          });
+          
+          sourceResults.wiley.count = count;
+          totalCount += count;
+          totalFetched += items.length;
+          
+          for (const article of items) {
+            if (added >= targetNewArticles) break;
+            
+            try {
+              const doi = article.doi?.toLowerCase();
+              
+              // Skip if already processed or exists
+              if (doi && (processedDois.has(doi) || existingDoisInProject.has(doi))) {
+                skipped++;
+                continue;
+              }
+              if (doi) processedDois.add(doi);
+              
+              const universal = wileyToUniversal(article);
+              const articleId = await findOrCreateUniversalArticle(universal);
+              articleIds.push(articleId);
+              
+              const wasAdded = await addArticleToProject(paramsP.data.id, articleId, userId, `${searchQuery} [Wiley]`);
+              if (wasAdded) {
+                added++;
+                sourceResults.wiley.added++;
+                newArticleIds.push(articleId);
+                if (doi) existingDoisInProject.add(doi);
+              } else {
+                skipped++;
+              }
+            } catch (err) {
+              console.error("Error saving Wiley article:", err);
+            }
+          }
+        } catch (err) {
+          console.error("Error searching Wiley:", err);
         }
       }
       
@@ -492,9 +757,22 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         [paramsP.data.id]
       );
       
-      let message = skipped > 0 
-        ? `${added} новых статей добавлено, ${skipped} уже были в проекте`
-        : `${added} статей добавлено`;
+      // Build message with source breakdown
+      let message = '';
+      const sourceBreakdown: string[] = [];
+      
+      for (const [source, result] of Object.entries(sourceResults)) {
+        const sourceName = source === 'pubmed' ? 'PubMed' : source === 'doaj' ? 'DOAJ' : 'Wiley';
+        sourceBreakdown.push(`${sourceName}: ${result.added} из ${result.count}`);
+      }
+      
+      if (sourceBreakdown.length > 1) {
+        message = `Добавлено ${added} статей (${sourceBreakdown.join(', ')})`;
+      } else {
+        message = skipped > 0 
+          ? `${added} новых статей добавлено, ${skipped} уже были в проекте`
+          : `${added} статей добавлено`;
+      }
       
       if (translated > 0) {
         message += `, ${translated} переведено`;
@@ -506,6 +784,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         added,
         skipped,
         translated,
+        sources: sourceResults,
         message,
       };
     }

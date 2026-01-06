@@ -9,8 +9,10 @@ import {
   apiGetPdfSource,
   getPdfDownloadUrl,
   PUBMED_SEARCH_FIELDS,
+  SEARCH_SOURCES,
   type Article,
   type SearchFilters,
+  type SearchSource,
 } from "../lib/api";
 
 type Props = {
@@ -62,6 +64,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   // Поиск
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // Источники поиска (PubMed, DOAJ, Wiley)
+  const [searchSources, setSearchSources] = useState<SearchSource[]>(['pubmed']);
   
   // Поле поиска PubMed
   const [searchField, setSearchField] = useState<string>("All Fields");
@@ -172,6 +177,19 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     return { yearFrom: fromDate.getFullYear(), yearTo: currentYear };
   }
 
+  // Toggle search source
+  function toggleSearchSource(source: SearchSource) {
+    setSearchSources(prev => {
+      if (prev.includes(source)) {
+        // Don't allow removing last source
+        if (prev.length === 1) return prev;
+        return prev.filter(s => s !== source);
+      } else {
+        return [...prev, source];
+      }
+    });
+  }
+
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -192,15 +210,17 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       filters.searchField = searchField;
     }
     
-    // Доступность текста
-    if (textAvailability === "free_full") {
-      filters.freeFullTextOnly = true;
-    } else if (textAvailability === "full") {
-      filters.fullTextOnly = true;
+    // Доступность текста (only for PubMed)
+    if (searchSources.includes('pubmed')) {
+      if (textAvailability === "free_full") {
+        filters.freeFullTextOnly = true;
+      } else if (textAvailability === "full") {
+        filters.fullTextOnly = true;
+      }
     }
     
-    // Типы публикаций
-    if (pubTypes.length > 0) {
+    // Типы публикаций (only for PubMed)
+    if (searchSources.includes('pubmed') && pubTypes.length > 0) {
       const pubmedTypes = PUBLICATION_TYPES
         .filter((pt) => pubTypes.includes(pt.id))
         .map((pt) => pt.pubmed);
@@ -212,7 +232,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     filters.translate = translateAfterSearch;
 
     try {
-      const res = await apiSearchArticles(projectId, searchQuery.trim(), filters, maxResults);
+      const res = await apiSearchArticles(projectId, searchQuery.trim(), filters, maxResults, searchSources);
       setOk(res.message);
       setShowSearch(false);
       await loadArticles();
@@ -261,13 +281,15 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       filters.searchField = searchField;
     }
     
-    if (textAvailability === "free_full") {
-      filters.freeFullTextOnly = true;
-    } else if (textAvailability === "full") {
-      filters.fullTextOnly = true;
+    if (searchSources.includes('pubmed')) {
+      if (textAvailability === "free_full") {
+        filters.freeFullTextOnly = true;
+      } else if (textAvailability === "full") {
+        filters.fullTextOnly = true;
+      }
     }
     
-    if (pubTypes.length > 0) {
+    if (searchSources.includes('pubmed') && pubTypes.length > 0) {
       const pubmedTypes = PUBLICATION_TYPES
         .filter((pt) => pubTypes.includes(pt.id))
         .map((pt) => pt.pubmed);
@@ -282,7 +304,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     
     try {
       for (const query of allQueries) {
-        const res = await apiSearchArticles(projectId, query, filters, maxResults);
+        const res = await apiSearchArticles(projectId, query, filters, maxResults, searchSources);
         results.push(`${query}: ${res.message}`);
         totalFound += res.added;
       }
@@ -585,7 +607,12 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   return (
     <div style={{ marginTop: 24 }}>
       <div className="row space" style={{ marginBottom: 12 }}>
-        <h2>База статей ({total})</h2>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <svg className="icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          База статей ({total})
+        </h2>
         <div className="row gap">
           {canEdit && untranslatedCount > 0 && (
             <button
@@ -595,7 +622,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               type="button"
               title={`Перевести ${untranslatedCount} статей без перевода`}
             >
-              {translating ? "Переводим..." : `🌐 Перевести (${untranslatedCount})`}
+              <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              </svg>
+              {translating ? "Переводим..." : `Перевести (${untranslatedCount})`}
             </button>
           )}
           {canEdit && (
@@ -604,7 +634,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               onClick={() => setShowSearch(!showSearch)}
               type="button"
             >
-              {showSearch ? "Скрыть поиск" : "🔍 Поиск в PubMed"}
+              <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {showSearch ? "Скрыть поиск" : "Поиск статей"}
             </button>
           )}
         </div>
@@ -615,18 +648,50 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
       {/* Форма поиска */}
       {showSearch && (
-        <form onSubmit={multiQueries.length > 0 ? handleMultiSearch : handleSearch} className="card" style={{ marginBottom: 16 }}>
-          <div className="row space" style={{ marginBottom: 12 }}>
-            <h3 style={{ margin: 0 }}>Поиск статей в PubMed</h3>
+        <form onSubmit={multiQueries.length > 0 ? handleMultiSearch : handleSearch} className="card search-form-card" style={{ marginBottom: 16 }}>
+          {/* Header */}
+          <div className="search-form-header">
+            <div className="search-form-title">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <h3 style={{ margin: 0 }}>Поиск научных статей</h3>
+            </div>
             <label className="row gap" style={{ alignItems: "center" }}>
               <input
                 type="checkbox"
                 checked={showMultiSearch}
                 onChange={(e) => setShowMultiSearch(e.target.checked)}
-                style={{ width: "auto" }}
+                className="search-checkbox"
               />
               <span className="muted" style={{ fontSize: 12 }}>Мультипоиск</span>
             </label>
+          </div>
+          
+          {/* Источники поиска */}
+          <div className="search-sources-section">
+            <div className="search-section-label">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              <span>Источники:</span>
+            </div>
+            <div className="search-sources-grid">
+              {SEARCH_SOURCES.map((source) => (
+                <label key={source.value} className={`search-source-option ${searchSources.includes(source.value) ? 'active' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={searchSources.includes(source.value)}
+                    onChange={() => toggleSearchSource(source.value)}
+                    className="search-checkbox"
+                  />
+                  <div className="search-source-content">
+                    <span className="search-source-name">{source.label}</span>
+                    <span className="search-source-desc">{source.description}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
           </div>
           <div className="stack">
             {/* Мультипоиск - список запросов */}
@@ -826,17 +891,22 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   onChange={(e) => setTranslateAfterSearch(e.target.checked)}
                   style={{ width: "auto" }}
                 />
-                <span>🌐 Перевести заголовки и абстракты (RU)</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                  </svg>
+                  Перевести заголовки и абстракты (RU)
+                </span>
               </label>
             </div>
 
             <div className="row gap">
-              <button className="btn" disabled={searching} type="submit">
+              <button className="btn search-submit-btn" disabled={searching || searchSources.length === 0} type="submit">
                 {searching 
                   ? "Поиск..." 
                   : multiQueries.length > 0 
-                    ? `🔍 Мультипоиск (${multiQueries.length + (searchQuery.trim() ? 1 : 0)} запросов)` 
-                    : "Найти и добавить"}
+                    ? `Мультипоиск (${multiQueries.length + (searchQuery.trim() ? 1 : 0)} запросов)` 
+                    : `Найти в ${searchSources.map(s => s === 'pubmed' ? 'PubMed' : s === 'doaj' ? 'DOAJ' : 'Wiley').join(', ')}`}
               </button>
               <button
                 className="btn secondary"
@@ -857,6 +927,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           onClick={() => setViewStatus("candidate")}
           type="button"
         >
+          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
           Кандидаты ({counts.candidate})
         </button>
         <button
@@ -864,20 +937,29 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           onClick={() => setViewStatus("selected")}
           type="button"
         >
-          ✅ Отобранные ({counts.selected})
+          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Отобранные ({counts.selected})
         </button>
         <button
           className={viewStatus === "excluded" ? "btn" : "btn secondary"}
           onClick={() => setViewStatus("excluded")}
           type="button"
         >
-          ❌ Исключённые ({counts.excluded})
+          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Исключённые ({counts.excluded})
         </button>
         <button
           className={viewStatus === "all" ? "btn" : "btn secondary"}
           onClick={() => setViewStatus("all")}
           type="button"
         >
+          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+          </svg>
           Все ({total})
         </button>
         <button
@@ -885,19 +967,27 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           onClick={() => setViewStatus("deleted")}
           type="button"
         >
-          🗑️ Корзина ({counts.deleted})
+          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Корзина ({counts.deleted})
         </button>
       </div>
       
       {/* Локальный поиск по базе */}
       <div className="row gap" style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <input
-          type="text"
-          placeholder="🔍 Поиск по названию/автору..."
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          style={{ flex: 1, minWidth: 200, maxWidth: 400, padding: "8px 12px", fontSize: 13 }}
-        />
+        <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 400 }}>
+          <svg className="icon-sm" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            placeholder="Поиск по названию/автору..."
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            style={{ width: '100%', padding: "8px 12px 8px 36px", fontSize: 13 }}
+          />
+        </div>
         
         {/* Фильтр по периоду годов */}
         <div className="row gap" style={{ alignItems: "center" }}>
@@ -963,7 +1053,12 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             onChange={(e) => setShowStatsOnly(e.target.checked)}
             style={{ width: "auto" }}
           />
-          <span className="muted">📊 Статистика</span>
+          <span className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Статистика
+          </span>
         </label>
         
         <label className="row gap" style={{ alignItems: "center" }}>
@@ -973,7 +1068,12 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             onChange={(e) => setHighlightStats(e.target.checked)}
             style={{ width: "auto" }}
           />
-          <span className="muted">🎨 Подсветка</span>
+          <span className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+            </svg>
+            Подсветка
+          </span>
         </label>
         
         {/* Фильтр по типу публикации */}
@@ -1010,7 +1110,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12, maxWidth: 200 }}
             title="Фильтр по поисковому запросу"
           >
-            <option value="">📂 Все запросы</option>
+            <option value="">Все запросы</option>
             {availableSourceQueries.map((q) => (
               <option key={q} value={q} title={q}>
                 {q.length > 25 ? q.slice(0, 25) + '...' : q}
@@ -1046,7 +1146,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
-                ✅ Отобрать
+                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Отобрать
               </button>
               <button
                 className="btn secondary"
@@ -1055,7 +1158,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
-                ❌ Исключить
+                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Исключить
               </button>
               <button
                 className="btn secondary"
@@ -1065,7 +1171,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
-                🌐 Перевести
+                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                </svg>
+                Перевести
               </button>
               <button
                 className="btn secondary"
@@ -1075,7 +1184,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
-                📚 Crossref
+                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                </svg>
+                Crossref
               </button>
               <button
                 className="btn secondary"
@@ -1085,7 +1197,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
-                🤖 AI Статистика
+                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                AI Статистика
               </button>
               {viewStatus !== "candidate" && viewStatus !== "deleted" && (
                 <button
@@ -1095,7 +1210,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   type="button"
                   style={{ padding: "4px 10px", fontSize: 12 }}
                 >
-                  ↩️ В кандидаты
+                  <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  </svg>
+                  В кандидаты
                 </button>
               )}
               {viewStatus !== "deleted" && (
@@ -1106,7 +1224,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   type="button"
                   style={{ padding: "4px 10px", fontSize: 12 }}
                 >
-                  🗑️ Удалить
+                  <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Удалить
                 </button>
               )}
               {viewStatus === "deleted" && (
@@ -1117,7 +1238,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   type="button"
                   style={{ padding: "4px 10px", fontSize: 12 }}
                 >
-                  ♻️ Восстановить
+                  <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Восстановить
                 </button>
               )}
             </div>
@@ -1157,9 +1281,21 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               <div className="article-main" onClick={() => setSelectedArticle(a)}>
                 <div className="article-title">
                   {getTitle(a)}
-                  {a.title_ru && <span className="translate-badge" title="Есть перевод">🌐</span>}
+                  {a.title_ru && (
+                    <span className="translate-badge" title="Есть перевод">
+                      <svg className="icon-sm" style={{ display: 'inline', verticalAlign: 'middle', color: '#38bdf8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                      </svg>
+                    </span>
+                  )}
                   {!a.title_ru && <span className="no-translate-badge" title="Нет перевода">EN</span>}
-                  {a.has_stats && <span className="stats-badge" title="Содержит статистику">📊</span>}
+                  {a.has_stats && (
+                    <span className="stats-badge" title="Содержит статистику">
+                      <svg className="icon-sm" style={{ display: 'inline', verticalAlign: 'middle', color: '#4ade80' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </span>
+                  )}
                 </div>
                 <div className="article-meta">
                   {a.authors?.slice(0, 3).join(", ")}
@@ -1191,7 +1327,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Добавить в отобранные"
                       type="button"
                     >
-                      ✅
+                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     </button>
                   )}
                   {a.status !== "excluded" && a.status !== "deleted" && (
@@ -1201,7 +1339,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Исключить из выборки"
                       type="button"
                     >
-                      ❌
+                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
                   )}
                   {a.status !== "candidate" && a.status !== "deleted" && (
@@ -1211,7 +1351,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Вернуть в кандидаты"
                       type="button"
                     >
-                      ↩️
+                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                      </svg>
                     </button>
                   )}
                   {a.status !== "deleted" && (
@@ -1221,7 +1363,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Удалить в корзину"
                       type="button"
                     >
-                      🗑️
+                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                   )}
                   {a.status === "deleted" && (
@@ -1231,7 +1375,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Восстановить из корзины"
                       type="button"
                     >
-                      ♻️
+                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
                     </button>
                   )}
                 </div>
@@ -1241,166 +1387,256 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         </div>
       )}
 
-      {/* Модальное окно просмотра статьи */}
+      {/* ResearchRabbit-style Article Sidebar/Modal */}
       {selectedArticle && (
-        <div className="modal-overlay" onClick={() => { setSelectedArticle(null); setShowOriginal(false); }}>
-          <div className="modal article-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="row space" style={{ marginBottom: 12 }}>
-              <h3 style={{ margin: 0 }}>Просмотр статьи</h3>
-              <div className="row gap">
+        <div className="rabbit-overlay" onClick={() => { setSelectedArticle(null); setShowOriginal(false); }}>
+          <div className="rabbit-sidebar" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className="rabbit-header">
+              <div className="rabbit-header-title">
+                <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Детали статьи</span>
+              </div>
+              <div className="rabbit-header-actions">
                 {selectedArticle.title_ru && (
                   <button
-                    className={`btn ${showOriginal ? "secondary" : ""}`}
+                    className={`rabbit-lang-btn ${!showOriginal ? 'active' : ''}`}
                     onClick={() => setShowOriginal(!showOriginal)}
                     type="button"
-                    style={{ fontSize: 12, padding: "6px 10px" }}
+                    title={showOriginal ? "Показать перевод" : "Показать оригинал"}
                   >
-                    {showOriginal ? "🌐 Перевод" : "EN Оригинал"}
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    </svg>
+                    {showOriginal ? "RU" : "EN"}
                   </button>
                 )}
                 <button
-                  className="btn secondary"
+                  className="rabbit-close-btn"
                   onClick={() => { setSelectedArticle(null); setShowOriginal(false); }}
                   type="button"
                 >
-                  ✕
+                  <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             </div>
 
-            <h4>
-              {showOriginal || !selectedArticle.title_ru 
-                ? selectedArticle.title_en 
-                : selectedArticle.title_ru}
-            </h4>
-            {selectedArticle.title_ru && !showOriginal && (
-              <p className="muted" style={{ fontSize: 13, marginTop: 4 }}>
-                {selectedArticle.title_en}
-              </p>
-            )}
+            {/* Content */}
+            <div className="rabbit-content">
+              {/* Title Section */}
+              <div className="rabbit-title-section">
+                <h2 className="rabbit-article-title">
+                  {showOriginal || !selectedArticle.title_ru 
+                    ? selectedArticle.title_en 
+                    : selectedArticle.title_ru}
+                </h2>
+                {selectedArticle.title_ru && !showOriginal && (
+                  <p className="rabbit-original-title">
+                    {selectedArticle.title_en}
+                  </p>
+                )}
+              </div>
 
-            <div className="article-meta" style={{ marginBottom: 12 }}>
-              {selectedArticle.authors?.join(", ")}
-              {selectedArticle.year && ` (${selectedArticle.year})`}
-              {selectedArticle.journal && ` — ${selectedArticle.journal}`}
-            </div>
+              {/* Metadata Card */}
+              <div className="rabbit-meta-card">
+                {/* Authors */}
+                {selectedArticle.authors && selectedArticle.authors.length > 0 && (
+                  <div className="rabbit-meta-row">
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <div className="rabbit-meta-content">
+                      <span className="rabbit-meta-label">Авторы</span>
+                      <span className="rabbit-meta-value">{selectedArticle.authors.join(", ")}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Year */}
+                {selectedArticle.year && (
+                  <div className="rabbit-meta-row">
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <div className="rabbit-meta-content">
+                      <span className="rabbit-meta-label">Год</span>
+                      <span className="rabbit-meta-value">{selectedArticle.year}</span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Journal */}
+                {selectedArticle.journal && (
+                  <div className="rabbit-meta-row">
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <div className="rabbit-meta-content">
+                      <span className="rabbit-meta-label">Журнал</span>
+                      <span className="rabbit-meta-value">{selectedArticle.journal}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
 
-            <div style={{ marginBottom: 12 }}>
-              {selectedArticle.pmid && (
-                <a
-                  href={selectedArticle.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="id-badge"
-                  style={{ marginRight: 8 }}
-                >
-                  PubMed ↗
-                </a>
-              )}
-              {selectedArticle.doi && (
-                <a
-                  href={`https://doi.org/${selectedArticle.doi}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="id-badge"
-                  style={{ marginRight: 8 }}
-                >
-                  DOI ↗
-                </a>
-              )}
-              <button
-                className="btn secondary"
-                onClick={async () => {
-                  try {
-                    const source = await apiGetPdfSource(projectId, selectedArticle.id);
-                    if (source.directDownload) {
-                      window.open(source.url, '_blank');
-                    } else {
-                      // Для Wiley и др. проксируем через наш API
-                      window.open(getPdfDownloadUrl(projectId, selectedArticle.id), '_blank');
-                    }
-                  } catch (err: any) {
-                    alert(err.message || 'PDF не найден. Попробуйте поискать на сайте журнала.');
-                  }
-                }}
-                style={{ fontSize: 12, padding: "4px 10px", marginRight: 8 }}
-                type="button"
-              >
-                📄 PDF
-              </button>
-              {!selectedArticle.title_ru && canEdit && (
+              {/* Tags / Badges */}
+              <div className="rabbit-tags">
+                {selectedArticle.publication_types?.map((pt) => (
+                  <span key={pt} className="rabbit-tag pub-type">{pt}</span>
+                ))}
+                {selectedArticle.has_stats && (
+                  <span className="rabbit-tag stats">
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    Статистика
+                  </span>
+                )}
+                {(selectedArticle.stats_quality ?? 0) > 0 && (
+                  <span className={`rabbit-tag stats-q${selectedArticle.stats_quality}`}>
+                    p&lt;{selectedArticle.stats_quality === 3 ? "0.001" : selectedArticle.stats_quality === 2 ? "0.01" : "0.05"}
+                  </span>
+                )}
+                {selectedArticle.title_ru && (
+                  <span className="rabbit-tag translated">
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    </svg>
+                    Переведено
+                  </span>
+                )}
+              </div>
+
+              {/* Links Section */}
+              <div className="rabbit-links">
+                {selectedArticle.pmid && (
+                  <a
+                    href={selectedArticle.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rabbit-link-btn pubmed"
+                  >
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    PubMed
+                  </a>
+                )}
+                {selectedArticle.doi && (
+                  <a
+                    href={`https://doi.org/${selectedArticle.doi}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rabbit-link-btn doi"
+                  >
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    DOI
+                  </a>
+                )}
                 <button
-                  className="btn secondary"
-                  onClick={() => handleTranslateOne(selectedArticle.id)}
-                  disabled={translatingOne}
-                  style={{ fontSize: 12, padding: "4px 10px" }}
+                  className="rabbit-link-btn pdf"
+                  onClick={async () => {
+                    try {
+                      const source = await apiGetPdfSource(projectId, selectedArticle.id);
+                      if (source.directDownload) {
+                        window.open(source.url, '_blank');
+                      } else {
+                        window.open(getPdfDownloadUrl(projectId, selectedArticle.id), '_blank');
+                      }
+                    } catch (err: any) {
+                      alert(err.message || 'PDF не найден. Попробуйте поискать на сайте журнала.');
+                    }
+                  }}
                   type="button"
                 >
-                  {translatingOne ? "Переводим..." : "🌐 Перевести"}
+                  <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  PDF
                 </button>
-              )}
-            </div>
-
-            {selectedArticle.has_stats && (
-              <div className="ok" style={{ marginBottom: 12 }}>
-                📊 Статистика обнаружена в абстракте
+                {!selectedArticle.title_ru && canEdit && (
+                  <button
+                    className="rabbit-link-btn translate"
+                    onClick={() => handleTranslateOne(selectedArticle.id)}
+                    disabled={translatingOne}
+                    type="button"
+                  >
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    </svg>
+                    {translatingOne ? "Переводим..." : "Перевести"}
+                  </button>
+                )}
               </div>
-            )}
 
-            <div className="row space" style={{ alignItems: "center" }}>
-              <h5 style={{ margin: 0 }}>Абстракт</h5>
-              {selectedArticle.has_stats && (
-                <label className="row gap" style={{ alignItems: "center" }}>
-                  <input
-                    type="checkbox"
-                    checked={highlightStats}
-                    onChange={(e) => setHighlightStats(e.target.checked)}
-                    style={{ width: "auto" }}
-                  />
-                  <span className="muted" style={{ fontSize: 12 }}>Подсветка статистики</span>
-                </label>
-              )}
-            </div>
-            <div
-              className="abstract-text"
-              style={{
-                maxHeight: 300,
-                overflow: "auto",
-                padding: 12,
-                background: "#0f1626",
-                borderRadius: 8,
-                fontSize: 14,
-                lineHeight: 1.6,
-                marginTop: 8,
-              }}
-            >
-              {highlightStatistics(
-                showOriginal || !selectedArticle.abstract_ru 
-                  ? (selectedArticle.abstract_en || "Нет абстракта")
-                  : selectedArticle.abstract_ru
-              )}
-            </div>
-            
-            {selectedArticle.abstract_ru && !showOriginal && selectedArticle.abstract_en && (
-              <details style={{ marginTop: 12 }}>
-                <summary className="muted" style={{ cursor: "pointer" }}>
-                  Показать оригинал абстракта
-                </summary>
-                <div
-                  className="abstract-text muted"
-                  style={{
-                    marginTop: 8,
-                    padding: 12,
-                    background: "#0a0f1a",
-                    borderRadius: 8,
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {selectedArticle.abstract_en}
+              {/* Abstract Section */}
+              <div className="rabbit-abstract-section">
+                <div className="rabbit-section-header">
+                  <div className="rabbit-section-title">
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                    </svg>
+                    Абстракт
+                  </div>
+                  {selectedArticle.has_stats && (
+                    <label className="rabbit-highlight-toggle">
+                      <input
+                        type="checkbox"
+                        checked={highlightStats}
+                        onChange={(e) => setHighlightStats(e.target.checked)}
+                      />
+                      <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                      </svg>
+                      <span>Подсветка</span>
+                    </label>
+                  )}
                 </div>
-              </details>
-            )}
+                <div className="rabbit-abstract-content">
+                  {highlightStatistics(
+                    showOriginal || !selectedArticle.abstract_ru 
+                      ? (selectedArticle.abstract_en || "Нет абстракта")
+                      : selectedArticle.abstract_ru
+                  )}
+                </div>
+                
+                {selectedArticle.abstract_ru && !showOriginal && selectedArticle.abstract_en && (
+                  <details className="rabbit-original-abstract">
+                    <summary>
+                      <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                      Показать оригинал
+                    </summary>
+                    <div className="rabbit-abstract-original-text">
+                      {selectedArticle.abstract_en}
+                    </div>
+                  </details>
+                )}
+              </div>
+
+              {/* IDs Section */}
+              <div className="rabbit-ids-section">
+                {selectedArticle.pmid && (
+                  <div className="rabbit-id-row">
+                    <span className="rabbit-id-label">PMID</span>
+                    <span className="rabbit-id-value">{selectedArticle.pmid}</span>
+                  </div>
+                )}
+                {selectedArticle.doi && (
+                  <div className="rabbit-id-row">
+                    <span className="rabbit-id-label">DOI</span>
+                    <span className="rabbit-id-value">{selectedArticle.doi}</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}

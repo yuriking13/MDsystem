@@ -285,15 +285,16 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
-  // Resize observer
+  // Resize observer - use 2000x2000 for the graph canvas
   useEffect(() => {
     if (!containerRef.current) return;
     
     const updateSize = () => {
       if (containerRef.current) {
+        // Fixed 2000x2000 canvas for the graph visualization
         setDimensions({
-          width: Math.max(1000, containerRef.current.offsetWidth - 350), // Больше места для графа
-          height: Math.max(600, window.innerHeight - 280), // Учитываем все панели
+          width: 2000,
+          height: 2000,
         });
       }
     };
@@ -412,7 +413,8 @@ export default function CitationGraph({ projectId }: Props) {
     return (
       <div className="graph-container">
         <div className="muted" style={{ padding: 40, textAlign: 'center' }}>
-          ⏳ Загрузка графа цитирований...
+          <div className="loading-spinner" style={{ margin: '0 auto 16px', width: 32, height: 32 }} />
+          Загрузка графа цитирований...
         </div>
       </div>
     );
@@ -427,166 +429,152 @@ export default function CitationGraph({ projectId }: Props) {
   }
 
   return (
-    <div className="graph-container" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
-      {/* Фильтры - первая строка */}
+    <div className="graph-container" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 200px)' }}>
+      {/* Header Panel */}
+      <div className="graph-header-panel">
+        <div className="graph-header-title">
+          <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <div>
+            <h3>Граф цитирований</h3>
+            <span className="graph-header-subtitle">Визуализация связей между статьями проекта</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters Row 1 */}
       <div className="graph-filters" style={{ 
         display: 'flex', 
         flexWrap: 'wrap', 
         gap: 12, 
-        padding: '12px 16px', 
+        padding: '12px 20px', 
+        borderBottom: '1px solid var(--border-glass)',
+        alignItems: 'center',
+        background: 'rgba(0,0,0,0.05)'
+      }}>
+        {/* Depth Filter */}
+        <div className="graph-filter-group">
+          <div className="graph-filter-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <span>Уровень:</span>
+          </div>
+          <div className="graph-filter-buttons">
+            <button
+              className={`graph-filter-btn ${depth === 1 ? 'active' : ''}`}
+              onClick={() => setDepth(1)}
+              title="Только статьи проекта + связи между ними"
+            >
+              Проект
+            </button>
+            <button
+              className={`graph-filter-btn ${depth === 2 ? 'active' : ''}`}
+              onClick={() => setDepth(2)}
+              title="+ Топ ссылок (references)"
+            >
+              +Ссылки
+            </button>
+            <button
+              className={`graph-filter-btn ${depth === 3 ? 'active' : ''}`}
+              onClick={() => setDepth(3)}
+              title="+ Топ цитирующих (cited_by)"
+            >
+              +Цитирующие
+            </button>
+          </div>
+        </div>
+
+        {/* Status Filter */}
+        <div className="graph-filter-group">
+          <div className="graph-filter-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+            </svg>
+            <span>Статус:</span>
+          </div>
+          <div className="graph-filter-buttons">
+            <button
+              className={`graph-filter-btn ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('all')}
+            >
+              Все
+            </button>
+            <button
+              className={`graph-filter-btn ${filter === 'selected' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('selected')}
+            >
+              Отобранные
+            </button>
+            <button
+              className={`graph-filter-btn ${filter === 'excluded' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('excluded')}
+            >
+              Исключённые
+            </button>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+          <button
+            className="btn"
+            style={{ padding: '8px 16px', fontSize: 12 }}
+            onClick={handleImportSelected}
+            disabled={importing || selectedNodeIds.size === 0}
+            title="Добавить выбранные статьи из графа в кандидаты"
+          >
+            <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            {importing ? 'Импорт...' : `В кандидаты (${selectedNodeIds.size})`}
+          </button>
+        </div>
+      </div>
+
+      {/* Filters Row 2 */}
+      <div className="graph-filters" style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: 12, 
+        padding: '12px 20px', 
         borderBottom: '1px solid var(--border-glass)',
         alignItems: 'center'
       }}>
-        {/* Фильтр по уровню глубины */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>📊 Уровень:</span>
-          <button
-            className={`btn ${depth === 1 ? '' : 'secondary'}`}
-            style={{ padding: '4px 10px', fontSize: 11 }}
-            onClick={() => setDepth(1)}
-            title="Только статьи проекта + связи между ними"
-          >
-            1️⃣ Проект
-          </button>
-          <button
-            className={`btn ${depth === 2 ? '' : 'secondary'}`}
-            style={{ padding: '4px 10px', fontSize: 11 }}
-            onClick={() => setDepth(2)}
-            title="+ Топ ссылок (references)"
-          >
-            2️⃣ +Ссылки
-          </button>
-          <button
-            className={`btn ${depth === 3 ? '' : 'secondary'}`}
-            style={{ padding: '4px 10px', fontSize: 11 }}
-            onClick={() => setDepth(3)}
-            title="+ Топ цитирующих (cited_by)"
-          >
-            3️⃣ +Цитирующие
-          </button>
-        </div>
-
-        {/* Фильтр по статусу */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Статус:</span>
-          <button
-            className={`btn ${filter === 'all' ? '' : 'secondary'}`}
-            style={{ padding: '4px 10px', fontSize: 11 }}
-            onClick={() => handleFilterChange('all')}
-          >
-            Все
-          </button>
-          <button
-            className={`btn ${filter === 'selected' ? '' : 'secondary'}`}
-            style={{ padding: '4px 10px', fontSize: 11 }}
-            onClick={() => handleFilterChange('selected')}
-          >
-            ✅ Отобранные
-          </button>
-          <button
-            className={`btn ${filter === 'excluded' ? '' : 'secondary'}`}
-            style={{ padding: '4px 10px', fontSize: 11 }}
-            onClick={() => handleFilterChange('excluded')}
-          >
-            ❌ Исключённые
-          </button>
-        </div>
-
-        {/* Кнопка обновления PubMed */}
-        <button
-          className="btn"
-          style={{ marginLeft: 'auto', padding: '6px 14px', fontSize: 12 }}
-          onClick={handleImportSelected}
-          disabled={importing || selectedNodeIds.size === 0}
-          title="Добавить выбранные статьи из графа в кандидаты"
-        >
-          {importing ? `⏳ Импорт...` : `➕ В кандидаты (${selectedNodeIds.size})`}
-        </button>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer' }}>
+        {/* Fetch References */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)' }}>
             <input
               type="checkbox"
               checked={fetchSelectedOnly}
               onChange={(e) => setFetchSelectedOnly(e.target.checked)}
-              style={{ width: 14, height: 14 }}
+              className="search-checkbox"
             />
             Только отобранные
           </label>
           <button
             className="btn secondary"
-            style={{ padding: '6px 14px', fontSize: 12 }}
+            style={{ padding: '8px 16px', fontSize: 12 }}
             onClick={handleFetchReferences}
             disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
             title={fetchSelectedOnly ? 'Загрузить связи только для отобранных статей' : 'Загрузить связи для всех статей проекта'}
           >
-            {fetchingRefs || fetchJobStatus?.isRunning ? '⏳ Загрузка...' : '🔄 Обновить связи из PubMed'}
+            <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            {fetchingRefs || fetchJobStatus?.isRunning ? 'Загрузка...' : 'Обновить связи из PubMed'}
           </button>
         </div>
-      </div>
       
-      {/* Прогресс загрузки связей */}
-      {fetchJobStatus?.isRunning && (
-        <div style={{ 
-          padding: '12px 16px', 
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15))',
-          borderBottom: '1px solid var(--border-glass)',
-          borderRadius: '0'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-            <div className="loading-spinner" style={{ width: 18, height: 18 }} />
-            <span style={{ fontWeight: 600, fontSize: 13 }}>
-              Загрузка связей из PubMed...
-            </span>
-            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
-              ⏱️ {formatTime(fetchJobStatus.elapsedSeconds)}
-            </span>
+        {/* Year Filter */}
+        <div className="graph-filter-group">
+          <div className="graph-filter-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>Годы:</span>
           </div>
-          
-          {/* Прогресс бар */}
-          <div style={{ 
-            height: 8, 
-            background: 'rgba(255,255,255,0.1)', 
-            borderRadius: 4, 
-            overflow: 'hidden',
-            marginBottom: 8
-          }}>
-            <div style={{ 
-              height: '100%', 
-              width: `${fetchJobStatus.progress}%`,
-              background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
-              borderRadius: 4,
-              transition: 'width 0.3s ease'
-            }} />
-          </div>
-          
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)' }}>
-            <span>
-              📊 Статей: {fetchJobStatus.processedArticles || 0} / {fetchJobStatus.totalArticles || '?'}
-            </span>
-            <span>
-              {fetchJobStatus.progress}% завершено
-            </span>
-          </div>
-          
-          <div style={{ marginTop: 8, fontSize: 11, color: '#fbbf24' }}>
-            💡 Загрузка выполняется в фоне. Вы можете продолжить работу — граф обновится автоматически.
-          </div>
-        </div>
-      )}
-      
-      {/* Фильтры - вторая строка */}
-      <div className="graph-filters" style={{ 
-        display: 'flex', 
-        flexWrap: 'wrap', 
-        gap: 12, 
-        padding: '8px 16px', 
-        borderBottom: '1px solid var(--border-glass)',
-        alignItems: 'center'
-      }}>
-        {/* Фильтр по годам */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>📅 Годы:</span>
           <input
             type="number"
             placeholder={yearRange.min ? String(yearRange.min) : "От"}
@@ -594,17 +582,17 @@ export default function CitationGraph({ projectId }: Props) {
             onChange={(e) => setYearFrom(e.target.value ? parseInt(e.target.value, 10) : undefined)}
             style={{ 
               width: 70, 
-              padding: '4px 8px', 
-              fontSize: 11,
+              padding: '6px 8px', 
+              fontSize: 12,
               border: '1px solid var(--border-glass)',
-              borderRadius: 4,
+              borderRadius: 6,
               background: 'var(--bg-secondary)',
               color: 'var(--text-primary)'
             }}
             min={yearRange.min || 1900}
             max={yearRange.max || 2030}
           />
-          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>
           <input
             type="number"
             placeholder={yearRange.max ? String(yearRange.max) : "До"}
@@ -612,10 +600,10 @@ export default function CitationGraph({ projectId }: Props) {
             onChange={(e) => setYearTo(e.target.value ? parseInt(e.target.value, 10) : undefined)}
             style={{ 
               width: 70, 
-              padding: '4px 8px', 
-              fontSize: 11,
+              padding: '6px 8px', 
+              fontSize: 12,
               border: '1px solid var(--border-glass)',
-              borderRadius: 4,
+              borderRadius: 6,
               background: 'var(--bg-secondary)',
               color: 'var(--text-primary)'
             }}
@@ -624,8 +612,8 @@ export default function CitationGraph({ projectId }: Props) {
           />
           {(yearFrom || yearTo) && (
             <button
-              className="btn secondary"
-              style={{ padding: '2px 6px', fontSize: 10 }}
+              className="graph-filter-btn"
+              style={{ padding: '4px 8px' }}
               onClick={() => { setYearFrom(undefined); setYearTo(undefined); }}
             >
               ✕
@@ -633,244 +621,284 @@ export default function CitationGraph({ projectId }: Props) {
           )}
         </div>
         
-        {/* Фильтр по качеству статистики (p-value) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>📈 P-value:</span>
+        {/* P-value Filter */}
+        <div className="graph-filter-group">
+          <div className="graph-filter-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <span>P-value:</span>
+          </div>
           <button
-            className={`btn ${highlightPValue ? '' : 'secondary'}`}
-            style={{ 
-              padding: '4px 10px', 
-              fontSize: 11,
-              background: highlightPValue ? '#fbbf24' : undefined,
-              color: highlightPValue ? '#1e293b' : undefined,
-              border: highlightPValue ? '2px solid #f59e0b' : undefined,
-            }}
+            className={`graph-filter-btn ${highlightPValue ? 'active' : ''}`}
+            style={highlightPValue ? { background: '#fbbf24', borderColor: '#f59e0b', color: '#1e293b' } : undefined}
             onClick={() => setHighlightPValue(!highlightPValue)}
-            title={highlightPValue ? 'Скрыть подсветку статей с P-value' : 'Подсветить золотым статьи с P-value'}
+            title={highlightPValue ? 'Скрыть подсветку' : 'Подсветить золотым'}
           >
-            ✨ {highlightPValue ? 'Выделены' : 'Выделить'}
+            Выделить
           </button>
           <select
             value={statsQuality}
             onChange={(e) => setStatsQuality(parseInt(e.target.value, 10))}
             style={{ 
-              padding: '4px 8px', 
-              fontSize: 11,
+              padding: '6px 10px', 
+              fontSize: 12,
               border: '1px solid var(--border-glass)',
-              borderRadius: 4,
+              borderRadius: 6,
               background: 'var(--bg-secondary)',
               color: 'var(--text-primary)'
             }}
-            title="Фильтровать: показывать только статьи с указанным уровнем P-value"
           >
             <option value={0}>Все статьи</option>
             <option value={1}>≥ Упомянут p-value</option>
             <option value={2}>≥ Значимые результаты</option>
-            <option value={3}>Строгие критерии (p&lt;0.01)</option>
+            <option value={3}>Строгие (p&lt;0.01)</option>
           </select>
         </div>
         
-        {/* Фильтр по запросам */}
+        {/* Query Filter */}
         {availableQueries.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>🔍 Запросы:</span>
-            {availableQueries.map(query => (
-              <button
-                key={query}
-                className={`btn ${selectedQueries.includes(query) ? '' : 'secondary'}`}
-                style={{ 
-                  padding: '4px 10px', 
-                  fontSize: 10,
-                  maxWidth: 150,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap'
-                }}
-                onClick={() => handleQueryToggle(query)}
-                title={query}
-              >
-                {query}
-              </button>
-            ))}
-            {selectedQueries.length > 0 && (
-              <button
-                className="btn secondary"
-                style={{ padding: '4px 8px', fontSize: 10 }}
-                onClick={handleClearQueries}
-              >
-                ✕ Сбросить
-              </button>
-            )}
+          <div className="graph-filter-group" style={{ flexWrap: 'wrap' }}>
+            <div className="graph-filter-label">
+              <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span>Запросы:</span>
+            </div>
+            <div className="graph-filter-buttons">
+              {availableQueries.map(query => (
+                <button
+                  key={query}
+                  className={`graph-filter-btn ${selectedQueries.includes(query) ? 'active' : ''}`}
+                  onClick={() => handleQueryToggle(query)}
+                  title={query}
+                  style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                >
+                  {query.length > 15 ? query.slice(0, 15) + '...' : query}
+                </button>
+              ))}
+              {selectedQueries.length > 0 && (
+                <button className="graph-filter-btn" onClick={handleClearQueries}>✕</button>
+              )}
+            </div>
           </div>
         )}
       </div>
 
+      {/* Progress Bar */}
+      {fetchJobStatus?.isRunning && (
+        <div style={{ 
+          padding: '16px 20px', 
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))',
+          borderBottom: '1px solid var(--border-glass)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+            <div className="loading-spinner" />
+            <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
+              Загрузка связей из PubMed...
+            </span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
+              {formatTime(fetchJobStatus.elapsedSeconds)}
+            </span>
+          </div>
+          
+          <div className="progress-bar-animated" style={{ 
+            height: 6, 
+            background: 'rgba(255,255,255,0.1)', 
+            borderRadius: 3, 
+            overflow: 'hidden',
+            marginBottom: 10
+          }}>
+            <div style={{ 
+              height: '100%', 
+              width: `${fetchJobStatus.progress}%`,
+              background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
+              borderRadius: 3,
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)' }}>
+            <span>Статей: {fetchJobStatus.processedArticles || 0} / {fetchJobStatus.totalArticles || '?'}</span>
+            <span>{fetchJobStatus.progress}% завершено</span>
+          </div>
+          
+          <div style={{ marginTop: 10, fontSize: 11, color: '#fbbf24', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Загрузка выполняется в фоне. Граф обновится автоматически.
+          </div>
+        </div>
+      )}
+
       {refsMessage && (
-        <div className="ok" style={{ margin: '8px 16px', padding: 10, fontSize: 12 }}>
+        <div className="ok" style={{ margin: '8px 20px', padding: 12, fontSize: 13 }}>
           {refsMessage}
         </div>
       )}
 
       {importMessage && (
-        <div className="ok" style={{ margin: '8px 16px', padding: 10, fontSize: 12 }}>
+        <div className="ok" style={{ margin: '8px 20px', padding: 12, fontSize: 13 }}>
           {importMessage}
         </div>
       )}
 
-      {/* Статистика */}
-      <div className="graph-stats" style={{ padding: '8px 16px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', borderBottom: '1px solid var(--border-glass)' }}>
-        <span style={{ fontWeight: 600 }}>📊 Узлов: <span style={{ color: '#3b82f6' }}>{stats.totalNodes}</span></span>
-        <span style={{ fontWeight: 600 }}>🔗 Связей: <span style={{ color: '#10b981' }}>{stats.totalLinks}</span></span>
+      {/* Stats Bar */}
+      <div className="graph-stats-bar">
+        <div className="graph-stat-item">
+          <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+          <span>Узлов:</span>
+          <span className="graph-stat-value">{stats.totalNodes}</span>
+        </div>
+        <div className="graph-stat-item">
+          <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <span>Связей:</span>
+          <span className="graph-stat-value" style={{ color: '#10b981' }}>{stats.totalLinks}</span>
+        </div>
         {stats.levelCounts && (
           <>
             {depth >= 3 && stats.levelCounts.level0 !== undefined && stats.levelCounts.level0 > 0 && (
-              <span style={{ color: '#a855f7', fontWeight: 500 }}>
-                🟣 Цитируют нас: {stats.levelCounts.level0}
-              </span>
+              <div className="graph-stat-item">
+                <span className="legend-dot" style={{ background: '#a855f7' }}></span>
+                <span>Цитируют:</span>
+                <span style={{ color: '#a855f7', fontWeight: 600 }}>{stats.levelCounts.level0}</span>
+              </div>
             )}
-            <span style={{ color: '#3b82f6', fontWeight: 500 }}>🔵 В проекте: {stats.levelCounts.level1}</span>
+            <div className="graph-stat-item">
+              <span className="legend-dot" style={{ background: '#3b82f6' }}></span>
+              <span>В проекте:</span>
+              <span style={{ color: '#3b82f6', fontWeight: 600 }}>{stats.levelCounts.level1}</span>
+            </div>
             {depth >= 2 && (
-              <span style={{ color: '#f97316', fontWeight: 500 }}>
-                🟠 Ссылки: {stats.levelCounts.level2}
-              </span>
+              <div className="graph-stat-item">
+                <span className="legend-dot" style={{ background: '#f97316' }}></span>
+                <span>Ссылки:</span>
+                <span style={{ color: '#f97316', fontWeight: 600 }}>{stats.levelCounts.level2}</span>
+              </div>
             )}
             {depth >= 3 && stats.levelCounts.level3 !== undefined && stats.levelCounts.level3 > 0 && (
-              <span style={{ color: '#06b6d4', fontWeight: 500 }}>
-                🔷 Связанные: {stats.levelCounts.level3}
-              </span>
+              <div className="graph-stat-item">
+                <span className="legend-dot" style={{ background: '#06b6d4' }}></span>
+                <span>Связанные:</span>
+                <span style={{ color: '#06b6d4', fontWeight: 600 }}>{stats.levelCounts.level3}</span>
+              </div>
             )}
           </>
         )}
       </div>
       
-      {/* Подсказка если нет связей */}
+      {/* Warning if no references */}
       {depth >= 2 && stats.availableReferences === 0 && stats.availableCiting === 0 && (
         <div style={{ 
-          padding: '8px 16px', 
+          padding: '12px 20px', 
           background: 'rgba(251, 191, 36, 0.1)', 
           borderBottom: '1px solid var(--border-glass)',
           fontSize: 12,
-          color: '#fbbf24'
+          color: '#fbbf24',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
         }}>
-          ⚠️ Данные о ссылках не загружены. Нажмите "Обновить связи из PubMed" для загрузки информации о цитированиях.
+          <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          Данные о ссылках не загружены. Нажмите "Обновить связи из PubMed" для загрузки.
         </div>
       )}
       
-      <div className="graph-legend" style={{ padding: '4px 16px', display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 11 }}>
+      {/* Legend */}
+      <div className="graph-legend-bar">
         {highlightPValue && (
-          <span style={{ fontWeight: 600 }}><span className="legend-dot" style={{ background: '#fbbf24' }}></span> P-value</span>
+          <span><span className="legend-dot" style={{ background: '#fbbf24' }}></span> P-value</span>
         )}
         {depth >= 3 && (
-          <>
-            <span><span className="legend-dot" style={{ background: '#a855f7' }}></span> Цитируют нас</span>
-          </>
+          <span><span className="legend-dot" style={{ background: '#a855f7' }}></span> Цитируют нас</span>
         )}
         <span><span className="legend-dot" style={{ background: '#22c55e' }}></span> Отобранные</span>
         <span><span className="legend-dot" style={{ background: '#3b82f6' }}></span> Кандидаты</span>
         <span><span className="legend-dot" style={{ background: '#ef4444' }}></span> Исключённые</span>
         {depth >= 2 && (
-          <>
-            <span><span className="legend-dot" style={{ background: '#f97316' }}></span> Ссылки</span>
-          </>
+          <span><span className="legend-dot" style={{ background: '#f97316' }}></span> Ссылки</span>
         )}
         {depth >= 3 && (
-          <>
-            <span><span className="legend-dot" style={{ background: '#06b6d4' }}></span> Связанные</span>
-          </>
+          <span><span className="legend-dot" style={{ background: '#06b6d4' }}></span> Связанные</span>
         )}
       </div>
 
-      {/* Основной контейнер с графом и sidebar */}
+      {/* Main Graph + Sidebar Container */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Область графа */}
+        {/* Graph Area - scrollable 2000x2000 canvas */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
-      {(!data || data.nodes.length === 0) ? (
-        <div className="muted" style={{ padding: 40, textAlign: 'center' }}>
-          📊 Нет данных для графа с текущими фильтрами.
-        </div>
-      ) : (
-        <ForceGraph2D
-          graphData={data}
-          width={dimensions.width}
-          height={dimensions.height}
-          nodeColor={nodeColor}
-          nodeLabel={nodeLabel}
-          nodeVal={nodeVal}
-          nodeRelSize={6}
-          nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
-            const size = Math.sqrt(node.val || 20) * 1.5;
-            
-            // Основной кружок узла
-            ctx.fillStyle = nodeColor(node);
-            ctx.beginPath();
-            ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
-            ctx.fill();
-            
-            // Светлый ободок для выделения (уровень показывает интенсивность)
-            if (selectedNodeIds.has(node.id)) {
-              ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
-              ctx.lineWidth = size * 0.4;
-              ctx.stroke();
-            }
-            
-            // Дополнительный обвод для важных узлов (много цитирований)
-            if ((node.citedByCount || 0) > 20) {
-              ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-              ctx.lineWidth = size * 0.15;
-              ctx.stroke();
-            }
-          }}
-          linkColor={() => 'rgba(100, 120, 150, 0.3)'}
-          linkWidth={0.8}
-          linkDirectionalArrowLength={3}
-          linkDirectionalArrowRelPos={0.95}
-          backgroundColor="#0b0f19"
-          d3AlphaDecay={0.015}
-          d3VelocityDecay={0.25}
-          cooldownTicks={250}
-          warmupTicks={120}
-          onNodeHover={(node: any) => setHoveredNode(node)}
-          onNodeClick={(node: any, event: any) => {
-            // Alt+клик всегда открывает первоисточник
-            if (event?.altKey) {
-              if (node.doi) {
-                window.open(`https://doi.org/${node.doi}`, '_blank');
-              } else if (node.pmid) {
-                window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
-              }
-              return;
-            }
-
-            // Alt+клик открывает источник, обычный клик фиксирует узел для отображения
-            if (event?.altKey) {
-              if (node.doi) {
-                window.open(`https://doi.org/${node.doi}`, '_blank');
-              } else if (node.pmid) {
-                window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
-              }
-              return;
-            }
-
-            // Обычный клик: фиксируем узел для отображения информации
-            setSelectedNodeForDisplay(selectedNodeForDisplay?.id === node.id ? null : node);
-          }}
-        />
-      )}
-      
-      <div className="muted" style={{ fontSize: 11, marginTop: 8, padding: '0 16px 12px' }}>
-        💡 Наведите на узел для подробностей. Клик - фиксирует узел, Alt+клик открывает DOI/PubMed.
-      </div>
+          {(!data || data.nodes.length === 0) ? (
+            <div className="muted" style={{ padding: 60, textAlign: 'center' }}>
+              <svg className="icon-lg" style={{ margin: '0 auto 16px', opacity: 0.5, width: 48, height: 48 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <p>Нет данных для графа с текущими фильтрами.</p>
+            </div>
+          ) : (
+            <div style={{ overflow: 'auto', flex: 1, position: 'relative' }}>
+              <ForceGraph2D
+                graphData={data}
+                width={dimensions.width}
+                height={dimensions.height}
+                nodeColor={nodeColor}
+                nodeLabel={nodeLabel}
+                nodeVal={nodeVal}
+                nodeRelSize={6}
+                nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
+                  const size = Math.sqrt(node.val || 20) * 1.5;
+                  
+                  ctx.fillStyle = nodeColor(node);
+                  ctx.beginPath();
+                  ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                  ctx.fill();
+                  
+                  if (selectedNodeIds.has(node.id)) {
+                    ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
+                    ctx.lineWidth = size * 0.4;
+                    ctx.stroke();
+                  }
+                  
+                  if ((node.citedByCount || 0) > 20) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = size * 0.15;
+                    ctx.stroke();
+                  }
+                }}
+                linkColor={() => 'rgba(100, 120, 150, 0.3)'}
+                linkWidth={0.8}
+                linkDirectionalArrowLength={3}
+                linkDirectionalArrowRelPos={0.95}
+                backgroundColor="#0b0f19"
+                d3AlphaDecay={0.015}
+                d3VelocityDecay={0.25}
+                cooldownTicks={250}
+                warmupTicks={120}
+                onNodeHover={(node: any) => setHoveredNode(node)}
+                onNodeClick={(node: any, event: any) => {
+                  if (event?.altKey) {
+                    if (node.doi) {
+                      window.open(`https://doi.org/${node.doi}`, '_blank');
+                    } else if (node.pmid) {
+                      window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
+                    }
+                    return;
+                  }
+                  setSelectedNodeForDisplay(selectedNodeForDisplay?.id === node.id ? null : node);
+                }}
+              />
+            </div>
+          )}
         </div>
 
-        {/* Sidebar с информацией о узле */}
-        <div style={{
-          width: 340,
-          borderLeft: '1px solid var(--border-glass)',
-          backgroundColor: 'var(--bg-secondary)',
-          overflow: 'auto',
-          padding: '16px',
-          fontSize: 13
-        }}>
+        {/* Sidebar */}
+        <div className="graph-sidebar">
           {selectedNodeForDisplay || hoveredNode ? (
             <NodeInfoPanel 
               node={selectedNodeForDisplay || hoveredNode} 
@@ -878,11 +906,32 @@ export default function CitationGraph({ projectId }: Props) {
               onRefresh={() => loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality })}
             />
           ) : (
-            <div style={{ color: 'var(--text-muted)', textAlign: 'center', paddingTop: '40px' }}>
-              👈 Наведите или кликните на узел
+            <div className="graph-sidebar-empty">
+              <div>
+                <svg className="icon-lg" style={{ margin: '0 auto 12px', opacity: 0.5 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                </svg>
+                <p style={{ margin: 0 }}>Наведите или кликните на узел для просмотра информации</p>
+              </div>
             </div>
           )}
         </div>
+      </div>
+      
+      {/* Footer with instructions */}
+      <div className="graph-footer">
+        <div className="graph-footer-title">
+          <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>Как работает граф</span>
+        </div>
+        <ul className="graph-footer-list">
+          <li>Каждый <strong>узел</strong> — статья из вашего проекта</li>
+          <li><strong>Стрелки</strong> показывают, какая статья цитирует какую</li>
+          <li>Данные о связях берутся из <strong>Crossref</strong> (обогатите статьи кнопкой "Crossref")</li>
+          <li>Кликните на узел чтобы открыть статью по DOI. <strong>Alt+клик</strong> открывает источник напрямую.</li>
+        </ul>
       </div>
     </div>
   );
@@ -908,7 +957,6 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
       };
       const res = await apiImportFromGraph(projectId, payload);
       setAddMessage(res.message || 'Статья добавлена в проект!');
-      // Обновляем граф после добавления
       if (onRefresh) {
         setTimeout(() => onRefresh(), 500);
       }
@@ -921,10 +969,10 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
 
   const getLevelColor = (level: number) => {
     switch(level) {
-      case 0: return '#a855f7'; // Фиолетовый - цитирует нас
-      case 1: return '#3b82f6'; // Синий - наши статьи
-      case 2: return '#f97316'; // Оранжевый - references
-      case 3: return '#06b6d4'; // Голубой - связанные
+      case 0: return '#a855f7';
+      case 1: return '#3b82f6';
+      case 2: return '#f97316';
+      case 3: return '#06b6d4';
       default: return '#6b7280';
     }
   };
@@ -942,78 +990,44 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
   const level = node.graphLevel ?? 1;
 
   return (
-    <div>
-      <div style={{ marginBottom: '16px' }}>
-        <div style={{ 
-          padding: '12px', 
-          backgroundColor: 'var(--bg-primary)',
-          borderRadius: '8px',
-          marginBottom: '12px',
-          border: `2px solid ${getLevelColor(level)}`
-        }}>
-          <div style={{ 
-            display: 'inline-block',
-            padding: '4px 10px',
-            backgroundColor: getLevelColor(level),
-            color: 'white',
-            borderRadius: '4px',
-            fontSize: 11,
-            fontWeight: 600,
-            marginBottom: '10px'
-          }}>
-            {getLevelName(level)}
-          </div>
-          
-          {/* Название (label) */}
-          <div style={{ 
-            fontSize: 14,
-            lineHeight: '1.5',
-            color: 'var(--text-primary)',
-            fontWeight: 600,
-            wordBreak: 'break-word',
-            marginBottom: '8px'
-          }}>
-            {node.label}
-          </div>
-
-          {/* Полное название если есть title */}
-          {node.title && node.title !== node.label && (
-            <div style={{
-              fontSize: 12,
-              lineHeight: '1.4',
-              color: 'var(--text-muted)',
-              wordBreak: 'break-word',
-              marginTop: '8px',
-              padding: '8px',
-              backgroundColor: 'rgba(255,255,255,0.05)',
-              borderRadius: '4px'
-            }}>
-              📖 {node.title}
-            </div>
-          )}
+    <div className="node-info-panel">
+      {/* Header Card */}
+      <div className="node-info-header" style={{ borderLeftColor: getLevelColor(level) }}>
+        <div className="node-level-badge" style={{ backgroundColor: getLevelColor(level) }}>
+          {getLevelName(level)}
         </div>
+        <div className="node-title">{node.label}</div>
+        {node.title && node.title !== node.label && (
+          <div className="node-full-title">{node.title}</div>
+        )}
       </div>
 
+      {/* Info Rows */}
       {node.year && (
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>📅 Год</div>
-          <div style={{ fontWeight: 500 }}>{node.year}</div>
+        <div className="node-info-row">
+          <div className="node-info-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            Год
+          </div>
+          <div className="node-info-value">{node.year}</div>
         </div>
       )}
 
       {node.pmid && (
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>🆔 PMID</div>
+        <div className="node-info-row">
+          <div className="node-info-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+            </svg>
+            PMID
+          </div>
           <a 
             href={`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ 
-              color: '#3b82f6',
-              textDecoration: 'none',
-              fontWeight: 500,
-              cursor: 'pointer'
-            }}
+            className="node-info-link"
           >
             {node.pmid} ↗
           </a>
@@ -1021,19 +1035,19 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
       )}
 
       {node.doi && (
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>📄 DOI</div>
+        <div className="node-info-row">
+          <div className="node-info-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            DOI
+          </div>
           <a 
             href={`https://doi.org/${node.doi}`}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ 
-              color: '#3b82f6',
-              textDecoration: 'none',
-              fontWeight: 500,
-              cursor: 'pointer',
-              wordBreak: 'break-all'
-            }}
+            className="node-info-link"
+            style={{ wordBreak: 'break-all' }}
           >
             {node.doi} ↗
           </a>
@@ -1041,50 +1055,67 @@ function NodeInfoPanel({ node, projectId, onRefresh }: { node: any; projectId: s
       )}
 
       {(node.citedByCount !== undefined && node.citedByCount > 0) && (
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>📈 Цитирований</div>
-          <div style={{ fontWeight: 500, color: '#10b981' }}>{node.citedByCount}</div>
+        <div className="node-info-row">
+          <div className="node-info-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            Цитирований
+          </div>
+          <div className="node-info-value" style={{ color: '#10b981' }}>{node.citedByCount}</div>
         </div>
       )}
 
       {node.statsQuality && node.statsQuality > 0 && (
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>⭐ P-value</div>
-          <div style={{ fontWeight: 500 }}>{'★'.repeat(node.statsQuality)}</div>
+        <div className="node-info-row">
+          <div className="node-info-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+            </svg>
+            P-value
+          </div>
+          <div className="node-info-value" style={{ color: '#fbbf24' }}>{'★'.repeat(node.statsQuality)}</div>
         </div>
       )}
 
-      {node.graphLevel === 2 || node.graphLevel === 3 || node.graphLevel === 0 ? (
+      {/* Add Button */}
+      {(node.graphLevel === 2 || node.graphLevel === 3 || node.graphLevel === 0) && (
         <button
           onClick={handleAddToProject}
           disabled={adding}
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            backgroundColor: '#10b981',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: adding ? 'wait' : 'pointer',
-            fontWeight: 600,
-            fontSize: 12,
-            marginTop: '16px',
-            opacity: adding ? 0.6 : 1
-          }}
+          className="node-add-btn"
         >
-          {adding ? '⏳ Добавляю...' : '➕ Добавить в проект'}
+          {adding ? (
+            <>
+              <span className="loading-spinner" style={{ width: 14, height: 14, marginRight: 8, display: 'inline-block', verticalAlign: 'middle' }} />
+              Добавляю...
+            </>
+          ) : (
+            <>
+              <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Добавить в проект
+            </>
+          )}
         </button>
-      ) : null}
+      )}
 
       {addMessage && (
         <div style={{ 
-          marginTop: '12px',
-          padding: '8px 12px',
+          marginTop: 12,
+          padding: '10px 14px',
           backgroundColor: 'rgba(16, 185, 129, 0.1)',
-          borderRadius: '4px',
-          fontSize: 11,
-          color: '#10b981'
+          borderRadius: 8,
+          fontSize: 12,
+          color: '#10b981',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8
         }}>
+          <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           {addMessage}
         </div>
       )}
