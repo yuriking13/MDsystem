@@ -6,8 +6,8 @@ import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
-import { Table } from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
+import { CustomTable } from './extensions/CustomTable';
 import { CustomTableCell } from './extensions/CustomTableCell';
 import { CustomTableHeader } from './extensions/CustomTableHeader';
 import { TextStyle } from '@tiptap/extension-text-style';
@@ -249,7 +249,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
       Placeholder.configure({
         placeholder: 'Начните писать...',
       }),
-      Table.configure({
+      CustomTable.configure({
         resizable: true,
         allowTableNodeSelection: true,
         lastColumnResizable: true,
@@ -592,6 +592,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     
     // Insert table function - improved version
     const insertTable = (tableData: { headers: string[]; rows: string[][] }, title?: string, statisticId?: string) => {
+      console.log('[insertTable] Called with statisticId:', statisticId);
       if (!editor.isEditable || !editor.view || editor.isDestroyed) {
         console.warn('Editor is not ready for table insertion');
         return;
@@ -620,7 +621,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
       tableHtml += '<tr>';
       for (let i = 0; i < numCols; i++) {
         const headerText = headers[i] || `Колонка ${i + 1}`;
-        tableHtml += `<th>${headerText}</th>`;
+        tableHtml += `<th><p>${headerText}</p></th>`;
       }
       tableHtml += '</tr>';
       
@@ -630,18 +631,26 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
         tableHtml += '<tr>';
         for (let colIdx = 0; colIdx < numCols; colIdx++) {
           const cellText = row[colIdx] || '';
-          tableHtml += `<td>${cellText}</td>`;
+          tableHtml += `<td><p>${cellText}</p></td>`;
         }
         tableHtml += '</tr>';
       }
       
       tableHtml += '</table>';
       
+      console.log('[insertTable] Generated HTML:', tableHtml.substring(0, 200));
+      
       // Insert the table
       editor.chain()
         .focus()
         .insertContent(tableHtml)
         .run();
+      
+      // Verify the insertion
+      setTimeout(() => {
+        const html = editor.getHTML();
+        console.log('[insertTable] After insert, editor HTML contains data-statistic-id:', html.includes('data-statistic-id'));
+      }, 100);
     };
     
     (window as any).__editorInsertCitation = insertCitation;
