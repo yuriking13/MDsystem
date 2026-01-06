@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import TiptapEditor from "../components/TiptapEditor/TiptapEditor";
+import TiptapEditor, { TiptapEditorHandle } from "../components/TiptapEditor/TiptapEditor";
 import {
   apiGetDocument,
   apiUpdateDocument,
@@ -74,6 +74,7 @@ export default function DocumentPage() {
   const [citationStyle, setCitationStyle] = useState<CitationStyle>("gost");
   const hasSyncedStatistics = useRef(false);
   const isSyncingStatistics = useRef(false);
+  const editorRef = useRef<TiptapEditorHandle>(null);
 
   // Модальное окно выбора статьи для цитаты
   const [showCitationPicker, setShowCitationPicker] = useState(false);
@@ -282,13 +283,17 @@ export default function DocumentPage() {
 
   // Refresh document content with the latest data from Statistics (run once after load)
   const syncDocumentWithStatistics = useCallback(async () => {
-    if (!projectId || !content) return;
+    if (!projectId) return;
     if (isSyncingStatistics.current) return;
     isSyncingStatistics.current = true;
 
     try {
+      // Get current content from editor (source of truth) or fallback to state
+      const currentHtml = editorRef.current?.getHTML() || content;
+      if (!currentHtml) return;
+
       const parser = new DOMParser();
-      const docDom = parser.parseFromString(content, "text/html");
+      const docDom = parser.parseFromString(currentHtml, "text/html");
 
       const tables = Array.from(docDom.querySelectorAll('table[data-statistic-id]')) as HTMLElement[];
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -348,6 +353,10 @@ export default function DocumentPage() {
 
       if (changed) {
         const updatedContent = docDom.body.innerHTML;
+        // Use forceSetContent to directly update TipTap editor
+        if (editorRef.current) {
+          editorRef.current.forceSetContent(updatedContent);
+        }
         setContent(updatedContent);
         setDoc((prev) => prev ? { ...prev, content: updatedContent } : prev);
         await saveDocument(updatedContent);
@@ -780,6 +789,7 @@ export default function DocumentPage() {
         {/* Редактор с встроенными сайдбарами */}
         <div className="document-editor-wrapper">
           <TiptapEditor
+            ref={editorRef}
             content={content}
             onChange={setContent}
             onInsertCitation={openCitationPicker}

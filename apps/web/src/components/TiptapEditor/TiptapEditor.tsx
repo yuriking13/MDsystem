@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -168,7 +168,14 @@ type StatEditorState = {
   colWidths?: number[];
 };
 
-export default function TiptapEditor({
+export interface TiptapEditorHandle {
+  /** Force set content in the editor (bypasses internal state comparison) */
+  forceSetContent: (html: string) => void;
+  /** Get current editor HTML */
+  getHTML: () => string;
+}
+
+const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function TiptapEditor({
   content = '',
   onChange,
   onInsertCitation,
@@ -182,7 +189,7 @@ export default function TiptapEditor({
   citations = [],
   citationStyle = 'gost',
   editable = true,
-}: TiptapEditorProps) {
+}: TiptapEditorProps, ref) {
   const [showOutline, setShowOutline] = useState(true);
   const [showBibliography, setShowBibliography] = useState(true);
   const [showPageSettings, setShowPageSettings] = useState(false);
@@ -290,7 +297,7 @@ export default function TiptapEditor({
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       onChange?.(html);
-      updateHeadings(editor);
+      // updateHeadings called later after it's defined
     },
   });
 
@@ -503,6 +510,17 @@ export default function TiptapEditor({
     
     setHeadings(newHeadings);
   }, []);
+
+  // Expose imperative methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    forceSetContent: (html: string) => {
+      if (editor) {
+        editor.commands.setContent(html);
+        updateHeadings(editor);
+      }
+    },
+    getHTML: () => editor?.getHTML() || '',
+  }), [editor, updateHeadings]);
 
   // Register global insert functions
   useEffect(() => {
@@ -936,4 +954,6 @@ export default function TiptapEditor({
       )}
     </div>
   );
-}
+});
+
+export default TiptapEditor;
