@@ -82,7 +82,7 @@ export default function PageSettingsModal({
 
   // Check for deviations from style
   useEffect(() => {
-    const styleConfig = STYLE_CONFIGS[citationStyle];
+    const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
     const newDeviations: string[] = [];
 
     if (Math.abs(settings.marginTop - styleConfig.marginTop) > 5) {
@@ -119,7 +119,7 @@ export default function PageSettingsModal({
 
   // Apply style preset
   const applyStylePreset = (style: CitationStyle) => {
-    const styleConfig = STYLE_CONFIGS[style];
+    const styleConfig = STYLE_CONFIGS[style] || STYLE_CONFIGS.gost;
     const newSettings: PageSettings = {
       marginTop: styleConfig.marginTop,
       marginBottom: styleConfig.marginBottom,
