@@ -1151,7 +1151,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         for (const article of articlesRes.rows) {
           const citedByPmids = article.cited_by_pmids || [];
           for (const citingPmid of citedByPmids) {
-            if (!pmidToId.has(citingPmid) && !level2Pmids.has(citingPmid)) {
+            if (!pmidToId.has(citingPmid)) {
               level3Pmids.add(citingPmid);
               level3ToLevel1Links.push({ sourcePmid: citingPmid, targetId: article.id });
             }

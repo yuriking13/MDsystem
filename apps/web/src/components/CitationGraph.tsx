@@ -26,6 +26,7 @@ export default function CitationGraph({ projectId }: Props) {
     availableCiting?: number;
   }>({ totalNodes: 0, totalLinks: 0 });
   const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+  const [selectedNodeForDisplay, setSelectedNodeForDisplay] = useState<GraphNode | null>(null);
   const [fetchingRefs, setFetchingRefs] = useState(false);
   const [refsMessage, setRefsMessage] = useState<string | null>(null);
 
@@ -162,8 +163,8 @@ export default function CitationGraph({ projectId }: Props) {
     const updateSize = () => {
       if (containerRef.current) {
         setDimensions({
-          width: containerRef.current.offsetWidth,
-          height: 500,
+          width: containerRef.current.offsetWidth - 350, // Оставляем место для sidebar
+          height: Math.max(600, window.innerHeight - 200), // Большой размер
         });
       }
     };
@@ -225,20 +226,20 @@ export default function CitationGraph({ projectId }: Props) {
     
     // Базовый размер по цитированиям
     let baseSize: number;
-    if (citedByCount === 0) baseSize = 2;
-    else if (citedByCount <= 3) baseSize = 2.5 + citedByCount * 0.3;
-    else if (citedByCount <= 10) baseSize = 3.5 + (citedByCount - 3) * 0.4;
-    else if (citedByCount <= 30) baseSize = 6 + (citedByCount - 10) * 0.35;
-    else if (citedByCount <= 100) baseSize = 13 + (citedByCount - 30) * 0.15;
-    else baseSize = 24 + Math.log10(citedByCount - 99) * 5;
+    if (citedByCount === 0) baseSize = 3.5;
+    else if (citedByCount <= 2) baseSize = 4 + citedByCount * 0.5;
+    else if (citedByCount <= 8) baseSize = 5 + (citedByCount - 2) * 0.6;
+    else if (citedByCount <= 25) baseSize = 8.5 + (citedByCount - 8) * 0.5;
+    else if (citedByCount <= 80) baseSize = 17 + (citedByCount - 25) * 0.25;
+    else baseSize = 31 + Math.log10(citedByCount - 79) * 6;
     
-    // Коэффициент по уровню графа (уровни 2 и 3 немного меньше)
+    // Коэффициент по уровню графа (разные размеры для разных уровней)
     let levelMultiplier = 1;
-    if (level === 2) levelMultiplier = 0.85;
-    if (level === 3) levelMultiplier = 0.75;
+    if (level === 2) levelMultiplier = 0.9;
+    if (level === 3) levelMultiplier = 0.8;
     
     // Бонус за качество статистики
-    const statsBonus = statsQ > 0 ? 0.15 * statsQ : 0;
+    const statsBonus = statsQ > 0 ? 0.12 * statsQ : 0;
     
     return baseSize * levelMultiplier * (1 + statsBonus);
   }, []);
@@ -281,7 +282,7 @@ export default function CitationGraph({ projectId }: Props) {
   }
 
   return (
-    <div className="graph-container" ref={containerRef}>
+    <div className="graph-container" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Фильтры - первая строка */}
       <div className="graph-filters" style={{ 
         display: 'flex', 
@@ -559,6 +560,10 @@ export default function CitationGraph({ projectId }: Props) {
         )}
       </div>
 
+      {/* Основной контейнер с графом и sidebar */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* Область графа */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'auto' }}>
       {(!data || data.nodes.length === 0) ? (
         <div className="muted" style={{ padding: 40, textAlign: 'center' }}>
           📊 Нет данных для графа с текущими фильтрами.
@@ -571,7 +576,7 @@ export default function CitationGraph({ projectId }: Props) {
           nodeColor={nodeColor}
           nodeLabel={nodeLabel}
           nodeVal={nodeVal}
-          nodeRelSize={5}
+          nodeRelSize={6.5}
           nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
             const size = (node.val || 1) * 1.2;
             
@@ -616,30 +621,214 @@ export default function CitationGraph({ projectId }: Props) {
               return;
             }
 
-            // Обычный клик: для уровней 2/3 — выбор узла, для уровня 1 — открытие
-            const level = node.graphLevel || 1;
-            if (level >= 2) {
-              setSelectedNodeIds((prev) => {
-                const next = new Set(prev);
-                if (next.has(node.id)) next.delete(node.id);
-                else next.add(node.id);
-                return next;
-              });
+            // Alt+клик открывает источник, обычный клик фиксирует узел для отображения
+            if (event?.altKey) {
+              if (node.doi) {
+                window.open(`https://doi.org/${node.doi}`, '_blank');
+              } else if (node.pmid) {
+                window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
+              }
               return;
             }
 
-            if (node.doi) {
-              window.open(`https://doi.org/${node.doi}`, '_blank');
-            } else if (node.pmid) {
-              window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
-            }
+            // Обычный клик: фиксируем узел для отображения информации
+            setSelectedNodeForDisplay(selectedNodeForDisplay?.id === node.id ? null : node);
           }}
         />
       )}
       
       <div className="muted" style={{ fontSize: 11, marginTop: 8, padding: '0 16px 12px' }}>
-        💡 Наведите на узел для подробностей. Клик по уровням 2/3 выбирает узел, Alt+клик открывает DOI/PubMed.
+        💡 Наведите на узел для подробностей. Клик - фиксирует узел, Alt+клик открывает DOI/PubMed.
       </div>
+        </div>
+
+        {/* Sidebar с информацией о узле */}
+        <div style={{
+          width: 340,
+          borderLeft: '1px solid var(--border-glass)',
+          backgroundColor: 'var(--bg-secondary)',
+          overflow: 'auto',
+          padding: '16px',
+          fontSize: 13
+        }}>
+          {selectedNodeForDisplay || hoveredNode ? (
+            <NodeInfoPanel node={selectedNodeForDisplay || hoveredNode} projectId={projectId} />
+          ) : (
+            <div style={{ color: 'var(--text-muted)', textAlign: 'center', paddingTop: '40px' }}>
+              👈 Наведите или кликните на узел
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Компонент для отображения информации о узле
+function NodeInfoPanel({ node, projectId }: { node: any; projectId: string }) {
+  const [adding, setAdding] = useState(false);
+  const [addMessage, setAddMessage] = useState<string | null>(null);
+
+  const handleAddToProject = async () => {
+    if (!node.pmid && !node.doi) {
+      setAddMessage('Нет PMID или DOI для добавления');
+      return;
+    }
+
+    setAdding(true);
+    try {
+      // TODO: реализовать API для добавления статьи в проект
+      setAddMessage('Функция в разработке');
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const getLevelColor = (level: number) => {
+    switch(level) {
+      case 1: return '#3b82f6';
+      case 2: return '#f97316';
+      case 3: return '#d946ef';
+      default: return '#gray';
+    }
+  };
+
+  const getLevelName = (level: number) => {
+    switch(level) {
+      case 1: return 'Поиск (найдена)';
+      case 2: return 'Ссылка (references)';
+      case 3: return 'Цитирующая (cited-by)';
+      default: return `Уровень ${level}`;
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: '16px' }}>
+        <div style={{ 
+          padding: '8px 12px', 
+          backgroundColor: 'var(--bg-primary)',
+          borderRadius: '6px',
+          marginBottom: '12px'
+        }}>
+          <div style={{ 
+            display: 'inline-block',
+            padding: '4px 8px',
+            backgroundColor: getLevelColor(node.graphLevel || 1),
+            color: 'white',
+            borderRadius: '4px',
+            fontSize: 11,
+            fontWeight: 600,
+            marginBottom: '8px'
+          }}>
+            {getLevelName(node.graphLevel || 1)}
+          </div>
+          <div style={{ 
+            fontSize: 12,
+            lineHeight: '1.4',
+            color: 'var(--text-primary)',
+            fontWeight: 500,
+            wordBreak: 'break-word'
+          }}>
+            {node.label}
+          </div>
+        </div>
+      </div>
+
+      {node.year && (
+        <div style={{ marginBottom: '12px' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>📅 Год</div>
+          <div style={{ fontWeight: 500 }}>{node.year}</div>
+        </div>
+      )}
+
+      {node.pmid && (
+        <div style={{ marginBottom: '12px' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>🆔 PMID</div>
+          <a 
+            href={`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ 
+              color: '#3b82f6',
+              textDecoration: 'none',
+              fontWeight: 500,
+              cursor: 'pointer'
+            }}
+          >
+            {node.pmid} ↗
+          </a>
+        </div>
+      )}
+
+      {node.doi && (
+        <div style={{ marginBottom: '12px' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>📄 DOI</div>
+          <a 
+            href={`https://doi.org/${node.doi}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ 
+              color: '#3b82f6',
+              textDecoration: 'none',
+              fontWeight: 500,
+              cursor: 'pointer',
+              wordBreak: 'break-all'
+            }}
+          >
+            {node.doi} ↗
+          </a>
+        </div>
+      )}
+
+      {(node.citedByCount !== undefined && node.citedByCount > 0) && (
+        <div style={{ marginBottom: '12px' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>📈 Цитирований</div>
+          <div style={{ fontWeight: 500, color: '#10b981' }}>{node.citedByCount}</div>
+        </div>
+      )}
+
+      {node.statsQuality && node.statsQuality > 0 && (
+        <div style={{ marginBottom: '12px' }}>
+          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: '4px' }}>⭐ P-value</div>
+          <div style={{ fontWeight: 500 }}>{'★'.repeat(node.statsQuality)}</div>
+        </div>
+      )}
+
+      {node.graphLevel === 2 || node.graphLevel === 3 ? (
+        <button
+          onClick={handleAddToProject}
+          disabled={adding}
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            backgroundColor: '#10b981',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 600,
+            fontSize: 12,
+            marginTop: '16px',
+            opacity: adding ? 0.6 : 1
+          }}
+        >
+          {adding ? '⏳ Добавляю...' : '➕ Добавить в базу'}
+        </button>
+      ) : null}
+
+      {addMessage && (
+        <div style={{ 
+          marginTop: '12px',
+          padding: '8px 12px',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderRadius: '4px',
+          fontSize: 11,
+          color: '#10b981'
+        }}>
+          {addMessage}
+        </div>
+      )}
     </div>
   );
 }
