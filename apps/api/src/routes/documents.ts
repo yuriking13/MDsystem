@@ -1064,9 +1064,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Получить все статьи проекта (Уровень 1) с их данными о references
       // Включаем references_fetched_at для определения уже проанализированных статей
+      // Добавляем abstract_en, abstract_ru, title_ru, journal для полноценного отображения
       const articlesRes = await pool.query(
         hasRefColumns
-          ? `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
+          ? `SELECT a.id, a.doi, a.pmid, a.title_en, a.title_ru, a.abstract_en, a.abstract_ru,
+                    a.authors, a.year, a.journal,
                     a.raw_json, a.reference_pmids, a.cited_by_pmids, a.references_fetched_at,
                     ${hasStatsQuality ? 'COALESCE(a.stats_quality, 0) as stats_quality,' : '0 as stats_quality,'}
                     pa.status${hasSourceQueryCol ? ', pa.source_query' : ''},
@@ -1074,7 +1076,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
              FROM project_articles pa
              JOIN articles a ON a.id = pa.article_id
              WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}${yearCondition}${statsCondition}`
-          : `SELECT a.id, a.doi, a.pmid, a.title_en, a.authors, a.year, 
+          : `SELECT a.id, a.doi, a.pmid, a.title_en, a.title_ru, a.abstract_en, a.abstract_ru,
+                    a.authors, a.year, a.journal,
                     a.raw_json, 
                     ARRAY[]::text[] as reference_pmids, 
                     ARRAY[]::text[] as cited_by_pmids,
@@ -1093,6 +1096,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         id: string;
         label: string;
         title: string | null;
+        title_ru: string | null;
+        abstract: string | null;
+        abstract_ru: string | null;
+        authors: string | null;
+        journal: string | null;
         year: number | null;
         status: string;
         doi: string | null;
@@ -1136,10 +1144,20 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         const europePMCCitations = article.raw_json?.europePMCCitations || 0;
         const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
         
+        // Форматируем авторов (может быть массивом или строкой)
+        const authorsStr = Array.isArray(article.authors) 
+          ? article.authors.join(', ') 
+          : article.authors || null;
+        
         nodes.push({
           id: article.id,
           label,
-          title: article.title_en || article.title_ru || null,
+          title: article.title_en || null,
+          title_ru: article.title_ru || null,
+          abstract: article.abstract_en || null,
+          abstract_ru: article.abstract_ru || null,
+          authors: authorsStr,
+          journal: article.journal || null,
           year: article.year,
           status: article.status,
           doi: article.doi,
@@ -1265,7 +1283,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
         
         const level2Res = await pool.query(
-          `SELECT id, doi, pmid, title_en, authors, year, raw_json,
+          `SELECT id, doi, pmid, title_en, title_ru, abstract_en, abstract_ru, authors, year, journal, raw_json,
                   ${hasRefColumns ? 'reference_pmids, cited_by_pmids,' : "ARRAY[]::text[] as reference_pmids, ARRAY[]::text[] as cited_by_pmids,"}
                   ${hasStatsQuality ? 'COALESCE(stats_quality, 0) as stats_quality' : '0 as stats_quality'}
            FROM articles 
@@ -1296,16 +1314,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         for (const article of level2Res.rows) {
           if (addedNodeIds.has(article.id)) continue;
           
-          const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
+          const authorsArr = article.authors || [];
+          const firstAuthor = (Array.isArray(authorsArr) ? authorsArr[0] : authorsArr)?.split?.(' ')?.[0] || 'Unknown';
           const label = `${firstAuthor} (${article.year || '?'})`;
           const pubmedCitedBy = article.cited_by_pmids?.length || 0;
           const europePMCCitations = article.raw_json?.europePMCCitations || 0;
           const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
+          const authorsStr = Array.isArray(authorsArr) ? authorsArr.join(', ') : authorsArr;
           
           nodes.push({
             id: article.id,
             label,
             title: article.title_en || null,
+            title_ru: article.title_ru || null,
+            abstract: article.abstract_en || null,
+            abstract_ru: article.abstract_ru || null,
+            authors: authorsStr || null,
+            journal: article.journal || null,
             year: article.year,
             status: 'reference', // Особый статус для статей уровня 2
             doi: article.doi,
@@ -1325,6 +1350,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
         
         // Добавляем узлы для PMIDs которых нет в БД (показываем как "неизвестные")
+        // Для таких узлов нужно подгрузить данные при клике (см. NodeInfoPanel)
         for (const pmid of level2NotInDb) {
           const nodeId = `pmid:${pmid}`; // Используем специальный ID
           if (addedNodeIds.has(nodeId)) continue;
@@ -1333,6 +1359,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             id: nodeId,
             label: `PMID:${pmid}`,
             title: null,
+            title_ru: null,
+            abstract: null,
+            abstract_ru: null,
+            authors: null,
+            journal: null,
             year: null,
             status: 'reference',
             doi: null,
@@ -1349,6 +1380,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Загружаем статьи уровня 0 (citing articles - те кто цитирует нас) - сначала ищем в БД
       const level0InDb = new Map<string, any>(); // pmid -> article data
       const level0NotInDb = new Set<string>(); // PMIDs не в БД
+      
+      console.log(`[CitationGraph] Level 0 check: depth=${depth}, level0Pmids.size=${level0Pmids.size}, canAddMore=${canAddMore()}`);
       
       if (depth >= 3 && level0Pmids.size > 0 && canAddMore()) {
         // В lite режиме ограничиваем количество PMIDs для загрузки
@@ -1375,7 +1408,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
         
         const level0Res = await pool.query(
-          `SELECT id, doi, pmid, title_en, authors, year, raw_json,
+          `SELECT id, doi, pmid, title_en, title_ru, abstract_en, abstract_ru, authors, year, journal, raw_json,
                   ${hasRefColumns ? 'reference_pmids, cited_by_pmids,' : "ARRAY[]::text[] as reference_pmids, ARRAY[]::text[] as cited_by_pmids,"}
                   ${hasStatsQuality ? 'COALESCE(stats_quality, 0) as stats_quality' : '0 as stats_quality'}
            FROM articles 
@@ -1406,16 +1439,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         for (const article of level0Res.rows) {
           if (addedNodeIds.has(article.id)) continue;
           
-          const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
+          const authorsArr = article.authors || [];
+          const firstAuthor = (Array.isArray(authorsArr) ? authorsArr[0] : authorsArr)?.split?.(' ')?.[0] || 'Unknown';
           const label = `${firstAuthor} (${article.year || '?'})`;
           const pubmedCitedBy = article.cited_by_pmids?.length || 0;
           const europePMCCitations = article.raw_json?.europePMCCitations || 0;
           const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
+          const authorsStr = Array.isArray(authorsArr) ? authorsArr.join(', ') : authorsArr;
           
           nodes.push({
             id: article.id,
             label,
             title: article.title_en || null,
+            title_ru: article.title_ru || null,
+            abstract: article.abstract_en || null,
+            abstract_ru: article.abstract_ru || null,
+            authors: authorsStr || null,
+            journal: article.journal || null,
             year: article.year,
             status: 'citing', // Особый статус для цитирующих статей
             doi: article.doi,
@@ -1435,6 +1475,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
         
         // Добавляем узлы для PMIDs которых нет в БД (показываем как "неизвестные")
+        // Данные будут подгружены при клике через NodeInfoPanel
         for (const pmid of level0NotInDb) {
           const nodeId = `pmid:${pmid}`; // Используем специальный ID
           if (addedNodeIds.has(nodeId)) continue;
@@ -1443,6 +1484,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             id: nodeId,
             label: `PMID:${pmid}`,
             title: null,
+            title_ru: null,
+            abstract: null,
+            abstract_ru: null,
+            authors: null,
+            journal: null,
             year: null,
             status: 'citing',
             doi: null,
@@ -1460,6 +1506,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Это статьи, которые цитируют те же references что и мы - т.е. похожие исследования
       const level3InDb = new Map<string, any>();
       const level3NotInDb = new Set<string>();
+      
+      console.log(`[CitationGraph] Level 3 check: depth=${depth}, level2Articles.length=${level2Articles.length}, canAddMore=${canAddMore()}`);
       
       // Level 3 работает с лимитами для производительности
       if (depth >= 3 && level2Articles.length > 0 && canAddMore()) {
@@ -1499,7 +1547,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
           
           const level3Res = await pool.query(
-            `SELECT id, doi, pmid, title_en, authors, year, raw_json,
+            `SELECT id, doi, pmid, title_en, title_ru, abstract_en, abstract_ru, authors, year, journal, raw_json,
                     ${hasRefColumns ? 'reference_pmids, cited_by_pmids,' : "ARRAY[]::text[] as reference_pmids, ARRAY[]::text[] as cited_by_pmids,"}
                     ${hasStatsQuality ? 'COALESCE(stats_quality, 0) as stats_quality' : '0 as stats_quality'}
              FROM articles 
@@ -1528,16 +1576,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           for (const article of level3Res.rows) {
             if (addedNodeIds.has(article.id)) continue;
             
-            const firstAuthor = article.authors?.[0]?.split(' ')[0] || 'Unknown';
+            const authorsArr = article.authors || [];
+            const firstAuthor = (Array.isArray(authorsArr) ? authorsArr[0] : authorsArr)?.split?.(' ')?.[0] || 'Unknown';
             const label = `${firstAuthor} (${article.year || '?'})`;
             const pubmedCitedBy = article.cited_by_pmids?.length || 0;
             const europePMCCitations = article.raw_json?.europePMCCitations || 0;
             const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
+            const authorsStr = Array.isArray(authorsArr) ? authorsArr.join(', ') : authorsArr;
             
             nodes.push({
               id: article.id,
               label,
               title: article.title_en || null,
+              title_ru: article.title_ru || null,
+              abstract: article.abstract_en || null,
+              abstract_ru: article.abstract_ru || null,
+              authors: authorsStr || null,
+              journal: article.journal || null,
               year: article.year,
               status: 'related', // Связанная работа
               doi: article.doi,
@@ -1557,6 +1612,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
           
           // Добавляем узлы для PMIDs которых нет в БД
+          // Данные будут подгружены при клике через NodeInfoPanel
           for (const pmid of level3NotInDb) {
             const nodeId = `pmid:${pmid}`;
             if (addedNodeIds.has(nodeId)) continue;
@@ -1565,6 +1621,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               id: nodeId,
               label: `PMID:${pmid}`,
               title: null,
+              title_ru: null,
+              abstract: null,
+              abstract_ru: null,
+              authors: null,
+              journal: null,
               year: null,
               status: 'related',
               doi: null,
@@ -1724,6 +1785,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         level2: nodes.filter(n => n.graphLevel === 2).length, // References
         level3: nodes.filter(n => n.graphLevel === 3).length, // Связанные
       };
+      
+      console.log(`[CitationGraph] Final levelCounts: L0=${levelCounts.level0}, L1=${levelCounts.level1}, L2=${levelCounts.level2}, L3=${levelCounts.level3}, links=${links.length}`);
       
       // Note: totalRefPmids and articlesWithRefs are now calculated above in the link creation loop
 

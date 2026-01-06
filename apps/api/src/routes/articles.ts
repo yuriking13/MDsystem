@@ -1820,6 +1820,91 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       };
     }
   );
+
+  // =====================================================
+  // GET /api/articles/by-pmid/:pmid - получить данные статьи по PMID
+  // =====================================================
+  fastify.get<{
+    Params: { pmid: string };
+  }>(
+    "/articles/by-pmid/:pmid",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { pmid } = request.params;
+      
+      if (!pmid || !/^\d+$/.test(pmid)) {
+        return reply.code(400).send({ error: "Invalid PMID" });
+      }
+
+      // Сначала проверяем в базе данных
+      const dbRes = await pool.query(
+        `SELECT id, doi, pmid, title_en, title_ru, abstract_en, abstract_ru, 
+                authors, year, journal, raw_json
+         FROM articles 
+         WHERE pmid = $1`,
+        [pmid]
+      );
+
+      if (dbRes.rows.length > 0) {
+        const article = dbRes.rows[0];
+        const authorsStr = Array.isArray(article.authors) 
+          ? article.authors.join(', ') 
+          : article.authors || null;
+        
+        return {
+          ok: true,
+          source: 'database',
+          article: {
+            pmid: article.pmid,
+            doi: article.doi,
+            title: article.title_en || null,
+            title_ru: article.title_ru || null,
+            abstract: article.abstract_en || null,
+            abstract_ru: article.abstract_ru || null,
+            authors: authorsStr,
+            journal: article.journal || null,
+            year: article.year,
+            citedByCount: article.raw_json?.europePMCCitations || 0,
+          }
+        };
+      }
+
+      // Если не найдено в БД, запрашиваем из PubMed
+      try {
+        const apiKey = await getUserApiKey(request.user.sub, 'ncbi');
+        const results = await pubmedFetchByPmids({
+          pmids: [pmid],
+          apiKey: apiKey || undefined,
+          throttleMs: apiKey ? 80 : 300,
+        });
+
+        if (results.length > 0) {
+          const pubmedArticle = results[0];
+          return {
+            ok: true,
+            source: 'pubmed',
+            article: {
+              pmid: pubmedArticle.pmid,
+              doi: pubmedArticle.doi || null,
+              title: pubmedArticle.title || null,
+              title_ru: null, // PubMed не возвращает перевод
+              abstract: pubmedArticle.abstract || null,
+              abstract_ru: null,
+              authors: pubmedArticle.authors || null,
+              journal: pubmedArticle.journal || null,
+              year: pubmedArticle.year || null,
+              citedByCount: 0,
+            }
+          };
+        }
+
+        return reply.code(404).send({ ok: false, error: "Article not found" });
+      } catch (err) {
+        console.error(`Error fetching PMID ${pmid} from PubMed:`, err);
+        return reply.code(500).send({ ok: false, error: "Failed to fetch from PubMed" });
+      }
+    }
+  );
 };
 
 export default plugin;
