@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import { apiGetCitationGraph, apiFetchReferences, apiImportFromGraph, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts } from "../lib/api";
+import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiImportFromGraph, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts } from "../lib/api";
 
 type Props = {
   projectId: string;
@@ -13,6 +13,24 @@ type GraphData = {
 
 type FilterType = 'all' | 'selected' | 'excluded';
 type DepthType = 1 | 2 | 3;
+
+// Тип для статуса загрузки
+type FetchJobStatus = {
+  isRunning: boolean;
+  progress: number;
+  elapsedSeconds: number;
+  status?: string;
+  totalArticles?: number;
+  processedArticles?: number;
+  message?: string;
+};
+
+// Форматирование времени MM:SS
+function formatTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
 
 export default function CitationGraph({ projectId }: Props) {
   const [data, setData] = useState<GraphData | null>(null);
@@ -29,6 +47,10 @@ export default function CitationGraph({ projectId }: Props) {
   const [selectedNodeForDisplay, setSelectedNodeForDisplay] = useState<GraphNode | null>(null);
   const [fetchingRefs, setFetchingRefs] = useState(false);
   const [refsMessage, setRefsMessage] = useState<string | null>(null);
+  
+  // Статус фоновой загрузки
+  const [fetchJobStatus, setFetchJobStatus] = useState<FetchJobStatus | null>(null);
+  const fetchStatusIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
   const [importing, setImporting] = useState(false);
@@ -103,17 +125,101 @@ export default function CitationGraph({ projectId }: Props) {
     loadGraph(options);
   }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality]);
 
+  // Проверка статуса загрузки при монтировании
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const status = await apiFetchReferencesStatus(projectId);
+        if (status.hasJob && (status.status === 'running' || status.status === 'pending')) {
+          setFetchJobStatus({
+            isRunning: true,
+            progress: status.progress || 0,
+            elapsedSeconds: status.elapsedSeconds || 0,
+            status: status.status,
+            totalArticles: status.totalArticles,
+            processedArticles: status.processedArticles,
+          });
+          startStatusPolling();
+        }
+      } catch {
+        // Игнорируем ошибки проверки статуса
+      }
+    };
+    checkStatus();
+    
+    return () => {
+      if (fetchStatusIntervalRef.current) {
+        clearInterval(fetchStatusIntervalRef.current);
+      }
+    };
+  }, [projectId]);
+
+  const startStatusPolling = () => {
+    if (fetchStatusIntervalRef.current) {
+      clearInterval(fetchStatusIntervalRef.current);
+    }
+    
+    fetchStatusIntervalRef.current = setInterval(async () => {
+      try {
+        const status = await apiFetchReferencesStatus(projectId);
+        
+        if (!status.hasJob || status.status === 'completed' || status.status === 'failed') {
+          // Загрузка завершена
+          if (fetchStatusIntervalRef.current) {
+            clearInterval(fetchStatusIntervalRef.current);
+            fetchStatusIntervalRef.current = null;
+          }
+          
+          setFetchJobStatus(null);
+          setFetchingRefs(false);
+          
+          if (status.status === 'completed') {
+            setRefsMessage('✅ Загрузка связей завершена! Граф обновляется...');
+            // Перезагружаем граф
+            await loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality });
+          } else if (status.status === 'failed') {
+            setRefsMessage(`❌ Ошибка: ${status.errorMessage || 'Неизвестная ошибка'}`);
+          }
+        } else {
+          // Обновляем прогресс
+          setFetchJobStatus({
+            isRunning: true,
+            progress: status.progress || 0,
+            elapsedSeconds: status.elapsedSeconds || 0,
+            status: status.status,
+            totalArticles: status.totalArticles,
+            processedArticles: status.processedArticles,
+          });
+        }
+      } catch (err) {
+        console.error('Error polling status:', err);
+      }
+    }, 2000); // Каждые 2 секунды
+  };
+
   const handleFetchReferences = async () => {
     setFetchingRefs(true);
     setRefsMessage(null);
     try {
       const res = await apiFetchReferences(projectId);
-      setRefsMessage(res.message);
-      // Перезагружаем граф после получения связей
-      await loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined });
+      
+      if (res.jobId) {
+        // Фоновая загрузка запущена
+        setFetchJobStatus({
+          isRunning: true,
+          progress: 0,
+          elapsedSeconds: 0,
+          totalArticles: res.totalArticles,
+          message: res.message,
+        });
+        setRefsMessage(`⏳ ${res.message}`);
+        startStatusPolling();
+      } else {
+        setRefsMessage(res.message);
+        setFetchingRefs(false);
+      }
     } catch (err: any) {
-      setRefsMessage(err?.message || "Ошибка получения связей");
-    } finally {
+      setRefsMessage(err?.message || "Ошибка запуска загрузки");
       setFetchingRefs(false);
     }
   };
@@ -372,11 +478,61 @@ export default function CitationGraph({ projectId }: Props) {
           className="btn secondary"
           style={{ padding: '6px 14px', fontSize: 12 }}
           onClick={handleFetchReferences}
-          disabled={fetchingRefs}
+          disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
         >
-          {fetchingRefs ? '⏳ Загрузка...' : '🔄 Обновить связи из PubMed'}
+          {fetchingRefs || fetchJobStatus?.isRunning ? '⏳ Загрузка...' : '🔄 Обновить связи из PubMed'}
         </button>
       </div>
+      
+      {/* Прогресс загрузки связей */}
+      {fetchJobStatus?.isRunning && (
+        <div style={{ 
+          padding: '12px 16px', 
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15))',
+          borderBottom: '1px solid var(--border-glass)',
+          borderRadius: '0'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <div className="loading-spinner" style={{ width: 18, height: 18 }} />
+            <span style={{ fontWeight: 600, fontSize: 13 }}>
+              Загрузка связей из PubMed...
+            </span>
+            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
+              ⏱️ {formatTime(fetchJobStatus.elapsedSeconds)}
+            </span>
+          </div>
+          
+          {/* Прогресс бар */}
+          <div style={{ 
+            height: 8, 
+            background: 'rgba(255,255,255,0.1)', 
+            borderRadius: 4, 
+            overflow: 'hidden',
+            marginBottom: 8
+          }}>
+            <div style={{ 
+              height: '100%', 
+              width: `${fetchJobStatus.progress}%`,
+              background: 'linear-gradient(90deg, #3b82f6, #8b5cf6)',
+              borderRadius: 4,
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--text-muted)' }}>
+            <span>
+              📊 Статей: {fetchJobStatus.processedArticles || 0} / {fetchJobStatus.totalArticles || '?'}
+            </span>
+            <span>
+              {fetchJobStatus.progress}% завершено
+            </span>
+          </div>
+          
+          <div style={{ marginTop: 8, fontSize: 11, color: '#fbbf24' }}>
+            💡 Загрузка выполняется в фоне. Вы можете продолжить работу — граф обновится автоматически.
+          </div>
+        </div>
+      )}
       
       {/* Фильтры - вторая строка */}
       <div className="graph-filters" style={{ 

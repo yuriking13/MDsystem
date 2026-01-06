@@ -6,6 +6,7 @@ import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.j
 import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
 import { getCrossrefByDOI } from "../lib/crossref.js";
+import { getBoss } from "../worker/boss.js";
 
 // Схемы валидации
 const SearchBodySchema = z.object({
@@ -769,7 +770,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // POST /api/projects/:id/articles/fetch-references - получить связи между статьями из PubMed
+  // POST /api/projects/:id/articles/fetch-references - запуск фоновой загрузки связей
   fastify.post(
     "/projects/:id/articles/fetch-references",
     { preHandler: [fastify.authenticate] },
@@ -803,94 +804,125 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(500).send({ error: "Ошибка проверки схемы БД" });
       }
       
-      // Получить API ключ PubMed
-      const apiKey = await getUserApiKey(userId, "pubmed");
-      
-      // Получить статьи проекта с PMID
-      const articlesRes = await pool.query(
-        `SELECT a.id, a.pmid 
-         FROM articles a
-         JOIN project_articles pa ON pa.article_id = a.id
-         WHERE pa.project_id = $1 
-           AND a.pmid IS NOT NULL
-           AND (a.references_fetched_at IS NULL OR a.references_fetched_at < now() - interval '7 days')
-         LIMIT 200`,
+      // Проверяем есть ли уже запущенный job
+      const runningJob = await pool.query(
+        `SELECT id FROM graph_fetch_jobs 
+         WHERE project_id = $1 AND status IN ('pending', 'running')
+         LIMIT 1`,
         [paramsP.data.id]
       );
       
-      if (articlesRes.rows.length === 0) {
+      if (runningJob.rows.length > 0) {
+        return reply.code(409).send({ 
+          error: "Загрузка уже запущена",
+          jobId: runningJob.rows[0].id,
+          message: "Дождитесь завершения текущей загрузки" 
+        });
+      }
+      
+      // Подсчитываем статьи для оценки времени
+      const countRes = await pool.query(
+        `SELECT COUNT(*) as cnt FROM articles a
+         JOIN project_articles pa ON pa.article_id = a.id
+         WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`,
+        [paramsP.data.id]
+      );
+      const totalArticles = parseInt(countRes.rows[0]?.cnt || '0');
+      
+      if (totalArticles === 0) {
         return { 
           ok: true, 
-          updated: 0, 
-          message: "Нет статей для обновления связей или все связи уже актуальны" 
+          message: "Нет статей с PMID для загрузки связей" 
         };
       }
       
-      // Собираем PMIDs
-      const pmids = articlesRes.rows.map((r: { pmid: string }) => r.pmid);
-      const idByPmid = new Map<string, string>();
-      for (const row of articlesRes.rows) {
-        idByPmid.set(row.pmid, row.id);
-      }
+      // Создаём job в БД
+      const jobRes = await pool.query(
+        `INSERT INTO graph_fetch_jobs (project_id, status, total_articles) 
+         VALUES ($1, 'pending', $2) 
+         RETURNING id`,
+        [paramsP.data.id, totalArticles]
+      );
+      const jobId = jobRes.rows[0].id;
       
-      // Получаем references
-      const refsMap = await enrichArticlesWithReferences({
-        apiKey: apiKey || undefined,
-        pmids,
-        throttleMs: apiKey ? 100 : 400,
+      // Запускаем фоновый воркер
+      const boss = getBoss();
+      await boss.send('graph:fetch-references', {
+        projectId: paramsP.data.id,
+        jobId,
+        userId,
       });
       
-      // Обновляем статьи
-      let updated = 0;
-      for (const [pmid, refs] of refsMap) {
-        const articleId = idByPmid.get(pmid);
-        if (!articleId) continue;
-        
-        try {
-          await pool.query(
-            `UPDATE articles SET 
-              reference_pmids = $1,
-              cited_by_pmids = $2,
-              references_fetched_at = now()
-             WHERE id = $3`,
-            [refs.references, refs.citedBy, articleId]
-          );
-          updated++;
-        } catch (err) {
-          console.error(`Error updating references for ${pmid}:`, err);
-        }
-      }
-      
-      // После получения связей из PubMed, дополнительно получаем citation counts из Europe PMC
-      // Это асинхронная операция, не блокируем ответ
-      (async () => {
-        try {
-          const citationCounts = await europePMCGetCitationCounts({
-            pmids,
-            throttleMs: 200,
-          });
-          
-          for (const [pmid, count] of citationCounts) {
-            const articleId = idByPmid.get(pmid);
-            if (!articleId || count === 0) continue;
-            
-            await pool.query(
-              `UPDATE articles SET 
-                raw_json = COALESCE(raw_json, '{}'::jsonb) || jsonb_build_object('europePMCCitations', $1)
-               WHERE id = $2`,
-              [count, articleId]
-            );
-          }
-        } catch (err) {
-          console.error('Europe PMC citation fetch error:', err);
-        }
-      })();
+      // Оценка времени: ~0.5 сек на статью для references + ~0.3 сек на PMID для кэша
+      const estimatedSeconds = Math.ceil(totalArticles * 0.8);
       
       return { 
         ok: true, 
-        updated, 
-        total: articlesRes.rows.length,
-        message: `Обновлены связи для ${updated} статей` 
+        jobId,
+        totalArticles,
+        estimatedSeconds,
+        message: `Запущена фоновая загрузка связей для ${totalArticles} статей. Примерное время: ${Math.ceil(estimatedSeconds / 60)} мин.` 
+      };
+    }
+  );
+
+  // GET /api/projects/:id/articles/fetch-references/status - статус загрузки
+  fastify.get(
+    "/projects/:id/articles/fetch-references/status",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+      
+      // Проверка доступа
+      const access = await checkProjectAccess(paramsP.data.id, userId, false);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No access" });
+      }
+      
+      // Получаем последний job
+      const jobRes = await pool.query(
+        `SELECT * FROM graph_fetch_jobs 
+         WHERE project_id = $1 
+         ORDER BY created_at DESC 
+         LIMIT 1`,
+        [paramsP.data.id]
+      );
+      
+      if (jobRes.rows.length === 0) {
+        return { hasJob: false };
+      }
+      
+      const job = jobRes.rows[0];
+      
+      // Вычисляем прогресс
+      const progress = job.total_articles > 0 
+        ? Math.round((job.processed_articles / job.total_articles) * 50 + 
+                     (job.fetched_pmids / Math.max(job.total_pmids_to_fetch, 1)) * 50)
+        : 0;
+      
+      // Вычисляем прошедшее время
+      const elapsedSeconds = job.started_at 
+        ? Math.round((Date.now() - new Date(job.started_at).getTime()) / 1000)
+        : 0;
+      
+      return {
+        hasJob: true,
+        jobId: job.id,
+        status: job.status,
+        progress: Math.min(progress, 100),
+        totalArticles: job.total_articles,
+        processedArticles: job.processed_articles,
+        totalPmidsToFetch: job.total_pmids_to_fetch,
+        fetchedPmids: job.fetched_pmids,
+        elapsedSeconds,
+        startedAt: job.started_at,
+        completedAt: job.completed_at,
+        errorMessage: job.error_message,
       };
     }
   );

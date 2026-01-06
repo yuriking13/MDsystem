@@ -672,18 +672,40 @@ export async function apiImportFromGraph(
   );
 }
 
-// Получение связей между статьями из PubMed
+// Получение связей между статьями из PubMed (фоновая загрузка)
 export type FetchReferencesResult = {
   ok: true;
-  updated: number;
-  total: number;
+  jobId?: string;
+  totalArticles?: number;
+  estimatedSeconds?: number;
   message: string;
+};
+
+export type FetchReferencesStatusResult = {
+  hasJob: boolean;
+  jobId?: string;
+  status?: 'pending' | 'running' | 'completed' | 'failed';
+  progress?: number;
+  totalArticles?: number;
+  processedArticles?: number;
+  totalPmidsToFetch?: number;
+  fetchedPmids?: number;
+  elapsedSeconds?: number;
+  startedAt?: string;
+  completedAt?: string;
+  errorMessage?: string;
 };
 
 export async function apiFetchReferences(projectId: string): Promise<FetchReferencesResult> {
   return apiFetch<FetchReferencesResult>(
     `/api/projects/${projectId}/articles/fetch-references`,
     { method: "POST" }
+  );
+}
+
+export async function apiFetchReferencesStatus(projectId: string): Promise<FetchReferencesStatusResult> {
+  return apiFetch<FetchReferencesStatusResult>(
+    `/api/projects/${projectId}/articles/fetch-references/status`
   );
 }
 
