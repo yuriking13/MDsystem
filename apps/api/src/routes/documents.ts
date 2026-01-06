@@ -1077,6 +1077,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       type GraphNodeInternal = {
         id: string;
         label: string;
+        title: string | null;
         year: number | null;
         status: string;
         doi: string | null;
@@ -1105,6 +1106,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         nodes.push({
           id: article.id,
           label,
+          title: article.title_en || article.title_ru || null,
           year: article.year,
           status: article.status,
           doi: article.doi,
@@ -1226,6 +1228,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           nodes.push({
             id: article.id,
             label,
+            title: article.title_en || null,
             year: article.year,
             status: 'reference', // Особый статус для статей уровня 2
             doi: article.doi,
@@ -1252,6 +1255,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           nodes.push({
             id: nodeId,
             label: `PMID:${pmid}`,
+            title: null,
             year: null,
             status: 'reference',
             doi: null,
@@ -1332,6 +1336,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           nodes.push({
             id: article.id,
             label,
+            title: article.title_en || null,
             year: article.year,
             status: 'citing', // Особый статус для статей уровня 3
             doi: article.doi,
@@ -1358,6 +1363,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           nodes.push({
             id: nodeId,
             label: `PMID:${pmid}`,
+            title: null,
             year: null,
             status: 'citing',
             doi: null,

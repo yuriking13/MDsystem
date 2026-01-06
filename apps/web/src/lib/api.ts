@@ -569,6 +569,7 @@ export async function apiExportProject(projectId: string): Promise<ExportRespons
 export type GraphNode = {
   id: string;
   label: string;
+  title?: string; // Полное название статьи
   year: number | null;
   status: string;
   doi: string | null;

@@ -163,8 +163,8 @@ export default function CitationGraph({ projectId }: Props) {
     const updateSize = () => {
       if (containerRef.current) {
         setDimensions({
-          width: containerRef.current.offsetWidth - 350, // Оставляем место для sidebar
-          height: Math.max(600, window.innerHeight - 200), // Большой размер
+          width: Math.max(600, containerRef.current.offsetWidth - 380), // Оставляем место для sidebar
+          height: Math.max(700, window.innerHeight - 150), // Большой размер
         });
       }
     };
@@ -224,22 +224,22 @@ export default function CitationGraph({ projectId }: Props) {
     const level = node.graphLevel || 1;
     const statsQ = node.statsQuality || 0;
     
-    // Базовый размер по цитированиям
+    // Базовый размер ЗНАЧИТЕЛЬНО УВЕЛИЧЕН для отличной видимости
     let baseSize: number;
-    if (citedByCount === 0) baseSize = 3.5;
-    else if (citedByCount <= 2) baseSize = 4 + citedByCount * 0.5;
-    else if (citedByCount <= 8) baseSize = 5 + (citedByCount - 2) * 0.6;
-    else if (citedByCount <= 25) baseSize = 8.5 + (citedByCount - 8) * 0.5;
-    else if (citedByCount <= 80) baseSize = 17 + (citedByCount - 25) * 0.25;
-    else baseSize = 31 + Math.log10(citedByCount - 79) * 6;
+    if (citedByCount === 0) baseSize = 20;
+    else if (citedByCount <= 3) baseSize = 25 + citedByCount * 3;
+    else if (citedByCount <= 10) baseSize = 34 + (citedByCount - 3) * 4;
+    else if (citedByCount <= 30) baseSize = 62 + (citedByCount - 10) * 2.5;
+    else if (citedByCount <= 100) baseSize = 112 + (citedByCount - 30) * 1;
+    else baseSize = 182 + Math.log10(citedByCount - 99) * 15;
     
     // Коэффициент по уровню графа (разные размеры для разных уровней)
     let levelMultiplier = 1;
-    if (level === 2) levelMultiplier = 0.9;
-    if (level === 3) levelMultiplier = 0.8;
+    if (level === 2) levelMultiplier = 0.85;
+    if (level === 3) levelMultiplier = 0.75;
     
     // Бонус за качество статистики
-    const statsBonus = statsQ > 0 ? 0.12 * statsQ : 0;
+    const statsBonus = statsQ > 0 ? 0.1 * statsQ : 0;
     
     return baseSize * levelMultiplier * (1 + statsBonus);
   }, []);
@@ -576,9 +576,9 @@ export default function CitationGraph({ projectId }: Props) {
           nodeColor={nodeColor}
           nodeLabel={nodeLabel}
           nodeVal={nodeVal}
-          nodeRelSize={6.5}
+          nodeRelSize={6}
           nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
-            const size = (node.val || 1) * 1.2;
+            const size = Math.sqrt(node.val || 20) * 1.5;
             
             // Основной кружок узла
             ctx.fillStyle = nodeColor(node);
@@ -706,32 +706,52 @@ function NodeInfoPanel({ node, projectId }: { node: any; projectId: string }) {
     <div>
       <div style={{ marginBottom: '16px' }}>
         <div style={{ 
-          padding: '8px 12px', 
+          padding: '12px', 
           backgroundColor: 'var(--bg-primary)',
-          borderRadius: '6px',
-          marginBottom: '12px'
+          borderRadius: '8px',
+          marginBottom: '12px',
+          border: `2px solid ${getLevelColor(node.graphLevel || 1)}`
         }}>
           <div style={{ 
             display: 'inline-block',
-            padding: '4px 8px',
+            padding: '4px 10px',
             backgroundColor: getLevelColor(node.graphLevel || 1),
             color: 'white',
             borderRadius: '4px',
             fontSize: 11,
             fontWeight: 600,
-            marginBottom: '8px'
+            marginBottom: '10px'
           }}>
             {getLevelName(node.graphLevel || 1)}
           </div>
+          
+          {/* Название (label) */}
           <div style={{ 
-            fontSize: 12,
-            lineHeight: '1.4',
+            fontSize: 14,
+            lineHeight: '1.5',
             color: 'var(--text-primary)',
-            fontWeight: 500,
-            wordBreak: 'break-word'
+            fontWeight: 600,
+            wordBreak: 'break-word',
+            marginBottom: '8px'
           }}>
             {node.label}
           </div>
+
+          {/* Полное название если есть title */}
+          {node.title && node.title !== node.label && (
+            <div style={{
+              fontSize: 12,
+              lineHeight: '1.4',
+              color: 'var(--text-muted)',
+              wordBreak: 'break-word',
+              marginTop: '8px',
+              padding: '8px',
+              backgroundColor: 'rgba(255,255,255,0.05)',
+              borderRadius: '4px'
+            }}>
+              📖 {node.title}
+            </div>
+          )}
         </div>
       </div>
 
