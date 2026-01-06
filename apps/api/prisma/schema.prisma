@@ -63,6 +63,7 @@ model Project {
   articles   ProjectArticle[]
   statistics ProjectStatistic[]
   queries    SearchQuery[]
+  graphFetchJobs GraphFetchJob[]
 
   @@map("projects")
 }
@@ -207,4 +208,44 @@ model SearchQuery {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("search_queries")
+}
+
+// Кэш данных о статьях для графа цитирований
+model GraphCache {
+  pmid          String    @id
+  title         String?
+  authors       String?
+  year          Int?
+  doi           String?
+  referencePmids String[] @default([]) @map("reference_pmids")
+  citedByPmids   String[] @default([]) @map("cited_by_pmids")
+  citationCount  Int?     @map("citation_count")
+  fetchedAt     DateTime? @map("fetched_at")
+  expiresAt     DateTime? @default(dbgenerated("now() + interval '30 days'")) @map("expires_at")
+  projectId     String?   @map("project_id")
+
+  @@index([projectId])
+  @@index([expiresAt])
+  @@map("graph_cache")
+}
+
+// Отслеживание прогресса загрузки связей из PubMed
+model GraphFetchJob {
+  id                 String    @id @default(dbgenerated("gen_random_uuid()"))
+  projectId          String    @map("project_id")
+  status             String    @default("pending") // pending, running, completed, failed
+  totalArticles      Int       @default(0) @map("total_articles")
+  processedArticles  Int       @default(0) @map("processed_articles")
+  totalPmidsToFetch  Int       @default(0) @map("total_pmids_to_fetch")
+  fetchedPmids       Int       @default(0) @map("fetched_pmids")
+  startedAt          DateTime? @map("started_at")
+  completedAt        DateTime? @map("completed_at")
+  errorMessage       String?   @map("error_message")
+  createdAt          DateTime  @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([status])
+  @@map("graph_fetch_jobs")
 }
