@@ -382,6 +382,38 @@ export type PubMedReferences = {
   citedBy: string[];         // PMIDs статей, которые цитируют (входящие)
 };
 
+/**
+ * Fetch with retry and exponential backoff
+ */
+async function fetchWithRetry(url: string, maxRetries = 3, baseDelayMs = 1000): Promise<Response> {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        return response;
+      }
+      // If rate limited (429) or server error (5xx), retry
+      if (response.status === 429 || response.status >= 500) {
+        const delay = baseDelayMs * Math.pow(2, attempt);
+        console.log(`[PubMed] HTTP ${response.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+        await sleep(delay);
+        continue;
+      }
+      // For other errors, don't retry
+      return response;
+    } catch (err) {
+      lastError = err as Error;
+      const delay = baseDelayMs * Math.pow(2, attempt);
+      console.log(`[PubMed] Network error: ${(err as Error).message}, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await sleep(delay);
+    }
+  }
+  
+  throw lastError || new Error('Max retries exceeded');
+}
+
 export async function pubmedGetReferences(args: {
   apiKey?: string;
   pmids: string[];
@@ -392,8 +424,8 @@ export async function pubmedGetReferences(args: {
   const results: PubMedReferences[] = [];
   const parser = new XMLParser({ ignoreAttributes: false });
   
-  // Обрабатываем батчами по 100 (лимит eLink)
-  const BATCH_SIZE = 100;
+  // Обрабатываем батчами по 50 (меньше чем 100 для стабильности)
+  const BATCH_SIZE = 50;
   
   for (let i = 0; i < args.pmids.length; i += BATCH_SIZE) {
     const batch = args.pmids.slice(i, i + BATCH_SIZE);
@@ -417,14 +449,18 @@ export async function pubmedGetReferences(args: {
     if (args.apiKey) citedByUrl.searchParams.set('api_key', args.apiKey);
     
     try {
-      // Выполняем оба запроса параллельно
-      const [refsRes, citedByRes] = await Promise.all([
-        fetch(refsUrl.toString()),
-        fetch(citedByUrl.toString())
-      ]);
+      // Выполняем запросы последовательно с retry для стабильности
+      const refsRes = await fetchWithRetry(refsUrl.toString());
+      if (args.throttleMs) await sleep(args.throttleMs / 2);
+      
+      const citedByRes = await fetchWithRetry(citedByUrl.toString());
       
       if (!refsRes.ok || !citedByRes.ok) {
         console.error('PubMed eLink error:', refsRes.status, citedByRes.status);
+        // Still add empty results for batch so we don't lose progress
+        for (const pmid of batch) {
+          results.push({ pmid, references: [], citedBy: [] });
+        }
         continue;
       }
       
@@ -451,7 +487,11 @@ export async function pubmedGetReferences(args: {
       
       if (args.throttleMs) await sleep(args.throttleMs);
     } catch (err) {
-      console.error('PubMed eLink fetch error:', err);
+      console.error('PubMed eLink fetch error after retries:', err);
+      // Add empty results for batch so we don't lose progress
+      for (const pmid of batch) {
+        results.push({ pmid, references: [], citedBy: [] });
+      }
     }
   }
   
