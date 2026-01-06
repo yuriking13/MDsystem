@@ -1371,138 +1371,62 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
       
-      // Добавляем связи уровень 1 -> уровень 2 (references)
-      for (const link of level1ToLevel2Links) {
-        const targetId = pmidToId.get(link.targetPmid);
-        if (targetId && addedNodeIds.has(targetId)) {
-          const linkKey = `${link.sourceId}->${targetId}`;
-          if (!linksSet.has(linkKey)) {
-            linksSet.add(linkKey);
-            links.push({
-              source: link.sourceId,
-              target: targetId,
-            });
-          }
-        }
-      }
-      
-      // Добавляем связи уровень 3 -> уровень 1 (citing)
-      for (const link of level3ToLevel1Links) {
-        const sourceId = pmidToId.get(link.sourcePmid);
-        if (sourceId && addedNodeIds.has(sourceId)) {
-          const linkKey = `${sourceId}->${link.targetId}`;
-          if (!linksSet.has(linkKey)) {
-            linksSet.add(linkKey);
-            links.push({
-              source: sourceId,
-              target: link.targetId,
-            });
-          }
-        }
-      }
+      // ===== ЕДИНАЯ ЛОГИКА СОЗДАНИЯ ВСЕХ СВЯЗЕЙ =====
+      // Собираем все статьи (все уровни) для обработки связей
+      const allArticles = [
+        ...articlesRes.rows,        // уровень 1
+        ...level2Articles,           // уровень 2
+        ...level3Articles            // уровень 3
+      ];
 
-      // Добавляем связи между статьями уровня 1 на основе references из PubMed
-      for (const article of articlesRes.rows) {
+      // Функция для добавления связи
+      const addLink = (sourceId: string, targetId: string) => {
+        if (!sourceId || !targetId || sourceId === targetId) return;
+        if (!addedNodeIds.has(sourceId) || !addedNodeIds.has(targetId)) return;
+        
+        const linkKey = `${sourceId}->${targetId}`;
+        if (!linksSet.has(linkKey)) {
+          linksSet.add(linkKey);
+          links.push({ source: sourceId, target: targetId });
+        }
+      };
+
+      // Обрабатываем все статьи для создания связей на основе PubMed данных
+      for (const article of allArticles) {
         const refPmids = article.reference_pmids || [];
         const citedByPmids = article.cited_by_pmids || [];
         
         // Исходящие связи (эта статья ссылается на другие статьи)
         for (const refPmid of refPmids) {
           const targetId = pmidToId.get(refPmid);
-          if (targetId && targetId !== article.id) {
-            const linkKey = `${article.id}->${targetId}`;
-            if (!linksSet.has(linkKey)) {
-              linksSet.add(linkKey);
-              links.push({
-                source: article.id,
-                target: targetId,
-              });
-            }
+          if (targetId) {
+            addLink(article.id, targetId);
           }
         }
         
         // Входящие связи от других статей (цитирующие)
         for (const citingPmid of citedByPmids) {
           const sourceId = pmidToId.get(citingPmid);
-          if (sourceId && sourceId !== article.id) {
-            const linkKey = `${sourceId}->${article.id}`;
-            if (!linksSet.has(linkKey)) {
-              linksSet.add(linkKey);
-              links.push({
-                source: sourceId,
-                target: article.id,
-              });
-            }
+          if (sourceId) {
+            addLink(sourceId, article.id);
           }
         }
       }
 
-      // Добавляем связи на основе references из Crossref (для статей уровня 1)
+      // Добавляем связи на основе references из Crossref (для всех статей уровня 1)
       for (const article of articlesRes.rows) {
-        // Crossref данные хранятся в raw_json.crossref
         const crossrefData = article.raw_json?.crossref;
         const references = crossrefData?.references || crossrefData?.reference || [];
         
         if (!Array.isArray(references) || references.length === 0) continue;
 
         for (const ref of references) {
-          // DOI может быть в разных форматах
           const refDoi = ref.DOI || ref.doi || ref['unstructured']?.match(/10\.\d{4,}\/[^\s]+/)?.[0];
           if (!refDoi) continue;
 
           const targetId = doiToId.get(refDoi.toLowerCase());
-          if (targetId && targetId !== article.id && addedNodeIds.has(targetId)) {
-            const linkKey = `${article.id}->${targetId}`;
-            if (!linksSet.has(linkKey)) {
-              linksSet.add(linkKey);
-              links.push({
-                source: article.id,
-                target: targetId,
-              });
-            }
-          }
-        }
-      }
-
-      // Добавляем связи между статьями уровней 2 и 3
-      // Комбинируем статьи из both уровней для обработки связей
-      const level23Articles = [
-        ...level2Articles,
-        ...level3Articles
-      ];
-
-      // Обрабатываем связи статей уровней 2 и 3
-      for (const article of level23Articles) {
-        const refPmids = article.reference_pmids || [];
-        const citedByPmids = article.cited_by_pmids || [];
-        
-        // Исходящие связи (эта статья ссылается на другие статьи)
-        for (const refPmid of refPmids) {
-          const targetId = pmidToId.get(refPmid);
-          if (targetId && targetId !== article.id && addedNodeIds.has(targetId)) {
-            const linkKey = `${article.id}->${targetId}`;
-            if (!linksSet.has(linkKey)) {
-              linksSet.add(linkKey);
-              links.push({
-                source: article.id,
-                target: targetId,
-              });
-            }
-          }
-        }
-        
-        // Входящие связи от других статей
-        for (const citingPmid of citedByPmids) {
-          const sourceId = pmidToId.get(citingPmid);
-          if (sourceId && sourceId !== article.id && addedNodeIds.has(sourceId)) {
-            const linkKey = `${sourceId}->${article.id}`;
-            if (!linksSet.has(linkKey)) {
-              linksSet.add(linkKey);
-              links.push({
-                source: sourceId,
-                target: article.id,
-              });
-            }
+          if (targetId) {
+            addLink(article.id, targetId);
           }
         }
       }

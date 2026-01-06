@@ -177,29 +177,30 @@ export default function CitationGraph({ projectId }: Props) {
     const status = node.status;
     const level = node.graphLevel || 1;
 
+    // Если выбран - яркий зелёный
     if (selectedNodeIds.has(node.id)) {
-      return '#22c55e';
+      return '#10b981';
     }
     
     // Уровень 1 (найденные статьи) - стандартные цвета по статусу
     if (level === 1) {
-      if (status === 'selected') return '#4ade80'; // Зелёный
-      if (status === 'excluded') return '#ff6b6b'; // Красный
-      return '#4b74ff'; // Синий (кандидаты)
+      if (status === 'selected') return '#34d399'; // Яркий зелёный
+      if (status === 'excluded') return '#ef4444'; // Красный
+      return '#3b82f6'; // Синий (кандидаты)
     }
     
     // Уровень 2 (references - статьи, на которые ссылаются)
     if (level === 2) {
-      return '#f59e0b'; // Оранжевый
+      return '#f97316'; // Насыщенный оранжевый
     }
     
     // Уровень 3 (citing - статьи, которые цитируют)
     if (level === 3) {
-      return '#a855f7'; // Фиолетовый
+      return '#d946ef'; // Насыщенный розово-фиолетовый
     }
     
-    return '#4b74ff';
-  }, []);
+    return '#3b82f6';
+  }, [selectedNodeIds]);
 
   const nodeLabel = useCallback((node: any) => {
     const citedByCount = node.citedByCount || 0;
@@ -224,17 +225,20 @@ export default function CitationGraph({ projectId }: Props) {
     
     // Базовый размер по цитированиям
     let baseSize: number;
-    if (citedByCount === 0) baseSize = 1;
-    else if (citedByCount <= 5) baseSize = 2 + citedByCount * 0.5;
-    else if (citedByCount <= 20) baseSize = 5 + (citedByCount - 5) * 0.4;
-    else if (citedByCount <= 100) baseSize = 11 + (citedByCount - 20) * 0.2;
-    else baseSize = 27 + Math.log10(citedByCount - 99) * 8;
+    if (citedByCount === 0) baseSize = 2;
+    else if (citedByCount <= 3) baseSize = 2.5 + citedByCount * 0.3;
+    else if (citedByCount <= 10) baseSize = 3.5 + (citedByCount - 3) * 0.4;
+    else if (citedByCount <= 30) baseSize = 6 + (citedByCount - 10) * 0.35;
+    else if (citedByCount <= 100) baseSize = 13 + (citedByCount - 30) * 0.15;
+    else baseSize = 24 + Math.log10(citedByCount - 99) * 5;
     
     // Коэффициент по уровню графа (уровни 2 и 3 немного меньше)
-    const levelMultiplier = level === 1 ? 1 : 0.8;
+    let levelMultiplier = 1;
+    if (level === 2) levelMultiplier = 0.85;
+    if (level === 3) levelMultiplier = 0.75;
     
     // Бонус за качество статистики
-    const statsBonus = statsQ > 0 ? 0.2 * statsQ : 0;
+    const statsBonus = statsQ > 0 ? 0.15 * statsQ : 0;
     
     return baseSize * levelMultiplier * (1 + statsBonus);
   }, []);
@@ -491,32 +495,32 @@ export default function CitationGraph({ projectId }: Props) {
       )}
 
       {/* Статистика */}
-      <div className="graph-stats" style={{ padding: '8px 16px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span>📊 Всего узлов: {stats.totalNodes}</span>
-        <span>🔗 Связей: {stats.totalLinks}</span>
+      <div className="graph-stats" style={{ padding: '8px 16px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap', borderBottom: '1px solid var(--border-glass)' }}>
+        <span style={{ fontWeight: 600 }}>📊 Всего узлов: <span style={{ color: '#3b82f6' }}>{stats.totalNodes}</span></span>
+        <span style={{ fontWeight: 600 }}>🔗 Связей: <span style={{ color: '#10b981' }}>{stats.totalLinks}</span></span>
         {stats.levelCounts && (
           <>
-            <span style={{ color: '#4b74ff' }}>🔵 Поиск: {stats.levelCounts.level1}</span>
+            <span style={{ color: '#3b82f6', fontWeight: 500 }}>🔵 Поиск: {stats.levelCounts.level1}</span>
             {depth >= 2 && (
-              <span style={{ color: '#f59e0b' }}>
+              <span style={{ color: '#f97316', fontWeight: 500 }}>
                 🟠 Ссылки: {stats.levelCounts.level2}
                 {stats.availableReferences !== undefined && stats.availableReferences > 0 && 
-                  ` (всего: ${stats.availableReferences})`}
+                  ` (доступно: ${stats.availableReferences})`}
               </span>
             )}
             {depth >= 3 && (
-              <span style={{ color: '#a855f7' }}>
+              <span style={{ color: '#d946ef', fontWeight: 500 }}>
                 🟣 Цитирующие: {stats.levelCounts.level3}
                 {stats.availableCiting !== undefined && stats.availableCiting > 0 && 
-                  ` (всего: ${stats.availableCiting})`}
+                  ` (доступно: ${stats.availableCiting})`}
               </span>
             )}
           </>
         )}
         {hoveredNode && (
-          <span className="hovered-info" style={{ color: 'var(--text-muted)', fontSize: 12 }}>
+          <span className="hovered-info" style={{ color: 'var(--text-muted)', fontSize: 12, marginLeft: 'auto' }}>
             📄 {hoveredNode.label} 
-            {hoveredNode.graphLevel && hoveredNode.graphLevel > 1 && ` [Ур.${hoveredNode.graphLevel}]`}
+            {hoveredNode.graphLevel && hoveredNode.graphLevel > 1 && ` [Уровень ${hoveredNode.graphLevel}]`}
             {hoveredNode.doi && ` • DOI: ${hoveredNode.doi}`}
             {hoveredNode.statsQuality !== undefined && hoveredNode.statsQuality > 0 && ` • P-value: ★${'★'.repeat(hoveredNode.statsQuality - 1)}`}
           </span>
@@ -537,18 +541,21 @@ export default function CitationGraph({ projectId }: Props) {
       )}
       
       <div className="graph-legend" style={{ padding: '4px 16px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <span style={{ fontWeight: 500, fontSize: 11 }}>Уровень 1:</span>
+        <span style={{ fontWeight: 500, fontSize: 11 }}>🔵 Уровень 1:</span>
         <span><span className="legend-dot selected"></span> Отобранные</span>
         <span><span className="legend-dot candidate"></span> Кандидаты</span>
         <span><span className="legend-dot excluded"></span> Исключённые</span>
         {depth >= 2 && (
           <>
-            <span style={{ marginLeft: 8, fontWeight: 500, fontSize: 11 }}>|</span>
-            <span><span className="legend-dot" style={{ background: '#f59e0b' }}></span> Уровень 2 (ссылки)</span>
+            <span style={{ marginLeft: 8, fontWeight: 500, fontSize: 11 }}>🟠 Уровень 2:</span>
+            <span><span className="legend-dot" style={{ background: '#f97316' }}></span> Ссылки (references)</span>
           </>
         )}
         {depth >= 3 && (
-          <span><span className="legend-dot" style={{ background: '#a855f7' }}></span> Уровень 3 (цитирующие)</span>
+          <>
+            <span style={{ marginLeft: 8, fontWeight: 500, fontSize: 11 }}>🟣 Уровень 3:</span>
+            <span><span className="legend-dot" style={{ background: '#d946ef' }}></span> Цитирующие (cited-by)</span>
+          </>
         )}
       </div>
 
@@ -564,16 +571,39 @@ export default function CitationGraph({ projectId }: Props) {
           nodeColor={nodeColor}
           nodeLabel={nodeLabel}
           nodeVal={nodeVal}
-          nodeRelSize={4}
-          linkColor={() => '#334477'}
-          linkWidth={1}
-          linkDirectionalArrowLength={4}
-          linkDirectionalArrowRelPos={1}
+          nodeRelSize={5}
+          nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
+            const size = (node.val || 1) * 1.2;
+            
+            // Основной кружок узла
+            ctx.fillStyle = nodeColor(node);
+            ctx.beginPath();
+            ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Светлый ободок для выделения (уровень показывает интенсивность)
+            if (selectedNodeIds.has(node.id)) {
+              ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
+              ctx.lineWidth = size * 0.4;
+              ctx.stroke();
+            }
+            
+            // Дополнительный обвод для важных узлов (много цитирований)
+            if ((node.citedByCount || 0) > 20) {
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+              ctx.lineWidth = size * 0.15;
+              ctx.stroke();
+            }
+          }}
+          linkColor={() => 'rgba(100, 120, 150, 0.3)'}
+          linkWidth={0.8}
+          linkDirectionalArrowLength={3}
+          linkDirectionalArrowRelPos={0.95}
           backgroundColor="#0b0f19"
-          d3AlphaDecay={0.02}
-          d3VelocityDecay={0.2}
-          cooldownTicks={200}
-          warmupTicks={100}
+          d3AlphaDecay={0.015}
+          d3VelocityDecay={0.25}
+          cooldownTicks={250}
+          warmupTicks={120}
           onNodeHover={(node: any) => setHoveredNode(node)}
           onNodeClick={(node: any, event: any) => {
             // Alt+клик всегда открывает первоисточник
