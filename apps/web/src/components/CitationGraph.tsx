@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiImportFromGraph, apiGetArticleByPmid, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts } from "../lib/api";
+import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiImportFromGraph, apiGetArticleByPmid, apiTranslateText, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts } from "../lib/api";
 
 type Props = {
   projectId: string;
@@ -70,6 +70,9 @@ export default function CitationGraph({ projectId }: Props) {
   // Новые фильтры
   const [depth, setDepth] = useState<DepthType>(1);
   const [yearRange, setYearRange] = useState<{ min: number | null; max: number | null }>({ min: null, max: null });
+  // Разделяем значения инпутов и примененные фильтры чтобы не обновлять при каждом символе
+  const [yearFromInput, setYearFromInput] = useState<string>('');
+  const [yearToInput, setYearToInput] = useState<string>('');
   const [yearFrom, setYearFrom] = useState<number | undefined>(undefined);
   const [yearTo, setYearTo] = useState<number | undefined>(undefined);
   const [statsQuality, setStatsQuality] = useState<number>(0);
@@ -669,8 +672,18 @@ export default function CitationGraph({ projectId }: Props) {
           <input
             type="number"
             placeholder={yearRange.min ? String(yearRange.min) : "От"}
-            value={yearFrom || ''}
-            onChange={(e) => setYearFrom(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+            value={yearFromInput}
+            onChange={(e) => setYearFromInput(e.target.value)}
+            onBlur={() => {
+              const val = yearFromInput ? parseInt(yearFromInput, 10) : undefined;
+              if (val !== yearFrom) setYearFrom(val);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const val = yearFromInput ? parseInt(yearFromInput, 10) : undefined;
+                if (val !== yearFrom) setYearFrom(val);
+              }
+            }}
             style={{ 
               width: 70, 
               padding: '6px 8px', 
@@ -687,8 +700,18 @@ export default function CitationGraph({ projectId }: Props) {
           <input
             type="number"
             placeholder={yearRange.max ? String(yearRange.max) : "До"}
-            value={yearTo || ''}
-            onChange={(e) => setYearTo(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+            value={yearToInput}
+            onChange={(e) => setYearToInput(e.target.value)}
+            onBlur={() => {
+              const val = yearToInput ? parseInt(yearToInput, 10) : undefined;
+              if (val !== yearTo) setYearTo(val);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                const val = yearToInput ? parseInt(yearToInput, 10) : undefined;
+                if (val !== yearTo) setYearTo(val);
+              }
+            }}
             style={{ 
               width: 70, 
               padding: '6px 8px', 
@@ -705,7 +728,12 @@ export default function CitationGraph({ projectId }: Props) {
             <button
               className="graph-filter-btn"
               style={{ padding: '4px 8px' }}
-              onClick={() => { setYearFrom(undefined); setYearTo(undefined); }}
+              onClick={() => { 
+                setYearFrom(undefined); 
+                setYearTo(undefined);
+                setYearFromInput('');
+                setYearToInput('');
+              }}
             >
               ✕
             </button>
@@ -1117,6 +1145,8 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
   const [addMessage, setAddMessage] = useState<string | null>(null);
   const [localLanguage, setLocalLanguage] = useState<'en' | 'ru' | null>(null); // null = используем global
   const [loadingData, setLoadingData] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translationError, setTranslationError] = useState<string | null>(null);
   
   // Используем локальный язык если задан, иначе глобальный
   const language = localLanguage ?? globalLang;
@@ -1160,6 +1190,51 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
         });
     }
   }, [node.pmid, node.title, enrichedData, loadingData]);
+  
+  // Функция перевода
+  const handleTranslate = async () => {
+    const titleToTranslate = enrichedData?.title || node.title;
+    const abstractToTranslate = enrichedData?.abstract || node.abstract;
+    
+    if (!titleToTranslate && !abstractToTranslate) {
+      setTranslationError('Нечего переводить');
+      return;
+    }
+    
+    setTranslating(true);
+    setTranslationError(null);
+    
+    try {
+      const result = await apiTranslateText(
+        titleToTranslate || undefined,
+        abstractToTranslate || undefined,
+        node.pmid || undefined
+      );
+      
+      if (result.ok) {
+        // Обновляем enrichedData с переводом
+        setEnrichedData(prev => ({
+          title: prev?.title || node.title || null,
+          title_ru: result.title_ru || prev?.title_ru || null,
+          abstract: prev?.abstract || node.abstract || null,
+          abstract_ru: result.abstract_ru || prev?.abstract_ru || null,
+          authors: prev?.authors || node.authors || null,
+          journal: prev?.journal || node.journal || null,
+          year: prev?.year || node.year || null,
+          doi: prev?.doi || node.doi || null,
+          citedByCount: prev?.citedByCount || node.citedByCount || 0,
+        }));
+        // Переключаемся на русский
+        setLocalLanguage('ru');
+      } else {
+        setTranslationError(result.error || 'Ошибка перевода');
+      }
+    } catch (err: any) {
+      setTranslationError(err?.message || 'Ошибка перевода');
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   // Объединяем данные узла и обогащенные данные
   const displayData = {
@@ -1242,7 +1317,8 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
           {/* Language Toggle - показываем всегда */}
           <div className="language-toggle" style={{ display: 'flex', gap: 2, padding: 2, background: 'rgba(255,255,255,0.1)', borderRadius: 6 }}>
             <button
-              onClick={() => setLocalLanguage(localLanguage === 'en' ? null : 'en')}
+              onClick={() => setLocalLanguage('en')}
+              disabled={translating}
               style={{
                 padding: '4px 8px',
                 fontSize: 11,
@@ -1257,35 +1333,60 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
               EN
             </button>
             <button
-              onClick={() => setLocalLanguage(localLanguage === 'ru' ? null : 'ru')}
+              onClick={() => {
+                if (hasRussian) {
+                  // Если есть перевод - просто переключаем язык
+                  setLocalLanguage('ru');
+                } else {
+                  // Если нет перевода - запускаем перевод
+                  handleTranslate();
+                }
+              }}
+              disabled={translating}
               style={{
                 padding: '4px 8px',
                 fontSize: 11,
                 fontWeight: language === 'ru' ? 600 : 400,
-                background: language === 'ru' ? (hasRussian ? 'var(--accent)' : 'rgba(239, 68, 68, 0.5)') : 'transparent',
-                color: language === 'ru' ? 'white' : 'var(--text-secondary)',
+                background: language === 'ru' ? 'var(--accent)' : (translating ? 'rgba(59, 130, 246, 0.3)' : 'transparent'),
+                color: language === 'ru' || translating ? 'white' : 'var(--text-secondary)',
                 border: 'none',
                 borderRadius: 4,
-                cursor: 'pointer',
-                opacity: hasRussian ? 1 : 0.7,
+                cursor: translating ? 'wait' : 'pointer',
               }}
-              title={hasRussian ? 'Русский перевод' : 'Перевод недоступен'}
+              title={hasRussian ? 'Русский перевод' : 'Нажмите для перевода'}
             >
-              RU
+              {translating ? '...' : 'RU'}
             </button>
           </div>
         </div>
         
-        {/* Сообщение если выбран RU но перевода нет */}
-        {language === 'ru' && !hasRussian && (
+        {/* Сообщение об ошибке перевода */}
+        {translationError && (
           <div style={{ 
             padding: '6px 12px', 
-            background: 'rgba(251, 191, 36, 0.1)', 
+            background: 'rgba(239, 68, 68, 0.1)', 
             fontSize: 11, 
-            color: '#fbbf24',
+            color: '#ef4444',
             borderBottom: '1px solid var(--border-glass)'
           }}>
-            Перевод недоступен. Показан оригинал.
+            {translationError}
+          </div>
+        )}
+        
+        {/* Сообщение о переводе в процессе */}
+        {translating && (
+          <div style={{ 
+            padding: '6px 12px', 
+            background: 'rgba(59, 130, 246, 0.1)', 
+            fontSize: 11, 
+            color: '#3b82f6',
+            borderBottom: '1px solid var(--border-glass)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6
+          }}>
+            <span className="loading-spinner" style={{ width: 12, height: 12 }} />
+            Переводим...
           </div>
         )}
         

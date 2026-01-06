@@ -1905,6 +1905,75 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
     }
   );
+
+  // =====================================================
+  // POST /api/articles/translate-text - перевести текст на лету (для графа)
+  // =====================================================
+  fastify.post<{
+    Body: { 
+      title?: string;
+      abstract?: string;
+      pmid?: string; // опционально - если передан, сохраним перевод в БД
+    };
+  }>(
+    "/articles/translate-text",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { title, abstract, pmid } = request.body || {};
+      const userId = (request as any).user.sub;
+
+      if (!title && !abstract) {
+        return reply.code(400).send({ ok: false, error: "Nothing to translate" });
+      }
+
+      // Получаем API ключ для OpenRouter
+      const apiKey = await getUserApiKey(userId, 'openrouter');
+      if (!apiKey) {
+        return reply.code(400).send({ 
+          ok: false, 
+          error: "Для перевода нужен API ключ OpenRouter. Добавьте его в Настройках." 
+        });
+      }
+
+      try {
+        const { translateArticle } = await import("../lib/translate.js");
+        
+        const result = await translateArticle(
+          apiKey,
+          title || '',
+          abstract || null
+        );
+
+        // Если передан PMID и статья есть в БД - сохраняем перевод
+        if (pmid && (result.title_ru || result.abstract_ru)) {
+          try {
+            await pool.query(
+              `UPDATE articles 
+               SET title_ru = COALESCE($1, title_ru), 
+                   abstract_ru = COALESCE($2, abstract_ru)
+               WHERE pmid = $3`,
+              [result.title_ru || null, result.abstract_ru || null, pmid]
+            );
+          } catch (saveErr) {
+            console.error(`Failed to save translation for PMID ${pmid}:`, saveErr);
+            // Не возвращаем ошибку - перевод всё равно получен
+          }
+        }
+
+        return {
+          ok: true,
+          title_ru: result.title_ru || null,
+          abstract_ru: result.abstract_ru || null,
+        };
+      } catch (err: any) {
+        console.error('Translation error:', err);
+        return reply.code(500).send({ 
+          ok: false, 
+          error: err?.message || "Translation failed" 
+        });
+      }
+    }
+  );
 };
 
 export default plugin;

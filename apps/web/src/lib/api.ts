@@ -973,3 +973,25 @@ export type ArticleByPmidResult = {
 export async function apiGetArticleByPmid(pmid: string): Promise<ArticleByPmidResult> {
   return apiFetch<ArticleByPmidResult>(`/api/articles/by-pmid/${pmid}`);
 }
+
+// =====================================================
+// Перевод текста на лету (для графа)
+// =====================================================
+export type TranslateTextResult = {
+  ok: boolean;
+  title_ru?: string | null;
+  abstract_ru?: string | null;
+  error?: string;
+};
+
+export async function apiTranslateText(
+  title?: string,
+  abstract?: string,
+  pmid?: string
+): Promise<TranslateTextResult> {
+  return apiFetch<TranslateTextResult>('/api/articles/translate-text', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, abstract, pmid }),
+  });
+}
