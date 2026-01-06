@@ -19,7 +19,7 @@ export const TableFigureNumbering = Extension.create({
 
             state.doc.descendants((node, pos) => {
               // Нумерация таблиц
-              if (node.type.name === 'table') {
+              if (node?.type?.name === 'table') {
                 tableNumber++;
                 // Важно: захватываем текущее значение в локальную переменную
                 const currentTableNumber = tableNumber;
@@ -48,7 +48,7 @@ export const TableFigureNumbering = Extension.create({
               }
 
               // Нумерация графиков (chartNode)
-              if (node.type.name === 'chartNode') {
+              if (node?.type?.name === 'chartNode') {
                 figureNumber++;
                 // Важно: захватываем текущее значение в локальную переменную
                 const currentFigureNumber = figureNumber;

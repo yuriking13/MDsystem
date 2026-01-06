@@ -230,85 +230,165 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     });
   }, [citationStyle]);
   
-  const extensions = useMemo(() => [
-    StarterKit.configure({
-      heading: {
-        levels: [1, 2, 3],
-      },
-      paragraph: false, // Отключаем стандартный paragraph
-      link: false, // avoid duplicate Link extension
-      underline: false, // Отключаем - добавляем отдельно ниже
-    }),
-    CustomParagraph, // Используем свой paragraph с indent
-    TextAlign.configure({
-      types: ['heading', 'paragraph'],
-      alignments: ['left', 'center', 'right', 'justify'],
-    }),
-    Image.configure({
-      HTMLAttributes: {
-        class: 'tiptap-image',
-      },
-    }),
-    Placeholder.configure({
-      placeholder: 'Начните писать...',
-    }),
-    CustomTable.configure({
-      resizable: true,
-      allowTableNodeSelection: true,
-      lastColumnResizable: true,
-      cellMinWidth: 50,
-      renderWrapper: true,  // ВАЖНО: TipTap должна обернуть таблицу в div.tableWrapper
-      HTMLAttributes: {
-        class: 'tiptap-table',
-      },
-    }),
-    TableRow,
-    CustomTableCell,
-    CustomTableHeader,
-    TextStyle,
-    Color,
-    Highlight.configure({
-      multicolor: true,
-    }),
-    ChartNode,
-    CitationMark,
-    TableFigureNumbering,
-    Underline,
-    Link.configure({
-      openOnClick: false,
-      HTMLAttributes: {
-        class: 'tiptap-link',
-      },
-    }),
-    PaginationPlus.configure({
-      pageHeight: styleConfig.pageHeight,
-      pageWidth: styleConfig.pageWidth,
-      pageGap: PAGE_GAP,
-      marginTop: styleConfig.marginTop,
-      marginRight: styleConfig.marginRight,
-      marginBottom: styleConfig.marginBottom,
-      marginLeft: styleConfig.marginLeft,
-      headerRight: citationStyle === 'gost' ? '' : '{page}',
-      headerLeft: '',
-      footerRight: '',
-      footerLeft: citationStyle === 'gost' ? '{page}' : '',
-      pageBreakBackground: '#4a5568',
-    }),
-  ], [citationStyle, styleConfig]);
+  // Создаём расширения по одному с проверкой
+  const extensions = useMemo(() => {
+    const extList: any[] = [];
+    
+    // StarterKit
+    try {
+      const starterKit = StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        paragraph: false,
+        link: false,
+        underline: false,
+      });
+      if (starterKit) extList.push(starterKit);
+    } catch (e) {
+      console.error('TiptapEditor: Failed to configure StarterKit', e);
+    }
+    
+    // CustomParagraph
+    if (CustomParagraph) extList.push(CustomParagraph);
+    
+    // TextAlign
+    try {
+      const textAlign = TextAlign.configure({
+        types: ['heading', 'paragraph'],
+        alignments: ['left', 'center', 'right', 'justify'],
+      });
+      if (textAlign) extList.push(textAlign);
+    } catch (e) {
+      console.error('TiptapEditor: Failed to configure TextAlign', e);
+    }
+    
+    // Image
+    try {
+      const image = Image.configure({
+        HTMLAttributes: { class: 'tiptap-image' },
+      });
+      if (image) extList.push(image);
+    } catch (e) {
+      console.error('TiptapEditor: Failed to configure Image', e);
+    }
+    
+    // Placeholder
+    try {
+      const placeholder = Placeholder.configure({
+        placeholder: 'Начните писать...',
+      });
+      if (placeholder) extList.push(placeholder);
+    } catch (e) {
+      console.error('TiptapEditor: Failed to configure Placeholder', e);
+    }
+    
+    // CustomTable
+    try {
+      const customTable = CustomTable.configure({
+        resizable: true,
+        allowTableNodeSelection: true,
+        lastColumnResizable: true,
+        cellMinWidth: 50,
+        renderWrapper: true,
+        HTMLAttributes: { class: 'tiptap-table' },
+      });
+      if (customTable) extList.push(customTable);
+    } catch (e) {
+      console.error('TiptapEditor: Failed to configure CustomTable', e);
+    }
+    
+    // Simple extensions
+    if (TableRow) extList.push(TableRow);
+    if (CustomTableCell) extList.push(CustomTableCell);
+    if (CustomTableHeader) extList.push(CustomTableHeader);
+    if (TextStyle) extList.push(TextStyle);
+    if (Color) extList.push(Color);
+    
+    // Highlight
+    try {
+      const highlight = Highlight.configure({ multicolor: true });
+      if (highlight) extList.push(highlight);
+    } catch (e) {
+      console.error('TiptapEditor: Failed to configure Highlight', e);
+    }
+    
+    // Custom extensions
+    if (ChartNode) extList.push(ChartNode);
+    if (CitationMark) extList.push(CitationMark);
+    if (TableFigureNumbering) extList.push(TableFigureNumbering);
+    if (Underline) extList.push(Underline);
+    
+    // Link
+    try {
+      const link = Link.configure({
+        openOnClick: false,
+        HTMLAttributes: { class: 'tiptap-link' },
+      });
+      if (link) extList.push(link);
+    } catch (e) {
+      console.error('TiptapEditor: Failed to configure Link', e);
+    }
+    
+    // PaginationPlus
+    try {
+      const pagination = PaginationPlus.configure({
+        pageHeight: styleConfig.pageHeight,
+        pageWidth: styleConfig.pageWidth,
+        pageGap: PAGE_GAP,
+        marginTop: styleConfig.marginTop,
+        marginRight: styleConfig.marginRight,
+        marginBottom: styleConfig.marginBottom,
+        marginLeft: styleConfig.marginLeft,
+        headerRight: citationStyle === 'gost' ? '' : '{page}',
+        headerLeft: '',
+        footerRight: '',
+        footerLeft: citationStyle === 'gost' ? '{page}' : '',
+        pageBreakBackground: '#4a5568',
+      });
+      if (pagination) extList.push(pagination);
+    } catch (e) {
+      console.error('TiptapEditor: Failed to configure PaginationPlus', e);
+    }
+    
+    return extList;
+  }, [citationStyle, styleConfig]);
 
   // Deduplicate extensions by name to avoid TipTap warnings
   const uniqueExtensions = useMemo(() => {
     const seen = new Set<string>();
-    return extensions.filter((ext) => {
-      // Filter out null/undefined extensions
-      if (!ext) return false;
-      // If extension has no name, include it (custom extensions)
-      if (!ext.name) return true;
+    const result: any[] = [];
+    
+    for (const ext of extensions) {
+      // Skip null/undefined
+      if (ext == null) {
+        console.warn('TiptapEditor: Skipping null/undefined extension');
+        continue;
+      }
+      
+      // Check if ext is a valid extension object
+      if (typeof ext !== 'object') {
+        console.warn('TiptapEditor: Skipping non-object extension:', ext);
+        continue;
+      }
+      
+      // Get the name safely
+      const extName = ext.name;
+      
+      // If no name, include it (some extensions might not have names)
+      if (!extName) {
+        result.push(ext);
+        continue;
+      }
+      
       // Skip duplicates
-      if (seen.has(ext.name)) return false;
-      seen.add(ext.name);
-      return true;
-    });
+      if (seen.has(extName)) {
+        continue;
+      }
+      
+      seen.add(extName);
+      result.push(ext);
+    }
+    
+    return result;
   }, [extensions]);
 
   const editor = useEditor({
@@ -327,15 +407,19 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   // ===========================
   const getSelectedTableInfo = useCallback(() => {
     if (!editor) return null;
-    const { state } = editor;
-    const { $from } = state.selection;
-    for (let depth = $from.depth; depth > 0; depth--) {
-      const node = $from.node(depth);
-      if (node.type.name === 'table') {
-        const pos = $from.before(depth);
-        const dom = editor.view.nodeDOM(pos) as HTMLElement | null;
-        return { node, pos, dom };
+    try {
+      const { state } = editor;
+      const { $from } = state.selection;
+      for (let depth = $from.depth; depth > 0; depth--) {
+        const node = $from.node(depth);
+        if (node?.type?.name === 'table') {
+          const pos = $from.before(depth);
+          const dom = editor.view.nodeDOM(pos) as HTMLElement | null;
+          return { node, pos, dom };
+        }
       }
+    } catch (err) {
+      console.error('Error getting table info:', err);
     }
     return null;
   }, [editor]);
@@ -397,10 +481,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     const colWidths: number[] = [];
 
     node.forEach((rowNode: any) => {
-      if (rowNode.type.name === 'tableRow') {
+      if (rowNode?.type?.name === 'tableRow') {
         const rowArr: string[] = [];
         rowNode.forEach((cellNode: any, colIdx: number) => {
-          if (cellNode.type.name === 'tableCell' || cellNode.type.name === 'tableHeader') {
+          if (cellNode?.type?.name === 'tableCell' || cellNode?.type?.name === 'tableHeader') {
             rowArr.push(cellNode.textContent || '');
             const cw = cellNode.attrs?.colwidth?.[0];
             if (cw) {
@@ -519,11 +603,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     const newHeadings: Array<{level: number; text: string; id: string}> = [];
     
     doc.descendants((node: any, pos: number) => {
-      if (node.type.name === 'heading') {
+      if (node?.type?.name === 'heading') {
         const id = `heading-${pos}`;
         newHeadings.push({
-          level: node.attrs.level,
-          text: node.textContent,
+          level: node.attrs?.level || 1,
+          text: node.textContent || '',
           id,
         });
       }
@@ -579,7 +663,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
       // Find if we're inside a table and get its end position
       for (let depth = $from.depth; depth > 0; depth--) {
         const node = $from.node(depth);
-        if (node.type.name === 'table') {
+        if (node?.type?.name === 'table') {
           // Found a table, get its end position
           const tableStart = $from.before(depth);
           tableEndPos = tableStart + node.nodeSize;
@@ -711,7 +795,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
       // Find parent table
       for (let depth = $from.depth; depth > 0; depth--) {
         const node = $from.node(depth);
-        if (node.type.name === 'table') {
+        if (node?.type?.name === 'table') {
           const pos = $from.before(depth);
           const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
           
@@ -743,10 +827,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
             let tableCols = 0;
 
             node.forEach((rowNode: any) => {
-              if (rowNode.type.name === 'tableRow') {
+              if (rowNode?.type?.name === 'tableRow') {
                 const rowData: string[] = [];
                 rowNode.forEach((cellNode: any) => {
-                  if (cellNode.type.name === 'tableCell' || cellNode.type.name === 'tableHeader') {
+                  if (cellNode?.type?.name === 'tableCell' || cellNode?.type?.name === 'tableHeader') {
                     rowData.push(cellNode.textContent || '');
                   }
                 });

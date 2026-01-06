@@ -133,7 +133,7 @@ export const CitationMark = Node.create<CitationMarkOptions>({
 
           // Собрать все цитаты
           state.doc.descendants((node: any, pos: number) => {
-            if (node.type.name === this.name) {
+            if (node?.type?.name === this.name) {
               citations.push({
                 pos,
                 node,
