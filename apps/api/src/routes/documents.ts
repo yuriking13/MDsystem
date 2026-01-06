@@ -1131,6 +1131,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const level1ToLevel2Links: { sourceId: string; targetPmid: string }[] = [];
       const level3ToLevel1Links: { sourcePmid: string; targetId: string }[] = [];
       
+      // Массивы для сохранения статей уровней 2 и 3 для дальнейшей обработки связей
+      let level2Articles: any[] = [];
+      let level3Articles: any[] = [];
+      
       if (depth >= 2) {
         for (const article of articlesRes.rows) {
           const refPmids = article.reference_pmids || [];
@@ -1189,6 +1193,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
            WHERE pmid = ANY($1)${level2YearCondition}${level2StatsCondition}`,
           level2Params
         );
+        
+        // Сохраняем результаты для обработки связей позже
+        level2Articles = level2Res.rows;
         
         // Помечаем найденные в БД
         for (const article of level2Res.rows) {
@@ -1293,6 +1300,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           level3Params
         );
         
+        // Сохраняем результаты для обработки связей позже
+        level3Articles = level3Res.rows;
+        
         // Помечаем найденные в БД
         for (const article of level3Res.rows) {
           level3InDb.set(article.pmid, article);
@@ -1396,11 +1406,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         const refPmids = article.reference_pmids || [];
         const citedByPmids = article.cited_by_pmids || [];
         
-        // Исходящие связи (эта статья ссылается на другие статьи уровня 1)
+        // Исходящие связи (эта статья ссылается на другие статьи)
         for (const refPmid of refPmids) {
           const targetId = pmidToId.get(refPmid);
-          // Только связи к статьям уровня 1 (которые уже были в проекте)
-          if (targetId && targetId !== article.id && !targetId.startsWith('pmid:')) {
+          if (targetId && targetId !== article.id) {
             const linkKey = `${article.id}->${targetId}`;
             if (!linksSet.has(linkKey)) {
               linksSet.add(linkKey);
@@ -1412,10 +1421,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
         }
         
-        // Входящие связи от других статей уровня 1
+        // Входящие связи от других статей (цитирующие)
         for (const citingPmid of citedByPmids) {
           const sourceId = pmidToId.get(citingPmid);
-          if (sourceId && sourceId !== article.id && !sourceId.startsWith('pmid:')) {
+          if (sourceId && sourceId !== article.id) {
             const linkKey = `${sourceId}->${article.id}`;
             if (!linksSet.has(linkKey)) {
               linksSet.add(linkKey);
@@ -1449,6 +1458,49 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               links.push({
                 source: article.id,
                 target: targetId,
+              });
+            }
+          }
+        }
+      }
+
+      // Добавляем связи между статьями уровней 2 и 3
+      // Комбинируем статьи из both уровней для обработки связей
+      const level23Articles = [
+        ...level2Articles,
+        ...level3Articles
+      ];
+
+      // Обрабатываем связи статей уровней 2 и 3
+      for (const article of level23Articles) {
+        const refPmids = article.reference_pmids || [];
+        const citedByPmids = article.cited_by_pmids || [];
+        
+        // Исходящие связи (эта статья ссылается на другие статьи)
+        for (const refPmid of refPmids) {
+          const targetId = pmidToId.get(refPmid);
+          if (targetId && targetId !== article.id && addedNodeIds.has(targetId)) {
+            const linkKey = `${article.id}->${targetId}`;
+            if (!linksSet.has(linkKey)) {
+              linksSet.add(linkKey);
+              links.push({
+                source: article.id,
+                target: targetId,
+              });
+            }
+          }
+        }
+        
+        // Входящие связи от других статей
+        for (const citingPmid of citedByPmids) {
+          const sourceId = pmidToId.get(citingPmid);
+          if (sourceId && sourceId !== article.id && addedNodeIds.has(sourceId)) {
+            const linkKey = `${sourceId}->${article.id}`;
+            if (!linksSet.has(linkKey)) {
+              linksSet.add(linkKey);
+              links.push({
+                source: sourceId,
+                target: article.id,
               });
             }
           }
