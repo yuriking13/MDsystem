@@ -74,6 +74,7 @@ export default function DocumentPage() {
   const [citationStyle, setCitationStyle] = useState<CitationStyle>("gost");
   const hasSyncedStatistics = useRef(false);
   const isSyncingStatistics = useRef(false);
+  const lastUserEditRef = useRef(0);
   const editorRef = useRef<TiptapEditorHandle>(null);
 
   // Модальное окно выбора статьи для цитаты
@@ -287,6 +288,19 @@ export default function DocumentPage() {
       console.log('[SYNC] No projectId, skipping');
       return;
     }
+
+    // Skip sync while there are unsaved local edits (avoid overwriting user's work)
+    if (content && doc?.content && content !== doc.content) {
+      console.log('[SYNC] Skip: local edits not yet saved');
+      return;
+    }
+
+    // Also skip if the user edited within the last 2.5 seconds
+    const sinceEdit = Date.now() - lastUserEditRef.current;
+    if (sinceEdit < 2500) {
+      console.log('[SYNC] Skip: edited recently (ms ago):', sinceEdit);
+      return;
+    }
     if (isSyncingStatistics.current) {
       console.log('[SYNC] Already syncing, skipping');
       return;
@@ -447,7 +461,7 @@ export default function DocumentPage() {
       isSyncingStatistics.current = false;
       console.log('[SYNC] Sync finished');
     }
-  }, [buildTableHtmlFromStatistic, content, projectId, saveDocument]);
+  }, [buildTableHtmlFromStatistic, content, doc?.content, projectId, saveDocument]);
 
   // After initial load, refresh document tables from Statistics once
   useEffect(() => {
@@ -590,6 +604,11 @@ export default function DocumentPage() {
     }
     setShowChartModal(false);
   }
+
+  const handleContentChange = useCallback((html: string) => {
+    lastUserEditRef.current = Date.now();
+    setContent(html);
+  }, []);
   
   // Вставить таблицу из статистики
   async function handleInsertTable(stat: ProjectStatistic) {
@@ -874,7 +893,7 @@ export default function DocumentPage() {
           <TiptapEditor
             ref={editorRef}
             content={content}
-            onChange={setContent}
+            onChange={handleContentChange}
             onInsertCitation={openCitationPicker}
             onImportStatistic={openImportModal}
             onCreateChartFromTable={openChartModal}
