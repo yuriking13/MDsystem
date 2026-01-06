@@ -230,26 +230,26 @@ export default function CitationGraph({ projectId }: Props) {
     const level = node.graphLevel ?? 1;
     const statsQ = node.statsQuality || 0;
     
-    // Логарифмическая шкала для пропорционального отображения цитирований
-    // Минимальный размер 4, максимальный ~40 для самых цитируемых
+    // Логарифмическая шкала - УВЕЛИЧЕННЫЕ размеры для видимости
+    // Минимальный размер 12, максимальный ~80 для самых цитируемых
     let baseSize: number;
     if (citedByCount === 0) {
-      baseSize = 4;
+      baseSize = 12;
     } else if (citedByCount <= 10) {
-      baseSize = 4 + citedByCount * 0.6; // 4-10
+      baseSize = 12 + citedByCount * 1.5; // 12-27
     } else if (citedByCount <= 100) {
-      baseSize = 10 + Math.log10(citedByCount) * 5; // 10-20
+      baseSize = 27 + Math.log10(citedByCount) * 12; // 27-51
     } else if (citedByCount <= 1000) {
-      baseSize = 20 + Math.log10(citedByCount) * 4; // 20-32
+      baseSize = 51 + Math.log10(citedByCount) * 8; // 51-75
     } else {
-      baseSize = 32 + Math.log10(citedByCount) * 2; // 32-40+
+      baseSize = 75 + Math.log10(citedByCount) * 3; // 75-85+
     }
     
-    // Уровень 1 (наши статьи) немного крупнее для выделения
-    if (level === 1) baseSize *= 1.3;
+    // Уровень 1 (наши статьи) крупнее для выделения
+    if (level === 1) baseSize *= 1.4;
     
     // Бонус за качество статистики
-    const statsBonus = statsQ > 0 ? 0.1 * statsQ : 0;
+    const statsBonus = statsQ > 0 ? 0.15 * statsQ : 0;
     
     return baseSize * (1 + statsBonus);
   }, []);

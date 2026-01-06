@@ -1613,7 +1613,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         .filter((n) => typeof n.id === 'string' && n.id.startsWith('pmid:') && typeof n.pmid === 'string' && n.pmid)
         .map((n) => String(n.pmid));
 
-      const uniquePlaceholderPmids = Array.from(new Set(placeholderPmids)).slice(0, 50); // Увеличили лимит
+      const uniquePlaceholderPmids = Array.from(new Set(placeholderPmids)).slice(0, 150); // Увеличили лимит до 150
       if (uniquePlaceholderPmids.length > 0) {
         try {
           const fetched = await pubmedFetchByPmids({
