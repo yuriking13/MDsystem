@@ -596,6 +596,8 @@ export type CitationGraphResponse = {
     totalNodes: number;
     totalLinks: number;
     levelCounts?: LevelCounts;
+    availableReferences?: number; // Количество PMIDs в reference_pmids
+    availableCiting?: number; // Количество PMIDs в cited_by_pmids
   };
   availableQueries?: string[];
   yearRange?: {
