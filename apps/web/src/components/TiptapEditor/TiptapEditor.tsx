@@ -514,12 +514,23 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   // Expose imperative methods to parent via ref
   useImperativeHandle(ref, () => ({
     forceSetContent: (html: string) => {
+      console.log('[TiptapEditor] forceSetContent called, html length:', html?.length);
+      console.log('[TiptapEditor] editor available:', !!editor);
       if (editor) {
-        editor.commands.setContent(html);
+        console.log('[TiptapEditor] Calling editor.commands.setContent...');
+        const result = editor.commands.setContent(html);
+        console.log('[TiptapEditor] setContent result:', result);
         updateHeadings(editor);
+        console.log('[TiptapEditor] updateHeadings called');
+      } else {
+        console.log('[TiptapEditor] WARNING: editor is null in forceSetContent!');
       }
     },
-    getHTML: () => editor?.getHTML() || '',
+    getHTML: () => {
+      const html = editor?.getHTML() || '';
+      console.log('[TiptapEditor] getHTML called, returning length:', html.length);
+      return html;
+    },
   }), [editor, updateHeadings]);
 
   // Register global insert functions

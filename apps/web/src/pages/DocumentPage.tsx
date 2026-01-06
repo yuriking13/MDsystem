@@ -283,25 +283,43 @@ export default function DocumentPage() {
 
   // Refresh document content with the latest data from Statistics (run once after load)
   const syncDocumentWithStatistics = useCallback(async () => {
-    if (!projectId) return;
-    if (isSyncingStatistics.current) return;
+    if (!projectId) {
+      console.log('[SYNC] No projectId, skipping');
+      return;
+    }
+    if (isSyncingStatistics.current) {
+      console.log('[SYNC] Already syncing, skipping');
+      return;
+    }
     isSyncingStatistics.current = true;
+    console.log('[SYNC] Starting sync...');
 
     try {
       // Get current content from editor (source of truth) or fallback to state
       const currentHtml = editorRef.current?.getHTML() || content;
-      if (!currentHtml) return;
+      console.log('[SYNC] editorRef available:', !!editorRef.current);
+      console.log('[SYNC] currentHtml length:', currentHtml?.length || 0);
+      if (!currentHtml) {
+        console.log('[SYNC] No content, skipping');
+        return;
+      }
 
       const parser = new DOMParser();
       const docDom = parser.parseFromString(currentHtml, "text/html");
 
       const tables = Array.from(docDom.querySelectorAll('table[data-statistic-id]')) as HTMLElement[];
+      console.log('[SYNC] Found tables with data-statistic-id:', tables.length);
+      
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const ids = Array.from(new Set(tables
         .map((el) => el.getAttribute('data-statistic-id'))
         .filter((id): id is string => !!id && uuidRegex.test(id))));
+      console.log('[SYNC] Valid statistic IDs:', ids);
 
-      if (ids.length === 0) return;
+      if (ids.length === 0) {
+        console.log('[SYNC] No valid IDs, skipping');
+        return;
+      }
 
       const statMap = new Map<string, TableData>();
       const missingIds = new Set<string>();
@@ -310,20 +328,23 @@ export default function DocumentPage() {
           const res = await apiGetStatistic(projectId, id);
           if (res.statistic.table_data) {
             statMap.set(id, res.statistic.table_data as TableData);
+            console.log('[SYNC] Loaded statistic:', id);
           }
         } catch (err: any) {
-          console.warn('Failed to load statistic for sync', id, err);
+          console.warn('[SYNC] Failed to load statistic:', id, err);
           missingIds.add(id);
         }
       }));
+      console.log('[SYNC] Loaded statistics count:', statMap.size);
 
       // Determine which statistics were deleted server-side
       const existingIds = new Set<string>();
       try {
         const list = await apiGetStatistics(projectId);
         list.statistics.forEach((s) => existingIds.add(s.id));
+        console.log('[SYNC] Existing statistics on server:', existingIds.size);
       } catch (err) {
-        console.warn('Failed to fetch statistics list for sync', err);
+        console.warn('[SYNC] Failed to fetch statistics list:', err);
       }
 
       let changed = false;
@@ -334,6 +355,7 @@ export default function DocumentPage() {
 
         // If statistic was removed or missing, drop the table from the document
         if (!data && ((existingIds.size > 0 && !existingIds.has(statId)) || missingIds.has(statId))) {
+          console.log('[SYNC] Removing deleted table:', statId);
           tableEl.remove();
           changed = true;
           return;
@@ -346,23 +368,34 @@ export default function DocumentPage() {
         wrapper.innerHTML = newHtml;
         const newTable = wrapper.firstElementChild;
         if (newTable && newTable.outerHTML !== tableEl.outerHTML) {
+          console.log('[SYNC] Updating table:', statId);
+          console.log('[SYNC] Old HTML:', tableEl.outerHTML.substring(0, 200));
+          console.log('[SYNC] New HTML:', newTable.outerHTML.substring(0, 200));
           tableEl.replaceWith(newTable);
           changed = true;
         }
       });
 
+      console.log('[SYNC] Changed:', changed);
       if (changed) {
         const updatedContent = docDom.body.innerHTML;
+        console.log('[SYNC] Updated content length:', updatedContent.length);
         // Use forceSetContent to directly update TipTap editor
         if (editorRef.current) {
+          console.log('[SYNC] Calling forceSetContent...');
           editorRef.current.forceSetContent(updatedContent);
+          console.log('[SYNC] forceSetContent called');
+        } else {
+          console.log('[SYNC] WARNING: editorRef.current is null!');
         }
         setContent(updatedContent);
         setDoc((prev) => prev ? { ...prev, content: updatedContent } : prev);
         await saveDocument(updatedContent);
+        console.log('[SYNC] Save completed');
       }
     } finally {
       isSyncingStatistics.current = false;
+      console.log('[SYNC] Sync finished');
     }
   }, [buildTableHtmlFromStatistic, content, projectId, saveDocument]);
 
