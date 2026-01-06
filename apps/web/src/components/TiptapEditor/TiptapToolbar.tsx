@@ -160,7 +160,7 @@ export default function TiptapToolbar({
       // Check if current cell is a tableHeader
       for (let depth = $from.depth; depth > 0; depth--) {
         const node = $from.node(depth);
-        if (node.type.name === 'tableHeader') {
+        if (node?.type?.name === 'tableHeader') {
           isHeader = true;
           break;
         }
@@ -469,7 +469,7 @@ export default function TiptapToolbar({
                         let tableNode: any = null;
                         
                         state.doc.nodesBetween(0, state.doc.content.size, (node, pos) => {
-                          if (node.type.name === 'table') {
+                          if (node?.type?.name === 'table') {
                             if (pos <= from && pos + node.nodeSize >= from) {
                               tableNode = node;
                             }
@@ -483,9 +483,9 @@ export default function TiptapToolbar({
                           
                           tableNode.content.forEach((row: any) => {
                             const tr = document.createElement('tr');
-                            row.content.forEach((cell: any) => {
-                              const cellEl = document.createElement(cell.type.name === 'tableHeader' ? 'th' : 'td');
-                              cellEl.textContent = cell.textContent;
+                            row.content?.forEach((cell: any) => {
+                              const cellEl = document.createElement(cell?.type?.name === 'tableHeader' ? 'th' : 'td');
+                              cellEl.textContent = cell?.textContent || '';
                               tr.appendChild(cellEl);
                             });
                             tableEl.appendChild(tr);
