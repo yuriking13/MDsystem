@@ -13,6 +13,7 @@ import documentsRoutes from './routes/documents.js';
 import statisticsRoutes from './routes/statistics.js';
 
 import envGuard from './plugins/00-env-guard.js';
+import { startWorkers } from './worker/index.js';
 
 const app = Fastify({ logger: true });
 
@@ -37,6 +38,11 @@ app.get('/api/health', async () => ({ ok: true }));
 app.listen({ host: env.HOST, port: env.PORT })
   .then(() => {
     app.log.info(`API listening on http://${env.HOST}:${env.PORT}`);
+
+    // Стартуем фоновые воркеры (pg-boss) для очередей
+    startWorkers().catch((err) => {
+      app.log.error({ err }, 'Failed to start workers');
+    });
   })
   .catch((err) => {
     app.log.error(err);
