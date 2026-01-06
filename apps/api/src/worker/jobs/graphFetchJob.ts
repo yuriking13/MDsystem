@@ -145,6 +145,8 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
     // Фаза 2: Кэшируем информацию о связанных статьях
     const pmidsToFetch = Array.from(allPmidsToCache);
     
+    console.log(`[GraphFetch] Phase 2 starting: ${pmidsToFetch.length} unique PMIDs to cache`);
+    
     await pool.query(
       `UPDATE graph_fetch_jobs SET 
         processed_articles = $1, 
@@ -156,6 +158,8 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
     // Загружаем информацию батчами
     const batchSize = 50;
     let fetchedPmids = 0;
+    let cachedFromDb = 0;
+    let fetchedFromPubmed = 0;
     
     for (let i = 0; i < pmidsToFetch.length; i += batchSize) {
       const batch = pmidsToFetch.slice(i, i + batchSize);
@@ -167,6 +171,7 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
         [batch]
       );
       const existingPmids = new Set(existingRes.rows.map((r: { pmid: string }) => r.pmid));
+      cachedFromDb += existingPmids.size;
       const toFetch = batch.filter((p: string) => !existingPmids.has(p));
       
       if (toFetch.length > 0) {
@@ -177,6 +182,8 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
             apiKey: apiKey || undefined,
             throttleMs: apiKey ? 80 : 300,
           });
+          
+          fetchedFromPubmed += fetched.length;
           
           // Сохраняем в кэш
           for (const article of fetched) {
@@ -196,12 +203,17 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
             );
           }
         } catch (err) {
-          console.error(`[GraphFetch] Error fetching batch:`, err);
+          console.error(`[GraphFetch] Error fetching batch ${i}-${i+batchSize}:`, err);
           // Продолжаем с следующим батчем
         }
       }
       
       fetchedPmids += batch.length;
+      
+      // Логируем прогресс каждые 200 PMIDs
+      if (fetchedPmids % 200 === 0 || fetchedPmids === pmidsToFetch.length) {
+        console.log(`[GraphFetch] Phase 2 progress: ${fetchedPmids}/${pmidsToFetch.length} PMIDs (${cachedFromDb} cached, ${fetchedFromPubmed} fetched)`);
+      }
       
       // Обновляем прогресс
       await pool.query(
@@ -210,13 +222,17 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
       );
     }
     
+    console.log(`[GraphFetch] Phase 2 complete: ${cachedFromDb} PMIDs from cache, ${fetchedFromPubmed} fetched from PubMed`);
+    
     // Фаза 3: Загружаем citation counts из Europe PMC (быстрее чем PubMed)
+    console.log(`[GraphFetch] Phase 3 starting: fetching citation counts from Europe PMC for ${Math.min(pmids.length, 200)} articles`);
     try {
       const citationCounts = await europePMCGetCitationCounts({
         pmids: pmids.slice(0, 200), // Ограничиваем для скорости
         throttleMs: 150,
       });
       
+      let citationUpdates = 0;
       for (const [pmid, count] of citationCounts) {
         const articleId = idByPmid.get(pmid);
         if (!articleId || count === 0) continue;
@@ -227,7 +243,9 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
            WHERE id = $2`,
           [count, articleId]
         );
+        citationUpdates++;
       }
+      console.log(`[GraphFetch] Phase 3 complete: updated citation counts for ${citationUpdates} articles`);
     } catch (err) {
       console.error('[GraphFetch] Europe PMC error:', err);
     }
