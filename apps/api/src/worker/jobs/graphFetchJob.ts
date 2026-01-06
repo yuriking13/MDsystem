@@ -2,7 +2,7 @@ import { pool } from '../../pg.js';
 import { enrichArticlesWithReferences, pubmedFetchByPmids, europePMCGetCitationCounts } from '../../lib/pubmed.js';
 import { decryptApiKey } from '../../utils/apiKeyCrypto.js';
 
-// Поfлучаесм API калюч пользователя из бВазы
+// Поfлучаесм API кDалюч пользователя из бВазы
 async function getUserApiKey(userId: string, provider: string): Promise<string | null> {
   const result = await pool.query(
     `SELECT encrypted_key FROM user_api_keys WHERE user_id = $1 AND provider = $2`,
