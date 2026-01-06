@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useState, useCallback, useImperativeHandle, forwardRef, useMemo } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -228,75 +228,81 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     });
   }, [citationStyle]);
   
-  const extensions = [
-      StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3],
-        },
-        paragraph: false, // Отключаем стандартный paragraph
-        link: false, // avoid duplicate Link extension
-      }),
-      CustomParagraph, // Используем свой paragraph с indent
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-        alignments: ['left', 'center', 'right', 'justify'],
-      }),
-      Image.configure({
-        HTMLAttributes: {
-          class: 'tiptap-image',
-        },
-      }),
-      Placeholder.configure({
-        placeholder: 'Начните писать...',
-      }),
-      CustomTable.configure({
-        resizable: true,
-        allowTableNodeSelection: true,
-        lastColumnResizable: true,
-        cellMinWidth: 50,
-        renderWrapper: true,  // ВАЖНО: TipTap должна обернуть таблицу в div.tableWrapper
-        HTMLAttributes: {
-          class: 'tiptap-table',
-        },
-      }),
-      TableRow,
-      CustomTableCell,
-      CustomTableHeader,
-      TextStyle,
-      Color,
-      Highlight.configure({
-        multicolor: true,
-      }),
-      ChartNode,
-      CitationMark,
-      TableFigureNumbering,
-      Underline,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: 'tiptap-link',
-        },
-      }),
-      PaginationPlus.configure({
-        pageHeight: styleConfig.pageHeight,
-        pageWidth: styleConfig.pageWidth,
-        pageGap: PAGE_GAP,
-        marginTop: styleConfig.marginTop,
-        marginRight: styleConfig.marginRight,
-        marginBottom: styleConfig.marginBottom,
-        marginLeft: styleConfig.marginLeft,
-        headerRight: citationStyle === 'gost' ? '' : '{page}',
-        headerLeft: '',
-        footerRight: '',
-        footerLeft: citationStyle === 'gost' ? '{page}' : '',
-        pageBreakBackground: '#4a5568',
-      }),
-    ];
+  const extensions = useMemo(() => [
+    StarterKit.configure({
+      heading: {
+        levels: [1, 2, 3],
+      },
+      paragraph: false, // Отключаем стандартный paragraph
+      link: false, // avoid duplicate Link extension
+    }),
+    CustomParagraph, // Используем свой paragraph с indent
+    TextAlign.configure({
+      types: ['heading', 'paragraph'],
+      alignments: ['left', 'center', 'right', 'justify'],
+    }),
+    Image.configure({
+      HTMLAttributes: {
+        class: 'tiptap-image',
+      },
+    }),
+    Placeholder.configure({
+      placeholder: 'Начните писать...',
+    }),
+    CustomTable.configure({
+      resizable: true,
+      allowTableNodeSelection: true,
+      lastColumnResizable: true,
+      cellMinWidth: 50,
+      renderWrapper: true,  // ВАЖНО: TipTap должна обернуть таблицу в div.tableWrapper
+      HTMLAttributes: {
+        class: 'tiptap-table',
+      },
+    }),
+    TableRow,
+    CustomTableCell,
+    CustomTableHeader,
+    TextStyle,
+    Color,
+    Highlight.configure({
+      multicolor: true,
+    }),
+    ChartNode,
+    CitationMark,
+    TableFigureNumbering,
+    Underline,
+    Link.configure({
+      openOnClick: false,
+      HTMLAttributes: {
+        class: 'tiptap-link',
+      },
+    }),
+    PaginationPlus.configure({
+      pageHeight: styleConfig.pageHeight,
+      pageWidth: styleConfig.pageWidth,
+      pageGap: PAGE_GAP,
+      marginTop: styleConfig.marginTop,
+      marginRight: styleConfig.marginRight,
+      marginBottom: styleConfig.marginBottom,
+      marginLeft: styleConfig.marginLeft,
+      headerRight: citationStyle === 'gost' ? '' : '{page}',
+      headerLeft: '',
+      footerRight: '',
+      footerLeft: citationStyle === 'gost' ? '{page}' : '',
+      pageBreakBackground: '#4a5568',
+    }),
+  ], [citationStyle, styleConfig]);
 
-  // Deduplicate extensions by name to silence duplicate warnings
-  const uniqueExtensions = extensions.filter((ext, idx) =>
-    extensions.findIndex((e) => e.name === ext.name) === idx
-  );
+  // Deduplicate extensions by name to avoid TipTap warnings
+  const uniqueExtensions = useMemo(() => {
+    const seen = new Set<string>();
+    return extensions.filter((ext) => {
+      if (!ext?.name) return true;
+      if (seen.has(ext.name)) return false;
+      seen.add(ext.name);
+      return true;
+    });
+  }, [extensions]);
 
   const editor = useEditor({
     extensions: uniqueExtensions,
@@ -698,51 +704,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
           const pos = $from.before(depth);
           const tableElement = editor.view.nodeDOM(pos) as HTMLElement;
           
-          // DEBUG: Log DETAILED table structure WITH COL WIDTHS
-          if (tableElement) {
-            const wrapper = tableElement.parentElement;
-            const colgroup = tableElement.querySelector('colgroup');
-            const colsArray = Array.from(tableElement.querySelectorAll('col'));
-            const firstCell = tableElement.querySelector('td, th');
-            const allCells = tableElement.querySelectorAll('td, th');
-            
-            // Log actual computed widths
-            const colWidths = colsArray.map((col, idx) => {
-              const computedStyle = window.getComputedStyle(col);
-              return {
-                index: idx,
-                style: col.getAttribute('style'),
-                width: col.style.width,
-                minWidth: col.style.minWidth,
-                computedWidth: computedStyle.width,
-              };
-            });
-            
-            // Log cell colwidth attributes
-            const cellColwidths = Array.from(allCells).slice(0, 5).map((cell, idx) => ({
-              index: idx,
-              colwidth: cell.getAttribute('colwidth'),
-              colspan: cell.getAttribute('colspan'),
-              tag: cell.tagName,
-            }));
-            
-            console.log('═══ DETAILED TABLE STRUCTURE ═══', {
-              hasWrapper: !!wrapper,
-              wrapperClass: wrapper?.className,
-              wrapperDisplay: wrapper?.style.display,
-              hasColgroupTag: !!colgroup,
-              colgroupHTML: colgroup?.outerHTML.substring(0, 300),
-              numberOfColElements: colsArray.length,
-              expectedCols: cols + 1, // +1 for header
-              colWidths: colWidths,
-              cellColwidths: cellColwidths,
-              tableStyle: tableElement.getAttribute('style'),
-              tableWidth: tableElement.style.width,
-              tableLayout: window.getComputedStyle(tableElement).tableLayout,
-              totalCells: allCells.length,
-            });
-          }
-          
           // CRITICAL FIX: Ensure all col elements have width for resize to work
           if (tableElement) {
             const colgroup = tableElement.querySelector('colgroup');
@@ -751,14 +712,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
             
             // If colgroup doesn't exist or is incomplete, create/fix it
             if (!colgroup || colElements.length === 0 || colElements.length < headerCells.length) {
-              console.warn('Colgroup is incomplete, attempting to fix...', {
-                hasColgroupTag: !!colgroup,
-                colCount: colElements.length,
-                expectedCount: headerCells.length,
-              });
-              
-              // This would require more complex logic to rebuild colgroup
-              // For now, we'll try to ensure each col has a width
+              // Ensure each column has a width so resize stays stable
               colElements.forEach((col, idx) => {
                 const currentWidth = col.style.width;
                 if (!currentWidth || currentWidth === 'auto' || currentWidth === '0px') {
@@ -766,7 +720,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                   const headerCell = headerCells[idx] as HTMLElement;
                   const cellWidth = headerCell?.offsetWidth || 100;
                   col.style.width = `${cellWidth}px`;
-                  console.log(`Fixed col ${idx} width to ${cellWidth}px`);
                 }
               });
             }

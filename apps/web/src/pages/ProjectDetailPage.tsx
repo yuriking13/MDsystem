@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   apiGetProject,
@@ -190,6 +190,7 @@ export default function ProjectDetailPage() {
   const [editingStat, setEditingStat] = useState<ProjectStatistic | null>(null);
   const [statisticsView, setStatisticsView] = useState<'charts' | 'tables'>('charts');
   const [showCreateStatistic, setShowCreateStatistic] = useState(false);
+  const refreshingStats = useRef(false);
 
   // Invite form
   const [showInvite, setShowInvite] = useState(false);
@@ -241,16 +242,22 @@ export default function ProjectDetailPage() {
     }
   }
   
-  async function loadStatistics() {
-    if (!id) return;
-    setLoadingStats(true);
+  async function loadStatistics(options?: { silent?: boolean }) {
+    if (!id || refreshingStats.current) return;
+    refreshingStats.current = true;
+    if (!options?.silent) {
+      setLoadingStats(true);
+    }
     try {
       const res = await apiGetStatistics(id);
       setStatistics(res.statistics);
     } catch (err: any) {
       console.error("Failed to load statistics:", err);
     } finally {
-      setLoadingStats(false);
+      if (!options?.silent) {
+        setLoadingStats(false);
+      }
+      refreshingStats.current = false;
     }
   }
 
@@ -263,7 +270,16 @@ export default function ProjectDetailPage() {
     if (activeTab === "statistics" && statistics.length === 0) {
       loadStatistics();
     }
-  }, [activeTab]);
+  }, [activeTab, statistics.length]);
+
+  // Auto-refresh statistics while the tab is open to reflect document-driven updates
+  useEffect(() => {
+    if (activeTab !== "statistics" || editingStat || showCreateStatistic) return;
+    const interval = setInterval(() => {
+      loadStatistics({ silent: true });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [activeTab, editingStat, showCreateStatistic]);
 
   const canEdit = project && (project.role === "owner" || project.role === "editor");
   const isOwner = project?.role === "owner";
@@ -951,7 +967,7 @@ export default function ProjectDetailPage() {
                 </div>
                 <button 
                   className="btn secondary"
-                  onClick={loadStatistics}
+                  onClick={() => loadStatistics()}
                   disabled={loadingStats}
                   type="button"
                 >

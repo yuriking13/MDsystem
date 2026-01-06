@@ -150,7 +150,7 @@ export default function DocumentPage() {
           cells.push(cell.textContent || '');
         });
         
-        if (rowIdx === 0 && tr.querySelector('th')) {
+            // console.log('Table auto-saved to Statistics:', result.statistic.id);
           headers.push(...cells);
         } else {
           rows.push(cells);
@@ -302,36 +302,28 @@ export default function DocumentPage() {
   // Refresh document content with the latest data from Statistics (run once after load)
   const syncDocumentWithStatistics = useCallback(async () => {
     if (!projectId) {
-      console.log('[SYNC] No projectId, skipping');
       return;
     }
 
     // Skip sync while there are unsaved local edits (avoid overwriting user's work)
     if (content && doc?.content && content !== doc.content) {
-      console.log('[SYNC] Skip: local edits not yet saved');
       return;
     }
 
     // Also skip if the user edited within the last 2.5 seconds
     const sinceEdit = Date.now() - lastUserEditRef.current;
     if (sinceEdit < 2500) {
-      console.log('[SYNC] Skip: edited recently (ms ago):', sinceEdit);
       return;
     }
     if (isSyncingStatistics.current) {
-      console.log('[SYNC] Already syncing, skipping');
       return;
     }
     isSyncingStatistics.current = true;
-    console.log('[SYNC] Starting sync...');
 
     try {
       // Get current content from editor (source of truth) or fallback to state
       const currentHtml = editorRef.current?.getHTML() || content;
-      console.log('[SYNC] editorRef available:', !!editorRef.current);
-      console.log('[SYNC] currentHtml length:', currentHtml?.length || 0);
       if (!currentHtml) {
-        console.log('[SYNC] No content, skipping');
         return;
       }
 
@@ -748,7 +740,6 @@ export default function DocumentPage() {
       });
 
       await apiMarkStatisticUsedInDocument(projectId, result.statistic.id, docId);
-      console.log('Table auto-saved to Statistics:', result.statistic.id);
       return result.statistic.id;
     } catch (err) {
       console.error("Failed to auto-save table:", err);
