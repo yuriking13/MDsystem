@@ -722,10 +722,21 @@ export type FetchReferencesStatusResult = {
   errorMessage?: string;
 };
 
-export async function apiFetchReferences(projectId: string): Promise<FetchReferencesResult> {
+export type FetchReferencesOptions = {
+  selectedOnly?: boolean; // Загружать связи только для отобранных статей
+  articleIds?: string[]; // Загружать связи только для указанных статей
+};
+
+export async function apiFetchReferences(
+  projectId: string, 
+  options?: FetchReferencesOptions
+): Promise<FetchReferencesResult> {
   return apiFetch<FetchReferencesResult>(
     `/api/projects/${projectId}/articles/fetch-references`,
-    { method: "POST" }
+    { 
+      method: "POST",
+      body: options ? JSON.stringify(options) : undefined,
+    }
   );
 }
 

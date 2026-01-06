@@ -8,6 +8,7 @@ type ApiKeysGetResponse = { items: Array<{ provider: string; hasKey: boolean }> 
 
 const PROVIDERS = [
   { id: "pubmed", label: "PubMed API key" },
+  { id: "doaj", label: "DOAJ API key (Directory of Open Access Journals)" },
   { id: "wiley", label: "Wiley TDM API key" },
   { id: "openrouter", label: "OpenRouter API key (для перевода/LLM)" },
 ];
@@ -22,6 +23,7 @@ export default function Settings() {
 
   const [inputs, setInputs] = useState<Record<string, string>>({
     pubmed: "",
+    doaj: "",
     wiley: "",
     openrouter: "",
   });

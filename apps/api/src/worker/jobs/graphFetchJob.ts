@@ -16,12 +16,14 @@ export type GraphFetchJobPayload = {
   projectId: string;
   jobId: string;
   userId: string;
+  selectedOnly?: boolean; // Загружать связи только для отобранных статей
+  articleIds?: string[] | null; // Загружать связи только для указанных статей
 };
 
 export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
-  const { projectId, jobId, userId } = payload;
+  const { projectId, jobId, userId, selectedOnly, articleIds } = payload;
   
-  console.log(`[GraphFetch] Starting job ${jobId} for project ${projectId}, userId: ${userId}`);
+  console.log(`[GraphFetch] Starting job ${jobId} for project ${projectId}, userId: ${userId}, selectedOnly: ${selectedOnly}, articleIds: ${articleIds?.length || 0}`);
   
   try {
     console.log(`[GraphFetch] Updating job status to 'running'`);
@@ -35,14 +37,26 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
     // Получаем API ключ пользователя
     const apiKey = await getUserApiKey(userId, 'pubmed');
     
-    // Получаем статьи проекта с PMID
-    const articlesRes = await pool.query(
-      `SELECT a.id, a.pmid, a.reference_pmids, a.cited_by_pmids
+    // Получаем статьи проекта с PMID (с учётом фильтров)
+    let sql = `SELECT a.id, a.pmid, a.reference_pmids, a.cited_by_pmids
        FROM articles a
        JOIN project_articles pa ON pa.article_id = a.id
-       WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`,
-      [projectId]
-    );
+       WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`;
+    const params: any[] = [projectId];
+    let paramIdx = 2;
+    
+    // Фильтр по статусу (только отобранные)
+    if (selectedOnly) {
+      sql += ` AND pa.status = 'selected'`;
+    }
+    
+    // Фильтр по конкретным статьям
+    if (articleIds && articleIds.length > 0) {
+      sql += ` AND a.id = ANY($${paramIdx++})`;
+      params.push(articleIds);
+    }
+    
+    const articlesRes = await pool.query(sql, params);
     
     const articles = articlesRes.rows;
     const totalArticles = articles.length;
@@ -78,10 +92,28 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
     const allPmidsToCache = new Set<string>();
     
     // Обновляем статьи и собираем PMIDs
+    // Также считаем статистику найденных связей
     let processedArticles = 0;
+    let totalReferencesFound = 0;
+    let totalCitedByFound = 0;
+    let articlesWithReferences = 0;
+    let articlesWithCitedBy = 0;
+    
     for (const [pmid, refs] of refsMap) {
       const articleId = idByPmid.get(pmid);
       if (!articleId) continue;
+      
+      // Считаем статистику
+      if (refs.references.length > 0) {
+        articlesWithReferences++;
+        totalReferencesFound += refs.references.length;
+      }
+      if (refs.citedBy.length > 0) {
+        articlesWithCitedBy++;
+        totalCitedByFound += refs.citedBy.length;
+      }
+      
+      console.log(`[GraphFetch] Article ${pmid}: ${refs.references.length} refs, ${refs.citedBy.length} cited_by`);
       
       // Обновляем статью
       await pool.query(
@@ -107,6 +139,8 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
         );
       }
     }
+    
+    console.log(`[GraphFetch] Phase 1 complete: ${articlesWithReferences}/${processedArticles} articles have references (${totalReferencesFound} total), ${articlesWithCitedBy} have cited_by (${totalCitedByFound} total)`);
     
     // Фаза 2: Кэшируем информацию о связанных статьях
     const pmidsToFetch = Array.from(allPmidsToCache);

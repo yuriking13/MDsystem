@@ -4,7 +4,7 @@ import { getDb } from "../utils/db.js";
 import { encryptApiKey } from "../utils/apiKeyCrypto.js";
 import { getAuthUser } from "../utils/authUser.js";
 
-const KnownProviders = ["pubmed", "wiley", "crossref", "openrouter"] as const;
+const KnownProviders = ["pubmed", "wiley", "doaj", "openrouter"] as const;
 
 function normalizeProvider(p: string): string {
   return p.trim().toLowerCase();

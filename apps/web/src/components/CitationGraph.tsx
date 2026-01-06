@@ -56,6 +56,9 @@ export default function CitationGraph({ projectId }: Props) {
   const [importing, setImporting] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   
+  // Опция загрузки связей только для отобранных
+  const [fetchSelectedOnly, setFetchSelectedOnly] = useState(false);
+  
   // Фильтры
   const [filter, setFilter] = useState<FilterType>('all');
   const [availableQueries, setAvailableQueries] = useState<string[]>([]);
@@ -70,6 +73,9 @@ export default function CitationGraph({ projectId }: Props) {
   const [yearFrom, setYearFrom] = useState<number | undefined>(undefined);
   const [yearTo, setYearTo] = useState<number | undefined>(undefined);
   const [statsQuality, setStatsQuality] = useState<number>(0);
+  
+  // Подсветка статей с P-value (золотым цветом)
+  const [highlightPValue, setHighlightPValue] = useState(false);
   
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
@@ -215,7 +221,8 @@ export default function CitationGraph({ projectId }: Props) {
     });
     
     try {
-      const res = await apiFetchReferences(projectId);
+      // Передаём опцию selectedOnly если выбран чекбокс
+      const res = await apiFetchReferences(projectId, fetchSelectedOnly ? { selectedOnly: true } : undefined);
       
       if (res.jobId) {
         // Фоновая загрузка запущена - обновляем данные
@@ -299,7 +306,13 @@ export default function CitationGraph({ projectId }: Props) {
   const nodeColor = useCallback((node: any) => {
     const status = node.status;
     const level = node.graphLevel ?? 1;
+    const statsQ = node.statsQuality || 0;
 
+    // Если включена подсветка P-value и статья имеет P-value - золотой
+    if (highlightPValue && statsQ > 0) {
+      return '#fbbf24'; // Золотой/янтарный для P-value
+    }
+    
     // Если выбран - яркий зелёный
     if (selectedNodeIds.has(node.id)) {
       return '#10b981';
@@ -328,7 +341,7 @@ export default function CitationGraph({ projectId }: Props) {
     }
     
     return '#6b7280'; // Серый по умолчанию
-  }, [selectedNodeIds]);
+  }, [selectedNodeIds, highlightPValue]);
 
   const nodeLabel = useCallback((node: any) => {
     const citedByCount = node.citedByCount || 0;
@@ -490,14 +503,26 @@ export default function CitationGraph({ projectId }: Props) {
           {importing ? `⏳ Импорт...` : `➕ В кандидаты (${selectedNodeIds.size})`}
         </button>
 
-        <button
-          className="btn secondary"
-          style={{ padding: '6px 14px', fontSize: 12 }}
-          onClick={handleFetchReferences}
-          disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
-        >
-          {fetchingRefs || fetchJobStatus?.isRunning ? '⏳ Загрузка...' : '🔄 Обновить связи из PubMed'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={fetchSelectedOnly}
+              onChange={(e) => setFetchSelectedOnly(e.target.checked)}
+              style={{ width: 14, height: 14 }}
+            />
+            Только отобранные
+          </label>
+          <button
+            className="btn secondary"
+            style={{ padding: '6px 14px', fontSize: 12 }}
+            onClick={handleFetchReferences}
+            disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
+            title={fetchSelectedOnly ? 'Загрузить связи только для отобранных статей' : 'Загрузить связи для всех статей проекта'}
+          >
+            {fetchingRefs || fetchJobStatus?.isRunning ? '⏳ Загрузка...' : '🔄 Обновить связи из PubMed'}
+          </button>
+        </div>
       </div>
       
       {/* Прогресс загрузки связей */}
@@ -611,6 +636,20 @@ export default function CitationGraph({ projectId }: Props) {
         {/* Фильтр по качеству статистики (p-value) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>📈 P-value:</span>
+          <button
+            className={`btn ${highlightPValue ? '' : 'secondary'}`}
+            style={{ 
+              padding: '4px 10px', 
+              fontSize: 11,
+              background: highlightPValue ? '#fbbf24' : undefined,
+              color: highlightPValue ? '#1e293b' : undefined,
+              border: highlightPValue ? '2px solid #f59e0b' : undefined,
+            }}
+            onClick={() => setHighlightPValue(!highlightPValue)}
+            title={highlightPValue ? 'Скрыть подсветку статей с P-value' : 'Подсветить золотым статьи с P-value'}
+          >
+            ✨ {highlightPValue ? 'Выделены' : 'Выделить'}
+          </button>
           <select
             value={statsQuality}
             onChange={(e) => setStatsQuality(parseInt(e.target.value, 10))}
@@ -622,6 +661,7 @@ export default function CitationGraph({ projectId }: Props) {
               background: 'var(--bg-secondary)',
               color: 'var(--text-primary)'
             }}
+            title="Фильтровать: показывать только статьи с указанным уровнем P-value"
           >
             <option value={0}>Все статьи</option>
             <option value={1}>≥ Упомянут p-value</option>
@@ -717,6 +757,9 @@ export default function CitationGraph({ projectId }: Props) {
       )}
       
       <div className="graph-legend" style={{ padding: '4px 16px', display: 'flex', gap: 12, flexWrap: 'wrap', fontSize: 11 }}>
+        {highlightPValue && (
+          <span style={{ fontWeight: 600 }}><span className="legend-dot" style={{ background: '#fbbf24' }}></span> P-value</span>
+        )}
         {depth >= 3 && (
           <>
             <span><span className="legend-dot" style={{ background: '#a855f7' }}></span> Цитируют нас</span>
