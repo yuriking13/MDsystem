@@ -8,16 +8,18 @@ export async function startWorkers() {
   console.log('[workers] pg-boss started, registering job handlers...');
 
   // PubMed search worker (1 concurrent)
+  // Note: pg-boss 10.x passes an array of jobs to the handler
   console.log('[workers] Registering search:pubmed handler');
-  await boss.work('search:pubmed', async (job: any) => {
+  await boss.work('search:pubmed', async ([job]: any) => {
     console.log('[worker-pubmed] Processing job', job.id);
     await runPubmedSearchJob(job.data as any);
   });
   console.log('[workers] search:pubmed handler registered');
 
   // Graph fetch worker (1 concurrent для rate limiting)
+  // Note: pg-boss 10.x passes an array of jobs to the handler
   console.log('[workers] Registering graph:fetch-references handler');
-  await boss.work('graph:fetch-references', async (job: any) => {
+  await boss.work('graph:fetch-references', async ([job]: any) => {
     console.log('[worker-graph] Processing job', job.id);
     await runGraphFetchJob(job.data as any);
   });
