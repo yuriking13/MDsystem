@@ -526,19 +526,22 @@ export default function StatisticEditModal({ statistic, onClose, onSave }: Props
                 <div>
                   <span className="muted" style={{ fontSize: 11 }}>Рекомендуемые типы графиков: </span>
                   <div className="row gap" style={{ marginTop: 6, flexWrap: 'wrap' }}>
-                    {recommendedTypes.map(t => (
-                      <button
-                        key={t}
-                        onClick={() => {
-                          setChartType(t);
-                          setActiveTab('chart');
-                        }}
-                        className={`id-badge ${chartType === t ? 'stats-q3' : ''}`}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {CHART_TYPE_INFO[t].icon} {CHART_TYPE_INFO[t].name}
-                      </button>
-                    ))}
+                    {recommendedTypes.map(t => {
+                      const info = CHART_TYPE_INFO[t] ?? { name: String(t), icon: '📊' };
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => {
+                            setChartType(t);
+                            setActiveTab('chart');
+                          }}
+                          className={`id-badge ${chartType === t ? 'stats-q3' : ''}`}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {info.icon} {info.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}

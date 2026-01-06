@@ -832,7 +832,7 @@ export function ChartCreatorModal({ tableHtml, onClose, onInsert }: ChartModalPr
     const chartHtml = `
       <div class="chart-container" data-chart='${chartDataJson.replace(/'/g, "&#39;")}' data-chart-id="${chartId}">
         <div class="chart-placeholder">
-          График: ${title || CHART_TYPE_INFO[chartType].name}
+          График: ${title || CHART_TYPE_INFO[chartType]?.name || 'График'}
         </div>
       </div>
     `;
@@ -932,28 +932,31 @@ export function ChartCreatorModal({ tableHtml, onClose, onInsert }: ChartModalPr
                 </button>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                {allChartTypes.map(t => (
-                  <button
-                    key={t}
-                    className={`btn ${chartType === t ? '' : 'secondary'}`}
-                    onClick={() => setChartType(t)}
-                    style={{ 
-                      padding: '6px 10px', 
-                      fontSize: 11,
-                      border: recommendedTypes.includes(t) ? '2px solid var(--success)' : undefined,
-                    }}
-                    title={CHART_TYPE_INFO[t].description}
-                  >
-                    {CHART_TYPE_INFO[t].icon} {t === 'histogram' ? 'Гист.' : 
-                       t === 'stacked' ? 'Stacked' : 
-                       t === 'boxplot' ? 'Box' : 
-                       t === 'scatter' ? 'Scatter' : 
-                       t === 'doughnut' ? 'Кольцо' :
-                       t === 'bar' ? 'Столбцы' :
-                       t === 'line' ? 'Линия' :
-                       t === 'pie' ? 'Круг' : t}
-                  </button>
-                ))}
+                {allChartTypes.map(t => {
+                  const info = CHART_TYPE_INFO[t] ?? { name: String(t), icon: '📊', description: '' };
+                  return (
+                    <button
+                      key={t}
+                      className={`btn ${chartType === t ? '' : 'secondary'}`}
+                      onClick={() => setChartType(t)}
+                      style={{ 
+                        padding: '6px 10px', 
+                        fontSize: 11,
+                        border: recommendedTypes.includes(t) ? '2px solid var(--success)' : undefined,
+                      }}
+                      title={info.description}
+                    >
+                      {info.icon} {t === 'histogram' ? 'Гист.' : 
+                         t === 'stacked' ? 'Stacked' : 
+                         t === 'boxplot' ? 'Box' : 
+                         t === 'scatter' ? 'Scatter' : 
+                         t === 'doughnut' ? 'Кольцо' :
+                         t === 'bar' ? 'Столбцы' :
+                         t === 'line' ? 'Линия' :
+                         t === 'pie' ? 'Круг' : t}
+                    </button>
+                  );
+                })}
               </div>
             </label>
             
