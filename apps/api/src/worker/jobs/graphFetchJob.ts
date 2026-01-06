@@ -21,14 +21,16 @@ export type GraphFetchJobPayload = {
 export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
   const { projectId, jobId, userId } = payload;
   
-  console.log(`[GraphFetch] Starting job ${jobId} for project ${projectId}`);
+  console.log(`[GraphFetch] Starting job ${jobId} for project ${projectId}, userId: ${userId}`);
   
   try {
+    console.log(`[GraphFetch] Updating job status to 'running'`);
     // Обновляем статус на running
     await pool.query(
       `UPDATE graph_fetch_jobs SET status = 'running', started_at = now() WHERE id = $1`,
       [jobId]
     );
+    console.log(`[GraphFetch] Job status updated, fetching articles...`);
     
     // Получаем API ключ пользователя
     const apiKey = await getUserApiKey(userId, 'pubmed');
