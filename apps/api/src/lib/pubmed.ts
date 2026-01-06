@@ -467,6 +467,9 @@ export async function pubmedGetReferences(args: {
   // Обрабатываем батчами по 50 (меньше чем 100 для стабильности)
   const BATCH_SIZE = 50;
   
+  let totalRefs = 0;
+  let totalCitedBy = 0;
+  
   for (let i = 0; i < args.pmids.length; i += BATCH_SIZE) {
     const batch = args.pmids.slice(i, i + BATCH_SIZE);
     
@@ -496,7 +499,7 @@ export async function pubmedGetReferences(args: {
       const citedByRes = await fetchWithRetry(citedByUrl.toString());
       
       if (!refsRes.ok || !citedByRes.ok) {
-        console.error('PubMed eLink error:', refsRes.status, citedByRes.status);
+        console.error('[PubMed eLink] HTTP error:', refsRes.status, citedByRes.status);
         // Still add empty results for batch so we don't lose progress
         for (const pmid of batch) {
           results.push({ pmid, references: [], citedBy: [] });
@@ -516,24 +519,42 @@ export async function pubmedGetReferences(args: {
       const refsMap = parseElinkResults(refsData);
       const citedByMap = parseElinkResults(citedByData);
       
+      // Логируем статистику для батча
+      let batchRefs = 0;
+      let batchCitedBy = 0;
+      
       // Собираем результаты для каждого PMID в батче
       for (const pmid of batch) {
+        const refs = refsMap.get(pmid) || [];
+        const citedBy = citedByMap.get(pmid) || [];
+        batchRefs += refs.length;
+        batchCitedBy += citedBy.length;
         results.push({
           pmid,
-          references: refsMap.get(pmid) || [],
-          citedBy: citedByMap.get(pmid) || [],
+          references: refs,
+          citedBy: citedBy,
         });
+      }
+      
+      totalRefs += batchRefs;
+      totalCitedBy += batchCitedBy;
+      
+      // Логируем прогресс каждый батч
+      if (i % 100 === 0 || i + BATCH_SIZE >= args.pmids.length) {
+        console.log(`[PubMed eLink] Batch ${i}-${Math.min(i + BATCH_SIZE, args.pmids.length)}/${args.pmids.length}: ${batchRefs} refs, ${batchCitedBy} citedBy`);
       }
       
       if (args.throttleMs) await sleep(args.throttleMs);
     } catch (err) {
-      console.error('PubMed eLink fetch error after retries:', err);
+      console.error('[PubMed eLink] Fetch error after retries:', err);
       // Add empty results for batch so we don't lose progress
       for (const pmid of batch) {
         results.push({ pmid, references: [], citedBy: [] });
       }
     }
   }
+  
+  console.log(`[PubMed eLink] Total: ${totalRefs} references, ${totalCitedBy} citedBy for ${args.pmids.length} articles`);
   
   return results;
 }

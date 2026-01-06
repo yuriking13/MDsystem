@@ -77,6 +77,9 @@ export default function CitationGraph({ projectId }: Props) {
   // Подсветка статей с P-value (золотым цветом)
   const [highlightPValue, setHighlightPValue] = useState(false);
   
+  // Модальное окно "Как это работает"
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
@@ -444,12 +447,28 @@ export default function CitationGraph({ projectId }: Props) {
         
         {/* How graph works - inline help */}
         <div className="graph-help-inline">
-          <span title="Каждый узел — статья. Стрелки показывают цитирования. Кликните на узел для просмотра информации. Alt+клик открывает источник.">
+          <button 
+            onClick={() => setShowHelpModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-secondary)',
+              cursor: 'pointer',
+              padding: '4px 8px',
+              borderRadius: 6,
+              fontSize: 13,
+              transition: 'all 0.2s ease'
+            }}
+            className="help-button"
+          >
             <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             Как работает
-          </span>
+          </button>
         </div>
       </div>
 
@@ -922,6 +941,106 @@ export default function CitationGraph({ projectId }: Props) {
               projectId={projectId} 
               onRefresh={() => loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality })}
             />
+          </div>
+        </div>
+      )}
+
+      {/* How it works Modal */}
+      {showHelpModal && (
+        <div className="node-info-modal-overlay" onClick={() => setShowHelpModal(false)}>
+          <div className="node-info-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 600 }}>
+            <button 
+              className="node-info-modal-close"
+              onClick={() => setShowHelpModal(false)}
+            >
+              <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            <h3 style={{ marginTop: 0, marginBottom: 20, fontSize: 18, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ color: '#3b82f6' }}>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Как работает граф цитирований
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14, lineHeight: 1.6 }}>
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>🔵 Узлы (статьи)</strong>
+                <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>
+                  Каждый узел — это статья. Размер узла зависит от количества цитирований: чем больше цитирований, тем крупнее узел.
+                </p>
+              </div>
+              
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>➡️ Стрелки (связи)</strong>
+                <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>
+                  Стрелки показывают направление цитирования: от цитирующей статьи к цитируемой.
+                </p>
+              </div>
+              
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>🎨 Цвета узлов</strong>
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--text-secondary)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }}></span>
+                    <span>Зелёный — отобранные статьи</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#3b82f6', flexShrink: 0 }}></span>
+                    <span>Синий — кандидаты в проекте</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }}></span>
+                    <span>Красный — исключённые</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#f97316', flexShrink: 0 }}></span>
+                    <span>Оранжевый — ссылки (references)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#a855f7', flexShrink: 0 }}></span>
+                    <span>Фиолетовый — статьи, которые цитируют нас</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>🖱️ Действия</strong>
+                <div style={{ marginTop: 6, color: 'var(--text-secondary)' }}>
+                  <p style={{ margin: '4px 0' }}>• <strong>Клик</strong> — показать информацию о статье</p>
+                  <p style={{ margin: '4px 0' }}>• <strong>Alt + клик</strong> — открыть статью в PubMed/DOI</p>
+                  <p style={{ margin: '4px 0' }}>• <strong>Перетаскивание</strong> — перемещать узлы</p>
+                  <p style={{ margin: '4px 0' }}>• <strong>Колёсико мыши</strong> — масштабирование</p>
+                </div>
+              </div>
+              
+              <div>
+                <strong style={{ color: 'var(--text-primary)' }}>🔄 Загрузка связей</strong>
+                <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>
+                  Нажмите «Обновить связи из PubMed» для загрузки информации о ссылках и цитированиях из PubMed. Это позволяет видеть, на какие статьи ссылаются ваши работы и какие статьи их цитируют.
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowHelpModal(false)}
+              style={{
+                marginTop: 24,
+                width: '100%',
+                padding: '12px',
+                background: 'var(--accent)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 8,
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: 'pointer'
+              }}
+            >
+              Понятно
+            </button>
           </div>
         </div>
       )}
