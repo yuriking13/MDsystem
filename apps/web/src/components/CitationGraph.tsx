@@ -61,6 +61,9 @@ export default function CitationGraph({ projectId }: Props) {
   const [availableQueries, setAvailableQueries] = useState<string[]>([]);
   const [selectedQueries, setSelectedQueries] = useState<string[]>([]);
   
+  // Режим графа: lite (облегчённый с лимитами) или mega (полный)
+  const [mode, setMode] = useState<'lite' | 'mega'>('lite');
+  
   // Новые фильтры
   const [depth, setDepth] = useState<DepthType>(1);
   const [yearRange, setYearRange] = useState<{ min: number | null; max: number | null }>({ min: null, max: null });
@@ -107,6 +110,7 @@ export default function CitationGraph({ projectId }: Props) {
   // Перезагрузка при изменении фильтров
   useEffect(() => {
     const options: GraphFilterOptions = { 
+      mode,
       filter,
       depth,
     };
@@ -123,7 +127,7 @@ export default function CitationGraph({ projectId }: Props) {
       options.statsQuality = statsQuality;
     }
     loadGraph(options);
-  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality]);
+  }, [loadGraph, mode, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality]);
 
   // Проверка статуса загрузки при монтировании
   useEffect(() => {
@@ -421,6 +425,32 @@ export default function CitationGraph({ projectId }: Props) {
         borderBottom: '1px solid var(--border-glass)',
         alignItems: 'center'
       }}>
+        {/* Переключатель режима */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>⚡ Режим:</span>
+          <button
+            className={`btn ${mode === 'lite' ? '' : 'secondary'}`}
+            style={{ padding: '4px 10px', fontSize: 11 }}
+            onClick={() => setMode('lite')}
+            title="Облегчённый граф с лимитами (макс 10 связей на статью, макс 500 узлов)"
+          >
+            🚀 Lite
+          </button>
+          <button
+            className={`btn ${mode === 'mega' ? '' : 'secondary'}`}
+            style={{ padding: '4px 10px', fontSize: 11, background: mode === 'mega' ? 'var(--danger)' : undefined }}
+            onClick={() => {
+              if (mode !== 'mega' && !confirm('⚠️ Режим MEGA может загрузить тысячи узлов и сильно нагрузить браузер. Продолжить?')) {
+                return;
+              }
+              setMode('mega');
+            }}
+            title="Полный граф без лимитов (может быть очень тяжёлым!)"
+          >
+            🔥 Mega
+          </button>
+        </div>
+        
         {/* Фильтр по уровню глубины */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>📊 Уровень:</span>
@@ -428,15 +458,15 @@ export default function CitationGraph({ projectId }: Props) {
             className={`btn ${depth === 1 ? '' : 'secondary'}`}
             style={{ padding: '4px 10px', fontSize: 11 }}
             onClick={() => setDepth(1)}
-            title="Только найденные статьи"
+            title="Только статьи проекта + связи между ними"
           >
-            1️⃣ Поиск
+            1️⃣ Проект
           </button>
           <button
             className={`btn ${depth === 2 ? '' : 'secondary'}`}
             style={{ padding: '4px 10px', fontSize: 11 }}
             onClick={() => setDepth(2)}
-            title="+ Статьи, на которые ссылаются найденные"
+            title="+ Топ ссылок (references)"
           >
             2️⃣ +Ссылки
           </button>
@@ -444,7 +474,7 @@ export default function CitationGraph({ projectId }: Props) {
             className={`btn ${depth === 3 ? '' : 'secondary'}`}
             style={{ padding: '4px 10px', fontSize: 11 }}
             onClick={() => setDepth(3)}
-            title="+ Статьи, которые цитируют найденные"
+            title="+ Топ цитирующих (cited_by)"
           >
             3️⃣ +Цитирующие
           </button>
