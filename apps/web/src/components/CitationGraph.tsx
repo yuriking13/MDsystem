@@ -52,9 +52,6 @@ export default function CitationGraph({ projectId }: Props) {
   const [fetchJobStatus, setFetchJobStatus] = useState<FetchJobStatus | null>(null);
   const fetchStatusIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [selectedNodeIds, setSelectedNodeIds] = useState<Set<string>>(new Set());
-  const [importing, setImporting] = useState(false);
-  const [importingSelected, setImportingSelected] = useState(false);
   const [importMessage, setImportMessage] = useState<string | null>(null);
   
   // Опция загрузки связей только для отобранных
@@ -106,16 +103,6 @@ export default function CitationGraph({ projectId }: Props) {
       if (res.yearRange) {
         setYearRange(res.yearRange);
       }
-
-      // Если граф перезагрузился, убираем выбор узлов, которых больше нет
-      setSelectedNodeIds((prev) => {
-        const next = new Set<string>();
-        const ids = new Set(res.nodes.map((n) => n.id));
-        for (const id of prev) {
-          if (ids.has(id)) next.add(id);
-        }
-        return next;
-      });
     } catch (err: any) {
       setError(err?.message || "Ошибка загрузки графа");
     } finally {
@@ -286,62 +273,6 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
-  const buildImportPayload = useCallback(() => {
-    if (!data) return { pmids: [], dois: [] };
-
-    const selected = new Set(selectedNodeIds);
-    const pmids: string[] = [];
-    const dois: string[] = [];
-
-    for (const n of data.nodes) {
-      if (!selected.has(n.id)) continue;
-      if (n.pmid) pmids.push(String(n.pmid));
-      if (n.doi) dois.push(String(n.doi));
-    }
-
-    return {
-      pmids: Array.from(new Set(pmids)).slice(0, 100),
-      dois: Array.from(new Set(dois.map((d) => d.toLowerCase()))).slice(0, 100),
-    };
-  }, [data, selectedNodeIds]);
-
-  const handleImportAsCandidates = async () => {
-    setImporting(true);
-    setImportMessage(null);
-    try {
-      const payload = buildImportPayload();
-      if ((payload.pmids?.length || 0) === 0 && (payload.dois?.length || 0) === 0) {
-        setImportMessage('Не выбрано ни одного узла с PMID/DOI');
-        return;
-      }
-      const res = await apiImportFromGraph(projectId, { ...payload, status: 'candidate' });
-      setImportMessage(res.message);
-      setSelectedNodeIds(new Set());
-    } catch (err: any) {
-      setImportMessage(err?.message || 'Ошибка импорта в кандидаты');
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  const handleImportAsSelected = async () => {
-    setImportingSelected(true);
-    setImportMessage(null);
-    try {
-      const payload = buildImportPayload();
-      if ((payload.pmids?.length || 0) === 0 && (payload.dois?.length || 0) === 0) {
-        setImportMessage('Не выбрано ни одного узла с PMID/DOI');
-        return;
-      }
-      const res = await apiImportFromGraph(projectId, { ...payload, status: 'selected' });
-      setImportMessage(res.message);
-      setSelectedNodeIds(new Set());
-    } catch (err: any) {
-      setImportMessage(err?.message || 'Ошибка импорта в отобранные');
-    } finally {
-      setImportingSelected(false);
-    }
-  };
 
   // Resize observer - use 2000x2000 for the graph canvas
   useEffect(() => {
@@ -366,15 +297,11 @@ export default function CitationGraph({ projectId }: Props) {
     const status = node.status;
     const level = node.graphLevel ?? 1;
     const statsQ = node.statsQuality || 0;
+    const source = node.source || 'pubmed';
 
     // Если включена подсветка P-value и статья имеет P-value - золотой
     if (highlightPValue && statsQ > 0) {
       return '#fbbf24'; // Золотой/янтарный для P-value
-    }
-    
-    // Если выбран - яркий зелёный
-    if (selectedNodeIds.has(node.id)) {
-      return '#10b981';
     }
     
     // Уровень 0 (citing - статьи, которые цитируют наши) - фиолетовый
@@ -386,7 +313,10 @@ export default function CitationGraph({ projectId }: Props) {
     if (level === 1) {
       if (status === 'selected') return '#22c55e'; // Яркий зелёный
       if (status === 'excluded') return '#ef4444'; // Красный
-      return '#3b82f6'; // Синий (кандидаты)
+      // Кандидаты - разные цвета по источнику
+      if (source === 'doaj') return '#14b8a6'; // Бирюзовый для DOAJ
+      if (source === 'wiley') return '#8b5cf6'; // Фиолетовый для Wiley
+      return '#3b82f6'; // Синий для PubMed (кандидаты)
     }
     
     // Уровень 2 (references - статьи, на которые ссылаются)
@@ -400,7 +330,7 @@ export default function CitationGraph({ projectId }: Props) {
     }
     
     return '#6b7280'; // Серый по умолчанию
-  }, [selectedNodeIds, highlightPValue]);
+  }, [highlightPValue]);
 
   const nodeLabel = useCallback((node: any) => {
     const citedByCount = node.citedByCount || 0;
@@ -630,32 +560,9 @@ export default function CitationGraph({ projectId }: Props) {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
-          <button
-            className="btn secondary"
-            style={{ padding: '8px 16px', fontSize: 12 }}
-            onClick={handleImportAsCandidates}
-            disabled={importing || importingSelected || selectedNodeIds.size === 0}
-            title="Добавить выбранные статьи из графа в кандидаты"
-          >
-            <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            {importing ? 'Импорт...' : `В Кандидаты (${selectedNodeIds.size})`}
-          </button>
-          <button
-            className="btn"
-            style={{ padding: '8px 16px', fontSize: 12, background: '#22c55e', borderColor: '#16a34a' }}
-            onClick={handleImportAsSelected}
-            disabled={importing || importingSelected || selectedNodeIds.size === 0}
-            title="Добавить выбранные статьи из графа в отобранные"
-          >
-            <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {importingSelected ? 'Импорт...' : `В Отобранные (${selectedNodeIds.size})`}
-          </button>
+        {/* Hint about clicking nodes */}
+        <div style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
+          Нажмите на узел для просмотра статьи
         </div>
       </div>
 
@@ -971,7 +878,9 @@ export default function CitationGraph({ projectId }: Props) {
           <span><span className="legend-dot" style={{ background: '#a855f7' }}></span> Цитируют статью из базы</span>
         )}
         <span><span className="legend-dot" style={{ background: '#22c55e' }}></span> Отобранные</span>
-        <span><span className="legend-dot" style={{ background: '#3b82f6' }}></span> Кандидаты</span>
+        <span><span className="legend-dot" style={{ background: '#3b82f6' }}></span> PubMed</span>
+        <span><span className="legend-dot" style={{ background: '#14b8a6' }}></span> DOAJ</span>
+        <span><span className="legend-dot" style={{ background: '#8b5cf6' }}></span> Wiley</span>
         <span><span className="legend-dot" style={{ background: '#ef4444' }}></span> Исключённые</span>
         {depth >= 2 && (
           <span><span className="legend-dot" style={{ background: '#f97316' }}></span> Ссылки</span>
@@ -1007,13 +916,7 @@ export default function CitationGraph({ projectId }: Props) {
                 ctx.beginPath();
                 ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
                 ctx.fill();
-                
-                if (selectedNodeIds.has(node.id)) {
-                  ctx.strokeStyle = 'rgba(16, 185, 129, 0.6)';
-                  ctx.lineWidth = size * 0.4;
-                  ctx.stroke();
-                }
-                
+
                 if ((node.citedByCount || 0) > 20) {
                   ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
                   ctx.lineWidth = size * 0.15;
@@ -1090,21 +993,36 @@ export default function CitationGraph({ projectId }: Props) {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16, fontSize: 14, lineHeight: 1.6 }}>
               <div>
-                <strong style={{ color: 'var(--text-primary)' }}>🔵 Узлы (статьи)</strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+                  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ color: '#3b82f6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <strong>Узлы (статьи)</strong>
+                </div>
                 <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>
                   Каждый узел — это статья. Размер узла зависит от количества цитирований: чем больше цитирований, тем крупнее узел.
                 </p>
               </div>
               
               <div>
-                <strong style={{ color: 'var(--text-primary)' }}>➡️ Стрелки (связи)</strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+                  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ color: '#3b82f6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                  </svg>
+                  <strong>Стрелки (связи)</strong>
+                </div>
                 <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>
                   Стрелки показывают направление цитирования: от цитирующей статьи к цитируемой.
                 </p>
               </div>
               
               <div>
-                <strong style={{ color: 'var(--text-primary)' }}>🎨 Цвета узлов</strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+                  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ color: '#3b82f6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z" />
+                  </svg>
+                  <strong>Цвета узлов</strong>
+                </div>
                 <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--text-secondary)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#22c55e', flexShrink: 0 }}></span>
@@ -1112,7 +1030,15 @@ export default function CitationGraph({ projectId }: Props) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#3b82f6', flexShrink: 0 }}></span>
-                    <span>Синий — кандидаты в проекте</span>
+                    <span>Синий — PubMed (кандидаты)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#14b8a6', flexShrink: 0 }}></span>
+                    <span>Бирюзовый — DOAJ (кандидаты)</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#8b5cf6', flexShrink: 0 }}></span>
+                    <span>Фиолетовый — Wiley (кандидаты)</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }}></span>
@@ -1124,13 +1050,18 @@ export default function CitationGraph({ projectId }: Props) {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#a855f7', flexShrink: 0 }}></span>
-                    <span>Фиолетовый — статьи, цитирующие статью из базы</span>
+                    <span>Пурпурный — статьи, цитирующие вашу базу</span>
                   </div>
                 </div>
               </div>
               
               <div>
-                <strong style={{ color: 'var(--text-primary)' }}>🖱️ Действия</strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+                  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ color: '#3b82f6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59" />
+                  </svg>
+                  <strong>Действия</strong>
+                </div>
                 <div style={{ marginTop: 6, color: 'var(--text-secondary)' }}>
                   <p style={{ margin: '4px 0' }}>• <strong>Клик</strong> — показать информацию о статье</p>
                   <p style={{ margin: '4px 0' }}>• <strong>Alt + клик</strong> — открыть статью в PubMed/DOI</p>
@@ -1140,7 +1071,12 @@ export default function CitationGraph({ projectId }: Props) {
               </div>
               
               <div>
-                <strong style={{ color: 'var(--text-primary)' }}>🔄 Загрузка связей</strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-primary)' }}>
+                  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ color: '#3b82f6' }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  </svg>
+                  <strong>Загрузка связей</strong>
+                </div>
                 <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>
                   Нажмите «Обновить связи из PubMed» для загрузки информации о ссылках и цитированиях из PubMed. Это позволяет видеть, на какие статьи ссылаются ваши работы и какие статьи их цитируют.
                 </p>
