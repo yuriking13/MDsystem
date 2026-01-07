@@ -276,10 +276,15 @@ export default function ProjectDetailPage() {
     }
   }, [activeTab, statistics.length]);
 
-  // Автоматически загружаем библиографию при переходе на вкладку документов
+  // Автоматически загружаем и показываем библиографию при переходе на вкладку документов
   useEffect(() => {
-    if (activeTab === "documents" && documents.length > 0 && bibliography.length === 0) {
-      handleLoadBibliography();
+    if (activeTab === "documents" && documents.length > 0) {
+      // Автоматически показываем библиографию при наличии документов
+      if (!showBibliography) {
+        setShowBibliography(true);
+      }
+      // Загружаем или обновляем библиографию
+      refreshBibliography(true);
     }
   }, [activeTab, documents.length]);
 
@@ -294,18 +299,15 @@ export default function ProjectDetailPage() {
 
   // Auto-refresh bibliography while the documents tab is open
   useEffect(() => {
-    if (activeTab !== "documents" || !showBibliography) return;
+    if (activeTab !== "documents") return;
     
-    // Обновляем библиографию при переходе на вкладку
-    refreshBibliography(true);
-    
-    // Периодически обновляем библиографию
+    // Периодически обновляем библиографию каждые 5 секунд
     const interval = setInterval(() => {
       refreshBibliography(true);
-    }, 10000); // Каждые 10 секунд
+    }, 5000);
     
     return () => clearInterval(interval);
-  }, [activeTab, showBibliography]);
+  }, [activeTab]);
 
   const canEdit = project && (project.role === "owner" || project.role === "editor");
   const isOwner = project?.role === "owner";
@@ -977,14 +979,15 @@ export default function ProjectDetailPage() {
                 <div className="row gap" style={{ marginBottom: 12, flexWrap: 'wrap' }}>
                   <button 
                     className="btn secondary" 
-                    onClick={handleLoadBibliography}
-                    disabled={loadingBib}
+                    onClick={() => refreshBibliography(false)}
+                    disabled={loadingBib || updatingBibliography}
                     type="button"
+                    title="Обновить список литературы"
                   >
                     <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
                     </svg>
-                    {loadingBib ? 'Загрузка...' : 'Показать'}
+                    {loadingBib || updatingBibliography ? 'Обновление...' : 'Обновить'}
                   </button>
                   <button 
                     className="btn secondary" 
@@ -1066,62 +1069,69 @@ export default function ProjectDetailPage() {
                   </button>
                 </div>
 
-                {showBibliography && (
-                  <div style={{ marginTop: 12 }}>
-                    <div className="row space" style={{ marginBottom: 8 }}>
-                      <div className="row gap" style={{ alignItems: 'center' }}>
-                        <span className="muted">
-                          Всего источников: {bibliography.length}
+                <div style={{ marginTop: 12 }}>
+                  <div className="row space" style={{ marginBottom: 8 }}>
+                    <div className="row gap" style={{ alignItems: 'center' }}>
+                      <span className="muted">
+                        Всего источников: {bibliography.length}
+                      </span>
+                      {(updatingBibliography || loadingBib) && (
+                        <span className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#3b82f6' }}>
+                          <svg className="icon-sm loading-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 12, height: 12 }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          обновление...
                         </span>
-                        {updatingBibliography && (
-                          <span className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#3b82f6' }}>
-                            <svg className="icon-sm loading-spinner" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{ width: 12, height: 12 }}>
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            обновление...
-                          </span>
-                        )}
-                      </div>
-                      <button 
-                        className="btn secondary" 
-                        onClick={handleCopyBibliography}
-                        disabled={bibliography.length === 0}
-                        style={{ padding: '4px 10px', fontSize: 12 }}
-                        type="button"
-                      >
-                        <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
-                        </svg>
-                        Копировать
-                      </button>
+                      )}
+                      {bibliographyLastUpdated > 0 && !updatingBibliography && !loadingBib && (
+                        <span className="muted" style={{ fontSize: 10, opacity: 0.6 }}>
+                          обновлено {new Date(bibliographyLastUpdated).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      )}
                     </div>
-                    
-                    {bibliography.length === 0 ? (
-                      <div className="empty-state-bibliography" style={{ 
-                        textAlign: 'center', 
-                        padding: '24px 16px', 
-                        background: 'rgba(255,255,255,0.03)', 
-                        borderRadius: 8 
-                      }}>
-                        <svg className="icon-lg" style={{ width: 32, height: 32, margin: '0 auto 8px', opacity: 0.3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        <div className="muted" style={{ fontSize: 13 }}>
-                          Нет цитат. Добавьте цитаты в документы проекта.
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bibliography-list">
-                        {bibliography.map((item) => (
-                          <div key={item.articleId} className="bibliography-item">
-                            <span className="bib-number">{item.number}.</span>
-                            <span className="bib-text">{item.formatted}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <button 
+                      className="btn secondary" 
+                      onClick={handleCopyBibliography}
+                      disabled={bibliography.length === 0}
+                      style={{ padding: '4px 10px', fontSize: 12 }}
+                      type="button"
+                    >
+                      <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                      </svg>
+                      Копировать
+                    </button>
                   </div>
-                )}
+                  
+                  {loadingBib && bibliography.length === 0 ? (
+                    <div className="muted" style={{ textAlign: 'center', padding: 24 }}>
+                      Загрузка списка литературы...
+                    </div>
+                  ) : bibliography.length === 0 ? (
+                    <div className="empty-state-bibliography" style={{ 
+                      textAlign: 'center', 
+                      padding: '24px 16px', 
+                      background: 'rgba(255,255,255,0.03)', 
+                      borderRadius: 8 
+                    }}>
+                      <svg className="icon-lg" style={{ width: 32, height: 32, margin: '0 auto 8px', opacity: 0.3 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                      </svg>
+                      <div className="muted" style={{ fontSize: 13 }}>
+                        Нет цитат. Добавьте цитаты в документы проекта.
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bibliography-list">
+                      {bibliography.map((item) => (
+                        <div key={item.articleId} className="bibliography-item">
+                          <span className="bib-number">{item.number}.</span>
+                          <span className="bib-text">{item.formatted}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

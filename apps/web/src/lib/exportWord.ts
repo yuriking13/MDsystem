@@ -205,17 +205,115 @@ function dataUrlToBuffer(dataUrl: string): { buffer: Buffer | Uint8Array; type: 
 }
 
 /**
- * Рендерить график (canvas) в изображение
+ * Рендерить график используя Chart.js в офф-скрин canvas
  */
-async function renderChartToImage(chartEl: Element): Promise<string | null> {
+async function renderChartFromData(
+  tableData: any, 
+  config: any,
+  width = 600,
+  height = 400
+): Promise<string | null> {
+  if (typeof window === 'undefined' || !tableData || !config) return null;
+  
   try {
-    const canvas = chartEl.querySelector('canvas');
-    if (canvas && canvas instanceof HTMLCanvasElement) {
-      return canvas.toDataURL('image/png');
+    // Динамически импортируем Chart.js
+    const { Chart, registerables } = await import('chart.js');
+    Chart.register(...registerables);
+    
+    // Создаём офф-скрин canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.display = 'none';
+    document.body.appendChild(canvas);
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      document.body.removeChild(canvas);
+      return null;
     }
-    return null;
+    
+    // Подготовка данных для Chart.js
+    const chartType = config.type || 'bar';
+    const colors = config.colors || [
+      'rgba(75, 116, 255, 0.8)',
+      'rgba(74, 222, 128, 0.8)',
+      'rgba(255, 107, 107, 0.8)',
+      'rgba(251, 191, 36, 0.8)',
+      'rgba(168, 85, 247, 0.8)',
+    ];
+    
+    // Извлекаем данные из tableData
+    const headers = tableData.headers || [];
+    const rows = tableData.rows || [];
+    
+    const labelColumn = config.labelColumn ?? 0;
+    const dataColumns = config.dataColumns || [1];
+    
+    const labels = rows.map((row: string[]) => row[labelColumn] || '');
+    const datasets = dataColumns.map((colIdx: number, i: number) => {
+      const data = rows.map((row: string[]) => {
+        const val = (row[colIdx] || '').replace(/[,\s]/g, '');
+        return parseFloat(val) || 0;
+      });
+      
+      return {
+        label: headers[colIdx] || `Данные ${i + 1}`,
+        data,
+        backgroundColor: chartType === 'pie' || chartType === 'doughnut' 
+          ? colors.slice(0, data.length)
+          : colors[i % colors.length],
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        borderWidth: 1,
+      };
+    });
+    
+    const chartData = { labels, datasets };
+    
+    // Конфигурация Chart.js
+    const chartConfig: any = {
+      type: chartType === 'histogram' ? 'bar' : chartType,
+      data: chartData,
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        animation: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: { color: '#1e293b' }
+          },
+          title: {
+            display: !!config.title,
+            text: config.title || '',
+            color: '#1e293b',
+            font: { size: 14 }
+          }
+        },
+        scales: chartType !== 'pie' && chartType !== 'doughnut' ? {
+          x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
+          y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
+        } : undefined
+      }
+    };
+    
+    // Рендерим график
+    const chart = new Chart(ctx, chartConfig);
+    
+    // Ждём рендеринга
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Получаем изображение
+    const dataUrl = canvas.toDataURL('image/png');
+    
+    // Очистка
+    chart.destroy();
+    document.body.removeChild(canvas);
+    
+    return dataUrl;
   } catch (e) {
-    console.error('Error rendering chart to image:', e);
+    console.error('Error rendering chart:', e);
     return null;
   }
 }
@@ -252,7 +350,7 @@ export function captureChartsFromDOM(): Map<string, string> {
 /**
  * Подготовить HTML контент для экспорта (заменить графики на изображения)
  * @param html - исходный HTML контент
- * @param chartImages - карта chartId -> dataUrl изображений графиков
+ * @param chartImages - карта chartId -> dataUrl изображений графиков (опционально)
  */
 export async function prepareHtmlForExport(html: string, chartImages?: Map<string, string>): Promise<string> {
   if (typeof window === 'undefined' || !html) return html;
@@ -260,30 +358,45 @@ export async function prepareHtmlForExport(html: string, chartImages?: Map<strin
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   
-  // Сначала пробуем найти уже отрендеренные canvas
+  // Находим все chart nodes
   const chartNodes = doc.querySelectorAll('.chart-node, [data-chart-id], [data-type="chart-node"]');
   
   for (const chartNode of Array.from(chartNodes)) {
     const chartId = chartNode.getAttribute('data-chart-id');
+    
+    // Получаем данные графика из атрибутов
+    const tableDataStr = chartNode.getAttribute('data-table-data');
+    const configStr = chartNode.getAttribute('data-config');
     const title = chartNode.getAttribute('data-title') || 
                   chartNode.querySelector('.chart-node-title')?.textContent ||
                   'График';
     
-    // Проверяем есть ли уже canvas
-    const canvas = chartNode.querySelector('canvas');
-    
     let dataUrl: string | null = null;
     
+    // Проверяем есть ли уже canvas в DOM
+    const canvas = chartNode.querySelector('canvas');
     if (canvas && canvas instanceof HTMLCanvasElement) {
-      // Canvas найден - конвертируем в изображение
       try {
         dataUrl = canvas.toDataURL('image/png');
       } catch (e) {
         console.error('Error converting chart to image:', e);
       }
-    } else if (chartId && chartImages?.has(chartId)) {
-      // Используем предзахваченное изображение
+    }
+    
+    // Используем предзахваченное изображение
+    if (!dataUrl && chartId && chartImages?.has(chartId)) {
       dataUrl = chartImages.get(chartId) || null;
+    }
+    
+    // Рендерим график из данных если нет изображения
+    if (!dataUrl && tableDataStr && configStr) {
+      try {
+        const tableData = JSON.parse(tableDataStr);
+        const config = JSON.parse(configStr);
+        dataUrl = await renderChartFromData(tableData, config);
+      } catch (e) {
+        console.error('Error parsing chart data:', e);
+      }
     }
     
     if (dataUrl) {
@@ -310,7 +423,7 @@ export async function prepareHtmlForExport(html: string, chartImages?: Map<strin
       
       chartNode.replaceWith(figure);
     } else {
-      // Нет данных для графика - оставляем placeholder
+      // Нет данных для графика - оставляем placeholder с названием
       const placeholder = doc.createElement('div');
       placeholder.style.textAlign = 'center';
       placeholder.style.padding = '20px';
