@@ -255,15 +255,19 @@ export default function DocumentPage() {
             const renumberResult = await apiRenumberCitations(projectId);
             if (renumberResult.documents) {
               // Находим обновленный текущий документ
-              const updatedDoc = renumberResult.documents.find(d => d.id === docId);
-              if (updatedDoc) {
-                setDoc(updatedDoc);
-                if (editorRef.current && updatedDoc.content !== newContent) {
-                  editorRef.current.forceSetContent(updatedDoc.content);
-                  setContent(updatedDoc.content);
+              const updatedDocPartial = renumberResult.documents.find(d => d.id === docId);
+              if (updatedDocPartial) {
+                // Если контент изменился, обновляем редактор
+                if (editorRef.current && updatedDocPartial.content !== newContent) {
+                  editorRef.current.forceSetContent(updatedDocPartial.content);
+                  setContent(updatedDocPartial.content);
                 }
               }
             }
+            // ВАЖНО: Перезагружаем полный документ с citations после перенумерации
+            // renumberResult.documents не содержит citations, поэтому нужна полная загрузка
+            const fullDoc = await apiGetDocument(projectId, docId);
+            setDoc(fullDoc.document);
           } catch (renumberErr) {
             console.warn("Renumber citations warning:", renumberErr);
           } finally {
