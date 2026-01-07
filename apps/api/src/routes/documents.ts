@@ -448,6 +448,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   // - Минимальный свободный номер для нового источника
   // - Переиспользование освободившихся номеров
   // - Sub-number для множественных цитат одного источника
+  // - ДЕДУПЛИКАЦИЯ: статьи с одинаковым PMID/DOI получают один номер
   fastify.post(
     "/projects/:projectId/documents/:docId/citations",
     { preHandler: [fastify.authenticate] },
@@ -475,8 +476,18 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(403).send({ error: "No edit access" });
       }
 
-      // Проверяем, есть ли уже цитаты на этот источник
-      const existingCitations = await pool.query(
+      // Получаем PMID и DOI добавляемой статьи для дедупликации
+      const articleInfo = await pool.query(
+        `SELECT pmid, doi, title_en FROM articles WHERE id = $1`,
+        [bodyP.data.articleId]
+      );
+      
+      const articlePmid = articleInfo.rows[0]?.pmid;
+      const articleDoi = articleInfo.rows[0]?.doi;
+      const articleTitle = articleInfo.rows[0]?.title_en;
+
+      // Проверяем, есть ли уже цитаты на этот источник (по article_id)
+      let existingCitations = await pool.query(
         `SELECT inline_number, sub_number FROM citations 
          WHERE document_id = $1 AND article_id = $2 
          ORDER BY sub_number`,
@@ -486,8 +497,36 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let inlineNumber: number;
       let subNumber = 1;
 
+      // Если нет цитат с этим article_id, проверяем дубликаты по PMID/DOI
+      if ((existingCitations.rowCount ?? 0) === 0 && (articlePmid || articleDoi)) {
+        // Ищем цитаты на статьи-дубликаты (с таким же PMID или DOI)
+        const duplicateQuery = `
+          SELECT c.inline_number, c.sub_number, c.article_id
+          FROM citations c
+          JOIN articles a ON a.id = c.article_id
+          WHERE c.document_id = $1 
+            AND c.article_id != $2
+            AND (
+              (a.pmid IS NOT NULL AND a.pmid = $3)
+              OR (a.doi IS NOT NULL AND LOWER(a.doi) = LOWER($4))
+            )
+          ORDER BY c.inline_number, c.sub_number
+        `;
+        const duplicateCitations = await pool.query(duplicateQuery, [
+          paramsP.data.docId,
+          bodyP.data.articleId,
+          articlePmid || '',
+          articleDoi || ''
+        ]);
+        
+        if ((duplicateCitations.rowCount ?? 0) > 0) {
+          // Нашли дубликат - используем тот же inline_number
+          existingCitations = duplicateCitations;
+        }
+      }
+
       if ((existingCitations.rowCount ?? 0) > 0) {
-        // Есть существующие цитаты этого источника - используем тот же inline_number
+        // Есть существующие цитаты этого источника (или дубликата) - используем тот же inline_number
         inlineNumber = existingCitations.rows[0].inline_number;
         
         // Найти минимальный свободный sub_number (переиспользуем освободившиеся номера)
@@ -742,7 +781,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
   // POST /api/projects/:projectId/documents/:docId/sync-citations
   // Синхронизирует цитаты в БД с текущим HTML контентом документа
-  // Удаляет цитаты, которых больше нет в тексте
+  // - Удаляет цитаты, которых больше нет в тексте
+  // - ОБЪЕДИНЯЕТ дубликаты (статьи с одинаковым PMID/DOI получают один номер)
   // Возвращает обновлённый документ с перенумерованными цитатами
   fastify.post(
     "/projects/:projectId/documents/:docId/sync-citations",
@@ -792,53 +832,93 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           `DELETE FROM citations WHERE id = ANY($1) AND document_id = $2`,
           [toDelete, docId]
         );
-
-        // Перенумеруем оставшиеся цитаты
-        // 1. Перенумеровываем sub_number для каждого источника
-        await pool.query(
-          `WITH article_subs AS (
-            SELECT id, article_id,
-              ROW_NUMBER() OVER (PARTITION BY article_id ORDER BY order_index) as new_sub
-            FROM citations WHERE document_id = $1
-          )
-          UPDATE citations c
-          SET sub_number = a.new_sub
-          FROM article_subs a
-          WHERE c.id = a.id`,
-          [docId]
-        );
-
-        // 2. Перенумеруем inline_number
-        await pool.query(
-          `WITH article_order AS (
-            SELECT article_id, MIN(order_index) as first_appearance
-            FROM citations WHERE document_id = $1
-            GROUP BY article_id
-          ),
-          article_numbers AS (
-            SELECT article_id, ROW_NUMBER() OVER (ORDER BY first_appearance) as article_num
-            FROM article_order
-          )
-          UPDATE citations c
-          SET inline_number = an.article_num
-          FROM article_numbers an
-          WHERE c.article_id = an.article_id AND c.document_id = $1`,
-          [docId]
-        );
-
-        // 3. Обновляем order_index
-        await pool.query(
-          `WITH numbered AS (
-            SELECT id, ROW_NUMBER() OVER (ORDER BY order_index) - 1 as new_order
-            FROM citations WHERE document_id = $1
-          )
-          UPDATE citations c
-          SET order_index = n.new_order
-          FROM numbered n
-          WHERE c.id = n.id`,
-          [docId]
-        );
       }
+
+      // =======================================================================
+      // ДЕДУПЛИКАЦИЯ: объединяем цитаты на статьи с одинаковым PMID/DOI
+      // Все цитаты одной "логической" статьи должны иметь один inline_number
+      // =======================================================================
+      
+      // Получаем все цитаты с данными статей для дедупликации
+      const citationsWithArticles = await pool.query(
+        `SELECT c.id, c.article_id, c.order_index, a.pmid, a.doi, a.title_en
+         FROM citations c
+         JOIN articles a ON a.id = c.article_id
+         WHERE c.document_id = $1
+         ORDER BY c.order_index`,
+        [docId]
+      );
+
+      // Создаём группы статей-дубликатов по ключу дедупликации (PMID > DOI > title)
+      const getDedupeKey = (row: any): string => {
+        if (row.pmid) return `pmid:${row.pmid}`;
+        if (row.doi) return `doi:${row.doi.toLowerCase()}`;
+        if (row.title_en) return `title:${row.title_en.toLowerCase().replace(/[^\w\s]/g, '').trim()}`;
+        return `id:${row.article_id}`;
+      };
+
+      // Группируем по ключу дедупликации, сохраняем порядок первого появления
+      const dedupeKeyToNumber = new Map<string, number>(); // ключ -> inline_number
+      const dedupeKeyOrder: string[] = []; // порядок первого появления
+      
+      for (const row of citationsWithArticles.rows) {
+        const key = getDedupeKey(row);
+        if (!dedupeKeyToNumber.has(key)) {
+          dedupeKeyOrder.push(key);
+        }
+      }
+
+      // Присваиваем номера в порядке первого появления
+      dedupeKeyOrder.forEach((key, index) => {
+        dedupeKeyToNumber.set(key, index + 1);
+      });
+
+      // Обновляем inline_number для всех цитат согласно дедупликации
+      for (const row of citationsWithArticles.rows) {
+        const key = getDedupeKey(row);
+        const newInlineNumber = dedupeKeyToNumber.get(key);
+        if (newInlineNumber !== undefined) {
+          await pool.query(
+            `UPDATE citations SET inline_number = $1 WHERE id = $2`,
+            [newInlineNumber, row.id]
+          );
+        }
+      }
+
+      // Перенумеровываем sub_number для каждой группы дедупликации
+      // (группируем по ключу, а не по article_id)
+      const citationsByDedupeKey = new Map<string, any[]>();
+      for (const row of citationsWithArticles.rows) {
+        const key = getDedupeKey(row);
+        if (!citationsByDedupeKey.has(key)) {
+          citationsByDedupeKey.set(key, []);
+        }
+        citationsByDedupeKey.get(key)!.push(row);
+      }
+
+      for (const [, citations] of citationsByDedupeKey) {
+        // Сортируем по order_index и присваиваем sub_number
+        citations.sort((a, b) => a.order_index - b.order_index);
+        for (let i = 0; i < citations.length; i++) {
+          await pool.query(
+            `UPDATE citations SET sub_number = $1 WHERE id = $2`,
+            [i + 1, citations[i].id]
+          );
+        }
+      }
+
+      // Обновляем order_index для последовательности
+      await pool.query(
+        `WITH numbered AS (
+          SELECT id, ROW_NUMBER() OVER (ORDER BY order_index) - 1 as new_order
+          FROM citations WHERE document_id = $1
+        )
+        UPDATE citations c
+        SET order_index = n.new_order
+        FROM numbered n
+        WHERE c.id = n.id`,
+        [docId]
+      );
 
       // Возвращаем обновлённый документ с цитатами
       let hasSubNumber = false;
