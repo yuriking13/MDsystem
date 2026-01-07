@@ -37,7 +37,9 @@ import {
   exportToPdf, 
   exportBibliographyToWord, 
   exportBibliographyToTxt, 
-  exportBibliographyToPdf 
+  exportBibliographyToPdf,
+  prepareHtmlForExport,
+  captureChartsFromDOM
 } from "../lib/exportWord";
 
 type Tab = "articles" | "documents" | "statistics" | "graph" | "team" | "settings";
@@ -274,6 +276,13 @@ export default function ProjectDetailPage() {
     }
   }, [activeTab, statistics.length]);
 
+  // Автоматически загружаем библиографию при переходе на вкладку документов
+  useEffect(() => {
+    if (activeTab === "documents" && documents.length > 0 && bibliography.length === 0) {
+      handleLoadBibliography();
+    }
+  }, [activeTab, documents.length]);
+
   // Auto-refresh statistics while the tab is open to reflect document-driven updates
   useEffect(() => {
     if (activeTab !== "statistics" || editingStat || showCreateStatistic) return;
@@ -282,6 +291,21 @@ export default function ProjectDetailPage() {
     }, 5000);
     return () => clearInterval(interval);
   }, [activeTab, editingStat, showCreateStatistic]);
+
+  // Auto-refresh bibliography while the documents tab is open
+  useEffect(() => {
+    if (activeTab !== "documents" || !showBibliography) return;
+    
+    // Обновляем библиографию при переходе на вкладку
+    refreshBibliography(true);
+    
+    // Периодически обновляем библиографию
+    const interval = setInterval(() => {
+      refreshBibliography(true);
+    }, 10000); // Каждые 10 секунд
+    
+    return () => clearInterval(interval);
+  }, [activeTab, showBibliography]);
 
   const canEdit = project && (project.role === "owner" || project.role === "editor");
   const isOwner = project?.role === "owner";
@@ -513,15 +537,31 @@ export default function ProjectDetailPage() {
       // Обновляем нумерацию цитат перед экспортом
       await apiRenumberCitations(id);
       
+      // Захватываем графики из текущего DOM (если есть)
+      const chartImages = captureChartsFromDOM();
+      
       // Получаем свежие данные для экспорта
       const res = await apiExportProject(id);
       
+      // Подготавливаем документы с изображениями графиков
+      const preparedDocuments = await Promise.all(
+        res.documents.map(async d => ({
+          title: d.title,
+          content: d.content ? await prepareHtmlForExport(d.content, chartImages) : null
+        }))
+      );
+      
+      // Подготавливаем объединённый контент если нужно
+      const preparedMergedContent = merged && res.mergedContent 
+        ? await prepareHtmlForExport(res.mergedContent, chartImages) 
+        : undefined;
+      
       await exportToWord(
         res.projectName,
-        res.documents.map(d => ({ title: d.title, content: d.content })),
+        preparedDocuments,
         res.bibliography,
         res.citationStyle,
-        merged ? res.mergedContent : undefined
+        preparedMergedContent
       );
       
       // Обновляем локальную библиографию
@@ -871,13 +911,30 @@ export default function ProjectDetailPage() {
                         // Обновляем нумерацию цитат перед экспортом
                         await apiRenumberCitations(id);
                         
+                        // Захватываем графики из текущего DOM
+                        const chartImages = captureChartsFromDOM();
+                        
                         const res = await apiExportProject(id);
+                        
+                        // Подготавливаем документы с изображениями графиков
+                        const preparedDocuments = await Promise.all(
+                          res.documents.map(async d => ({
+                            title: d.title,
+                            content: d.content ? await prepareHtmlForExport(d.content, chartImages) : null
+                          }))
+                        );
+                        
+                        // Подготавливаем объединённый контент
+                        const preparedMergedContent = res.mergedContent 
+                          ? await prepareHtmlForExport(res.mergedContent, chartImages) 
+                          : undefined;
+                        
                         exportToPdf(
                           res.projectName,
-                          res.documents.map(d => ({ title: d.title, content: d.content })),
+                          preparedDocuments,
                           res.bibliography,
                           res.citationStyle,
-                          res.mergedContent
+                          preparedMergedContent
                         );
                         
                         // Обновляем локальную библиографию
@@ -1142,15 +1199,20 @@ export default function ProjectDetailPage() {
               </div>
               <div className="chart-types-grid" style={{ marginTop: 16 }}>
                 {(['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter'] as ChartType[]).map(type => {
-                  const info = CHART_TYPE_INFO[type] ?? { name: String(type), icon: '📊', description: '' };
+                  const info = CHART_TYPE_INFO[type];
+                  const defaultIcon = (
+                    <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                    </svg>
+                  );
                   return (
                     <div 
                       key={type} 
                       className="chart-type-card chart-type-hint"
-                      title={info.description}
+                      title={info?.description || ''}
                     >
-                      <span className="chart-type-icon">{info.icon}</span>
-                      <span className="chart-type-name">{info.name}</span>
+                      <span className="chart-type-icon">{info?.icon || defaultIcon}</span>
+                      <span className="chart-type-name">{info?.name || String(type)}</span>
                     </div>
                   );
                 })}
@@ -1218,7 +1280,15 @@ export default function ProjectDetailPage() {
                       <div className="stat-card-header">
                         <div className="stat-card-title-row">
                           <span className="stat-card-icon">
-                            {showAsTable ? '📋' : (chartInfo?.icon || '📊')}
+                            {showAsTable ? (
+                              <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M13.125 12h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125M20.625 12c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5M12 14.625v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 14.625c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m0 1.5v-1.5m0 0c0-.621.504-1.125 1.125-1.125m0 0h7.5" />
+                              </svg>
+                            ) : (chartInfo?.icon || (
+                              <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                              </svg>
+                            ))}
                           </span>
                           <div className="stat-card-title-info">
                             <h4 className="stat-card-title">{stat.title || 'Без названия'}</h4>
