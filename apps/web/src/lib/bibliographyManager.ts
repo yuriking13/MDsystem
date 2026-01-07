@@ -226,33 +226,64 @@ export function apiToLocalCitation(citation: Citation): LocalCitation {
 }
 
 /**
+ * Генерирует ключ дедупликации для статьи
+ * Приоритет: PMID > DOI > название
+ * Статьи с одинаковым ключом считаются одним источником
+ */
+export function getDedupeKey(article: Citation['article']): string {
+  if (!article) return '';
+  
+  if (article.pmid) {
+    return `pmid:${article.pmid}`;
+  }
+  if (article.doi) {
+    return `doi:${article.doi.toLowerCase()}`;
+  }
+  if (article.title_en) {
+    // Нормализуем название для сравнения
+    return `title:${article.title_en.toLowerCase().replace(/[^\w\s]/g, '').trim()}`;
+  }
+  return '';
+}
+
+/**
  * Группирует цитаты по источнику для отображения в сайдбаре
+ * ВАЖНО: Использует дедупликацию по PMID/DOI/title для объединения одинаковых статей
  */
 export function groupCitationsBySource(citations: Citation[]): Map<string, CitationInfo[]> {
   const groups = new Map<string, CitationInfo[]>();
   
+  // Создаём карту dedupe_key -> все цитаты этого источника (включая разные article_id)
+  const dedupeKeyToCitations = new Map<string, Citation[]>();
+  
   for (const citation of citations) {
-    const articleId = citation.article_id;
-    const list = groups.get(articleId) || [];
-    
-    // Подсчитываем сколько всего цитат у этого источника
-    const totalSubs = citations.filter(c => c.article_id === articleId).length;
-    
-    list.push({
-      citationId: citation.id,
-      articleId: citation.article_id,
-      number: citation.inline_number,
-      subNumber: citation.sub_number || 1,
-      displayId: formatCitationId(citation.inline_number, citation.sub_number || 1, totalSubs),
-      article: citation.article,
-    });
-    
-    groups.set(articleId, list);
+    const key = getDedupeKey(citation.article) || `id:${citation.article_id}`;
+    const list = dedupeKeyToCitations.get(key) || [];
+    list.push(citation);
+    dedupeKeyToCitations.set(key, list);
   }
   
-  // Сортируем цитаты внутри каждой группы
-  for (const [, list] of groups) {
-    list.sort((a, b) => a.subNumber - b.subNumber);
+  // Для каждой группы дубликатов создаём единую группу CitationInfo
+  for (const [dedupeKey, citationList] of dedupeKeyToCitations) {
+    // Используем минимальный inline_number в группе (все должны быть одинаковыми после синхронизации)
+    const minInlineNumber = Math.min(...citationList.map(c => c.inline_number));
+    const totalSubs = citationList.length;
+    
+    // Сортируем по sub_number
+    const sortedCitations = [...citationList].sort((a, b) => 
+      (a.sub_number || 1) - (b.sub_number || 1)
+    );
+    
+    const infos: CitationInfo[] = sortedCitations.map((citation, index) => ({
+      citationId: citation.id,
+      articleId: citation.article_id,
+      number: minInlineNumber,
+      subNumber: index + 1, // Пересчитываем sub_number последовательно
+      displayId: formatCitationId(minInlineNumber, index + 1, totalSubs),
+      article: citation.article,
+    }));
+    
+    groups.set(dedupeKey, infos);
   }
   
   return groups;
@@ -273,10 +304,50 @@ export function sortCitationsForDisplay(citations: Citation[]): Citation[] {
 
 /**
  * Проверяет, нужно ли отображать sub_number для данного источника
+ * Использует дедупликацию: статьи с одинаковым PMID/DOI/title считаются одним источником
  */
 export function shouldShowSubNumber(citations: Citation[], articleId: string): boolean {
-  const count = citations.filter(c => c.article_id === articleId).length;
+  // Найдём статью для получения её dedupe key
+  const citation = citations.find(c => c.article_id === articleId);
+  if (!citation || !citation.article) {
+    // Fallback к старой логике
+    const count = citations.filter(c => c.article_id === articleId).length;
+    return count > 1;
+  }
+  
+  const targetKey = getDedupeKey(citation.article);
+  if (!targetKey) {
+    const count = citations.filter(c => c.article_id === articleId).length;
+    return count > 1;
+  }
+  
+  // Считаем ВСЕ цитаты с таким же dedupe key (включая разные article_id)
+  const count = citations.filter(c => {
+    const key = getDedupeKey(c.article) || `id:${c.article_id}`;
+    return key === targetKey;
+  }).length;
+  
   return count > 1;
+}
+
+/**
+ * Находит все цитаты того же логического источника (по dedupe key)
+ */
+export function findCitationsOfSameSource(citations: Citation[], articleId: string): Citation[] {
+  const citation = citations.find(c => c.article_id === articleId);
+  if (!citation || !citation.article) {
+    return citations.filter(c => c.article_id === articleId);
+  }
+  
+  const targetKey = getDedupeKey(citation.article);
+  if (!targetKey) {
+    return citations.filter(c => c.article_id === articleId);
+  }
+  
+  return citations.filter(c => {
+    const key = getDedupeKey(c.article) || `id:${c.article_id}`;
+    return key === targetKey;
+  });
 }
 
 /**

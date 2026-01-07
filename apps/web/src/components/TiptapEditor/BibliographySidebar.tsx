@@ -3,7 +3,8 @@ import type { Citation } from '../../lib/api';
 import { 
   groupCitationsBySource, 
   sortCitationsForDisplay, 
-  shouldShowSubNumber 
+  shouldShowSubNumber,
+  getDedupeKey
 } from '../../lib/bibliographyManager';
 
 interface BibliographySidebarProps {
@@ -21,6 +22,9 @@ interface BibliographySidebarProps {
  * - k — номер цитаты этого источника (1, 2, 3...)
  * 
  * Если у источника только одна цитата, отображается просто [n]
+ * 
+ * ВАЖНО: Использует дедупликацию по PMID/DOI/title для объединения
+ * одинаковых статей с разными article_id
  */
 export default function BibliographySidebar({
   citations = [],
@@ -41,17 +45,21 @@ export default function BibliographySidebar({
     [safeCitations]
   );
   
-  // Группируем по источникам
+  // Группируем по источникам (с учётом дедупликации по PMID/DOI/title)
   const groupedCitations = useMemo(() => 
     groupCitationsBySource(safeCitations),
     [safeCitations]
   );
   
-  // Количество уникальных источников
-  const uniqueSourcesCount = useMemo(() => 
-    new Set(safeCitations.map(c => c.article_id)).size,
-    [safeCitations]
-  );
+  // Количество уникальных источников (с учётом дедупликации)
+  const uniqueSourcesCount = useMemo(() => {
+    const dedupeKeys = new Set<string>();
+    for (const c of safeCitations) {
+      const key = getDedupeKey(c.article) || `id:${c.article_id}`;
+      dedupeKeys.add(key);
+    }
+    return dedupeKeys.size;
+  }, [safeCitations]);
 
   const startEditNote = (citation: Citation) => {
     setEditingNoteId(citation.id);
@@ -242,81 +250,87 @@ export default function BibliographySidebar({
           // Все цитаты в порядке нумерации
           sortedCitations.map((citation) => renderCitation(citation))
         ) : (
-          // Группировка по источникам
-          Array.from(groupedCitations.entries()).map(([articleId, citationInfos]) => {
-            const firstCitation = safeCitations.find(c => c.article_id === articleId);
-            if (!firstCitation) return null;
-            
-            const inlineNumber = citationInfos[0]?.number || 1;
-            const citationCount = citationInfos.length;
-            
-            return (
-              <div key={articleId} className="bibliography-source-group">
-                <div className="bib-source-header">
-                  <span className="bib-source-number">[{inlineNumber}]</span>
-                  <div className="bib-source-info">
-                    {firstCitation.article?.authors && firstCitation.article.authors.length > 0 && (
-                      <div className="bib-authors">
-                        {firstCitation.article.authors.slice(0, 3).join(', ')}
-                        {firstCitation.article.authors.length > 3 && ' et al.'}
-                      </div>
-                    )}
-                    <div className="bib-title">{firstCitation.article?.title_en || 'Без названия'}</div>
-                    {firstCitation.article?.journal && (
-                      <div className="bib-journal">{firstCitation.article.journal}</div>
-                    )}
-                    {firstCitation.article?.year && (
-                      <div className="bib-year">{firstCitation.article.year}</div>
+          // Группировка по источникам (с дедупликацией по PMID/DOI/title)
+          Array.from(groupedCitations.entries())
+            .sort((a, b) => (a[1][0]?.number || 0) - (b[1][0]?.number || 0))
+            .map(([dedupeKey, citationInfos]) => {
+              // Находим первую цитату для получения информации о статье
+              const firstInfo = citationInfos[0];
+              if (!firstInfo) return null;
+              
+              const firstCitation = safeCitations.find(c => c.id === firstInfo.citationId);
+              if (!firstCitation) return null;
+              
+              const inlineNumber = firstInfo.number || 1;
+              const citationCount = citationInfos.length;
+              
+              return (
+                <div key={dedupeKey} className="bibliography-source-group">
+                  <div className="bib-source-header">
+                    <span className="bib-source-number">[{inlineNumber}]</span>
+                    <div className="bib-source-info">
+                      {firstCitation.article?.authors && firstCitation.article.authors.length > 0 && (
+                        <div className="bib-authors">
+                          {firstCitation.article.authors.slice(0, 3).join(', ')}
+                          {firstCitation.article.authors.length > 3 && ' et al.'}
+                        </div>
+                      )}
+                      <div className="bib-title">{firstCitation.article?.title_en || 'Без названия'}</div>
+                      {firstCitation.article?.journal && (
+                        <div className="bib-journal">{firstCitation.article.journal}</div>
+                      )}
+                      {firstCitation.article?.year && (
+                        <div className="bib-year">{firstCitation.article.year}</div>
+                      )}
+                    </div>
+                    {citationCount > 1 && (
+                      <span className="bib-citation-count" title={`${citationCount} цитат`}>
+                        ×{citationCount}
+                      </span>
                     )}
                   </div>
-                  {citationCount > 1 && (
-                    <span className="bib-citation-count" title={`${citationCount} цитат`}>
-                      ×{citationCount}
-                    </span>
-                  )}
-                </div>
-                
-                {/* Список цитат этого источника */}
-                <div className="bib-source-citations">
-                  {citationInfos.map((info) => {
-                    const citation = safeCitations.find(c => c.id === info.citationId);
-                    if (!citation) return null;
-                    
-                    return (
-                      <div key={citation.id} className="bib-sub-citation">
-                        <span 
-                          className="bib-sub-number bib-number-clickable"
-                          onClick={() => handleCitationClick(citation.id)}
-                          title="Перейти к цитате в тексте"
-                        >
-                          #{info.subNumber}
-                        </span>
-                        {citation.note ? (
-                          <div 
-                            className="bib-note-inline"
-                            onClick={() => onUpdateCitationNote && startEditNote(citation)}
+                  
+                  {/* Список цитат этого источника */}
+                  <div className="bib-source-citations">
+                    {citationInfos.map((info) => {
+                      const citation = safeCitations.find(c => c.id === info.citationId);
+                      if (!citation) return null;
+                      
+                      return (
+                        <div key={citation.id} className="bib-sub-citation">
+                          <span 
+                            className="bib-sub-number bib-number-clickable"
+                            onClick={() => handleCitationClick(citation.id)}
+                            title="Перейти к цитате в тексте"
                           >
-                            «{citation.note}»
-                          </div>
-                        ) : (
-                          <span className="bib-no-note">без цитаты</span>
-                        )}
-                        {onRemoveCitation && (
-                          <button
-                            className="bib-remove-small"
-                            onClick={() => onRemoveCitation(citation.id)}
-                            title="Удалить цитату"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                            #{info.subNumber}
+                          </span>
+                          {citation.note ? (
+                            <div 
+                              className="bib-note-inline"
+                              onClick={() => onUpdateCitationNote && startEditNote(citation)}
+                            >
+                              «{citation.note}»
+                            </div>
+                          ) : (
+                            <span className="bib-no-note">без цитаты</span>
+                          )}
+                          {onRemoveCitation && (
+                            <button
+                              className="bib-remove-small"
+                              onClick={() => onRemoveCitation(citation.id)}
+                              title="Удалить цитату"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })
         )}
         
         {safeCitations.length === 0 && (
