@@ -719,7 +719,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Получить все уникальные цитаты из всех документов проекта
-      // Сортируем по минимальному inline_number (порядок первого появления)
+      // ВАЖНО: Сортируем по (document.order_index, inline_number) - это обеспечивает
+      // правильное слияние дубликатов. Если один источник используется в нескольких
+      // документах, мы используем его позицию при ПЕРВОМ появлении (учитывая порядок документов).
+      // Формула: d.order_index * 1000000 + c.inline_number даёт уникальный порядок появления.
       const citationsRes = await pool.query(
         hasVolumeColumns
           ? `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
@@ -727,27 +730,27 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                     COALESCE(a.volume, a.raw_json->'crossref'->>'volume') as volume,
                     COALESCE(a.issue, a.raw_json->'crossref'->>'issue') as issue,
                     COALESCE(a.pages, a.raw_json->'crossref'->>'pages') as pages,
-                    MIN(c.inline_number) as first_inline_number
+                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
              GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
                       a.doi, a.pmid, a.volume, a.issue, a.pages, a.raw_json
-             ORDER BY first_inline_number`
+             ORDER BY first_appearance_order`
           : `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
                     a.doi, a.pmid,
                     (a.raw_json->'crossref'->>'volume') as volume,
                     (a.raw_json->'crossref'->>'issue') as issue,
                     (a.raw_json->'crossref'->>'pages') as pages,
-                    MIN(c.inline_number) as first_inline_number
+                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
              GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
                       a.doi, a.pmid, a.raw_json
-             ORDER BY first_inline_number`,
+             ORDER BY first_appearance_order`,
         [paramsP.data.projectId]
       );
 
@@ -893,31 +896,34 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         hasVolumeColumns = false;
       }
 
-      // Получаем уникальные статьи с минимальным inline_number (порядок первого появления)
-      // Это обеспечивает правильную нумерацию библиографии после перестановки документов
+      // Получаем уникальные статьи с порядком первого появления
+      // ВАЖНО: Учитываем порядок документов (order_index) + позицию внутри документа (inline_number)
+      // Формула: d.order_index * 1000000 + c.inline_number даёт корректный порядок появления.
+      // Это обеспечивает слияние дубликатов: если источник Y используется в Doc1[2] и Doc2[1],
+      // он получит номер из Doc1 (первый документ), а не из Doc2.
       const citationsRes = await pool.query(
         hasVolumeColumns
           ? `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
                     a.doi, a.pmid, a.volume, a.issue, a.pages,
-                    MIN(c.inline_number) as first_inline_number
+                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
              GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
                       a.doi, a.pmid, a.volume, a.issue, a.pages
-             ORDER BY first_inline_number`
+             ORDER BY first_appearance_order`
           : `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
                     a.doi, a.pmid, 
                     NULL as volume, NULL as issue, NULL as pages,
-                    MIN(c.inline_number) as first_inline_number
+                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
              GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
                       a.doi, a.pmid
-             ORDER BY first_inline_number`,
+             ORDER BY first_appearance_order`,
         [paramsP.data.projectId]
       );
 
