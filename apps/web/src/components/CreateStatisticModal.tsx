@@ -10,6 +10,74 @@ import ChartFromTable, {
 } from './ChartFromTable';
 import { apiCreateStatistic, type ProjectStatistic } from '../lib/api';
 
+// SVG Icons (Flowbite/Heroicons style)
+const PlusIcon = () => (
+  <svg className="icon-md" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ color: 'var(--accent)' }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+  </svg>
+);
+
+const CloseIcon = () => (
+  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+  </svg>
+);
+
+const TableIcon = () => (
+  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ marginRight: 6 }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125" />
+  </svg>
+);
+
+const ChartIcon = () => (
+  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ marginRight: 6 }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+  </svg>
+);
+
+const BeakerIcon = () => (
+  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ marginRight: 6 }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+  </svg>
+);
+
+const QuantitativeIcon = () => (
+  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ marginRight: 4, flexShrink: 0 }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+  </svg>
+);
+
+const QualitativeIcon = () => (
+  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ marginRight: 4, flexShrink: 0 }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" />
+  </svg>
+);
+
+const LightBulbIcon = () => (
+  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ marginRight: 6, color: 'var(--accent)' }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+  </svg>
+);
+
+const CheckIcon = () => (
+  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ marginRight: 4 }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+  </svg>
+);
+
+const SpinnerIcon = () => (
+  <svg className="icon-sm loading-spinner" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ marginRight: 4 }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+  </svg>
+);
+
+const TableDataIcon = () => (
+  <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ marginRight: 4 }}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125" />
+  </svg>
+);
+
 type Props = {
   projectId: string;
   onClose: () => void;
@@ -162,8 +230,13 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal statistic-edit-modal" style={{ maxWidth: 1000 }} onClick={e => e.stopPropagation()}>
         <div className="row space" style={{ marginBottom: 16 }}>
-          <h3 style={{ margin: 0 }}>➕ Создать таблицу и график</h3>
-          <button className="btn secondary" onClick={onClose}>✕</button>
+          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <PlusIcon />
+            Создать таблицу и график
+          </h3>
+          <button className="btn secondary" onClick={onClose} style={{ padding: '8px', display: 'flex', alignItems: 'center' }}>
+            <CloseIcon />
+          </button>
         </div>
         
         {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
@@ -174,19 +247,22 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
             className={`tab ${activeTab === 'table' ? 'active' : ''}`}
             onClick={() => setActiveTab('table')}
           >
-            1️⃣ Ввод данных
+            <TableIcon />
+            1. Ввод данных
           </button>
           <button 
             className={`tab ${activeTab === 'chart' ? 'active' : ''}`}
             onClick={() => setActiveTab('chart')}
           >
-            2️⃣ Тип графика
+            <ChartIcon />
+            2. Тип графика
           </button>
           <button 
             className={`tab ${activeTab === 'classification' ? 'active' : ''}`}
             onClick={() => setActiveTab('classification')}
           >
-            3️⃣ Классификация
+            <BeakerIcon />
+            3. Классификация
           </button>
         </div>
 
@@ -205,8 +281,9 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
             </div>
             
             <div className="row space" style={{ marginBottom: 12 }}>
-              <span className="muted">
-                📋 Таблица данных: {tableData.rows.length} строк × {tableData.headers.length} колонок
+              <span className="muted" style={{ display: 'flex', alignItems: 'center' }}>
+                <TableDataIcon />
+                Таблица данных: {tableData.rows.length} строк × {tableData.headers.length} колонок
               </span>
               <div className="row gap">
                 <button 
@@ -291,8 +368,9 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
             </div>
             
             <div className="card" style={{ marginTop: 16, padding: 12 }}>
-              <div className="muted" style={{ fontSize: 12 }}>
-                💡 Введите данные в таблицу, затем перейдите к выбору типа графика
+              <div className="muted" style={{ fontSize: 12, display: 'flex', alignItems: 'center' }}>
+                <LightBulbIcon />
+                Введите данные в таблицу, затем перейдите к выбору типа графика
               </div>
             </div>
           </div>
@@ -420,7 +498,10 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
           <div>
             <div className="card" style={{ padding: 16, marginBottom: 16 }}>
               <div className="row space" style={{ marginBottom: 12 }}>
-                <strong style={{ fontSize: 14 }}>🔬 Классификация данных</strong>
+                <strong style={{ fontSize: 14, display: 'flex', alignItems: 'center' }}>
+                  <BeakerIcon />
+                  Классификация данных
+                </strong>
                 <span className="muted" style={{ fontSize: 12 }}>
                   Рекомендуемый метод: {recommendedMethod}
                 </span>
@@ -492,14 +573,20 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
             {/* Explanation cards */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="card" style={{ padding: 14 }}>
-                <h5 style={{ margin: '0 0 8px 0', fontSize: 13 }}>📊 Количественные данные</h5>
+                <h5 style={{ margin: '0 0 8px 0', fontSize: 13, display: 'flex', alignItems: 'center' }}>
+                  <QuantitativeIcon />
+                  Количественные данные
+                </h5>
                 <p className="muted" style={{ fontSize: 11, margin: 0, lineHeight: 1.5 }}>
                   <strong>Непрерывные:</strong> возраст, рост, вес, давление<br/>
                   <strong>Дискретные:</strong> количество детей, число визитов
                 </p>
               </div>
               <div className="card" style={{ padding: 14 }}>
-                <h5 style={{ margin: '0 0 8px 0', fontSize: 13 }}>🏷️ Качественные данные</h5>
+                <h5 style={{ margin: '0 0 8px 0', fontSize: 13, display: 'flex', alignItems: 'center' }}>
+                  <QualitativeIcon />
+                  Качественные данные
+                </h5>
                 <p className="muted" style={{ fontSize: 11, margin: 0, lineHeight: 1.5 }}>
                   <strong>Номинальные:</strong> группа крови, пол<br/>
                   <strong>Дихотомические:</strong> да/нет, жив/умер<br/>
@@ -538,8 +625,19 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
               className="btn"
               onClick={handleCreate}
               disabled={saving || !title.trim()}
+              style={{ display: 'flex', alignItems: 'center' }}
             >
-              {saving ? '⏳ Создание...' : '✅ Создать график'}
+              {saving ? (
+                <>
+                  <SpinnerIcon />
+                  Создание...
+                </>
+              ) : (
+                <>
+                  <CheckIcon />
+                  Создать график
+                </>
+              )}
             </button>
           </div>
         </div>

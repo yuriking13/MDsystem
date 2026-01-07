@@ -14,6 +14,7 @@ import {
   apiGetBibliography,
   apiExportProject,
   apiGetStatistics,
+  apiCreateStatistic,
   apiDeleteStatistic,
   apiUpdateStatistic,
   type Project,
@@ -43,6 +44,180 @@ import {
 } from "../lib/exportWord";
 
 type Tab = "articles" | "documents" | "statistics" | "graph" | "team" | "settings";
+
+// Helper function to generate HTML table from table data
+function generateTableHtml(tableData: TableData, title?: string): string {
+  let html = '';
+  if (title) {
+    html += `<p><strong>${title}</strong></p>\n`;
+  }
+  html += '<table border="1" style="border-collapse: collapse; width: 100%;">\n';
+  html += '<thead><tr>';
+  for (const header of tableData.headers) {
+    html += `<th style="padding: 8px; background: #f5f5f5;">${header}</th>`;
+  }
+  html += '</tr></thead>\n<tbody>\n';
+  for (const row of tableData.rows) {
+    html += '<tr>';
+    for (const cell of row) {
+      html += `<td style="padding: 8px;">${cell}</td>`;
+    }
+    html += '</tr>\n';
+  }
+  html += '</tbody></table>';
+  return html;
+}
+
+// Sample data templates for each chart type
+const CHART_SAMPLE_DATA: Record<ChartType, { title: string; tableData: TableData; config: Record<string, any> }> = {
+  bar: {
+    title: 'Сравнение групп пациентов',
+    tableData: {
+      headers: ['Группа', 'Количество'],
+      rows: [
+        ['Контрольная группа', '45'],
+        ['Группа лечения A', '62'],
+        ['Группа лечения B', '58'],
+        ['Группа лечения C', '51'],
+      ],
+    },
+    config: {
+      type: 'bar',
+      title: 'Сравнение групп пациентов',
+      labelColumn: 0,
+      dataColumns: [1],
+    },
+  },
+  histogram: {
+    title: 'Распределение возраста пациентов',
+    tableData: {
+      headers: ['ID', 'Возраст'],
+      rows: [
+        ['1', '23'], ['2', '34'], ['3', '45'], ['4', '28'], ['5', '52'],
+        ['6', '41'], ['7', '36'], ['8', '29'], ['9', '47'], ['10', '38'],
+        ['11', '55'], ['12', '33'], ['13', '42'], ['14', '31'], ['15', '49'],
+        ['16', '27'], ['17', '44'], ['18', '39'], ['19', '35'], ['20', '50'],
+      ],
+    },
+    config: {
+      type: 'histogram',
+      title: 'Распределение возраста пациентов',
+      labelColumn: 0,
+      dataColumns: [1],
+      bins: 8,
+    },
+  },
+  stacked: {
+    title: 'Структура исходов по группам',
+    tableData: {
+      headers: ['Группа', 'Улучшение', 'Без изменений', 'Ухудшение'],
+      rows: [
+        ['Плацебо', '15', '20', '10'],
+        ['Препарат A', '35', '12', '5'],
+        ['Препарат B', '28', '18', '8'],
+      ],
+    },
+    config: {
+      type: 'stacked',
+      title: 'Структура исходов по группам',
+      labelColumn: 0,
+      dataColumns: [1, 2, 3],
+    },
+  },
+  pie: {
+    title: 'Распределение диагнозов',
+    tableData: {
+      headers: ['Диагноз', 'Количество пациентов'],
+      rows: [
+        ['Гипертония', '35'],
+        ['Диабет 2 типа', '25'],
+        ['ИБС', '20'],
+        ['ХОБЛ', '12'],
+        ['Другие', '8'],
+      ],
+    },
+    config: {
+      type: 'pie',
+      title: 'Распределение диагнозов',
+      labelColumn: 0,
+      dataColumns: [1],
+    },
+  },
+  line: {
+    title: 'Динамика артериального давления',
+    tableData: {
+      headers: ['День', 'Систолическое', 'Диастолическое'],
+      rows: [
+        ['1', '150', '95'],
+        ['7', '145', '92'],
+        ['14', '138', '88'],
+        ['21', '132', '85'],
+        ['28', '128', '82'],
+        ['35', '125', '80'],
+      ],
+    },
+    config: {
+      type: 'line',
+      title: 'Динамика артериального давления',
+      labelColumn: 0,
+      dataColumns: [1, 2],
+    },
+  },
+  boxplot: {
+    title: 'Распределение уровня глюкозы',
+    tableData: {
+      headers: ['ID', 'Группа A', 'Группа B'],
+      rows: [
+        ['1', '5.2', '6.8'], ['2', '5.8', '7.2'], ['3', '4.9', '6.5'],
+        ['4', '6.1', '7.8'], ['5', '5.5', '6.9'], ['6', '5.3', '7.4'],
+        ['7', '5.9', '8.1'], ['8', '5.0', '6.6'], ['9', '6.2', '7.0'],
+        ['10', '5.4', '7.3'], ['11', '5.7', '6.7'], ['12', '5.1', '7.5'],
+      ],
+    },
+    config: {
+      type: 'boxplot',
+      title: 'Распределение уровня глюкозы',
+      labelColumn: 0,
+      dataColumns: [1, 2],
+    },
+  },
+  scatter: {
+    title: 'Корреляция веса и роста',
+    tableData: {
+      headers: ['ID', 'Рост (см)', 'Вес (кг)'],
+      rows: [
+        ['1', '165', '62'], ['2', '178', '85'], ['3', '172', '74'],
+        ['4', '160', '55'], ['5', '185', '92'], ['6', '170', '68'],
+        ['7', '168', '65'], ['8', '182', '88'], ['9', '175', '78'],
+        ['10', '163', '58'], ['11', '180', '82'], ['12', '173', '71'],
+      ],
+    },
+    config: {
+      type: 'scatter',
+      title: 'Корреляция веса и роста',
+      labelColumn: 0,
+      dataColumns: [1, 2],
+      xColumn: 1,
+      yColumn: 2,
+    },
+  },
+  doughnut: {
+    title: 'Распределение по полу',
+    tableData: {
+      headers: ['Пол', 'Количество'],
+      rows: [
+        ['Мужчины', '120'],
+        ['Женщины', '105'],
+      ],
+    },
+    config: {
+      type: 'doughnut',
+      title: 'Распределение по полу',
+      labelColumn: 0,
+      dataColumns: [1],
+    },
+  },
+};
 
 // Типы исследований с описаниями
 const RESEARCH_TYPES: Record<ResearchType, {
@@ -192,6 +367,7 @@ export default function ProjectDetailPage() {
   const [editingStat, setEditingStat] = useState<ProjectStatistic | null>(null);
   const [statisticsView, setStatisticsView] = useState<'charts' | 'tables'>('charts');
   const [showCreateStatistic, setShowCreateStatistic] = useState(false);
+  const [creatingChartType, setCreatingChartType] = useState<ChartType | null>(null);
   const refreshingStats = useRef(false);
 
   // Invite form
@@ -1210,6 +1386,8 @@ export default function ProjectDetailPage() {
               <div className="chart-types-grid" style={{ marginTop: 16 }}>
                 {(['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter'] as ChartType[]).map(type => {
                   const info = CHART_TYPE_INFO[type];
+                  const sampleData = CHART_SAMPLE_DATA[type];
+                  const isCreating = creatingChartType === type;
                   const defaultIcon = (
                     <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
@@ -1218,11 +1396,31 @@ export default function ProjectDetailPage() {
                   return (
                     <div 
                       key={type} 
-                      className="chart-type-card chart-type-hint"
-                      title={info?.description || ''}
+                      className={`chart-type-card ${isCreating ? 'creating' : ''}`}
+                      title={`Создать ${info?.name || type}: ${info?.description || ''}`}
+                      onClick={async () => {
+                        if (!id || isCreating || creatingChartType) return;
+                        setCreatingChartType(type);
+                        try {
+                          const result = await apiCreateStatistic(id, {
+                            type: 'chart',
+                            title: sampleData.title,
+                            config: sampleData.config,
+                            tableData: sampleData.tableData,
+                            chartType: type,
+                          });
+                          setStatistics([...statistics, result.statistic]);
+                          setOk(`Создан пример: ${info?.name || type}`);
+                        } catch (err: any) {
+                          setError(err?.message || 'Ошибка создания');
+                        } finally {
+                          setCreatingChartType(null);
+                        }
+                      }}
+                      style={{ cursor: isCreating || creatingChartType ? 'wait' : 'pointer', opacity: creatingChartType && !isCreating ? 0.5 : 1 }}
                     >
                       <span className="chart-type-icon">{info?.icon || defaultIcon}</span>
-                      <span className="chart-type-name">{info?.name || String(type)}</span>
+                      <span className="chart-type-name">{isCreating ? 'Создание...' : (info?.name || String(type))}</span>
                     </div>
                   );
                 })}
@@ -1334,7 +1532,7 @@ export default function ProjectDetailPage() {
                         <p className="stat-card-description">{stat.description}</p>
                       )}
                       
-                      <div className="stat-card-preview">
+                      <div className="stat-card-preview" data-stat-id={stat.id}>
                         {/* Режим графиков - показываем график */}
                         {!showAsTable && tableData && stat.config && stat.config.type && (
                           <ChartFromTable 
@@ -1406,22 +1604,56 @@ export default function ProjectDetailPage() {
                           </svg>
                           Редактировать
                         </button>
-                        {documents.length > 0 && (
-                          <button 
-                            className="btn secondary stat-action-btn" 
-                            onClick={() => {
-                              const chartCode = `[График: ${stat.title}]`;
-                              navigator.clipboard.writeText(chartCode);
-                              setOk(`Скопировано! Вставьте в документ.`);
-                            }}
-                            title="Скопировать ссылку"
-                          >
-                            <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
-                            </svg>
-                            Копировать
-                          </button>
-                        )}
+                        <button 
+                          className="btn secondary stat-action-btn" 
+                          onClick={async () => {
+                            // Copy actual chart/table as HTML to clipboard
+                            try {
+                              const chartContainer = document.querySelector(`[data-stat-id="${stat.id}"]`);
+                              if (chartContainer) {
+                                // Try to get canvas as image
+                                const canvas = chartContainer.querySelector('canvas');
+                                if (canvas) {
+                                  canvas.toBlob(async (blob) => {
+                                    if (blob) {
+                                      try {
+                                        await navigator.clipboard.write([
+                                          new ClipboardItem({ 'image/png': blob })
+                                        ]);
+                                        setOk('График скопирован как изображение!');
+                                      } catch {
+                                        // Fallback: copy as text
+                                        const tableHtml = tableData ? generateTableHtml(tableData, stat.title || 'Таблица') : '';
+                                        await navigator.clipboard.writeText(tableHtml || `[График: ${stat.title}]`);
+                                        setOk('Данные скопированы!');
+                                      }
+                                    }
+                                  }, 'image/png');
+                                  return;
+                                }
+                              }
+                              // Fallback: copy table data as HTML
+                              if (tableData) {
+                                const tableHtml = generateTableHtml(tableData, stat.title || 'Таблица');
+                                await navigator.clipboard.writeText(tableHtml);
+                                setOk('Таблица скопирована!');
+                              } else {
+                                await navigator.clipboard.writeText(`[График: ${stat.title}]`);
+                                setOk('Ссылка скопирована!');
+                              }
+                            } catch (err) {
+                              console.error('Copy error:', err);
+                              setError('Не удалось скопировать');
+                            }
+                          }}
+                          title="Копировать график/таблицу"
+                        >
+                          <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                          </svg>
+                          Копировать
+                        </button>
+                        <div className="stat-card-actions-spacer" />
                         <button 
                           className="btn secondary stat-action-btn stat-delete-btn" 
                           onClick={() => handleDeleteStatistic(stat.id)}
