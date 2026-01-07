@@ -891,6 +891,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   );
 
   // GET /api/projects/:projectId/bibliography - только список литературы
+  // ВАЖНО: Этот эндпоинт используется для отображения в UI при работе с проектом.
+  // Дедупликация здесь НЕ применяется - она происходит только при экспорте (/export).
+  // Каждый article_id показывается отдельно с учётом порядка первого появления.
   fastify.get(
     "/projects/:projectId/bibliography",
     { preHandler: [fastify.authenticate] },
@@ -933,73 +936,35 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         hasVolumeColumns = false;
       }
 
-      // =======================================================================
-      // ЛОГИКА ОБЪЕДИНЕНИЯ ДУБЛИКАТОВ
-      // =======================================================================
-      // 1. Получаем ВСЕ цитаты с полными данными статей (отсортированные по порядку появления)
-      // 2. Определяем "ключ дедупликации" для каждой статьи (PMID > DOI > title_en)
-      // 3. Группируем по ключу, выбираем первое появление
-      // =======================================================================
-      
-      const allCitationsRes = await pool.query(
+      // Получаем уникальные статьи (по article_id) с порядком первого появления
+      // Учитываем порядок документов (order_index) + позицию внутри документа (inline_number)
+      const citationsRes = await pool.query(
         hasVolumeColumns
-          ? `SELECT c.article_id, d.order_index as doc_order, c.inline_number,
-                    a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-                    a.doi, a.pmid, a.volume, a.issue, a.pages
+          ? `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                    a.doi, a.pmid, a.volume, a.issue, a.pages,
+                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             ORDER BY d.order_index, c.inline_number`
-          : `SELECT c.article_id, d.order_index as doc_order, c.inline_number,
-                    a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-                    a.doi, a.pmid,
-                    NULL as volume, NULL as issue, NULL as pages
+             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                      a.doi, a.pmid, a.volume, a.issue, a.pages
+             ORDER BY first_appearance_order`
+          : `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                    a.doi, a.pmid, 
+                    NULL as volume, NULL as issue, NULL as pages,
+                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             ORDER BY d.order_index, c.inline_number`,
+             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                      a.doi, a.pmid
+             ORDER BY first_appearance_order`,
         [paramsP.data.projectId]
       );
 
-      // Функция для получения ключа дедупликации
-      // Приоритет: PMID > базовый DOI (без версий) > нормализованный title
-      const getDedupeKey = (article: any): string => {
-        if (article.pmid) {
-          return `pmid:${article.pmid}`;
-        }
-        if (article.doi) {
-          // Нормализуем DOI: убираем версии типа /v1/review2, /v2/decision1 и т.д.
-          const baseDoi = article.doi.replace(/\/v\d+\/.*$/, '').toLowerCase();
-          return `doi:${baseDoi}`;
-        }
-        if (article.title_en) {
-          // Нормализуем title: lowercase, убираем пунктуацию
-          const normalizedTitle = article.title_en.toLowerCase().replace(/[^\w\s]/g, '').trim();
-          return `title:${normalizedTitle}`;
-        }
-        // Fallback на article_id
-        return `id:${article.id}`;
-      };
-
-      // Группируем статьи по ключу дедупликации
-      const dedupeKeyToArticle = new Map<string, any>();
-      const dedupeKeyOrder: string[] = [];
-
-      for (const citation of allCitationsRes.rows) {
-        const dedupeKey = getDedupeKey(citation);
-        
-        if (!dedupeKeyToArticle.has(dedupeKey)) {
-          dedupeKeyToArticle.set(dedupeKey, citation);
-          dedupeKeyOrder.push(dedupeKey);
-        }
-      }
-
-      // Создаём библиографию из уникальных источников
-      const bibliography = dedupeKeyOrder.map((dedupeKey, index) => {
-        const article = dedupeKeyToArticle.get(dedupeKey)!;
-        
+      const bibliography = citationsRes.rows.map((article: any, index: number) => {
         const bibArticle: BibliographyArticle = {
           title_en: article.title_en,
           title_ru: article.title_ru,
@@ -1012,7 +977,6 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           doi: article.doi,
           pmid: article.pmid,
         };
-        
         return {
           number: index + 1,
           articleId: article.id,
