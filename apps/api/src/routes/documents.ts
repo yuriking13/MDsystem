@@ -1064,11 +1064,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Получить все статьи проекта (Уровень 1) с их данными о references
       // Включаем references_fetched_at для определения уже проанализированных статей
-      // Добавляем abstract_en, abstract_ru, title_ru, journal для полноценного отображения
+      // Добавляем abstract_en, abstract_ru, title_ru, journal, source для полноценного отображения
       const articlesRes = await pool.query(
         hasRefColumns
           ? `SELECT a.id, a.doi, a.pmid, a.title_en, a.title_ru, a.abstract_en, a.abstract_ru,
-                    a.authors, a.year, a.journal,
+                    a.authors, a.year, a.journal, a.source,
                     a.raw_json, a.reference_pmids, a.cited_by_pmids, a.references_fetched_at,
                     ${hasStatsQuality ? 'COALESCE(a.stats_quality, 0) as stats_quality,' : '0 as stats_quality,'}
                     pa.status${hasSourceQueryCol ? ', pa.source_query' : ''},
@@ -1077,7 +1077,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
              JOIN articles a ON a.id = pa.article_id
              WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}${yearCondition}${statsCondition}`
           : `SELECT a.id, a.doi, a.pmid, a.title_en, a.title_ru, a.abstract_en, a.abstract_ru,
-                    a.authors, a.year, a.journal,
+                    a.authors, a.year, a.journal, a.source,
                     a.raw_json, 
                     ARRAY[]::text[] as reference_pmids, 
                     ARRAY[]::text[] as cited_by_pmids,
@@ -1108,6 +1108,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         citedByCount: number;
         graphLevel: number;
         statsQuality: number;
+        source?: string; // 'pubmed' | 'doaj' | 'wiley' | 'crossref'
       };
       const nodes: GraphNodeInternal[] = [];
       const links: { source: string; target: string }[] = [];
@@ -1165,6 +1166,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           citedByCount,
           graphLevel: 1,
           statsQuality: article.stats_quality || 0,
+          source: article.source || 'pubmed',
         });
         addedNodeIds.add(article.id);
 

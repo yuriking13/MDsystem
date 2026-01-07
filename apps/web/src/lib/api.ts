@@ -612,6 +612,7 @@ export type GraphNode = {
   citedByCount?: number;
   graphLevel?: number; // 0 = citing, 1 = в проекте, 2 = references, 3 = related
   statsQuality?: number; // 0-3, качество статистики по p-value
+  source?: string; // 'pubmed' | 'doaj' | 'wiley' | 'crossref'
 };
 
 export type GraphLink = {
