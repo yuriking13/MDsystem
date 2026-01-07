@@ -317,6 +317,10 @@ export const ChartNode = Node.create({
     return {
       chartId: {
         default: null,
+        parseHTML: (element: HTMLElement) => element.getAttribute('data-chart-id'),
+        renderHTML: (attributes: Record<string, any>) => {
+          return attributes.chartId ? { 'data-chart-id': attributes.chartId } : {};
+        },
       },
       tableData: {
         default: null,
@@ -325,9 +329,9 @@ export const ChartNode = Node.create({
           return data ? JSON.parse(data) : null;
         },
         renderHTML: (attributes: Record<string, any>) => {
-          return {
+          return attributes.tableData ? {
             'data-table-data': JSON.stringify(attributes.tableData),
-          };
+          } : {};
         },
       },
       config: {
@@ -337,13 +341,17 @@ export const ChartNode = Node.create({
           return data ? JSON.parse(data) : null;
         },
         renderHTML: (attributes: Record<string, any>) => {
-          return {
+          return attributes.config ? {
             'data-config': JSON.stringify(attributes.config),
-          };
+          } : {};
         },
       },
       title: {
         default: '',
+        parseHTML: (element: HTMLElement) => element.getAttribute('data-title') || '',
+        renderHTML: (attributes: Record<string, any>) => {
+          return attributes.title ? { 'data-title': attributes.title } : {};
+        },
       },
       colorScheme: {
         default: 'default',
