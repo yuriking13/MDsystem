@@ -718,44 +718,90 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         hasVolumeColumns = false;
       }
 
-      // Получить все уникальные цитаты из всех документов проекта
-      // ВАЖНО: Сортируем по (document.order_index, inline_number) - это обеспечивает
-      // правильное слияние дубликатов. Если один источник используется в нескольких
-      // документах, мы используем его позицию при ПЕРВОМ появлении (учитывая порядок документов).
-      // Формула: d.order_index * 1000000 + c.inline_number даёт уникальный порядок появления.
-      const citationsRes = await pool.query(
+      // =======================================================================
+      // ЛОГИКА ОБЪЕДИНЕНИЯ ДУБЛИКАТОВ ПРИ ЭКСПОРТЕ
+      // =======================================================================
+      // 1. Получаем ВСЕ цитаты с полными данными статей
+      // 2. Определяем "ключ дедупликации" для каждой статьи (PMID > DOI > title_en)
+      // 3. Группируем по ключу, выбираем первое появление (по order_index документа + inline_number)
+      // 4. Создаём маппинг: article_id -> глобальный номер (с учётом дубликатов)
+      // =======================================================================
+      
+      const allCitationsRes = await pool.query(
         hasVolumeColumns
-          ? `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+          ? `SELECT c.id as citation_id, c.document_id, c.article_id, c.inline_number,
+                    d.order_index as doc_order,
+                    a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
                     a.doi, a.pmid,
                     COALESCE(a.volume, a.raw_json->'crossref'->>'volume') as volume,
                     COALESCE(a.issue, a.raw_json->'crossref'->>'issue') as issue,
-                    COALESCE(a.pages, a.raw_json->'crossref'->>'pages') as pages,
-                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
+                    COALESCE(a.pages, a.raw_json->'crossref'->>'pages') as pages
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-                      a.doi, a.pmid, a.volume, a.issue, a.pages, a.raw_json
-             ORDER BY first_appearance_order`
-          : `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+             ORDER BY d.order_index, c.inline_number`
+          : `SELECT c.id as citation_id, c.document_id, c.article_id, c.inline_number,
+                    d.order_index as doc_order,
+                    a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
                     a.doi, a.pmid,
                     (a.raw_json->'crossref'->>'volume') as volume,
                     (a.raw_json->'crossref'->>'issue') as issue,
-                    (a.raw_json->'crossref'->>'pages') as pages,
-                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
+                    (a.raw_json->'crossref'->>'pages') as pages
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-                      a.doi, a.pmid, a.raw_json
-             ORDER BY first_appearance_order`,
+             ORDER BY d.order_index, c.inline_number`,
         [paramsP.data.projectId]
       );
 
-      // Форматировать список литературы
-      const bibliography = citationsRes.rows.map((article: any, index: number) => {
+      // Функция для получения ключа дедупликации
+      // Приоритет: PMID > базовый DOI (без версий) > нормализованный title
+      const getDedupeKey = (article: any): string => {
+        if (article.pmid) {
+          return `pmid:${article.pmid}`;
+        }
+        if (article.doi) {
+          // Нормализуем DOI: убираем версии типа /v1/review2, /v2/decision1 и т.д.
+          const baseDoi = article.doi.replace(/\/v\d+\/.*$/, '').toLowerCase();
+          return `doi:${baseDoi}`;
+        }
+        if (article.title_en) {
+          // Нормализуем title: lowercase, убираем пунктуацию
+          const normalizedTitle = article.title_en.toLowerCase().replace(/[^\w\s]/g, '').trim();
+          return `title:${normalizedTitle}`;
+        }
+        // Fallback на article_id
+        return `id:${article.id}`;
+      };
+
+      // Группируем статьи по ключу дедупликации
+      // Сохраняем первое появление (по порядку документов и inline_number)
+      const dedupeKeyToArticle = new Map<string, any>(); // ключ -> данные статьи (первое появление)
+      const dedupeKeyOrder: string[] = []; // порядок первого появления ключей
+      const articleIdToDedupeKey = new Map<string, string>(); // article_id -> ключ дедупликации
+
+      for (const citation of allCitationsRes.rows) {
+        const dedupeKey = getDedupeKey(citation);
+        articleIdToDedupeKey.set(citation.article_id, dedupeKey);
+        
+        if (!dedupeKeyToArticle.has(dedupeKey)) {
+          // Первое появление этого источника
+          dedupeKeyToArticle.set(dedupeKey, citation);
+          dedupeKeyOrder.push(dedupeKey);
+        }
+      }
+
+      // Создаём библиографию из уникальных источников
+      const bibliography: { number: number; articleId: string; formatted: string }[] = [];
+      const dedupeKeyToNumber = new Map<string, number>(); // ключ дедупликации -> глобальный номер
+
+      dedupeKeyOrder.forEach((dedupeKey, index) => {
+        const article = dedupeKeyToArticle.get(dedupeKey)!;
+        const globalNumber = index + 1;
+        dedupeKeyToNumber.set(dedupeKey, globalNumber);
+        
         const bibArticle: BibliographyArticle = {
           title_en: article.title_en,
           title_ru: article.title_ru,
@@ -768,36 +814,25 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           doi: article.doi,
           pmid: article.pmid,
         };
-        return {
-          number: index + 1,
+        
+        bibliography.push({
+          number: globalNumber,
           articleId: article.id,
           formatted: formatCitation(bibArticle, citationStyle),
-        };
+        });
       });
 
-      // Создаём маппинг articleId -> новый номер в общем списке
-      const articleToNumber = new Map<string, number>();
-      for (const bib of bibliography) {
-        articleToNumber.set(bib.articleId, bib.number);
-      }
-
-      // Получаем все цитаты с их document_id и article_id
-      const allCitationsRes = await pool.query(
-        `SELECT c.document_id, c.article_id, c.inline_number
-         FROM citations c
-         JOIN documents d ON d.id = c.document_id
-         WHERE d.project_id = $1
-         ORDER BY c.document_id, c.inline_number`,
-        [paramsP.data.projectId]
-      );
-
       // Создаём маппинг (document_id, inline_number) -> новый глобальный номер
+      // Используем ключ дедупликации для определения номера
       const citationMapping = new Map<string, number>();
-      for (const c of allCitationsRes.rows) {
-        const key = `${c.document_id}:${c.inline_number}`;
-        const globalNum = articleToNumber.get(c.article_id);
-        if (globalNum !== undefined) {
-          citationMapping.set(key, globalNum);
+      for (const citation of allCitationsRes.rows) {
+        const key = `${citation.document_id}:${citation.inline_number}`;
+        const dedupeKey = articleIdToDedupeKey.get(citation.article_id);
+        if (dedupeKey) {
+          const globalNum = dedupeKeyToNumber.get(dedupeKey);
+          if (globalNum !== undefined) {
+            citationMapping.set(key, globalNum);
+          }
         }
       }
 
@@ -811,30 +846,32 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         
         // Перенумеровываем цитаты в контенте
         let content = doc.content || '';
-        // Заменяем [n] на глобальные номера
+        
+        // Заменяем data-citation-number и текст [n] в span элементах
         content = content.replace(
-          /data-citation-number="(\d+)"/g,
-          (match: string, num: string) => {
-            const key = `${doc.id}:${num}`;
+          /<span[^>]*class="citation-ref"[^>]*data-citation-number="(\d+)"[^>]*>\[(\d+)\]<\/span>/g,
+          (match: string, attrNum: string, textNum: string) => {
+            const key = `${doc.id}:${attrNum}`;
             const globalNum = citationMapping.get(key);
             if (globalNum !== undefined) {
-              return `data-citation-number="${globalNum}"`;
+              return match
+                .replace(`data-citation-number="${attrNum}"`, `data-citation-number="${globalNum}"`)
+                .replace(`[${textNum}]`, `[${globalNum}]`);
             }
             return match;
           }
         );
-        // Также заменяем текст [n] внутри span
+        
+        // Также обрабатываем обратный порядок атрибутов (data-citation-number перед class)
         content = content.replace(
-          /<span class="citation-ref"[^>]*>\[(\d+)\]<\/span>/g,
-          (match: string, num: string) => {
-            // Ищем data-citation-number в этом же span
-            const numMatch = match.match(/data-citation-number="(\d+)"/);
-            if (numMatch) {
-              const key = `${doc.id}:${numMatch[1]}`;
-              const globalNum = citationMapping.get(key);
-              if (globalNum !== undefined) {
-                return match.replace(`[${num}]`, `[${globalNum}]`);
-              }
+          /<span[^>]*data-citation-number="(\d+)"[^>]*class="citation-ref"[^>]*>\[(\d+)\]<\/span>/g,
+          (match: string, attrNum: string, textNum: string) => {
+            const key = `${doc.id}:${attrNum}`;
+            const globalNum = citationMapping.get(key);
+            if (globalNum !== undefined) {
+              return match
+                .replace(`data-citation-number="${attrNum}"`, `data-citation-number="${globalNum}"`)
+                .replace(`[${textNum}]`, `[${globalNum}]`);
             }
             return match;
           }
@@ -896,38 +933,73 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         hasVolumeColumns = false;
       }
 
-      // Получаем уникальные статьи с порядком первого появления
-      // ВАЖНО: Учитываем порядок документов (order_index) + позицию внутри документа (inline_number)
-      // Формула: d.order_index * 1000000 + c.inline_number даёт корректный порядок появления.
-      // Это обеспечивает слияние дубликатов: если источник Y используется в Doc1[2] и Doc2[1],
-      // он получит номер из Doc1 (первый документ), а не из Doc2.
-      const citationsRes = await pool.query(
+      // =======================================================================
+      // ЛОГИКА ОБЪЕДИНЕНИЯ ДУБЛИКАТОВ
+      // =======================================================================
+      // 1. Получаем ВСЕ цитаты с полными данными статей (отсортированные по порядку появления)
+      // 2. Определяем "ключ дедупликации" для каждой статьи (PMID > DOI > title_en)
+      // 3. Группируем по ключу, выбираем первое появление
+      // =======================================================================
+      
+      const allCitationsRes = await pool.query(
         hasVolumeColumns
-          ? `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-                    a.doi, a.pmid, a.volume, a.issue, a.pages,
-                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
+          ? `SELECT c.article_id, d.order_index as doc_order, c.inline_number,
+                    a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                    a.doi, a.pmid, a.volume, a.issue, a.pages
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-                      a.doi, a.pmid, a.volume, a.issue, a.pages
-             ORDER BY first_appearance_order`
-          : `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-                    a.doi, a.pmid, 
-                    NULL as volume, NULL as issue, NULL as pages,
-                    MIN(d.order_index * 1000000 + c.inline_number) as first_appearance_order
+             ORDER BY d.order_index, c.inline_number`
+          : `SELECT c.article_id, d.order_index as doc_order, c.inline_number,
+                    a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                    a.doi, a.pmid,
+                    NULL as volume, NULL as issue, NULL as pages
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-                      a.doi, a.pmid
-             ORDER BY first_appearance_order`,
+             ORDER BY d.order_index, c.inline_number`,
         [paramsP.data.projectId]
       );
 
-      const bibliography = citationsRes.rows.map((article: any, index: number) => {
+      // Функция для получения ключа дедупликации
+      // Приоритет: PMID > базовый DOI (без версий) > нормализованный title
+      const getDedupeKey = (article: any): string => {
+        if (article.pmid) {
+          return `pmid:${article.pmid}`;
+        }
+        if (article.doi) {
+          // Нормализуем DOI: убираем версии типа /v1/review2, /v2/decision1 и т.д.
+          const baseDoi = article.doi.replace(/\/v\d+\/.*$/, '').toLowerCase();
+          return `doi:${baseDoi}`;
+        }
+        if (article.title_en) {
+          // Нормализуем title: lowercase, убираем пунктуацию
+          const normalizedTitle = article.title_en.toLowerCase().replace(/[^\w\s]/g, '').trim();
+          return `title:${normalizedTitle}`;
+        }
+        // Fallback на article_id
+        return `id:${article.id}`;
+      };
+
+      // Группируем статьи по ключу дедупликации
+      const dedupeKeyToArticle = new Map<string, any>();
+      const dedupeKeyOrder: string[] = [];
+
+      for (const citation of allCitationsRes.rows) {
+        const dedupeKey = getDedupeKey(citation);
+        
+        if (!dedupeKeyToArticle.has(dedupeKey)) {
+          dedupeKeyToArticle.set(dedupeKey, citation);
+          dedupeKeyOrder.push(dedupeKey);
+        }
+      }
+
+      // Создаём библиографию из уникальных источников
+      const bibliography = dedupeKeyOrder.map((dedupeKey, index) => {
+        const article = dedupeKeyToArticle.get(dedupeKey)!;
+        
         const bibArticle: BibliographyArticle = {
           title_en: article.title_en,
           title_ru: article.title_ru,
@@ -940,6 +1012,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           doi: article.doi,
           pmid: article.pmid,
         };
+        
         return {
           number: index + 1,
           articleId: article.id,
