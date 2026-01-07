@@ -558,6 +558,22 @@ export async function apiUpdateCitation(
   );
 }
 
+// Синхронизирует цитаты документа с HTML контентом
+// Удаляет из БД цитаты, которых больше нет в тексте
+export async function apiSyncCitations(
+  projectId: string,
+  docId: string,
+  citationIds: string[]
+): Promise<{ ok: boolean; deleted: number; document: Document }> {
+  return apiFetch<{ ok: boolean; deleted: number; document: Document }>(
+    `/api/projects/${projectId}/documents/${docId}/sync-citations`,
+    {
+      method: "POST",
+      body: JSON.stringify({ citationIds }),
+    }
+  );
+}
+
 // ========== Bibliography & Export ==========
 
 export type BibliographyItem = {
