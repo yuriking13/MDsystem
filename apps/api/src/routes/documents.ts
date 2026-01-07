@@ -444,6 +444,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   );
 
   // POST /api/projects/:projectId/documents/:docId/citations - добавить цитату
+  // Реализует умную нумерацию:
+  // - Минимальный свободный номер для нового источника
+  // - Переиспользование освободившихся номеров
+  // - Sub-number для множественных цитат одного источника
   fastify.post(
     "/projects/:projectId/documents/:docId/citations",
     { preHandler: [fastify.authenticate] },
@@ -483,7 +487,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let subNumber = 1;
 
       if ((existingCitations.rowCount ?? 0) > 0) {
-        // Есть существующие цитаты - используем тот же inline_number
+        // Есть существующие цитаты этого источника - используем тот же inline_number
         inlineNumber = existingCitations.rows[0].inline_number;
         
         // Найти минимальный свободный sub_number (переиспользуем освободившиеся номера)
@@ -494,6 +498,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       } else {
         // Новый источник - найти минимальный свободный inline_number
+        // Это обеспечивает компактную нумерацию без пропусков
         const usedInlineNumbers = await pool.query(
           `SELECT DISTINCT inline_number FROM citations WHERE document_id = $1 ORDER BY inline_number`,
           [paramsP.data.docId]
@@ -630,6 +635,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   );
 
   // DELETE /api/projects/:projectId/documents/:docId/citations/:citationId
+  // Реализует умную перенумерацию после удаления:
+  // - Если удаляется последняя цитата источника, освобождается номер
+  // - Если после удалённого номера были источники, они сдвигаются
+  // - Sub_number пересчитываются последовательно (1, 2, 3...)
   fastify.delete(
     "/projects/:projectId/documents/:docId/citations/:citationId",
     { preHandler: [fastify.authenticate] },
@@ -652,21 +661,35 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(403).send({ error: "No edit access" });
       }
 
-      // Сначала получаем article_id удаляемой цитаты
+      // Получаем информацию об удаляемой цитате
       const citationToDelete = await pool.query(
-        `SELECT article_id FROM citations WHERE id = $1 AND document_id = $2`,
+        `SELECT article_id, inline_number FROM citations WHERE id = $1 AND document_id = $2`,
         [paramsP.data.citationId, paramsP.data.docId]
       );
       
-      const articleId = citationToDelete.rows[0]?.article_id;
+      if (citationToDelete.rowCount === 0) {
+        return reply.code(404).send({ error: "Citation not found" });
+      }
       
+      const articleId = citationToDelete.rows[0].article_id;
+      const deletedInlineNumber = citationToDelete.rows[0].inline_number;
+      
+      // Удаляем цитату
       await pool.query(
         `DELETE FROM citations WHERE id = $1 AND document_id = $2`,
         [paramsP.data.citationId, paramsP.data.docId]
       );
 
-      // Перенумеровать sub_number для цитат с тем же article_id (1, 2, 3...)
-      if (articleId) {
+      // Проверяем, остались ли ещё цитаты этого источника
+      const remainingForArticle = await pool.query(
+        `SELECT COUNT(*) as count FROM citations WHERE document_id = $1 AND article_id = $2`,
+        [paramsP.data.docId, articleId]
+      );
+      
+      const articleHasMoreCitations = parseInt(remainingForArticle.rows[0].count) > 0;
+
+      if (articleHasMoreCitations) {
+        // Есть ещё цитаты этого источника - только пересчитываем sub_number (1, 2, 3...)
         await pool.query(
           `WITH numbered AS (
             SELECT id, ROW_NUMBER() OVER (ORDER BY order_index) as new_sub
@@ -678,28 +701,27 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           WHERE c.id = n.id`,
           [paramsP.data.docId, articleId]
         );
+      } else {
+        // Удалена последняя цитата источника - нужно проверить, есть ли источники после
+        // и если есть, сдвинуть их номера на -1
+        const sourcesAfter = await pool.query(
+          `SELECT DISTINCT article_id FROM citations 
+           WHERE document_id = $1 AND inline_number > $2`,
+          [paramsP.data.docId, deletedInlineNumber]
+        );
+        
+        if ((sourcesAfter.rowCount ?? 0) > 0) {
+          // Есть источники после - сдвигаем все номера > deletedInlineNumber на -1
+          await pool.query(
+            `UPDATE citations 
+             SET inline_number = inline_number - 1 
+             WHERE document_id = $1 AND inline_number > $2`,
+            [paramsP.data.docId, deletedInlineNumber]
+          );
+        }
+        // Если источников после нет, номер просто освобождается
+        // и будет переиспользован при следующей вставке
       }
-
-      // Перенумеровать inline_number для всех цитат в документе
-      // Одинаковые article_id должны иметь одинаковый inline_number
-      await pool.query(
-        `WITH article_order AS (
-          -- Определяем порядок статей по их первому появлению (минимальный order_index)
-          SELECT article_id, MIN(order_index) as first_appearance
-          FROM citations WHERE document_id = $1
-          GROUP BY article_id
-        ),
-        article_numbers AS (
-          -- Присваиваем номера статьям по порядку их первого появления
-          SELECT article_id, ROW_NUMBER() OVER (ORDER BY first_appearance) as article_num
-          FROM article_order
-        )
-        UPDATE citations c
-        SET inline_number = an.article_num
-        FROM article_numbers an
-        WHERE c.article_id = an.article_id AND c.document_id = $1`,
-        [paramsP.data.docId]
-      );
 
       // Обновляем order_index для последовательности
       await pool.query(
@@ -715,6 +737,156 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       );
 
       return { ok: true };
+    }
+  );
+
+  // POST /api/projects/:projectId/documents/:docId/sync-citations
+  // Синхронизирует цитаты в БД с текущим HTML контентом документа
+  // Удаляет цитаты, которых больше нет в тексте
+  // Возвращает обновлённый документ с перенумерованными цитатами
+  fastify.post(
+    "/projects/:projectId/documents/:docId/sync-citations",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+
+      const paramsP = DocumentIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid params" });
+      }
+
+      const bodySchema = z.object({
+        citationIds: z.array(z.string().uuid()), // ID цитат, которые есть в HTML
+      });
+
+      const bodyP = bodySchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "Invalid body" });
+      }
+
+      const access = await checkProjectAccess(paramsP.data.projectId, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+
+      const { docId, projectId } = paramsP.data;
+      const citationIdsInHtml = new Set(bodyP.data.citationIds);
+
+      // Получаем все цитаты документа из БД
+      const existingCitations = await pool.query(
+        `SELECT id FROM citations WHERE document_id = $1`,
+        [docId]
+      );
+
+      // Находим цитаты для удаления (есть в БД, но нет в HTML)
+      const toDelete: string[] = [];
+      for (const row of existingCitations.rows) {
+        if (!citationIdsInHtml.has(row.id)) {
+          toDelete.push(row.id);
+        }
+      }
+
+      // Удаляем цитаты
+      if (toDelete.length > 0) {
+        await pool.query(
+          `DELETE FROM citations WHERE id = ANY($1) AND document_id = $2`,
+          [toDelete, docId]
+        );
+
+        // Перенумеруем оставшиеся цитаты
+        // 1. Перенумеровываем sub_number для каждого источника
+        await pool.query(
+          `WITH article_subs AS (
+            SELECT id, article_id,
+              ROW_NUMBER() OVER (PARTITION BY article_id ORDER BY order_index) as new_sub
+            FROM citations WHERE document_id = $1
+          )
+          UPDATE citations c
+          SET sub_number = a.new_sub
+          FROM article_subs a
+          WHERE c.id = a.id`,
+          [docId]
+        );
+
+        // 2. Перенумеруем inline_number
+        await pool.query(
+          `WITH article_order AS (
+            SELECT article_id, MIN(order_index) as first_appearance
+            FROM citations WHERE document_id = $1
+            GROUP BY article_id
+          ),
+          article_numbers AS (
+            SELECT article_id, ROW_NUMBER() OVER (ORDER BY first_appearance) as article_num
+            FROM article_order
+          )
+          UPDATE citations c
+          SET inline_number = an.article_num
+          FROM article_numbers an
+          WHERE c.article_id = an.article_id AND c.document_id = $1`,
+          [docId]
+        );
+
+        // 3. Обновляем order_index
+        await pool.query(
+          `WITH numbered AS (
+            SELECT id, ROW_NUMBER() OVER (ORDER BY order_index) - 1 as new_order
+            FROM citations WHERE document_id = $1
+          )
+          UPDATE citations c
+          SET order_index = n.new_order
+          FROM numbered n
+          WHERE c.id = n.id`,
+          [docId]
+        );
+      }
+
+      // Возвращаем обновлённый документ с цитатами
+      let hasSubNumber = false;
+      try {
+        const checkCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'citations' AND column_name = 'sub_number'`
+        );
+        hasSubNumber = (checkCol.rowCount ?? 0) > 0;
+      } catch {
+        hasSubNumber = false;
+      }
+
+      const res = await pool.query(
+        `SELECT d.*, 
+          (SELECT json_agg(json_build_object(
+            'id', c.id,
+            'article_id', c.article_id,
+            'order_index', c.order_index,
+            'inline_number', c.inline_number,
+            'sub_number', ${hasSubNumber ? 'c.sub_number' : '1'},
+            'page_range', c.page_range,
+            'note', c.note,
+            'article', json_build_object(
+              'id', a.id,
+              'title_en', a.title_en,
+              'title_ru', a.title_ru,
+              'authors', a.authors,
+              'year', a.year,
+              'journal', a.journal,
+              'doi', a.doi,
+              'pmid', a.pmid
+            )
+          ) ORDER BY c.inline_number, ${hasSubNumber ? 'c.sub_number' : 'c.order_index'})
+          FROM citations c
+          JOIN articles a ON a.id = c.article_id
+          WHERE c.document_id = d.id
+         ) as citations
+         FROM documents d
+         WHERE d.id = $1 AND d.project_id = $2`,
+        [docId, projectId]
+      );
+
+      return {
+        ok: true,
+        deleted: toDelete.length,
+        document: res.rows[0],
+      };
     }
   );
 

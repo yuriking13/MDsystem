@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import TiptapEditor, { TiptapEditorHandle } from "../components/TiptapEditor/TiptapEditor";
+import CitationPicker from "../components/TiptapEditor/CitationPicker";
 import {
   apiGetDocument,
   apiUpdateDocument,
@@ -8,6 +9,7 @@ import {
   apiAddCitation,
   apiRemoveCitation,
   apiUpdateCitation,
+  apiSyncCitations,
   apiGetProject,
   apiGetStatistics,
   apiMarkStatisticUsedInDocument,
@@ -233,6 +235,9 @@ export default function DocumentPage() {
   }, []);
 
   // Автосохранение при изменении контента
+  // Синхронизирует цитаты с БД:
+  // - Удаляет из БД цитаты, которых больше нет в тексте
+  // - Перенумеровывает оставшиеся цитаты для компактности
   const saveDocument = useCallback(
     async (newContent: string) => {
       if (!projectId || !docId) return;
@@ -248,28 +253,37 @@ export default function DocumentPage() {
         // Keep local doc state in sync so we don't think there are pending edits after save
         setDoc((prev) => (prev ? { ...prev, content: newContent } : prev));
         
-        // Если цитаты изменились, перенумеровываем их
+        // Если цитаты изменились, синхронизируем с БД
+        // Это удалит цитаты, которых больше нет в тексте, и перенумерует остальные
         if (citationsChanged) {
           try {
             setUpdatingBibliography(true);
-            const renumberResult = await apiRenumberCitations(projectId);
-            if (renumberResult.documents) {
-              // Находим обновленный текущий документ
-              const updatedDocPartial = renumberResult.documents.find(d => d.id === docId);
-              if (updatedDocPartial) {
-                // Если контент изменился, обновляем редактор
-                if (editorRef.current && updatedDocPartial.content !== newContent) {
-                  editorRef.current.forceSetContent(updatedDocPartial.content);
-                  setContent(updatedDocPartial.content);
+            
+            // Синхронизируем цитаты - передаём ID цитат, которые есть в HTML
+            const citationIdsArray = Array.from(newCitationIds);
+            const syncResult = await apiSyncCitations(projectId, docId, citationIdsArray);
+            
+            if (syncResult.document) {
+              // Обновляем состояние документа с новыми цитатами
+              setDoc(syncResult.document);
+              
+              // Если контент документа изменился (перенумерация), обновляем редактор
+              if (syncResult.document.content && syncResult.document.content !== newContent) {
+                if (editorRef.current) {
+                  editorRef.current.forceSetContent(syncResult.document.content);
                 }
+                setContent(syncResult.document.content);
               }
             }
-            // ВАЖНО: Перезагружаем полный документ с citations после перенумерации
-            // renumberResult.documents не содержит citations, поэтому нужна полная загрузка
-            const fullDoc = await apiGetDocument(projectId, docId);
-            setDoc(fullDoc.document);
-          } catch (renumberErr) {
-            console.warn("Renumber citations warning:", renumberErr);
+          } catch (syncErr) {
+            console.warn("Sync citations warning:", syncErr);
+            // Fallback: просто загружаем документ заново
+            try {
+              const fullDoc = await apiGetDocument(projectId, docId);
+              setDoc(fullDoc.document);
+            } catch {
+              // Игнорируем ошибку fallback
+            }
           } finally {
             setUpdatingBibliography(false);
           }
@@ -860,11 +874,16 @@ export default function DocumentPage() {
 
   // Добавить цитату - всегда создаём новую запись (можно несколько цитат к одному источнику)
   // Модальное окно НЕ закрывается, чтобы можно было добавить несколько цитат
+  // 
+  // Логика нумерации:
+  // - Новый источник получает минимальный свободный номер [n]
+  // - Повторная цитата того же источника получает тот же номер с sub_number (n#k)
+  // - Номера всегда компактны (1, 2, 3...) без пропусков
   async function handleAddCitation(article: Article) {
     if (!projectId || !docId) return;
 
     try {
-      // Всегда создаём новую цитату
+      // Создаём новую цитату - API сам вычисляет правильные номера
       const res = await apiAddCitation(projectId, docId, article.id);
       
       // Вставить цитату в редактор
@@ -874,11 +893,12 @@ export default function DocumentPage() {
           citationId: res.citation.id,
           citationNumber: res.citation.inline_number,
           articleId: article.id,
+          subNumber: res.citation.sub_number || 1,
           note: res.citation.note || '',
         });
       }
       
-      // Обновить документ
+      // Обновить документ для синхронизации списка литературы
       const updated = await apiGetDocument(projectId, docId);
       setDoc(updated.document);
       
@@ -1013,52 +1033,15 @@ export default function DocumentPage() {
         </div>
       </div>
 
-      {/* Модалка выбора статьи */}
+      {/* Модалка выбора статьи - использует новый CitationPicker */}
       {showCitationPicker && (
-        <div className="modal-overlay" onClick={() => setShowCitationPicker(false)}>
-          <div className="modal" style={{ maxWidth: 600 }} onClick={(e) => e.stopPropagation()}>
-            <div className="row space" style={{ marginBottom: 12 }}>
-              <h3 style={{ margin: 0 }}>Выберите статью</h3>
-              <button
-                className="btn secondary"
-                onClick={() => setShowCitationPicker(false)}
-              >
-                ✕
-              </button>
-            </div>
-
-            <input
-              placeholder="Поиск по названию..."
-              value={searchArticle}
-              onChange={(e) => setSearchArticle(e.target.value)}
-              style={{ marginBottom: 12 }}
-            />
-
-            <div style={{ maxHeight: 400, overflow: "auto" }}>
-              {filteredArticles.length === 0 ? (
-                <div className="muted">
-                  Нет отобранных статей. Сначала отберите статьи в базе.
-                </div>
-              ) : (
-                filteredArticles.map((a) => (
-                  <div
-                    key={a.id}
-                    className="article-picker-item"
-                    onClick={() => handleAddCitation(a)}
-                  >
-                    <div style={{ fontWeight: 500 }}>
-                      {a.title_en || a.title_ru}
-                    </div>
-                    <div className="muted" style={{ fontSize: 12 }}>
-                      {a.authors?.slice(0, 2).join(", ")}
-                      {a.year && ` • ${a.year}`}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
+        <CitationPicker
+          articles={articles}
+          citationStyle={citationStyle}
+          onSelect={handleAddCitation}
+          onClose={() => setShowCitationPicker(false)}
+          isLoading={articles.length === 0}
+        />
       )}
       
       {/* Модалка импорта из статистики */}
