@@ -213,9 +213,14 @@ async function renderChartFromData(
   width = 600,
   height = 400
 ): Promise<string | null> {
-  if (typeof window === 'undefined' || !tableData || !config) return null;
+  if (typeof window === 'undefined' || !tableData || !config) {
+    console.log('[renderChartFromData] Skipping: no window or data', { hasWindow: typeof window !== 'undefined', hasTableData: !!tableData, hasConfig: !!config });
+    return null;
+  }
   
   try {
+    console.log('[renderChartFromData] Starting chart render', { type: config.type, title: config.title });
+    
     // Динамически импортируем Chart.js
     const { Chart, registerables } = await import('chart.js');
     Chart.register(...registerables);
@@ -224,17 +229,22 @@ async function renderChartFromData(
     const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
-    canvas.style.display = 'none';
+    // Используем visibility:hidden вместо display:none для корректного рендеринга
+    canvas.style.position = 'absolute';
+    canvas.style.left = '-9999px';
+    canvas.style.top = '-9999px';
+    canvas.style.visibility = 'hidden';
     document.body.appendChild(canvas);
     
     const ctx = canvas.getContext('2d');
     if (!ctx) {
+      console.error('[renderChartFromData] Failed to get 2d context');
       document.body.removeChild(canvas);
       return null;
     }
     
     // Подготовка данных для Chart.js
-    const chartType = config.type || 'bar';
+    let chartType = config.type || 'bar';
     const colors = config.colors || [
       'rgba(75, 116, 255, 0.8)',
       'rgba(74, 222, 128, 0.8)',
@@ -247,13 +257,21 @@ async function renderChartFromData(
     const headers = tableData.headers || [];
     const rows = tableData.rows || [];
     
+    console.log('[renderChartFromData] Data:', { headers, rowCount: rows.length });
+    
+    if (rows.length === 0) {
+      console.warn('[renderChartFromData] No rows in table data');
+      document.body.removeChild(canvas);
+      return null;
+    }
+    
     const labelColumn = config.labelColumn ?? 0;
     const dataColumns = config.dataColumns || [1];
     
     const labels = rows.map((row: string[]) => row[labelColumn] || '');
     const datasets = dataColumns.map((colIdx: number, i: number) => {
       const data = rows.map((row: string[]) => {
-        const val = (row[colIdx] || '').replace(/[,\s]/g, '');
+        const val = String(row[colIdx] || '').replace(/[,\s]/g, '');
         return parseFloat(val) || 0;
       });
       
@@ -270,9 +288,13 @@ async function renderChartFromData(
     
     const chartData = { labels, datasets };
     
+    // Нормализуем тип графика для Chart.js
+    if (chartType === 'histogram' || chartType === 'stacked') chartType = 'bar';
+    if (chartType === 'boxplot' || chartType === 'scatter') chartType = 'scatter';
+    
     // Конфигурация Chart.js
     const chartConfig: any = {
-      type: chartType === 'histogram' ? 'bar' : chartType,
+      type: chartType,
       data: chartData,
       options: {
         responsive: false,
@@ -298,14 +320,24 @@ async function renderChartFromData(
       }
     };
     
+    // Для stacked bar chart
+    if (config.type === 'stacked') {
+      chartConfig.options.scales = {
+        x: { stacked: true, ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
+        y: { stacked: true, ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
+      };
+    }
+    
     // Рендерим график
     const chart = new Chart(ctx, chartConfig);
     
-    // Ждём рендеринга
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // Ждём рендеринга (увеличенное время для сложных графиков)
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     // Получаем изображение
     const dataUrl = canvas.toDataURL('image/png');
+    
+    console.log('[renderChartFromData] Chart rendered successfully, dataUrl length:', dataUrl.length);
     
     // Очистка
     chart.destroy();
@@ -313,7 +345,7 @@ async function renderChartFromData(
     
     return dataUrl;
   } catch (e) {
-    console.error('Error rendering chart:', e);
+    console.error('[renderChartFromData] Error rendering chart:', e);
     return null;
   }
 }
@@ -358,44 +390,76 @@ export async function prepareHtmlForExport(html: string, chartImages?: Map<strin
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   
-  // Находим все chart nodes
-  const chartNodes = doc.querySelectorAll('.chart-node, [data-chart-id], [data-type="chart-node"]');
+  // Находим все chart nodes - ищем все возможные варианты
+  const chartNodes = doc.querySelectorAll('.chart-node, [data-chart-id], [data-type="chart-node"], .chart-node-wrapper');
+  
+  console.log('[prepareHtmlForExport] Found chart nodes:', chartNodes.length);
   
   for (const chartNode of Array.from(chartNodes)) {
     const chartId = chartNode.getAttribute('data-chart-id');
+    console.log('[prepareHtmlForExport] Processing chart:', chartId, 'tag:', chartNode.tagName, 'class:', chartNode.className);
     
-    // Получаем данные графика из атрибутов
-    const tableDataStr = chartNode.getAttribute('data-table-data');
-    const configStr = chartNode.getAttribute('data-config');
-    const title = chartNode.getAttribute('data-title') || 
-                  chartNode.querySelector('.chart-node-title')?.textContent ||
-                  'График';
+    // Получаем данные графика из атрибутов (проверяем и сам узел и вложенные элементы)
+    let tableDataStr = chartNode.getAttribute('data-table-data');
+    let configStr = chartNode.getAttribute('data-config');
+    let title = chartNode.getAttribute('data-title');
     
-    let dataUrl: string | null = null;
-    
-    // Проверяем есть ли уже canvas в DOM
-    const canvas = chartNode.querySelector('canvas');
-    if (canvas && canvas instanceof HTMLCanvasElement) {
-      try {
-        dataUrl = canvas.toDataURL('image/png');
-      } catch (e) {
-        console.error('Error converting chart to image:', e);
+    // Если атрибуты не найдены на самом узле, ищем во вложенном элементе
+    if (!tableDataStr || !configStr) {
+      const innerNode = chartNode.querySelector('[data-table-data]');
+      if (innerNode) {
+        tableDataStr = tableDataStr || innerNode.getAttribute('data-table-data');
+        configStr = configStr || innerNode.getAttribute('data-config');
+        title = title || innerNode.getAttribute('data-title');
       }
     }
     
-    // Используем предзахваченное изображение
-    if (!dataUrl && chartId && chartImages?.has(chartId)) {
-      dataUrl = chartImages.get(chartId) || null;
+    // Получаем заголовок
+    if (!title) {
+      title = chartNode.querySelector('.chart-node-title')?.textContent ||
+              chartNode.querySelector('[class*="title"]')?.textContent ||
+              'График';
     }
     
-    // Рендерим график из данных если нет изображения
+    console.log('[prepareHtmlForExport] Chart data:', { 
+      hasTableData: !!tableDataStr, 
+      hasConfig: !!configStr, 
+      title,
+      tableDataLength: tableDataStr?.length,
+      configLength: configStr?.length
+    });
+    
+    let dataUrl: string | null = null;
+    
+    // 1. Используем предзахваченное изображение (приоритет)
+    if (chartId && chartImages?.has(chartId)) {
+      dataUrl = chartImages.get(chartId) || null;
+      console.log('[prepareHtmlForExport] Using pre-captured image for chart:', chartId);
+    }
+    
+    // 2. Проверяем есть ли уже canvas в DOM
+    if (!dataUrl) {
+      const canvas = chartNode.querySelector('canvas');
+      if (canvas && canvas instanceof HTMLCanvasElement) {
+        try {
+          dataUrl = canvas.toDataURL('image/png');
+          console.log('[prepareHtmlForExport] Captured from canvas');
+        } catch (e) {
+          console.error('[prepareHtmlForExport] Error converting chart canvas to image:', e);
+        }
+      }
+    }
+    
+    // 3. Рендерим график из данных если нет изображения
     if (!dataUrl && tableDataStr && configStr) {
       try {
         const tableData = JSON.parse(tableDataStr);
         const config = JSON.parse(configStr);
+        console.log('[prepareHtmlForExport] Rendering chart from data:', config.type);
         dataUrl = await renderChartFromData(tableData, config);
+        console.log('[prepareHtmlForExport] Rendered chart, dataUrl:', dataUrl ? 'success' : 'failed');
       } catch (e) {
-        console.error('Error parsing chart data:', e);
+        console.error('[prepareHtmlForExport] Error parsing/rendering chart data:', e);
       }
     }
     
@@ -422,6 +486,7 @@ export async function prepareHtmlForExport(html: string, chartImages?: Map<strin
       figure.appendChild(caption);
       
       chartNode.replaceWith(figure);
+      console.log('[prepareHtmlForExport] Replaced chart with image');
     } else {
       // Нет данных для графика - оставляем placeholder с названием
       const placeholder = doc.createElement('div');
@@ -434,6 +499,7 @@ export async function prepareHtmlForExport(html: string, chartImages?: Map<strin
       placeholder.innerHTML = `<em style="color: #64748b">[${title}]</em>`;
       
       chartNode.replaceWith(placeholder);
+      console.log('[prepareHtmlForExport] Replaced chart with placeholder');
     }
   }
   
@@ -591,6 +657,68 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
                   alignment: AlignmentType.CENTER,
                 }));
               }
+            }
+          }
+          continue;
+        }
+        
+        // Обработка figure (изображения с подписью, включая графики)
+        if (tagName === 'figure') {
+          const img = child.querySelector('img');
+          const figcaption = child.querySelector('figcaption');
+          const caption = figcaption?.textContent || '';
+          
+          if (img) {
+            const src = img.getAttribute('src');
+            if (src && src.startsWith('data:image')) {
+              const imageData = dataUrlToBuffer(src);
+              if (imageData) {
+                try {
+                  const imageRun = new ImageRun({
+                    data: imageData.buffer,
+                    transformation: {
+                      width: 500,
+                      height: 300,
+                    },
+                    type: imageData.type,
+                  });
+                  elements.push(new Paragraph({
+                    children: [imageRun],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 200, after: 100 },
+                  }));
+                  
+                  // Добавляем подпись к графику
+                  if (caption) {
+                    elements.push(new Paragraph({
+                      children: [new TextRun({ 
+                        text: caption, 
+                        italics: true, 
+                        size: styleConfig.fontSize * 2 - 2,
+                        color: '64748b' 
+                      })],
+                      alignment: AlignmentType.CENTER,
+                      spacing: { after: 200 },
+                    }));
+                  }
+                } catch (e) {
+                  console.error('Error adding figure image to docx:', e);
+                  elements.push(new Paragraph({
+                    children: [new TextRun({ text: `[${caption || 'Изображение'}]`, italics: true, color: '666666' })],
+                    alignment: AlignmentType.CENTER,
+                  }));
+                }
+              }
+            }
+          } else {
+            // Figure без изображения - выводим текст
+            const text = child.textContent || '';
+            if (text) {
+              elements.push(new Paragraph({
+                children: [new TextRun({ text, italics: true, color: '666666' })],
+                alignment: AlignmentType.CENTER,
+                spacing: { before: 200, after: 200 },
+              }));
             }
           }
           continue;

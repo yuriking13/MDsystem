@@ -998,8 +998,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const statsQuality = query.statsQuality ? parseInt(query.statsQuality, 10) : undefined;
       
       // Лимиты для графа (mega режим отключён)
+      // maxLinksPerNode - количество связей на узел для уровней 2/3
+      // maxTotalNodes - лимит для ДОПОЛНИТЕЛЬНЫХ узлов (уровни 0, 2, 3), 
+      //                 статьи проекта (уровень 1) всегда включаются
       const maxLinksPerNode = Math.min(50, Math.max(1, parseInt(query.maxLinksPerNode || '10', 10) || 10));
-      const maxTotalNodes = Math.min(2000, Math.max(10, parseInt(query.maxTotalNodes || '500', 10) || 500));
+      const maxExtraNodes = Math.min(2000, Math.max(10, parseInt(query.maxTotalNodes || '1000', 10) || 1000));
       
       let sourceQueries: string[] = [];
       if (query.sourceQueries) {
@@ -1288,13 +1291,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const level2InDb = new Map<string, any>(); // pmid -> article data
       const level2NotInDb = new Set<string>(); // PMIDs не в БД
       
-      // Вычисляем сколько узлов уже есть и сколько можно добавить
-      const currentNodeCount = () => addedNodeIds.size;
-      const canAddMore = () => currentNodeCount() < maxTotalNodes;
+      // Подсчёт добавленных ДОПОЛНИТЕЛЬНЫХ узлов (уровни 0, 2, 3)
+      // Статьи проекта (уровень 1) не учитываются в лимите
+      let extraNodesAdded = 0;
+      const canAddMore = () => extraNodesAdded < maxExtraNodes;
       
       if (depth >= 2 && level2Pmids.size > 0) {
-        // В lite режиме ограничиваем количество PMIDs для загрузки
-        const remainingSlots = Math.max(0, maxTotalNodes - currentNodeCount());
+        // Ограничиваем количество PMIDs для загрузки
+        const remainingSlots = Math.max(0, maxExtraNodes - extraNodesAdded);
         const level2PmidsArr = Array.from(level2Pmids).slice(0, remainingSlots);
         
         // Строим условия фильтрации для уровня 2
@@ -1347,6 +1351,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         // Добавляем узлы для статей из БД
         for (const article of level2Res.rows) {
           if (addedNodeIds.has(article.id)) continue;
+          if (!canAddMore()) break; // Проверяем лимит
           
           const authorsArr = article.authors || [];
           const firstAuthor = (Array.isArray(authorsArr) ? authorsArr[0] : authorsArr)?.split?.(' ')?.[0] || 'Unknown';
@@ -1374,6 +1379,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             statsQuality: article.stats_quality || 0,
           });
           addedNodeIds.add(article.id);
+          extraNodesAdded++;
           
           if (article.doi) {
             doiToId.set(article.doi.toLowerCase(), article.id);
@@ -1386,6 +1392,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         // Добавляем узлы для PMIDs которых нет в БД (показываем как "неизвестные")
         // Для таких узлов нужно подгрузить данные при клике (см. NodeInfoPanel)
         for (const pmid of level2NotInDb) {
+          if (!canAddMore()) break; // Проверяем лимит
           const nodeId = `pmid:${pmid}`; // Используем специальный ID
           if (addedNodeIds.has(nodeId)) continue;
           
@@ -1407,6 +1414,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             statsQuality: 0,
           });
           addedNodeIds.add(nodeId);
+          extraNodesAdded++;
           pmidToId.set(pmid, nodeId);
         }
       }
@@ -1418,8 +1426,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       console.log(`[CitationGraph] Level 0 check: depth=${depth}, level0Pmids.size=${level0Pmids.size}, canAddMore=${canAddMore()}`);
       
       if (depth >= 3 && level0Pmids.size > 0 && canAddMore()) {
-        // В lite режиме ограничиваем количество PMIDs для загрузки
-        const remainingSlotsL0 = Math.max(0, maxTotalNodes - currentNodeCount());
+        // Ограничиваем количество PMIDs для загрузки
+        const remainingSlotsL0 = Math.max(0, maxExtraNodes - extraNodesAdded);
         const level0PmidsArr = Array.from(level0Pmids).slice(0, remainingSlotsL0);
         
         // Строим условия фильтрации для уровня 0
@@ -1472,6 +1480,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         // Добавляем узлы для статей из БД (уровень 0 - цитирующие нас)
         for (const article of level0Res.rows) {
           if (addedNodeIds.has(article.id)) continue;
+          if (!canAddMore()) break; // Проверяем лимит
           
           const authorsArr = article.authors || [];
           const firstAuthor = (Array.isArray(authorsArr) ? authorsArr[0] : authorsArr)?.split?.(' ')?.[0] || 'Unknown';
@@ -1499,6 +1508,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             statsQuality: article.stats_quality || 0,
           });
           addedNodeIds.add(article.id);
+          extraNodesAdded++;
           
           if (article.doi) {
             doiToId.set(article.doi.toLowerCase(), article.id);
@@ -1511,6 +1521,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         // Добавляем узлы для PMIDs которых нет в БД (показываем как "неизвестные")
         // Данные будут подгружены при клике через NodeInfoPanel
         for (const pmid of level0NotInDb) {
+          if (!canAddMore()) break; // Проверяем лимит
           const nodeId = `pmid:${pmid}`; // Используем специальный ID
           if (addedNodeIds.has(nodeId)) continue;
           
@@ -1532,6 +1543,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             statsQuality: 0,
           });
           addedNodeIds.add(nodeId);
+          extraNodesAdded++;
           pmidToId.set(pmid, nodeId);
         }
       }
@@ -1557,7 +1569,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
         
         // Ограничиваем количество для производительности
-        const remainingSlotsL3 = Math.max(0, maxTotalNodes - currentNodeCount());
+        const remainingSlotsL3 = Math.max(0, maxExtraNodes - extraNodesAdded);
         const level3PmidsArr = Array.from(level3Pmids).slice(0, Math.min(200, remainingSlotsL3));
         
         if (level3PmidsArr.length > 0) {
@@ -1609,6 +1621,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           // Добавляем узлы для статей уровня 3 из БД
           for (const article of level3Res.rows) {
             if (addedNodeIds.has(article.id)) continue;
+            if (!canAddMore()) break; // Проверяем лимит
             
             const authorsArr = article.authors || [];
             const firstAuthor = (Array.isArray(authorsArr) ? authorsArr[0] : authorsArr)?.split?.(' ')?.[0] || 'Unknown';
@@ -1622,7 +1635,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               id: article.id,
               label,
               title: article.title_en || null,
-              title_ru: article.title_ru || null,
+              title_ru: null,
               abstract: article.abstract_en || null,
               abstract_ru: article.abstract_ru || null,
               authors: authorsStr || null,
@@ -1636,6 +1649,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               statsQuality: article.stats_quality || 0,
             });
             addedNodeIds.add(article.id);
+            extraNodesAdded++;
             
             if (article.doi) {
               doiToId.set(article.doi.toLowerCase(), article.id);
@@ -1648,6 +1662,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           // Добавляем узлы для PMIDs которых нет в БД
           // Данные будут подгружены при клике через NodeInfoPanel
           for (const pmid of level3NotInDb) {
+            if (!canAddMore()) break; // Проверяем лимит
             const nodeId = `pmid:${pmid}`;
             if (addedNodeIds.has(nodeId)) continue;
             
@@ -1669,6 +1684,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               statsQuality: 0,
             });
             addedNodeIds.add(nodeId);
+            extraNodesAdded++;
             pmidToId.set(pmid, nodeId);
           }
         }
@@ -1874,7 +1890,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         availableQueries,
         yearRange,
         currentDepth: depth,
-        limits: { maxLinksPerNode, maxTotalNodes },
+        limits: { maxLinksPerNode, maxExtraNodes },
       };
     }
   );
