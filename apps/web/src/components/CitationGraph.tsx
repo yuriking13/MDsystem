@@ -304,9 +304,9 @@ export default function CitationGraph({ projectId }: Props) {
       return '#fbbf24'; // Золотой/янтарный для P-value
     }
     
-    // Уровень 0 (citing - статьи, которые цитируют наши) - фиолетовый
+    // Уровень 0 (citing - статьи, которые цитируют наши) - розовый/пинк
     if (level === 0) {
-      return '#a855f7'; // Фиолетовый
+      return '#ec4899'; // Розовый (pink) - отличается от фиолетового Wiley
     }
     
     // Уровень 1 (найденные статьи) - стандартные цвета по статусу
@@ -314,7 +314,7 @@ export default function CitationGraph({ projectId }: Props) {
       if (status === 'selected') return '#22c55e'; // Яркий зелёный
       if (status === 'excluded') return '#ef4444'; // Красный
       // Кандидаты - разные цвета по источнику
-      if (source === 'doaj') return '#14b8a6'; // Бирюзовый для DOAJ
+      if (source === 'doaj') return '#eab308'; // Жёлтый для DOAJ - отличается от зелёного
       if (source === 'wiley') return '#8b5cf6'; // Фиолетовый для Wiley
       return '#3b82f6'; // Синий для PubMed (кандидаты)
     }
@@ -822,9 +822,9 @@ export default function CitationGraph({ projectId }: Props) {
           <>
             {depth >= 3 && stats.levelCounts.level0 !== undefined && stats.levelCounts.level0 > 0 && (
               <div className="graph-stat-item">
-                <span className="legend-dot" style={{ background: '#a855f7' }}></span>
+                <span className="legend-dot" style={{ background: '#ec4899' }}></span>
                 <span>Цитируют:</span>
-                <span style={{ color: '#a855f7', fontWeight: 600 }}>{stats.levelCounts.level0}</span>
+                <span style={{ color: '#ec4899', fontWeight: 600 }}>{stats.levelCounts.level0}</span>
               </div>
             )}
             <div className="graph-stat-item">
@@ -875,11 +875,11 @@ export default function CitationGraph({ projectId }: Props) {
           <span><span className="legend-dot" style={{ background: '#fbbf24' }}></span> P-value</span>
         )}
         {depth >= 3 && (
-          <span><span className="legend-dot" style={{ background: '#a855f7' }}></span> Цитируют статью из базы</span>
+          <span><span className="legend-dot" style={{ background: '#ec4899' }}></span> Цитируют статью из базы</span>
         )}
         <span><span className="legend-dot" style={{ background: '#22c55e' }}></span> Отобранные</span>
         <span><span className="legend-dot" style={{ background: '#3b82f6' }}></span> PubMed</span>
-        <span><span className="legend-dot" style={{ background: '#14b8a6' }}></span> DOAJ</span>
+        <span><span className="legend-dot" style={{ background: '#eab308' }}></span> DOAJ</span>
         <span><span className="legend-dot" style={{ background: '#8b5cf6' }}></span> Wiley</span>
         <span><span className="legend-dot" style={{ background: '#ef4444' }}></span> Исключённые</span>
         {depth >= 2 && (
@@ -1033,8 +1033,8 @@ export default function CitationGraph({ projectId }: Props) {
                     <span>Синий — PubMed (кандидаты)</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#14b8a6', flexShrink: 0 }}></span>
-                    <span>Бирюзовый — DOAJ (кандидаты)</span>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#eab308', flexShrink: 0 }}></span>
+                    <span>Жёлтый — DOAJ (кандидаты)</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#8b5cf6', flexShrink: 0 }}></span>
@@ -1049,8 +1049,8 @@ export default function CitationGraph({ projectId }: Props) {
                     <span>Оранжевый — ссылки (references)</span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#a855f7', flexShrink: 0 }}></span>
-                    <span>Пурпурный — статьи, цитирующие вашу базу</span>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#ec4899', flexShrink: 0 }}></span>
+                    <span>Розовый — статьи, цитирующие вашу базу</span>
                   </div>
                 </div>
               </div>
@@ -1259,7 +1259,7 @@ function NodeInfoPanel({ node, projectId, onRefresh, globalLang = 'en' }: { node
 
   const getLevelColor = (level: number) => {
     switch(level) {
-      case 0: return '#a855f7';
+      case 0: return '#ec4899'; // Розовый для цитирующих
       case 1: return '#3b82f6';
       case 2: return '#f97316';
       case 3: return '#06b6d4';

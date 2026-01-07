@@ -221,30 +221,106 @@ async function renderChartToImage(chartEl: Element): Promise<string | null> {
 }
 
 /**
- * Подготовить HTML контент для экспорта (заменить графики на изображения)
+ * Захват графиков из текущего DOM и создание карты chartId -> dataUrl
  */
-export async function prepareHtmlForExport(html: string): Promise<string> {
+export function captureChartsFromDOM(): Map<string, string> {
+  const chartImages = new Map<string, string>();
+  
+  if (typeof window === 'undefined') return chartImages;
+  
+  // Ищем все графики в текущем DOM
+  const chartNodes = document.querySelectorAll('[data-chart-id], .chart-node-wrapper[data-chart-id]');
+  
+  for (const chartNode of Array.from(chartNodes)) {
+    const chartId = chartNode.getAttribute('data-chart-id');
+    if (!chartId) continue;
+    
+    const canvas = chartNode.querySelector('canvas');
+    if (canvas && canvas instanceof HTMLCanvasElement) {
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        chartImages.set(chartId, dataUrl);
+      } catch (e) {
+        console.error('Error capturing chart:', chartId, e);
+      }
+    }
+  }
+  
+  return chartImages;
+}
+
+/**
+ * Подготовить HTML контент для экспорта (заменить графики на изображения)
+ * @param html - исходный HTML контент
+ * @param chartImages - карта chartId -> dataUrl изображений графиков
+ */
+export async function prepareHtmlForExport(html: string, chartImages?: Map<string, string>): Promise<string> {
   if (typeof window === 'undefined' || !html) return html;
   
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   
-  // Находим все графики и заменяем их на изображения
-  const chartNodes = doc.querySelectorAll('.chart-node, [data-chart-id]');
+  // Сначала пробуем найти уже отрендеренные canvas
+  const chartNodes = doc.querySelectorAll('.chart-node, [data-chart-id], [data-type="chart-node"]');
   
   for (const chartNode of Array.from(chartNodes)) {
+    const chartId = chartNode.getAttribute('data-chart-id');
+    const title = chartNode.getAttribute('data-title') || 
+                  chartNode.querySelector('.chart-node-title')?.textContent ||
+                  'График';
+    
+    // Проверяем есть ли уже canvas
     const canvas = chartNode.querySelector('canvas');
+    
+    let dataUrl: string | null = null;
+    
     if (canvas && canvas instanceof HTMLCanvasElement) {
+      // Canvas найден - конвертируем в изображение
       try {
-        const dataUrl = canvas.toDataURL('image/png');
-        const img = doc.createElement('img');
-        img.src = dataUrl;
-        img.style.maxWidth = '100%';
-        img.setAttribute('data-chart-image', 'true');
-        chartNode.replaceWith(img);
+        dataUrl = canvas.toDataURL('image/png');
       } catch (e) {
         console.error('Error converting chart to image:', e);
       }
+    } else if (chartId && chartImages?.has(chartId)) {
+      // Используем предзахваченное изображение
+      dataUrl = chartImages.get(chartId) || null;
+    }
+    
+    if (dataUrl) {
+      // Заменяем chartNode на изображение с подписью
+      const figure = doc.createElement('figure');
+      figure.style.textAlign = 'center';
+      figure.style.margin = '1em 0';
+      figure.style.pageBreakInside = 'avoid';
+      
+      const img = doc.createElement('img');
+      img.src = dataUrl;
+      img.style.maxWidth = '100%';
+      img.style.height = 'auto';
+      img.setAttribute('data-chart-image', 'true');
+      
+      const caption = doc.createElement('figcaption');
+      caption.textContent = title;
+      caption.style.fontSize = '0.9em';
+      caption.style.color = '#64748b';
+      caption.style.marginTop = '0.5em';
+      
+      figure.appendChild(img);
+      figure.appendChild(caption);
+      
+      chartNode.replaceWith(figure);
+    } else {
+      // Нет данных для графика - оставляем placeholder
+      const placeholder = doc.createElement('div');
+      placeholder.style.textAlign = 'center';
+      placeholder.style.padding = '20px';
+      placeholder.style.background = '#f8fafc';
+      placeholder.style.border = '1px dashed #cbd5e1';
+      placeholder.style.borderRadius = '4px';
+      placeholder.style.margin = '1em 0';
+      placeholder.innerHTML = `<em style="color: #64748b">[${title}]</em>`;
+      
+      chartNode.replaceWith(placeholder);
     }
   }
   

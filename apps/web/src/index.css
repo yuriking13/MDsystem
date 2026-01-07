@@ -2209,6 +2209,23 @@ input::placeholder {
 .chart-type-icon {
   font-size: 28px;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-type-icon .chart-icon,
+.chart-type-icon svg {
+  width: 32px;
+  height: 32px;
+  color: var(--accent);
+}
+
+.chart-icon {
+  width: 24px;
+  height: 24px;
+  color: var(--accent);
+  flex-shrink: 0;
 }
 
 .chart-type-name {
@@ -2281,6 +2298,16 @@ input::placeholder {
 .stat-card-icon {
   font-size: 24px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-card-icon .chart-icon,
+.stat-card-icon svg {
+  width: 28px;
+  height: 28px;
+  color: var(--accent);
 }
 
 .stat-card-title-info {

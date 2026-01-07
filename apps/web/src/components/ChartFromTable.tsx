@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, type ReactNode } from 'react';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -45,10 +45,61 @@ export type ChartType =
   | 'scatter'       // Диаграмма рассеяния
   | 'doughnut';     // Кольцевая (сохраняем для совместимости)
 
+// SVG иконки для графиков (Flowbite/Heroicons style)
+const ChartBarIcon = () => (
+  <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+  </svg>
+);
+
+const HistogramIcon = () => (
+  <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3 3v18h18M7 16v-4m4 4v-8m4 8v-6m4 6V7" />
+  </svg>
+);
+
+const StackedBarIcon = () => (
+  <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h3v12H6V6zm4.5 4h3v8h-3v-8zm4.5-2h3v10h-3V8z" />
+  </svg>
+);
+
+const PieChartIcon = () => (
+  <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0013.5 3v7.5z" />
+  </svg>
+);
+
+const LineChartIcon = () => (
+  <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+  </svg>
+);
+
+const BoxPlotIcon = () => (
+  <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+  </svg>
+);
+
+const ScatterIcon = () => (
+  <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+  </svg>
+);
+
+const DoughnutIcon = () => (
+  <svg className="chart-icon" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
 // Метаданные для каждого типа графика
 export const CHART_TYPE_INFO: Record<ChartType, {
   name: string;
-  icon: string;
+  icon: ReactNode;
   description: string;
   whenToUse: string;
   specialValue: string;
@@ -57,7 +108,7 @@ export const CHART_TYPE_INFO: Record<ChartType, {
 }> = {
   bar: {
     name: 'Столбиковая диаграмма',
-    icon: '📊',
+    icon: <ChartBarIcon />,
     description: 'Сравнение значений между категориями',
     whenToUse: 'Сравнение групп пациентов, сравнение средних, частот, долей',
     specialValue: 'Наглядное сравнение дискретных категорий',
@@ -66,7 +117,7 @@ export const CHART_TYPE_INFO: Record<ChartType, {
   },
   histogram: {
     name: 'Гистограмма',
-    icon: '📶',
+    icon: <HistogramIcon />,
     description: 'Распределение числовых (непрерывных) данных',
     whenToUse: 'Проверка нормальности распределения, анализ вариабельности данных',
     specialValue: 'Показывает форму распределения данных',
@@ -75,7 +126,7 @@ export const CHART_TYPE_INFO: Record<ChartType, {
   },
   stacked: {
     name: 'Внутристолбиковая (Stacked Bar)',
-    icon: '📚',
+    icon: <StackedBarIcon />,
     description: 'Структура внутри категории',
     whenToUse: 'Вклад подгрупп в общий результат, анализ составных показателей',
     specialValue: 'Показывает одновременно целое и его части',
@@ -83,7 +134,7 @@ export const CHART_TYPE_INFO: Record<ChartType, {
   },
   pie: {
     name: 'Секторная диаграмма',
-    icon: '🥧',
+    icon: <PieChartIcon />,
     description: 'Доли от целого',
     whenToUse: 'Когда категорий ≤ 5-6, когда важны проценты',
     specialValue: 'Интуитивное восприятие долей',
@@ -92,7 +143,7 @@ export const CHART_TYPE_INFO: Record<ChartType, {
   },
   line: {
     name: 'Линейная диаграмма',
-    icon: '📈',
+    icon: <LineChartIcon />,
     description: 'Динамика во времени',
     whenToUse: 'Временные ряды, мониторинг показателей',
     specialValue: 'Показывает тренды и изменения',
@@ -101,7 +152,7 @@ export const CHART_TYPE_INFO: Record<ChartType, {
   },
   boxplot: {
     name: 'Ящичная диаграмма (Box Plot)',
-    icon: '📦',
+    icon: <BoxPlotIcon />,
     description: 'Медиана, квартили, разброс, выбросы',
     whenToUse: 'Сравнение распределений между группами, асимметричные данные',
     specialValue: 'Устойчива к выбросам, показывает всю структуру распределения',
@@ -109,7 +160,7 @@ export const CHART_TYPE_INFO: Record<ChartType, {
   },
   scatter: {
     name: 'Диаграмма рассеяния (Scatter Plot)',
-    icon: '⚡',
+    icon: <ScatterIcon />,
     description: 'Связь между двумя количественными переменными',
     whenToUse: 'Корреляционный анализ, поиск линейных и нелинейных зависимостей',
     specialValue: 'Визуализация корреляции и выбросов',
@@ -117,7 +168,7 @@ export const CHART_TYPE_INFO: Record<ChartType, {
   },
   doughnut: {
     name: 'Кольцевая диаграмма',
-    icon: '🍩',
+    icon: <DoughnutIcon />,
     description: 'Доли от целого с центральным пространством',
     whenToUse: 'Аналогично секторной, но с возможностью размещения текста в центре',
     specialValue: 'Эстетический вариант секторной диаграммы',
