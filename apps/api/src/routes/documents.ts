@@ -473,9 +473,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Проверяем, есть ли уже цитаты на этот источник
       const existingCitations = await pool.query(
-        `SELECT inline_number FROM citations 
+        `SELECT inline_number, sub_number FROM citations 
          WHERE document_id = $1 AND article_id = $2 
-         ORDER BY inline_number LIMIT 1`,
+         ORDER BY sub_number`,
         [paramsP.data.docId, bodyP.data.articleId]
       );
 
@@ -483,24 +483,26 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let subNumber = 1;
 
       if ((existingCitations.rowCount ?? 0) > 0) {
-        // Есть существующие цитаты - используем тот же номер, но новый sub_number
+        // Есть существующие цитаты - используем тот же inline_number
         inlineNumber = existingCitations.rows[0].inline_number;
         
-        // Получить следующий sub_number для этого источника
-        const maxSub = await pool.query(
-          `SELECT COALESCE(MAX(sub_number), 0) + 1 as next_sub
-           FROM citations WHERE document_id = $1 AND article_id = $2`,
-          [paramsP.data.docId, bodyP.data.articleId]
-        );
-        subNumber = maxSub.rows[0].next_sub;
+        // Найти минимальный свободный sub_number (переиспользуем освободившиеся номера)
+        const usedSubNumbers = new Set(existingCitations.rows.map((r: any) => r.sub_number || 1));
+        subNumber = 1;
+        while (usedSubNumbers.has(subNumber)) {
+          subNumber++;
+        }
       } else {
-        // Новый источник - получить следующий inline_number
-        const maxNum = await pool.query(
-          `SELECT COALESCE(MAX(inline_number), 0) + 1 as next_number
-           FROM citations WHERE document_id = $1`,
+        // Новый источник - найти минимальный свободный inline_number
+        const usedInlineNumbers = await pool.query(
+          `SELECT DISTINCT inline_number FROM citations WHERE document_id = $1 ORDER BY inline_number`,
           [paramsP.data.docId]
         );
-        inlineNumber = maxNum.rows[0].next_number;
+        const usedNumbers = new Set(usedInlineNumbers.rows.map((r: any) => r.inline_number));
+        inlineNumber = 1;
+        while (usedNumbers.has(inlineNumber)) {
+          inlineNumber++;
+        }
       }
 
       // Получить следующий order_index
@@ -650,19 +652,63 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(403).send({ error: "No edit access" });
       }
 
+      // Сначала получаем article_id удаляемой цитаты
+      const citationToDelete = await pool.query(
+        `SELECT article_id FROM citations WHERE id = $1 AND document_id = $2`,
+        [paramsP.data.citationId, paramsP.data.docId]
+      );
+      
+      const articleId = citationToDelete.rows[0]?.article_id;
+      
       await pool.query(
         `DELETE FROM citations WHERE id = $1 AND document_id = $2`,
         [paramsP.data.citationId, paramsP.data.docId]
       );
 
-      // Перенумеровать оставшиеся
+      // Перенумеровать sub_number для цитат с тем же article_id (1, 2, 3...)
+      if (articleId) {
+        await pool.query(
+          `WITH numbered AS (
+            SELECT id, ROW_NUMBER() OVER (ORDER BY order_index) as new_sub
+            FROM citations WHERE document_id = $1 AND article_id = $2
+          )
+          UPDATE citations c
+          SET sub_number = n.new_sub
+          FROM numbered n
+          WHERE c.id = n.id`,
+          [paramsP.data.docId, articleId]
+        );
+      }
+
+      // Перенумеровать inline_number для всех цитат в документе
+      // Одинаковые article_id должны иметь одинаковый inline_number
+      await pool.query(
+        `WITH article_order AS (
+          -- Определяем порядок статей по их первому появлению (минимальный order_index)
+          SELECT article_id, MIN(order_index) as first_appearance
+          FROM citations WHERE document_id = $1
+          GROUP BY article_id
+        ),
+        article_numbers AS (
+          -- Присваиваем номера статьям по порядку их первого появления
+          SELECT article_id, ROW_NUMBER() OVER (ORDER BY first_appearance) as article_num
+          FROM article_order
+        )
+        UPDATE citations c
+        SET inline_number = an.article_num
+        FROM article_numbers an
+        WHERE c.article_id = an.article_id AND c.document_id = $1`,
+        [paramsP.data.docId]
+      );
+
+      // Обновляем order_index для последовательности
       await pool.query(
         `WITH numbered AS (
-          SELECT id, ROW_NUMBER() OVER (ORDER BY order_index) as new_num
+          SELECT id, ROW_NUMBER() OVER (ORDER BY order_index) - 1 as new_order
           FROM citations WHERE document_id = $1
         )
         UPDATE citations c
-        SET inline_number = n.new_num, order_index = n.new_num - 1
+        SET order_index = n.new_order
         FROM numbered n
         WHERE c.id = n.id`,
         [paramsP.data.docId]
