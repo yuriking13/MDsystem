@@ -719,30 +719,35 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Получить все уникальные цитаты из всех документов проекта
+      // Сортируем по минимальному inline_number (порядок первого появления)
       const citationsRes = await pool.query(
         hasVolumeColumns
-          ? `SELECT DISTINCT ON (a.id)
-               a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-               a.doi, a.pmid,
-               COALESCE(a.volume, a.raw_json->'crossref'->>'volume') as volume,
-               COALESCE(a.issue, a.raw_json->'crossref'->>'issue') as issue,
-               COALESCE(a.pages, a.raw_json->'crossref'->>'pages') as pages
+          ? `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                    a.doi, a.pmid,
+                    COALESCE(a.volume, a.raw_json->'crossref'->>'volume') as volume,
+                    COALESCE(a.issue, a.raw_json->'crossref'->>'issue') as issue,
+                    COALESCE(a.pages, a.raw_json->'crossref'->>'pages') as pages,
+                    MIN(c.inline_number) as first_inline_number
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             ORDER BY a.id, c.order_index`
-          : `SELECT DISTINCT ON (a.id)
-               a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-               a.doi, a.pmid,
-               (a.raw_json->'crossref'->>'volume') as volume,
-               (a.raw_json->'crossref'->>'issue') as issue,
-               (a.raw_json->'crossref'->>'pages') as pages
+             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                      a.doi, a.pmid, a.volume, a.issue, a.pages, a.raw_json
+             ORDER BY first_inline_number`
+          : `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                    a.doi, a.pmid,
+                    (a.raw_json->'crossref'->>'volume') as volume,
+                    (a.raw_json->'crossref'->>'issue') as issue,
+                    (a.raw_json->'crossref'->>'pages') as pages,
+                    MIN(c.inline_number) as first_inline_number
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             ORDER BY a.id, c.order_index`,
+             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                      a.doi, a.pmid, a.raw_json
+             ORDER BY first_inline_number`,
         [paramsP.data.projectId]
       );
 
@@ -888,25 +893,31 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         hasVolumeColumns = false;
       }
 
+      // Получаем уникальные статьи с минимальным inline_number (порядок первого появления)
+      // Это обеспечивает правильную нумерацию библиографии после перестановки документов
       const citationsRes = await pool.query(
         hasVolumeColumns
-          ? `SELECT DISTINCT ON (a.id)
-               a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-               a.doi, a.pmid, a.volume, a.issue, a.pages
+          ? `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                    a.doi, a.pmid, a.volume, a.issue, a.pages,
+                    MIN(c.inline_number) as first_inline_number
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             ORDER BY a.id`
-          : `SELECT DISTINCT ON (a.id)
-               a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
-               a.doi, a.pmid, 
-               NULL as volume, NULL as issue, NULL as pages
+             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                      a.doi, a.pmid, a.volume, a.issue, a.pages
+             ORDER BY first_inline_number`
+          : `SELECT a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                    a.doi, a.pmid, 
+                    NULL as volume, NULL as issue, NULL as pages,
+                    MIN(c.inline_number) as first_inline_number
              FROM citations c
              JOIN documents d ON d.id = c.document_id
              JOIN articles a ON a.id = c.article_id
              WHERE d.project_id = $1
-             ORDER BY a.id`,
+             GROUP BY a.id, a.title_en, a.title_ru, a.authors, a.year, a.journal,
+                      a.doi, a.pmid
+             ORDER BY first_inline_number`,
         [paramsP.data.projectId]
       );
 
@@ -976,6 +987,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         statsQuality?: string;
         maxLinksPerNode?: string;
         maxTotalNodes?: string;
+        sources?: string; // Фильтр по источнику (pubmed, doaj, wiley)
       };
       
       // Mega режим отключён - всегда используем lite с лимитами
@@ -995,6 +1007,19 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           sourceQueries = JSON.parse(query.sourceQueries);
         } catch {
           sourceQueries = [];
+        }
+      }
+      
+      // Фильтр по источнику статьи (pubmed, doaj, wiley)
+      let sourcesFilter: string[] = [];
+      if (query.sources) {
+        try {
+          sourcesFilter = JSON.parse(query.sources);
+          // Валидация источников
+          const validSources = ['pubmed', 'doaj', 'wiley'];
+          sourcesFilter = sourcesFilter.filter(s => validSources.includes(s));
+        } catch {
+          sourcesFilter = [];
         }
       }
 
@@ -1061,6 +1086,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         queryParams.push(statsQuality);
         statsCondition = ` AND COALESCE(a.stats_quality, 0) >= $${paramIdx++}`;
       }
+      
+      // Условие по источнику статьи (pubmed, doaj, wiley)
+      let sourcesCondition = '';
+      if (sourcesFilter.length > 0) {
+        queryParams.push(sourcesFilter);
+        sourcesCondition = ` AND COALESCE(a.source, 'pubmed') = ANY($${paramIdx++})`;
+      }
 
       // Получить все статьи проекта (Уровень 1) с их данными о references
       // Включаем references_fetched_at для определения уже проанализированных статей
@@ -1075,7 +1107,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                     1 as graph_level
              FROM project_articles pa
              JOIN articles a ON a.id = pa.article_id
-             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}${yearCondition}${statsCondition}`
+             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}${yearCondition}${statsCondition}${sourcesCondition}`
           : `SELECT a.id, a.doi, a.pmid, a.title_en, a.title_ru, a.abstract_en, a.abstract_ru,
                     a.authors, a.year, a.journal, a.source,
                     a.raw_json, 
@@ -1087,7 +1119,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                     1 as graph_level
              FROM project_articles pa
              JOIN articles a ON a.id = pa.article_id
-             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}${yearCondition}${statsCondition}`,
+             WHERE pa.project_id = $1${statusCondition}${sourceQueryCondition}${yearCondition}${statsCondition}${sourcesCondition}`,
         queryParams
       );
 

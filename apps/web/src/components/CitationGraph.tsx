@@ -78,6 +78,9 @@ export default function CitationGraph({ projectId }: Props) {
   // Подсветка статей с P-value (золотым цветом)
   const [highlightPValue, setHighlightPValue] = useState(false);
   
+  // Фильтр по источнику статей (PubMed, DOAJ, Wiley)
+  const [selectedSources, setSelectedSources] = useState<('pubmed' | 'doaj' | 'wiley')[]>([]);
+  
   // Модальное окно "Как это работает"
   const [showHelpModal, setShowHelpModal] = useState(false);
   
@@ -128,8 +131,11 @@ export default function CitationGraph({ projectId }: Props) {
     if (statsQuality > 0) {
       options.statsQuality = statsQuality;
     }
+    if (selectedSources.length > 0) {
+      options.sources = selectedSources;
+    }
     loadGraph(options);
-  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality]);
+  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources]);
 
   // Проверка статуса загрузки при монтировании
   useEffect(() => {
@@ -200,6 +206,9 @@ export default function CitationGraph({ projectId }: Props) {
                 }
                 if (statsQuality > 0) {
                   options.statsQuality = statsQuality;
+                }
+                if (selectedSources.length > 0) {
+                  options.sources = selectedSources;
                 }
                 await loadGraph(options);
                 setRefsMessage('✅ Граф успешно обновлён!');
@@ -401,6 +410,20 @@ export default function CitationGraph({ projectId }: Props) {
     setSelectedQueries([]);
   };
 
+  const handleSourceToggle = (source: 'pubmed' | 'doaj' | 'wiley') => {
+    setSelectedSources(prev => {
+      if (prev.includes(source)) {
+        return prev.filter(s => s !== source);
+      } else {
+        return [...prev, source];
+      }
+    });
+  };
+
+  const handleClearSources = () => {
+    setSelectedSources([]);
+  };
+
   if (loading) {
     return (
       <div className="graph-container">
@@ -530,6 +553,49 @@ export default function CitationGraph({ projectId }: Props) {
               onClick={() => handleFilterChange('excluded')}
             >
               Исключённые
+            </button>
+          </div>
+        </div>
+
+        {/* Source Filter (PubMed, DOAJ, Wiley) */}
+        <div className="graph-filter-group">
+          <div className="graph-filter-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            <span>Источник:</span>
+          </div>
+          <div className="graph-filter-buttons">
+            <button
+              className={`graph-filter-btn ${selectedSources.length === 0 ? 'active' : ''}`}
+              onClick={handleClearSources}
+              title="Показать все источники"
+            >
+              Все
+            </button>
+            <button
+              className={`graph-filter-btn ${selectedSources.includes('pubmed') ? 'active' : ''}`}
+              onClick={() => handleSourceToggle('pubmed')}
+              style={selectedSources.includes('pubmed') ? { background: '#3b82f6', borderColor: '#2563eb' } : undefined}
+              title="PubMed"
+            >
+              PubMed
+            </button>
+            <button
+              className={`graph-filter-btn ${selectedSources.includes('doaj') ? 'active' : ''}`}
+              onClick={() => handleSourceToggle('doaj')}
+              style={selectedSources.includes('doaj') ? { background: '#eab308', borderColor: '#ca8a04', color: '#1e293b' } : undefined}
+              title="DOAJ"
+            >
+              DOAJ
+            </button>
+            <button
+              className={`graph-filter-btn ${selectedSources.includes('wiley') ? 'active' : ''}`}
+              onClick={() => handleSourceToggle('wiley')}
+              style={selectedSources.includes('wiley') ? { background: '#8b5cf6', borderColor: '#7c3aed' } : undefined}
+              title="Wiley"
+            >
+              Wiley
             </button>
           </div>
         </div>
@@ -964,7 +1030,7 @@ export default function CitationGraph({ projectId }: Props) {
             <NodeInfoPanel 
               node={selectedNodeForDisplay} 
               projectId={projectId} 
-              onRefresh={() => loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality })}
+              onRefresh={() => loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality, sources: selectedSources.length > 0 ? selectedSources : undefined })}
               globalLang={globalLang}
             />
           </div>

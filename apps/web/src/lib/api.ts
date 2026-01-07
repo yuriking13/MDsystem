@@ -654,6 +654,7 @@ export type GraphFilterOptions = {
   statsQuality?: number; // Минимальное качество статистики (0-3)
   maxLinksPerNode?: number; // Макс связей на узел (по умолчанию 10)
   maxTotalNodes?: number; // Макс узлов (по умолчанию 500)
+  sources?: ('pubmed' | 'doaj' | 'wiley')[]; // Фильтр по источнику статей
 };
 
 export async function apiGetCitationGraph(
@@ -684,6 +685,9 @@ export async function apiGetCitationGraph(
   }
   if (options?.maxTotalNodes !== undefined) {
     params.set('maxTotalNodes', String(options.maxTotalNodes));
+  }
+  if (options?.sources && options.sources.length > 0) {
+    params.set('sources', JSON.stringify(options.sources));
   }
   const queryString = params.toString();
   const url = `/api/projects/${projectId}/citation-graph${queryString ? `?${queryString}` : ''}`;
