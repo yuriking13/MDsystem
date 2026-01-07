@@ -406,16 +406,24 @@ export default function DocumentPage() {
 
       const tables = Array.from(docDom.querySelectorAll('table[data-statistic-id]')) as HTMLElement[];
       
+      // Find chart nodes by data-chart-id attribute (used in TipTap ChartNode)
+      const chartNodes = Array.from(docDom.querySelectorAll('[data-chart-id]')) as HTMLElement[];
+      
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const ids = Array.from(new Set(tables
+      const tableIds = Array.from(new Set(tables
         .map((el) => el.getAttribute('data-statistic-id'))
         .filter((id): id is string => !!id && uuidRegex.test(id))));
+      
+      const chartIds = Array.from(new Set(chartNodes
+        .map((el) => el.getAttribute('data-chart-id'))
+        .filter((id): id is string => !!id && uuidRegex.test(id))));
 
-      if (ids.length === 0) return;
+      const allIds = [...tableIds, ...chartIds];
+      if (allIds.length === 0) return;
 
       const statMap = new Map<string, TableData>();
       const missingIds = new Set<string>();
-      await Promise.allSettled(ids.map(async (id) => {
+      await Promise.allSettled(tableIds.map(async (id) => {
         try {
           const res = await apiGetStatistic(projectId, id);
           if (res.statistic.table_data) {
@@ -506,6 +514,21 @@ export default function DocumentPage() {
             tableEl.replaceWith(newTable);
             changed = true;
           }
+        }
+      });
+
+      // Also remove chart nodes if their statistic was deleted
+      chartNodes.forEach((chartEl) => {
+        const chartId = chartEl.getAttribute('data-chart-id');
+        if (!chartId) return;
+
+        // If chart's statistic was removed, drop the chart from the document
+        if (existingIds.size > 0 && !existingIds.has(chartId)) {
+          // Find the chart-node-wrapper parent or remove the element directly
+          const wrapper = chartEl.closest('.chart-node-wrapper') || chartEl;
+          wrapper.remove();
+          changed = true;
+          console.log('[SYNC] Removed deleted chart from document:', chartId);
         }
       });
 
