@@ -18,6 +18,14 @@ import {
   formatFileSize,
   ALLOWED_MIME_TYPES,
 } from "../lib/storage.js";
+import {
+  cacheGet,
+  cacheSet,
+  invalidateFiles,
+  invalidateFile,
+  CACHE_KEYS,
+  TTL,
+} from "../lib/redis.js";
 
 const filesRoutes: FastifyPluginAsync = async (app) => {
   // Check if user has access to project
@@ -55,6 +63,15 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         return reply.forbidden("You don't have access to this project");
       }
 
+      // Try cache first (only for non-filtered requests)
+      const cacheKey = CACHE_KEYS.files(projectId);
+      if (!category) {
+        const cached = await cacheGet<any>(cacheKey);
+        if (cached) {
+          return cached;
+        }
+      }
+
       const where: { projectId: string; category?: string } = { projectId };
       if (category) {
         where.category = category;
@@ -70,7 +87,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         },
       });
 
-      return {
+      const result = {
         files: files.map((f: ProjectFile & { uploader: Pick<User, 'id' | 'email'> | null }) => ({
           id: f.id,
           name: f.name,
@@ -86,6 +103,13 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         })),
         storageConfigured: isStorageConfigured(),
       };
+
+      // Cache only non-filtered results
+      if (!category) {
+        await cacheSet(cacheKey, result, TTL.SHORT);
+      }
+
+      return result;
     }
   );
 
@@ -176,6 +200,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           uploadedBy: userId,
         },
       });
+
+      // Invalidate files cache
+      await invalidateFiles(projectId);
 
       return {
         file: {
@@ -358,6 +385,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         },
       });
 
+      // Invalidate files cache
+      await invalidateFile(projectId, fileId);
+
       return {
         file: {
           id: updated.id,
@@ -410,6 +440,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         where: { id: fileId },
       });
 
+      // Invalidate files cache
+      await invalidateFiles(projectId);
+
       return { ok: true };
     }
   );
@@ -452,6 +485,8 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
             usedInDocuments: [...usedInDocuments, documentId],
           },
         });
+        // Invalidate files cache
+        await invalidateFile(projectId, fileId);
       }
 
       return { ok: true };
@@ -494,6 +529,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         data: { usedInDocuments },
       });
 
+      // Invalidate files cache
+      await invalidateFile(projectId, fileId);
+
       return { ok: true };
     }
   );
@@ -525,6 +563,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       });
 
       // Update each file's usedInDocuments
+      let changedCount = 0;
       for (const file of allFiles) {
         const wasUsed = file.usedInDocuments.includes(documentId);
         const isUsed = fileIds.includes(file.id);
@@ -540,7 +579,13 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
             where: { id: file.id },
             data: { usedInDocuments: newUsedInDocuments },
           });
+          changedCount++;
         }
+      }
+
+      // Invalidate files cache if anything changed
+      if (changedCount > 0) {
+        await invalidateFiles(projectId);
       }
 
       return { ok: true, synced: fileIds.length };

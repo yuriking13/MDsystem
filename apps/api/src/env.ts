@@ -19,6 +19,11 @@ const EnvSchema = z.object({
   S3_ACCESS_KEY_ID: z.string().optional(),
   S3_SECRET_ACCESS_KEY: z.string().optional(),
   S3_BUCKET_NAME: z.string().optional(),
+
+  // Redis caching (optional)
+  REDIS_URL: z.string().optional(), // e.g. redis://localhost:6379
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_CACHE_TTL: z.coerce.number().int().min(1).optional().default(300), // Default 5 minutes
 });
 
 export type Env = z.infer<typeof EnvSchema>;

@@ -2,6 +2,14 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { wsEvents } from "../websocket.js";
+import {
+  cacheGet,
+  cacheSet,
+  invalidateStatistics,
+  invalidateStatistic,
+  CACHE_KEYS,
+  TTL,
+} from "../lib/redis.js";
 
 const ProjectIdSchema = z.object({
   id: z.string().uuid(),
@@ -70,6 +78,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "NotFound", message: "Project not found" });
       }
 
+      // Try cache first
+      const cacheKey = CACHE_KEYS.statistics(parsed.data.id);
+      const cached = await cacheGet<any>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
       const res = await pool.query(
         `SELECT id, type, title, description, config, table_data, 
                 data_classification, chart_type, used_in_documents,
@@ -81,7 +96,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         [parsed.data.id]
       );
 
-      return { statistics: res.rows };
+      const result = { statistics: res.rows };
+      
+      // Cache the result
+      await cacheSet(cacheKey, result, TTL.SHORT);
+
+      return result;
     }
   );
 
@@ -178,6 +198,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // WebSocket: уведомляем о создании
       wsEvents.statisticCreated(paramsP.data.id, res.rows[0], userId);
+
+      // Invalidate statistics cache
+      await invalidateStatistics(paramsP.data.id);
 
       return { statistic: res.rows[0] };
     }
@@ -306,6 +329,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // WebSocket: уведомляем об обновлении
       wsEvents.statisticUpdated(paramsP.data.id, res.rows[0], userId);
 
+      // Invalidate statistics cache
+      await invalidateStatistic(paramsP.data.id, paramsP.data.statId);
+
       return { statistic: res.rows[0] };
     }
   );
@@ -370,6 +396,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // WebSocket: уведомляем об удалении
       wsEvents.statisticDeleted(paramsP.data.id, paramsP.data.statId, userId);
+
+      // Invalidate statistics cache
+      await invalidateStatistics(paramsP.data.id);
 
       return { ok: true };
     }

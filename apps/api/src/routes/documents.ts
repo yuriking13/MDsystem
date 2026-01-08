@@ -3,6 +3,15 @@ import { z } from "zod";
 import { pool } from "../pg.js";
 import { formatCitation, type CitationStyle, type BibliographyArticle } from "../lib/bibliography.js";
 import { pubmedFetchByPmids } from "../lib/pubmed.js";
+import {
+  cacheGet,
+  cacheSet,
+  invalidateDocuments,
+  invalidateDocument,
+  invalidateCitationGraph,
+  CACHE_KEYS,
+  TTL,
+} from "../lib/redis.js";
 
 const ProjectIdSchema = z.object({
   projectId: z.string().uuid(),
@@ -181,6 +190,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         ]
       );
 
+      // Invalidate documents cache
+      await invalidateDocuments(paramsP.data.projectId);
+
       return { document: res.rows[0] };
     }
   );
@@ -240,6 +252,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Document not found" });
       }
 
+      // Invalidate document cache
+      await invalidateDocument(paramsP.data.projectId, paramsP.data.docId);
+
       return { document: res.rows[0] };
     }
   );
@@ -265,6 +280,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         `DELETE FROM documents WHERE id = $1 AND project_id = $2`,
         [paramsP.data.docId, paramsP.data.projectId]
       );
+
+      // Invalidate documents cache
+      await invalidateDocuments(paramsP.data.projectId);
 
       return { ok: true };
     }
@@ -1367,6 +1385,26 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         sources?: string; // Фильтр по источнику (pubmed, doaj, wiley)
       };
       
+      // Build cache key from all parameters
+      const cacheKeyParams = JSON.stringify({
+        filter: query.filter || 'all',
+        depth: query.depth || '1',
+        yearFrom: query.yearFrom,
+        yearTo: query.yearTo,
+        statsQuality: query.statsQuality,
+        maxLinksPerNode: query.maxLinksPerNode || '10',
+        maxTotalNodes: query.maxTotalNodes || '1000',
+        sourceQueries: query.sourceQueries,
+        sources: query.sources,
+      });
+      const cacheKey = CACHE_KEYS.citationGraph(paramsP.data.projectId, cacheKeyParams);
+      
+      // Try cache first (citation graph is expensive to compute)
+      const cached = await cacheGet<any>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+      
       // Mega режим отключён - всегда используем lite с лимитами
       const filter = query.filter || 'all';
       const depth = Math.min(3, Math.max(1, parseInt(query.depth || '1', 10) || 1));
@@ -2250,7 +2288,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      return {
+      const result = {
         nodes,
         links,
         stats: {
@@ -2269,6 +2307,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         currentDepth: depth,
         limits: { maxLinksPerNode, maxExtraNodes },
       };
+
+      // Cache the result (medium TTL since graph data changes less frequently)
+      await cacheSet(cacheKey, result, TTL.DEFAULT);
+
+      return result;
     }
   );
 };
