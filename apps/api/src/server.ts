@@ -17,6 +17,7 @@ import filesRoutes from './routes/files.js';
 import envGuard from './plugins/00-env-guard.js';
 import { startWorkers } from './worker/index.js';
 import { registerWebSocket, getConnectionStats } from './websocket.js';
+import { initCache, getCacheBackend, closeCache } from './lib/redis.js';
 
 const app = Fastify({ logger: true });
 
@@ -49,6 +50,23 @@ app.get('/api/health', async () => ({ ok: true }));
 
 // Статистика WebSocket подключений
 app.get('/api/ws-stats', async () => getConnectionStats());
+
+// Статистика кэша
+app.get('/api/cache-stats', async () => getCacheBackend());
+
+// Initialize cache on startup
+await initCache();
+
+// Graceful shutdown
+const shutdown = async () => {
+  app.log.info('Shutting down...');
+  await closeCache();
+  await app.close();
+  process.exit(0);
+};
+
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);
 
 app.listen({ host: env.HOST, port: env.PORT })
   .then(() => {

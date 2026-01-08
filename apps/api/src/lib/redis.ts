@@ -1,20 +1,147 @@
 /**
- * Redis caching module for API data
+ * Caching module for API data
  * Provides caching with automatic invalidation for articles, documents, files, statistics, and citation graphs
+ * 
+ * Supports two backends:
+ * 1. Redis (recommended for production) - if REDIS_URL is configured
+ * 2. In-memory LRU cache (fallback) - if Redis is not available
+ * 
+ * The fallback is automatic - no code changes needed in routes.
  */
 
 import { Redis } from "ioredis";
+import { LRUCache } from "lru-cache";
 import { env } from "../env.js";
+
+// ============================================================
+// In-memory LRU Cache (fallback when Redis is not available)
+// ============================================================
+
+interface MemoryCacheEntry {
+  value: string;
+  expiresAt: number;
+}
+
+// Default: 100MB max, 10000 entries max
+const memoryCache = new LRUCache<string, MemoryCacheEntry>({
+  max: 10000, // Maximum 10k entries
+  maxSize: 100 * 1024 * 1024, // 100MB max
+  sizeCalculation: (entry) => {
+    // Size in bytes (roughly)
+    return entry.value.length * 2 + 50; // UTF-16 + overhead
+  },
+  ttl: 0, // We manage TTL ourselves for consistency with Redis
+  allowStale: false,
+});
+
+// Track memory cache stats
+let memoryCacheHits = 0;
+let memoryCacheMisses = 0;
+
+/**
+ * Get value from memory cache
+ */
+function memoryGet(key: string): string | null {
+  const entry = memoryCache.get(key);
+  if (!entry) {
+    memoryCacheMisses++;
+    return null;
+  }
+  
+  // Check if expired
+  if (entry.expiresAt > 0 && Date.now() > entry.expiresAt) {
+    memoryCache.delete(key);
+    memoryCacheMisses++;
+    return null;
+  }
+  
+  memoryCacheHits++;
+  return entry.value;
+}
+
+/**
+ * Set value in memory cache with TTL
+ */
+function memorySet(key: string, value: string, ttlSeconds: number): void {
+  const expiresAt = ttlSeconds > 0 ? Date.now() + ttlSeconds * 1000 : 0;
+  memoryCache.set(key, { value, expiresAt });
+}
+
+/**
+ * Delete key from memory cache
+ */
+function memoryDel(key: string): void {
+  memoryCache.delete(key);
+}
+
+/**
+ * Delete keys matching a pattern from memory cache
+ * Supports simple glob patterns with * at the end
+ */
+function memoryDelPattern(pattern: string): number {
+  let deleted = 0;
+  const prefix = pattern.replace(/\*$/, '');
+  
+  for (const key of memoryCache.keys()) {
+    if (key.startsWith(prefix)) {
+      memoryCache.delete(key);
+      deleted++;
+    }
+  }
+  
+  return deleted;
+}
+
+/**
+ * Get memory cache statistics
+ */
+export function getMemoryCacheStats() {
+  return {
+    size: memoryCache.size,
+    calculatedSize: memoryCache.calculatedSize,
+    hits: memoryCacheHits,
+    misses: memoryCacheMisses,
+    hitRate: memoryCacheHits + memoryCacheMisses > 0 
+      ? (memoryCacheHits / (memoryCacheHits + memoryCacheMisses) * 100).toFixed(1) + '%'
+      : 'N/A',
+  };
+}
+
+// ============================================================
+// Redis client (primary, if configured)
+// ============================================================
 
 // Redis client instance (lazy initialization)
 let redisClient: Redis | null = null;
 let connectionAttempted = false;
+let useRedis = false; // Track if we should use Redis or fallback
 
 /**
- * Check if Redis is configured and available
+ * Check if Redis is configured
  */
 export function isRedisConfigured(): boolean {
   return !!env.REDIS_URL;
+}
+
+/**
+ * Check if Redis is actually connected and working
+ */
+export function isRedisConnected(): boolean {
+  return useRedis && redisClient !== null;
+}
+
+/**
+ * Get cache backend info
+ */
+export function getCacheBackend(): { type: 'redis' | 'memory'; connected: boolean; stats?: any } {
+  if (useRedis && redisClient) {
+    return { type: 'redis', connected: true };
+  }
+  return { 
+    type: 'memory', 
+    connected: true, 
+    stats: getMemoryCacheStats() 
+  };
 }
 
 /**
@@ -42,7 +169,7 @@ export async function getRedisClient(): Promise<Redis | null> {
       maxRetriesPerRequest: 3,
       retryStrategy: (times: number) => {
         if (times > 3) {
-          console.warn("[Redis] Max retry attempts reached, giving up");
+          console.warn("[Redis] Max retry attempts reached, falling back to memory cache");
           return null;
         }
         return Math.min(times * 200, 2000);
@@ -63,10 +190,12 @@ export async function getRedisClient(): Promise<Redis | null> {
     });
 
     redisClient = client;
-    console.log("[Redis] Connected successfully");
+    useRedis = true;
+    console.log("[Cache] Using Redis backend");
     return client;
   } catch (err) {
-    console.warn("[Redis] Connection failed, caching disabled:", (err as Error).message);
+    console.warn("[Cache] Redis connection failed, using in-memory LRU cache:", (err as Error).message);
+    useRedis = false;
     return null;
   }
 }
@@ -105,81 +234,133 @@ const LONG_TTL = 600; // 10 minutes for rarely changing data
 
 /**
  * Get cached data
- * Returns null if cache miss or Redis unavailable
+ * Uses Redis if available, otherwise falls back to memory cache
  */
 export async function cacheGet<T>(key: string): Promise<T | null> {
+  // Try Redis first
   const client = await getRedisClient();
-  if (!client) return null;
-
+  
+  if (client && useRedis) {
+    try {
+      const data = await client.get(key);
+      if (!data) return null;
+      return JSON.parse(data) as T;
+    } catch (err) {
+      console.warn("[Cache] Redis get error, trying memory:", (err as Error).message);
+    }
+  }
+  
+  // Fallback to memory cache
   try {
-    const data = await client.get(key);
+    const data = memoryGet(key);
     if (!data) return null;
     return JSON.parse(data) as T;
   } catch (err) {
-    console.warn("[Redis] Cache get error:", (err as Error).message);
+    console.warn("[Cache] Memory get error:", (err as Error).message);
     return null;
   }
 }
 
 /**
  * Set cached data with TTL
+ * Uses Redis if available, otherwise falls back to memory cache
  */
 export async function cacheSet(key: string, data: unknown, ttl = DEFAULT_TTL): Promise<boolean> {
+  const jsonData = JSON.stringify(data);
+  
+  // Try Redis first
   const client = await getRedisClient();
-  if (!client) return false;
-
+  
+  if (client && useRedis) {
+    try {
+      await client.setex(key, ttl, jsonData);
+      return true;
+    } catch (err) {
+      console.warn("[Cache] Redis set error, using memory:", (err as Error).message);
+    }
+  }
+  
+  // Fallback to memory cache
   try {
-    await client.setex(key, ttl, JSON.stringify(data));
+    memorySet(key, jsonData, ttl);
     return true;
   } catch (err) {
-    console.warn("[Redis] Cache set error:", (err as Error).message);
+    console.warn("[Cache] Memory set error:", (err as Error).message);
     return false;
   }
 }
 
 /**
  * Delete cached data by key
+ * Deletes from both Redis and memory cache for consistency
  */
 export async function cacheDel(key: string): Promise<boolean> {
+  let success = true;
+  
+  // Delete from Redis if available
   const client = await getRedisClient();
-  if (!client) return false;
-
-  try {
-    await client.del(key);
-    return true;
-  } catch (err) {
-    console.warn("[Redis] Cache delete error:", (err as Error).message);
-    return false;
+  if (client && useRedis) {
+    try {
+      await client.del(key);
+    } catch (err) {
+      console.warn("[Cache] Redis delete error:", (err as Error).message);
+      success = false;
+    }
   }
+  
+  // Always delete from memory cache too
+  try {
+    memoryDel(key);
+  } catch (err) {
+    console.warn("[Cache] Memory delete error:", (err as Error).message);
+    success = false;
+  }
+  
+  return success;
 }
 
 /**
  * Delete all cached data matching a pattern
- * Uses SCAN for safety (doesn't block Redis)
+ * Uses SCAN for Redis (doesn't block), simple iteration for memory
  */
 export async function cacheDelPattern(pattern: string): Promise<boolean> {
+  let success = true;
+  
+  // Delete from Redis if available
   const client = await getRedisClient();
-  if (!client) return false;
+  if (client && useRedis) {
+    try {
+      let cursor = "0";
+      const keysToDelete: string[] = [];
 
-  try {
-    let cursor = "0";
-    const keysToDelete: string[] = [];
+      do {
+        const [newCursor, keys] = await client.scan(cursor, "MATCH", pattern, "COUNT", 100);
+        cursor = newCursor;
+        keysToDelete.push(...keys);
+      } while (cursor !== "0");
 
-    do {
-      const [newCursor, keys] = await client.scan(cursor, "MATCH", pattern, "COUNT", 100);
-      cursor = newCursor;
-      keysToDelete.push(...keys);
-    } while (cursor !== "0");
-
-    if (keysToDelete.length > 0) {
-      await client.del(...keysToDelete);
-      console.log(`[Redis] Deleted ${keysToDelete.length} keys matching: ${pattern}`);
+      if (keysToDelete.length > 0) {
+        await client.del(...keysToDelete);
+        console.log(`[Cache] Redis: deleted ${keysToDelete.length} keys matching: ${pattern}`);
+      }
+    } catch (err) {
+      console.warn("[Cache] Redis delete pattern error:", (err as Error).message);
+      success = false;
     }
-    return true;
-  } catch (err) {
-    console.warn("[Redis] Cache delete pattern error:", (err as Error).message);
-    return false;
   }
+  
+  // Always delete from memory cache too
+  try {
+    const deleted = memoryDelPattern(pattern);
+    if (deleted > 0) {
+      console.log(`[Cache] Memory: deleted ${deleted} keys matching: ${pattern}`);
+    }
+  } catch (err) {
+    console.warn("[Cache] Memory delete pattern error:", (err as Error).message);
+    success = false;
+  }
+  
+  return success;
 }
 
 // ============================================================
@@ -307,13 +488,36 @@ export const TTL = {
 };
 
 /**
- * Gracefully close Redis connection (call on server shutdown)
+ * Gracefully close Redis connection and clear memory cache (call on server shutdown)
  */
-export async function closeRedis(): Promise<void> {
+export async function closeCache(): Promise<void> {
   if (redisClient) {
     await redisClient.quit();
     redisClient = null;
     connectionAttempted = false;
-    console.log("[Redis] Connection closed");
+    useRedis = false;
+    console.log("[Cache] Redis connection closed");
+  }
+  
+  // Clear memory cache
+  memoryCache.clear();
+  memoryCacheHits = 0;
+  memoryCacheMisses = 0;
+  console.log("[Cache] Memory cache cleared");
+}
+
+// Alias for backwards compatibility
+export const closeRedis = closeCache;
+
+/**
+ * Initialize cache backend
+ * Call this on server startup to eagerly connect to Redis
+ */
+export async function initCache(): Promise<void> {
+  const client = await getRedisClient();
+  if (client) {
+    console.log("[Cache] Initialized with Redis backend");
+  } else {
+    console.log("[Cache] Initialized with in-memory LRU backend (Redis not available)");
   }
 }
