@@ -9,6 +9,14 @@ import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
 import { getCrossrefByDOI } from "../lib/crossref.js";
 import { getBoss, startBoss } from "../worker/boss.js";
+import { 
+  cacheGet, 
+  cacheSet, 
+  cacheThrough, 
+  invalidateArticles, 
+  CACHE_KEYS, 
+  TTL 
+} from "../lib/redis.js";
 
 // Поля поиска PubMed
 const PUBMED_SEARCH_FIELDS = [
@@ -759,6 +767,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         [paramsP.data.id]
       );
       
+      // Invalidate articles cache after adding new articles
+      if (added > 0) {
+        await invalidateArticles(paramsP.data.id);
+      }
+      
       // Build message with source breakdown
       let message = '';
       const sourceBreakdown: string[] = [];
@@ -810,23 +823,34 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Project not found" });
       }
       
-      // Проверяем наличие колонки source_query
-      let hasSourceQuery = false;
-      try {
-        const checkCol = await pool.query(
-          `SELECT column_name FROM information_schema.columns 
-           WHERE table_name = 'project_articles' AND column_name = 'source_query'`
-        );
-        hasSourceQuery = (checkCol.rowCount ?? 0) > 0;
-      } catch {
-        hasSourceQuery = false;
-      }
-      
       // Query params для фильтрации
       const query = request.query as any;
       const status = query.status; // candidate, selected, excluded
       const hasStats = query.hasStats === "true";
       const sourceQuery = query.sourceQuery; // Фильтр по поисковому запросу
+      
+      // Build cache key based on filters
+      const cacheKey = status 
+        ? CACHE_KEYS.articlesStatus(paramsP.data.id, `${status}:${hasStats}:${sourceQuery || ''}`)
+        : CACHE_KEYS.articles(paramsP.data.id);
+      
+      // Try cache first
+      const cached = await cacheGet<any>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+      
+      // Проверяем наличие колонки source_query
+      let hasSourceQueryCol = false;
+      try {
+        const checkCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'project_articles' AND column_name = 'source_query'`
+        );
+        hasSourceQueryCol = (checkCol.rowCount ?? 0) > 0;
+      } catch {
+        hasSourceQueryCol = false;
+      }
       
       let sql = `
         SELECT 
@@ -836,7 +860,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           a.has_stats, a.stats_json, a.stats_quality, a.publication_types,
           a.created_at,
           pa.status, pa.notes, pa.tags, pa.added_at
-          ${hasSourceQuery ? ', pa.source_query' : ''}
+          ${hasSourceQueryCol ? ', pa.source_query' : ''}
         FROM project_articles pa
         JOIN articles a ON a.id = pa.article_id
         WHERE pa.project_id = $1
@@ -857,7 +881,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
       
       // Фильтр по поисковому запросу
-      if (hasSourceQuery && sourceQuery) {
+      if (hasSourceQueryCol && sourceQuery) {
         sql += ` AND pa.source_query = $${paramIdx++}`;
         params.push(sourceQuery);
       }
@@ -877,7 +901,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       
       // Получить уникальные поисковые запросы
       let searchQueries: string[] = [];
-      if (hasSourceQuery) {
+      if (hasSourceQueryCol) {
         const queriesRes = await pool.query(
           `SELECT DISTINCT source_query FROM project_articles 
            WHERE project_id = $1 AND source_query IS NOT NULL
@@ -897,12 +921,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         counts[row.status] = row.count;
       }
       
-      return {
+      const result = {
         articles: res.rows,
         searchQueries,
         counts,
         total: res.rowCount,
       };
+      
+      // Cache the result (short TTL since data changes frequently)
+      await cacheSet(cacheKey, result, TTL.SHORT);
+      
+      return result;
     }
   );
 
@@ -941,6 +970,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Article not found in project" });
       }
       
+      // Invalidate articles cache
+      await invalidateArticles(paramsP.data.id);
+      
       return { ok: true, article: res.rows[0] };
     }
   );
@@ -967,6 +999,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         `DELETE FROM project_articles WHERE project_id = $1 AND article_id = $2`,
         [paramsP.data.id, paramsP.data.articleId]
       );
+      
+      // Invalidate articles cache
+      await invalidateArticles(paramsP.data.id);
       
       return { ok: true };
     }
@@ -1006,6 +1041,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
          WHERE project_id = $2 AND article_id = ANY($3)`,
         [bodyP.data.status, paramsP.data.id, bodyP.data.articleIds]
       );
+      
+      // Invalidate articles cache
+      if (res.rowCount && res.rowCount > 0) {
+        await invalidateArticles(paramsP.data.id);
+      }
       
       return { ok: true, updated: res.rowCount };
     }
@@ -1584,6 +1624,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Обновляем updated_at проекта
       await pool.query(`UPDATE projects SET updated_at = now() WHERE id = $1`, [paramsP.data.id]);
+
+      // Invalidate articles cache after import
+      if (added > 0) {
+        await invalidateArticles(paramsP.data.id);
+      }
 
       return {
         ok: true,

@@ -3983,5 +3983,14 @@ input::placeholder {
   justify-content: space-between;
   padding: 12px 20px;
   border-top: 1px solid var(--border-glass);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.file-preview-modal .modal-footer .btn {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
