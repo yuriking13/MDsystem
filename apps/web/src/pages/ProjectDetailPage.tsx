@@ -22,7 +22,7 @@ import {
   apiUploadFile,
   apiDeleteFile,
   apiGetStorageStatus,
-  getFileDownloadPath,
+  apiGetFileDownloadUrl,
   type Project,
   type ProjectMember,
   type Document,
@@ -341,6 +341,57 @@ const RESEARCH_PROTOCOLS: Record<ResearchProtocol, {
   },
 };
 
+// Компонент для превью изображений
+function FileImagePreview({ projectId, fileId, fileName }: { projectId: string; fileId: string; fileName: string }) {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    apiGetFileDownloadUrl(projectId, fileId)
+      .then(({ url }) => {
+        if (mounted) {
+          setImageUrl(url);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setError(true);
+          setLoading(false);
+        }
+      });
+    return () => { mounted = false; };
+  }, [projectId, fileId]);
+
+  if (loading) {
+    return (
+      <div className="file-thumbnail file-thumbnail-loading">
+        <svg className="w-6 h-6 animate-spin" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (error || !imageUrl) {
+    return (
+      <div className="file-thumbnail file-thumbnail-error">
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div className="file-thumbnail">
+      <img src={imageUrl} alt={fileName} loading="lazy" />
+    </div>
+  );
+}
+
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
@@ -551,9 +602,7 @@ export default function ProjectDetailPage() {
   async function handleDownloadFile(fileId: string, fileName: string) {
     if (!id) return;
     try {
-      // Получаем signed URL через API
-      const { url } = await import("../lib/api").then(m => m.apiGetFileDownloadUrl(id, fileId));
-      // Создаём временную ссылку для скачивания
+      const { url } = await apiGetFileDownloadUrl(id, fileId);
       const link = document.createElement("a");
       link.href = url;
       link.download = fileName;
@@ -564,6 +613,26 @@ export default function ProjectDetailPage() {
     } catch (err: any) {
       setError(err.message || "Ошибка скачивания файла");
     }
+  }
+
+  // Просмотр файла
+  const [previewFile, setPreviewFile] = useState<ProjectFile | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  async function handlePreviewFile(file: ProjectFile) {
+    if (!id) return;
+    try {
+      const { url } = await apiGetFileDownloadUrl(id, file.id);
+      setPreviewUrl(url);
+      setPreviewFile(file);
+    } catch (err: any) {
+      setError(err.message || "Ошибка загрузки превью");
+    }
+  }
+
+  function closePreview() {
+    setPreviewFile(null);
+    setPreviewUrl(null);
   }
 
   useEffect(() => {
@@ -1504,7 +1573,10 @@ export default function ProjectDetailPage() {
                       disabled={uploadingFile}
                       type="button"
                     >
-                      {uploadingFile ? `Загрузка ${uploadProgress}%` : "📁 Загрузить файл"}
+                      <svg className="w-4 h-4" style={{ marginRight: 6 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                      {uploadingFile ? `Загрузка ${uploadProgress}%` : "Загрузить файл"}
                     </button>
                   </>
                 )}
@@ -1512,16 +1584,21 @@ export default function ProjectDetailPage() {
                   className="btn secondary"
                   onClick={() => loadFiles()}
                   disabled={loadingFiles}
+                  title="Обновить"
                   type="button"
                 >
-                  🔄
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                  </svg>
                 </button>
               </div>
             </div>
 
             {!storageConfigured && (
-              <div className="card" style={{ marginBottom: 16, padding: 20, textAlign: 'center' }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>☁️</div>
+              <div className="card" style={{ marginBottom: 16, padding: 40, textAlign: 'center' }}>
+                <svg className="w-16 h-16" style={{ margin: '0 auto 16px', opacity: 0.5 }} fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" />
+                </svg>
                 <h3 style={{ margin: '0 0 8px 0' }}>Хранилище не настроено</h3>
                 <p className="muted" style={{ margin: 0 }}>
                   Для загрузки файлов необходимо настроить подключение к Yandex Object Storage.
@@ -1534,20 +1611,30 @@ export default function ProjectDetailPage() {
             {storageConfigured && (
               <>
                 {/* Фильтр по категориям */}
-                <div className="row gap" style={{ marginBottom: 16 }}>
+                <div className="row gap" style={{ marginBottom: 16, flexWrap: 'wrap' }}>
                   {(["all", "document", "image", "video", "audio"] as const).map((cat) => (
                     <button
                       key={cat}
                       className={`btn ${filesCategory === cat ? "" : "secondary"}`}
                       onClick={() => setFilesCategory(cat)}
                       type="button"
-                      style={{ fontSize: 13 }}
+                      style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
                     >
-                      {cat === "all" && "📂 Все"}
-                      {cat === "document" && "📄 Документы"}
-                      {cat === "image" && "🖼️ Изображения"}
-                      {cat === "video" && "🎬 Видео"}
-                      {cat === "audio" && "🎵 Аудио"}
+                      {cat === "all" && (
+                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg> Все</>
+                      )}
+                      {cat === "document" && (
+                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /></svg> Документы</>
+                      )}
+                      {cat === "image" && (
+                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg> Изображения</>
+                      )}
+                      {cat === "video" && (
+                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg> Видео</>
+                      )}
+                      {cat === "audio" && (
+                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" /></svg> Аудио</>
+                      )}
                     </button>
                   ))}
                 </div>
@@ -1558,7 +1645,9 @@ export default function ProjectDetailPage() {
                   </div>
                 ) : files.length === 0 ? (
                   <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-                    <div style={{ fontSize: 48, marginBottom: 12 }}>📁</div>
+                    <svg className="w-16 h-16" style={{ margin: '0 auto 16px', opacity: 0.5 }} fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                    </svg>
                     <h3 style={{ margin: '0 0 8px 0' }}>Нет файлов</h3>
                     <p className="muted" style={{ margin: 0 }}>
                       {canEdit 
@@ -1568,48 +1657,139 @@ export default function ProjectDetailPage() {
                   </div>
                 ) : (
                   <div className="files-grid">
-                    {files.map((file) => (
-                      <div key={file.id} className="file-card card">
-                        <div className="file-icon">
-                          {file.category === "document" && "📄"}
-                          {file.category === "image" && "🖼️"}
-                          {file.category === "video" && "🎬"}
-                          {file.category === "audio" && "🎵"}
-                          {file.category === "other" && "📁"}
-                        </div>
-                        <div className="file-info">
-                          <div className="file-name" title={file.name}>
-                            {file.name}
+                    {files.map((file) => {
+                      const isImage = file.category === "image";
+                      const isVideo = file.category === "video";
+                      const isAudio = file.category === "audio";
+                      const canPreview = isImage || isVideo || isAudio || file.mimeType === "application/pdf";
+                      
+                      return (
+                        <div 
+                          key={file.id} 
+                          className={`file-card card ${canPreview ? 'clickable' : ''}`}
+                          onClick={canPreview ? () => handlePreviewFile(file) : undefined}
+                          style={{ cursor: canPreview ? 'pointer' : 'default' }}
+                        >
+                          {/* Превью для изображений */}
+                          {isImage && (
+                            <FileImagePreview projectId={id} fileId={file.id} fileName={file.name} />
+                          )}
+                          {/* Иконка для других типов */}
+                          {!isImage && (
+                            <div className="file-icon">
+                              {file.category === "document" && (
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                              )}
+                              {isVideo && (
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
+                                </svg>
+                              )}
+                              {isAudio && (
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+                                </svg>
+                              )}
+                              {file.category === "other" && (
+                                <svg className="w-8 h-8" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                                </svg>
+                              )}
+                            </div>
+                          )}
+                          <div className="file-info">
+                            <div className="file-name" title={file.name}>
+                              {file.name}
+                            </div>
+                            <div className="file-meta muted">
+                              {file.sizeFormatted} • {new Date(file.createdAt).toLocaleDateString()}
+                            </div>
                           </div>
-                          <div className="file-meta muted">
-                            {file.sizeFormatted} • {new Date(file.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="file-actions">
-                          <button
-                            className="btn secondary"
-                            onClick={() => handleDownloadFile(file.id, file.name)}
-                            title="Скачать"
-                            type="button"
-                          >
-                            ⬇️
-                          </button>
-                          {canEdit && (
+                          <div className="file-actions" onClick={(e) => e.stopPropagation()}>
+                            {canPreview && (
+                              <button
+                                className="btn secondary"
+                                onClick={() => handlePreviewFile(file)}
+                                title="Просмотр"
+                                type="button"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                              </button>
+                            )}
                             <button
                               className="btn secondary"
-                              onClick={() => handleDeleteFile(file.id, file.name)}
-                              title="Удалить"
+                              onClick={() => handleDownloadFile(file.id, file.name)}
+                              title="Скачать"
                               type="button"
                             >
-                              🗑️
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                              </svg>
                             </button>
-                          )}
+                            {canEdit && (
+                              <button
+                                className="btn secondary"
+                                onClick={() => handleDeleteFile(file.id, file.name)}
+                                title="Удалить"
+                                type="button"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </>
+            )}
+
+            {/* Модальное окно просмотра файла */}
+            {previewFile && previewUrl && (
+              <div className="modal-overlay" onClick={closePreview}>
+                <div className="modal file-preview-modal" onClick={(e) => e.stopPropagation()}>
+                  <div className="modal-header">
+                    <h3>{previewFile.name}</h3>
+                    <button className="btn secondary" onClick={closePreview} type="button">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="modal-body file-preview-body">
+                    {previewFile.category === "image" && (
+                      <img src={previewUrl} alt={previewFile.name} style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain' }} />
+                    )}
+                    {previewFile.category === "video" && (
+                      <video src={previewUrl} controls style={{ maxWidth: '100%', maxHeight: '70vh' }} />
+                    )}
+                    {previewFile.category === "audio" && (
+                      <audio src={previewUrl} controls style={{ width: '100%' }} />
+                    )}
+                    {previewFile.mimeType === "application/pdf" && (
+                      <iframe src={previewUrl} style={{ width: '100%', height: '70vh', border: 'none' }} title={previewFile.name} />
+                    )}
+                  </div>
+                  <div className="modal-footer">
+                    <span className="muted">{previewFile.sizeFormatted}</span>
+                    <button className="btn" onClick={() => handleDownloadFile(previewFile.id, previewFile.name)} type="button">
+                      <svg className="w-4 h-4" style={{ marginRight: 6 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                      </svg>
+                      Скачать
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         )}
