@@ -12,6 +12,12 @@ const StatIdSchema = z.object({
   statId: z.string().uuid(),
 });
 
+// Схема для удаления - принимает любой ID (для поврежденных записей)
+const StatIdSchemaAny = z.object({
+  id: z.string().uuid(),
+  statId: z.string().min(1),
+});
+
 const CreateStatisticSchema = z.object({
   type: z.enum(['chart', 'table']),
   title: z.string().min(1).max(500),
@@ -305,12 +311,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   );
 
   // DELETE /api/projects/:id/statistics/:statId - delete statistic item
+  // Использует StatIdSchemaAny для поддержки удаления записей с невалидными ID
   fastify.delete(
     "/projects/:id/statistics/:statId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const userId = (request as any).user.sub;
-      const paramsP = StatIdSchema.safeParse(request.params);
+      // Используем StatIdSchemaAny чтобы можно было удалять записи с любым ID (включая поврежденные)
+      const paramsP = StatIdSchemaAny.safeParse(request.params);
       
       if (!paramsP.success) {
         return reply.code(400).send({ error: "BadRequest", message: "Invalid params" });

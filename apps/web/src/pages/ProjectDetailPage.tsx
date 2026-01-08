@@ -556,18 +556,12 @@ export default function ProjectDetailPage() {
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const isValidUuid = uuidRegex.test(statId);
     
-    if (!isValidUuid) {
-      // Для невалидных ID предлагаем принудительное удаление
-      if (!confirm("Эта статистика имеет недействительный ID и не может быть удалена через API. Удалить её из списка локально?")) {
-        return;
-      }
-      // Удаляем только локально
-      setStatistics(statistics.filter(s => s.id !== statId));
-      setOk("Элемент удалён из списка");
-      return;
-    }
+    // Разные сообщения для валидных и невалидных ID
+    const confirmMessage = isValidUuid 
+      ? "Удалить этот элемент статистики?"
+      : "Удалить эту поврежденную запись?";
     
-    if (!confirm("Удалить этот элемент статистики?")) return;
+    if (!confirm(confirmMessage)) return;
     try {
       await apiDeleteStatistic(id, statId);
       setStatistics(statistics.filter(s => s.id !== statId));
