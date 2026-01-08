@@ -288,6 +288,30 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
       }
 
+      // Проверяем, используется ли статистика в документах
+      const usageCheck = await pool.query(
+        `SELECT used_in_documents FROM project_statistics 
+         WHERE id = $1 AND project_id = $2`,
+        [paramsP.data.statId, paramsP.data.id]
+      );
+
+      if (usageCheck.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Statistic not found" });
+      }
+
+      const usedInDocs = usageCheck.rows[0].used_in_documents || [];
+      
+      // Проверяем force флаг в query параметрах
+      const force = (request.query as any)?.force === 'true';
+      
+      if (usedInDocs.length > 0 && !force) {
+        return reply.code(409).send({ 
+          error: "Conflict", 
+          message: `Статистика используется в ${usedInDocs.length} документе(ах). Удалите её из документов или используйте force=true`,
+          usedInDocuments: usedInDocs,
+        });
+      }
+
       await pool.query(
         `DELETE FROM project_statistics WHERE id = $1 AND project_id = $2`,
         [paramsP.data.statId, paramsP.data.id]
@@ -549,6 +573,59 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         ok: true,
         created: createdStats.length,
         statistics: createdStats
+      };
+    }
+  );
+
+  // POST /api/projects/:id/statistics/cleanup - удалить "битые" статистики без данных
+  fastify.post(
+    "/projects/:id/statistics/cleanup",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+      }
+
+      // Check edit access
+      const access = await pool.query(
+        `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+        [paramsP.data.id, userId]
+      );
+
+      if (access.rowCount === 0) {
+        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+      }
+
+      const role = access.rows[0].role;
+      if (role !== "owner" && role !== "editor") {
+        return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
+      }
+
+      // Удаляем статистики без данных или с пустыми данными
+      const deleteRes = await pool.query(
+        `DELETE FROM project_statistics 
+         WHERE project_id = $1 
+         AND (
+           table_data IS NULL 
+           OR table_data = '{}'::jsonb 
+           OR table_data = 'null'::jsonb
+           OR (table_data->>'rows' IS NULL AND table_data->>'headers' IS NULL)
+           OR (
+             table_data->>'rows' = '[]' 
+             AND (table_data->>'headers' IS NULL OR table_data->>'headers' = '[]')
+           )
+         )
+         RETURNING id, title`,
+        [paramsP.data.id]
+      );
+
+      return { 
+        ok: true,
+        deleted: deleteRes.rowCount || 0,
+        deletedItems: deleteRes.rows
       };
     }
   );
