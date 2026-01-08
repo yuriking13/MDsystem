@@ -18,6 +18,11 @@ import {
   apiDeleteStatistic,
   apiUpdateStatistic,
   apiCleanupStatistics,
+  apiGetProjectFiles,
+  apiUploadFile,
+  apiDeleteFile,
+  apiGetStorageStatus,
+  getFileDownloadPath,
   type Project,
   type ProjectMember,
   type Document,
@@ -27,6 +32,8 @@ import {
   type ResearchProtocol,
   type ProjectStatistic,
   type DataClassification,
+  type ProjectFile,
+  type FileCategory,
 } from "../lib/api";
 import { useProjectWebSocket } from "../lib/useProjectWebSocket";
 import { useAuth } from "../lib/AuthContext";
@@ -45,7 +52,7 @@ import {
   captureChartsFromDOM
 } from "../lib/exportWord";
 
-type Tab = "articles" | "documents" | "statistics" | "graph" | "team" | "settings";
+type Tab = "articles" | "documents" | "files" | "statistics" | "graph" | "team" | "settings";
 
 // Helper function to generate HTML table from table data
 function generateTableHtml(tableData: TableData, title?: string): string {
@@ -372,6 +379,15 @@ export default function ProjectDetailPage() {
   const [creatingChartType, setCreatingChartType] = useState<ChartType | null>(null);
   const refreshingStats = useRef(false);
 
+  // Файлы проекта
+  const [files, setFiles] = useState<ProjectFile[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [storageConfigured, setStorageConfigured] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [filesCategory, setFilesCategory] = useState<FileCategory | "all">("all");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // WebSocket для real-time синхронизации
   const handleWSStatisticCreated = useCallback((statistic: ProjectStatistic) => {
     if (!statistic) return;
@@ -475,6 +491,81 @@ export default function ProjectDetailPage() {
     }
   }
 
+  // Загрузка файлов проекта
+  async function loadFiles() {
+    if (!id) return;
+    setLoadingFiles(true);
+    try {
+      const category = filesCategory === "all" ? undefined : filesCategory;
+      const res = await apiGetProjectFiles(id, category);
+      setFiles(res.files);
+      setStorageConfigured(res.storageConfigured);
+    } catch (err: any) {
+      console.error("Failed to load files:", err);
+    } finally {
+      setLoadingFiles(false);
+    }
+  }
+
+  // Загрузка нового файла
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!id || !e.target.files?.length) return;
+    const file = e.target.files[0];
+    
+    setUploadingFile(true);
+    setUploadProgress(0);
+    setError(null);
+    
+    try {
+      await apiUploadFile(id, file, (progress) => {
+        setUploadProgress(progress);
+      });
+      setOk(`Файл "${file.name}" успешно загружен`);
+      loadFiles();
+    } catch (err: any) {
+      setError(err.message || "Ошибка загрузки файла");
+    } finally {
+      setUploadingFile(false);
+      setUploadProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  }
+
+  // Удаление файла
+  async function handleDeleteFile(fileId: string, fileName: string) {
+    if (!id) return;
+    if (!confirm(`Удалить файл "${fileName}"?`)) return;
+    
+    try {
+      await apiDeleteFile(id, fileId);
+      setFiles(prev => prev.filter(f => f.id !== fileId));
+      setOk(`Файл "${fileName}" удалён`);
+    } catch (err: any) {
+      setError(err.message || "Ошибка удаления файла");
+    }
+  }
+
+  // Скачивание файла
+  async function handleDownloadFile(fileId: string, fileName: string) {
+    if (!id) return;
+    try {
+      // Получаем signed URL через API
+      const { url } = await import("../lib/api").then(m => m.apiGetFileDownloadUrl(id, fileId));
+      // Создаём временную ссылку для скачивания
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      link.target = "_blank";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err: any) {
+      setError(err.message || "Ошибка скачивания файла");
+    }
+  }
+
   useEffect(() => {
     load();
   }, [id]);
@@ -485,6 +576,13 @@ export default function ProjectDetailPage() {
       loadStatistics();
     }
   }, [activeTab, statistics.length]);
+
+  // Загружаем файлы при переходе на вкладку
+  useEffect(() => {
+    if (activeTab === "files") {
+      loadFiles();
+    }
+  }, [activeTab, filesCategory]);
 
   // Автоматически загружаем и показываем библиографию при переходе на вкладку документов
   useEffect(() => {
@@ -882,6 +980,15 @@ export default function ProjectDetailPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
           Документы ({documents.length})
+        </button>
+        <button
+          className={`tab ${activeTab === "files" ? "active" : ""}`}
+          onClick={() => setActiveTab("files")}
+        >
+          <svg className="tab-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+          </svg>
+          Файлы ({files.length})
         </button>
         <button
           className={`tab ${activeTab === "statistics" ? "active" : ""}`}
@@ -1373,6 +1480,137 @@ export default function ProjectDetailPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* === FILES TAB === */}
+        {activeTab === "files" && id && (
+          <div className="files-page">
+            <div className="row space" style={{ marginBottom: 16 }}>
+              <h2 style={{ margin: 0 }}>Файлы проекта</h2>
+              <div className="row gap">
+                {canEdit && storageConfigured && (
+                  <>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileUpload}
+                      style={{ display: "none" }}
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.svg,.webp,.mp4,.webm,.mp3,.wav,.ogg"
+                    />
+                    <button
+                      className="btn"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile}
+                      type="button"
+                    >
+                      {uploadingFile ? `Загрузка ${uploadProgress}%` : "📁 Загрузить файл"}
+                    </button>
+                  </>
+                )}
+                <button
+                  className="btn secondary"
+                  onClick={() => loadFiles()}
+                  disabled={loadingFiles}
+                  type="button"
+                >
+                  🔄
+                </button>
+              </div>
+            </div>
+
+            {!storageConfigured && (
+              <div className="card" style={{ marginBottom: 16, padding: 20, textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>☁️</div>
+                <h3 style={{ margin: '0 0 8px 0' }}>Хранилище не настроено</h3>
+                <p className="muted" style={{ margin: 0 }}>
+                  Для загрузки файлов необходимо настроить подключение к Yandex Object Storage.
+                  <br />
+                  Обратитесь к администратору системы.
+                </p>
+              </div>
+            )}
+
+            {storageConfigured && (
+              <>
+                {/* Фильтр по категориям */}
+                <div className="row gap" style={{ marginBottom: 16 }}>
+                  {(["all", "document", "image", "video", "audio"] as const).map((cat) => (
+                    <button
+                      key={cat}
+                      className={`btn ${filesCategory === cat ? "" : "secondary"}`}
+                      onClick={() => setFilesCategory(cat)}
+                      type="button"
+                      style={{ fontSize: 13 }}
+                    >
+                      {cat === "all" && "📂 Все"}
+                      {cat === "document" && "📄 Документы"}
+                      {cat === "image" && "🖼️ Изображения"}
+                      {cat === "video" && "🎬 Видео"}
+                      {cat === "audio" && "🎵 Аудио"}
+                    </button>
+                  ))}
+                </div>
+
+                {loadingFiles ? (
+                  <div style={{ textAlign: 'center', padding: 40 }}>
+                    <div className="muted">Загрузка файлов...</div>
+                  </div>
+                ) : files.length === 0 ? (
+                  <div className="card" style={{ textAlign: 'center', padding: 40 }}>
+                    <div style={{ fontSize: 48, marginBottom: 12 }}>📁</div>
+                    <h3 style={{ margin: '0 0 8px 0' }}>Нет файлов</h3>
+                    <p className="muted" style={{ margin: 0 }}>
+                      {canEdit 
+                        ? "Загрузите файлы с помощью кнопки выше" 
+                        : "В этом проекте пока нет файлов"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="files-grid">
+                    {files.map((file) => (
+                      <div key={file.id} className="file-card card">
+                        <div className="file-icon">
+                          {file.category === "document" && "📄"}
+                          {file.category === "image" && "🖼️"}
+                          {file.category === "video" && "🎬"}
+                          {file.category === "audio" && "🎵"}
+                          {file.category === "other" && "📁"}
+                        </div>
+                        <div className="file-info">
+                          <div className="file-name" title={file.name}>
+                            {file.name}
+                          </div>
+                          <div className="file-meta muted">
+                            {file.sizeFormatted} • {new Date(file.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="file-actions">
+                          <button
+                            className="btn secondary"
+                            onClick={() => handleDownloadFile(file.id, file.name)}
+                            title="Скачать"
+                            type="button"
+                          >
+                            ⬇️
+                          </button>
+                          {canEdit && (
+                            <button
+                              className="btn secondary"
+                              onClick={() => handleDeleteFile(file.id, file.name)}
+                              title="Удалить"
+                              type="button"
+                            >
+                              🗑️
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
 

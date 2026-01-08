@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
+import multipart from '@fastify/multipart';
 
 import { env } from './env.js';
 import authPlugin from './auth.js';
@@ -11,6 +12,7 @@ import projectsRoutes from './routes/projects.js';
 import articlesRoutes from './routes/articles.js';
 import documentsRoutes from './routes/documents.js';
 import statisticsRoutes from './routes/statistics.js';
+import filesRoutes from './routes/files.js';
 
 import envGuard from './plugins/00-env-guard.js';
 import { startWorkers } from './worker/index.js';
@@ -25,6 +27,11 @@ await app.register(cors, {
   credentials: true
 });
 await app.register(sensible);
+await app.register(multipart, {
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB
+  },
+});
 await app.register(authPlugin);
 
 // WebSocket для real-time синхронизации
@@ -36,6 +43,7 @@ await app.register(projectsRoutes, { prefix: '/api' });
 await app.register(articlesRoutes, { prefix: '/api' });
 await app.register(documentsRoutes, { prefix: '/api' });
 await app.register(statisticsRoutes, { prefix: '/api' });
+await app.register(filesRoutes, { prefix: '/api' });
 
 app.get('/api/health', async () => ({ ok: true }));
 
