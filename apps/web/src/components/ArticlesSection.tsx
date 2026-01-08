@@ -389,8 +389,11 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     setOk(null);
     
     try {
-      const res = await apiDetectStatsWithAI(projectId);
+      // Если выбраны статьи - анализируем только их
+      const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
+      const res = await apiDetectStatsWithAI(projectId, ids);
       setOk(res.message);
+      setSelectedIds(new Set());
       await loadArticles();
     } catch (err: any) {
       setError(err?.message || "Ошибка AI анализа статистики");
@@ -502,8 +505,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     ];
     
     // Применяем все паттерны
-    let result = text;
-    const replacements: Array<{ start: number; end: number; match: string; className: string }> = [];
+    const replacements: Array<{ start: number; end: number; match: string; className: string; source: 'regex' | 'ai' }> = [];
     
     for (const { regex, className } of patterns) {
       let match;
@@ -514,12 +516,79 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           end: match.index + match[0].length,
           match: match[0],
           className,
+          source: 'regex',
         });
       }
     }
     
-    // Сортируем по позиции и удаляем пересечения
-    replacements.sort((a, b) => a.start - b.start);
+    // Добавляем результаты AI-анализа (из stats_json.ai)
+    if (aiStats?.ai?.stats && Array.isArray(aiStats.ai.stats)) {
+      for (const stat of aiStats.ai.stats) {
+        if (!stat.text) continue;
+        
+        // Ищем текст статистики в абстракте
+        const statText = stat.text;
+        let idx = text.indexOf(statText);
+        
+        // Если точное совпадение не найдено, пробуем нечёткий поиск
+        if (idx === -1) {
+          // Убираем лишние пробелы и ищем снова
+          const normalizedStat = statText.replace(/\s+/g, ' ').trim();
+          const normalizedText = text.replace(/\s+/g, ' ');
+          const normalizedIdx = normalizedText.indexOf(normalizedStat);
+          if (normalizedIdx !== -1) {
+            // Находим соответствующую позицию в оригинальном тексте
+            let origIdx = 0;
+            let normIdx = 0;
+            while (normIdx < normalizedIdx && origIdx < text.length) {
+              if (text[origIdx] === ' ' && (origIdx === 0 || text[origIdx-1] === ' ')) {
+                origIdx++;
+              } else {
+                origIdx++;
+                normIdx++;
+              }
+            }
+            idx = origIdx;
+          }
+        }
+        
+        if (idx !== -1) {
+          // Определяем CSS класс по типу и значимости
+          let className = 'stat-ai'; // базовый класс для AI-найденной статистики
+          if (stat.significance === 'high') {
+            className = 'stat-p001'; // зелёный - высокая значимость
+          } else if (stat.significance === 'medium') {
+            className = 'stat-p01'; // жёлтый - средняя
+          } else if (stat.significance === 'low') {
+            className = 'stat-p05'; // оранжевый - низкая
+          } else if (stat.type === 'confidence-interval') {
+            className = 'stat-ci';
+          } else if (stat.type === 'effect-size') {
+            className = 'stat-ratio';
+          } else if (stat.type === 'sample-size') {
+            className = 'stat-n';
+          } else if (stat.type === 'p-value' || stat.type === 'test-statistic') {
+            className = 'stat-pval';
+          }
+          
+          replacements.push({
+            start: idx,
+            end: idx + statText.length,
+            match: statText,
+            className,
+            source: 'ai',
+          });
+        }
+      }
+    }
+    
+    // Сортируем по позиции и удаляем пересечения (приоритет regex над AI для избежания дублей)
+    replacements.sort((a, b) => {
+      if (a.start !== b.start) return a.start - b.start;
+      // При одинаковой позиции - приоритет regex
+      return a.source === 'regex' ? -1 : 1;
+    });
+    
     const filtered: typeof replacements = [];
     for (const r of replacements) {
       const last = filtered[filtered.length - 1];
@@ -536,7 +605,11 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         parts.push(text.slice(lastEnd, r.start));
       }
       parts.push(
-        <span key={r.start} className={r.className}>
+        <span 
+          key={r.start} 
+          className={r.className}
+          title={r.source === 'ai' ? 'Найдено AI' : undefined}
+        >
           {r.match}
         </span>
       );
@@ -1603,7 +1676,8 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   {highlightStatistics(
                     showOriginal || !selectedArticle.abstract_ru 
                       ? (selectedArticle.abstract_en || "Нет абстракта")
-                      : selectedArticle.abstract_ru
+                      : selectedArticle.abstract_ru,
+                    selectedArticle.stats_json
                   )}
                 </div>
                 

@@ -568,7 +568,7 @@ input::placeholder {
 
 /* ===== STATS HIGHLIGHTING ===== */
 
-.stat-p001, .stat-p01, .stat-p05, .stat-pval, .stat-ci, .stat-ratio, .stat-n {
+.stat-p001, .stat-p01, .stat-p05, .stat-pval, .stat-ci, .stat-ratio, .stat-n, .stat-ai {
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: 500;
@@ -581,6 +581,8 @@ input::placeholder {
 .stat-ci { background: rgba(128, 200, 232, 0.2); color: #80c8e8; }
 .stat-ratio { background: rgba(200, 128, 232, 0.2); color: #c880e8; }
 .stat-n { background: rgba(128, 128, 232, 0.2); color: #8080e8; }
+/* AI-найденная статистика (fallback когда тип не определён) */
+.stat-ai { background: rgba(255, 165, 0, 0.25); color: #ffa500; border: 1px dashed rgba(255, 165, 0, 0.5); }
 
 /* ===== BADGES ===== */
 
