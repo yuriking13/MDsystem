@@ -908,12 +908,13 @@ export async function apiMarkStatisticUsedInDocument(
 
 export async function apiDeleteStatistic(
   projectId: string,
-  statId: string
+  statId: string,
+  force = false
 ): Promise<{ ok: true }> {
-  return apiFetch<{ ok: true }>(
-    `/api/projects/${projectId}/statistics/${statId}`,
-    { method: "DELETE" }
-  );
+  const url = force 
+    ? `/api/projects/${projectId}/statistics/${statId}?force=true`
+    : `/api/projects/${projectId}/statistics/${statId}`;
+  return apiFetch<{ ok: true }>(url, { method: "DELETE" });
 }
 
 export async function apiMarkStatisticUsed(
@@ -969,6 +970,15 @@ export async function apiSyncStatistics(
       method: "POST",
       body: JSON.stringify(data),
     }
+  );
+}
+
+export async function apiCleanupStatistics(
+  projectId: string
+): Promise<{ ok: boolean; deleted: number; deletedItems: Array<{ id: string; title: string }> }> {
+  return apiFetch<{ ok: boolean; deleted: number; deletedItems: Array<{ id: string; title: string }> }>(
+    `/api/projects/${projectId}/statistics/cleanup`,
+    { method: "POST" }
   );
 }
 

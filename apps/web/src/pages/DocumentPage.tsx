@@ -643,6 +643,17 @@ export default function DocumentPage() {
   async function handleInsertStatistic(stat: ProjectStatistic) {
     if (!stat.table_data || !stat.config || !projectId || !docId) return;
     
+    // ВАЖНО: Проверяем существование статистики на сервере перед импортом
+    try {
+      await apiGetStatistic(projectId, stat.id);
+    } catch (err: any) {
+      // Статистика была удалена — обновляем список и показываем ошибку
+      setError("Эта статистика была удалена. Список обновлён.");
+      const res = await apiGetStatistics(projectId);
+      setStatistics(res.statistics);
+      return;
+    }
+    
     setShowImportModal(false);
     
     // Небольшая задержка чтобы редактор успел зарегистрировать функцию
@@ -725,6 +736,17 @@ export default function DocumentPage() {
   // Вставить таблицу из статистики
   async function handleInsertTable(stat: ProjectStatistic) {
     if (!stat.table_data || !projectId || !docId) return;
+    
+    // ВАЖНО: Проверяем существование статистики на сервере перед импортом
+    try {
+      await apiGetStatistic(projectId, stat.id);
+    } catch (err: any) {
+      // Статистика была удалена — обновляем список и показываем ошибку
+      setError("Эта статистика была удалена. Список обновлён.");
+      const res = await apiGetStatistics(projectId);
+      setStatistics(res.statistics);
+      return;
+    }
     
     setShowImportModal(false);
     
