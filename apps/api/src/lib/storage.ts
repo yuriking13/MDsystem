@@ -39,8 +39,8 @@ export const ALLOWED_MIME_TYPES = {
 export type AllowedMimeType = keyof typeof ALLOWED_MIME_TYPES;
 export type FileCategory = "document" | "image" | "video" | "audio" | "other";
 
-// Max file size: 50MB
-export const MAX_FILE_SIZE = 50 * 1024 * 1024;
+// Max file size: 500MB
+export const MAX_FILE_SIZE = 500 * 1024 * 1024;
 
 let s3Client: S3Client | null = null;
 
