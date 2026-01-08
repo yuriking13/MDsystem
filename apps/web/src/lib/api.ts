@@ -367,26 +367,123 @@ export async function apiTranslateArticles(
   );
 }
 
-// AI детекция статистики
+// AI детекция статистики (SSE streaming)
+export type AIStatsProgress = {
+  batch: number;
+  totalBatches: number;
+  analyzed: number;
+  found: number;
+  errors: number;
+  total: number;
+  percent: number;
+};
+
 export type AIStatsResult = {
   ok: true;
   analyzed: number;
   found: number;
-  remaining: number;
+  errors: number;
+  total: number;
   message: string;
+};
+
+export type AIStatsCallbacks = {
+  onStart?: (data: { total: number; batchSize: number }) => void;
+  onProgress?: (data: AIStatsProgress) => void;
+  onComplete?: (data: AIStatsResult) => void;
+  onError?: (error: Error) => void;
 };
 
 export async function apiDetectStatsWithAI(
   projectId: string,
-  articleIds?: string[]
+  articleIds?: string[],
+  callbacks?: AIStatsCallbacks
 ): Promise<AIStatsResult> {
-  return apiFetch<AIStatsResult>(
-    `/api/projects/${projectId}/articles/ai-detect-stats`,
-    { 
-      method: "POST",
-      body: JSON.stringify({ articleIds }),
-    }
-  );
+  const token = localStorage.getItem("token");
+  
+  const response = await fetch(`/api/projects/${projectId}/articles/ai-detect-stats`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ articleIds }),
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP ${response.status}`);
+  }
+  
+  const contentType = response.headers.get("content-type");
+  
+  // Если это SSE - обрабатываем стрим
+  if (contentType?.includes("text/event-stream")) {
+    return new Promise((resolve, reject) => {
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let result: AIStatsResult | null = null;
+      
+      const processLine = (line: string) => {
+        if (line.startsWith('event: ')) {
+          // Сохраняем тип события для следующей строки data
+          buffer = line.slice(7);
+        } else if (line.startsWith('data: ')) {
+          const eventType = buffer;
+          buffer = '';
+          try {
+            const data = JSON.parse(line.slice(6));
+            
+            if (eventType === 'start' && callbacks?.onStart) {
+              callbacks.onStart(data);
+            } else if (eventType === 'progress' && callbacks?.onProgress) {
+              callbacks.onProgress(data);
+            } else if (eventType === 'complete') {
+              result = data;
+              callbacks?.onComplete?.(data);
+            }
+          } catch (e) {
+            console.error('SSE parse error:', e);
+          }
+        }
+      };
+      
+      const read = async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader!.read();
+            if (done) {
+              if (result) {
+                resolve(result);
+              } else {
+                reject(new Error('Stream ended without complete event'));
+              }
+              break;
+            }
+            
+            const text = decoder.decode(value, { stream: true });
+            const lines = text.split('\n');
+            for (const line of lines) {
+              if (line.trim()) {
+                processLine(line);
+              }
+            }
+          }
+        } catch (err) {
+          callbacks?.onError?.(err as Error);
+          reject(err);
+        }
+      };
+      
+      read();
+    });
+  }
+  
+  // Если обычный JSON ответ (для совместимости)
+  const data = await response.json();
+  callbacks?.onComplete?.(data);
+  return data;
 }
 
 // Обогащение статей через Crossref
