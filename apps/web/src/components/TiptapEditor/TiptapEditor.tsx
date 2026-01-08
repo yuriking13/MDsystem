@@ -23,6 +23,7 @@ import PageSettingsModal, { type PageSettings } from './PageSettingsModal';
 import { ChartNode, insertChartIntoEditor, type ChartNodeAttrs } from './extensions/ChartNode';
 import { CitationMark, type CitationAttrs } from './extensions/CitationMark';
 import { TableFigureNumbering } from './extensions/TableFigureNumbering';
+import { ProjectFileNode, insertFileIntoEditor, getFileIdsFromEditor, type ProjectFileNodeAttrs } from './extensions/ProjectFileNode';
 import StatisticEditModal from '../StatisticEditModal';
 import type { ProjectStatistic, DataClassification } from '../../lib/api';
 import type { TableData, ChartConfig } from '../ChartFromTable';
@@ -140,6 +141,7 @@ interface TiptapEditorProps {
   onChange?: (html: string) => void;
   onInsertCitation?: () => void;
   onImportStatistic?: () => void;
+  onImportFile?: () => void;
   onCreateChartFromTable?: (tableHtml: string) => void;
   onRemoveCitation?: (citationId: string) => void;
   onUpdateCitationNote?: (citationId: string, note: string) => void;
@@ -159,6 +161,7 @@ interface TiptapEditorProps {
   citations?: Citation[];
   citationStyle?: CitationStyle;
   editable?: boolean;
+  projectId?: string;
 }
 
 type StatEditorState = {
@@ -173,6 +176,10 @@ export interface TiptapEditorHandle {
   forceSetContent: (html: string) => void;
   /** Get current editor HTML */
   getHTML: () => string;
+  /** Insert a project file into the editor */
+  insertFile: (attrs: ProjectFileNodeAttrs) => boolean;
+  /** Get all file IDs used in the document */
+  getFileIds: () => string[];
 }
 
 const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function TiptapEditor({
@@ -180,6 +187,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   onChange,
   onInsertCitation,
   onImportStatistic,
+  onImportFile,
   onCreateChartFromTable,
   onRemoveCitation,
   onUpdateCitationNote,
@@ -189,6 +197,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   citations = [],
   citationStyle = 'gost',
   editable = true,
+  projectId,
 }: TiptapEditorProps, ref) {
   const [showOutline, setShowOutline] = useState(true);
   const [showBibliography, setShowBibliography] = useState(true);
@@ -315,6 +324,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     if (ChartNode) extList.push(ChartNode);
     if (CitationMark) extList.push(CitationMark);
     if (TableFigureNumbering) extList.push(TableFigureNumbering);
+    if (ProjectFileNode) extList.push(ProjectFileNode);
     if (Underline) extList.push(Underline);
     
     // Link
@@ -625,6 +635,18 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
       }
     },
     getHTML: () => editor?.getHTML() || '',
+    insertFile: (attrs: ProjectFileNodeAttrs) => {
+      if (editor && !editor.isDestroyed) {
+        return insertFileIntoEditor(editor, attrs);
+      }
+      return false;
+    },
+    getFileIds: () => {
+      if (editor && !editor.isDestroyed) {
+        return getFileIdsFromEditor(editor);
+      }
+      return [];
+    },
   }), [editor, updateHeadings]);
 
   // Register global insert functions
@@ -1007,6 +1029,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
           editor={editor} 
           onInsertCitation={onInsertCitation}
           onImportStatistic={onImportStatistic}
+          onImportFile={onImportFile}
           onCreateChartFromTable={onCreateChartFromTable}
           onOpenTableEditor={handleOpenTableEditor}
           onToggleOutline={() => setShowOutline(!showOutline)}

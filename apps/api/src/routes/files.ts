@@ -79,6 +79,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           sizeFormatted: formatFileSize(f.size),
           category: f.category,
           description: f.description,
+          usedInDocuments: f.usedInDocuments || [],
           uploadedBy: f.uploader?.email || null,
           createdAt: f.createdAt.toISOString(),
           updatedAt: f.updatedAt.toISOString(),
@@ -410,6 +411,139 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       });
 
       return { ok: true };
+    }
+  );
+
+  // POST /api/projects/:projectId/files/:fileId/use - Mark file as used in document
+  app.post<{
+    Params: { projectId: string; fileId: string };
+    Body: { documentId: string };
+  }>(
+    "/projects/:projectId/files/:fileId/use",
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const userId = (req as any).user.sub;
+      const { projectId, fileId } = req.params;
+      const { documentId } = req.body;
+
+      if (!documentId) {
+        return reply.badRequest("documentId is required");
+      }
+
+      const access = await checkProjectAccess(userId, projectId);
+      if (!access.hasAccess) {
+        return reply.forbidden("You don't have access to this project");
+      }
+
+      const file = await prisma.projectFile.findFirst({
+        where: { id: fileId, projectId },
+      });
+
+      if (!file) {
+        return reply.notFound("File not found");
+      }
+
+      // Add documentId to usedInDocuments if not already present
+      const usedInDocuments = file.usedInDocuments || [];
+      if (!usedInDocuments.includes(documentId)) {
+        await prisma.projectFile.update({
+          where: { id: fileId },
+          data: {
+            usedInDocuments: [...usedInDocuments, documentId],
+          },
+        });
+      }
+
+      return { ok: true };
+    }
+  );
+
+  // DELETE /api/projects/:projectId/files/:fileId/use - Unmark file usage in document
+  app.delete<{
+    Params: { projectId: string; fileId: string };
+    Body: { documentId: string };
+  }>(
+    "/projects/:projectId/files/:fileId/use",
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const userId = (req as any).user.sub;
+      const { projectId, fileId } = req.params;
+      const { documentId } = req.body;
+
+      if (!documentId) {
+        return reply.badRequest("documentId is required");
+      }
+
+      const access = await checkProjectAccess(userId, projectId);
+      if (!access.hasAccess) {
+        return reply.forbidden("You don't have access to this project");
+      }
+
+      const file = await prisma.projectFile.findFirst({
+        where: { id: fileId, projectId },
+      });
+
+      if (!file) {
+        return reply.notFound("File not found");
+      }
+
+      // Remove documentId from usedInDocuments
+      const usedInDocuments = (file.usedInDocuments || []).filter(id => id !== documentId);
+      await prisma.projectFile.update({
+        where: { id: fileId },
+        data: { usedInDocuments },
+      });
+
+      return { ok: true };
+    }
+  );
+
+  // POST /api/projects/:projectId/files/sync - Sync file usage with document content
+  app.post<{
+    Params: { projectId: string };
+    Body: { documentId: string; fileIds: string[] };
+  }>(
+    "/projects/:projectId/files/sync",
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const userId = (req as any).user.sub;
+      const { projectId } = req.params;
+      const { documentId, fileIds } = req.body;
+
+      if (!documentId) {
+        return reply.badRequest("documentId is required");
+      }
+
+      const access = await checkProjectAccess(userId, projectId);
+      if (!access.hasAccess) {
+        return reply.forbidden("You don't have access to this project");
+      }
+
+      // Get all project files
+      const allFiles = await prisma.projectFile.findMany({
+        where: { projectId },
+      });
+
+      // Update each file's usedInDocuments
+      for (const file of allFiles) {
+        const wasUsed = file.usedInDocuments.includes(documentId);
+        const isUsed = fileIds.includes(file.id);
+
+        if (wasUsed !== isUsed) {
+          let newUsedInDocuments: string[];
+          if (isUsed) {
+            newUsedInDocuments = [...file.usedInDocuments, documentId];
+          } else {
+            newUsedInDocuments = file.usedInDocuments.filter(id => id !== documentId);
+          }
+          await prisma.projectFile.update({
+            where: { id: file.id },
+            data: { usedInDocuments: newUsedInDocuments },
+          });
+        }
+      }
+
+      return { ok: true, synced: fileIds.length };
     }
   );
 };

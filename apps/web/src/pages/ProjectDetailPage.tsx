@@ -1707,6 +1707,19 @@ export default function ProjectDetailPage() {
                             <div className="file-meta muted">
                               {file.sizeFormatted} • {new Date(file.createdAt).toLocaleDateString()}
                             </div>
+                            {/* Теги использования в документах */}
+                            {file.usedInDocuments && file.usedInDocuments.length > 0 && (
+                              <div className="file-usage-tags">
+                                {file.usedInDocuments.map((docId) => {
+                                  const doc = documents.find(d => d.id === docId);
+                                  return doc ? (
+                                    <span key={docId} className="file-usage-tag" title={`Используется в: ${doc.title}`}>
+                                      📄 {doc.title.length > 15 ? doc.title.slice(0, 15) + '...' : doc.title}
+                                    </span>
+                                  ) : null;
+                                })}
+                              </div>
+                            )}
                           </div>
                           <div className="file-actions" onClick={(e) => e.stopPropagation()}>
                             {canPreview && (
