@@ -814,6 +814,7 @@ export type ProjectStatistic = {
   order_index: number;
   created_at: string;
   updated_at: string;
+  version?: number; // Optimistic locking
 };
 
 export async function apiGetStatistics(
@@ -865,6 +866,7 @@ export async function apiUpdateStatistic(
     dataClassification?: DataClassification;
     chartType?: string;
     orderIndex?: number;
+    version?: number; // Optimistic locking - отправлять для проверки конфликтов
   }
 ): Promise<{ statistic: ProjectStatistic }> {
   return apiFetch<{ statistic: ProjectStatistic }>(
