@@ -1778,7 +1778,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // POST /api/projects/:id/articles/ai-detect-stats - AI детекция статистики
+  // POST /api/projects/:id/articles/ai-detect-stats - AI детекция статистики (SSE streaming)
   fastify.post(
     "/projects/:id/articles/ai-detect-stats",
     { preHandler: [fastify.authenticate] },
@@ -1810,32 +1810,30 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Импортируем функцию
       const { detectStatsCombined } = await import("../lib/stats.js");
       
-      // Лимит для обработки за один запрос (чтобы уложиться в таймаут nginx)
-      const BATCH_LIMIT = 15;
+      // Настройки батчинга
+      const BATCH_SIZE = 10; // Размер пачки
+      const PARALLEL_LIMIT = 5; // Параллельных запросов в пачке
+      const BATCH_DELAY_MS = 500; // Пауза между пачками для rate limiting
       
-      // Получить статьи для анализа
-      // Если переданы articleIds - берём только их (с лимитом)
-      // Иначе берём статьи без AI-статистики
+      // Получить ВСЕ статьи для анализа (без AI статистики)
       let articlesRes;
-      let totalRemaining = 0;
       
       if (articleIds && articleIds.length > 0) {
-        // Ограничиваем количество выбранных статей
-        const limitedIds = articleIds.slice(0, BATCH_LIMIT);
+        // Выбранные статьи, которые ещё не проанализированы AI
         articlesRes = await pool.query(
           `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality, a.stats_json
            FROM articles a
            JOIN project_articles pa ON pa.article_id = a.id
            WHERE pa.project_id = $1 
              AND a.id = ANY($2)
-             AND a.abstract_en IS NOT NULL`,
-          [paramsP.data.id, limitedIds]
+             AND a.abstract_en IS NOT NULL
+             AND (a.stats_json IS NULL OR a.stats_json->'ai' IS NULL)`,
+          [paramsP.data.id, articleIds]
         );
-        totalRemaining = Math.max(0, articleIds.length - BATCH_LIMIT);
       } else {
-        // Сначала узнаём общее количество необработанных
-        const countRes = await pool.query(
-          `SELECT COUNT(*) as cnt
+        // Все статьи без AI-статистики
+        articlesRes = await pool.query(
+          `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality, a.stats_json
            FROM articles a
            JOIN project_articles pa ON pa.article_id = a.id
            WHERE pa.project_id = $1 
@@ -1843,102 +1841,139 @@ const plugin: FastifyPluginAsync = async (fastify) => {
              AND (a.stats_json IS NULL OR a.stats_json->'ai' IS NULL)`,
           [paramsP.data.id]
         );
-        const totalUnprocessed = parseInt(countRes.rows[0]?.cnt || '0', 10);
-        
-        // Берём статьи без AI-статистики с лимитом
-        articlesRes = await pool.query(
-          `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality, a.stats_json
-           FROM articles a
-           JOIN project_articles pa ON pa.article_id = a.id
-           WHERE pa.project_id = $1 
-             AND a.abstract_en IS NOT NULL
-             AND (a.stats_json IS NULL OR a.stats_json->'ai' IS NULL)
-           LIMIT $2`,
-          [paramsP.data.id, BATCH_LIMIT]
-        );
-        totalRemaining = Math.max(0, totalUnprocessed - BATCH_LIMIT);
       }
       
-      if (articlesRes.rows.length === 0) {
+      const articles = articlesRes.rows;
+      const total = articles.length;
+      
+      if (total === 0) {
         return { 
           ok: true, 
           analyzed: 0, 
           found: 0,
-          remaining: 0,
+          total: 0,
           message: articleIds?.length 
-            ? "Выбранные статьи не имеют абстрактов для анализа" 
+            ? "Выбранные статьи уже проанализированы или не имеют абстрактов" 
             : "Все статьи уже проанализированы AI" 
         };
       }
       
+      // Устанавливаем SSE заголовки
+      reply.raw.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no', // Отключаем буферизацию nginx
+      });
+      
+      // Функция отправки SSE события
+      const sendEvent = (event: string, data: any) => {
+        reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+      };
+      
+      // Отправляем начальное событие
+      sendEvent('start', { total, batchSize: BATCH_SIZE });
+      
       let analyzed = 0;
       let found = 0;
+      let errors = 0;
       
-      // Обрабатываем параллельно по 5 статей для ускорения
-      const PARALLEL_LIMIT = 5;
-      const articles = articlesRes.rows;
-      
-      for (let i = 0; i < articles.length; i += PARALLEL_LIMIT) {
-        const batch = articles.slice(i, i + PARALLEL_LIMIT);
+      // Обрабатываем пачками
+      for (let batchStart = 0; batchStart < articles.length; batchStart += BATCH_SIZE) {
+        const batch = articles.slice(batchStart, batchStart + BATCH_SIZE);
+        const batchNum = Math.floor(batchStart / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(articles.length / BATCH_SIZE);
         
-        const results = await Promise.allSettled(
-          batch.map(async (article) => {
-            const result = await detectStatsCombined({
-              text: article.abstract_en,
-              openrouterKey,
-              useAI: true,
-            });
-            return { article, result };
-          })
-        );
-        
-        for (const res of results) {
-          if (res.status === 'fulfilled') {
-            const { article, result } = res.value;
-            
-            // Сохраняем результат AI-анализа
-            if (result.aiStats && result.aiStats.stats && result.aiStats.stats.length > 0) {
-              await pool.query(
-                `UPDATE articles SET 
-                  has_stats = true,
-                  stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
-                  stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
-                 WHERE id = $3`,
-                [
-                  result.quality,
-                  JSON.stringify({ ai: result.aiStats }),
-                  article.id
-                ]
-              );
-              found++;
-            } else if (result.hasStats) {
-              await pool.query(
-                `UPDATE articles SET 
-                  has_stats = true,
-                  stats_quality = GREATEST(COALESCE(stats_quality, 0), $1)
-                 WHERE id = $2`,
-                [result.quality, article.id]
-              );
+        // Обрабатываем пачку параллельно (по PARALLEL_LIMIT за раз)
+        for (let i = 0; i < batch.length; i += PARALLEL_LIMIT) {
+          const parallelBatch = batch.slice(i, i + PARALLEL_LIMIT);
+          
+          const results = await Promise.allSettled(
+            parallelBatch.map(async (article) => {
+              const result = await detectStatsCombined({
+                text: article.abstract_en,
+                openrouterKey,
+                useAI: true,
+              });
+              return { article, result };
+            })
+          );
+          
+          for (const res of results) {
+            if (res.status === 'fulfilled') {
+              const { article, result } = res.value;
+              
+              // Сохраняем результат AI-анализа
+              if (result.aiStats && result.aiStats.stats && result.aiStats.stats.length > 0) {
+                await pool.query(
+                  `UPDATE articles SET 
+                    has_stats = true,
+                    stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
+                    stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
+                   WHERE id = $3`,
+                  [
+                    result.quality,
+                    JSON.stringify({ ai: result.aiStats }),
+                    article.id
+                  ]
+                );
+                found++;
+              } else if (result.hasStats) {
+                // Отмечаем что AI анализ был проведён (пустой результат)
+                await pool.query(
+                  `UPDATE articles SET 
+                    has_stats = true,
+                    stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
+                    stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": false, "stats": []}}'::jsonb
+                   WHERE id = $2`,
+                  [result.quality, article.id]
+                );
+              } else {
+                // Отмечаем что AI анализ был проведён (ничего не найдено)
+                await pool.query(
+                  `UPDATE articles SET 
+                    stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": false, "stats": []}}'::jsonb
+                   WHERE id = $1`,
+                  [article.id]
+                );
+              }
+              
+              analyzed++;
+            } else {
+              console.error(`AI stats detection error:`, res.reason);
+              errors++;
             }
-            
-            analyzed++;
-          } else {
-            console.error(`AI stats detection error:`, res.reason);
           }
+        }
+        
+        // Отправляем прогресс после каждой пачки
+        sendEvent('progress', { 
+          batch: batchNum, 
+          totalBatches,
+          analyzed, 
+          found,
+          errors,
+          total,
+          percent: Math.round((analyzed / total) * 100)
+        });
+        
+        // Пауза между пачками чтобы не превысить rate limits
+        if (batchStart + BATCH_SIZE < articles.length) {
+          await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
         }
       }
       
-      const remainingMsg = totalRemaining > 0 
-        ? ` Осталось ${totalRemaining} статей — нажмите ещё раз.`
-        : '';
+      // Отправляем финальное событие
+      sendEvent('complete', { 
+        ok: true,
+        analyzed, 
+        found, 
+        errors,
+        total,
+        message: `Проанализировано ${analyzed} статей. AI нашёл статистику в ${found}.`
+      });
       
-      return { 
-        ok: true, 
-        analyzed,
-        found,
-        remaining: totalRemaining,
-        message: `Проанализировано ${analyzed} статей. AI нашёл статистику в ${found}.${remainingMsg}` 
-      };
+      reply.raw.end();
     }
   );
 

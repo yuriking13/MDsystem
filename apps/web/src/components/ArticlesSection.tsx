@@ -102,6 +102,12 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   
   // AI детекция статистики
   const [detectingStats, setDetectingStats] = useState(false);
+  const [aiStatsProgress, setAiStatsProgress] = useState<{
+    percent: number;
+    analyzed: number;
+    found: number;
+    total: number;
+  } | null>(null);
 
   // Выбранная статья для просмотра
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
@@ -387,16 +393,37 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     setDetectingStats(true);
     setError(null);
     setOk(null);
+    setAiStatsProgress(null);
     
     try {
       // Если выбраны статьи - анализируем только их
       const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
-      const res = await apiDetectStatsWithAI(projectId, ids);
-      setOk(res.message);
+      const res = await apiDetectStatsWithAI(projectId, ids, {
+        onStart: (data) => {
+          setAiStatsProgress({ percent: 0, analyzed: 0, found: 0, total: data.total });
+        },
+        onProgress: (data) => {
+          setAiStatsProgress({
+            percent: data.percent,
+            analyzed: data.analyzed,
+            found: data.found,
+            total: data.total,
+          });
+        },
+        onComplete: (data) => {
+          setOk(data.message);
+          setAiStatsProgress(null);
+        },
+        onError: (err) => {
+          setError(err.message);
+          setAiStatsProgress(null);
+        },
+      });
       setSelectedIds(new Set());
       await loadArticles();
     } catch (err: any) {
       setError(err?.message || "Ошибка AI анализа статистики");
+      setAiStatsProgress(null);
     } finally {
       setDetectingStats(false);
     }
@@ -1269,12 +1296,21 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 disabled={detectingStats}
                 title="AI детекция статистики (OpenRouter)"
                 type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
+                style={{ padding: "4px 10px", fontSize: 12, minWidth: aiStatsProgress ? 180 : undefined }}
               >
-                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                AI Статистика
+                {detectingStats && aiStatsProgress ? (
+                  <>
+                    <span className="spinner-small" style={{ marginRight: 6 }} />
+                    {aiStatsProgress.percent}% ({aiStatsProgress.analyzed}/{aiStatsProgress.total})
+                  </>
+                ) : (
+                  <>
+                    <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    AI Статистика
+                  </>
+                )}
               </button>
               {viewStatus !== "candidate" && viewStatus !== "deleted" && (
                 <button
