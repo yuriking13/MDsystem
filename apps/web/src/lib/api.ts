@@ -399,7 +399,7 @@ export async function apiDetectStatsWithAI(
   articleIds?: string[],
   callbacks?: AIStatsCallbacks
 ): Promise<AIStatsResult> {
-  const token = localStorage.getItem("token");
+  const token = getToken();
   
   const response = await fetch(`/api/projects/${projectId}/articles/ai-detect-stats`, {
     method: "POST",
