@@ -4,6 +4,7 @@
 
 import { FastifyPluginAsync } from "fastify";
 import { prisma } from "../db.js";
+import type { ProjectFile, User } from "@prisma/client";
 import {
   isStorageConfigured,
   validateFileType,
@@ -70,7 +71,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       });
 
       return {
-        files: files.map((f) => ({
+        files: files.map((f: ProjectFile & { uploader: Pick<User, 'id' | 'email'> | null }) => ({
           id: f.id,
           name: f.name,
           mimeType: f.mimeType,

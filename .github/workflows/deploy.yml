@@ -28,6 +28,9 @@ jobs:
             corepack prepare pnpm@latest --activate
             pnpm install
 
+            # Generate Prisma client BEFORE build (required for new models)
+            pnpm --filter api exec prisma generate
+
             pnpm --filter api build
             pnpm --filter web build
 
@@ -41,6 +44,10 @@ jobs:
             
             # Using db push because the database is not baselined for migrations
             pnpm --filter api exec prisma db push --accept-data-loss
+
+            # Apply additional migrations (project_files table)
+            echo "Applying project_files migration..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_project_files.sql 2>/dev/null || echo "project_files table may already exist"
 
             # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
