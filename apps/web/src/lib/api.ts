@@ -1042,6 +1042,7 @@ export type ProjectFile = {
   sizeFormatted: string;
   category: FileCategory;
   description: string | null;
+  usedInDocuments: string[];
   uploadedBy: string | null;
   createdAt: string;
   updatedAt: string;
@@ -1151,5 +1152,47 @@ export async function apiDeleteFile(
   return apiFetch<{ ok: true }>(
     `/api/projects/${projectId}/files/${fileId}`,
     { method: "DELETE" }
+  );
+}
+
+export async function apiMarkFileUsed(
+  projectId: string,
+  fileId: string,
+  documentId: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/files/${fileId}/use`,
+    {
+      method: "POST",
+      body: JSON.stringify({ documentId }),
+    }
+  );
+}
+
+export async function apiUnmarkFileUsed(
+  projectId: string,
+  fileId: string,
+  documentId: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/files/${fileId}/use`,
+    {
+      method: "DELETE",
+      body: JSON.stringify({ documentId }),
+    }
+  );
+}
+
+export async function apiSyncFileUsage(
+  projectId: string,
+  documentId: string,
+  fileIds: string[]
+): Promise<{ ok: true; synced: number }> {
+  return apiFetch<{ ok: true; synced: number }>(
+    `/api/projects/${projectId}/files/sync`,
+    {
+      method: "POST",
+      body: JSON.stringify({ documentId, fileIds }),
+    }
   );
 }

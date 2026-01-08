@@ -18,13 +18,18 @@ import {
   apiUpdateStatistic,
   apiCreateStatistic,
   apiRenumberCitations,
+  apiGetProjectFiles,
+  apiMarkFileUsed,
+  apiSyncFileUsage,
   type Document,
   type Article,
   type Citation,
   type CitationStyle,
   type ProjectStatistic,
   type DataClassification,
+  type ProjectFile,
 } from "../lib/api";
+import { type ProjectFileNodeAttrs } from "../components/TiptapEditor/extensions/ProjectFileNode";
 import ChartFromTable, { CHART_TYPE_INFO, ChartCreatorModal, type ChartType, type TableData } from "../components/ChartFromTable";
 
 // Всегда используем язык оригинала (английский)
@@ -92,6 +97,12 @@ export default function DocumentPage() {
   // Модальное окно создания графика из таблицы
   const [showChartModal, setShowChartModal] = useState(false);
   const [chartTableHtml, setChartTableHtml] = useState("");
+  
+  // Модальное окно выбора файла из проекта
+  const [showFileModal, setShowFileModal] = useState(false);
+  const [projectFiles, setProjectFiles] = useState<ProjectFile[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
+  const [fileFilter, setFileFilter] = useState<'all' | 'image' | 'video' | 'audio' | 'document'>('all');
   
   // Состояние для обновления библиографии проекта
   const [updatingBibliography, setUpdatingBibliography] = useState(false);
@@ -638,6 +649,52 @@ export default function DocumentPage() {
       setLoadingStats(false);
     }
   }
+
+  // Открыть модал выбора файла
+  async function openFileModal() {
+    if (!projectId) return;
+    setShowFileModal(true);
+    setLoadingFiles(true);
+    
+    try {
+      const res = await apiGetProjectFiles(projectId);
+      setProjectFiles(res.files);
+    } catch (err) {
+      console.error("Load files error:", err);
+    } finally {
+      setLoadingFiles(false);
+    }
+  }
+
+  // Вставить файл в редактор
+  async function handleInsertFile(file: ProjectFile) {
+    if (!projectId || !docId || !editorRef.current) return;
+    
+    const attrs: ProjectFileNodeAttrs = {
+      fileId: file.id,
+      projectId: projectId,
+      fileName: file.name,
+      mimeType: file.mimeType,
+      category: file.category as 'image' | 'video' | 'audio' | 'document' | 'other',
+    };
+    
+    const success = editorRef.current.insertFile(attrs);
+    if (success) {
+      // Отметить файл как используемый в документе
+      try {
+        await apiMarkFileUsed(projectId, file.id, docId);
+      } catch (err) {
+        console.error("Failed to mark file as used:", err);
+      }
+      setShowFileModal(false);
+    }
+  }
+
+  // Фильтрация файлов
+  const filteredFiles = useMemo(() => {
+    if (fileFilter === 'all') return projectFiles;
+    return projectFiles.filter(f => f.category === fileFilter);
+  }, [projectFiles, fileFilter]);
   
   // Вставить статистику в редактор
   async function handleInsertStatistic(stat: ProjectStatistic) {
@@ -1043,6 +1100,7 @@ export default function DocumentPage() {
             onChange={handleContentChange}
             onInsertCitation={openCitationPicker}
             onImportStatistic={openImportModal}
+            onImportFile={openFileModal}
             onCreateChartFromTable={openChartModal}
             onRemoveCitation={handleRemoveCitation}
             onUpdateCitationNote={handleUpdateCitationNote}
@@ -1051,6 +1109,7 @@ export default function DocumentPage() {
             onSaveStatistic={handleSaveStatistic}
             citations={visibleCitations}
             citationStyle={citationStyle}
+            projectId={projectId}
           />
         </div>
       </div>
@@ -1224,6 +1283,112 @@ export default function DocumentPage() {
           onClose={() => setShowChartModal(false)}
           onInsert={handleInsertChartFromTable}
         />
+      )}
+
+      {/* Модалка выбора файла из проекта */}
+      {showFileModal && (
+        <div className="modal-overlay" onClick={() => setShowFileModal(false)}>
+          <div className="modal" style={{ maxWidth: 700 }} onClick={(e) => e.stopPropagation()}>
+            <div className="row space" style={{ marginBottom: 16 }}>
+              <h3 style={{ margin: 0 }}>📁 Вставить файл из проекта</h3>
+              <button
+                className="btn secondary"
+                onClick={() => setShowFileModal(false)}
+                type="button"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Фильтр по типу */}
+            <div className="row gap" style={{ marginBottom: 16, flexWrap: 'wrap' }}>
+              {(['all', 'image', 'video', 'audio', 'document'] as const).map((cat) => (
+                <button
+                  key={cat}
+                  className={`btn ${fileFilter === cat ? '' : 'secondary'}`}
+                  onClick={() => setFileFilter(cat)}
+                  style={{ fontSize: 12 }}
+                  type="button"
+                >
+                  {cat === 'all' && '📂 Все'}
+                  {cat === 'image' && '🖼️ Изображения'}
+                  {cat === 'video' && '🎬 Видео'}
+                  {cat === 'audio' && '🎵 Аудио'}
+                  {cat === 'document' && '📄 Документы'}
+                </button>
+              ))}
+            </div>
+
+            {loadingFiles ? (
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <div className="muted">Загрузка файлов...</div>
+              </div>
+            ) : filteredFiles.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 40 }}>
+                <div style={{ fontSize: 32, marginBottom: 8 }}>📁</div>
+                <div className="muted">
+                  {projectFiles.length === 0 
+                    ? 'Нет загруженных файлов. Загрузите файлы во вкладке "Файлы" проекта.'
+                    : 'Нет файлов выбранного типа'}
+                </div>
+              </div>
+            ) : (
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', 
+                gap: 12,
+                maxHeight: 400,
+                overflow: 'auto',
+                padding: 4,
+              }}>
+                {filteredFiles.map((file) => (
+                  <div 
+                    key={file.id}
+                    className="file-picker-item"
+                    onClick={() => handleInsertFile(file)}
+                    style={{
+                      padding: 12,
+                      background: 'var(--bg-glass-light)',
+                      border: '1px solid var(--border-glass)',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      transition: 'all 0.2s',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--accent)';
+                      e.currentTarget.style.background = 'rgba(75,116,255,0.1)';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--border-glass)';
+                      e.currentTarget.style.background = 'var(--bg-glass-light)';
+                    }}
+                  >
+                    <div style={{ fontSize: 32, marginBottom: 8 }}>
+                      {file.category === 'image' && '🖼️'}
+                      {file.category === 'video' && '🎬'}
+                      {file.category === 'audio' && '🎵'}
+                      {file.category === 'document' && '📄'}
+                      {file.category === 'other' && '📁'}
+                    </div>
+                    <div style={{ 
+                      fontSize: 12, 
+                      whiteSpace: 'nowrap', 
+                      overflow: 'hidden', 
+                      textOverflow: 'ellipsis',
+                      marginBottom: 4,
+                    }} title={file.name}>
+                      {file.name}
+                    </div>
+                    <div className="muted" style={{ fontSize: 10 }}>
+                      {file.sizeFormatted}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
