@@ -372,6 +372,7 @@ export type AIStatsResult = {
   ok: true;
   analyzed: number;
   found: number;
+  remaining: number;
   message: string;
 };
 
