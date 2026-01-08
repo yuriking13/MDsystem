@@ -72,6 +72,11 @@ jobs:
               "Environment=\"CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}\"" \
               "Environment=\"API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}\"" \
               "Environment=\"DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}\"" \
+              "Environment=\"S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}\"" \
+              "Environment=\"S3_REGION=${{ secrets.S3_REGION }}\"" \
+              "Environment=\"S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}\"" \
+              "Environment=\"S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}\"" \
+              "Environment=\"S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}\"" \
               > /etc/systemd/system/thesis-api.service.d/override.conf
 
             # ---- install/refresh service file ----

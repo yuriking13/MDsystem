@@ -1029,3 +1029,127 @@ export async function apiTranslateText(
     body: JSON.stringify({ title, abstract, pmid }),
   });
 }
+
+// ========== Project Files ==========
+
+export type FileCategory = "document" | "image" | "video" | "audio" | "other";
+
+export type ProjectFile = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+  sizeFormatted: string;
+  category: FileCategory;
+  description: string | null;
+  uploadedBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FilesResponse = {
+  files: ProjectFile[];
+  storageConfigured: boolean;
+};
+
+export type StorageStatusResponse = {
+  configured: boolean;
+  maxFileSize: number;
+  maxFileSizeFormatted: string;
+  allowedTypes: string[];
+};
+
+export async function apiGetStorageStatus(): Promise<StorageStatusResponse> {
+  return apiFetch<StorageStatusResponse>("/api/storage/status");
+}
+
+export async function apiGetProjectFiles(
+  projectId: string,
+  category?: FileCategory
+): Promise<FilesResponse> {
+  const params = new URLSearchParams();
+  if (category) params.set("category", category);
+  const qs = params.toString();
+  return apiFetch<FilesResponse>(
+    `/api/projects/${projectId}/files${qs ? `?${qs}` : ""}`
+  );
+}
+
+export async function apiUploadFile(
+  projectId: string,
+  file: File,
+  onProgress?: (percent: number) => void
+): Promise<{ file: ProjectFile }> {
+  const token = getToken();
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    
+    if (onProgress) {
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+    }
+
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText));
+      } else {
+        try {
+          const error = JSON.parse(xhr.responseText);
+          reject(new Error(error.message || error.error || `HTTP ${xhr.status}`));
+        } catch {
+          reject(new Error(`HTTP ${xhr.status}`));
+        }
+      }
+    });
+
+    xhr.addEventListener("error", () => reject(new Error("Network error")));
+    xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
+
+    xhr.open("POST", `/api/projects/${projectId}/files`);
+    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+    xhr.send(formData);
+  });
+}
+
+export async function apiGetFileDownloadUrl(
+  projectId: string,
+  fileId: string
+): Promise<{ url: string; expiresIn: number }> {
+  return apiFetch<{ url: string; expiresIn: number }>(
+    `/api/projects/${projectId}/files/${fileId}/url`
+  );
+}
+
+export function getFileDownloadPath(projectId: string, fileId: string): string {
+  return `/api/projects/${projectId}/files/${fileId}/download?redirect=true`;
+}
+
+export async function apiUpdateFile(
+  projectId: string,
+  fileId: string,
+  data: { name?: string; description?: string }
+): Promise<{ file: Partial<ProjectFile> }> {
+  return apiFetch<{ file: Partial<ProjectFile> }>(
+    `/api/projects/${projectId}/files/${fileId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+export async function apiDeleteFile(
+  projectId: string,
+  fileId: string
+): Promise<{ ok: true }> {
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/files/${fileId}`,
+    { method: "DELETE" }
+  );
+}
