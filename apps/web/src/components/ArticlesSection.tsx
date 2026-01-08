@@ -580,20 +580,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         }
         
         if (idx !== -1) {
-          // Определяем CSS класс по типу и значимости
+          // Пропускаем not-significant статистику - она не важна для подсветки
+          if (stat.significance === 'not-significant') {
+            continue;
+          }
+          
+          // Определяем CSS класс по значимости (только для реальных p-values)
           let className = 'stat-ai'; // базовый класс для AI-найденной статистики
           if (stat.significance === 'high') {
-            className = 'stat-p001'; // зелёный - высокая значимость
+            className = 'stat-p001'; // зелёный - высокая значимость (p < 0.001)
           } else if (stat.significance === 'medium') {
-            className = 'stat-p01'; // жёлтый - средняя
+            className = 'stat-p01'; // жёлтый - средняя (p < 0.01)
           } else if (stat.significance === 'low') {
-            className = 'stat-p05'; // оранжевый - низкая
+            className = 'stat-p05'; // оранжевый - низкая (p < 0.05)
           } else if (stat.type === 'confidence-interval') {
             className = 'stat-ci';
           } else if (stat.type === 'effect-size') {
             className = 'stat-ratio';
-          } else if (stat.type === 'sample-size') {
-            className = 'stat-n';
           } else if (stat.type === 'p-value' || stat.type === 'test-statistic') {
             className = 'stat-pval';
           }

@@ -114,35 +114,53 @@ export async function detectStatsWithAI(args: {
 }): Promise<AIStatsResult> {
   const { text, openrouterKey, model = "google/gemini-2.0-flash-001" } = args;
 
-  const prompt = `You are a scientific statistics expert. Analyze the following text and identify ALL statistical data.
+  const prompt = `You are a scientific statistics expert analyzing a medical research abstract.
 
 TEXT:
 ${text}
 
-Your task:
-1. Find ALL statistical values including: p-values, confidence intervals, odds ratios (OR), risk ratios (RR), hazard ratios (HR), sample sizes (n=), t-tests, chi-square, F-statistics, correlation coefficients, standard deviations, means with errors, etc.
-2. For each found statistic, identify its type and significance level.
+TASK: Find ONLY inferential statistics that indicate statistical significance or effect sizes. 
+
+INCLUDE (these are what we're looking for):
+- P-values: "p < 0.05", "p = 0.001", "P < 0.001"
+- Confidence intervals WITH effect measures: "OR = 1.30; 95% CI: 1.06-1.61", "HR 2.5 (1.2-4.8)"
+- Effect sizes with CI: "RR = 0.75 (95% CI 0.6-0.9)"
+- Test statistics with p-values: "χ² = 15.3, p < 0.01", "t(45) = 2.31, p = 0.025"
+- Correlation with significance: "r = 0.45, p < 0.05"
+
+EXCLUDE (do NOT mark these as significant statistics):
+- Simple percentages: "15.9% of patients", "48.3% had diabetes" — these are DESCRIPTIVE, not inferential
+- Sample sizes alone: "n = 895", "895 women" — unless paired with statistical test
+- Means without comparison: "mean age 38.9 years", "average BMI 25.3"
+- Prevalence rates: "prevalence of 30%", "48.3% had metabolic syndrome"
+- Simple proportions or frequencies
+
+CRITICAL RULES:
+1. A percentage like "15.9%" is NOT a p-value! Only "p < 0.05" format indicates significance.
+2. "significance" field should ONLY be "high/medium/low" if there's an ACTUAL p-value in the text
+3. If no p-value is present, use "not-significant" for the significance field
+4. For confidence intervals without explicit p-value, use "not-significant" unless effect clearly excludes null
 
 Respond in JSON format:
 {
   "hasStats": true/false,
   "stats": [
     {
-      "text": "exact text from abstract containing the statistic",
+      "text": "exact text fragment containing the statistic",
       "type": "p-value|confidence-interval|effect-size|sample-size|test-statistic|other",
       "significance": "high|medium|low|not-significant"
     }
   ],
-  "summary": "brief summary of statistical findings"
+  "summary": "brief summary"
 }
 
-Rules for significance:
-- high: p < 0.001 or very strong effects
-- medium: p < 0.01 or moderate effects  
-- low: p < 0.05 or weak effects
-- not-significant: p ≥ 0.05 or descriptive stats only
+Significance levels (ONLY for actual p-values):
+- high: p < 0.001
+- medium: p < 0.01  
+- low: p < 0.05
+- not-significant: p ≥ 0.05 OR no p-value present
 
-IMPORTANT: Return ONLY valid JSON, no markdown or explanations.`;
+Return ONLY valid JSON.`;
 
   try {
     const res = await fetch(OPENROUTER_API, {
@@ -177,8 +195,55 @@ IMPORTANT: Return ONLY valid JSON, no markdown or explanations.`;
       return { hasStats: false, stats: [] };
     }
     
-    const result = JSON.parse(jsonMatch[0]) as AIStatsResult;
-    return result;
+    const rawResult = JSON.parse(jsonMatch[0]) as AIStatsResult;
+    
+    // Post-process: validate significance levels
+    // Only allow high/medium/low if the text actually contains a p-value pattern
+    const pValuePattern = /[pP]\s*[<>=≤≥]\s*0[.,]\d+/;
+    
+    if (rawResult.stats) {
+      rawResult.stats = rawResult.stats.map(stat => {
+        // If marked as significant but no actual p-value in text, downgrade to not-significant
+        if (stat.significance && stat.significance !== 'not-significant') {
+          if (!pValuePattern.test(stat.text)) {
+            // Check if it's a CI that excludes null (e.g., OR > 1 with CI not crossing 1)
+            const ciExcludesNull = /(?:OR|RR|HR)\s*[=:]\s*(\d+[.,]\d*)[^0-9]*(?:95%?\s*CI|CI\s*95%?)[:\s]*\(?(\d+[.,]\d*)[\s–\-−—]+(\d+[.,]\d*)\)?/i;
+            const ciMatch = stat.text.match(ciExcludesNull);
+            
+            if (ciMatch) {
+              const low = parseFloat(ciMatch[2].replace(',', '.'));
+              const high = parseFloat(ciMatch[3].replace(',', '.'));
+              // If CI doesn't cross 1.0, it's statistically significant
+              if (low > 1.0 || high < 1.0) {
+                stat.significance = 'low'; // Conservative estimate without explicit p-value
+              } else {
+                stat.significance = 'not-significant';
+              }
+            } else {
+              stat.significance = 'not-significant';
+            }
+          }
+        }
+        return stat;
+      });
+      
+      // Filter out purely descriptive stats that slipped through
+      rawResult.stats = rawResult.stats.filter(stat => {
+        const text = stat.text.toLowerCase();
+        // Reject simple percentages without statistical context
+        if (/^\d+[.,]\d*\s*%/.test(stat.text) && !pValuePattern.test(stat.text)) {
+          // Check if it has statistical context
+          if (!/(ci|or|rr|hr|odds|risk|hazard|interval)/i.test(stat.text)) {
+            return false;
+          }
+        }
+        return true;
+      });
+      
+      rawResult.hasStats = rawResult.stats.length > 0;
+    }
+    
+    return rawResult;
   } catch (err) {
     console.error("AI stats detection error:", err);
     return { hasStats: false, stats: [] };
