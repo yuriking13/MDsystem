@@ -14,6 +14,7 @@ import statisticsRoutes from './routes/statistics.js';
 
 import envGuard from './plugins/00-env-guard.js';
 import { startWorkers } from './worker/index.js';
+import { registerWebSocket, getConnectionStats } from './websocket.js';
 
 const app = Fastify({ logger: true });
 
@@ -26,6 +27,9 @@ await app.register(cors, {
 await app.register(sensible);
 await app.register(authPlugin);
 
+// WebSocket для real-time синхронизации
+await registerWebSocket(app);
+
 await authRoutes(app);
 await app.register(settingsRoutes, { prefix: '/api' });
 await app.register(projectsRoutes, { prefix: '/api' });
@@ -34,6 +38,9 @@ await app.register(documentsRoutes, { prefix: '/api' });
 await app.register(statisticsRoutes, { prefix: '/api' });
 
 app.get('/api/health', async () => ({ ok: true }));
+
+// Статистика WebSocket подключений
+app.get('/api/ws-stats', async () => getConnectionStats());
 
 app.listen({ host: env.HOST, port: env.PORT })
   .then(() => {

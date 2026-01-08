@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   apiGetProject,
@@ -28,6 +28,7 @@ import {
   type ProjectStatistic,
   type DataClassification,
 } from "../lib/api";
+import { useProjectWebSocket } from "../lib/useProjectWebSocket";
 import { useAuth } from "../lib/AuthContext";
 import ArticlesSection from "../components/ArticlesSection";
 import CitationGraph from "../components/CitationGraph";
@@ -371,6 +372,38 @@ export default function ProjectDetailPage() {
   const [creatingChartType, setCreatingChartType] = useState<ChartType | null>(null);
   const refreshingStats = useRef(false);
 
+  // WebSocket для real-time синхронизации
+  const handleWSStatisticCreated = useCallback((statistic: ProjectStatistic) => {
+    if (!statistic) return;
+    setStatistics(prev => {
+      // Проверяем что такой статистики ещё нет
+      if (prev.some(s => s.id === statistic.id)) return prev;
+      return [...prev, statistic];
+    });
+  }, []);
+
+  const handleWSStatisticUpdated = useCallback((statistic: ProjectStatistic) => {
+    if (!statistic) return;
+    setStatistics(prev => prev.map(s => s.id === statistic.id ? statistic : s));
+    // Если редактируем эту статистику, обновляем её тоже
+    setEditingStat(prev => prev?.id === statistic.id ? statistic : prev);
+  }, []);
+
+  const handleWSStatisticDeleted = useCallback((statisticId: string) => {
+    if (!statisticId) return;
+    setStatistics(prev => prev.filter(s => s.id !== statisticId));
+    // Закрываем редактор если удалили редактируемую статистику
+    setEditingStat(prev => prev?.id === statisticId ? null : prev);
+  }, []);
+
+  const { isConnected: wsConnected } = useProjectWebSocket({
+    projectId: id,
+    onStatisticCreated: handleWSStatisticCreated,
+    onStatisticUpdated: handleWSStatisticUpdated,
+    onStatisticDeleted: handleWSStatisticDeleted,
+    enabled: activeTab === "statistics", // Включаем только на вкладке статистики
+  });
+
   // Invite form
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -569,15 +602,32 @@ export default function ProjectDetailPage() {
     tableData?: Record<string, any>;
     dataClassification?: DataClassification;
     chartType?: string;
-  }) {
+  }, currentVersion?: number) {
     if (!id) return;
     try {
-      const result = await apiUpdateStatistic(id, statId, updates);
+      // Отправляем version для optimistic locking
+      const result = await apiUpdateStatistic(id, statId, {
+        ...updates,
+        version: currentVersion,
+      });
       setStatistics(statistics.map(s => 
         s.id === statId ? { ...s, ...result.statistic } : s
       ));
       setOk("Статистика обновлена");
     } catch (err: any) {
+      // Обработка конфликта версий
+      if (err?.message?.includes("VersionConflict") || err?.message?.includes("изменены другим")) {
+        const reload = confirm(
+          "⚠️ Данные были изменены другим пользователем!\n\n" +
+          "Ваши изменения не сохранены.\n" +
+          "Обновить данные?"
+        );
+        if (reload) {
+          loadStatistics();
+          setEditingStat(null);
+        }
+        return;
+      }
       setError(err?.message || "Ошибка обновления");
       throw err;
     }
@@ -1337,9 +1387,24 @@ export default function ProjectDetailPage() {
           <div className="statistics-page">
             <div className="statistics-header">
               <div>
-                <h2 style={{ margin: 0 }}>Статистика проекта</h2>
+                <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  Статистика проекта
+                  {/* WebSocket индикатор */}
+                  <span 
+                    title={wsConnected ? "Real-time синхронизация активна" : "Нет real-time соединения"}
+                    style={{
+                      display: 'inline-block',
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      backgroundColor: wsConnected ? '#4ade80' : '#6b7280',
+                      animation: wsConnected ? 'pulse 2s infinite' : 'none',
+                    }}
+                  />
+                </h2>
                 <div className="muted" style={{ fontSize: 13 }}>
                   Графики и таблицы из документов проекта
+                  {wsConnected && <span style={{ color: '#4ade80', marginLeft: 8 }}>• Live</span>}
                 </div>
               </div>
               <div className="statistics-controls">
@@ -1721,7 +1786,8 @@ export default function ProjectDetailPage() {
                 statistic={editingStat}
                 onClose={() => setEditingStat(null)}
                 onSave={async (updates) => {
-                  await handleUpdateStatistic(editingStat.id, updates);
+                  // Передаём version для optimistic locking
+                  await handleUpdateStatistic(editingStat.id, updates, editingStat.version);
                   setEditingStat(null);
                 }}
               />

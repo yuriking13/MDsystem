@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
+import { wsEvents } from "../websocket.js";
 
 const ProjectIdSchema = z.object({
   id: z.string().uuid(),
@@ -37,6 +38,7 @@ const UpdateStatisticSchema = z.object({
   }).optional(),
   chartType: z.string().max(50).optional(),
   orderIndex: z.number().optional(),
+  version: z.number().optional(), // Optimistic locking - клиент отправляет версию для проверки
 });
 
 const plugin: FastifyPluginAsync = async (fastify) => {
@@ -65,7 +67,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const res = await pool.query(
         `SELECT id, type, title, description, config, table_data, 
                 data_classification, chart_type, used_in_documents,
-                order_index, created_at, updated_at
+                order_index, created_at, updated_at,
+                COALESCE(version, 1) as version
          FROM project_statistics
          WHERE project_id = $1
          ORDER BY order_index, created_at DESC`,
@@ -149,10 +152,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const res = await pool.query(
         `INSERT INTO project_statistics 
-         (project_id, type, title, description, config, table_data, data_classification, chart_type, created_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         (project_id, type, title, description, config, table_data, data_classification, chart_type, created_by, version)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 1)
          RETURNING id, type, title, description, config, table_data, 
-                   data_classification, chart_type, order_index, created_at, updated_at`,
+                   data_classification, chart_type, order_index, created_at, updated_at,
+                   version`,
         [
           paramsP.data.id,
           type,
@@ -166,11 +170,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         ]
       );
 
+      // WebSocket: уведомляем о создании
+      wsEvents.statisticCreated(paramsP.data.id, res.rows[0], userId);
+
       return { statistic: res.rows[0] };
     }
   );
 
   // PATCH /api/projects/:id/statistics/:statId - update statistic item
+  // Поддерживает Optimistic Locking через параметр version
   fastify.patch(
     "/projects/:id/statistics/:statId",
     { preHandler: [fastify.authenticate] },
@@ -239,23 +247,58 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(400).send({ error: "BadRequest", message: "No fields to update" });
       }
 
-      // Always update the updated_at timestamp
+      // Увеличиваем версию при каждом обновлении
+      updates.push(`version = COALESCE(version, 1) + 1`);
       updates.push(`updated_at = NOW()`);
 
+      // Optimistic Locking: если клиент передал version, проверяем её
+      const clientVersion = bodyP.data.version;
+      let whereClause = `id = $${idx} AND project_id = $${idx + 1}`;
       values.push(paramsP.data.statId);
       values.push(paramsP.data.id);
+      idx += 2;
+
+      if (clientVersion !== undefined) {
+        whereClause += ` AND COALESCE(version, 1) = $${idx}`;
+        values.push(clientVersion);
+      }
 
       const res = await pool.query(
         `UPDATE project_statistics SET ${updates.join(", ")} 
-         WHERE id = $${idx} AND project_id = $${idx + 1}
+         WHERE ${whereClause}
          RETURNING id, type, title, description, config, table_data, 
-                   data_classification, chart_type, order_index, created_at, updated_at`,
+                   data_classification, chart_type, order_index, created_at, updated_at,
+                   COALESCE(version, 1) as version`,
         values
       );
 
       if (res.rowCount === 0) {
+        // Проверяем причину: запись не существует или версия не совпала
+        if (clientVersion !== undefined) {
+          const exists = await pool.query(
+            `SELECT COALESCE(version, 1) as version FROM project_statistics 
+             WHERE id = $1 AND project_id = $2`,
+            [paramsP.data.statId, paramsP.data.id]
+          );
+          
+          if (exists.rowCount === 0) {
+            return reply.code(404).send({ error: "NotFound", message: "Statistic not found" });
+          }
+          
+          // Запись есть, но версия другая — конфликт
+          return reply.code(409).send({ 
+            error: "VersionConflict", 
+            message: "Данные были изменены другим пользователем. Обновите страницу.",
+            currentVersion: exists.rows[0].version,
+            yourVersion: clientVersion,
+          });
+        }
+        
         return reply.code(404).send({ error: "NotFound", message: "Statistic not found" });
       }
+
+      // WebSocket: уведомляем об обновлении
+      wsEvents.statisticUpdated(paramsP.data.id, res.rows[0], userId);
 
       return { statistic: res.rows[0] };
     }
@@ -316,6 +359,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         `DELETE FROM project_statistics WHERE id = $1 AND project_id = $2`,
         [paramsP.data.statId, paramsP.data.id]
       );
+
+      // WebSocket: уведомляем об удалении
+      wsEvents.statisticDeleted(paramsP.data.id, paramsP.data.statId, userId);
 
       return { ok: true };
     }
