@@ -1803,27 +1803,49 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         });
       }
       
+      // Парсим articleIds из тела запроса
+      const body = request.body as { articleIds?: string[] } | undefined;
+      const articleIds = body?.articleIds;
+      
       // Импортируем функцию
       const { detectStatsCombined } = await import("../lib/stats.js");
       
-      // Получить статьи без статистики или с низким quality
-      const articlesRes = await pool.query(
-        `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality
-         FROM articles a
-         JOIN project_articles pa ON pa.article_id = a.id
-         WHERE pa.project_id = $1 
-           AND a.abstract_en IS NOT NULL
-           AND (a.has_stats = false OR a.stats_quality = 0)
-         LIMIT 100`,
-        [paramsP.data.id]
-      );
+      // Получить статьи для анализа
+      // Если переданы articleIds - берём только их
+      // Иначе берём все статьи с абстрактом (без фильтра has_stats, т.к. AI может найти больше)
+      let articlesRes;
+      if (articleIds && articleIds.length > 0) {
+        articlesRes = await pool.query(
+          `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality, a.stats_json
+           FROM articles a
+           JOIN project_articles pa ON pa.article_id = a.id
+           WHERE pa.project_id = $1 
+             AND a.id = ANY($2)
+             AND a.abstract_en IS NOT NULL`,
+          [paramsP.data.id, articleIds]
+        );
+      } else {
+        // Если не выбраны конкретные - берём статьи без AI-статистики
+        articlesRes = await pool.query(
+          `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality, a.stats_json
+           FROM articles a
+           JOIN project_articles pa ON pa.article_id = a.id
+           WHERE pa.project_id = $1 
+             AND a.abstract_en IS NOT NULL
+             AND (a.stats_json IS NULL OR a.stats_json->'ai' IS NULL)
+           LIMIT 100`,
+          [paramsP.data.id]
+        );
+      }
       
       if (articlesRes.rows.length === 0) {
         return { 
           ok: true, 
           analyzed: 0, 
           found: 0,
-          message: "Все статьи уже проанализированы" 
+          message: articleIds?.length 
+            ? "Выбранные статьи не имеют абстрактов для анализа" 
+            : "Все статьи уже проанализированы AI" 
         };
       }
       
@@ -1838,11 +1860,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             useAI: true,
           });
           
-          if (result.hasStats) {
+          // Сохраняем результат AI-анализа (даже если hasStats=false для consistency)
+          // AI найдёт статистику которую regex пропустил
+          if (result.aiStats && result.aiStats.stats && result.aiStats.stats.length > 0) {
             await pool.query(
               `UPDATE articles SET 
                 has_stats = true,
-                stats_quality = GREATEST(stats_quality, $1),
+                stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
                 stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
                WHERE id = $3`,
               [
@@ -1852,6 +1876,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               ]
             );
             found++;
+          } else if (result.hasStats) {
+            // regex нашёл, но AI нет - обновляем флаг
+            await pool.query(
+              `UPDATE articles SET 
+                has_stats = true,
+                stats_quality = GREATEST(COALESCE(stats_quality, 0), $1)
+               WHERE id = $2`,
+              [result.quality, article.id]
+            );
           }
           
           analyzed++;
@@ -1864,7 +1897,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         ok: true, 
         analyzed,
         found,
-        message: `Проанализировано ${analyzed} статей. Найдена статистика в ${found} статьях.` 
+        message: `Проанализировано ${analyzed} статей. AI нашёл статистику в ${found} статьях.` 
       };
     }
   );

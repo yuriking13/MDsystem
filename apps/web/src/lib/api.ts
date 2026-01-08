@@ -375,10 +375,16 @@ export type AIStatsResult = {
   message: string;
 };
 
-export async function apiDetectStatsWithAI(projectId: string): Promise<AIStatsResult> {
+export async function apiDetectStatsWithAI(
+  projectId: string,
+  articleIds?: string[]
+): Promise<AIStatsResult> {
   return apiFetch<AIStatsResult>(
     `/api/projects/${projectId}/articles/ai-detect-stats`,
-    { method: "POST" }
+    { 
+      method: "POST",
+      body: JSON.stringify({ articleIds }),
+    }
   );
 }
 
