@@ -1596,7 +1596,7 @@ export default function ProjectDetailPage() {
 
             {!storageConfigured && (
               <div className="card" style={{ marginBottom: 16, padding: 40, textAlign: 'center' }}>
-                <svg className="w-16 h-16" style={{ margin: '0 auto 16px', opacity: 0.5 }} fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
+                <svg style={{ width: 48, height: 48, margin: '0 auto 16px', opacity: 0.5 }} fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" />
                 </svg>
                 <h3 style={{ margin: '0 0 8px 0' }}>Хранилище не настроено</h3>
@@ -1645,7 +1645,7 @@ export default function ProjectDetailPage() {
                   </div>
                 ) : files.length === 0 ? (
                   <div className="card" style={{ textAlign: 'center', padding: 40 }}>
-                    <svg className="w-16 h-16" style={{ margin: '0 auto 16px', opacity: 0.5 }} fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
+                    <svg style={{ width: 48, height: 48, margin: '0 auto 16px', opacity: 0.5 }} fill="none" stroke="currentColor" strokeWidth={1} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
                     </svg>
                     <h3 style={{ margin: '0 0 8px 0' }}>Нет файлов</h3>
