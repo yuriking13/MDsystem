@@ -299,7 +299,7 @@ export default function CitationGraph({ projectId }: Props) {
         });
         // Показываем сообщение о статьях без PMID если есть
         if (res.articlesWithoutPmid && res.articlesWithoutPmid > 0) {
-          setRefsMessage(`ℹ️ ${res.articlesWithoutPmid} статей без PMID (DOAJ, Wiley, Crossref) пропущено — связи доступны только для PubMed.`);
+          setRefsMessage(`ℹ️ ${res.articlesWithoutPmid} статей без PMID — связи будут загружены из Crossref по DOI.`);
         }
         startStatusPolling();
       } else {
@@ -702,7 +702,7 @@ export default function CitationGraph({ projectId }: Props) {
             <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            {fetchingRefs || fetchJobStatus?.isRunning ? 'Загрузка...' : 'Обновить связи из PubMed'}
+            {fetchingRefs || fetchJobStatus?.isRunning ? 'Загрузка...' : 'Обновить связи'}
           </button>
         </div>
       
@@ -1007,7 +1007,7 @@ export default function CitationGraph({ projectId }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
             <div className="loading-spinner" />
             <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
-              Загрузка связей из PubMed...
+              Загрузка связей (PubMed + Crossref)...
             </span>
             <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
               {formatTime(fetchJobStatus.elapsedSeconds)}
@@ -1119,7 +1119,7 @@ export default function CitationGraph({ projectId }: Props) {
           <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          Данные о ссылках не загружены. Нажмите "Обновить связи из PubMed" для загрузки.
+          Данные о ссылках не загружены. Нажмите "Обновить связи" для загрузки.
         </div>
       )}
       
@@ -1345,7 +1345,7 @@ export default function CitationGraph({ projectId }: Props) {
                   <strong>Загрузка связей</strong>
                 </div>
                 <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>
-                  Нажмите «Обновить связи из PubMed» для загрузки информации о ссылках и цитированиях из PubMed. Это позволяет видеть, на какие статьи ссылаются ваши работы и какие статьи их цитируют.
+                  Нажмите «Обновить связи» для загрузки информации о ссылках и цитированиях. Для PubMed статей данные берутся из PubMed API, для DOAJ/Wiley — из Crossref по DOI. Это позволяет видеть, на какие статьи ссылаются ваши работы.
                 </p>
               </div>
             </div>
