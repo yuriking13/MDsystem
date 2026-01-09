@@ -2226,7 +2226,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         
         // Ограничиваем количество для производительности
         const remainingSlotsL3 = Math.max(0, maxExtraNodes - extraNodesAdded);
-        const level3PmidsArr = Array.from(level3Pmids).slice(0, Math.min(200, remainingSlotsL3));
+        const level3PmidsArr = Array.from(level3Pmids).slice(0, Math.min(500, remainingSlotsL3));
         
         if (level3PmidsArr.length > 0) {
           // Строим условия фильтрации для уровня 3
@@ -2534,7 +2534,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         .filter((n) => typeof n.id === 'string' && n.id.startsWith('pmid:') && typeof n.pmid === 'string' && n.pmid)
         .map((n) => String(n.pmid));
 
-      const uniquePlaceholderPmids = Array.from(new Set(placeholderPmids)).slice(0, 150); // Увеличили лимит до 150
+      const uniquePlaceholderPmids = Array.from(new Set(placeholderPmids)).slice(0, 500); // Увеличили лимит для загрузки title
       if (uniquePlaceholderPmids.length > 0) {
         try {
           const fetched = await pubmedFetchByPmids({
@@ -2553,11 +2553,56 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             n.year = year;
             n.doi = a.doi ?? n.doi;
             n.title = a.title ?? null; // Добавляем полное название
+            n.authors = a.authors ?? null;
+            n.journal = a.journal ?? null;
             n.label = `${firstAuthor} (${year || '?'})`;
           }
         } catch (err) {
           // не падаем, если PubMed недоступен/лимит
           console.error('Citation graph enrichment (PubMed) error:', err);
+        }
+      }
+      
+      // Применяем фильтр годов ко ВСЕМ узлам (включая placeholder)
+      // Это важно для консистентности графа
+      if (yearFrom !== undefined || yearTo !== undefined) {
+        const nodesToRemove = new Set<string>();
+        
+        for (const n of nodes) {
+          // Пропускаем узлы проекта (level 1) - они уже отфильтрованы в SQL
+          if (n.graphLevel === 1) continue;
+          
+          // Для placeholder узлов с загруженным годом - проверяем фильтр
+          if (n.year !== null) {
+            if (yearFrom !== undefined && n.year < yearFrom) {
+              nodesToRemove.add(n.id);
+            }
+            if (yearTo !== undefined && n.year > yearTo) {
+              nodesToRemove.add(n.id);
+            }
+          }
+        }
+        
+        // Удаляем отфильтрованные узлы и их связи
+        if (nodesToRemove.size > 0) {
+          console.log(`[CitationGraph] Year filter removed ${nodesToRemove.size} external nodes`);
+          
+          // Фильтруем узлы
+          const filteredNodes = nodes.filter(n => !nodesToRemove.has(n.id));
+          nodes.length = 0;
+          nodes.push(...filteredNodes);
+          
+          // Фильтруем связи
+          const filteredLinks = links.filter(l => 
+            !nodesToRemove.has(l.source) && !nodesToRemove.has(l.target)
+          );
+          links.length = 0;
+          links.push(...filteredLinks);
+          
+          // Обновляем addedNodeIds
+          for (const id of nodesToRemove) {
+            addedNodeIds.delete(id);
+          }
         }
       }
 

@@ -32,6 +32,23 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+// Debounce hook для предотвращения частых обновлений
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export default function CitationGraph({ projectId }: Props) {
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,10 +115,15 @@ export default function CitationGraph({ projectId }: Props) {
   // Показать расширенные настройки
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   
+  // Debounce для параметров которые меняются часто (слайдеры)
+  const debouncedMaxNodes = useDebounce(maxNodes, 500);
+  const debouncedMaxLinksPerNode = useDebounce(maxLinksPerNode, 500);
+  
   // Глобальный язык для всех узлов графа
   const [globalLang, setGlobalLang] = useState<'en' | 'ru'>('en');
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   const loadGraph = useCallback(async (options?: GraphFilterOptions) => {
@@ -135,14 +157,14 @@ export default function CitationGraph({ projectId }: Props) {
     }
   }, [projectId]);
 
-  // Перезагрузка при изменении фильтров
+  // Перезагрузка при изменении фильтров (с debounce для слайдеров)
   useEffect(() => {
     const options: GraphFilterOptions = { 
       filter,
       depth,
       sortBy,
-      maxTotalNodes: maxNodes,
-      maxLinksPerNode,
+      maxTotalNodes: debouncedMaxNodes,
+      maxLinksPerNode: debouncedMaxLinksPerNode,
       enableClustering,
       clusterBy,
     };
@@ -162,7 +184,7 @@ export default function CitationGraph({ projectId }: Props) {
       options.sources = selectedSources;
     }
     loadGraph(options);
-  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources, sortBy, maxNodes, maxLinksPerNode, enableClustering, clusterBy]);
+  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources, sortBy, debouncedMaxNodes, debouncedMaxLinksPerNode, enableClustering, clusterBy]);
 
   // Проверка статуса загрузки при монтировании
   useEffect(() => {
@@ -222,8 +244,8 @@ export default function CitationGraph({ projectId }: Props) {
                     filter,
                     depth,
                     sortBy,
-                    maxTotalNodes: maxNodes,
-                    maxLinksPerNode,
+                    maxTotalNodes: debouncedMaxNodes,
+                    maxLinksPerNode: debouncedMaxLinksPerNode,
                     enableClustering,
                     clusterBy,
                   };
@@ -299,7 +321,7 @@ export default function CitationGraph({ projectId }: Props) {
         });
         // Показываем сообщение о статьях без PMID если есть
         if (res.articlesWithoutPmid && res.articlesWithoutPmid > 0) {
-          setRefsMessage(`ℹ️ ${res.articlesWithoutPmid} статей без PMID (DOAJ, Wiley, Crossref) пропущено — связи доступны только для PubMed.`);
+          setRefsMessage(`ℹ️ ${res.articlesWithoutPmid} статей без PMID — связи будут загружены из Crossref по DOI.`);
         }
         startStatusPolling();
       } else {
@@ -333,6 +355,36 @@ export default function CitationGraph({ projectId }: Props) {
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
+  
+  // Настройка сил графа после загрузки данных
+  useEffect(() => {
+    if (!graphRef.current || !data) return;
+    
+    // Увеличиваем силу отталкивания для разреженного графа
+    const fg = graphRef.current;
+    if (fg.d3Force) {
+      // Настраиваем силу отталкивания (charge)
+      const charge = fg.d3Force('charge');
+      if (charge) {
+        charge.strength(-400).distanceMax(600);
+      }
+      
+      // Настраиваем расстояние связей
+      const link = fg.d3Force('link');
+      if (link) {
+        link.distance(120);
+      }
+      
+      // Ослабляем центральную силу
+      const center = fg.d3Force('center');
+      if (center) {
+        // Можно настроить если нужно
+      }
+      
+      // Перезапускаем симуляцию
+      fg.d3ReheatSimulation();
+    }
+  }, [data]);
 
   const nodeColor = useCallback((node: any) => {
     const status = node.status;
@@ -379,7 +431,7 @@ export default function CitationGraph({ projectId }: Props) {
     const statsQ = node.statsQuality || 0;
     
     let levelText = '';
-    if (level === 0) levelText = ' [Цитирует статью]';
+    if (level === 0) levelText = ' [Цитирует]';
     else if (level === 2) levelText = ' [Ссылка]';
     else if (level === 3) levelText = ' [Связанная]';
     
@@ -388,9 +440,26 @@ export default function CitationGraph({ projectId }: Props) {
     
     // Показываем название если есть (с учётом языка)
     const title = globalLang === 'ru' && node.title_ru ? node.title_ru : node.title;
-    const displayTitle = title ? `\n${title.substring(0, 100)}${title.length > 100 ? '...' : ''}` : '';
+    // Для placeholder узлов без title показываем PMID/DOI
+    let displayTitle = '';
+    if (title) {
+      displayTitle = `\n📄 ${title.substring(0, 120)}${title.length > 120 ? '...' : ''}`;
+    } else if (node.pmid && node.id?.startsWith('pmid:')) {
+      displayTitle = `\n🔗 PMID: ${node.pmid} (загрузите данные)`;
+    } else if (node.doi) {
+      displayTitle = `\n🔗 DOI: ${node.doi}`;
+    }
     
-    return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ''}${statsText}${displayTitle}`;
+    // Добавляем год и журнал если есть
+    let metaInfo = '';
+    if (node.year) {
+      metaInfo += `\n📅 ${node.year}`;
+      if (node.journal) {
+        metaInfo += ` • ${node.journal.substring(0, 40)}${node.journal.length > 40 ? '...' : ''}`;
+      }
+    }
+    
+    return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ''}${statsText}${displayTitle}${metaInfo}`;
   }, [globalLang]);
 
   // Размер узла зависит от количества цитирований - как в ResearchRabbit
@@ -702,7 +771,7 @@ export default function CitationGraph({ projectId }: Props) {
             <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            {fetchingRefs || fetchJobStatus?.isRunning ? 'Загрузка...' : 'Обновить связи из PubMed'}
+            {fetchingRefs || fetchJobStatus?.isRunning ? 'Загрузка...' : 'Обновить связи'}
           </button>
         </div>
       
@@ -1007,7 +1076,7 @@ export default function CitationGraph({ projectId }: Props) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
             <div className="loading-spinner" />
             <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
-              Загрузка связей из PubMed...
+              Загрузка связей (PubMed + Crossref)...
             </span>
             <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
               {formatTime(fetchJobStatus.elapsedSeconds)}
@@ -1119,7 +1188,7 @@ export default function CitationGraph({ projectId }: Props) {
           <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          Данные о ссылках не загружены. Нажмите "Обновить связи из PubMed" для загрузки.
+          Данные о ссылках не загружены. Нажмите "Обновить связи" для загрузки.
         </div>
       )}
       
@@ -1156,6 +1225,7 @@ export default function CitationGraph({ projectId }: Props) {
         ) : (
           <div style={{ width: dimensions.width, height: dimensions.height, minWidth: '100%', minHeight: '600px' }}>
             <ForceGraph2D
+              ref={graphRef}
               graphData={data}
               width={dimensions.width}
               height={dimensions.height}
@@ -1182,10 +1252,15 @@ export default function CitationGraph({ projectId }: Props) {
               linkDirectionalArrowLength={3}
               linkDirectionalArrowRelPos={0.95}
               backgroundColor="#0b0f19"
-              d3AlphaDecay={0.015}
-              d3VelocityDecay={0.25}
-              cooldownTicks={250}
-              warmupTicks={120}
+              d3AlphaDecay={0.02}
+              d3VelocityDecay={0.35}
+              cooldownTicks={150}
+              warmupTicks={80}
+              d3AlphaMin={0.001}
+              // Настройка сил для разреженного графа
+              onEngineStop={() => {
+                // Граф стабилизировался
+              }}
               onNodeHover={(node: any) => setHoveredNode(node)}
               onNodeClick={(node: any, event: any) => {
                 if (event?.altKey) {
@@ -1227,8 +1302,8 @@ export default function CitationGraph({ projectId }: Props) {
                 statsQuality, 
                 sources: selectedSources.length > 0 ? selectedSources : undefined,
                 sortBy,
-                maxTotalNodes: maxNodes,
-                maxLinksPerNode,
+                maxTotalNodes: debouncedMaxNodes,
+                maxLinksPerNode: debouncedMaxLinksPerNode,
                 enableClustering,
                 clusterBy,
               })}
@@ -1345,7 +1420,7 @@ export default function CitationGraph({ projectId }: Props) {
                   <strong>Загрузка связей</strong>
                 </div>
                 <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)' }}>
-                  Нажмите «Обновить связи из PubMed» для загрузки информации о ссылках и цитированиях из PubMed. Это позволяет видеть, на какие статьи ссылаются ваши работы и какие статьи их цитируют.
+                  Нажмите «Обновить связи» для загрузки информации о ссылках и цитированиях. Для PubMed статей данные берутся из PubMed API, для DOAJ/Wiley — из Crossref по DOI. Это позволяет видеть, на какие статьи ссылаются ваши работы.
                 </p>
               </div>
             </div>
