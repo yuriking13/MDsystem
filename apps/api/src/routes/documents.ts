@@ -3,6 +3,7 @@ import { z } from "zod";
 import { pool } from "../pg.js";
 import { formatCitation, type CitationStyle, type BibliographyArticle } from "../lib/bibliography.js";
 import { pubmedFetchByPmids } from "../lib/pubmed.js";
+import { extractStats, calculateStatsQuality } from "../lib/stats.js";
 import {
   cacheGet,
   cacheSet,
@@ -1729,6 +1730,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         graphLevel: number;
         statsQuality: number;
         source?: string; // 'pubmed' | 'doaj' | 'wiley' | 'crossref'
+        hasPValue?: boolean; // Быстрый флаг для фильтрации
       };
       const nodes: GraphNodeInternal[] = [];
       const links: { source: string; target: string }[] = [];
@@ -2556,6 +2558,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             n.authors = a.authors ?? null;
             n.journal = a.journal ?? null;
             n.label = `${firstAuthor} (${year || '?'})`;
+            
+            // Анализируем abstract на p-value
+            if (a.abstract) {
+              (n as any).abstract = a.abstract;
+              const stats = extractStats(a.abstract);
+              const quality = calculateStatsQuality(stats);
+              n.statsQuality = quality;
+            }
           }
         } catch (err) {
           // не падаем, если PubMed недоступен/лимит

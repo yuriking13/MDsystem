@@ -1328,3 +1328,42 @@ export async function apiSyncFileUsage(
     }
   );
 }
+
+// ========== Graph AI Assistant ==========
+
+export type SearchSuggestion = {
+  query: string;
+  description: string;
+  filters?: {
+    yearFrom?: number;
+    yearTo?: number;
+    sources?: string[];
+  };
+};
+
+export type GraphAIAssistantResponse = {
+  ok: boolean;
+  response: string;
+  searchSuggestions: SearchSuggestion[];
+  pmidsToAdd: string[];
+  doisToAdd: string[];
+  error?: string;
+};
+
+export async function apiGraphAIAssistant(
+  projectId: string,
+  message: string,
+  context?: {
+    articleCount?: number;
+    yearRange?: { min: number | null; max: number | null };
+    topics?: string[];
+  }
+): Promise<GraphAIAssistantResponse> {
+  return apiFetch<GraphAIAssistantResponse>(
+    `/api/projects/${projectId}/graph-ai-assistant`,
+    {
+      method: "POST",
+      body: JSON.stringify({ message, context }),
+    }
+  );
+}
