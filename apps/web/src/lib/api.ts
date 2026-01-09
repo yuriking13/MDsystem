@@ -1341,29 +1341,57 @@ export type SearchSuggestion = {
   };
 };
 
+// Статья из графа для передачи в AI
+export type GraphArticleForAI = {
+  id: string;
+  title?: string;
+  abstract?: string;
+  year?: number | null;
+  journal?: string;
+  authors?: string;
+  pmid?: string | null;
+  doi?: string | null;
+  citedByCount?: number;
+  graphLevel?: number;
+};
+
+// Найденная статья с причиной
+export type FoundArticle = {
+  id: string;
+  title?: string;
+  year?: number | null;
+  journal?: string;
+  pmid?: string | null;
+  doi?: string | null;
+  citedByCount?: number;
+  reason: string;
+};
+
 export type GraphAIAssistantResponse = {
   ok: boolean;
   response: string;
-  searchSuggestions: SearchSuggestion[];
-  pmidsToAdd: string[];
-  doisToAdd: string[];
+  foundArticleIds: string[];  // ID найденных статей для подсветки
+  foundArticles: FoundArticle[];  // Полная информация о найденных статьях
+  searchSuggestions: SearchSuggestion[];  // Deprecated, но оставляем для совместимости
+  pmidsToAdd: string[];  // Deprecated
+  doisToAdd: string[];   // Deprecated
   error?: string;
 };
 
 export async function apiGraphAIAssistant(
   projectId: string,
   message: string,
+  graphArticles?: GraphArticleForAI[],
   context?: {
     articleCount?: number;
     yearRange?: { min: number | null; max: number | null };
-    topics?: string[];
   }
 ): Promise<GraphAIAssistantResponse> {
   return apiFetch<GraphAIAssistantResponse>(
     `/api/projects/${projectId}/graph-ai-assistant`,
     {
       method: "POST",
-      body: JSON.stringify({ message, context }),
+      body: JSON.stringify({ message, graphArticles, context }),
     }
   );
 }

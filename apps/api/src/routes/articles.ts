@@ -2133,13 +2133,28 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
   // ========== AI Assistant for Graph ==========
   // POST /api/projects/:id/graph-ai-assistant
-  // Чат с AI для поиска и рекомендации статей на основе графа
+  // AI ищет статьи СРЕДИ УЖЕ ЗАГРУЖЕННЫХ в граф (level 0, 2, 3)
+  // и возвращает их ID для подсветки и добавления в проект
+  
+  const GraphArticleSchema = z.object({
+    id: z.string(),
+    title: z.string().optional(),
+    abstract: z.string().optional(),
+    year: z.number().nullable().optional(),
+    journal: z.string().optional(),
+    authors: z.string().optional(),
+    pmid: z.string().nullable().optional(),
+    doi: z.string().nullable().optional(),
+    citedByCount: z.number().optional(),
+    graphLevel: z.number().optional(),
+  });
+  
   const GraphAIAssistantSchema = z.object({
     message: z.string().min(1).max(2000),
+    graphArticles: z.array(GraphArticleSchema).optional(), // Статьи из графа для поиска
     context: z.object({
       articleCount: z.number().optional(),
       yearRange: z.object({ min: z.number().nullable(), max: z.number().nullable() }).optional(),
-      topics: z.array(z.string()).optional(),
     }).optional(),
   });
 
@@ -2156,11 +2171,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       
       const bodyP = GraphAIAssistantSchema.safeParse(request.body);
       if (!bodyP.success) {
-        return reply.code(400).send({ error: "Invalid request body" });
+        return reply.code(400).send({ error: "Invalid request body", details: bodyP.error.issues });
       }
       
       const projectId = paramsP.data.id;
-      const { message, context } = bodyP.data;
+      const { message, graphArticles, context } = bodyP.data;
       
       try {
         // Получаем API ключ OpenRouter
@@ -2172,7 +2187,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           });
         }
         
-        // Получаем информацию о проекте и статьях
+        // Получаем информацию о проекте
         const projectRes = await pool.query(
           `SELECT p.name, p.description, p.research_type, p.research_subtype
            FROM projects p WHERE p.id = $1`,
@@ -2180,64 +2195,68 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         );
         const project = projectRes.rows[0];
         
-        // Получаем примеры статей проекта для контекста
-        const articlesRes = await pool.query(
-          `SELECT a.title_en, a.year, a.journal, a.abstract_en
-           FROM project_articles pa
-           JOIN articles a ON a.id = pa.article_id
-           WHERE pa.project_id = $1 AND pa.status = 'selected'
-           ORDER BY a.year DESC NULLS LAST
-           LIMIT 5`,
-          [projectId]
-        );
+        // Фильтруем только внешние статьи (level != 1) для поиска
+        const externalArticles = (graphArticles || []).filter(a => a.graphLevel !== 1);
         
-        const sampleArticles = articlesRes.rows.map(a => 
-          `- "${a.title_en}" (${a.year || '?'}, ${a.journal || 'Unknown journal'})`
-        ).join('\n');
+        // Формируем список статей для AI (лимитируем до 200 для контекста)
+        const articlesForAI = externalArticles
+          .slice(0, 200)
+          .map((a, idx) => {
+            const parts = [
+              `[${idx + 1}] ID: ${a.id}`,
+              a.title ? `Название: ${a.title}` : null,
+              a.year ? `Год: ${a.year}` : null,
+              a.journal ? `Журнал: ${a.journal}` : null,
+              a.authors ? `Авторы: ${a.authors.substring(0, 100)}` : null,
+              a.citedByCount ? `Цитирований: ${a.citedByCount}` : null,
+              a.abstract ? `Аннотация: ${a.abstract.substring(0, 300)}...` : null,
+            ].filter(Boolean);
+            return parts.join('\n');
+          })
+          .join('\n\n---\n\n');
         
-        // Формируем системный промпт
-        const systemPrompt = `Ты - AI ассистент для научного исследователя. Помогаешь находить и рекомендовать научные статьи.
+        // Формируем системный промпт для поиска в графе
+        const systemPrompt = `Ты - AI ассистент для научного исследователя. Твоя задача - искать релевантные статьи СРЕДИ УЖЕ ЗАГРУЖЕННЫХ в граф цитирований.
 
 КОНТЕКСТ ПРОЕКТА:
 - Название: ${project?.name || 'Без названия'}
 - Описание: ${project?.description || 'Нет описания'}
 - Тип исследования: ${project?.research_type || 'Не указан'}
-${context?.yearRange ? `- Годы публикаций: ${context.yearRange.min || '?'} - ${context.yearRange.max || '?'}` : ''}
-${context?.articleCount ? `- Статей в проекте: ${context.articleCount}` : ''}
+${context?.yearRange ? `- Годы публикаций в графе: ${context.yearRange.min || '?'} - ${context.yearRange.max || '?'}` : ''}
+- Всего статей в графе: ${context?.articleCount || externalArticles.length}
+- Статей для поиска (внешние, не в проекте): ${externalArticles.length}
 
-ПРИМЕРЫ ОТОБРАННЫХ СТАТЕЙ:
-${sampleArticles || 'Пока нет отобранных статей'}
+ДОСТУПНЫЕ СТАТЬИ ДЛЯ ПОИСКА:
+${articlesForAI || 'Нет статей для поиска. Попросите пользователя загрузить связи в графе (кнопка "Связи").'}
 
 ТВОЯ ЗАДАЧА:
-1. Понять запрос пользователя о поиске статей
-2. Если пользователь просит найти статьи по теме:
-   - Предложи поисковые запросы для PubMed/DOAJ
-   - Укажи фильтры (годы, типы публикаций)
-   - Объясни, почему эти статьи могут быть полезны
+1. Понять запрос пользователя (тема, ключевые слова, критерии)
+2. Найти СРЕДИ ПРЕДОСТАВЛЕННЫХ СТАТЕЙ те, которые соответствуют запросу
+3. Вернуть их ID для подсветки на графе
 
-3. Отвечай в формате JSON:
+ПРАВИЛА:
+- Возвращай ТОЛЬКО ID статей из списка выше (формат: "pmid:12345" или "doi:10.1234/...")
+- Если статей нет или их мало - честно скажи об этом
+- Ранжируй по релевантности: сначала наиболее подходящие
+- Учитывай название, аннотацию, журнал, год при поиске
+
+ФОРМАТ ОТВЕТА (строго JSON):
 {
-  "response": "Твой текстовый ответ пользователю",
-  "searchSuggestions": [
+  "response": "Твой текстовый ответ пользователю с объяснением что найдено",
+  "foundArticleIds": ["pmid:12345", "doi:10.1234/example"],
+  "foundArticlesInfo": [
     {
-      "query": "поисковый запрос для PubMed",
-      "description": "что найдётся по этому запросу",
-      "filters": {
-        "yearFrom": 2020,
-        "yearTo": 2024,
-        "sources": ["pubmed", "doaj"]
-      }
+      "id": "pmid:12345",
+      "reason": "Почему эта статья релевантна запросу"
     }
-  ],
-  "pmidsToAdd": ["12345678", "23456789"],  // Если знаешь конкретные PMID
-  "doisToAdd": ["10.1234/example"]  // Если знаешь конкретные DOI
+  ]
 }
 
 ВАЖНО:
 - Отвечай на русском языке
-- Если не уверен в PMID/DOI - не выдумывай, оставь пустыми массивы
-- Предлагай конкретные поисковые запросы с MeSH терминами когда возможно
-- Учитывай тематику проекта при рекомендациях`;
+- Возвращай ТОЛЬКО ID из предоставленного списка
+- Если ничего не найдено - верни пустой массив foundArticleIds
+- Лимит: до 50 наиболее релевантных статей`;
 
         // Вызываем OpenRouter с Claude
         const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
@@ -2250,13 +2269,13 @@ ${sampleArticles || 'Пока нет отобранных статей'}
             "HTTP-Referer": "https://mdsystem.app",
           },
           body: JSON.stringify({
-            model: "anthropic/claude-sonnet-4", // Claude Sonnet 4
+            model: "anthropic/claude-sonnet-4",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: message }
             ],
-            temperature: 0.3,
-            max_tokens: 2000,
+            temperature: 0.2,
+            max_tokens: 4000,
           }),
         });
         
@@ -2272,7 +2291,7 @@ ${sampleArticles || 'Пока нет отобранных статей'}
         const content = data.choices?.[0]?.message?.content || "";
         
         // Парсим JSON из ответа
-        let parsed: any = { response: content };
+        let parsed: any = { response: content, foundArticleIds: [], foundArticlesInfo: [] };
         try {
           const jsonMatch = content.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
@@ -2280,15 +2299,38 @@ ${sampleArticles || 'Пока нет отобранных статей'}
           }
         } catch {
           // Если не удалось распарсить - возвращаем как текст
-          parsed = { response: content };
+          parsed = { response: content, foundArticleIds: [], foundArticlesInfo: [] };
         }
+        
+        // Валидируем найденные ID - они должны быть из graphArticles
+        const validIds = new Set((graphArticles || []).map(a => a.id));
+        const validatedFoundIds = (parsed.foundArticleIds || []).filter((id: string) => validIds.has(id));
+        
+        // Собираем полную информацию о найденных статьях для фронтенда
+        const foundArticlesMap = new Map((graphArticles || []).map(a => [a.id, a]));
+        const foundArticles = validatedFoundIds.map((id: string) => {
+          const article = foundArticlesMap.get(id);
+          const info = (parsed.foundArticlesInfo || []).find((i: any) => i.id === id);
+          return {
+            id,
+            title: article?.title,
+            year: article?.year,
+            journal: article?.journal,
+            pmid: article?.pmid,
+            doi: article?.doi,
+            citedByCount: article?.citedByCount,
+            reason: info?.reason || '',
+          };
+        });
         
         return {
           ok: true,
           response: parsed.response || content,
-          searchSuggestions: parsed.searchSuggestions || [],
-          pmidsToAdd: parsed.pmidsToAdd || [],
-          doisToAdd: parsed.doisToAdd || [],
+          foundArticleIds: validatedFoundIds,
+          foundArticles,
+          searchSuggestions: [], // Больше не используем
+          pmidsToAdd: [], // Теперь добавляем через foundArticles
+          doisToAdd: [],
         };
         
       } catch (err: any) {
