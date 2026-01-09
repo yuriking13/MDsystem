@@ -589,6 +589,10 @@ export default function CitationGraph({ projectId }: Props) {
     // Добавляем сообщение пользователя в историю
     setAiHistory(prev => [...prev, { role: 'user', content: userMessage }]);
     
+    // Показываем статус отправки
+    const externalCount = (data?.nodes || []).filter(n => (n.graphLevel ?? 1) !== 1).length;
+    console.log(`[AI] Starting search. External articles available: ${externalCount}`);
+    
     try {
       // Собираем статьи из графа (только внешние - level 0, 2, 3)
       // graphLevel: 0 = citing, 1 = в проекте, 2 = references, 3 = related
@@ -631,8 +635,15 @@ export default function CitationGraph({ projectId }: Props) {
         }));
       
       console.log(`[AI] Sending ${graphArticles.length} articles to AI`);
+      // Временная отладка - показываем сколько статей отправляем
+      console.log(`[AI DEBUG] Total nodes: ${allNodes.length}, External: ${externalNodes.length}, Sending: ${graphArticles.length}`);
+      console.log(`[AI DEBUG] Level counts:`, levelCounts);
+      
       if (graphArticles.length > 0) {
         console.log(`[AI] Sample article:`, JSON.stringify(graphArticles[0]).substring(0, 300));
+        // Показываем размер payload
+        const payloadSize = JSON.stringify({ message: userMessage, graphArticles, context: { articleCount: stats.totalNodes, yearRange } }).length;
+        console.log(`[AI DEBUG] Payload size: ${(payloadSize / 1024).toFixed(1)} KB`);
       } else {
         // Если нет внешних статей - показываем ошибку сразу
         const errorMsg = depth < 2 
@@ -656,6 +667,12 @@ export default function CitationGraph({ projectId }: Props) {
       if (res.ok) {
         setAiResponse(res.response);
         
+        // Отладка: показываем что получил сервер
+        const debug = (res as any)._debug;
+        if (debug) {
+          console.log(`[AI DEBUG] Server received: ${debug.receivedArticles} articles, external: ${debug.externalArticles}, for AI: ${debug.articlesForAICount}`);
+        }
+        
         // Новые поля для найденных статей
         setAiFoundArticleIds(new Set(res.foundArticleIds || []));
         setAiFoundArticles(res.foundArticles || []);
@@ -667,9 +684,14 @@ export default function CitationGraph({ projectId }: Props) {
         
         // Добавляем ответ в историю
         const foundCount = res.foundArticleIds?.length || 0;
-        const historyMsg = foundCount > 0 
-          ? `${res.response}\n\n📊 Найдено статей: ${foundCount}` 
-          : res.response;
+        let historyMsg = res.response;
+        if (foundCount > 0) {
+          historyMsg += `\n\n📊 Найдено статей: ${foundCount}`;
+        }
+        // Добавляем отладку если статей 0
+        if (debug && debug.receivedArticles === 0) {
+          historyMsg += `\n\n⚠️ [DEBUG] Сервер получил 0 статей. Проверьте консоль браузера.`;
+        }
         setAiHistory(prev => [...prev, { role: 'assistant', content: historyMsg }]);
       } else {
         setAiError(res.error || 'Ошибка AI');
