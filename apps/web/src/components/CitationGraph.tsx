@@ -1419,7 +1419,7 @@ export default function CitationGraph({ projectId }: Props) {
       </div>
 
       {/* Main Graph Area - full width, no sidebar */}
-      <div style={{ flex: 1, overflow: 'auto', position: 'relative' }}>
+      <div style={{ flex: 1, overflowX: 'hidden', overflowY: 'auto', position: 'relative' }}>
         {(!data || data.nodes.length === 0) ? (
           <div className="muted" style={{ padding: 60, textAlign: 'center' }}>
             <svg className="icon-lg" style={{ margin: '0 auto 16px', opacity: 0.5, width: 48, height: 48 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1651,267 +1651,263 @@ export default function CitationGraph({ projectId }: Props) {
         </div>
       )}
       
-      {/* AI Assistant Sidebar */}
+      {/* AI Assistant Modal */}
       {showAIAssistant && (
-        <div style={{
-          position: 'fixed',
-          right: 0,
-          top: 0,
-          width: 420,
-          height: '100vh',
-          background: 'var(--bg-glass)',
-          borderLeft: '1px solid var(--border-glass)',
-          display: 'flex',
-          flexDirection: 'column',
-          zIndex: 1000,
-          boxShadow: '-4px 0 24px rgba(0,0,0,0.2)',
-        }}>
-          {/* Header */}
-          <div style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid var(--border-glass)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="node-info-modal-overlay" onClick={() => setShowAIAssistant(false)}>
+          <div 
+            className="node-info-modal" 
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              maxWidth: 520, 
+              maxHeight: '85vh',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <button 
+              className="node-info-modal-close"
+              onClick={() => setShowAIAssistant(false)}
+            >
+              <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* Header */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-glass)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))',
+              borderRadius: '12px 12px 0 0',
+            }}>
               <svg style={{ width: 24, height: 24, color: '#8b5cf6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
               <span style={{ fontWeight: 600, fontSize: 16 }}>AI Ассистент</span>
             </div>
-            <button
-              onClick={() => setShowAIAssistant(false)}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-                padding: 4,
-              }}
-            >
-              <svg style={{ width: 20, height: 20 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          
-          {/* Chat History */}
-          <div style={{ 
-            flex: 1, 
-            overflowY: 'auto', 
-            padding: 16,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 12,
-          }}>
-            {aiHistory.length === 0 && (
-              <div style={{ 
-                textAlign: 'center', 
-                color: 'var(--text-secondary)', 
-                padding: 40,
-                fontSize: 13,
-              }}>
-                <svg style={{ width: 48, height: 48, margin: '0 auto 16px', opacity: 0.5 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                <p style={{ marginBottom: 12 }}>Спросите AI о поиске статей</p>
-                <div style={{ fontSize: 12, opacity: 0.8 }}>
-                  <p>Примеры:</p>
-                  <p style={{ fontStyle: 'italic', marginTop: 8 }}>«Найди статьи по теме метаболического синдрома за 2020-2024»</p>
-                  <p style={{ fontStyle: 'italic', marginTop: 4 }}>«Мне нужны РКИ по лечению гипертонии»</p>
-                  <p style={{ fontStyle: 'italic', marginTop: 4 }}>«Какие MeSH термины использовать для поиска по диабету?»</p>
-                </div>
-              </div>
-            )}
             
-            {aiHistory.map((msg, idx) => (
-              <div
-                key={idx}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 12,
-                  background: msg.role === 'user' 
-                    ? 'linear-gradient(135deg, #3b82f6, #2563eb)' 
-                    : 'var(--bg-secondary)',
-                  color: msg.role === 'user' ? 'white' : 'var(--text-primary)',
-                  alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                  maxWidth: '85%',
+            {/* Chat History */}
+            <div style={{ 
+              flex: 1, 
+              overflowY: 'auto', 
+              padding: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              minHeight: 200,
+              maxHeight: 400,
+            }}>
+              {aiHistory.length === 0 && (
+                <div style={{ 
+                  textAlign: 'center', 
+                  color: 'var(--text-secondary)', 
+                  padding: 24,
                   fontSize: 13,
-                  lineHeight: 1.5,
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                {msg.content}
-              </div>
-            ))}
-            
-            {aiLoading && (
-              <div style={{
-                padding: '12px 16px',
-                borderRadius: 12,
-                background: 'var(--bg-secondary)',
-                alignSelf: 'flex-start',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}>
-                <span className="loading-spinner" style={{ width: 16, height: 16 }} />
-                <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>AI думает...</span>
-              </div>
-            )}
-            
-            {/* Search Suggestions */}
-            {aiSuggestions.length > 0 && (
-              <div style={{
-                padding: 16,
-                background: 'rgba(139, 92, 246, 0.1)',
-                borderRadius: 12,
-                border: '1px solid rgba(139, 92, 246, 0.3)',
-              }}>
-                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, color: '#8b5cf6' }}>
-                  📋 Предложенные запросы:
-                </div>
-                {aiSuggestions.map((suggestion, idx) => (
-                  <div 
-                    key={idx}
-                    style={{
-                      padding: '10px 12px',
-                      background: 'var(--bg-primary)',
-                      borderRadius: 8,
-                      marginBottom: 8,
-                    }}
-                  >
-                    <div style={{ fontWeight: 500, fontSize: 13 }}>
-                      {suggestion.query}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
-                      {suggestion.description}
-                    </div>
-                    {suggestion.filters && (
-                      <div style={{ fontSize: 11, color: '#8b5cf6', marginTop: 4 }}>
-                        {suggestion.filters.yearFrom && `${suggestion.filters.yearFrom}-`}
-                        {suggestion.filters.yearTo && suggestion.filters.yearTo}
-                        {suggestion.filters.sources && ` | ${suggestion.filters.sources.join(', ')}`}
-                      </div>
-                    )}
+                }}>
+                  <svg style={{ width: 48, height: 48, margin: '0 auto 16px', opacity: 0.5 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                  <p style={{ marginBottom: 12 }}>Спросите AI о поиске статей</p>
+                  <div style={{ fontSize: 12, opacity: 0.8 }}>
+                    <p>Примеры:</p>
+                    <p style={{ fontStyle: 'italic', marginTop: 8 }}>«Найди статьи по теме метаболического синдрома за 2020-2024»</p>
+                    <p style={{ fontStyle: 'italic', marginTop: 4 }}>«Мне нужны РКИ по лечению гипертонии»</p>
+                    <p style={{ fontStyle: 'italic', marginTop: 4 }}>«Какие MeSH термины использовать для поиска по диабету?»</p>
                   </div>
-                ))}
-              </div>
-            )}
-            
-            {/* Articles to Add */}
-            {(aiPmidsToAdd.length > 0 || aiDoisToAdd.length > 0) && (
-              <div style={{
-                padding: 16,
-                background: 'rgba(34, 197, 94, 0.1)',
-                borderRadius: 12,
-                border: '1px solid rgba(34, 197, 94, 0.3)',
-              }}>
-                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, color: '#22c55e' }}>
-                  📚 Найдены конкретные статьи ({aiPmidsToAdd.length + aiDoisToAdd.length}):
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                  {aiPmidsToAdd.length > 0 && (
-                    <div>PMID: {aiPmidsToAdd.join(', ')}</div>
-                  )}
-                  {aiDoisToAdd.length > 0 && (
-                    <div>DOI: {aiDoisToAdd.join(', ')}</div>
-                  )}
-                </div>
-                <button
-                  onClick={handleAIAddArticles}
-                  disabled={aiAddingArticles}
+              )}
+              
+              {aiHistory.map((msg, idx) => (
+                <div
+                  key={idx}
                   style={{
-                    width: '100%',
-                    padding: '10px 16px',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: aiAddingArticles ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #22c55e, #16a34a)',
-                    color: 'white',
-                    fontWeight: 600,
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    background: msg.role === 'user' 
+                      ? 'linear-gradient(135deg, #3b82f6, #2563eb)' 
+                      : 'var(--bg-secondary)',
+                    color: msg.role === 'user' ? 'white' : 'var(--text-primary)',
+                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                    maxWidth: '85%',
                     fontSize: 13,
-                    cursor: aiAddingArticles ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
+                    lineHeight: 1.5,
+                    whiteSpace: 'pre-wrap',
                   }}
                 >
-                  {aiAddingArticles ? (
-                    <>
-                      <span className="loading-spinner" style={{ width: 16, height: 16 }} />
-                      Добавляю...
-                    </>
-                  ) : (
-                    <>
-                      <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Добавить все в Кандидаты
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-          
-          {/* Input */}
-          <div style={{
-            padding: 16,
-            borderTop: '1px solid var(--border-glass)',
-            background: 'var(--bg-secondary)',
-          }}>
-            {aiError && (
-              <div style={{ 
-                marginBottom: 12, 
-                padding: '10px 12px', 
-                background: 'rgba(239, 68, 68, 0.1)', 
-                borderRadius: 8,
-                fontSize: 12,
-                color: '#ef4444',
-              }}>
-                {aiError}
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="text"
-                value={aiMessage}
-                onChange={(e) => setAiMessage(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAISend()}
-                placeholder="Спросите AI о статьях..."
-                disabled={aiLoading}
-                style={{
-                  flex: 1,
+                  {msg.content}
+                </div>
+              ))}
+              
+              {aiLoading && (
+                <div style={{
                   padding: '12px 16px',
                   borderRadius: 12,
-                  border: '1px solid var(--border-glass)',
-                  background: 'var(--bg-primary)',
-                  color: 'var(--text-primary)',
-                  fontSize: 13,
-                }}
-              />
-              <button
-                onClick={handleAISend}
-                disabled={aiLoading || !aiMessage.trim()}
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 12,
-                  border: 'none',
-                  background: aiLoading ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                  color: 'white',
-                  cursor: aiLoading ? 'not-allowed' : 'pointer',
+                  background: 'var(--bg-secondary)',
+                  alignSelf: 'flex-start',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              </button>
+                  gap: 8,
+                }}>
+                  <span className="loading-spinner" style={{ width: 16, height: 16 }} />
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>AI думает...</span>
+                </div>
+              )}
+              
+              {/* Search Suggestions */}
+              {aiSuggestions.length > 0 && (
+                <div style={{
+                  padding: 16,
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  borderRadius: 12,
+                  border: '1px solid rgba(139, 92, 246, 0.3)',
+                }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, color: '#8b5cf6' }}>
+                    📋 Предложенные запросы:
+                  </div>
+                  {aiSuggestions.map((suggestion, idx) => (
+                    <div 
+                      key={idx}
+                      style={{
+                        padding: '10px 12px',
+                        background: 'var(--bg-primary)',
+                        borderRadius: 8,
+                        marginBottom: 8,
+                      }}
+                    >
+                      <div style={{ fontWeight: 500, fontSize: 13 }}>
+                        {suggestion.query}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
+                        {suggestion.description}
+                      </div>
+                      {suggestion.filters && (
+                        <div style={{ fontSize: 11, color: '#8b5cf6', marginTop: 4 }}>
+                          {suggestion.filters.yearFrom && `${suggestion.filters.yearFrom}-`}
+                          {suggestion.filters.yearTo && suggestion.filters.yearTo}
+                          {suggestion.filters.sources && ` | ${suggestion.filters.sources.join(', ')}`}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Articles to Add */}
+              {(aiPmidsToAdd.length > 0 || aiDoisToAdd.length > 0) && (
+                <div style={{
+                  padding: 16,
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  borderRadius: 12,
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                }}>
+                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, color: '#22c55e' }}>
+                    📚 Найдены конкретные статьи ({aiPmidsToAdd.length + aiDoisToAdd.length}):
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                    {aiPmidsToAdd.length > 0 && (
+                      <div>PMID: {aiPmidsToAdd.join(', ')}</div>
+                    )}
+                    {aiDoisToAdd.length > 0 && (
+                      <div>DOI: {aiDoisToAdd.join(', ')}</div>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleAIAddArticles}
+                    disabled={aiAddingArticles}
+                    style={{
+                      width: '100%',
+                      padding: '10px 16px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: aiAddingArticles ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #22c55e, #16a34a)',
+                      color: 'white',
+                      fontWeight: 600,
+                      fontSize: 13,
+                      cursor: aiAddingArticles ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                    }}
+                  >
+                    {aiAddingArticles ? (
+                      <>
+                        <span className="loading-spinner" style={{ width: 16, height: 16 }} />
+                        Добавляю...
+                      </>
+                    ) : (
+                      <>
+                        <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Добавить все в Кандидаты
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {/* Input */}
+            <div style={{
+              padding: 16,
+              borderTop: '1px solid var(--border-glass)',
+              background: 'var(--bg-secondary)',
+              borderRadius: '0 0 12px 12px',
+            }}>
+              {aiError && (
+                <div style={{ 
+                  marginBottom: 12, 
+                  padding: '10px 12px', 
+                  background: 'rgba(239, 68, 68, 0.1)', 
+                  borderRadius: 8,
+                  fontSize: 12,
+                  color: '#ef4444',
+                }}>
+                  {aiError}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="text"
+                  value={aiMessage}
+                  onChange={(e) => setAiMessage(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAISend()}
+                  placeholder="Спросите AI о статьях..."
+                  disabled={aiLoading}
+                  style={{
+                    flex: 1,
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    border: '1px solid var(--border-glass)',
+                    background: 'var(--bg-primary)',
+                    color: 'var(--text-primary)',
+                    fontSize: 13,
+                  }}
+                />
+                <button
+                  onClick={handleAISend}
+                  disabled={aiLoading || !aiMessage.trim()}
+                  style={{
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    border: 'none',
+                    background: aiLoading ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                    color: 'white',
+                    cursor: aiLoading ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
