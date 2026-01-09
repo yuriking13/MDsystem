@@ -2939,7 +2939,19 @@ input::placeholder {
   border: 1px solid var(--border-glass);
   border-radius: 16px;
   overflow: hidden;
-  min-height: 800px;
+  min-height: 600px;
+}
+
+/* Fixed height graph container - fills viewport */
+.graph-container.graph-fixed-height {
+  height: calc(100vh - 180px);
+  max-height: calc(100vh - 180px);
+  display: flex;
+  flex-direction: column;
+}
+
+.graph-container.graph-fixed-height > div {
+  min-height: 0; /* Important for flex children to shrink */
 }
 
 /* Graph area - no strict borders, expansive canvas */
@@ -3106,16 +3118,44 @@ input::placeholder {
 .ai-panel {
   background: var(--bg-glass);
   transition: width 0.3s ease, min-width 0.3s ease;
+  flex-shrink: 0;
 }
 
 .ai-panel-open {
   width: 320px;
   min-width: 320px;
+  max-width: 320px;
 }
 
 .ai-panel-closed {
   width: 0;
   min-width: 0;
+}
+
+/* Graph canvas area */
+.graph-canvas-area {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  background: #0b0f19;
+}
+
+/* Graph tab wrapper - allow full width */
+.graph-tab-wrapper {
+  margin-left: calc(-1 * (100vw - 1100px) / 2 - 20px);
+  margin-right: calc(-1 * (100vw - 1100px) / 2 - 20px);
+  width: calc(100vw - 40px);
+  max-width: calc(100vw - 40px);
+}
+
+@media (max-width: 1140px) {
+  .graph-tab-wrapper {
+    margin-left: -20px;
+    margin-right: -20px;
+    width: calc(100% + 40px);
+    max-width: calc(100% + 40px);
+  }
 }
 
 /* Graph stats bar */

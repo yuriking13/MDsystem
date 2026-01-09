@@ -2234,7 +2234,9 @@ export default function ProjectDetailPage() {
 
         {/* === GRAPH TAB === */}
         {activeTab === "graph" && id && (
-          <CitationGraph projectId={id} />
+          <div className="graph-tab-wrapper">
+            <CitationGraph projectId={id} />
+          </div>
         )}
 
         {/* === TEAM TAB === */}
