@@ -2138,15 +2138,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   
   const GraphArticleSchema = z.object({
     id: z.string(),
-    title: z.string().optional(),
-    abstract: z.string().optional(),
+    title: z.string().nullable().optional(),
+    abstract: z.string().nullable().optional(),
     year: z.number().nullable().optional(),
-    journal: z.string().optional(),
-    authors: z.string().optional(),
+    journal: z.string().nullable().optional(),
+    authors: z.string().nullable().optional(),
     pmid: z.string().nullable().optional(),
     doi: z.string().nullable().optional(),
-    citedByCount: z.number().optional(),
-    graphLevel: z.number().optional(),
+    citedByCount: z.number().nullable().optional(),
+    graphLevel: z.number().nullable().optional(),
   });
   
   const GraphAIAssistantSchema = z.object({
