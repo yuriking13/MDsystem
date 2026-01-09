@@ -360,24 +360,33 @@ export default function CitationGraph({ projectId }: Props) {
   };
 
 
-  // Resize observer - use 2000x2000 for the graph canvas
+  // Resize observer - dynamically calculate graph dimensions
   useEffect(() => {
     if (!containerRef.current) return;
     
     const updateSize = () => {
       if (containerRef.current) {
-        // Fixed 2000x2000 canvas for the graph visualization
+        const rect = containerRef.current.getBoundingClientRect();
+        // Use container dimensions for graph size, with minimum dimensions
         setDimensions({
-          width: 2000,
-          height: 2000,
+          width: Math.max(rect.width - (showAIAssistant ? 320 : 0), 600),
+          height: Math.max(rect.height - 200, 400), // Subtract headers/stats/legend height
         });
       }
     };
     
     updateSize();
     window.addEventListener('resize', updateSize);
-    return () => window.removeEventListener('resize', updateSize);
-  }, []);
+    
+    // Use ResizeObserver for more accurate container size tracking
+    const resizeObserver = new ResizeObserver(updateSize);
+    resizeObserver.observe(containerRef.current);
+    
+    return () => {
+      window.removeEventListener('resize', updateSize);
+      resizeObserver.disconnect();
+    };
+  }, [showAIAssistant]);
   
   // Настройка сил графа после загрузки данных
   useEffect(() => {
@@ -710,7 +719,7 @@ export default function CitationGraph({ projectId }: Props) {
   }
 
   return (
-    <div className="graph-container" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', minHeight: '800px' }}>
+    <div className="graph-container graph-fixed-height" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)', minHeight: '600px' }}>
       {/* Compact Header Panel with Dropdowns */}
       <div style={{ 
         display: 'flex', 
@@ -1169,9 +1178,9 @@ export default function CitationGraph({ projectId }: Props) {
       </div>
 
       {/* Main Content Area with Graph and AI Panel */}
-      <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', minHeight: 0 }}>
         {/* Graph Area - always visible */}
-        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0 }}>
           {(!data || data.nodes.length === 0) ? (
             <div className="muted" style={{ padding: 60, textAlign: 'center' }}>
               <svg className="icon-lg" style={{ margin: '0 auto 16px', opacity: 0.5, width: 48, height: 48 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1180,11 +1189,11 @@ export default function CitationGraph({ projectId }: Props) {
               <p>Нет данных для графа с текущими фильтрами.</p>
             </div>
           ) : (
-            <div style={{ width: '100%', height: '100%', minHeight: '500px' }}>
+            <div style={{ width: '100%', height: '100%' }}>
               <ForceGraph2D
                 ref={graphRef}
                 graphData={data}
-                width={showAIAssistant ? dimensions.width - 320 : dimensions.width}
+                width={dimensions.width}
                 height={dimensions.height}
                 nodeColor={nodeColor}
                 nodeLabel={nodeLabel}
