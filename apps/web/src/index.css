@@ -2954,6 +2954,22 @@ input::placeholder {
   min-height: 0; /* Important for flex children to shrink */
 }
 
+/* Graph header filter panel - MUST be horizontal */
+.graph-header-filters {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  align-items: center !important;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.graph-header-filters > * {
+  flex-shrink: 0;
+}
+
 /* Graph area - no strict borders, expansive canvas */
 .graph-container > div:last-child {
   border: none;
@@ -3046,35 +3062,42 @@ input::placeholder {
   color: white;
 }
 
-/* Compact graph controls */
+/* Compact graph controls - MUST override base select styles */
 .graph-compact-select {
-  padding: 5px 8px;
-  font-size: 11px;
-  border: 1px solid var(--border-glass);
-  border-radius: 6px;
-  background: var(--bg-glass);
-  color: var(--text-primary);
-  cursor: pointer;
+  width: auto !important;
   min-width: 80px;
+  max-width: 150px;
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+  border: 1px solid var(--border-glass) !important;
+  border-radius: 6px !important;
+  background: var(--bg-glass) !important;
+  color: var(--text-primary) !important;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .graph-compact-select:focus {
-  border-color: var(--accent);
+  border-color: var(--accent) !important;
   outline: none;
+  box-shadow: none !important;
 }
 
 .graph-compact-input {
-  padding: 5px 8px;
-  font-size: 11px;
-  border: 1px solid var(--border-glass);
-  border-radius: 6px;
-  background: var(--bg-glass);
-  color: var(--text-primary);
+  width: auto !important;
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+  border: 1px solid var(--border-glass) !important;
+  border-radius: 6px !important;
+  background: var(--bg-glass) !important;
+  color: var(--text-primary) !important;
+  flex-shrink: 0;
 }
 
 .graph-compact-input:focus {
-  border-color: var(--accent);
+  border-color: var(--accent) !important;
   outline: none;
+  box-shadow: none !important;
 }
 
 .graph-compact-btn {
