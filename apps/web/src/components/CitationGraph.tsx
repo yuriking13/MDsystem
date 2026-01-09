@@ -369,8 +369,8 @@ export default function CitationGraph({ projectId }: Props) {
         const rect = containerRef.current.getBoundingClientRect();
         // Use container dimensions for graph size, with minimum dimensions
         setDimensions({
-          width: Math.max(rect.width - (showAIAssistant ? 320 : 0), 600),
-          height: Math.max(rect.height - 200, 400), // Subtract headers/stats/legend height
+          width: Math.max(rect.width, 400),
+          height: Math.max(rect.height - 150, 300), // Subtract headers/stats/legend height
         });
       }
     };
@@ -386,7 +386,7 @@ export default function CitationGraph({ projectId }: Props) {
       window.removeEventListener('resize', updateSize);
       resizeObserver.disconnect();
     };
-  }, [showAIAssistant]);
+  }, []);
   
   // Настройка сил графа после загрузки данных
   useEffect(() => {
@@ -1169,86 +1169,75 @@ export default function CitationGraph({ projectId }: Props) {
         )}
       </div>
 
-      {/* Main Content Area with Graph and AI Panel */}
-      <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', minHeight: 0 }}>
-        {/* Graph Area - always visible */}
-        <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0 }}>
-          {(!data || data.nodes.length === 0) ? (
-            <div className="muted" style={{ padding: 60, textAlign: 'center' }}>
-              <svg className="icon-lg" style={{ margin: '0 auto 16px', opacity: 0.5, width: 48, height: 48 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <p>Нет данных для графа с текущими фильтрами.</p>
-            </div>
-          ) : (
-            <div style={{ width: '100%', height: '100%' }}>
-              <ForceGraph2D
-                ref={graphRef}
-                graphData={data}
-                width={dimensions.width}
-                height={dimensions.height}
-                nodeColor={nodeColor}
-                nodeLabel={nodeLabel}
-                nodeVal={nodeVal}
-                nodeRelSize={6}
-                nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
-                  const size = Math.sqrt(node.val || 20) * 1.5;
-                  
-                  ctx.fillStyle = nodeColor(node);
-                  ctx.beginPath();
-                  ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
-                  ctx.fill();
+      {/* Graph Area */}
+      <div style={{ flex: 1, overflow: 'hidden', position: 'relative', minHeight: 0 }}>
+        {(!data || data.nodes.length === 0) ? (
+          <div className="muted" style={{ padding: 60, textAlign: 'center' }}>
+            <svg className="icon-lg" style={{ margin: '0 auto 16px', opacity: 0.5, width: 48, height: 48 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            <p>Нет данных для графа с текущими фильтрами.</p>
+          </div>
+        ) : (
+          <div style={{ width: '100%', height: '100%' }}>
+            <ForceGraph2D
+              ref={graphRef}
+              graphData={data}
+              width={dimensions.width}
+              height={dimensions.height}
+              nodeColor={nodeColor}
+              nodeLabel={nodeLabel}
+              nodeVal={nodeVal}
+              nodeRelSize={6}
+              nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
+                const size = Math.sqrt(node.val || 20) * 1.5;
+                
+                ctx.fillStyle = nodeColor(node);
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                ctx.fill();
 
-                  if ((node.citedByCount || 0) > 20) {
-                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                    ctx.lineWidth = size * 0.15;
-                    ctx.stroke();
+                if ((node.citedByCount || 0) > 20) {
+                  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                  ctx.lineWidth = size * 0.15;
+                  ctx.stroke();
+                }
+              }}
+              linkColor={() => 'rgba(100, 120, 150, 0.3)'}
+              linkWidth={0.8}
+              linkDirectionalArrowLength={3}
+              linkDirectionalArrowRelPos={0.95}
+              backgroundColor="#0b0f19"
+              d3AlphaDecay={0.02}
+              d3VelocityDecay={0.35}
+              cooldownTicks={150}
+              warmupTicks={80}
+              d3AlphaMin={0.001}
+              onEngineStop={() => {}}
+              onNodeHover={(node: any) => setHoveredNode(node)}
+              onNodeClick={(node: any, event: any) => {
+                if (event?.altKey) {
+                  if (node.doi) {
+                    window.open(`https://doi.org/${node.doi}`, '_blank');
+                  } else if (node.pmid) {
+                    window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
                   }
-                }}
-                linkColor={() => 'rgba(100, 120, 150, 0.3)'}
-                linkWidth={0.8}
-                linkDirectionalArrowLength={3}
-                linkDirectionalArrowRelPos={0.95}
-                backgroundColor="#0b0f19"
-                d3AlphaDecay={0.02}
-                d3VelocityDecay={0.35}
-                cooldownTicks={150}
-                warmupTicks={80}
-                d3AlphaMin={0.001}
-                onEngineStop={() => {}}
-                onNodeHover={(node: any) => setHoveredNode(node)}
-                onNodeClick={(node: any, event: any) => {
-                  if (event?.altKey) {
-                    if (node.doi) {
-                      window.open(`https://doi.org/${node.doi}`, '_blank');
-                    } else if (node.pmid) {
-                      window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
-                    }
-                    return;
-                  }
-                  setSelectedNodeForDisplay(selectedNodeForDisplay?.id === node.id ? null : node);
-                }}
-              />
-            </div>
-          )}
-        </div>
+                  return;
+                }
+                setSelectedNodeForDisplay(selectedNodeForDisplay?.id === node.id ? null : node);
+              }}
+            />
+          </div>
+        )}
+      </div>
 
-        {/* AI Assistant Collapsible Panel */}
-        <div 
-          className={`ai-panel ${showAIAssistant ? 'ai-panel-open' : 'ai-panel-closed'}`}
-          style={{
-            width: showAIAssistant ? 320 : 0,
-            minWidth: showAIAssistant ? 320 : 0,
-            transition: 'width 0.3s ease, min-width 0.3s ease',
-            overflow: 'hidden',
-            borderLeft: showAIAssistant ? '1px solid var(--border-glass)' : 'none',
-            display: 'flex',
-            flexDirection: 'column',
-            background: 'var(--bg-glass)',
-          }}
-        >
-          {showAIAssistant && (
-            <>
+      {/* AI Assistant - Fixed Sidebar */}
+      {showAIAssistant && (
+        <div className="ai-sidebar-overlay" onClick={() => setShowAIAssistant(false)}>
+          <div 
+            className="ai-sidebar"
+            onClick={(e) => e.stopPropagation()}
+          >
               {/* AI Panel Header */}
               <div style={{
                 padding: '10px 12px',
@@ -1464,10 +1453,9 @@ export default function CitationGraph({ projectId }: Props) {
                   </button>
                 </div>
               </div>
-            </>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Node Info Modal Popup */}
       {selectedNodeForDisplay && (

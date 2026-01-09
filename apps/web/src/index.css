@@ -2942,12 +2942,13 @@ input::placeholder {
   min-height: 600px;
 }
 
-/* Fixed height graph container - fills viewport */
+/* Fixed height graph container - fills available space without scroll */
 .graph-container.graph-fixed-height {
-  height: calc(100vh - 180px);
-  max-height: calc(100vh - 180px);
+  height: calc(100vh - 220px);
+  max-height: calc(100vh - 220px);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .graph-container.graph-fixed-height > div {
@@ -2964,6 +2965,7 @@ input::placeholder {
   align-items: center !important;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border-glass);
+  flex-shrink: 0;
 }
 
 .graph-header-filters > * {
@@ -3137,22 +3139,35 @@ input::placeholder {
   transition: all 0.15s ease;
 }
 
-/* AI Panel styles */
-.ai-panel {
-  background: var(--bg-glass);
-  transition: width 0.3s ease, min-width 0.3s ease;
-  flex-shrink: 0;
+/* AI Sidebar - Fixed position overlay */
+.ai-sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease;
 }
 
-.ai-panel-open {
+.ai-sidebar {
   width: 320px;
-  min-width: 320px;
-  max-width: 320px;
+  max-width: 90vw;
+  height: 100vh;
+  background: var(--bg-primary);
+  border-left: 1px solid var(--border-glass);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.25s ease;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
 }
 
-.ai-panel-closed {
-  width: 0;
-  min-width: 0;
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
 }
 
 /* Graph canvas area */
@@ -3164,22 +3179,6 @@ input::placeholder {
   background: #0b0f19;
 }
 
-/* Graph tab wrapper - allow full width */
-.graph-tab-wrapper {
-  margin-left: calc(-1 * (100vw - 1100px) / 2 - 20px);
-  margin-right: calc(-1 * (100vw - 1100px) / 2 - 20px);
-  width: calc(100vw - 40px);
-  max-width: calc(100vw - 40px);
-}
-
-@media (max-width: 1140px) {
-  .graph-tab-wrapper {
-    margin-left: -20px;
-    margin-right: -20px;
-    width: calc(100% + 40px);
-    max-width: calc(100% + 40px);
-  }
-}
 
 /* Graph stats bar */
 .graph-stats-bar {
