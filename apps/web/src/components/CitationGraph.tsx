@@ -720,16 +720,8 @@ export default function CitationGraph({ projectId }: Props) {
 
   return (
     <div className="graph-container graph-fixed-height" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 180px)', minHeight: '600px' }}>
-      {/* Compact Header Panel with Dropdowns */}
-      <div style={{ 
-        display: 'flex', 
-        flexWrap: 'wrap',
-        gap: 8, 
-        padding: '8px 12px', 
-        borderBottom: '1px solid var(--border-glass)',
-        alignItems: 'center',
-        background: 'var(--bg-secondary)'
-      }}>
+      {/* Compact Header Panel with Dropdowns - horizontal layout */}
+      <div className="graph-header-filters">
         {/* Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8 }}>
           <svg style={{ width: 18, height: 18, color: 'var(--accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
