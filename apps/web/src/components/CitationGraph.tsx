@@ -32,6 +32,23 @@ function formatTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+// Debounce hook для предотвращения частых обновлений
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
 export default function CitationGraph({ projectId }: Props) {
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,10 +115,15 @@ export default function CitationGraph({ projectId }: Props) {
   // Показать расширенные настройки
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   
+  // Debounce для параметров которые меняются часто (слайдеры)
+  const debouncedMaxNodes = useDebounce(maxNodes, 500);
+  const debouncedMaxLinksPerNode = useDebounce(maxLinksPerNode, 500);
+  
   // Глобальный язык для всех узлов графа
   const [globalLang, setGlobalLang] = useState<'en' | 'ru'>('en');
   
   const containerRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   const loadGraph = useCallback(async (options?: GraphFilterOptions) => {
@@ -135,14 +157,14 @@ export default function CitationGraph({ projectId }: Props) {
     }
   }, [projectId]);
 
-  // Перезагрузка при изменении фильтров
+  // Перезагрузка при изменении фильтров (с debounce для слайдеров)
   useEffect(() => {
     const options: GraphFilterOptions = { 
       filter,
       depth,
       sortBy,
-      maxTotalNodes: maxNodes,
-      maxLinksPerNode,
+      maxTotalNodes: debouncedMaxNodes,
+      maxLinksPerNode: debouncedMaxLinksPerNode,
       enableClustering,
       clusterBy,
     };
@@ -162,7 +184,7 @@ export default function CitationGraph({ projectId }: Props) {
       options.sources = selectedSources;
     }
     loadGraph(options);
-  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources, sortBy, maxNodes, maxLinksPerNode, enableClustering, clusterBy]);
+  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources, sortBy, debouncedMaxNodes, debouncedMaxLinksPerNode, enableClustering, clusterBy]);
 
   // Проверка статуса загрузки при монтировании
   useEffect(() => {
@@ -222,8 +244,8 @@ export default function CitationGraph({ projectId }: Props) {
                     filter,
                     depth,
                     sortBy,
-                    maxTotalNodes: maxNodes,
-                    maxLinksPerNode,
+                    maxTotalNodes: debouncedMaxNodes,
+                    maxLinksPerNode: debouncedMaxLinksPerNode,
                     enableClustering,
                     clusterBy,
                   };
@@ -333,6 +355,36 @@ export default function CitationGraph({ projectId }: Props) {
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
+  
+  // Настройка сил графа после загрузки данных
+  useEffect(() => {
+    if (!graphRef.current || !data) return;
+    
+    // Увеличиваем силу отталкивания для разреженного графа
+    const fg = graphRef.current;
+    if (fg.d3Force) {
+      // Настраиваем силу отталкивания (charge)
+      const charge = fg.d3Force('charge');
+      if (charge) {
+        charge.strength(-400).distanceMax(600);
+      }
+      
+      // Настраиваем расстояние связей
+      const link = fg.d3Force('link');
+      if (link) {
+        link.distance(120);
+      }
+      
+      // Ослабляем центральную силу
+      const center = fg.d3Force('center');
+      if (center) {
+        // Можно настроить если нужно
+      }
+      
+      // Перезапускаем симуляцию
+      fg.d3ReheatSimulation();
+    }
+  }, [data]);
 
   const nodeColor = useCallback((node: any) => {
     const status = node.status;
@@ -379,7 +431,7 @@ export default function CitationGraph({ projectId }: Props) {
     const statsQ = node.statsQuality || 0;
     
     let levelText = '';
-    if (level === 0) levelText = ' [Цитирует статью]';
+    if (level === 0) levelText = ' [Цитирует]';
     else if (level === 2) levelText = ' [Ссылка]';
     else if (level === 3) levelText = ' [Связанная]';
     
@@ -388,9 +440,26 @@ export default function CitationGraph({ projectId }: Props) {
     
     // Показываем название если есть (с учётом языка)
     const title = globalLang === 'ru' && node.title_ru ? node.title_ru : node.title;
-    const displayTitle = title ? `\n${title.substring(0, 100)}${title.length > 100 ? '...' : ''}` : '';
+    // Для placeholder узлов без title показываем PMID/DOI
+    let displayTitle = '';
+    if (title) {
+      displayTitle = `\n📄 ${title.substring(0, 120)}${title.length > 120 ? '...' : ''}`;
+    } else if (node.pmid && node.id?.startsWith('pmid:')) {
+      displayTitle = `\n🔗 PMID: ${node.pmid} (загрузите данные)`;
+    } else if (node.doi) {
+      displayTitle = `\n🔗 DOI: ${node.doi}`;
+    }
     
-    return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ''}${statsText}${displayTitle}`;
+    // Добавляем год и журнал если есть
+    let metaInfo = '';
+    if (node.year) {
+      metaInfo += `\n📅 ${node.year}`;
+      if (node.journal) {
+        metaInfo += ` • ${node.journal.substring(0, 40)}${node.journal.length > 40 ? '...' : ''}`;
+      }
+    }
+    
+    return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ''}${statsText}${displayTitle}${metaInfo}`;
   }, [globalLang]);
 
   // Размер узла зависит от количества цитирований - как в ResearchRabbit
@@ -1156,6 +1225,7 @@ export default function CitationGraph({ projectId }: Props) {
         ) : (
           <div style={{ width: dimensions.width, height: dimensions.height, minWidth: '100%', minHeight: '600px' }}>
             <ForceGraph2D
+              ref={graphRef}
               graphData={data}
               width={dimensions.width}
               height={dimensions.height}
@@ -1182,10 +1252,15 @@ export default function CitationGraph({ projectId }: Props) {
               linkDirectionalArrowLength={3}
               linkDirectionalArrowRelPos={0.95}
               backgroundColor="#0b0f19"
-              d3AlphaDecay={0.015}
-              d3VelocityDecay={0.25}
-              cooldownTicks={250}
-              warmupTicks={120}
+              d3AlphaDecay={0.02}
+              d3VelocityDecay={0.35}
+              cooldownTicks={150}
+              warmupTicks={80}
+              d3AlphaMin={0.001}
+              // Настройка сил для разреженного графа
+              onEngineStop={() => {
+                // Граф стабилизировался
+              }}
               onNodeHover={(node: any) => setHoveredNode(node)}
               onNodeClick={(node: any, event: any) => {
                 if (event?.altKey) {
@@ -1227,8 +1302,8 @@ export default function CitationGraph({ projectId }: Props) {
                 statsQuality, 
                 sources: selectedSources.length > 0 ? selectedSources : undefined,
                 sortBy,
-                maxTotalNodes: maxNodes,
-                maxLinksPerNode,
+                maxTotalNodes: debouncedMaxNodes,
+                maxLinksPerNode: debouncedMaxLinksPerNode,
                 enableClustering,
                 clusterBy,
               })}
