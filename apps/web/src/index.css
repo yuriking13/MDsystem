@@ -3139,35 +3139,17 @@ input::placeholder {
   transition: all 0.15s ease;
 }
 
-/* AI Sidebar - Fixed position overlay */
-.ai-sidebar-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-  display: flex;
-  justify-content: flex-end;
-  animation: fadeIn 0.2s ease;
-}
-
-.ai-sidebar {
-  width: 320px;
-  max-width: 90vw;
-  height: 100vh;
-  background: var(--bg-primary);
+/* AI Panel - Sidebar next to graph */
+.ai-panel-sidebar {
+  width: 280px;
+  min-width: 280px;
+  max-width: 280px;
+  background: var(--bg-glass);
   border-left: 1px solid var(--border-glass);
   display: flex;
   flex-direction: column;
-  animation: slideInRight 0.25s ease;
-  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.3);
-}
-
-@keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 /* Graph canvas area */
