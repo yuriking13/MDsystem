@@ -711,432 +711,182 @@ export default function CitationGraph({ projectId }: Props) {
 
   return (
     <div className="graph-container" ref={containerRef} style={{ display: 'flex', flexDirection: 'column', minHeight: '800px' }}>
-      {/* Header Panel */}
-      <div className="graph-header-panel">
-        <div className="graph-header-title">
-          <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-          <div>
-            <h3>Граф цитирований</h3>
-            <span className="graph-header-subtitle">Визуализация связей между статьями проекта</span>
-          </div>
-        </div>
-        
-        {/* How graph works - inline help */}
-        <div className="graph-help-inline" style={{ display: 'flex', gap: 8 }}>
-          <button 
-            onClick={() => setShowAIAssistant(!showAIAssistant)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: showAIAssistant ? 'linear-gradient(135deg, #8b5cf6, #6366f1)' : 'transparent',
-              border: showAIAssistant ? 'none' : '1px solid var(--border-glass)',
-              color: showAIAssistant ? 'white' : 'var(--text-secondary)',
-              cursor: 'pointer',
-              padding: '6px 12px',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            AI Ассистент
-          </button>
-          <button 
-            onClick={() => setShowHelpModal(true)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              padding: '4px 8px',
-              borderRadius: 6,
-              fontSize: 13,
-              transition: 'all 0.2s ease'
-            }}
-            className="help-button"
-          >
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Как работает
-          </button>
-        </div>
-      </div>
-
-      {/* Filters Row 1 */}
-      <div className="graph-filters" style={{ 
+      {/* Compact Header Panel with Dropdowns */}
+      <div style={{ 
         display: 'flex', 
-        flexWrap: 'wrap', 
-        gap: 12, 
-        padding: '12px 20px', 
+        flexWrap: 'wrap',
+        gap: 8, 
+        padding: '8px 12px', 
         borderBottom: '1px solid var(--border-glass)',
         alignItems: 'center',
-        background: 'rgba(0,0,0,0.05)'
+        background: 'var(--bg-secondary)'
       }}>
-        {/* Depth Filter */}
-        <div className="graph-filter-group">
-          <div className="graph-filter-label">
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            <span>Уровень:</span>
-          </div>
-          <div className="graph-filter-buttons">
-            <button
-              className={`graph-filter-btn ${depth === 1 ? 'active' : ''}`}
-              onClick={() => setDepth(1)}
-              title="Только статьи проекта + связи между ними"
-            >
-              Проект
-            </button>
-            <button
-              className={`graph-filter-btn ${depth === 2 ? 'active' : ''}`}
-              onClick={() => setDepth(2)}
-              title="+ Топ ссылок (references)"
-            >
-              +Ссылки
-            </button>
-            <button
-              className={`graph-filter-btn ${depth === 3 ? 'active' : ''}`}
-              onClick={() => setDepth(3)}
-              title="+ Топ цитирующих (cited_by)"
-            >
-              +Цитирующие
-            </button>
-          </div>
+        {/* Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8 }}>
+          <svg style={{ width: 18, height: 18, color: 'var(--accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+          </svg>
+          <span style={{ fontWeight: 600, fontSize: 14 }}>Граф</span>
         </div>
 
-        {/* Status Filter */}
-        <div className="graph-filter-group">
-          <div className="graph-filter-label">
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-            </svg>
-            <span>Статус:</span>
-          </div>
-          <div className="graph-filter-buttons">
-            <button
-              className={`graph-filter-btn ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => handleFilterChange('all')}
-            >
-              Все
-            </button>
-            <button
-              className={`graph-filter-btn ${filter === 'selected' ? 'active' : ''}`}
-              onClick={() => handleFilterChange('selected')}
-            >
-              Отобранные
-            </button>
-            <button
-              className={`graph-filter-btn ${filter === 'excluded' ? 'active' : ''}`}
-              onClick={() => handleFilterChange('excluded')}
-            >
-              Исключённые
-            </button>
-          </div>
-        </div>
+        {/* Depth Dropdown */}
+        <select
+          value={depth}
+          onChange={(e) => setDepth(parseInt(e.target.value, 10) as DepthType)}
+          className="graph-compact-select"
+        >
+          <option value={1}>Проект</option>
+          <option value={2}>+Ссылки</option>
+          <option value={3}>+Цитирующие</option>
+        </select>
 
-        {/* Source Filter (PubMed, DOAJ, Wiley) */}
-        <div className="graph-filter-group">
-          <div className="graph-filter-label">
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <span>Источник:</span>
-          </div>
-          <div className="graph-filter-buttons">
-            <button
-              className={`graph-filter-btn ${selectedSources.length === 0 ? 'active' : ''}`}
-              onClick={handleClearSources}
-              title="Показать все источники"
-            >
-              Все
-            </button>
-            <button
-              className={`graph-filter-btn ${selectedSources.includes('pubmed') ? 'active' : ''}`}
-              onClick={() => handleSourceToggle('pubmed')}
-              style={selectedSources.includes('pubmed') ? { background: '#3b82f6', borderColor: '#2563eb' } : undefined}
-              title="PubMed"
-            >
-              PubMed
-            </button>
-            <button
-              className={`graph-filter-btn ${selectedSources.includes('doaj') ? 'active' : ''}`}
-              onClick={() => handleSourceToggle('doaj')}
-              style={selectedSources.includes('doaj') ? { background: '#eab308', borderColor: '#ca8a04', color: '#1e293b' } : undefined}
-              title="DOAJ"
-            >
-              DOAJ
-            </button>
-            <button
-              className={`graph-filter-btn ${selectedSources.includes('wiley') ? 'active' : ''}`}
-              onClick={() => handleSourceToggle('wiley')}
-              style={selectedSources.includes('wiley') ? { background: '#8b5cf6', borderColor: '#7c3aed' } : undefined}
-              title="Wiley"
-            >
-              Wiley
-            </button>
-          </div>
-        </div>
+        {/* Status Dropdown */}
+        <select
+          value={filter}
+          onChange={(e) => handleFilterChange(e.target.value as FilterType)}
+          className="graph-compact-select"
+        >
+          <option value="all">Все статусы</option>
+          <option value="selected">Отобранные</option>
+          <option value="excluded">Исключённые</option>
+        </select>
 
-        {/* Language Toggle */}
-        <div className="graph-filter-group">
-          <div className="graph-filter-label">
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
-            </svg>
-            <span>Язык:</span>
-          </div>
-          <div className="lang-toggle">
-            <button
-              className={globalLang === 'en' ? 'active' : ''}
-              onClick={() => setGlobalLang('en')}
-              title="Английский"
-            >
-              EN
-            </button>
-            <button
-              className={globalLang === 'ru' ? 'active' : ''}
-              onClick={() => setGlobalLang('ru')}
-              title="Русский (если есть)"
-            >
-              RU
-            </button>
-          </div>
-        </div>
+        {/* Source Dropdown */}
+        <select
+          value={selectedSources.length === 0 ? 'all' : selectedSources[0]}
+          onChange={(e) => {
+            if (e.target.value === 'all') {
+              handleClearSources();
+            } else {
+              setSelectedSources([e.target.value as 'pubmed' | 'doaj' | 'wiley']);
+            }
+          }}
+          className="graph-compact-select"
+        >
+          <option value="all">Все источники</option>
+          <option value="pubmed">PubMed</option>
+          <option value="doaj">DOAJ</option>
+          <option value="wiley">Wiley</option>
+        </select>
 
-        {/* Hint about clicking nodes */}
-        <div style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
-          Нажмите на узел для просмотра статьи
-        </div>
-      </div>
-
-      {/* Filters Row 2 */}
-      <div className="graph-filters" style={{ 
-        display: 'flex', 
-        flexWrap: 'wrap', 
-        gap: 12, 
-        padding: '12px 20px', 
-        borderBottom: '1px solid var(--border-glass)',
-        alignItems: 'center'
-      }}>
-        {/* Fetch References */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', color: 'var(--text-secondary)' }}>
-            <input
-              type="checkbox"
-              checked={fetchSelectedOnly}
-              onChange={(e) => setFetchSelectedOnly(e.target.checked)}
-              className="search-checkbox"
-            />
-            Только отобранные
-          </label>
-          <button
-            className="btn secondary"
-            style={{ padding: '8px 16px', fontSize: 12 }}
-            onClick={handleFetchReferences}
-            disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
-            title={fetchSelectedOnly ? 'Загрузить связи только для отобранных статей' : 'Загрузить связи для всех статей проекта'}
-          >
-            <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            {fetchingRefs || fetchJobStatus?.isRunning ? 'Загрузка...' : 'Обновить связи'}
-          </button>
-        </div>
-      
-        {/* Year Filter */}
-        <div className="graph-filter-group">
-          <div className="graph-filter-label">
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            <span>Годы:</span>
-          </div>
+        {/* Year Range */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <input
             type="number"
-            placeholder={yearRange.min ? String(yearRange.min) : "От"}
+            placeholder="Год от"
             value={yearFromInput}
             onChange={(e) => setYearFromInput(e.target.value)}
             onBlur={() => {
               const val = yearFromInput ? parseInt(yearFromInput, 10) : undefined;
               if (val !== yearFrom) setYearFrom(val);
             }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const val = yearFromInput ? parseInt(yearFromInput, 10) : undefined;
-                if (val !== yearFrom) setYearFrom(val);
-              }
-            }}
-            style={{ 
-              width: 70, 
-              padding: '6px 8px', 
-              fontSize: 12,
-              border: '1px solid var(--border-glass)',
-              borderRadius: 6,
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)'
-            }}
-            min={yearRange.min || 1900}
-            max={yearRange.max || 2030}
+            className="graph-compact-input"
+            style={{ width: 70 }}
           />
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>
+          <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>—</span>
           <input
             type="number"
-            placeholder={yearRange.max ? String(yearRange.max) : "До"}
+            placeholder="До"
             value={yearToInput}
             onChange={(e) => setYearToInput(e.target.value)}
             onBlur={() => {
               const val = yearToInput ? parseInt(yearToInput, 10) : undefined;
               if (val !== yearTo) setYearTo(val);
             }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const val = yearToInput ? parseInt(yearToInput, 10) : undefined;
-                if (val !== yearTo) setYearTo(val);
-              }
-            }}
-            style={{ 
-              width: 70, 
-              padding: '6px 8px', 
-              fontSize: 12,
-              border: '1px solid var(--border-glass)',
-              borderRadius: 6,
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)'
-            }}
-            min={yearRange.min || 1900}
-            max={yearRange.max || 2030}
+            className="graph-compact-input"
+            style={{ width: 60 }}
           />
-          {(yearFrom || yearTo) && (
-            <button
-              className="graph-filter-btn"
-              style={{ padding: '4px 8px' }}
-              onClick={() => { 
-                setYearFrom(undefined); 
-                setYearTo(undefined);
-                setYearFromInput('');
-                setYearToInput('');
-              }}
-            >
-              ✕
-            </button>
-          )}
         </div>
-        
-        {/* P-value Filter */}
-        <div className="graph-filter-group">
-          <div className="graph-filter-label">
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <span>P-value:</span>
-          </div>
-          <button
-            className={`graph-filter-btn ${highlightPValue ? 'active' : ''}`}
-            style={highlightPValue ? { background: '#fbbf24', borderColor: '#f59e0b', color: '#1e293b' } : undefined}
-            onClick={() => setHighlightPValue(!highlightPValue)}
-            title={highlightPValue ? 'Скрыть подсветку' : 'Подсветить золотым'}
-          >
-            Выделить
-          </button>
-          <select
-            value={statsQuality}
-            onChange={(e) => setStatsQuality(parseInt(e.target.value, 10))}
-            style={{ 
-              padding: '6px 10px', 
-              fontSize: 12,
-              border: '1px solid var(--border-glass)',
-              borderRadius: 6,
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)'
-            }}
-          >
-            <option value={0}>Все статьи</option>
-            <option value={1}>≥ Упомянут p-value</option>
-            <option value={2}>≥ Значимые результаты</option>
-            <option value={3}>Строгие (p&lt;0.01)</option>
-          </select>
-        </div>
-        
-        {/* Sortierung by importance */}
-        <div className="graph-filter-group">
-          <div className="graph-filter-label">
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-            </svg>
-            <span>Приоритет:</span>
-          </div>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            style={{ 
-              padding: '6px 10px', 
-              fontSize: 12,
-              border: '1px solid var(--border-glass)',
-              borderRadius: 6,
-              background: 'var(--bg-secondary)',
-              color: 'var(--text-primary)'
-            }}
-            title="Как сортировать связанные статьи"
-          >
-            <option value="citations">По цитированиям</option>
-            <option value="frequency">По частоте (общие источники)</option>
-            <option value="year">По году (новые первые)</option>
-            <option value="default">Без сортировки</option>
-          </select>
-        </div>
-        
-        {/* Advanced Settings Toggle */}
-        <button
-          className="graph-filter-btn"
-          onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-          style={{ marginLeft: 'auto' }}
-          title="Расширенные настройки графа"
+
+        {/* P-value */}
+        <select
+          value={statsQuality}
+          onChange={(e) => setStatsQuality(parseInt(e.target.value, 10))}
+          className="graph-compact-select"
         >
-          <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <option value={0}>P-value: все</option>
+          <option value={1}>≥ Упомянут</option>
+          <option value={2}>≥ Значимые</option>
+          <option value={3}>Строгие</option>
+        </select>
+
+        {/* Sort */}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+          className="graph-compact-select"
+        >
+          <option value="citations">По цитированиям</option>
+          <option value="frequency">По частоте</option>
+          <option value="year">По году</option>
+          <option value="default">Без сортировки</option>
+        </select>
+
+        {/* Lang Toggle */}
+        <div className="lang-toggle" style={{ padding: 0 }}>
+          <button
+            className={globalLang === 'en' ? 'active' : ''}
+            onClick={() => setGlobalLang('en')}
+            style={{ padding: '4px 8px', fontSize: 11 }}
+          >
+            EN
+          </button>
+          <button
+            className={globalLang === 'ru' ? 'active' : ''}
+            onClick={() => setGlobalLang('ru')}
+            style={{ padding: '4px 8px', fontSize: 11 }}
+          >
+            RU
+          </button>
+        </div>
+
+        {/* Spacer */}
+        <div style={{ flex: 1 }} />
+
+        {/* Actions */}
+        <button
+          className="btn secondary"
+          style={{ padding: '5px 10px', fontSize: 11 }}
+          onClick={handleFetchReferences}
+          disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
+        >
+          <svg style={{ width: 14, height: 14, marginRight: 4 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          {fetchingRefs ? '...' : 'Связи'}
+        </button>
+
+        <button
+          onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+          className="graph-compact-btn"
+          title="Настройки"
+        >
+          <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          Настройки
         </button>
-        
-        {/* Query Filter */}
-        {availableQueries.length > 0 && (
-          <div className="graph-filter-group" style={{ flexWrap: 'wrap' }}>
-            <div className="graph-filter-label">
-              <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <span>Запросы:</span>
-            </div>
-            <div className="graph-filter-buttons">
-              {availableQueries.map(query => (
-                <button
-                  key={query}
-                  className={`graph-filter-btn ${selectedQueries.includes(query) ? 'active' : ''}`}
-                  onClick={() => handleQueryToggle(query)}
-                  title={query}
-                  style={{ maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                >
-                  {query.length > 15 ? query.slice(0, 15) + '...' : query}
-                </button>
-              ))}
-              {selectedQueries.length > 0 && (
-                <button className="graph-filter-btn" onClick={handleClearQueries}>✕</button>
-              )}
-            </div>
-          </div>
-        )}
+
+        <button 
+          onClick={() => setShowHelpModal(true)}
+          className="graph-compact-btn"
+          title="Как работает"
+        >
+          <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+
+        <button 
+          onClick={() => setShowAIAssistant(!showAIAssistant)}
+          className={showAIAssistant ? 'graph-compact-btn-active' : 'graph-compact-btn'}
+          title="AI Ассистент"
+        >
+          <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          </svg>
+          AI
+        </button>
       </div>
       
       {/* Advanced Settings Panel */}
@@ -1418,69 +1168,304 @@ export default function CitationGraph({ projectId }: Props) {
         )}
       </div>
 
-      {/* Main Graph Area - full width, no sidebar */}
-      <div style={{ flex: 1, overflowX: 'hidden', overflowY: 'auto', position: 'relative' }}>
-        {(!data || data.nodes.length === 0) ? (
-          <div className="muted" style={{ padding: 60, textAlign: 'center' }}>
-            <svg className="icon-lg" style={{ margin: '0 auto 16px', opacity: 0.5, width: 48, height: 48 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            <p>Нет данных для графа с текущими фильтрами.</p>
-          </div>
-        ) : (
-          <div style={{ width: dimensions.width, height: dimensions.height, minWidth: '100%', minHeight: '600px' }}>
-            <ForceGraph2D
-              ref={graphRef}
-              graphData={data}
-              width={dimensions.width}
-              height={dimensions.height}
-              nodeColor={nodeColor}
-              nodeLabel={nodeLabel}
-              nodeVal={nodeVal}
-              nodeRelSize={6}
-              nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
-                const size = Math.sqrt(node.val || 20) * 1.5;
-                
-                ctx.fillStyle = nodeColor(node);
-                ctx.beginPath();
-                ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
-                ctx.fill();
+      {/* Main Content Area with Graph and AI Panel */}
+      <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden' }}>
+        {/* Graph Area - always visible */}
+        <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+          {(!data || data.nodes.length === 0) ? (
+            <div className="muted" style={{ padding: 60, textAlign: 'center' }}>
+              <svg className="icon-lg" style={{ margin: '0 auto 16px', opacity: 0.5, width: 48, height: 48 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <p>Нет данных для графа с текущими фильтрами.</p>
+            </div>
+          ) : (
+            <div style={{ width: '100%', height: '100%', minHeight: '500px' }}>
+              <ForceGraph2D
+                ref={graphRef}
+                graphData={data}
+                width={showAIAssistant ? dimensions.width - 320 : dimensions.width}
+                height={dimensions.height}
+                nodeColor={nodeColor}
+                nodeLabel={nodeLabel}
+                nodeVal={nodeVal}
+                nodeRelSize={6}
+                nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
+                  const size = Math.sqrt(node.val || 20) * 1.5;
+                  
+                  ctx.fillStyle = nodeColor(node);
+                  ctx.beginPath();
+                  ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                  ctx.fill();
 
-                if ((node.citedByCount || 0) > 20) {
-                  ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-                  ctx.lineWidth = size * 0.15;
-                  ctx.stroke();
-                }
-              }}
-              linkColor={() => 'rgba(100, 120, 150, 0.3)'}
-              linkWidth={0.8}
-              linkDirectionalArrowLength={3}
-              linkDirectionalArrowRelPos={0.95}
-              backgroundColor="#0b0f19"
-              d3AlphaDecay={0.02}
-              d3VelocityDecay={0.35}
-              cooldownTicks={150}
-              warmupTicks={80}
-              d3AlphaMin={0.001}
-              // Настройка сил для разреженного графа
-              onEngineStop={() => {
-                // Граф стабилизировался
-              }}
-              onNodeHover={(node: any) => setHoveredNode(node)}
-              onNodeClick={(node: any, event: any) => {
-                if (event?.altKey) {
-                  if (node.doi) {
-                    window.open(`https://doi.org/${node.doi}`, '_blank');
-                  } else if (node.pmid) {
-                    window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
+                  if ((node.citedByCount || 0) > 20) {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = size * 0.15;
+                    ctx.stroke();
                   }
-                  return;
-                }
-                setSelectedNodeForDisplay(selectedNodeForDisplay?.id === node.id ? null : node);
-              }}
-            />
-          </div>
-        )}
+                }}
+                linkColor={() => 'rgba(100, 120, 150, 0.3)'}
+                linkWidth={0.8}
+                linkDirectionalArrowLength={3}
+                linkDirectionalArrowRelPos={0.95}
+                backgroundColor="#0b0f19"
+                d3AlphaDecay={0.02}
+                d3VelocityDecay={0.35}
+                cooldownTicks={150}
+                warmupTicks={80}
+                d3AlphaMin={0.001}
+                onEngineStop={() => {}}
+                onNodeHover={(node: any) => setHoveredNode(node)}
+                onNodeClick={(node: any, event: any) => {
+                  if (event?.altKey) {
+                    if (node.doi) {
+                      window.open(`https://doi.org/${node.doi}`, '_blank');
+                    } else if (node.pmid) {
+                      window.open(`https://pubmed.ncbi.nlm.nih.gov/${node.pmid}`, '_blank');
+                    }
+                    return;
+                  }
+                  setSelectedNodeForDisplay(selectedNodeForDisplay?.id === node.id ? null : node);
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* AI Assistant Collapsible Panel */}
+        <div 
+          className={`ai-panel ${showAIAssistant ? 'ai-panel-open' : 'ai-panel-closed'}`}
+          style={{
+            width: showAIAssistant ? 320 : 0,
+            minWidth: showAIAssistant ? 320 : 0,
+            transition: 'width 0.3s ease, min-width 0.3s ease',
+            overflow: 'hidden',
+            borderLeft: showAIAssistant ? '1px solid var(--border-glass)' : 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            background: 'var(--bg-glass)',
+          }}
+        >
+          {showAIAssistant && (
+            <>
+              {/* AI Panel Header */}
+              <div style={{
+                padding: '10px 12px',
+                borderBottom: '1px solid var(--border-glass)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))',
+                flexShrink: 0,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <svg style={{ width: 18, height: 18, color: '#8b5cf6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>AI Ассистент</span>
+                </div>
+                <button
+                  onClick={() => setShowAIAssistant(false)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    padding: 4,
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  title="Свернуть"
+                >
+                  <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+              
+              {/* Chat History */}
+              <div style={{ 
+                flex: 1, 
+                overflowY: 'auto', 
+                padding: 12,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}>
+                {aiHistory.length === 0 && (
+                  <div style={{ 
+                    textAlign: 'center', 
+                    color: 'var(--text-secondary)', 
+                    padding: 16,
+                    fontSize: 12,
+                  }}>
+                    <svg style={{ width: 36, height: 36, margin: '0 auto 12px', opacity: 0.5 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <p style={{ marginBottom: 8 }}>Спросите AI о поиске</p>
+                    <div style={{ fontSize: 11, opacity: 0.8 }}>
+                      <p style={{ fontStyle: 'italic' }}>«Найди статьи по диабету»</p>
+                      <p style={{ fontStyle: 'italic', marginTop: 4 }}>«РКИ по гипертонии»</p>
+                    </div>
+                  </div>
+                )}
+                
+                {aiHistory.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 10,
+                      background: msg.role === 'user' 
+                        ? 'linear-gradient(135deg, #3b82f6, #2563eb)' 
+                        : 'var(--bg-secondary)',
+                      color: msg.role === 'user' ? 'white' : 'var(--text-primary)',
+                      alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                      maxWidth: '90%',
+                      fontSize: 12,
+                      lineHeight: 1.4,
+                      whiteSpace: 'pre-wrap',
+                    }}
+                  >
+                    {msg.content}
+                  </div>
+                ))}
+                
+                {aiLoading && (
+                  <div style={{
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: 'var(--bg-secondary)',
+                    alignSelf: 'flex-start',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}>
+                    <span className="loading-spinner" style={{ width: 14, height: 14 }} />
+                    <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>Думаю...</span>
+                  </div>
+                )}
+                
+                {/* Search Suggestions */}
+                {aiSuggestions.length > 0 && (
+                  <div style={{
+                    padding: 12,
+                    background: 'rgba(139, 92, 246, 0.1)',
+                    borderRadius: 10,
+                    border: '1px solid rgba(139, 92, 246, 0.3)',
+                  }}>
+                    <div style={{ fontWeight: 600, fontSize: 11, marginBottom: 8, color: '#8b5cf6' }}>
+                      📋 Предложенные запросы:
+                    </div>
+                    {aiSuggestions.map((suggestion, idx) => (
+                      <div 
+                        key={idx}
+                        style={{
+                          padding: '8px 10px',
+                          background: 'var(--bg-primary)',
+                          borderRadius: 6,
+                          marginBottom: 6,
+                        }}
+                      >
+                        <div style={{ fontWeight: 500, fontSize: 11 }}>{suggestion.query}</div>
+                        <div style={{ fontSize: 10, color: 'var(--text-secondary)', marginTop: 2 }}>
+                          {suggestion.description}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Articles to Add */}
+                {(aiPmidsToAdd.length > 0 || aiDoisToAdd.length > 0) && (
+                  <div style={{
+                    padding: 12,
+                    background: 'rgba(34, 197, 94, 0.1)',
+                    borderRadius: 10,
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                  }}>
+                    <div style={{ fontWeight: 600, fontSize: 11, marginBottom: 8, color: '#22c55e' }}>
+                      📚 Статьи ({aiPmidsToAdd.length + aiDoisToAdd.length}):
+                    </div>
+                    <button
+                      onClick={handleAIAddArticles}
+                      disabled={aiAddingArticles}
+                      style={{
+                        width: '100%',
+                        padding: '8px 12px',
+                        borderRadius: 6,
+                        border: 'none',
+                        background: aiAddingArticles ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #22c55e, #16a34a)',
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: 11,
+                        cursor: aiAddingArticles ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {aiAddingArticles ? 'Добавляю...' : '+ Добавить в Кандидаты'}
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Input */}
+              <div style={{
+                padding: 12,
+                borderTop: '1px solid var(--border-glass)',
+                background: 'var(--bg-secondary)',
+                flexShrink: 0,
+              }}>
+                {aiError && (
+                  <div style={{ 
+                    marginBottom: 8, 
+                    padding: '8px 10px', 
+                    background: 'rgba(239, 68, 68, 0.1)', 
+                    borderRadius: 6,
+                    fontSize: 11,
+                    color: '#ef4444',
+                  }}>
+                    {aiError}
+                  </div>
+                )}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <input
+                    type="text"
+                    value={aiMessage}
+                    onChange={(e) => setAiMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAISend()}
+                    placeholder="Спросите AI..."
+                    disabled={aiLoading}
+                    style={{
+                      flex: 1,
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: '1px solid var(--border-glass)',
+                      background: 'var(--bg-primary)',
+                      color: 'var(--text-primary)',
+                      fontSize: 12,
+                    }}
+                  />
+                  <button
+                    onClick={handleAISend}
+                    disabled={aiLoading || !aiMessage.trim()}
+                    style={{
+                      padding: '10px 12px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: aiLoading ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                      color: 'white',
+                      cursor: aiLoading ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    <svg style={{ width: 16, height: 16 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Node Info Modal Popup */}
@@ -1651,267 +1636,6 @@ export default function CitationGraph({ projectId }: Props) {
         </div>
       )}
       
-      {/* AI Assistant Modal */}
-      {showAIAssistant && (
-        <div className="node-info-modal-overlay" onClick={() => setShowAIAssistant(false)}>
-          <div 
-            className="node-info-modal" 
-            onClick={(e) => e.stopPropagation()}
-            style={{ 
-              maxWidth: 520, 
-              maxHeight: '85vh',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <button 
-              className="node-info-modal-close"
-              onClick={() => setShowAIAssistant(false)}
-            >
-              <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            {/* Header */}
-            <div style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid var(--border-glass)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))',
-              borderRadius: '12px 12px 0 0',
-            }}>
-              <svg style={{ width: 24, height: 24, color: '#8b5cf6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-              </svg>
-              <span style={{ fontWeight: 600, fontSize: 16 }}>AI Ассистент</span>
-            </div>
-            
-            {/* Chat History */}
-            <div style={{ 
-              flex: 1, 
-              overflowY: 'auto', 
-              padding: 16,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 12,
-              minHeight: 200,
-              maxHeight: 400,
-            }}>
-              {aiHistory.length === 0 && (
-                <div style={{ 
-                  textAlign: 'center', 
-                  color: 'var(--text-secondary)', 
-                  padding: 24,
-                  fontSize: 13,
-                }}>
-                  <svg style={{ width: 48, height: 48, margin: '0 auto 16px', opacity: 0.5 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  <p style={{ marginBottom: 12 }}>Спросите AI о поиске статей</p>
-                  <div style={{ fontSize: 12, opacity: 0.8 }}>
-                    <p>Примеры:</p>
-                    <p style={{ fontStyle: 'italic', marginTop: 8 }}>«Найди статьи по теме метаболического синдрома за 2020-2024»</p>
-                    <p style={{ fontStyle: 'italic', marginTop: 4 }}>«Мне нужны РКИ по лечению гипертонии»</p>
-                    <p style={{ fontStyle: 'italic', marginTop: 4 }}>«Какие MeSH термины использовать для поиска по диабету?»</p>
-                  </div>
-                </div>
-              )}
-              
-              {aiHistory.map((msg, idx) => (
-                <div
-                  key={idx}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 12,
-                    background: msg.role === 'user' 
-                      ? 'linear-gradient(135deg, #3b82f6, #2563eb)' 
-                      : 'var(--bg-secondary)',
-                    color: msg.role === 'user' ? 'white' : 'var(--text-primary)',
-                    alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: '85%',
-                    fontSize: 13,
-                    lineHeight: 1.5,
-                    whiteSpace: 'pre-wrap',
-                  }}
-                >
-                  {msg.content}
-                </div>
-              ))}
-              
-              {aiLoading && (
-                <div style={{
-                  padding: '12px 16px',
-                  borderRadius: 12,
-                  background: 'var(--bg-secondary)',
-                  alignSelf: 'flex-start',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                }}>
-                  <span className="loading-spinner" style={{ width: 16, height: 16 }} />
-                  <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>AI думает...</span>
-                </div>
-              )}
-              
-              {/* Search Suggestions */}
-              {aiSuggestions.length > 0 && (
-                <div style={{
-                  padding: 16,
-                  background: 'rgba(139, 92, 246, 0.1)',
-                  borderRadius: 12,
-                  border: '1px solid rgba(139, 92, 246, 0.3)',
-                }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, color: '#8b5cf6' }}>
-                    📋 Предложенные запросы:
-                  </div>
-                  {aiSuggestions.map((suggestion, idx) => (
-                    <div 
-                      key={idx}
-                      style={{
-                        padding: '10px 12px',
-                        background: 'var(--bg-primary)',
-                        borderRadius: 8,
-                        marginBottom: 8,
-                      }}
-                    >
-                      <div style={{ fontWeight: 500, fontSize: 13 }}>
-                        {suggestion.query}
-                      </div>
-                      <div style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
-                        {suggestion.description}
-                      </div>
-                      {suggestion.filters && (
-                        <div style={{ fontSize: 11, color: '#8b5cf6', marginTop: 4 }}>
-                          {suggestion.filters.yearFrom && `${suggestion.filters.yearFrom}-`}
-                          {suggestion.filters.yearTo && suggestion.filters.yearTo}
-                          {suggestion.filters.sources && ` | ${suggestion.filters.sources.join(', ')}`}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              {/* Articles to Add */}
-              {(aiPmidsToAdd.length > 0 || aiDoisToAdd.length > 0) && (
-                <div style={{
-                  padding: 16,
-                  background: 'rgba(34, 197, 94, 0.1)',
-                  borderRadius: 12,
-                  border: '1px solid rgba(34, 197, 94, 0.3)',
-                }}>
-                  <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 12, color: '#22c55e' }}>
-                    📚 Найдены конкретные статьи ({aiPmidsToAdd.length + aiDoisToAdd.length}):
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 12 }}>
-                    {aiPmidsToAdd.length > 0 && (
-                      <div>PMID: {aiPmidsToAdd.join(', ')}</div>
-                    )}
-                    {aiDoisToAdd.length > 0 && (
-                      <div>DOI: {aiDoisToAdd.join(', ')}</div>
-                    )}
-                  </div>
-                  <button
-                    onClick={handleAIAddArticles}
-                    disabled={aiAddingArticles}
-                    style={{
-                      width: '100%',
-                      padding: '10px 16px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: aiAddingArticles ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #22c55e, #16a34a)',
-                      color: 'white',
-                      fontWeight: 600,
-                      fontSize: 13,
-                      cursor: aiAddingArticles ? 'not-allowed' : 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                    }}
-                  >
-                    {aiAddingArticles ? (
-                      <>
-                        <span className="loading-spinner" style={{ width: 16, height: 16 }} />
-                        Добавляю...
-                      </>
-                    ) : (
-                      <>
-                        <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        Добавить все в Кандидаты
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-            
-            {/* Input */}
-            <div style={{
-              padding: 16,
-              borderTop: '1px solid var(--border-glass)',
-              background: 'var(--bg-secondary)',
-              borderRadius: '0 0 12px 12px',
-            }}>
-              {aiError && (
-                <div style={{ 
-                  marginBottom: 12, 
-                  padding: '10px 12px', 
-                  background: 'rgba(239, 68, 68, 0.1)', 
-                  borderRadius: 8,
-                  fontSize: 12,
-                  color: '#ef4444',
-                }}>
-                  {aiError}
-                </div>
-              )}
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  type="text"
-                  value={aiMessage}
-                  onChange={(e) => setAiMessage(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleAISend()}
-                  placeholder="Спросите AI о статьях..."
-                  disabled={aiLoading}
-                  style={{
-                    flex: 1,
-                    padding: '12px 16px',
-                    borderRadius: 12,
-                    border: '1px solid var(--border-glass)',
-                    background: 'var(--bg-primary)',
-                    color: 'var(--text-primary)',
-                    fontSize: 13,
-                  }}
-                />
-                <button
-                  onClick={handleAISend}
-                  disabled={aiLoading || !aiMessage.trim()}
-                  style={{
-                    padding: '12px 16px',
-                    borderRadius: 12,
-                    border: 'none',
-                    background: aiLoading ? 'var(--bg-secondary)' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                    color: 'white',
-                    cursor: aiLoading ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                  }}
-                >
-                  <svg style={{ width: 18, height: 18 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
