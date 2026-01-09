@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
-import { apiLogin } from "../lib/api";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { apiRegister } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 
 // Парсинг ошибки в человекочитаемое сообщение
@@ -26,39 +26,47 @@ function parseError(msg: string): string {
     }
   }
   
-  if (msg.includes("Invalid credentials")) {
-    return "Неверный email или пароль";
+  if (msg.includes("User already exists") || msg.includes("API 409")) {
+    return "Пользователь с таким email уже существует";
   }
-  if (msg.includes("API 401")) {
-    return "Неверный email или пароль";
+  if (msg.includes("too_small") && msg.includes("password")) {
+    return "Пароль должен быть минимум 8 символов";
   }
   
   return msg;
 }
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const nav = useNavigate();
-  const loc = useLocation() as any;
   const { loginWithToken } = useAuth();
-
-  const redirectTo = useMemo(() => loc.state?.from || "/projects", [loc.state]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    if (password.length < 8) {
+      setError("Пароль должен быть минимум 8 символов");
+      return;
+    }
+
+    if (!agreeTerms) {
+      setError("Необходимо согласиться с условиями использования");
+      return;
+    }
+
     setBusy(true);
     try {
-      const res = await apiLogin(email.trim(), password);
+      const res = await apiRegister(email.trim(), password);
       await loginWithToken(res.token);
-      nav(redirectTo, { replace: true });
+      nav("/projects", { replace: true });
     } catch (err: any) {
-      setError(parseError(err?.message || "Ошибка входа"));
+      setError(parseError(err?.message || "Ошибка регистрации"));
     } finally {
       setBusy(false);
     }
@@ -120,10 +128,10 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Right side - Login form */}
+          {/* Right side - Register form */}
           <div className="auth-form-container">
             <div className="auth-form-card">
-              <h1 className="auth-title">Добро пожаловать</h1>
+              <h1 className="auth-title">Создать аккаунт</h1>
               
               <form onSubmit={submit} className="auth-form">
                 <div className="auth-field">
@@ -140,42 +148,46 @@ export default function LoginPage() {
                 </div>
 
                 <div className="auth-field">
-                  <label htmlFor="password">Пароль</label>
+                  <label htmlFor="password">
+                    Пароль <span className="auth-hint">(минимум 8 символов)</span>
+                  </label>
                   <input
                     type="password"
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    autoComplete="current-password"
+                    autoComplete="new-password"
+                    minLength={8}
                     required
                   />
                 </div>
 
-                <div className="auth-options">
+                <div className="auth-terms">
                   <label className="auth-checkbox">
                     <input
                       type="checkbox"
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
+                      checked={agreeTerms}
+                      onChange={(e) => setAgreeTerms(e.target.checked)}
                     />
-                    <span>Запомнить меня</span>
+                    <span>
+                      Регистрируясь, вы соглашаетесь с{" "}
+                      <a href="#" className="auth-link">Условиями использования</a> и{" "}
+                      <a href="#" className="auth-link">Политикой конфиденциальности</a>.
+                    </span>
                   </label>
-                  <Link to="/forgot-password" className="auth-link">
-                    Забыли пароль?
-                  </Link>
                 </div>
 
                 {error && <div className="auth-error">{error}</div>}
 
                 <button type="submit" className="auth-submit" disabled={busy}>
-                  {busy ? "Вход..." : "Войти в аккаунт"}
+                  {busy ? "Создание..." : "Создать аккаунт"}
                 </button>
 
                 <p className="auth-footer-text">
-                  Нет аккаунта?{" "}
-                  <Link to="/register" className="auth-link">
-                    Зарегистрироваться
+                  Уже есть аккаунт?{" "}
+                  <Link to="/login" className="auth-link">
+                    Войти
                   </Link>
                 </p>
               </form>
