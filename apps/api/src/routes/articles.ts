@@ -2160,7 +2160,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
   fastify.post(
     "/projects/:id/graph-ai-assistant",
-    { preHandler: [fastify.authenticate] },
+    { 
+      preHandler: [fastify.authenticate],
+      bodyLimit: 5 * 1024 * 1024, // 5MB для передачи статей графа
+    },
     async (request, reply) => {
       const userId = (request as any).user.sub;
       
@@ -2169,13 +2172,22 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(400).send({ error: "Invalid project ID" });
       }
       
+      // Отладка: что пришло в body
+      const rawBody = request.body as any;
+      console.log(`[AI Assistant] Raw body keys:`, Object.keys(rawBody || {}));
+      console.log(`[AI Assistant] Raw graphArticles length:`, rawBody?.graphArticles?.length);
+      console.log(`[AI Assistant] Raw message:`, rawBody?.message?.substring(0, 50));
+      
       const bodyP = GraphAIAssistantSchema.safeParse(request.body);
       if (!bodyP.success) {
+        console.log(`[AI Assistant] Zod validation failed:`, bodyP.error.issues);
         return reply.code(400).send({ error: "Invalid request body", details: bodyP.error.issues });
       }
       
       const projectId = paramsP.data.id;
       const { message, graphArticles, context } = bodyP.data;
+      
+      console.log(`[AI Assistant] After Zod: graphArticles length:`, graphArticles?.length);
       
       try {
         // Получаем API ключ OpenRouter
@@ -2195,8 +2207,27 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         );
         const project = projectRes.rows[0];
         
-        // Фильтруем только внешние статьи (level != 1) для поиска
-        const externalArticles = (graphArticles || []).filter(a => a.graphLevel !== 1);
+        // Логируем что получили
+        console.log(`[AI Assistant] Received graphArticles: ${graphArticles?.length || 0} items`);
+        if (graphArticles && graphArticles.length > 0) {
+          console.log(`[AI Assistant] Sample article:`, JSON.stringify(graphArticles[0]).slice(0, 300));
+          // Подсчёт по уровням
+          const levelCounts: Record<string, number> = {};
+          for (const a of graphArticles) {
+            const level = String(a.graphLevel ?? 'undefined');
+            levelCounts[level] = (levelCounts[level] || 0) + 1;
+          }
+          console.log(`[AI Assistant] Articles by level:`, levelCounts);
+        }
+        
+        // Фильтруем только внешние статьи (level 0, 2, 3) для поиска
+        // graphLevel: 0 = citing, 1 = в проекте, 2 = references, 3 = related
+        const externalArticles = (graphArticles || []).filter(a => {
+          const level = a.graphLevel ?? 1; // undefined считаем как level 1
+          return level !== 1;
+        });
+        
+        console.log(`[AI Assistant] External articles for search: ${externalArticles.length}`);
         
         // Формируем список статей для AI (лимитируем до 200 для контекста)
         const articlesForAI = externalArticles

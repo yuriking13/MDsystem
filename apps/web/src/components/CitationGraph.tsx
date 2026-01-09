@@ -590,21 +590,58 @@ export default function CitationGraph({ projectId }: Props) {
     setAiHistory(prev => [...prev, { role: 'user', content: userMessage }]);
     
     try {
-      // Собираем статьи из графа (только внешние - level != 1)
-      const graphArticles: GraphArticleForAI[] = (data?.nodes || [])
-        .filter(n => n.graphLevel !== 1) // Только внешние статьи
+      // Собираем статьи из графа (только внешние - level 0, 2, 3)
+      // graphLevel: 0 = citing, 1 = в проекте, 2 = references, 3 = related
+      const allNodes = data?.nodes || [];
+      
+      // Отладка - подсчёт по уровням
+      const levelCounts: Record<string, number> = {};
+      for (const n of allNodes) {
+        const level = String(n.graphLevel ?? 'undefined');
+        levelCounts[level] = (levelCounts[level] || 0) + 1;
+      }
+      console.log(`[AI] Graph nodes by level:`, levelCounts);
+      
+      const externalNodes = allNodes.filter(n => {
+        const level = n.graphLevel ?? 1; // undefined считаем как level 1 (в проекте)
+        return level !== 1; // Исключаем статьи проекта (level 1)
+      });
+      
+      console.log(`[AI] External nodes count: ${externalNodes.length}`);
+      
+      // Ограничиваем до 300 статей для передачи в AI (избегаем слишком большого payload)
+      // Сортируем по цитированиям чтобы передать наиболее важные
+      const sortedExternal = [...externalNodes].sort((a, b) => 
+        (b.citedByCount || 0) - (a.citedByCount || 0)
+      );
+      
+      const graphArticles: GraphArticleForAI[] = sortedExternal
+        .slice(0, 300)
         .map(n => ({
           id: n.id,
-          title: n.title || n.label,
-          abstract: n.abstract,
+          title: n.title || n.label || undefined,
+          abstract: n.abstract?.substring(0, 500), // Ограничиваем размер аннотации
           year: n.year,
           journal: n.journal,
-          authors: n.authors,
+          authors: n.authors?.substring(0, 200), // Ограничиваем авторов
           pmid: n.pmid,
           doi: n.doi,
           citedByCount: n.citedByCount,
           graphLevel: n.graphLevel,
         }));
+      
+      console.log(`[AI] Sending ${graphArticles.length} articles to AI`);
+      if (graphArticles.length > 0) {
+        console.log(`[AI] Sample article:`, JSON.stringify(graphArticles[0]).substring(0, 300));
+      } else {
+        // Если нет внешних статей - показываем ошибку сразу
+        const errorMsg = depth < 2 
+          ? 'Для поиска выберите глубину графа «+Ссылки» или «+Цитирующие» и загрузите связи.'
+          : 'В графе нет внешних статей для поиска. Нажмите кнопку "Связи" для загрузки данных о ссылках.';
+        setAiHistory(prev => [...prev, { role: 'assistant', content: `⚠️ ${errorMsg}` }]);
+        setAiLoading(false);
+        return;
+      }
       
       const res = await apiGraphAIAssistant(
         projectId, 
