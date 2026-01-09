@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiImportFromGraph, apiGetArticleByPmid, apiTranslateText, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts } from "../lib/api";
+import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiImportFromGraph, apiGetArticleByPmid, apiTranslateText, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts, type ClusterInfo } from "../lib/api";
 
 type Props = {
   projectId: string;
@@ -84,6 +84,20 @@ export default function CitationGraph({ projectId }: Props) {
   // Модальное окно "Как это работает"
   const [showHelpModal, setShowHelpModal] = useState(false);
   
+  // Новые настройки графа
+  const [sortBy, setSortBy] = useState<'citations' | 'frequency' | 'year' | 'default'>('citations');
+  const [maxNodes, setMaxNodes] = useState<number>(2000);
+  const [maxLinksPerNode, setMaxLinksPerNode] = useState<number>(20);
+  const [enableClustering, setEnableClustering] = useState(false);
+  const [clusterBy, setClusterBy] = useState<'year' | 'journal' | 'auto'>('auto');
+  
+  // Информация о лимитах и возможности загрузить больше
+  const [currentLimits, setCurrentLimits] = useState<{ maxLinksPerNode: number; maxExtraNodes: number } | null>(null);
+  const [canLoadMore, setCanLoadMore] = useState(false);
+  
+  // Показать расширенные настройки
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  
   // Глобальный язык для всех узлов графа
   const [globalLang, setGlobalLang] = useState<'en' | 'ru'>('en');
   
@@ -106,6 +120,14 @@ export default function CitationGraph({ projectId }: Props) {
       if (res.yearRange) {
         setYearRange(res.yearRange);
       }
+      // Обновляем информацию о лимитах
+      if (res.limits) {
+        setCurrentLimits(res.limits);
+        // Проверяем, можно ли загрузить больше
+        const totalAvailable = (res.stats.availableReferences || 0) + (res.stats.availableCiting || 0);
+        const currentExtra = res.nodes.filter(n => n.graphLevel !== 1).length;
+        setCanLoadMore(currentExtra < totalAvailable && currentExtra >= res.limits.maxExtraNodes * 0.9);
+      }
     } catch (err: any) {
       setError(err?.message || "Ошибка загрузки графа");
     } finally {
@@ -118,6 +140,11 @@ export default function CitationGraph({ projectId }: Props) {
     const options: GraphFilterOptions = { 
       filter,
       depth,
+      sortBy,
+      maxTotalNodes: maxNodes,
+      maxLinksPerNode,
+      enableClustering,
+      clusterBy,
     };
     if (selectedQueries.length > 0) {
       options.sourceQueries = selectedQueries;
@@ -135,7 +162,7 @@ export default function CitationGraph({ projectId }: Props) {
       options.sources = selectedSources;
     }
     loadGraph(options);
-  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources]);
+  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources, sortBy, maxNodes, maxLinksPerNode, enableClustering, clusterBy]);
 
   // Проверка статуса загрузки при монтировании
   useEffect(() => {
@@ -188,35 +215,40 @@ export default function CitationGraph({ projectId }: Props) {
           if (status.status === 'completed') {
             setRefsMessage('✅ Загрузка связей завершена! Граф обновляется...');
             // Небольшая задержка перед обновлением графа, чтобы БД успела записать данные
-            setTimeout(async () => {
-              try {
-                // Принудительно перезагружаем граф с текущими фильтрами
-                const options: GraphFilterOptions = { 
-                  filter,
-                  depth,
-                };
-                if (selectedQueries.length > 0) {
-                  options.sourceQueries = selectedQueries;
+              setTimeout(async () => {
+                try {
+                  // Принудительно перезагружаем граф с текущими фильтрами
+                  const options: GraphFilterOptions = { 
+                    filter,
+                    depth,
+                    sortBy,
+                    maxTotalNodes: maxNodes,
+                    maxLinksPerNode,
+                    enableClustering,
+                    clusterBy,
+                  };
+                  if (selectedQueries.length > 0) {
+                    options.sourceQueries = selectedQueries;
+                  }
+                  if (yearFrom !== undefined) {
+                    options.yearFrom = yearFrom;
+                  }
+                  if (yearTo !== undefined) {
+                    options.yearTo = yearTo;
+                  }
+                  if (statsQuality > 0) {
+                    options.statsQuality = statsQuality;
+                  }
+                  if (selectedSources.length > 0) {
+                    options.sources = selectedSources;
+                  }
+                  await loadGraph(options);
+                  setRefsMessage('✅ Граф успешно обновлён!');
+                } catch (refreshErr) {
+                  console.error('Error refreshing graph:', refreshErr);
+                  setRefsMessage('✅ Загрузка связей завершена! Обновите страницу для просмотра графа.');
                 }
-                if (yearFrom !== undefined) {
-                  options.yearFrom = yearFrom;
-                }
-                if (yearTo !== undefined) {
-                  options.yearTo = yearTo;
-                }
-                if (statsQuality > 0) {
-                  options.statsQuality = statsQuality;
-                }
-                if (selectedSources.length > 0) {
-                  options.sources = selectedSources;
-                }
-                await loadGraph(options);
-                setRefsMessage('✅ Граф успешно обновлён!');
-              } catch (refreshErr) {
-                console.error('Error refreshing graph:', refreshErr);
-                setRefsMessage('✅ Загрузка связей завершена! Обновите страницу для просмотра графа.');
-              }
-            }, 1000);
+              }, 1000);
           } else if (status.status === 'failed') {
             setRefsMessage(`❌ Ошибка: ${status.errorMessage || 'Неизвестная ошибка'}`);
           }
@@ -422,6 +454,14 @@ export default function CitationGraph({ projectId }: Props) {
 
   const handleClearSources = () => {
     setSelectedSources([]);
+  };
+
+  // Прогрессивная загрузка - увеличить лимиты
+  const handleLoadMore = () => {
+    const newMaxNodes = Math.min(maxNodes + 1000, 5000);
+    const newMaxLinks = Math.min(maxLinksPerNode + 10, 100);
+    setMaxNodes(newMaxNodes);
+    setMaxLinksPerNode(newMaxLinks);
   };
 
   if (loading) {
@@ -780,6 +820,48 @@ export default function CitationGraph({ projectId }: Props) {
           </select>
         </div>
         
+        {/* Sortierung by importance */}
+        <div className="graph-filter-group">
+          <div className="graph-filter-label">
+            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            <span>Приоритет:</span>
+          </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            style={{ 
+              padding: '6px 10px', 
+              fontSize: 12,
+              border: '1px solid var(--border-glass)',
+              borderRadius: 6,
+              background: 'var(--bg-secondary)',
+              color: 'var(--text-primary)'
+            }}
+            title="Как сортировать связанные статьи"
+          >
+            <option value="citations">По цитированиям</option>
+            <option value="frequency">По частоте (общие источники)</option>
+            <option value="year">По году (новые первые)</option>
+            <option value="default">Без сортировки</option>
+          </select>
+        </div>
+        
+        {/* Advanced Settings Toggle */}
+        <button
+          className="graph-filter-btn"
+          onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+          style={{ marginLeft: 'auto' }}
+          title="Расширенные настройки графа"
+        >
+          <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Настройки
+        </button>
+        
         {/* Query Filter */}
         {availableQueries.length > 0 && (
           <div className="graph-filter-group" style={{ flexWrap: 'wrap' }}>
@@ -808,6 +890,112 @@ export default function CitationGraph({ projectId }: Props) {
           </div>
         )}
       </div>
+      
+      {/* Advanced Settings Panel */}
+      {showAdvancedSettings && (
+        <div className="graph-filters" style={{ 
+          display: 'flex', 
+          flexWrap: 'wrap', 
+          gap: 16, 
+          padding: '12px 20px', 
+          borderBottom: '1px solid var(--border-glass)',
+          alignItems: 'center',
+          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05))'
+        }}>
+          {/* Max Nodes Slider */}
+          <div className="graph-filter-group">
+            <div className="graph-filter-label">
+              <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <span>Макс. узлов: <strong>{maxNodes}</strong></span>
+            </div>
+            <input
+              type="range"
+              min={500}
+              max={5000}
+              step={500}
+              value={maxNodes}
+              onChange={(e) => setMaxNodes(parseInt(e.target.value, 10))}
+              style={{ width: 120, cursor: 'pointer' }}
+              title="Максимальное количество дополнительных узлов в графе"
+            />
+          </div>
+          
+          {/* Max Links Per Node */}
+          <div className="graph-filter-group">
+            <div className="graph-filter-label">
+              <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              <span>Связей/узел: <strong>{maxLinksPerNode}</strong></span>
+            </div>
+            <input
+              type="range"
+              min={5}
+              max={100}
+              step={5}
+              value={maxLinksPerNode}
+              onChange={(e) => setMaxLinksPerNode(parseInt(e.target.value, 10))}
+              style={{ width: 100, cursor: 'pointer' }}
+              title="Максимум связей на каждый узел"
+            />
+          </div>
+          
+          {/* Clustering Toggle */}
+          <div className="graph-filter-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={enableClustering}
+                onChange={(e) => setEnableClustering(e.target.checked)}
+                className="search-checkbox"
+              />
+              <span>Кластеризация</span>
+            </label>
+            {enableClustering && (
+              <select
+                value={clusterBy}
+                onChange={(e) => setClusterBy(e.target.value as typeof clusterBy)}
+                style={{ 
+                  padding: '4px 8px', 
+                  fontSize: 11,
+                  border: '1px solid var(--border-glass)',
+                  borderRadius: 6,
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)'
+                }}
+              >
+                <option value="auto">Авто</option>
+                <option value="year">По годам</option>
+                <option value="journal">По журналам</option>
+              </select>
+            )}
+          </div>
+          
+          {/* Load More Button */}
+          {canLoadMore && maxNodes < 5000 && (
+            <button
+              className="btn secondary"
+              style={{ padding: '6px 12px', fontSize: 11 }}
+              onClick={handleLoadMore}
+              title="Загрузить больше связанных статей"
+            >
+              <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Загрузить больше (+1000)
+            </button>
+          )}
+          
+          {/* Current Limits Info */}
+          {currentLimits && (
+            <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)' }}>
+              Текущие лимиты: {currentLimits.maxExtraNodes} узлов, {currentLimits.maxLinksPerNode} связей/узел
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Progress Bar */}
       {fetchJobStatus?.isRunning && (
@@ -1030,7 +1218,20 @@ export default function CitationGraph({ projectId }: Props) {
             <NodeInfoPanel 
               node={selectedNodeForDisplay} 
               projectId={projectId} 
-              onRefresh={() => loadGraph({ filter, sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, depth, yearFrom, yearTo, statsQuality, sources: selectedSources.length > 0 ? selectedSources : undefined })}
+              onRefresh={() => loadGraph({ 
+                filter, 
+                sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, 
+                depth, 
+                yearFrom, 
+                yearTo, 
+                statsQuality, 
+                sources: selectedSources.length > 0 ? selectedSources : undefined,
+                sortBy,
+                maxTotalNodes: maxNodes,
+                maxLinksPerNode,
+                enableClustering,
+                clusterBy,
+              })}
               globalLang={globalLang}
             />
           </div>

@@ -747,6 +747,17 @@ export type LevelCounts = {
   level3?: number; // Связанные (также ссылаются на level2)
 };
 
+export type ClusterInfo = {
+  id: string;
+  label: string;
+  nodeCount: number;
+  pmids: string[];
+  representativePmid: string;
+  avgYear: number | null;
+  avgCitations: number;
+  clusterType: 'year' | 'journal';
+};
+
 export type CitationGraphResponse = {
   nodes: GraphNode[];
   links: GraphLink[];
@@ -763,6 +774,10 @@ export type CitationGraphResponse = {
     max: number | null;
   };
   currentDepth?: number;
+  limits?: { maxLinksPerNode: number; maxExtraNodes: number };
+  sortBy?: string;
+  clusters?: ClusterInfo[];
+  clusteringEnabled?: boolean;
 };
 
 export type GraphFilterOptions = {
@@ -772,9 +787,12 @@ export type GraphFilterOptions = {
   yearFrom?: number;
   yearTo?: number;
   statsQuality?: number; // Минимальное качество статистики (0-3)
-  maxLinksPerNode?: number; // Макс связей на узел (по умолчанию 10)
-  maxTotalNodes?: number; // Макс узлов (по умолчанию 500)
+  maxLinksPerNode?: number; // Макс связей на узел (по умолчанию 20, макс 100)
+  maxTotalNodes?: number; // Макс узлов (по умолчанию 2000, макс 5000)
   sources?: ('pubmed' | 'doaj' | 'wiley')[]; // Фильтр по источнику статей
+  sortBy?: 'citations' | 'frequency' | 'year' | 'default'; // Сортировка ссылок
+  enableClustering?: boolean; // Включить кластеризацию для больших графов
+  clusterBy?: 'year' | 'journal' | 'auto'; // Метод кластеризации
 };
 
 export async function apiGetCitationGraph(
@@ -808,6 +826,16 @@ export async function apiGetCitationGraph(
   }
   if (options?.sources && options.sources.length > 0) {
     params.set('sources', JSON.stringify(options.sources));
+  }
+  // Новые параметры
+  if (options?.sortBy) {
+    params.set('sortBy', options.sortBy);
+  }
+  if (options?.enableClustering !== undefined) {
+    params.set('enableClustering', String(options.enableClustering));
+  }
+  if (options?.clusterBy) {
+    params.set('clusterBy', options.clusterBy);
   }
   const queryString = params.toString();
   const url = `/api/projects/${projectId}/citation-graph${queryString ? `?${queryString}` : ''}`;

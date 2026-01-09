@@ -1383,6 +1383,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         maxLinksPerNode?: string;
         maxTotalNodes?: string;
         sources?: string; // Фильтр по источнику (pubmed, doaj, wiley)
+        sortBy?: string; // Сортировка связей: 'citations' | 'frequency' | 'year' | 'default'
+        enableClustering?: string; // Включить кластеризацию для больших графов
+        clusterBy?: string; // Группировка: 'year' | 'journal' | 'auto'
       };
       
       // Build cache key from all parameters
@@ -1392,10 +1395,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         yearFrom: query.yearFrom,
         yearTo: query.yearTo,
         statsQuality: query.statsQuality,
-        maxLinksPerNode: query.maxLinksPerNode || '10',
-        maxTotalNodes: query.maxTotalNodes || '1000',
+        maxLinksPerNode: query.maxLinksPerNode || '20',
+        maxTotalNodes: query.maxTotalNodes || '2000',
         sourceQueries: query.sourceQueries,
         sources: query.sources,
+        sortBy: query.sortBy || 'citations',
+        enableClustering: query.enableClustering || 'false',
+        clusterBy: query.clusterBy || 'auto',
       });
       const cacheKey = CACHE_KEYS.citationGraph(paramsP.data.projectId, cacheKeyParams);
       
@@ -1412,12 +1418,160 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const yearTo = query.yearTo ? parseInt(query.yearTo, 10) : undefined;
       const statsQuality = query.statsQuality ? parseInt(query.statsQuality, 10) : undefined;
       
-      // Лимиты для графа (mega режим отключён)
+      // Лимиты для графа (увеличены благодаря Redis кэшированию)
       // maxLinksPerNode - количество связей на узел для уровней 2/3
       // maxTotalNodes - лимит для ДОПОЛНИТЕЛЬНЫХ узлов (уровни 0, 2, 3), 
       //                 статьи проекта (уровень 1) всегда включаются
-      const maxLinksPerNode = Math.min(50, Math.max(1, parseInt(query.maxLinksPerNode || '10', 10) || 10));
-      const maxExtraNodes = Math.min(2000, Math.max(10, parseInt(query.maxTotalNodes || '1000', 10) || 1000));
+      const maxLinksPerNode = Math.min(100, Math.max(1, parseInt(query.maxLinksPerNode || '20', 10) || 20));
+      const maxExtraNodes = Math.min(5000, Math.max(10, parseInt(query.maxTotalNodes || '2000', 10) || 2000));
+      
+      // Параметры сортировки и кластеризации
+      const sortBy = (query.sortBy || 'citations') as 'citations' | 'frequency' | 'year' | 'default';
+      const enableClustering = query.enableClustering === 'true';
+      const clusterBy = (query.clusterBy || 'auto') as 'year' | 'journal' | 'auto';
+      
+      // ===== HELPER: Умная приоритизация ссылок =====
+      // Загружаем citation counts из graph_cache для сортировки
+      type PmidInfo = { pmid: string; citations: number; year: number | null; frequency: number };
+      const pmidInfoCache = new Map<string, PmidInfo>();
+      const pmidFrequencyMap = new Map<string, number>(); // Сколько раз PMID встречается в ссылках
+      
+      // Функция для получения информации о PMIDs из кэша
+      async function loadPmidInfo(pmids: string[]): Promise<void> {
+        if (pmids.length === 0) return;
+        
+        const res = await pool.query(
+          `SELECT pmid, year, 
+                  COALESCE((SELECT COUNT(*) FROM unnest(cited_by_pmids) WHERE cited_by_pmids IS NOT NULL), 0) as cited_count
+           FROM graph_cache 
+           WHERE pmid = ANY($1)`,
+          [pmids]
+        );
+        
+        for (const row of res.rows) {
+          pmidInfoCache.set(row.pmid, {
+            pmid: row.pmid,
+            citations: parseInt(row.cited_count) || 0,
+            year: row.year,
+            frequency: pmidFrequencyMap.get(row.pmid) || 0,
+          });
+        }
+      }
+      
+      // Функция для сортировки PMIDs по выбранному критерию
+      function sortPmids(pmids: string[], sortMethod: typeof sortBy): string[] {
+        if (sortMethod === 'default' || pmids.length === 0) return pmids;
+        
+        // Добавляем недостающую информацию
+        const pmidsWithInfo = pmids.map(pmid => ({
+          pmid,
+          info: pmidInfoCache.get(pmid) || { pmid, citations: 0, year: null, frequency: pmidFrequencyMap.get(pmid) || 0 },
+        }));
+        
+        switch (sortMethod) {
+          case 'citations':
+            // Сортируем по количеству цитирований (самые цитируемые первые)
+            pmidsWithInfo.sort((a, b) => (b.info.citations || 0) - (a.info.citations || 0));
+            break;
+          case 'frequency':
+            // Сортируем по частоте встречаемости (общие источники первые)
+            pmidsWithInfo.sort((a, b) => (b.info.frequency || 0) - (a.info.frequency || 0));
+            break;
+          case 'year':
+            // Сортируем по году (новые первые)
+            pmidsWithInfo.sort((a, b) => (b.info.year || 0) - (a.info.year || 0));
+            break;
+        }
+        
+        return pmidsWithInfo.map(p => p.pmid);
+      }
+      
+      // ===== HELPER: Кластеризация узлов =====
+      type ClusterInfo = {
+        id: string;
+        label: string;
+        nodeCount: number;
+        pmids: string[];
+        representativePmid: string; // Главный представитель кластера
+        avgYear: number | null;
+        avgCitations: number;
+        clusterType: 'year' | 'journal';
+      };
+      
+      function createClusters(
+        nodesData: { pmid: string; year: number | null; journal: string | null; citations: number }[],
+        method: typeof clusterBy
+      ): ClusterInfo[] {
+        if (nodesData.length < 50) return []; // Не кластеризуем малые графы
+        
+        const clusters: ClusterInfo[] = [];
+        
+        if (method === 'year' || method === 'auto') {
+          // Группируем по 5-летним периодам
+          const yearGroups = new Map<string, typeof nodesData>();
+          
+          for (const node of nodesData) {
+            const yearGroup = node.year ? `${Math.floor(node.year / 5) * 5}-${Math.floor(node.year / 5) * 5 + 4}` : 'Unknown';
+            if (!yearGroups.has(yearGroup)) {
+              yearGroups.set(yearGroup, []);
+            }
+            yearGroups.get(yearGroup)!.push(node);
+          }
+          
+          for (const [period, nodes] of yearGroups) {
+            if (nodes.length >= 10) { // Минимум 10 статей для кластера
+              const avgYear = nodes.reduce((sum, n) => sum + (n.year || 0), 0) / nodes.length;
+              const avgCitations = nodes.reduce((sum, n) => sum + n.citations, 0) / nodes.length;
+              const sorted = [...nodes].sort((a, b) => b.citations - a.citations);
+              
+              clusters.push({
+                id: `cluster:year:${period}`,
+                label: `${period} (${nodes.length} статей)`,
+                nodeCount: nodes.length,
+                pmids: nodes.map(n => n.pmid),
+                representativePmid: sorted[0]?.pmid || nodes[0].pmid,
+                avgYear: Math.round(avgYear),
+                avgCitations: Math.round(avgCitations),
+                clusterType: 'year',
+              });
+            }
+          }
+        }
+        
+        if (method === 'journal' || (method === 'auto' && clusters.length < 5)) {
+          // Группируем по журналам
+          const journalGroups = new Map<string, typeof nodesData>();
+          
+          for (const node of nodesData) {
+            const journal = node.journal || 'Unknown';
+            if (!journalGroups.has(journal)) {
+              journalGroups.set(journal, []);
+            }
+            journalGroups.get(journal)!.push(node);
+          }
+          
+          for (const [journal, nodes] of journalGroups) {
+            if (nodes.length >= 10) {
+              const avgYear = nodes.reduce((sum, n) => sum + (n.year || 0), 0) / nodes.length;
+              const avgCitations = nodes.reduce((sum, n) => sum + n.citations, 0) / nodes.length;
+              const sorted = [...nodes].sort((a, b) => b.citations - a.citations);
+              
+              clusters.push({
+                id: `cluster:journal:${journal.slice(0, 30)}`,
+                label: `${journal.length > 25 ? journal.slice(0, 25) + '...' : journal} (${nodes.length})`,
+                nodeCount: nodes.length,
+                pmids: nodes.map(n => n.pmid),
+                representativePmid: sorted[0]?.pmid || nodes[0].pmid,
+                avgYear: Math.round(avgYear),
+                avgCitations: Math.round(avgCitations),
+                clusterType: 'journal',
+              });
+            }
+          }
+        }
+        
+        return clusters.sort((a, b) => b.nodeCount - a.nodeCount);
+      }
       
       let sourceQueries: string[] = [];
       if (query.sourceQueries) {
@@ -1645,15 +1799,18 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let level2Articles: any[] = [];
       let level3Articles: any[] = [];
       
+      // Счётчики для статистики (объявляем здесь для доступа в результате)
+      let allCitedByCollected: string[] = [];
+      
       // Для расширения графа используем ТОЛЬКО статьи с загруженными ссылками
       // (references_fetched_at IS NOT NULL означает что reference_pmids заполнены)
       
       if (depth >= 2) {
+        // Шаг 1: Собираем ВСЕ уникальные reference PMIDs и считаем частоту
+        const allRefPmidsCollected: string[] = [];
+        const articleRefMap = new Map<string, string[]>(); // articleId -> [refPmids]
+        
         for (const article of articlesRes.rows) {
-          // Используем ТОЛЬКО статьи с загруженными ссылками
-          // (references_fetched_at установлен после загрузки из PubMed)
-          // if (!article.references_fetched_at) continue; // Можно включить для строгой проверки
-          
           // Parse reference_pmids properly
           let refPmids: string[] = [];
           if (Array.isArray(article.reference_pmids)) {
@@ -1662,23 +1819,55 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             refPmids = article.reference_pmids.slice(1, -1).split(',').filter(Boolean);
           }
           
+          // Сохраняем для последующей обработки
+          const externalRefs = refPmids.filter(pmid => !pmidToId.has(pmid));
+          articleRefMap.set(article.id, externalRefs);
+          
+          // Считаем частоту каждого PMID
+          for (const refPmid of externalRefs) {
+            allRefPmidsCollected.push(refPmid);
+            pmidFrequencyMap.set(refPmid, (pmidFrequencyMap.get(refPmid) || 0) + 1);
+          }
+        }
+        
+        // Шаг 2: Загружаем citation info для всех PMIDs (для умной сортировки)
+        const uniqueRefPmids = [...new Set(allRefPmidsCollected)];
+        if (sortBy !== 'default' && uniqueRefPmids.length > 0) {
+          await loadPmidInfo(uniqueRefPmids.slice(0, 5000)); // Лимит для производительности
+        }
+        
+        // Шаг 3: Сортируем все PMIDs по выбранному критерию
+        const sortedRefPmids = sortPmids(uniqueRefPmids, sortBy);
+        
+        // Шаг 4: Выбираем топ PMIDs с учётом лимитов
+        // Приоритет отдаём наиболее важным по выбранному критерию
+        const topPmidsSet = new Set(sortedRefPmids.slice(0, maxExtraNodes));
+        
+        // Шаг 5: Добавляем связи для отобранных PMIDs
+        for (const article of articlesRes.rows) {
+          const refPmids = articleRefMap.get(article.id) || [];
           let addedForThisArticle = 0;
+          
           for (const refPmid of refPmids) {
             // Ограничиваем количество связей на статью
             if (addedForThisArticle >= maxLinksPerNode) break;
-            // Добавляем в level2 только PMIDs, которых ещё нет в проекте
-            if (!pmidToId.has(refPmid)) {
+            // Добавляем только если PMID в топе
+            if (topPmidsSet.has(refPmid)) {
               level2Pmids.add(refPmid);
               level1ToLevel2Links.push({ sourceId: article.id, targetPmid: refPmid });
               addedForThisArticle++;
             }
           }
         }
-        console.log(`[CitationGraph] Depth ${depth}: collected ${level2Pmids.size} external reference PMIDs`);
+        console.log(`[CitationGraph] Depth ${depth}: collected ${level2Pmids.size} external reference PMIDs (sorted by ${sortBy})`);
       }
       
       // Уровень 0 (cited_by) загружаем при depth >= 3
       if (depth >= 3) {
+        // Шаг 1: Собираем ВСЕ уникальные cited_by PMIDs и считаем частоту
+        allCitedByCollected = []; // Используем переменную объявленную выше
+        const articleCitedByMap = new Map<string, string[]>(); // articleId -> [citingPmids]
+        
         for (const article of articlesRes.rows) {
           // Parse cited_by_pmids properly
           let citedByPmids: string[] = [];
@@ -1688,18 +1877,53 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             citedByPmids = article.cited_by_pmids.slice(1, -1).split(',').filter(Boolean);
           }
           
+          // Сохраняем для последующей обработки
+          const externalCiting = citedByPmids.filter(pmid => !pmidToId.has(pmid));
+          articleCitedByMap.set(article.id, externalCiting);
+          
+          // Считаем частоту (сколько наших статей цитирует данная статья)
+          for (const citingPmid of externalCiting) {
+            allCitedByCollected.push(citingPmid);
+            // Используем отдельный счётчик для cited_by
+            const currentFreq = pmidFrequencyMap.get(citingPmid) || 0;
+            pmidFrequencyMap.set(citingPmid, currentFreq + 1);
+          }
+        }
+        
+        // Шаг 2: Загружаем citation info для всех PMIDs (для умной сортировки)
+        const uniqueCitedByPmids = [...new Set(allCitedByCollected)];
+        if (sortBy !== 'default' && uniqueCitedByPmids.length > 0) {
+          // Загружаем только те, которых ещё нет в кэше
+          const toLoad = uniqueCitedByPmids.filter(p => !pmidInfoCache.has(p));
+          if (toLoad.length > 0) {
+            await loadPmidInfo(toLoad.slice(0, 3000));
+          }
+        }
+        
+        // Шаг 3: Сортируем все PMIDs по выбранному критерию
+        const sortedCitedByPmids = sortPmids(uniqueCitedByPmids, sortBy);
+        
+        // Шаг 4: Выбираем топ PMIDs с учётом оставшихся слотов
+        const remainingSlots = Math.max(0, maxExtraNodes - level2Pmids.size);
+        const topCitedBySet = new Set(sortedCitedByPmids.slice(0, remainingSlots));
+        
+        // Шаг 5: Добавляем связи для отобранных PMIDs
+        for (const article of articlesRes.rows) {
+          const citedByPmids = articleCitedByMap.get(article.id) || [];
           let addedForThisArticle = 0;
+          
           for (const citingPmid of citedByPmids) {
             // Ограничиваем количество связей на статью
             if (addedForThisArticle >= maxLinksPerNode) break;
-            if (!pmidToId.has(citingPmid)) {
+            // Добавляем только если PMID в топе
+            if (topCitedBySet.has(citingPmid)) {
               level0Pmids.add(citingPmid);
               level0ToLevel1Links.push({ sourcePmid: citingPmid, targetId: article.id });
               addedForThisArticle++;
             }
           }
         }
-        console.log(`[CitationGraph] Depth ${depth}: collected ${level0Pmids.size} citing article PMIDs`);
+        console.log(`[CitationGraph] Depth ${depth}: collected ${level0Pmids.size} citing article PMIDs (sorted by ${sortBy})`);
       }
 
       // Загружаем статьи уровня 2 (references) - сначала ищем в БД
@@ -2288,6 +2512,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
+      // ===== Кластеризация (если включена и граф большой) =====
+      let clusters: ClusterInfo[] = [];
+      if (enableClustering && nodes.length > 100) {
+        // Собираем данные для кластеризации
+        const nodesForClustering = nodes
+          .filter(n => n.graphLevel === 2 || n.graphLevel === 3) // Кластеризуем только references и related
+          .map(n => ({
+            pmid: n.pmid || n.id,
+            year: n.year,
+            journal: n.journal,
+            citations: n.citedByCount || 0,
+          }));
+        
+        clusters = createClusters(nodesForClustering, clusterBy);
+        console.log(`[CitationGraph] Created ${clusters.length} clusters (method: ${clusterBy})`);
+      }
+      
       const result = {
         nodes,
         links,
@@ -2297,7 +2538,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           levelCounts,
           // Информация о доступных ссылках для расширения графа
           availableReferences: totalRefPmids,
-          availableCiting: 0, // Будет добавлено позже
+          availableCiting: allCitedByCollected?.length || 0,
           // Отладочная информация
           articlesWithRefs,
           matchedInternalRefs,
@@ -2306,6 +2547,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         yearRange,
         currentDepth: depth,
         limits: { maxLinksPerNode, maxExtraNodes },
+        // Новые поля
+        sortBy,
+        clusters: clusters.length > 0 ? clusters : undefined,
+        clusteringEnabled: enableClustering,
       };
 
       // Cache the result (medium TTL since graph data changes less frequently)
