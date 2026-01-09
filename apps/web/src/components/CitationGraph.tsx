@@ -606,6 +606,7 @@ export default function CitationGraph({ projectId }: Props) {
       }
       console.log(`[AI] Graph nodes by level:`, levelCounts);
       
+      // Фильтруем внешние статьи (level 0, 2, 3)
       const externalNodes = allNodes.filter(n => {
         const level = n.graphLevel ?? 1; // undefined считаем как level 1 (в проекте)
         return level !== 1; // Исключаем статьи проекта (level 1)
@@ -613,42 +614,59 @@ export default function CitationGraph({ projectId }: Props) {
       
       console.log(`[AI] External nodes count: ${externalNodes.length}`);
       
-      // Ограничиваем до 300 статей для передачи в AI (избегаем слишком большого payload)
-      // Сортируем по цитированиям чтобы передать наиболее важные
-      const sortedExternal = [...externalNodes].sort((a, b) => 
+      // Фильтруем только статьи с реальными данными (не placeholder)
+      // Placeholder узлы имеют title типа "PMID:12345" без реальных метаданных
+      const articlesWithData = externalNodes.filter(n => {
+        // Есть реальное название (не просто PMID:xxx или DOI:xxx)
+        const hasRealTitle = n.title && !n.title.startsWith('PMID:') && !n.title.startsWith('DOI:');
+        // Или есть год публикации
+        const hasYear = n.year !== null && n.year !== undefined;
+        // Или есть аннотация
+        const hasAbstract = n.abstract && n.abstract.length > 50;
+        
+        return hasRealTitle || hasYear || hasAbstract;
+      });
+      
+      console.log(`[AI] Articles with real data: ${articlesWithData.length} (from ${externalNodes.length} external)`);
+      
+      // Сортируем по цитированиям
+      const sortedArticles = [...articlesWithData].sort((a, b) => 
         (b.citedByCount || 0) - (a.citedByCount || 0)
       );
       
-      const graphArticles: GraphArticleForAI[] = sortedExternal
-        .slice(0, 300)
-        .map(n => ({
-          id: n.id,
-          title: n.title || n.label || undefined,
-          abstract: n.abstract?.substring(0, 500), // Ограничиваем размер аннотации
-          year: n.year,
-          journal: n.journal,
-          authors: n.authors?.substring(0, 200), // Ограничиваем авторов
-          pmid: n.pmid,
-          doi: n.doi,
-          citedByCount: n.citedByCount,
-          graphLevel: n.graphLevel,
-        }));
+      // Передаём ВСЕ статьи с данными (без лимита)
+      const graphArticles: GraphArticleForAI[] = sortedArticles.map(n => ({
+        id: n.id,
+        title: n.title || undefined,
+        abstract: n.abstract?.substring(0, 800), // Ограничиваем размер аннотации для payload
+        year: n.year,
+        journal: n.journal,
+        authors: n.authors?.substring(0, 300),
+        pmid: n.pmid,
+        doi: n.doi,
+        citedByCount: n.citedByCount,
+        graphLevel: n.graphLevel,
+      }));
       
-      console.log(`[AI] Sending ${graphArticles.length} articles to AI`);
-      // Временная отладка - показываем сколько статей отправляем
-      console.log(`[AI DEBUG] Total nodes: ${allNodes.length}, External: ${externalNodes.length}, Sending: ${graphArticles.length}`);
+      console.log(`[AI] Sending ${graphArticles.length} articles to AI (with real data)`);
+      console.log(`[AI DEBUG] Total: ${allNodes.length}, External: ${externalNodes.length}, With data: ${articlesWithData.length}`);
       console.log(`[AI DEBUG] Level counts:`, levelCounts);
       
       if (graphArticles.length > 0) {
-        console.log(`[AI] Sample article:`, JSON.stringify(graphArticles[0]).substring(0, 300));
-        // Показываем размер payload
+        console.log(`[AI] Sample article:`, JSON.stringify(graphArticles[0]).substring(0, 400));
         const payloadSize = JSON.stringify({ message: userMessage, graphArticles, context: { articleCount: stats.totalNodes, yearRange } }).length;
         console.log(`[AI DEBUG] Payload size: ${(payloadSize / 1024).toFixed(1)} KB`);
       } else {
-        // Если нет внешних статей - показываем ошибку сразу
-        const errorMsg = depth < 2 
-          ? 'Для поиска выберите глубину графа «+Ссылки» или «+Цитирующие» и загрузите связи.'
-          : 'В графе нет внешних статей для поиска. Нажмите кнопку "Связи" для загрузки данных о ссылках.';
+        // Нет статей с данными
+        let errorMsg = '';
+        if (externalNodes.length === 0) {
+          errorMsg = depth < 2 
+            ? 'Для поиска выберите глубину графа «+Ссылки» или «+Цитирующие».'
+            : 'Нажмите кнопку "Связи" для загрузки ссылок из PubMed.';
+        } else {
+          // Есть внешние статьи, но без данных (placeholder)
+          errorMsg = `В графе ${externalNodes.length} внешних статей, но у них нет метаданных (только PMID). Нужно загрузить их данные из PubMed. Это происходит автоматически при следующей загрузке связей.`;
+        }
         setAiHistory(prev => [...prev, { role: 'assistant', content: `⚠️ ${errorMsg}` }]);
         setAiLoading(false);
         return;

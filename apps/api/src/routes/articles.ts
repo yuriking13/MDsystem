@@ -2229,18 +2229,28 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         
         console.log(`[AI Assistant] External articles for search: ${externalArticles.length}`);
         
-        // Формируем список статей для AI (лимитируем до 200 для контекста)
-        const articlesForAI = externalArticles
-          .slice(0, 200)
+        // Фильтруем статьи с реальными данными (не placeholder)
+        const articlesWithData = externalArticles.filter(a => {
+          // Есть реальное название (не PMID:xxx)
+          const hasRealTitle = a.title && !a.title.startsWith('PMID:') && !a.title.startsWith('DOI:');
+          const hasYear = a.year !== null && a.year !== undefined;
+          const hasAbstract = a.abstract && a.abstract.length > 50;
+          return hasRealTitle || hasYear || hasAbstract;
+        });
+        
+        console.log(`[AI Assistant] Articles with real data: ${articlesWithData.length}`);
+        
+        // Формируем список статей для AI (передаём ВСЕ статьи с данными)
+        const articlesForAI = articlesWithData
           .map((a, idx) => {
             const parts = [
               `[${idx + 1}] ID: ${a.id}`,
               a.title ? `Название: ${a.title}` : null,
               a.year ? `Год: ${a.year}` : null,
               a.journal ? `Журнал: ${a.journal}` : null,
-              a.authors ? `Авторы: ${a.authors.substring(0, 100)}` : null,
+              a.authors ? `Авторы: ${a.authors.substring(0, 150)}` : null,
               a.citedByCount ? `Цитирований: ${a.citedByCount}` : null,
-              a.abstract ? `Аннотация: ${a.abstract.substring(0, 300)}...` : null,
+              a.abstract ? `Аннотация: ${a.abstract.substring(0, 500)}` : null,
             ].filter(Boolean);
             return parts.join('\n');
           })
@@ -2254,11 +2264,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 - Описание: ${project?.description || 'Нет описания'}
 - Тип исследования: ${project?.research_type || 'Не указан'}
 ${context?.yearRange ? `- Годы публикаций в графе: ${context.yearRange.min || '?'} - ${context.yearRange.max || '?'}` : ''}
-- Всего статей в графе: ${context?.articleCount || externalArticles.length}
-- Статей для поиска (внешние, не в проекте): ${externalArticles.length}
+- Всего статей в графе: ${context?.articleCount || 0}
+- Внешних статей (ссылки/цитирующие): ${externalArticles.length}
+- Статей с полными данными для поиска: ${articlesWithData.length}
 
-ДОСТУПНЫЕ СТАТЬИ ДЛЯ ПОИСКА:
-${articlesForAI || 'Нет статей для поиска. Попросите пользователя загрузить связи в графе (кнопка "Связи").'}
+ДОСТУПНЫЕ СТАТЬИ ДЛЯ ПОИСКА (${articlesWithData.length} шт.):
+${articlesForAI || 'Нет статей с полными данными для поиска. Статьи-placeholder (только PMID без метаданных) пропущены.'}
 
 ТВОЯ ЗАДАЧА:
 1. Понять запрос пользователя (тема, ключевые слова, критерии)
@@ -2366,7 +2377,7 @@ ${articlesForAI || 'Нет статей для поиска. Попросите 
           _debug: {
             receivedArticles: graphArticles?.length || 0,
             externalArticles: externalArticles.length,
-            articlesForAICount: externalArticles.slice(0, 200).length,
+            articlesWithData: articlesWithData.length,
           },
         };
         
