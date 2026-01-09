@@ -2362,6 +2362,12 @@ ${articlesForAI || 'Нет статей для поиска. Попросите 
           searchSuggestions: [], // Больше не используем
           pmidsToAdd: [], // Теперь добавляем через foundArticles
           doisToAdd: [],
+          // Отладочная информация
+          _debug: {
+            receivedArticles: graphArticles?.length || 0,
+            externalArticles: externalArticles.length,
+            articlesForAICount: externalArticles.slice(0, 200).length,
+          },
         };
         
       } catch (err: any) {
