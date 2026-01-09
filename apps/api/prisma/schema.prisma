@@ -105,6 +105,8 @@ model Article {
   updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
   referencePmids      String[]  @default([]) @map("reference_pmids")
   citedByPmids        String[]  @default([]) @map("cited_by_pmids")
+  referenceDois       String[]  @default([]) @map("reference_dois")
+  crossrefCitedByCount Int?     @map("crossref_cited_by_count")
   referencesFetchedAt DateTime? @map("references_fetched_at")
   statsQuality        Int?      @default(0) @map("stats_quality")
   volume              String?

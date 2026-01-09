@@ -1669,11 +1669,25 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Получить все статьи проекта (Уровень 1) с их данными о references
       // Включаем references_fetched_at для определения уже проанализированных статей
       // Добавляем abstract_en, abstract_ru, title_ru, journal, source для полноценного отображения
+      // Проверяем наличие колонки reference_dois
+      let hasRefDoisCol = false;
+      try {
+        const checkRefDoisCol = await pool.query(
+          `SELECT column_name FROM information_schema.columns 
+           WHERE table_name = 'articles' AND column_name = 'reference_dois'`
+        );
+        hasRefDoisCol = (checkRefDoisCol.rowCount ?? 0) > 0;
+      } catch {
+        hasRefDoisCol = false;
+      }
+      
       const articlesRes = await pool.query(
         hasRefColumns
           ? `SELECT a.id, a.doi, a.pmid, a.title_en, a.title_ru, a.abstract_en, a.abstract_ru,
                     a.authors, a.year, a.journal, a.source,
                     a.raw_json, a.reference_pmids, a.cited_by_pmids, a.references_fetched_at,
+                    ${hasRefDoisCol ? 'COALESCE(a.reference_dois, ARRAY[]::text[]) as reference_dois,' : "ARRAY[]::text[] as reference_dois,"}
+                    ${hasRefDoisCol ? 'a.crossref_cited_by_count,' : 'NULL as crossref_cited_by_count,'}
                     ${hasStatsQuality ? 'COALESCE(a.stats_quality, 0) as stats_quality,' : '0 as stats_quality,'}
                     pa.status${hasSourceQueryCol ? ', pa.source_query' : ''},
                     1 as graph_level
@@ -1685,6 +1699,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                     a.raw_json, 
                     ARRAY[]::text[] as reference_pmids, 
                     ARRAY[]::text[] as cited_by_pmids,
+                    ARRAY[]::text[] as reference_dois,
+                    NULL as crossref_cited_by_count,
                     NULL as references_fetched_at,
                     ${hasStatsQuality ? 'COALESCE(a.stats_quality, 0) as stats_quality,' : '0 as stats_quality,'}
                     pa.status${hasSourceQueryCol ? ', pa.source_query' : ''},
@@ -1744,10 +1760,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           citedByPmidsForCount = article.cited_by_pmids.slice(1, -1).split(',').filter(Boolean);
         }
         
-        // Количество цитирований - берём максимум из PubMed cited_by и Europe PMC
+        // Количество цитирований - берём максимум из PubMed cited_by, Europe PMC и Crossref
         const pubmedCitedBy = citedByPmidsForCount.length;
         const europePMCCitations = article.raw_json?.europePMCCitations || 0;
-        const citedByCount = Math.max(pubmedCitedBy, europePMCCitations);
+        const crossrefCitations = article.crossref_cited_by_count || article.raw_json?.crossrefCitedByCount || 0;
+        const citedByCount = Math.max(pubmedCitedBy, europePMCCitations, crossrefCitations);
         
         // Форматируем авторов (может быть массивом или строкой)
         const authorsStr = Array.isArray(article.authors) 
@@ -2356,11 +2373,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let matchedInternalRefs = 0;
       const projectPmids = new Set(pmidToId.keys());
       
-      // Обрабатываем все статьи для создания связей на основе PubMed данных
+      // Обрабатываем все статьи для создания связей на основе PubMed и Crossref данных
+      let matchedDoiRefs = 0;
+      let totalRefDois = 0;
+      
       for (const article of allArticles) {
         // PostgreSQL returns arrays as arrays, but let's handle edge cases
         let refPmids: string[] = [];
         let citedByPmids: string[] = [];
+        let refDois: string[] = [];
         
         // Handle reference_pmids - might be array, string, or null
         if (Array.isArray(article.reference_pmids)) {
@@ -2393,17 +2414,44 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
         }
         
+        // Handle reference_dois (Crossref references for DOAJ/Wiley articles)
+        if (Array.isArray(article.reference_dois)) {
+          refDois = article.reference_dois;
+        } else if (typeof article.reference_dois === 'string') {
+          try {
+            if (article.reference_dois.startsWith('{')) {
+              refDois = article.reference_dois.slice(1, -1).split(',').filter(Boolean);
+            } else {
+              refDois = JSON.parse(article.reference_dois);
+            }
+          } catch {
+            refDois = [];
+          }
+        }
+        
         // Count for debugging
         if (refPmids.length > 0) {
           articlesWithRefs++;
           totalRefPmids += refPmids.length;
         }
+        if (refDois.length > 0) {
+          totalRefDois += refDois.length;
+        }
         
-        // Исходящие связи (эта статья ссылается на другие статьи)
+        // Исходящие связи по PMID (эта статья ссылается на другие статьи)
         for (const refPmid of refPmids) {
           const targetId = pmidToId.get(refPmid);
           if (targetId) {
             matchedInternalRefs++;
+            addLink(article.id, targetId);
+          }
+        }
+        
+        // Исходящие связи по DOI (для DOAJ/Wiley статей через Crossref)
+        for (const refDoi of refDois) {
+          const targetId = doiToId.get(refDoi.toLowerCase());
+          if (targetId) {
+            matchedDoiRefs++;
             addLink(article.id, targetId);
           }
         }
@@ -2418,9 +2466,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
       
       // Log debug info
-      console.log(`[CitationGraph] Project has ${projectPmids.size} articles with PMIDs`);
+      console.log(`[CitationGraph] Project has ${projectPmids.size} articles with PMIDs, ${doiToId.size} with DOIs`);
       console.log(`[CitationGraph] Found ${articlesWithRefs} articles with reference_pmids (${totalRefPmids} total refs)`);
-      console.log(`[CitationGraph] Matched ${matchedInternalRefs} internal references (links between project articles)`);
+      console.log(`[CitationGraph] Found ${totalRefDois} DOI references from Crossref`);
+      console.log(`[CitationGraph] Matched ${matchedInternalRefs} PMID refs + ${matchedDoiRefs} DOI refs = ${matchedInternalRefs + matchedDoiRefs} internal links`);
       console.log(`[CitationGraph] Created ${links.length} links`)
 
       // Добавляем связи на основе references из Crossref (для всех статей уровня 1)

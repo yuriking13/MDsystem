@@ -1,6 +1,7 @@
 import { pool } from '../../pg.js';
 import { enrichArticlesWithReferences, pubmedFetchByPmids, europePMCGetCitationCounts } from '../../lib/pubmed.js';
 import { decryptApiKey } from '../../utils/apiKeyCrypto.js';
+import { getCrossrefByDOI, extractEnrichedData } from '../../lib/crossref.js';
 
 // Поfлучаесм API кDалюч пользователя из бВазы
 async function getUserApiKey(userId: string, provider: string): Promise<string | null> {
@@ -267,6 +268,107 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
       console.log(`[GraphFetch] Phase 3 complete: updated citation counts for ${citationUpdates} articles`);
     } catch (err) {
       console.error('[GraphFetch] Europe PMC error:', err);
+    }
+    
+    // Фаза 4: Загружаем Crossref references для статей БЕЗ PMID (DOAJ, Wiley, Crossref)
+    // Это позволяет строить связи для не-PubMed статей
+    console.log(`[GraphFetch] Phase 4 starting: fetching Crossref references for non-PubMed articles`);
+    try {
+      // Получаем статьи проекта без PMID, но с DOI
+      let doiSql = `SELECT a.id, a.doi, a.source
+         FROM articles a
+         JOIN project_articles pa ON pa.article_id = a.id
+         WHERE pa.project_id = $1 
+           AND a.pmid IS NULL 
+           AND a.doi IS NOT NULL
+           AND (a.reference_dois IS NULL OR array_length(a.reference_dois, 1) IS NULL OR a.references_fetched_at IS NULL)`;
+      const doiParams: any[] = [projectId];
+      
+      // Фильтр по статусу (только отобранные)
+      if (selectedOnly) {
+        doiSql += ` AND pa.status = 'selected'`;
+      }
+      
+      // Фильтр по конкретным статьям
+      if (articleIds && articleIds.length > 0) {
+        doiSql += ` AND a.id = ANY($2)`;
+        doiParams.push(articleIds);
+      }
+      
+      doiSql += ` LIMIT 100`; // Ограничиваем для скорости
+      
+      const doiArticles = await pool.query(doiSql, doiParams);
+      
+      console.log(`[GraphFetch] Phase 4: found ${doiArticles.rows.length} articles with DOI but no PMID`);
+      
+      let crossrefProcessed = 0;
+      let crossrefWithRefs = 0;
+      let totalCrossrefRefs = 0;
+      
+      for (const article of doiArticles.rows) {
+        try {
+          // Throttle для Crossref API (polite pool)
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
+          const crossrefData = await getCrossrefByDOI(article.doi);
+          if (!crossrefData) {
+            crossrefProcessed++;
+            continue;
+          }
+          
+          const enriched = extractEnrichedData(crossrefData);
+          
+          // Извлекаем DOIs из references
+          const referenceDois: string[] = [];
+          if (enriched.references) {
+            for (const ref of enriched.references) {
+              if (ref.doi) {
+                referenceDois.push(ref.doi.toLowerCase());
+              }
+            }
+          }
+          
+          // Обновляем статью
+          await pool.query(
+            `UPDATE articles SET 
+              reference_dois = $1::text[],
+              crossref_cited_by_count = $2,
+              references_fetched_at = now(),
+              raw_json = COALESCE(raw_json, '{}'::jsonb) || jsonb_build_object(
+                'crossref', $3::jsonb,
+                'crossrefCitedByCount', $2
+              )
+             WHERE id = $4`,
+            [
+              referenceDois,
+              enriched.citedByCount || 0,
+              JSON.stringify({
+                referencesCount: enriched.referencesCount,
+                publisher: enriched.publisher,
+                subjects: enriched.subjects,
+              }),
+              article.id
+            ]
+          );
+          
+          if (referenceDois.length > 0) {
+            crossrefWithRefs++;
+            totalCrossrefRefs += referenceDois.length;
+          }
+          
+          crossrefProcessed++;
+          
+          if (crossrefProcessed % 10 === 0) {
+            console.log(`[GraphFetch] Phase 4 progress: ${crossrefProcessed}/${doiArticles.rows.length} DOI articles`);
+          }
+        } catch (err) {
+          console.error(`[GraphFetch] Crossref error for DOI ${article.doi}:`, err);
+        }
+      }
+      
+      console.log(`[GraphFetch] Phase 4 complete: ${crossrefWithRefs}/${crossrefProcessed} articles have Crossref references (${totalCrossrefRefs} total refs)`);
+    } catch (err) {
+      console.error('[GraphFetch] Phase 4 Crossref error:', err);
     }
     
     // Завершаем job
