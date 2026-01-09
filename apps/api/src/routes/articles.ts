@@ -2130,6 +2130,176 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
     }
   );
+
+  // ========== AI Assistant for Graph ==========
+  // POST /api/projects/:id/graph-ai-assistant
+  // Чат с AI для поиска и рекомендации статей на основе графа
+  const GraphAIAssistantSchema = z.object({
+    message: z.string().min(1).max(2000),
+    context: z.object({
+      articleCount: z.number().optional(),
+      yearRange: z.object({ min: z.number().nullable(), max: z.number().nullable() }).optional(),
+      topics: z.array(z.string()).optional(),
+    }).optional(),
+  });
+
+  fastify.post(
+    "/projects/:id/graph-ai-assistant",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+      
+      const bodyP = GraphAIAssistantSchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "Invalid request body" });
+      }
+      
+      const projectId = paramsP.data.id;
+      const { message, context } = bodyP.data;
+      
+      try {
+        // Получаем API ключ OpenRouter
+        const openrouterKey = await getUserApiKey(userId, 'openrouter');
+        if (!openrouterKey) {
+          return reply.code(400).send({
+            ok: false,
+            error: "Для AI ассистента нужен API ключ OpenRouter. Добавьте его в Настройках."
+          });
+        }
+        
+        // Получаем информацию о проекте и статьях
+        const projectRes = await pool.query(
+          `SELECT p.name, p.description, p.research_type, p.research_subtype
+           FROM projects p WHERE p.id = $1`,
+          [projectId]
+        );
+        const project = projectRes.rows[0];
+        
+        // Получаем примеры статей проекта для контекста
+        const articlesRes = await pool.query(
+          `SELECT a.title_en, a.year, a.journal, a.abstract_en
+           FROM project_articles pa
+           JOIN articles a ON a.id = pa.article_id
+           WHERE pa.project_id = $1 AND pa.status = 'selected'
+           ORDER BY a.year DESC NULLS LAST
+           LIMIT 5`,
+          [projectId]
+        );
+        
+        const sampleArticles = articlesRes.rows.map(a => 
+          `- "${a.title_en}" (${a.year || '?'}, ${a.journal || 'Unknown journal'})`
+        ).join('\n');
+        
+        // Формируем системный промпт
+        const systemPrompt = `Ты - AI ассистент для научного исследователя. Помогаешь находить и рекомендовать научные статьи.
+
+КОНТЕКСТ ПРОЕКТА:
+- Название: ${project?.name || 'Без названия'}
+- Описание: ${project?.description || 'Нет описания'}
+- Тип исследования: ${project?.research_type || 'Не указан'}
+${context?.yearRange ? `- Годы публикаций: ${context.yearRange.min || '?'} - ${context.yearRange.max || '?'}` : ''}
+${context?.articleCount ? `- Статей в проекте: ${context.articleCount}` : ''}
+
+ПРИМЕРЫ ОТОБРАННЫХ СТАТЕЙ:
+${sampleArticles || 'Пока нет отобранных статей'}
+
+ТВОЯ ЗАДАЧА:
+1. Понять запрос пользователя о поиске статей
+2. Если пользователь просит найти статьи по теме:
+   - Предложи поисковые запросы для PubMed/DOAJ
+   - Укажи фильтры (годы, типы публикаций)
+   - Объясни, почему эти статьи могут быть полезны
+
+3. Отвечай в формате JSON:
+{
+  "response": "Твой текстовый ответ пользователю",
+  "searchSuggestions": [
+    {
+      "query": "поисковый запрос для PubMed",
+      "description": "что найдётся по этому запросу",
+      "filters": {
+        "yearFrom": 2020,
+        "yearTo": 2024,
+        "sources": ["pubmed", "doaj"]
+      }
+    }
+  ],
+  "pmidsToAdd": ["12345678", "23456789"],  // Если знаешь конкретные PMID
+  "doisToAdd": ["10.1234/example"]  // Если знаешь конкретные DOI
+}
+
+ВАЖНО:
+- Отвечай на русском языке
+- Если не уверен в PMID/DOI - не выдумывай, оставь пустыми массивы
+- Предлагай конкретные поисковые запросы с MeSH терминами когда возможно
+- Учитывай тематику проекта при рекомендациях`;
+
+        // Вызываем OpenRouter с Claude
+        const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
+        
+        const res = await fetch(OPENROUTER_API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${openrouterKey}`,
+            "HTTP-Referer": "https://mdsystem.app",
+          },
+          body: JSON.stringify({
+            model: "anthropic/claude-sonnet-4", // Claude Sonnet 4
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: message }
+            ],
+            temperature: 0.3,
+            max_tokens: 2000,
+          }),
+        });
+        
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(`OpenRouter error ${res.status}: ${err.slice(0, 200)}`);
+        }
+        
+        type OpenRouterResponse = {
+          choices: Array<{ message: { content: string } }>;
+        };
+        const data = (await res.json()) as OpenRouterResponse;
+        const content = data.choices?.[0]?.message?.content || "";
+        
+        // Парсим JSON из ответа
+        let parsed: any = { response: content };
+        try {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+          }
+        } catch {
+          // Если не удалось распарсить - возвращаем как текст
+          parsed = { response: content };
+        }
+        
+        return {
+          ok: true,
+          response: parsed.response || content,
+          searchSuggestions: parsed.searchSuggestions || [],
+          pmidsToAdd: parsed.pmidsToAdd || [],
+          doisToAdd: parsed.doisToAdd || [],
+        };
+        
+      } catch (err: any) {
+        console.error('Graph AI Assistant error:', err);
+        return reply.code(500).send({
+          ok: false,
+          error: err?.message || "AI Assistant error"
+        });
+      }
+    }
+  );
 };
 
 export default plugin;
