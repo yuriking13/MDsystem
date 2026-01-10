@@ -438,6 +438,11 @@ export default function ProjectDetailPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [filesCategory, setFilesCategory] = useState<FileCategory | "all">("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Экспорт глав
+  const [showChapterSelectModal, setShowChapterSelectModal] = useState(false);
+  const [selectedChaptersForExport, setSelectedChaptersForExport] = useState<Set<string>>(new Set());
+  const [includeChartDataTables, setIncludeChartDataTables] = useState(true); // Включать данные графиков для создания в Word
 
   // WebSocket для real-time синхронизации
   const handleWSStatisticCreated = useCallback((statistic: ProjectStatistic) => {
@@ -951,17 +956,17 @@ export default function ProjectDetailPage() {
       // Получаем свежие данные для экспорта
       const res = await apiExportProject(id);
       
-      // Подготавливаем документы с изображениями графиков
+      // Подготавливаем документы с изображениями графиков (и таблицами данных для Word)
       const preparedDocuments = await Promise.all(
         res.documents.map(async d => ({
           title: d.title,
-          content: d.content ? await prepareHtmlForExport(d.content, chartImages) : null
+          content: d.content ? await prepareHtmlForExport(d.content, chartImages, includeChartDataTables) : null
         }))
       );
       
       // Подготавливаем объединённый контент если нужно
       const preparedMergedContent = merged && res.mergedContent 
-        ? await prepareHtmlForExport(res.mergedContent, chartImages) 
+        ? await prepareHtmlForExport(res.mergedContent, chartImages, includeChartDataTables) 
         : undefined;
       
       await exportToWord(
@@ -979,6 +984,67 @@ export default function ProjectDetailPage() {
       setOk(merged 
         ? 'Объединённый документ экспортирован в Word' 
         : 'Документ экспортирован в Word');
+    } catch (err: any) {
+      setError(err?.message || "Ошибка экспорта");
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  // Экспорт выбранных глав в Word
+  async function handleExportSelectedChapters() {
+    if (!id || selectedChaptersForExport.size === 0) return;
+    
+    setShowChapterSelectModal(false);
+    setExporting(true);
+    
+    try {
+      // Обновляем нумерацию цитат перед экспортом
+      await apiRenumberCitations(id);
+      
+      // Захватываем графики из текущего DOM
+      const chartImages = captureChartsFromDOM();
+      
+      // Получаем свежие данные для экспорта
+      const res = await apiExportProject(id);
+      
+      // Фильтруем только выбранные документы
+      const selectedDocs = res.documents.filter(d => selectedChaptersForExport.has(d.id));
+      
+      // Подготавливаем документы с изображениями графиков (и таблицами данных, если включено)
+      const preparedDocuments = await Promise.all(
+        selectedDocs.map(async d => ({
+          title: d.title,
+          content: d.content ? await prepareHtmlForExport(d.content, chartImages, includeChartDataTables) : null
+        }))
+      );
+      
+      // Фильтруем библиографию только для выбранных глав
+      // (получаем articleId из цитат в выбранных документах)
+      const selectedBibliography = res.bibliography.filter(bib => {
+        // Проверяем используется ли эта статья в выбранных документах
+        return selectedDocs.some(d => {
+          const content = d.content || '';
+          return content.includes(`data-citation-id="${bib.articleId}"`) ||
+                 content.includes(`data-article-id="${bib.articleId}"`);
+        });
+      });
+      
+      // Перенумеровываем библиографию
+      const renumberedBib = selectedBibliography.map((bib, idx) => ({
+        ...bib,
+        number: idx + 1,
+      }));
+      
+      await exportToWord(
+        res.projectName,
+        preparedDocuments,
+        renumberedBib,
+        res.citationStyle,
+        undefined // не объединённый
+      );
+      
+      setOk(`Экспортировано ${selectedDocs.length} глав в Word`);
     } catch (err: any) {
       setError(err?.message || "Ошибка экспорта");
     } finally {
@@ -1297,10 +1363,13 @@ export default function ProjectDetailPage() {
                 <div className="row gap" style={{ flexWrap: 'wrap' }}>
                   <button 
                     className="btn" 
-                    onClick={() => handleExportWord(false)}
+                    onClick={() => {
+                      setSelectedChaptersForExport(new Set(documents.map(d => d.id)));
+                      setShowChapterSelectModal(true);
+                    }}
                     disabled={exporting || documents.length === 0}
                     type="button"
-                    title="Экспорт глав по отдельности"
+                    title="Выбрать главы для экспорта"
                   >
                     <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -2606,13 +2675,162 @@ export default function ProjectDetailPage() {
                   disabled={saving}
                   type="button"
                 >
-                  {saving ? "Сохранение..." : "💾 Сохранить настройки"}
+                  {saving ? (
+                    "Сохранение..."
+                  ) : (
+                    <>
+                      <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                      </svg>
+                      Сохранить настройки
+                    </>
+                  )}
                 </button>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Modal: Select chapters for export */}
+      {showChapterSelectModal && (
+        <div className="modal-overlay" onClick={() => setShowChapterSelectModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg className="icon-md" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Выберите главы для экспорта
+              </h3>
+              <button 
+                className="btn secondary" 
+                onClick={() => setShowChapterSelectModal(false)}
+                type="button"
+                style={{ padding: 6 }}
+              >
+                <svg className="icon-md" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '16px 20px' }}>
+              <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+                <button
+                  className="btn secondary"
+                  onClick={() => setSelectedChaptersForExport(new Set(documents.map(d => d.id)))}
+                  type="button"
+                  style={{ fontSize: 12 }}
+                >
+                  Выбрать все
+                </button>
+                <button
+                  className="btn secondary"
+                  onClick={() => setSelectedChaptersForExport(new Set())}
+                  type="button"
+                  style={{ fontSize: 12 }}
+                >
+                  Снять все
+                </button>
+              </div>
+              <div style={{ maxHeight: 300, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {documents.map((doc, idx) => (
+                  <label 
+                    key={doc.id} 
+                    className="chapter-select-item"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '10px 12px',
+                      background: selectedChaptersForExport.has(doc.id) ? 'rgba(75, 116, 255, 0.1)' : 'var(--bg-secondary)',
+                      borderRadius: 8,
+                      cursor: 'pointer',
+                      border: selectedChaptersForExport.has(doc.id) ? '1px solid var(--accent)' : '1px solid transparent',
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedChaptersForExport.has(doc.id)}
+                      onChange={(e) => {
+                        const newSet = new Set(selectedChaptersForExport);
+                        if (e.target.checked) {
+                          newSet.add(doc.id);
+                        } else {
+                          newSet.delete(doc.id);
+                        }
+                        setSelectedChaptersForExport(newSet);
+                      }}
+                      style={{ width: 18, height: 18 }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 500 }}>
+                        {idx + 1}. {doc.title}
+                      </div>
+                      <div className="muted" style={{ fontSize: 11 }}>
+                        {doc.content ? `${doc.content.length} символов` : 'Пусто'}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+            {/* Опция включения данных графиков */}
+            <div style={{ 
+              padding: '12px 20px', 
+              borderTop: '1px solid var(--border-color)',
+              background: 'var(--bg-secondary)'
+            }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={includeChartDataTables}
+                  onChange={(e) => setIncludeChartDataTables(e.target.checked)}
+                  style={{ width: 18, height: 18, marginTop: 2 }}
+                />
+                <div>
+                  <div style={{ fontWeight: 500, fontSize: 13 }}>
+                    <svg className="icon-sm" style={{ marginRight: 4, verticalAlign: 'middle' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                    </svg>
+                    Включить данные графиков
+                  </div>
+                  <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
+                    Добавляет таблицы с исходными данными под каждым графиком.
+                    Используйте их для создания редактируемых графиков в Word.
+                  </div>
+                </div>
+              </label>
+            </div>
+            
+            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="muted" style={{ fontSize: 12 }}>
+                Выбрано: {selectedChaptersForExport.size} из {documents.length}
+              </span>
+              <div className="row gap">
+                <button
+                  className="btn secondary"
+                  onClick={() => setShowChapterSelectModal(false)}
+                  type="button"
+                >
+                  Отмена
+                </button>
+                <button
+                  className="btn"
+                  onClick={handleExportSelectedChapters}
+                  disabled={selectedChaptersForExport.size === 0 || exporting}
+                  type="button"
+                >
+                  <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                  {exporting ? 'Экспорт...' : 'Экспортировать'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

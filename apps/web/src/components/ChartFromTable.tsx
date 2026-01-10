@@ -251,6 +251,12 @@ export type ChartConfig = {
   bins?: number;
   // Классификация данных
   dataClassification?: DataClassification;
+  // Подписи осей
+  xAxisLabel?: string;
+  yAxisLabel?: string;
+  // Цвет текста и осей (по умолчанию черный)
+  textColor?: string;
+  axisColor?: string;
 };
 
 type Props = {
@@ -375,7 +381,18 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
     );
   }
   
-  const { type, title, labelColumn, dataColumns, colors = DEFAULT_COLORS, bins = 10 } = config;
+  const { 
+    type, 
+    title, 
+    labelColumn, 
+    dataColumns, 
+    colors = DEFAULT_COLORS, 
+    bins = 10,
+    xAxisLabel,
+    yAxisLabel,
+    textColor = '#000000', // По умолчанию черный
+    axisColor = '#000000', // По умолчанию черный
+  } = config;
   
   // Проверка валидности индексов колонок
   if (!dataColumns || dataColumns.length === 0) {
@@ -386,7 +403,7 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
     );
   }
   
-  // Базовые опции для всех графиков
+  // Базовые опции для всех графиков с кастомными цветами
   const baseOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -394,13 +411,13 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
       legend: {
         position: 'top' as const,
         labels: {
-          color: '#e8eefc',
+          color: textColor,
         },
       },
       title: {
         display: !!title,
         text: title,
-        color: '#e8eefc',
+        color: textColor,
         font: {
           size: 16,
         },
@@ -408,14 +425,27 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
     },
   };
   
+  // Настройки осей с кастомными цветами и подписями
   const axisScales = {
     x: {
-      ticks: { color: '#a9b7da' },
-      grid: { color: 'rgba(255,255,255,0.1)' },
+      ticks: { color: axisColor },
+      grid: { color: 'rgba(0,0,0,0.1)' },
+      title: xAxisLabel ? {
+        display: true,
+        text: xAxisLabel,
+        color: textColor,
+        font: { size: 12 },
+      } : undefined,
     },
     y: {
-      ticks: { color: '#a9b7da' },
-      grid: { color: 'rgba(255,255,255,0.1)' },
+      ticks: { color: axisColor },
+      grid: { color: 'rgba(0,0,0,0.1)' },
+      title: yAxisLabel ? {
+        display: true,
+        text: yAxisLabel,
+        color: textColor,
+        font: { size: 12 },
+      } : undefined,
     },
   };
 
@@ -679,16 +709,16 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
                 ...axisScales.x,
                 title: {
                   display: true,
-                  text: tableData.headers[xCol] || 'X',
-                  color: '#a9b7da',
+                  text: xAxisLabel || tableData.headers[xCol] || 'X',
+                  color: textColor,
                 },
               },
               y: {
                 ...axisScales.y,
                 title: {
                   display: true,
-                  text: tableData.headers[yCol] || 'Y',
-                  color: '#a9b7da',
+                  text: yAxisLabel || tableData.headers[yCol] || 'Y',
+                  color: textColor,
                 },
               },
             },

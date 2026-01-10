@@ -4457,3 +4457,18 @@ input::placeholder {
   text-decoration: underline;
 }
 
+/* ===== ONBOARDING TOUR ===== */
+
+.onboarding-overlay {
+  animation: fadeIn 0.3s ease;
+}
+
+.onboarding-modal {
+  animation: scaleIn 0.3s ease;
+}
+
+.onboarding-modal .icon-lg {
+  width: 40px;
+  height: 40px;
+}
+

@@ -70,6 +70,12 @@ export interface ChartNodeAttrs {
   title?: string;
   colorScheme?: keyof typeof CHART_COLOR_SCHEMES;
   backgroundColor?: string;
+  // Axis labels
+  xAxisLabel?: string;
+  yAxisLabel?: string;
+  // Text/axis colors (default black)
+  textColor?: string;
+  axisColor?: string;
 }
 
 // React component for rendering the chart
@@ -80,10 +86,14 @@ function ChartNodeView({ node, updateAttributes }: { node: any; updateAttributes
   const [selectedColorScheme, setSelectedColorScheme] = useState<keyof typeof CHART_COLOR_SCHEMES>(attrs.colorScheme || 'default');
   const [selectedChartType, setSelectedChartType] = useState<ChartType>(attrs.config?.type || 'bar');
   const [bgColor, setBgColor] = useState(attrs.backgroundColor || 'white');
+  const [xAxisLabel, setXAxisLabel] = useState(attrs.xAxisLabel || attrs.config?.xAxisLabel || '');
+  const [yAxisLabel, setYAxisLabel] = useState(attrs.yAxisLabel || attrs.config?.yAxisLabel || '');
+  const [textColor, setTextColor] = useState(attrs.textColor || attrs.config?.textColor || '#000000');
+  const [axisColor, setAxisColor] = useState(attrs.axisColor || attrs.config?.axisColor || '#000000');
   
   const { tableData, config, title } = attrs;
   
-  // Apply color scheme to config
+  // Apply color scheme and axis options to config
   const effectiveConfig = useMemo(() => {
     if (!config) return config;
     const scheme = CHART_COLOR_SCHEMES[selectedColorScheme] || CHART_COLOR_SCHEMES.default;
@@ -92,8 +102,12 @@ function ChartNodeView({ node, updateAttributes }: { node: any; updateAttributes
       type: selectedChartType,
       title: editTitle || config.title,
       colors: scheme.colors,
+      xAxisLabel: xAxisLabel || config.xAxisLabel,
+      yAxisLabel: yAxisLabel || config.yAxisLabel,
+      textColor: textColor || config.textColor || '#000000',
+      axisColor: axisColor || config.axisColor || '#000000',
     };
-  }, [config, selectedColorScheme, selectedChartType, editTitle]);
+  }, [config, selectedColorScheme, selectedChartType, editTitle, xAxisLabel, yAxisLabel, textColor, axisColor]);
   
   if (!tableData || !config) {
     return (
@@ -110,11 +124,19 @@ function ChartNodeView({ node, updateAttributes }: { node: any; updateAttributes
       title: editTitle,
       colorScheme: selectedColorScheme,
       backgroundColor: bgColor,
+      xAxisLabel,
+      yAxisLabel,
+      textColor,
+      axisColor,
       config: {
         ...config,
         type: selectedChartType,
         title: editTitle,
         colors: CHART_COLOR_SCHEMES[selectedColorScheme].colors,
+        xAxisLabel,
+        yAxisLabel,
+        textColor,
+        axisColor,
       },
     });
     setIsEditing(false);
@@ -287,6 +309,115 @@ function ChartNodeView({ node, updateAttributes }: { node: any; updateAttributes
           </div>
         )}
 
+        {/* Advanced edit panel for axis labels and colors */}
+        {isEditing && (
+          <div className="chart-axis-panel" style={{
+            padding: '12px 16px',
+            borderBottom: '1px solid #e2e8f0',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '12px',
+            alignItems: 'flex-end',
+            background: 'rgba(0,0,0,0.02)',
+          }}>
+            {/* X Axis Label */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', color: '#64748b' }}>Подпись оси X</label>
+              <input
+                value={xAxisLabel}
+                onChange={(e) => setXAxisLabel(e.target.value)}
+                placeholder="Ось X"
+                style={{
+                  padding: '4px 8px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  width: '120px',
+                }}
+              />
+            </div>
+
+            {/* Y Axis Label */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', color: '#64748b' }}>Подпись оси Y</label>
+              <input
+                value={yAxisLabel}
+                onChange={(e) => setYAxisLabel(e.target.value)}
+                placeholder="Ось Y"
+                style={{
+                  padding: '4px 8px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  width: '120px',
+                }}
+              />
+            </div>
+
+            {/* Text Color */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', color: '#64748b' }}>Цвет текста</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <input
+                  type="color"
+                  value={textColor}
+                  onChange={(e) => setTextColor(e.target.value)}
+                  style={{
+                    width: '32px',
+                    height: '28px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    padding: '2px',
+                  }}
+                />
+                <span style={{ fontSize: '10px', color: '#64748b' }}>{textColor}</span>
+              </div>
+            </div>
+
+            {/* Axis Color */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <label style={{ fontSize: '11px', color: '#64748b' }}>Цвет осей</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <input
+                  type="color"
+                  value={axisColor}
+                  onChange={(e) => setAxisColor(e.target.value)}
+                  style={{
+                    width: '32px',
+                    height: '28px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    padding: '2px',
+                  }}
+                />
+                <span style={{ fontSize: '10px', color: '#64748b' }}>{axisColor}</span>
+              </div>
+            </div>
+
+            {/* Reset to black button */}
+            <button
+              onClick={() => {
+                setTextColor('#000000');
+                setAxisColor('#000000');
+              }}
+              style={{
+                padding: '4px 8px',
+                fontSize: '11px',
+                background: '#f1f5f9',
+                color: '#475569',
+                border: '1px solid #d1d5db',
+                borderRadius: '4px',
+                cursor: 'pointer',
+              }}
+              title="Сбросить цвета на чёрный"
+            >
+              ⟲ По умолчанию
+            </button>
+          </div>
+        )}
+
         <div className="chart-node-content" style={{ 
           padding: '16px', 
           minHeight: '300px',
@@ -358,6 +489,18 @@ export const ChartNode = Node.create({
       },
       backgroundColor: {
         default: 'white',
+      },
+      xAxisLabel: {
+        default: '',
+      },
+      yAxisLabel: {
+        default: '',
+      },
+      textColor: {
+        default: '#000000',
+      },
+      axisColor: {
+        default: '#000000',
       },
     };
   },

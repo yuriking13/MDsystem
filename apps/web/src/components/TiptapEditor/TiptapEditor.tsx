@@ -15,6 +15,8 @@ import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import Paragraph from '@tiptap/extension-paragraph';
 import { PaginationPlus } from 'tiptap-pagination-plus';
+import FontFamily from '@tiptap/extension-font-family';
+import { FontSize } from './extensions/FontSize';
 
 import TiptapToolbar from './TiptapToolbar';
 import DocumentOutline from './DocumentOutline';
@@ -24,6 +26,8 @@ import { ChartNode, insertChartIntoEditor, type ChartNodeAttrs } from './extensi
 import { CitationMark, type CitationAttrs } from './extensions/CitationMark';
 import { TableFigureNumbering } from './extensions/TableFigureNumbering';
 import { ProjectFileNode, insertFileIntoEditor, getFileIdsFromEditor, type ProjectFileNodeAttrs } from './extensions/ProjectFileNode';
+import { CommentMark, type CommentAttrs } from './extensions/CommentMark';
+import { TrackChangesMark, type TrackChangeAttrs } from './extensions/TrackChangesMark';
 import StatisticEditModal from '../StatisticEditModal';
 import type { ProjectStatistic, DataClassification } from '../../lib/api';
 import type { TableData, ChartConfig } from '../ChartFromTable';
@@ -202,6 +206,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
   const [showOutline, setShowOutline] = useState(true);
   const [showBibliography, setShowBibliography] = useState(true);
   const [showPageSettings, setShowPageSettings] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [commentText, setCommentText] = useState('');
   const [statEditorState, setStatEditorState] = useState<StatEditorState | null>(null);
   const [headings, setHeadings] = useState<Array<{level: number; text: string; id: string}>>([]);
   const [currentStyle, setCurrentStyle] = useState<CitationStyle>(citationStyle);
@@ -311,6 +318,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     if (CustomTableHeader) extList.push(CustomTableHeader);
     if (TextStyle) extList.push(TextStyle);
     if (Color) extList.push(Color);
+    if (FontFamily) extList.push(FontFamily);
+    if (FontSize) extList.push(FontSize);
     
     // Highlight
     try {
@@ -326,6 +335,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
     if (TableFigureNumbering) extList.push(TableFigureNumbering);
     if (ProjectFileNode) extList.push(ProjectFileNode);
     if (Underline) extList.push(Underline);
+    if (CommentMark) extList.push(CommentMark);
+    if (TrackChangesMark) extList.push(TrackChangesMark);
     
     // Link
     try {
@@ -1038,6 +1049,17 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
           showOutline={showOutline}
           showBibliography={showBibliography}
           citationStyle={currentStyle}
+          reviewMode={reviewMode}
+          onToggleReviewMode={() => setReviewMode(!reviewMode)}
+          onAddComment={() => {
+            // Check if there's a selection
+            const { from, to } = editor.state.selection;
+            if (from === to) {
+              alert('Выделите текст для добавления комментария');
+              return;
+            }
+            setShowCommentModal(true);
+          }}
         />
       )}
       <div className="tiptap-main-area">
@@ -1081,6 +1103,78 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
           onClose={() => setStatEditorState(null)}
           onSave={handleSaveStatisticEditor}
         />
+      )}
+      
+      {/* Comment Modal */}
+      {showCommentModal && (
+        <div className="modal-overlay" onClick={() => setShowCommentModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width={20} height={20} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+                </svg>
+                Добавить комментарий
+              </h3>
+              <button className="btn secondary" onClick={() => setShowCommentModal(false)} style={{ padding: 6 }}>
+                <svg width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="modal-body" style={{ padding: '16px 20px' }}>
+              <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>
+                Комментарий будет добавлен к выделенному тексту
+              </p>
+              <textarea
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                placeholder="Введите комментарий..."
+                rows={4}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: 6,
+                  border: '1px solid var(--border-color)',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text)',
+                  resize: 'vertical',
+                }}
+                autoFocus
+              />
+            </div>
+            <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button className="btn secondary" onClick={() => setShowCommentModal(false)}>
+                Отмена
+              </button>
+              <button 
+                className="btn"
+                disabled={!commentText.trim()}
+                onClick={() => {
+                  if (!commentText.trim()) return;
+                  
+                  const commentId = `comment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                  const commentAttrs: CommentAttrs = {
+                    commentId,
+                    text: commentText.trim(),
+                    createdAt: new Date().toISOString(),
+                    resolved: false,
+                  };
+                  
+                  editor.chain().focus().setComment(commentAttrs).run();
+                  
+                  setCommentText('');
+                  setShowCommentModal(false);
+                }}
+              >
+                <svg width={14} height={14} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ marginRight: 4 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Добавить комментарий
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

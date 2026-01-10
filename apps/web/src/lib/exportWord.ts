@@ -383,8 +383,13 @@ export function captureChartsFromDOM(): Map<string, string> {
  * Подготовить HTML контент для экспорта (заменить графики на изображения)
  * @param html - исходный HTML контент
  * @param chartImages - карта chartId -> dataUrl изображений графиков (опционально)
+ * @param includeDataTables - включать ли таблицы с исходными данными графиков (для создания графиков в Word)
  */
-export async function prepareHtmlForExport(html: string, chartImages?: Map<string, string>): Promise<string> {
+export async function prepareHtmlForExport(
+  html: string, 
+  chartImages?: Map<string, string>,
+  includeDataTables: boolean = false
+): Promise<string> {
   if (typeof window === 'undefined' || !html) return html;
   
   const parser = new DOMParser();
@@ -430,6 +435,25 @@ export async function prepareHtmlForExport(html: string, chartImages?: Map<strin
     });
     
     let dataUrl: string | null = null;
+    let tableData: { headers?: string[]; rows?: string[][] } | null = null;
+    let config: { type?: string } | null = null;
+    
+    // Parse table data if available
+    if (tableDataStr) {
+      try {
+        tableData = JSON.parse(tableDataStr);
+      } catch (e) {
+        console.error('[prepareHtmlForExport] Error parsing tableData:', e);
+      }
+    }
+    
+    if (configStr) {
+      try {
+        config = JSON.parse(configStr);
+      } catch (e) {
+        console.error('[prepareHtmlForExport] Error parsing config:', e);
+      }
+    }
     
     // 1. Используем предзахваченное изображение (приоритет)
     if (chartId && chartImages?.has(chartId)) {
@@ -451,24 +475,25 @@ export async function prepareHtmlForExport(html: string, chartImages?: Map<strin
     }
     
     // 3. Рендерим график из данных если нет изображения
-    if (!dataUrl && tableDataStr && configStr) {
+    if (!dataUrl && tableData && config) {
       try {
-        const tableData = JSON.parse(tableDataStr);
-        const config = JSON.parse(configStr);
         console.log('[prepareHtmlForExport] Rendering chart from data:', config.type);
         dataUrl = await renderChartFromData(tableData, config);
         console.log('[prepareHtmlForExport] Rendered chart, dataUrl:', dataUrl ? 'success' : 'failed');
       } catch (e) {
-        console.error('[prepareHtmlForExport] Error parsing/rendering chart data:', e);
+        console.error('[prepareHtmlForExport] Error rendering chart data:', e);
       }
     }
     
     if (dataUrl) {
-      // Заменяем chartNode на изображение с подписью
+      // Заменяем chartNode на изображение с подписью и опционально таблицей данных
+      const container = doc.createElement('div');
+      container.style.margin = '1em 0';
+      container.style.pageBreakInside = 'avoid';
+      
       const figure = doc.createElement('figure');
       figure.style.textAlign = 'center';
-      figure.style.margin = '1em 0';
-      figure.style.pageBreakInside = 'avoid';
+      figure.style.margin = '0';
       
       const img = doc.createElement('img');
       img.src = dataUrl;
@@ -484,9 +509,71 @@ export async function prepareHtmlForExport(html: string, chartImages?: Map<strin
       
       figure.appendChild(img);
       figure.appendChild(caption);
+      container.appendChild(figure);
       
-      chartNode.replaceWith(figure);
-      console.log('[prepareHtmlForExport] Replaced chart with image');
+      // Добавляем таблицу с исходными данными для возможности создания графика в Word
+      if (includeDataTables && tableData && tableData.headers && tableData.rows) {
+        const dataTableWrapper = doc.createElement('div');
+        dataTableWrapper.style.marginTop = '1em';
+        dataTableWrapper.style.fontSize = '0.85em';
+        
+        const dataTableTitle = doc.createElement('p');
+        dataTableTitle.style.fontStyle = 'italic';
+        dataTableTitle.style.color = '#64748b';
+        dataTableTitle.style.marginBottom = '0.5em';
+        dataTableTitle.textContent = `Исходные данные для графика "${title}":`;
+        dataTableWrapper.appendChild(dataTableTitle);
+        
+        const dataTable = doc.createElement('table');
+        dataTable.setAttribute('data-chart-source-data', 'true');
+        dataTable.style.borderCollapse = 'collapse';
+        dataTable.style.width = '100%';
+        dataTable.style.marginBottom = '1em';
+        
+        // Header row
+        const thead = doc.createElement('thead');
+        const headerRow = doc.createElement('tr');
+        for (const header of tableData.headers) {
+          const th = doc.createElement('th');
+          th.textContent = header;
+          th.style.border = '1px solid #94a3b8';
+          th.style.padding = '6px 10px';
+          th.style.background = '#f1f5f9';
+          th.style.fontWeight = 'bold';
+          headerRow.appendChild(th);
+        }
+        thead.appendChild(headerRow);
+        dataTable.appendChild(thead);
+        
+        // Data rows
+        const tbody = doc.createElement('tbody');
+        for (const row of tableData.rows) {
+          const tr = doc.createElement('tr');
+          for (const cell of row) {
+            const td = doc.createElement('td');
+            td.textContent = cell;
+            td.style.border = '1px solid #94a3b8';
+            td.style.padding = '6px 10px';
+            tr.appendChild(td);
+          }
+          tbody.appendChild(tr);
+        }
+        dataTable.appendChild(tbody);
+        
+        dataTableWrapper.appendChild(dataTable);
+        
+        const hint = doc.createElement('p');
+        hint.style.fontSize = '0.8em';
+        hint.style.color = '#94a3b8';
+        hint.style.fontStyle = 'italic';
+        hint.textContent = '💡 Для создания редактируемого графика: выделите таблицу выше → Вставка → Диаграмма в Microsoft Word';
+        dataTableWrapper.appendChild(hint);
+        
+        container.appendChild(dataTableWrapper);
+      }
+      
+      chartNode.replaceWith(container);
+      console.log('[prepareHtmlForExport] Replaced chart with image' + (includeDataTables ? ' and data table' : ''));
     } else {
       // Нет данных для графика - оставляем placeholder с названием
       const placeholder = doc.createElement('div');

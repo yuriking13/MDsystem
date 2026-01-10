@@ -1,3 +1,6 @@
+/* Google Fonts Import - for font selection in editor */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Open+Sans:wght@400;600;700&family=Lato:wght@400;700&family=Montserrat:wght@400;500;700&family=PT+Sans:wght@400;700&family=PT+Serif:wght@400;700&display=swap');
+
 /* TipTap Editor Wrapper */
 .tiptap-editor-wrapper {
   display: flex;
@@ -1732,4 +1735,84 @@
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+/* ========== Review Mode / Comments / Track Changes ========== */
+
+/* Comment marks */
+.comment-mark {
+  background-color: rgba(251, 191, 36, 0.25);
+  border-bottom: 2px solid #fbbf24;
+  cursor: pointer;
+  position: relative;
+}
+
+.comment-mark:hover {
+  background-color: rgba(251, 191, 36, 0.4);
+}
+
+.comment-mark.comment-resolved {
+  background-color: rgba(100, 116, 139, 0.15);
+  border-bottom: 1px dashed #94a3b8;
+}
+
+/* Comment tooltip on hover */
+.comment-mark::after {
+  content: attr(data-comment-text);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  max-width: 250px;
+  white-space: pre-wrap;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.comment-mark:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Track changes - insertions */
+.track-change.track-insert {
+  background-color: rgba(74, 222, 128, 0.2);
+  border-bottom: 2px solid #4ade80;
+  text-decoration: underline;
+  text-decoration-color: #4ade80;
+}
+
+/* Track changes - deletions */
+.track-change.track-delete {
+  background-color: rgba(248, 113, 113, 0.2);
+  text-decoration: line-through;
+  text-decoration-color: #f87171;
+  color: #f87171;
+}
+
+/* Review mode indicator */
+.review-mode-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 6px;
+  font-size: 11px;
+  color: #fbbf24;
+}
+
+/* Review mode editor border highlight */
+.tiptap-editor-wrapper.review-mode-active .tiptap-editor {
+  border: 2px solid rgba(251, 191, 36, 0.3);
 }
