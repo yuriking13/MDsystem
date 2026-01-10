@@ -623,12 +623,14 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
   // POST /api/projects/:projectId/files/:fileId/analyze - Analyze file and extract article metadata
   app.post<{
     Params: { projectId: string; fileId: string };
+    Querystring: { force?: string };
   }>(
     "/projects/:projectId/files/:fileId/analyze",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
       const userId = (req as any).user.sub;
       const { projectId, fileId } = req.params;
+      const forceReanalyze = req.query.force === "true";
 
       if (!isStorageConfigured()) {
         return reply.serviceUnavailable("File storage is not configured");
@@ -637,12 +639,6 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       const access = await checkProjectAccess(userId, projectId);
       if (!access.hasAccess) {
         return reply.forbidden("You don't have access to this project");
-      }
-
-      // Get OpenRouter API key
-      const openrouterKey = await getUserApiKey(userId, "openrouter");
-      if (!openrouterKey) {
-        return reply.badRequest("OpenRouter API ключ не настроен. Добавьте его в настройках.");
       }
 
       // Get file info
@@ -659,6 +655,34 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         return reply.badRequest("Только PDF и Word документы могут быть проанализированы");
       }
 
+      // Check for cached metadata (if not forcing re-analysis)
+      // Use type assertion to access potentially missing fields
+      const fileAny = file as any;
+      const cachedMetadata = fileAny.extractedMetadata as ExtractedArticle | null | undefined;
+      const cachedText = fileAny.extractedText as string | null | undefined;
+      const cachedAt = fileAny.extractionDate as Date | null | undefined;
+      
+      if (!forceReanalyze && cachedMetadata && cachedText) {
+        app.log.info(`Using cached metadata for file: ${file.name}`);
+        return {
+          ok: true,
+          fileId,
+          fileName: file.name,
+          metadata: cachedMetadata,
+          textPreview: cachedText.slice(0, 500) + 
+            (cachedText.length > 500 ? "..." : ""),
+          fullText: cachedText,
+          cached: true,
+          cachedAt: cachedAt,
+        };
+      }
+
+      // Get OpenRouter API key
+      const openrouterKey = await getUserApiKey(userId, "openrouter");
+      if (!openrouterKey) {
+        return reply.badRequest("OpenRouter API ключ не настроен. Добавьте его в настройках.");
+      }
+
       try {
         // Download file from S3
         const { buffer } = await downloadFile(file.storagePath);
@@ -671,16 +695,33 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           return reply.badRequest("Не удалось извлечь текст из файла или файл пустой");
         }
 
-        // Try to extract DOI with regex first
-        const regexDoi = extractDoiFromText(text);
+        // Try to extract DOI with regex first (prioritize header DOI)
+        const regexDoi = extractDoiFromText(text, true);
 
         // Use AI to extract metadata
         app.log.info(`Analyzing file with AI: ${file.name}`);
         const metadata = await extractArticleMetadataWithAI(text, openrouterKey);
 
-        // Use regex DOI if AI didn't find one
-        if (!metadata.doi && regexDoi) {
+        // Use regex DOI if AI didn't find one (or AI got wrong DOI from bibliography)
+        if (regexDoi && (!metadata.doi || metadata.doi !== regexDoi)) {
+          // Prefer regex DOI from header as it's more reliable
+          app.log.info(`Using regex DOI from header: ${regexDoi} (AI found: ${metadata.doi})`);
           metadata.doi = regexDoi;
+        }
+
+        // Cache the extracted metadata and text (gracefully handle if columns don't exist)
+        try {
+          await prisma.projectFile.update({
+            where: { id: fileId },
+            data: {
+              extractedMetadata: metadata as any,
+              extractedText: text,
+              extractionDate: new Date(),
+            },
+          });
+          app.log.info(`Cached metadata for file: ${file.name}`);
+        } catch (cacheErr) {
+          app.log.warn({ err: cacheErr }, `Failed to cache metadata (columns may not exist yet): ${file.name}`);
         }
 
         return {
@@ -689,6 +730,8 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           fileName: file.name,
           metadata,
           textPreview: text.slice(0, 500) + (text.length > 500 ? "..." : ""),
+          fullText: text,
+          cached: false,
         };
       } catch (err: any) {
         app.log.error({ err }, `Failed to analyze file: ${file.name}`);
@@ -824,6 +867,168 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       } catch (err: any) {
         app.log.error({ err }, "Failed to import article from file");
         return reply.internalServerError(err.message || "Ошибка импорта статьи");
+      }
+    }
+  );
+
+  // POST /api/projects/:projectId/files/:fileId/import-as-document - Import file as project document
+  app.post<{
+    Params: { projectId: string; fileId: string };
+    Body: {
+      metadata: ExtractedArticle;
+      includeFullText?: boolean;
+    };
+  }>(
+    "/projects/:projectId/files/:fileId/import-as-document",
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const userId = (req as any).user.sub;
+      const { projectId, fileId } = req.params;
+      const { metadata, includeFullText = true } = req.body;
+
+      const access = await checkProjectAccess(userId, projectId);
+      if (!access.hasAccess) {
+        return reply.forbidden("You don't have access to this project");
+      }
+      if (!access.canEdit) {
+        return reply.forbidden("You don't have edit permissions");
+      }
+
+      // Get file info with cached text
+      const file = await prisma.projectFile.findFirst({
+        where: { id: fileId, projectId },
+      }) as (ProjectFile & { extractedText?: string | null }) | null;
+
+      if (!file) {
+        return reply.notFound("File not found");
+      }
+
+      if (!metadata || !metadata.title) {
+        return reply.badRequest("Метаданные статьи обязательны (как минимум заголовок)");
+      }
+
+      try {
+        // Get full text from cache or re-extract if needed
+        let fullText = "";
+        
+        // Try to get from cache first
+        if (file.extractedText) {
+          fullText = file.extractedText;
+          app.log.info(`Using cached text for document import: ${file.name}`);
+        } else if (includeFullText) {
+          // Re-extract if cache is empty
+          app.log.info(`Extracting text for document import: ${file.name}`);
+          const { buffer } = await downloadFile(file.storagePath);
+          fullText = await extractTextFromFile(buffer, file.mimeType);
+          
+          // Cache the text for future use
+          await prisma.projectFile.update({
+            where: { id: fileId },
+            data: { extractedText: fullText },
+          }).catch(() => {
+            // Ignore if column doesn't exist yet
+          });
+        }
+
+        // Build document content
+        const authors = metadata.authors?.join(", ") || "";
+        const doiLink = metadata.doi ? `https://doi.org/${metadata.doi}` : "";
+        
+        // Create structured document content
+        const documentContent = {
+          type: "doc",
+          content: [
+            {
+              type: "heading",
+              attrs: { level: 1 },
+              content: [{ type: "text", text: metadata.title }],
+            },
+            ...(authors ? [{
+              type: "paragraph",
+              content: [
+                { type: "text", marks: [{ type: "bold" }], text: "Авторы: " },
+                { type: "text", text: authors },
+              ],
+            }] : []),
+            ...(metadata.doi ? [{
+              type: "paragraph",
+              content: [
+                { type: "text", marks: [{ type: "bold" }], text: "DOI: " },
+                { 
+                  type: "text", 
+                  marks: [{ type: "link", attrs: { href: doiLink, target: "_blank" } }], 
+                  text: metadata.doi 
+                },
+              ],
+            }] : []),
+            ...(metadata.abstract ? [
+              {
+                type: "heading",
+                attrs: { level: 2 },
+                content: [{ type: "text", text: "Аннотация" }],
+              },
+              {
+                type: "paragraph",
+                content: [{ type: "text", text: metadata.abstract }],
+              },
+            ] : []),
+            {
+              type: "heading",
+              attrs: { level: 2 },
+              content: [{ type: "text", text: "Содержание" }],
+            },
+            ...(includeFullText && fullText ? 
+              fullText.split(/\n\n+/).slice(0, 100).map(para => ({
+                type: "paragraph",
+                content: para.trim() ? [{ type: "text", text: para.trim() }] : [],
+              })) : 
+              [{
+                type: "paragraph",
+                content: [{ type: "text", text: "[Здесь будет основной текст статьи...]" }],
+              }]
+            ),
+          ],
+        };
+
+        // Create the document
+        const docResult = await pool.query(
+          `INSERT INTO documents (
+            project_id, name, content, created_by, created_at, updated_at, source_file_id
+          ) VALUES ($1, $2, $3, $4, $5, $5, $6)
+          RETURNING id, name`,
+          [
+            projectId,
+            metadata.title,
+            JSON.stringify(documentContent),
+            userId,
+            new Date(),
+            fileId,
+          ]
+        );
+
+        const documentId = docResult.rows[0].id;
+
+        // Link file to document
+        await prisma.projectFile.update({
+          where: { id: fileId },
+          data: {
+            usedInDocuments: {
+              push: documentId,
+            },
+          },
+        });
+
+        app.log.info(`Created document from file: ${documentId}`);
+
+        return {
+          ok: true,
+          documentId,
+          documentName: metadata.title,
+          message: `Документ "${metadata.title}" создан из файла`,
+        };
+      } catch (err: any) {
+        app.log.error({ err }, "Failed to import file as document");
+        return reply.internalServerError(err.message || "Ошибка создания документа");
       }
     }
   );

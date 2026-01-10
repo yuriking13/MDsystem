@@ -1379,16 +1379,20 @@ export type FileAnalysisResponse = {
   fileName: string;
   metadata: ExtractedArticleMetadata;
   textPreview: string;
+  fullText?: string;
+  cached?: boolean;
+  cachedAt?: string;
 };
 
 export async function apiAnalyzeFile(
   projectId: string,
-  fileId: string
+  fileId: string,
+  force: boolean = false
 ): Promise<FileAnalysisResponse> {
-  return apiFetch<FileAnalysisResponse>(
-    `/api/projects/${projectId}/files/${fileId}/analyze`,
-    { method: "POST" }
-  );
+  const url = force
+    ? `/api/projects/${projectId}/files/${fileId}/analyze?force=true`
+    : `/api/projects/${projectId}/files/${fileId}/analyze`;
+  return apiFetch<FileAnalysisResponse>(url, { method: "POST" });
 }
 
 export type ImportFileAsArticleResponse = {
@@ -1409,6 +1413,28 @@ export async function apiImportFileAsArticle(
     {
       method: "POST",
       body: JSON.stringify({ metadata, status }),
+    }
+  );
+}
+
+export type ImportFileAsDocumentResponse = {
+  ok: boolean;
+  documentId: string;
+  documentName: string;
+  message: string;
+};
+
+export async function apiImportFileAsDocument(
+  projectId: string,
+  fileId: string,
+  metadata: ExtractedArticleMetadata,
+  includeFullText: boolean = true
+): Promise<ImportFileAsDocumentResponse> {
+  return apiFetch<ImportFileAsDocumentResponse>(
+    `/api/projects/${projectId}/files/${fileId}/import-as-document`,
+    {
+      method: "POST",
+      body: JSON.stringify({ metadata, includeFullText }),
     }
   );
 }

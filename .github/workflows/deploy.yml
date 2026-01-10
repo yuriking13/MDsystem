@@ -49,6 +49,10 @@ jobs:
             echo "Applying project_files migration..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_project_files.sql 2>/dev/null || echo "project_files table may already exist"
 
+            # Apply file metadata cache columns
+            echo "Applying file metadata cache migration..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_file_extracted_metadata.sql 2>/dev/null || echo "file metadata columns may already exist"
+
             # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'

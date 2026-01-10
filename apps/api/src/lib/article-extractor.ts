@@ -66,29 +66,60 @@ export async function extractTextFromFile(
 }
 
 /**
+ * Prepare text for AI analysis - get start and end parts for metadata + bibliography
+ */
+function prepareTextForAnalysis(text: string): { headerText: string; refText: string; fullTextForDoi: string } {
+  // Get first 10000 chars for header, abstract, authors, DOI, etc.
+  const headerText = text.slice(0, 10000);
+  
+  // Get last 20000 chars for bibliography (references are usually at the end)
+  const refText = text.length > 20000 ? text.slice(-20000) : text;
+  
+  // Get first 3000 chars for DOI extraction (main article DOI is usually in the header)
+  const fullTextForDoi = text.slice(0, 3000);
+  
+  return { headerText, refText, fullTextForDoi };
+}
+
+/**
  * Use AI to extract article metadata from text
  */
 export async function extractArticleMetadataWithAI(
   text: string,
   openrouterKey: string
 ): Promise<ExtractedArticle> {
-  // Limit text to first ~15000 characters (enough for title, abstract, intro, and references)
-  const truncatedText = text.slice(0, 15000);
+  const { headerText, refText } = prepareTextForAnalysis(text);
+  
+  // Combine header and reference sections with a separator
+  const combinedText = `=== НАЧАЛО СТАТЬИ (первые страницы) ===
+${headerText}
+
+=== КОНЕЦ СТАТЬИ (последние страницы, включая библиографию) ===
+${refText}`;
   
   const systemPrompt = `Ты - эксперт по извлечению метаданных из научных статей. 
-Твоя задача - проанализировать текст научной статьи и извлечь следующую информацию:
+Тебе предоставлены две части текста:
+1. НАЧАЛО СТАТЬИ - содержит заголовок, авторов, абстракт, DOI статьи
+2. КОНЕЦ СТАТЬИ - содержит библиографию/список литературы
 
-1. **Заголовок статьи** (title)
-2. **Авторы** (authors) - список авторов
-3. **Год публикации** (year)
-4. **DOI** (если есть)
-5. **URL** (если есть ссылка на статью)
-6. **Название журнала** (journal)
-7. **Абстракт** (abstract) - резюме статьи
-8. **Том** (volume)
-9. **Выпуск** (issue)  
-10. **Страницы** (pages)
-11. **Библиография** (bibliography) - список ссылок из раздела "Литература" / "References"
+Твоя задача - извлечь:
+
+1. **Заголовок статьи** (title) - из НАЧАЛА
+2. **Авторы** (authors) - список авторов из НАЧАЛА
+3. **Год публикации** (year) - из НАЧАЛА
+4. **DOI статьи** (doi) - ТОЛЬКО DOI самой статьи из НАЧАЛА (НЕ из библиографии!)
+5. **URL** (если есть ссылка на статью) - из НАЧАЛА
+6. **Название журнала** (journal) - из НАЧАЛА
+7. **Абстракт** (abstract) - резюме статьи из НАЧАЛА
+8. **Том** (volume) - из НАЧАЛА
+9. **Выпуск** (issue) - из НАЧАЛА
+10. **Страницы** (pages) - из НАЧАЛА
+11. **Библиография** (bibliography) - список ссылок из раздела "Литература"/"References" из КОНЦА
+
+ВАЖНО про DOI:
+- DOI статьи обычно указан в шапке/заголовке, рядом с названием журнала
+- НЕ путай DOI статьи с DOI из библиографии!
+- DOI начинается с "10." (например: 10.1007/s40136-016-0120-6)
 
 Верни результат СТРОГО в формате JSON без дополнительного текста:
 {
@@ -114,12 +145,23 @@ export async function extractArticleMetadataWithAI(
   ]
 }
 
-Важно:
-- Если информация не найдена, используй null
-- DOI обычно начинается с "10." и находится в начале или конце статьи
-- Год обычно 4 цифры (например 2024)
-- Библиография часто в конце документа, начинается с "References", "Литература", "Список литературы"
-- Извлеки до 50 ссылок из библиографии`;
+ОЧЕНЬ ВАЖНО про библиографию:
+- Извлеки ВСЕ ссылки из раздела "Литература" / "References" / "Список литературы"
+- Для КАЖДОЙ ссылки ОБЯЗАТЕЛЬНО извлеки:
+  - text: полный текст ссылки как есть
+  - title: название статьи/книги (обычно после авторов, в кавычках или курсивом)
+  - authors: авторы (в начале ссылки, до года)
+  - year: год (4 цифры в скобках или после авторов)
+  - doi: если есть (начинается с 10.)
+  - journal: название журнала (после названия статьи)
+
+Примеры форматов ссылок:
+- Русский: "Иванов И.И., Петров П.П. Название статьи // Журнал. 2020. Т. 5. № 2. С. 10-15."
+- Английский: "Smith J., Jones M. Article title. Journal Name. 2020;5(2):10-15."
+- ГОСТ: "1. Иванов, И.И. Название работы / И.И. Иванов. – М.: Издательство, 2020. – 200 с."
+
+Если информация не найдена, используй null (НО title должен быть заполнен для каждой ссылки!)
+DOI статьи берём ТОЛЬКО из начала документа (шапка статьи)`;
 
   const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
 
@@ -134,10 +176,10 @@ export async function extractArticleMetadataWithAI(
       model: "anthropic/claude-sonnet-4",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Проанализируй следующий текст научной статьи и извлеки метаданные:\n\n${truncatedText}` },
+        { role: "user", content: `Проанализируй следующий текст научной статьи и извлеки метаданные:\n\n${combinedText}` },
       ],
       temperature: 0.1,
-      max_tokens: 4000,
+      max_tokens: 8000, // Increased for larger bibliography
     }),
   });
 
@@ -192,14 +234,39 @@ export async function extractArticleMetadataWithAI(
 
 /**
  * Try to find DOI in text using regex
+ * Prioritizes DOIs from the start of the document (header) over those from bibliography
  */
-export function extractDoiFromText(text: string): string | null {
+export function extractDoiFromText(text: string, preferHeader: boolean = true): string | null {
   // DOI pattern: 10.xxxx/xxxxx
-  const doiMatch = text.match(/\b(10\.\d{4,}(?:\.\d+)*\/\S+?)(?=[\s,\]\)>"']|$)/i);
-  if (doiMatch) {
-    // Clean up DOI (remove trailing punctuation)
-    let doi = doiMatch[1].replace(/[.,;]+$/, "");
+  const doiPattern = /\b(10\.\d{4,}(?:\.\d+)*\/\S+?)(?=[\s,\]\)>"']|$)/gi;
+  
+  if (preferHeader) {
+    // First try to find DOI in the first 3000 characters (header area)
+    const headerText = text.slice(0, 3000);
+    const headerMatch = headerText.match(doiPattern);
+    if (headerMatch && headerMatch.length > 0) {
+      const doi = headerMatch[0].replace(/[.,;]+$/, "");
+      return doi.toLowerCase();
+    }
+  }
+  
+  // Fallback to first DOI found anywhere
+  const allMatches = text.match(doiPattern);
+  if (allMatches && allMatches.length > 0) {
+    const doi = allMatches[0].replace(/[.,;]+$/, "");
     return doi.toLowerCase();
   }
+  
   return null;
+}
+
+/**
+ * Extract full text content for document creation
+ */
+export function extractFullContent(text: string): string {
+  // Clean up the text for document usage
+  return text
+    .replace(/\r\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
