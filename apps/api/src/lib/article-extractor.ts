@@ -47,6 +47,132 @@ export async function extractTextFromWord(buffer: Buffer): Promise<string> {
 }
 
 /**
+ * Extract HTML from Word file (preserves structure, tables, headings)
+ */
+export async function extractHtmlFromWord(buffer: Buffer): Promise<string> {
+  const result = await mammoth.convertToHtml({ buffer });
+  return result.value;
+}
+
+/**
+ * Convert HTML to TipTap JSON format
+ */
+export function htmlToTiptapContent(html: string): any[] {
+  const content: any[] = [];
+  
+  // Simple HTML parser - split by tags
+  // This is a basic implementation; for production, use a proper HTML parser
+  const tagRegex = /<(\/?)(h[1-6]|p|table|tr|td|th|strong|b|em|i|ul|ol|li|br)[^>]*>([\s\S]*?)(?=<(?:\/?\1|h[1-6]|p|table|tr|td|th|ul|ol|li|br))|<(\/?)(h[1-6]|p|table|tr|td|th|strong|b|em|i|ul|ol|li|br)[^>]*>/gi;
+  
+  // Split HTML into lines/blocks for simpler processing
+  const blocks = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '</p>\n')
+    .replace(/<\/h([1-6])>/gi, '</h$1>\n')
+    .replace(/<\/tr>/gi, '</tr>\n')
+    .replace(/<\/table>/gi, '</table>\n')
+    .split('\n')
+    .filter(line => line.trim());
+  
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+    
+    // Check for headings
+    const headingMatch = trimmed.match(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/i);
+    if (headingMatch) {
+      const level = parseInt(headingMatch[1]);
+      const text = headingMatch[2].replace(/<[^>]+>/g, '').trim();
+      if (text) {
+        content.push({
+          type: "heading",
+          attrs: { level },
+          content: [{ type: "text", text }],
+        });
+      }
+      continue;
+    }
+    
+    // Check for table
+    if (trimmed.includes('<table')) {
+      const tableContent = parseHtmlTable(trimmed);
+      if (tableContent) {
+        content.push(tableContent);
+      }
+      continue;
+    }
+    
+    // Check for paragraph
+    const pMatch = trimmed.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
+    if (pMatch) {
+      const text = pMatch[1].replace(/<[^>]+>/g, '').trim();
+      if (text) {
+        content.push({
+          type: "paragraph",
+          content: [{ type: "text", text }],
+        });
+      }
+      continue;
+    }
+    
+    // Plain text
+    const text = trimmed.replace(/<[^>]+>/g, '').trim();
+    if (text) {
+      content.push({
+        type: "paragraph",
+        content: [{ type: "text", text }],
+      });
+    }
+  }
+  
+  return content;
+}
+
+/**
+ * Parse HTML table to TipTap table format
+ */
+function parseHtmlTable(html: string): any | null {
+  const rows: any[] = [];
+  
+  // Extract all rows
+  const rowMatches = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi);
+  if (!rowMatches) return null;
+  
+  for (const rowHtml of rowMatches) {
+    const cells: any[] = [];
+    
+    // Extract cells (th or td)
+    const cellMatches = rowHtml.match(/<(th|td)[^>]*>([\s\S]*?)<\/\1>/gi);
+    if (cellMatches) {
+      for (const cellHtml of cellMatches) {
+        const isHeader = cellHtml.toLowerCase().startsWith('<th');
+        const textMatch = cellHtml.match(/<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/i);
+        const text = textMatch ? textMatch[1].replace(/<[^>]+>/g, '').trim() : '';
+        
+        cells.push({
+          type: isHeader ? "tableHeader" : "tableCell",
+          content: text ? [{ type: "paragraph", content: [{ type: "text", text }] }] : [{ type: "paragraph", content: [] }],
+        });
+      }
+    }
+    
+    if (cells.length > 0) {
+      rows.push({
+        type: "tableRow",
+        content: cells,
+      });
+    }
+  }
+  
+  if (rows.length === 0) return null;
+  
+  return {
+    type: "table",
+    content: rows,
+  };
+}
+
+/**
  * Extract text from file based on mime type
  */
 export async function extractTextFromFile(
