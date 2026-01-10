@@ -656,24 +656,24 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       // Check for cached metadata (if not forcing re-analysis)
-      const fileWithCache = file as typeof file & { 
-        extractedMetadata?: ExtractedArticle | null;
-        extractedText?: string | null;
-        extractionDate?: Date | null;
-      };
+      // Use type assertion to access potentially missing fields
+      const fileAny = file as any;
+      const cachedMetadata = fileAny.extractedMetadata as ExtractedArticle | null | undefined;
+      const cachedText = fileAny.extractedText as string | null | undefined;
+      const cachedAt = fileAny.extractionDate as Date | null | undefined;
       
-      if (!forceReanalyze && fileWithCache.extractedMetadata && fileWithCache.extractedText) {
+      if (!forceReanalyze && cachedMetadata && cachedText) {
         app.log.info(`Using cached metadata for file: ${file.name}`);
         return {
           ok: true,
           fileId,
           fileName: file.name,
-          metadata: fileWithCache.extractedMetadata as ExtractedArticle,
-          textPreview: fileWithCache.extractedText.slice(0, 500) + 
-            (fileWithCache.extractedText.length > 500 ? "..." : ""),
-          fullText: fileWithCache.extractedText,
+          metadata: cachedMetadata,
+          textPreview: cachedText.slice(0, 500) + 
+            (cachedText.length > 500 ? "..." : ""),
+          fullText: cachedText,
           cached: true,
-          cachedAt: fileWithCache.extractionDate,
+          cachedAt: cachedAt,
         };
       }
 
@@ -709,16 +709,20 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           metadata.doi = regexDoi;
         }
 
-        // Cache the extracted metadata and text
-        await prisma.projectFile.update({
-          where: { id: fileId },
-          data: {
-            extractedMetadata: metadata as any,
-            extractedText: text,
-            extractionDate: new Date(),
-          },
-        });
-        app.log.info(`Cached metadata for file: ${file.name}`);
+        // Cache the extracted metadata and text (gracefully handle if columns don't exist)
+        try {
+          await prisma.projectFile.update({
+            where: { id: fileId },
+            data: {
+              extractedMetadata: metadata as any,
+              extractedText: text,
+              extractionDate: new Date(),
+            },
+          });
+          app.log.info(`Cached metadata for file: ${file.name}`);
+        } catch (cacheErr) {
+          app.log.warn({ err: cacheErr }, `Failed to cache metadata (columns may not exist yet): ${file.name}`);
+        }
 
         return {
           ok: true,
@@ -905,11 +909,25 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
 
       try {
         // Get full text from cache or re-extract if needed
-        let fullText = file.extractedText || "";
+        let fullText = "";
         
-        if (!fullText && includeFullText) {
+        // Try to get from cache first
+        if (file.extractedText) {
+          fullText = file.extractedText;
+          app.log.info(`Using cached text for document import: ${file.name}`);
+        } else if (includeFullText) {
+          // Re-extract if cache is empty
+          app.log.info(`Extracting text for document import: ${file.name}`);
           const { buffer } = await downloadFile(file.storagePath);
           fullText = await extractTextFromFile(buffer, file.mimeType);
+          
+          // Cache the text for future use
+          await prisma.projectFile.update({
+            where: { id: fileId },
+            data: { extractedText: fullText },
+          }).catch(() => {
+            // Ignore if column doesn't exist yet
+          });
         }
 
         // Build document content
