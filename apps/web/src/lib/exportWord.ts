@@ -204,6 +204,29 @@ function dataUrlToBuffer(dataUrl: string): { buffer: Buffer | Uint8Array; type: 
   }
 }
 
+// Вычисление статистики для boxplot
+function calculateBoxplotStats(values: number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const n = sorted.length;
+  
+  const min = sorted[0];
+  const max = sorted[n - 1];
+  const median = n % 2 === 0 
+    ? (sorted[n/2 - 1] + sorted[n/2]) / 2 
+    : sorted[Math.floor(n/2)];
+  
+  const q1Index = Math.floor(n / 4);
+  const q3Index = Math.floor(3 * n / 4);
+  const q1 = sorted[q1Index];
+  const q3 = sorted[q3Index];
+  const iqr = q3 - q1;
+  
+  const lowerWhisker = Math.max(min, q1 - 1.5 * iqr);
+  const upperWhisker = Math.min(max, q3 + 1.5 * iqr);
+  
+  return { min: lowerWhisker, q1, median, q3, max: upperWhisker };
+}
+
 /**
  * Рендерить график используя Chart.js в офф-скрин canvas
  */
@@ -224,6 +247,16 @@ async function renderChartFromData(
     // Динамически импортируем Chart.js
     const { Chart, registerables } = await import('chart.js');
     Chart.register(...registerables);
+    
+    // Для boxplot пытаемся загрузить плагин
+    if (config.type === 'boxplot') {
+      try {
+        const boxplotPlugin = await import('@sgratzl/chartjs-chart-boxplot');
+        Chart.register(boxplotPlugin.BoxPlotController, boxplotPlugin.BoxAndWiskers);
+      } catch (e) {
+        console.warn('[renderChartFromData] Boxplot plugin not available, using fallback');
+      }
+    }
     
     // Создаём офф-скрин canvas
     const canvas = document.createElement('canvas');
@@ -268,64 +301,105 @@ async function renderChartFromData(
     const labelColumn = config.labelColumn ?? 0;
     const dataColumns = config.dataColumns || [1];
     
-    const labels = rows.map((row: string[]) => row[labelColumn] || '');
-    const datasets = dataColumns.map((colIdx: number, i: number) => {
-      const data = rows.map((row: string[]) => {
-        const val = String(row[colIdx] || '').replace(/[,\s]/g, '');
-        return parseFloat(val) || 0;
+    let chartData: any;
+    let chartConfig: any;
+    
+    // Специальная обработка для boxplot
+    if (chartType === 'boxplot') {
+      const validDataColumns = dataColumns.filter((colIdx: number) => colIdx >= 0 && colIdx < headers.length);
+      
+      // Собираем данные для boxplot
+      const datasets = validDataColumns.map((colIdx: number, i: number) => {
+        const values = rows
+          .map((row: string[]) => {
+            const val = String(row[colIdx] || '').replace(/[,\s]/g, '');
+            return parseFloat(val);
+          })
+          .filter((v: number) => !isNaN(v));
+        
+        return {
+          label: headers[colIdx] || `Данные ${i + 1}`,
+          data: [values], // boxplot expects array of arrays
+          backgroundColor: colors[i % colors.length],
+          borderColor: 'rgba(255, 255, 255, 0.5)',
+          borderWidth: 1,
+        };
       });
       
-      return {
-        label: headers[colIdx] || `Данные ${i + 1}`,
-        data,
-        backgroundColor: chartType === 'pie' || chartType === 'doughnut' 
-          ? colors.slice(0, data.length)
-          : colors[i % colors.length],
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderWidth: 1,
+      chartData = {
+        labels: validDataColumns.map((i: number) => headers[i] || `Колонка ${i + 1}`),
+        datasets,
       };
-    });
-    
-    const chartData = { labels, datasets };
-    
-    // Нормализуем тип графика для Chart.js
-    if (chartType === 'histogram' || chartType === 'stacked') chartType = 'bar';
-    if (chartType === 'boxplot' || chartType === 'scatter') chartType = 'scatter';
-    
-    // Конфигурация Chart.js
-    const chartConfig: any = {
-      type: chartType,
-      data: chartData,
-      options: {
-        responsive: false,
-        maintainAspectRatio: false,
-        animation: false,
-        plugins: {
-          legend: {
-            display: true,
-            position: 'top',
-            labels: { color: '#1e293b' }
+      
+      chartConfig = {
+        type: 'boxplot',
+        data: chartData,
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          indexAxis: 'y', // horizontal boxplot
+          plugins: {
+            legend: { display: true, position: 'top', labels: { color: '#1e293b' } },
+            title: { display: !!config.title, text: config.title || '', color: '#1e293b', font: { size: 14 } }
           },
-          title: {
-            display: !!config.title,
-            text: config.title || '',
-            color: '#1e293b',
-            font: { size: 14 }
+          scales: {
+            x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
+            y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
           }
-        },
-        scales: chartType !== 'pie' && chartType !== 'doughnut' ? {
-          x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
-          y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
-        } : undefined
-      }
-    };
-    
-    // Для stacked bar chart
-    if (config.type === 'stacked') {
-      chartConfig.options.scales = {
-        x: { stacked: true, ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
-        y: { stacked: true, ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
+        }
       };
+    } else {
+      // Стандартная обработка для других типов
+      const labels = rows.map((row: string[]) => row[labelColumn] || '');
+      const datasets = dataColumns.map((colIdx: number, i: number) => {
+        const data = rows.map((row: string[]) => {
+          const val = String(row[colIdx] || '').replace(/[,\s]/g, '');
+          return parseFloat(val) || 0;
+        });
+        
+        return {
+          label: headers[colIdx] || `Данные ${i + 1}`,
+          data,
+          backgroundColor: chartType === 'pie' || chartType === 'doughnut' 
+            ? colors.slice(0, data.length)
+            : colors[i % colors.length],
+          borderColor: 'rgba(255, 255, 255, 0.2)',
+          borderWidth: 1,
+        };
+      });
+      
+      chartData = { labels, datasets };
+      
+      // Нормализуем тип графика для Chart.js
+      if (chartType === 'histogram' || chartType === 'stacked') chartType = 'bar';
+      if (chartType === 'scatter') chartType = 'scatter';
+      
+      chartConfig = {
+        type: chartType,
+        data: chartData,
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: { display: true, position: 'top', labels: { color: '#1e293b' } },
+            title: { display: !!config.title, text: config.title || '', color: '#1e293b', font: { size: 14 } }
+          },
+          scales: chartType !== 'pie' && chartType !== 'doughnut' ? {
+            x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
+            y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
+          } : undefined
+        }
+      };
+      
+      // Для stacked bar chart
+      if (config.type === 'stacked') {
+        chartConfig.options.scales = {
+          x: { stacked: true, ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
+          y: { stacked: true, ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
+        };
+      }
     }
     
     // Рендерим график

@@ -2141,7 +2141,8 @@ export default function ProjectDetailPage() {
                           <ChartFromTable 
                             tableData={tableData} 
                             config={stat.config as any} 
-                            height={180} 
+                            height={180}
+                            theme="dark"
                           />
                         )}
                         

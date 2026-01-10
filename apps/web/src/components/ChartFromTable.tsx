@@ -264,6 +264,9 @@ type Props = {
   config: ChartConfig;
   width?: number;
   height?: number;
+  // Тема для отображения: 'light' (черный текст) или 'dark' (белый текст)
+  // По умолчанию 'light' для документов, в Статистике используется 'dark'
+  theme?: 'light' | 'dark';
 };
 
 const DEFAULT_COLORS = [
@@ -363,7 +366,7 @@ function calculateBoxplotStats(values: number[]) {
   return { min: lowerWhisker, q1, median, q3, max: upperWhisker, outliers };
 }
 
-export default function ChartFromTable({ tableData, config, width, height }: Props) {
+export default function ChartFromTable({ tableData, config, width, height, theme = 'light' }: Props) {
   // Проверка наличия данных
   if (!tableData || !tableData.headers || !tableData.rows) {
     return (
@@ -390,9 +393,14 @@ export default function ChartFromTable({ tableData, config, width, height }: Pro
     bins = 10,
     xAxisLabel,
     yAxisLabel,
-    textColor = '#000000', // По умолчанию черный
-    axisColor = '#000000', // По умолчанию черный
+    textColor: configTextColor,
+    axisColor: configAxisColor,
   } = config;
+  
+  // Определяем цвета в зависимости от темы
+  // Для 'dark' темы (Статистика) используем белый текст, для 'light' (документы) - черный
+  const textColor = theme === 'dark' ? '#ffffff' : (configTextColor || '#000000');
+  const axisColor = theme === 'dark' ? '#e2e8f0' : (configAxisColor || '#000000');
   
   // Проверка валидности индексов колонок
   if (!dataColumns || dataColumns.length === 0) {
@@ -1146,7 +1154,7 @@ export function ChartCreatorModal({ tableHtml, onClose, onInsert }: ChartModalPr
           <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 16 }}>
             <div className="muted" style={{ marginBottom: 8, fontSize: 12 }}>Предпросмотр:</div>
             {(chartType === 'scatter' || chartType === 'histogram' || dataColumns.length > 0) ? (
-              <ChartFromTable tableData={tableData} config={config} height={280} />
+              <ChartFromTable tableData={tableData} config={config} height={280} theme="dark" />
             ) : (
               <div className="muted" style={{ textAlign: 'center', padding: 40 }}>
                 Выберите хотя бы одну колонку данных
