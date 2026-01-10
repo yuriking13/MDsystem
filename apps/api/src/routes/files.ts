@@ -1007,16 +1007,15 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         // Create the document
         const docResult = await pool.query(
           `INSERT INTO documents (
-            project_id, name, content, created_by, created_at, updated_at, source_file_id
-          ) VALUES ($1, $2, $3, $4, $5, $5, $6)
-          RETURNING id, name`,
+            project_id, title, content, created_by, created_at, updated_at
+          ) VALUES ($1, $2, $3, $4, $5, $5)
+          RETURNING id, title`,
           [
             projectId,
             metadata.title,
             JSON.stringify(documentContent),
             userId,
             new Date(),
-            fileId,
           ]
         );
 
