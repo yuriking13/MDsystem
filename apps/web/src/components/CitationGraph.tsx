@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiCancelFetchReferences, apiImportFromGraph, apiGetArticleByPmid, apiTranslateText, apiGraphAIAssistant, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts, type ClusterInfo, type SearchSuggestion, type FoundArticle, type GraphArticleForAI, type GraphFiltersForAI } from "../lib/api";
+import { IconInfoCircle, IconLinkChain } from "./FlowbiteIcons";
 
 type Props = {
   projectId: string;
@@ -379,9 +380,9 @@ export default function CitationGraph({ projectId }: Props) {
           processedArticles: 0,
           message: res.message,
         });
-        // Показываем сообщение о статьях без PMID если есть
+        // Показываем сообщение о статьях без PMID если есть (теперь они обрабатываются через Crossref)
         if (res.articlesWithoutPmid && res.articlesWithoutPmid > 0) {
-          setRefsMessage(`ℹ️ ${res.articlesWithoutPmid} статей без PMID — связи будут загружены из Crossref по DOI.`);
+          setRefsMessage(`crossref:${res.articlesWithoutPmid}`);
         }
         startStatusPolling();
       } else {
@@ -1262,8 +1263,20 @@ export default function CitationGraph({ projectId }: Props) {
       )}
 
       {refsMessage && (
-        <div className="ok" style={{ margin: '8px 20px', padding: 12, fontSize: 13 }}>
-          {refsMessage}
+        <div className="info" style={{ margin: '8px 20px', padding: 12, fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(59, 130, 246, 0.15)', borderRadius: 8, border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+          {refsMessage.startsWith('crossref:') ? (
+            <>
+              <IconLinkChain size="sm" className="text-blue-400" />
+              <span>
+                <strong>{refsMessage.replace('crossref:', '')}</strong> статей без PMID — связи загружаются из Crossref по DOI
+              </span>
+            </>
+          ) : (
+            <>
+              <IconInfoCircle size="sm" className="text-blue-400" />
+              <span>{refsMessage}</span>
+            </>
+          )}
         </div>
       )}
 

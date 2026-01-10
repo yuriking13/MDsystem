@@ -119,7 +119,8 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
     const apiKey = await getUserApiKey(userId, 'pubmed');
     
     // Получаем статьи проекта с PMID (с учётом фильтров)
-    let sql = `SELECT a.id, a.pmid, a.reference_pmids, a.cited_by_pmids
+    // ВАЖНО: пропускаем статьи с уже загруженными references (references_fetched_at IS NOT NULL)
+    let sql = `SELECT a.id, a.pmid, a.reference_pmids, a.cited_by_pmids, a.references_fetched_at
        FROM articles a
        JOIN project_articles pa ON pa.article_id = a.id
        WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`;
@@ -139,28 +140,41 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
     
     const articlesRes = await pool.query(sql, params);
     
-    const articles = articlesRes.rows;
-    const totalArticles = articles.length;
+    // Разделяем статьи: с уже загруженными references и без
+    const allArticles = articlesRes.rows;
+    const articlesNeedingRefs = allArticles.filter((a: any) => !a.references_fetched_at);
+    const articlesWithRefs = allArticles.filter((a: any) => a.references_fetched_at);
+    
+    console.log(`[GraphFetch] Total articles: ${allArticles.length}, need refs: ${articlesNeedingRefs.length}, already have refs: ${articlesWithRefs.length}`);
+    
+    const totalArticles = allArticles.length;
+    const articlesToProcess = articlesNeedingRefs.length;
     
     await pool.query(
       `UPDATE graph_fetch_jobs SET total_articles = $1 WHERE id = $2`,
-      [totalArticles, jobId]
+      [articlesToProcess, jobId]
     );
     
-    if (totalArticles === 0) {
+    // Если все статьи уже обработаны - завершаем
+    if (articlesToProcess === 0) {
+      console.log(`[GraphFetch] All ${totalArticles} articles already have references, skipping fetch`);
       await pool.query(
-        `UPDATE graph_fetch_jobs SET status = 'completed', completed_at = now() WHERE id = $1`,
+        `UPDATE graph_fetch_jobs SET status = 'completed', completed_at = now(), 
+         error_message = 'Все статьи уже обработаны (${articlesWithRefs.length} шт.)' 
+         WHERE id = $1`,
         [jobId]
       );
       return;
     }
     
-    // Фаза 1: Загружаем references и cited_by для статей проекта
-    const pmids = articles.map((a: { pmid: string | null }) => a.pmid).filter(Boolean) as string[];
+    // Фаза 1: Загружаем references и cited_by только для статей БЕЗ references
+    const pmids = articlesNeedingRefs.map((a: { pmid: string | null }) => a.pmid).filter(Boolean) as string[];
     const idByPmid = new Map<string, string>();
-    for (const row of articles) {
+    for (const row of articlesNeedingRefs) {
       idByPmid.set(row.pmid, row.id);
     }
+    
+    console.log(`[GraphFetch] Processing ${pmids.length} articles (${articlesWithRefs.length} already cached)`)
     
     // Обновляем прогресс перед началом фазы 1
     await updateProgress(jobId, { 
@@ -313,21 +327,21 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
           
           fetchedFromPubmed += fetched.length;
           
-          // Сохраняем в кэш
+          // Сохраняем в глобальный кэш (без привязки к проекту)
           for (const article of fetched) {
             const firstAuthor = (article.authors || '').split(',')[0]?.trim() || 'Unknown';
             
             await pool.query(
-              `INSERT INTO graph_cache (pmid, title, authors, year, doi, project_id, fetched_at, expires_at)
-               VALUES ($1, $2, $3, $4, $5, $6, now(), now() + interval '30 days')
+              `INSERT INTO graph_cache (pmid, title, authors, year, doi, fetched_at, expires_at)
+               VALUES ($1, $2, $3, $4, $5, now(), now() + interval '30 days')
                ON CONFLICT (pmid) DO UPDATE SET
-                 title = EXCLUDED.title,
-                 authors = EXCLUDED.authors,
-                 year = EXCLUDED.year,
-                 doi = EXCLUDED.doi,
+                 title = COALESCE(EXCLUDED.title, graph_cache.title),
+                 authors = COALESCE(EXCLUDED.authors, graph_cache.authors),
+                 year = COALESCE(EXCLUDED.year, graph_cache.year),
+                 doi = COALESCE(EXCLUDED.doi, graph_cache.doi),
                  fetched_at = now(),
                  expires_at = now() + interval '30 days'`,
-              [article.pmid, article.title, firstAuthor, article.year, article.doi, projectId]
+              [article.pmid, article.title, firstAuthor, article.year, article.doi]
             );
           }
         } catch (err) {

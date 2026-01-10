@@ -385,3 +385,21 @@ export function IconUpload({ className, size = 'md' }: IconProps) {
     </svg>
   );
 }
+
+// Info circle icon
+export function IconInfoCircle({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+    </svg>
+  );
+}
+
+// Crossref/Link chain icon
+export function IconLinkChain({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+    </svg>
+  );
+}

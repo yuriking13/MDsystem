@@ -2104,24 +2104,49 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
         
         // Добавляем узлы для PMIDs которых нет в БД (показываем как "неизвестные")
-        // Для таких узлов нужно подгрузить данные при клике (см. NodeInfoPanel)
+        // Сначала пробуем получить данные из глобального graph_cache
+        const level2NotInDbArr = Array.from(level2NotInDb);
+        const graphCacheRes = level2NotInDbArr.length > 0 
+          ? await pool.query(
+              `SELECT pmid, title, authors, year, doi FROM graph_cache 
+               WHERE pmid = ANY($1) AND (expires_at IS NULL OR expires_at > now())`,
+              [level2NotInDbArr]
+            )
+          : { rows: [] };
+        
+        const graphCacheByPmid = new Map<string, any>();
+        for (const row of graphCacheRes.rows) {
+          graphCacheByPmid.set(row.pmid, row);
+        }
+        
+        console.log(`[CitationGraph] Level 2 placeholders: ${level2NotInDbArr.length}, found in graph_cache: ${graphCacheByPmid.size}`);
+        
         for (const pmid of level2NotInDb) {
           if (!canAddMore()) break; // Проверяем лимит
           const nodeId = `pmid:${pmid}`; // Используем специальный ID
           if (addedNodeIds.has(nodeId)) continue;
           
+          // Пробуем получить данные из graph_cache
+          const cached = graphCacheByPmid.get(pmid);
+          const title = cached?.title || null;
+          const authors = cached?.authors || null;
+          const year = cached?.year || null;
+          const doi = cached?.doi || null;
+          const firstAuthor = authors?.split(' ')[0] || 'Unknown';
+          const label = (title || authors) ? `${firstAuthor} (${year || '?'})` : `PMID:${pmid}`;
+          
           nodes.push({
             id: nodeId,
-            label: `PMID:${pmid}`,
-            title: null,
+            label,
+            title,
             title_ru: null,
             abstract: null,
             abstract_ru: null,
-            authors: null,
+            authors,
             journal: null,
-            year: null,
+            year,
             status: 'reference',
-            doi: null,
+            doi,
             pmid: pmid,
             citedByCount: 0,
             graphLevel: 2,
@@ -2343,24 +2368,49 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
         
         // Добавляем узлы для PMIDs которых нет в БД (показываем как "неизвестные")
-        // Данные будут подгружены при клике через NodeInfoPanel
+        // Сначала пробуем получить данные из глобального graph_cache
+        const level0NotInDbArr = Array.from(level0NotInDb);
+        const graphCacheL0Res = level0NotInDbArr.length > 0 
+          ? await pool.query(
+              `SELECT pmid, title, authors, year, doi FROM graph_cache 
+               WHERE pmid = ANY($1) AND (expires_at IS NULL OR expires_at > now())`,
+              [level0NotInDbArr]
+            )
+          : { rows: [] };
+        
+        const graphCacheL0ByPmid = new Map<string, any>();
+        for (const row of graphCacheL0Res.rows) {
+          graphCacheL0ByPmid.set(row.pmid, row);
+        }
+        
+        console.log(`[CitationGraph] Level 0 placeholders: ${level0NotInDbArr.length}, found in graph_cache: ${graphCacheL0ByPmid.size}`);
+        
         for (const pmid of level0NotInDb) {
           if (!canAddMore()) break; // Проверяем лимит
           const nodeId = `pmid:${pmid}`; // Используем специальный ID
           if (addedNodeIds.has(nodeId)) continue;
           
+          // Пробуем получить данные из graph_cache
+          const cached = graphCacheL0ByPmid.get(pmid);
+          const title = cached?.title || null;
+          const authors = cached?.authors || null;
+          const year = cached?.year || null;
+          const doi = cached?.doi || null;
+          const firstAuthor = authors?.split(' ')[0] || 'Unknown';
+          const label = (title || authors) ? `${firstAuthor} (${year || '?'})` : `PMID:${pmid}`;
+          
           nodes.push({
             id: nodeId,
-            label: `PMID:${pmid}`,
-            title: null,
+            label,
+            title,
             title_ru: null,
             abstract: null,
             abstract_ru: null,
-            authors: null,
+            authors,
             journal: null,
-            year: null,
+            year,
             status: 'citing',
-            doi: null,
+            doi,
             pmid: pmid,
             citedByCount: 0,
             graphLevel: 0,
@@ -2484,24 +2534,49 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
           
           // Добавляем узлы для PMIDs которых нет в БД
-          // Данные будут подгружены при клике через NodeInfoPanel
+          // Сначала пробуем получить данные из глобального graph_cache
+          const level3NotInDbArr = Array.from(level3NotInDb);
+          const graphCacheL3Res = level3NotInDbArr.length > 0 
+            ? await pool.query(
+                `SELECT pmid, title, authors, year, doi FROM graph_cache 
+                 WHERE pmid = ANY($1) AND (expires_at IS NULL OR expires_at > now())`,
+                [level3NotInDbArr]
+              )
+            : { rows: [] };
+          
+          const graphCacheL3ByPmid = new Map<string, any>();
+          for (const row of graphCacheL3Res.rows) {
+            graphCacheL3ByPmid.set(row.pmid, row);
+          }
+          
+          console.log(`[CitationGraph] Level 3 placeholders: ${level3NotInDbArr.length}, found in graph_cache: ${graphCacheL3ByPmid.size}`);
+          
           for (const pmid of level3NotInDb) {
             if (!canAddMore()) break; // Проверяем лимит
             const nodeId = `pmid:${pmid}`;
             if (addedNodeIds.has(nodeId)) continue;
             
+            // Пробуем получить данные из graph_cache
+            const cached = graphCacheL3ByPmid.get(pmid);
+            const title = cached?.title || null;
+            const authors = cached?.authors || null;
+            const year = cached?.year || null;
+            const doi = cached?.doi || null;
+            const firstAuthor = authors?.split(' ')[0] || 'Unknown';
+            const label = (title || authors) ? `${firstAuthor} (${year || '?'})` : `PMID:${pmid}`;
+            
             nodes.push({
               id: nodeId,
-              label: `PMID:${pmid}`,
-              title: null,
+              label,
+              title,
               title_ru: null,
               abstract: null,
               abstract_ru: null,
-              authors: null,
+              authors,
               journal: null,
-              year: null,
+              year,
               status: 'related',
-              doi: null,
+              doi,
               pmid: pmid,
               citedByCount: 0,
               graphLevel: 3,
