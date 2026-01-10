@@ -224,6 +224,10 @@ export type Article = {
   notes: string | null;
   tags: string[] | null;
   added_at: string;
+  // Import from file support
+  source_file_id?: string | null;
+  is_from_file?: boolean;
+  extracted_bibliography?: ExtractedReference[] | null;
 };
 
 export type ArticlesResponse = {
@@ -1340,6 +1344,98 @@ export async function apiSyncFileUsage(
     {
       method: "POST",
       body: JSON.stringify({ documentId, fileIds }),
+    }
+  );
+}
+
+// ========== File Article Import ==========
+
+export type ExtractedReference = {
+  text: string;
+  title: string | null;
+  authors: string | null;
+  year: number | null;
+  doi: string | null;
+  journal: string | null;
+};
+
+export type ExtractedArticleMetadata = {
+  title: string | null;
+  authors: string[] | null;
+  year: number | null;
+  doi: string | null;
+  url: string | null;
+  journal: string | null;
+  abstract: string | null;
+  volume: string | null;
+  issue: string | null;
+  pages: string | null;
+  bibliography: ExtractedReference[] | null;
+};
+
+export type FileAnalysisResponse = {
+  ok: boolean;
+  fileId: string;
+  fileName: string;
+  metadata: ExtractedArticleMetadata;
+  textPreview: string;
+};
+
+export async function apiAnalyzeFile(
+  projectId: string,
+  fileId: string
+): Promise<FileAnalysisResponse> {
+  return apiFetch<FileAnalysisResponse>(
+    `/api/projects/${projectId}/files/${fileId}/analyze`,
+    { method: "POST" }
+  );
+}
+
+export type ImportFileAsArticleResponse = {
+  ok: boolean;
+  articleId: string;
+  message: string;
+  isExisting: boolean;
+};
+
+export async function apiImportFileAsArticle(
+  projectId: string,
+  fileId: string,
+  metadata: ExtractedArticleMetadata,
+  status: "selected" | "candidate" = "selected"
+): Promise<ImportFileAsArticleResponse> {
+  return apiFetch<ImportFileAsArticleResponse>(
+    `/api/projects/${projectId}/files/${fileId}/import-as-article`,
+    {
+      method: "POST",
+      body: JSON.stringify({ metadata, status }),
+    }
+  );
+}
+
+// ========== Convert Article to Document ==========
+
+export type ConvertArticleToDocumentResponse = {
+  ok: boolean;
+  documentId: string;
+  documentTitle: string;
+  bibliographyAdded: number;
+  message: string;
+};
+
+export async function apiConvertArticleToDocument(
+  projectId: string,
+  articleId: string,
+  options: {
+    includeBibliography?: boolean;
+    documentTitle?: string;
+  } = {}
+): Promise<ConvertArticleToDocumentResponse> {
+  return apiFetch<ConvertArticleToDocumentResponse>(
+    `/api/projects/${projectId}/articles/${articleId}/convert-to-document`,
+    {
+      method: "POST",
+      body: JSON.stringify(options),
     }
   );
 }

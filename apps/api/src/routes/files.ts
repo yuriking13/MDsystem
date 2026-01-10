@@ -4,6 +4,7 @@
 
 import { FastifyPluginAsync } from "fastify";
 import { prisma } from "../db.js";
+import { pool } from "../pg.js";
 import type { ProjectFile, User } from "@prisma/client";
 import {
   isStorageConfigured,
@@ -23,9 +24,16 @@ import {
   cacheSet,
   invalidateFiles,
   invalidateFile,
+  invalidateArticles,
   CACHE_KEYS,
   TTL,
 } from "../lib/redis.js";
+import {
+  extractTextFromFile,
+  extractArticleMetadataWithAI,
+  extractDoiFromText,
+  type ExtractedArticle,
+} from "../lib/article-extractor.js";
 
 const filesRoutes: FastifyPluginAsync = async (app) => {
   // Check if user has access to project
@@ -589,6 +597,234 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       return { ok: true, synced: fileIds.length };
+    }
+  );
+
+  // ============================================================
+  // Article Import from Files
+  // ============================================================
+
+  // Helper to get user's OpenRouter API key
+  async function getUserApiKey(userId: string, provider: string): Promise<string | null> {
+    const res = await pool.query(
+      `SELECT encrypted_key FROM user_api_keys WHERE user_id = $1 AND provider = $2`,
+      [userId, provider]
+    );
+    if (res.rowCount === 0) return null;
+    
+    try {
+      const { decryptApiKey } = await import("../utils/apiKeyCrypto.js");
+      return decryptApiKey(res.rows[0].encrypted_key);
+    } catch {
+      return null;
+    }
+  }
+
+  // POST /api/projects/:projectId/files/:fileId/analyze - Analyze file and extract article metadata
+  app.post<{
+    Params: { projectId: string; fileId: string };
+  }>(
+    "/projects/:projectId/files/:fileId/analyze",
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const userId = (req as any).user.sub;
+      const { projectId, fileId } = req.params;
+
+      if (!isStorageConfigured()) {
+        return reply.serviceUnavailable("File storage is not configured");
+      }
+
+      const access = await checkProjectAccess(userId, projectId);
+      if (!access.hasAccess) {
+        return reply.forbidden("You don't have access to this project");
+      }
+
+      // Get OpenRouter API key
+      const openrouterKey = await getUserApiKey(userId, "openrouter");
+      if (!openrouterKey) {
+        return reply.badRequest("OpenRouter API ключ не настроен. Добавьте его в настройках.");
+      }
+
+      // Get file info
+      const file = await prisma.projectFile.findFirst({
+        where: { id: fileId, projectId },
+      });
+
+      if (!file) {
+        return reply.notFound("File not found");
+      }
+
+      // Check if it's a document file (PDF or Word)
+      if (file.category !== "document") {
+        return reply.badRequest("Только PDF и Word документы могут быть проанализированы");
+      }
+
+      try {
+        // Download file from S3
+        const { buffer } = await downloadFile(file.storagePath);
+
+        // Extract text from file
+        app.log.info(`Extracting text from file: ${file.name} (${file.mimeType})`);
+        const text = await extractTextFromFile(buffer, file.mimeType);
+
+        if (!text || text.trim().length < 100) {
+          return reply.badRequest("Не удалось извлечь текст из файла или файл пустой");
+        }
+
+        // Try to extract DOI with regex first
+        const regexDoi = extractDoiFromText(text);
+
+        // Use AI to extract metadata
+        app.log.info(`Analyzing file with AI: ${file.name}`);
+        const metadata = await extractArticleMetadataWithAI(text, openrouterKey);
+
+        // Use regex DOI if AI didn't find one
+        if (!metadata.doi && regexDoi) {
+          metadata.doi = regexDoi;
+        }
+
+        return {
+          ok: true,
+          fileId,
+          fileName: file.name,
+          metadata,
+          textPreview: text.slice(0, 500) + (text.length > 500 ? "..." : ""),
+        };
+      } catch (err: any) {
+        app.log.error({ err }, `Failed to analyze file: ${file.name}`);
+        return reply.internalServerError(err.message || "Ошибка анализа файла");
+      }
+    }
+  );
+
+  // POST /api/projects/:projectId/files/:fileId/import-as-article - Import file as article
+  app.post<{
+    Params: { projectId: string; fileId: string };
+    Body: {
+      metadata: ExtractedArticle;
+      status?: "selected" | "candidate";
+    };
+  }>(
+    "/projects/:projectId/files/:fileId/import-as-article",
+    { preHandler: [app.authenticate] },
+    async (req, reply) => {
+      const userId = (req as any).user.sub;
+      const { projectId, fileId } = req.params;
+      const { metadata, status = "selected" } = req.body;
+
+      const access = await checkProjectAccess(userId, projectId);
+      if (!access.hasAccess) {
+        return reply.forbidden("You don't have access to this project");
+      }
+      if (!access.canEdit) {
+        return reply.forbidden("You don't have edit permissions");
+      }
+
+      // Get file info
+      const file = await prisma.projectFile.findFirst({
+        where: { id: fileId, projectId },
+      });
+
+      if (!file) {
+        return reply.notFound("File not found");
+      }
+
+      if (!metadata || !metadata.title) {
+        return reply.badRequest("Метаданные статьи обязательны (как минимум заголовок)");
+      }
+
+      try {
+        // Check if article with this DOI already exists
+        let articleId: string | null = null;
+        
+        if (metadata.doi) {
+          const existingByDoi = await pool.query(
+            `SELECT id FROM articles WHERE doi = $1`,
+            [metadata.doi.toLowerCase()]
+          );
+          if ((existingByDoi.rowCount ?? 0) > 0) {
+            articleId = existingByDoi.rows[0].id;
+            app.log.info(`Found existing article by DOI: ${metadata.doi}`);
+          }
+        }
+
+        // Create new article if not found
+        if (!articleId) {
+          const authors = metadata.authors || [];
+          const biblioJson = metadata.bibliography ? JSON.stringify(metadata.bibliography) : null;
+          
+          const insertRes = await pool.query(
+            `INSERT INTO articles (
+              title_en, abstract_en, authors, year, journal, doi, url, source,
+              volume, issue, pages, source_file_id, extracted_bibliography, is_from_file,
+              created_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+            RETURNING id`,
+            [
+              metadata.title,
+              metadata.abstract || null,
+              authors.length > 0 ? authors : null,
+              metadata.year || null,
+              metadata.journal || null,
+              metadata.doi?.toLowerCase() || null,
+              metadata.url || null,
+              "file", // source = file
+              metadata.volume || null,
+              metadata.issue || null,
+              metadata.pages || null,
+              fileId, // source_file_id
+              biblioJson,
+              true, // is_from_file
+              new Date(),
+            ]
+          );
+          articleId = insertRes.rows[0].id;
+          app.log.info(`Created new article from file: ${articleId}`);
+        }
+
+        // Check if article already in project
+        const existingInProject = await pool.query(
+          `SELECT 1 FROM project_articles WHERE project_id = $1 AND article_id = $2`,
+          [projectId, articleId]
+        );
+
+        if ((existingInProject.rowCount ?? 0) > 0) {
+          return {
+            ok: true,
+            articleId,
+            message: "Статья уже добавлена в проект",
+            isExisting: true,
+          };
+        }
+
+        // Add to project with specified status
+        await pool.query(
+          `INSERT INTO project_articles (project_id, article_id, status, added_by, source_query, imported_from_file_id, file_import_date)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [
+            projectId,
+            articleId,
+            status,
+            userId,
+            `Импорт из файла: ${file.name}`,
+            fileId,
+            new Date(),
+          ]
+        );
+
+        // Invalidate caches
+        await invalidateArticles(projectId);
+
+        return {
+          ok: true,
+          articleId,
+          message: `Статья "${metadata.title}" добавлена в ${status === "selected" ? "отобранные" : "кандидаты"}`,
+          isExisting: false,
+        };
+      } catch (err: any) {
+        app.log.error({ err }, "Failed to import article from file");
+        return reply.internalServerError(err.message || "Ошибка импорта статьи");
+      }
     }
   );
 };

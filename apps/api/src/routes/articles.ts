@@ -2577,6 +2577,202 @@ ${articlesForAI || 'Нет статей с полными данными для 
       }
     }
   );
+
+  // ============================================================
+  // Convert Article to Document
+  // ============================================================
+
+  // POST /api/projects/:id/articles/:articleId/convert-to-document
+  // Convert an article to a project document with optional bibliography import
+  fastify.post(
+    "/projects/:id/articles/:articleId/convert-to-document",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ArticleIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid params" });
+      }
+      
+      const bodySchema = z.object({
+        includeBibliography: z.boolean().default(false),
+        documentTitle: z.string().optional(),
+      });
+      
+      const bodyP = bodySchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "Invalid body" });
+      }
+      
+      const { id: projectId, articleId } = paramsP.data;
+      const { includeBibliography, documentTitle } = bodyP.data;
+      
+      // Check access
+      const access = await checkProjectAccess(projectId, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+      
+      // Get article data
+      const articleRes = await pool.query(
+        `SELECT a.*, pa.status
+         FROM articles a
+         JOIN project_articles pa ON pa.article_id = a.id
+         WHERE a.id = $1 AND pa.project_id = $2`,
+        [articleId, projectId]
+      );
+      
+      if (articleRes.rowCount === 0) {
+        return reply.code(404).send({ error: "Article not found in project" });
+      }
+      
+      const article = articleRes.rows[0];
+      
+      // Build document content
+      const title = documentTitle || article.title_ru || article.title_en;
+      
+      // Create HTML content for the document
+      let content = `<h1>${title}</h1>\n`;
+      
+      // Add metadata
+      if (article.authors && article.authors.length > 0) {
+        content += `<p><strong>Авторы:</strong> ${article.authors.join(", ")}</p>\n`;
+      }
+      
+      if (article.year) {
+        content += `<p><strong>Год:</strong> ${article.year}</p>\n`;
+      }
+      
+      if (article.journal) {
+        content += `<p><strong>Журнал:</strong> ${article.journal}`;
+        if (article.volume) content += `, Т. ${article.volume}`;
+        if (article.issue) content += `, № ${article.issue}`;
+        if (article.pages) content += `, С. ${article.pages}`;
+        content += `</p>\n`;
+      }
+      
+      if (article.doi) {
+        content += `<p><strong>DOI:</strong> <a href="https://doi.org/${article.doi}">${article.doi}</a></p>\n`;
+      }
+      
+      // Add abstract
+      const abstractText = article.abstract_ru || article.abstract_en;
+      if (abstractText) {
+        content += `<h2>Аннотация</h2>\n<p>${abstractText}</p>\n`;
+      }
+      
+      // Placeholder for main content
+      content += `<h2>Содержание</h2>\n<p>[Здесь будет основной текст статьи...]</p>\n`;
+      
+      // Get next order index
+      const maxOrder = await pool.query(
+        `SELECT COALESCE(MAX(order_index), -1) + 1 as next_order
+         FROM documents WHERE project_id = $1`,
+        [projectId]
+      );
+      
+      // Create document
+      const docRes = await pool.query(
+        `INSERT INTO documents (project_id, title, content, order_index, created_by)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, title`,
+        [
+          projectId,
+          title,
+          content,
+          maxOrder.rows[0].next_order,
+          userId,
+        ]
+      );
+      
+      const documentId = docRes.rows[0].id;
+      
+      // Add bibliography if requested
+      let bibliographyAdded = 0;
+      if (includeBibliography) {
+        // Check if article has extracted_bibliography
+        const biblioData = article.extracted_bibliography;
+        
+        if (biblioData && Array.isArray(biblioData)) {
+          // Import references as citations
+          for (const ref of biblioData) {
+            if (!ref.title) continue;
+            
+            // Try to find or create article for each reference
+            try {
+              // Check if article exists by DOI
+              let refArticleId: string | null = null;
+              
+              if (ref.doi) {
+                const existingRes = await pool.query(
+                  `SELECT id FROM articles WHERE doi = $1`,
+                  [ref.doi.toLowerCase()]
+                );
+                if ((existingRes.rowCount ?? 0) > 0) {
+                  refArticleId = existingRes.rows[0].id;
+                }
+              }
+              
+              // Create new article if not found
+              if (!refArticleId) {
+                const authors = ref.authors 
+                  ? ref.authors.split(",").map((a: string) => a.trim()).filter(Boolean)
+                  : null;
+                
+                const insertRes = await pool.query(
+                  `INSERT INTO articles (title_en, authors, year, journal, doi, source, created_at)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7)
+                   RETURNING id`,
+                  [
+                    ref.title,
+                    authors,
+                    ref.year || null,
+                    ref.journal || null,
+                    ref.doi?.toLowerCase() || null,
+                    "bibliography-import",
+                    new Date(),
+                  ]
+                );
+                refArticleId = insertRes.rows[0].id;
+              }
+              
+              // Add to project if not already there
+              await pool.query(
+                `INSERT INTO project_articles (project_id, article_id, status, added_by, source_query)
+                 VALUES ($1, $2, 'candidate', $3, $4)
+                 ON CONFLICT (project_id, article_id) DO NOTHING`,
+                [projectId, refArticleId, userId, `Библиография: ${title}`]
+              );
+              
+              // Add citation to document
+              await pool.query(
+                `INSERT INTO citations (document_id, article_id, order_index)
+                 VALUES ($1, $2, $3)`,
+                [documentId, refArticleId, bibliographyAdded]
+              );
+              
+              bibliographyAdded++;
+            } catch (err) {
+              console.error("Error importing bibliography reference:", err);
+            }
+          }
+        }
+      }
+      
+      // Invalidate caches
+      await invalidateArticles(projectId);
+      
+      return {
+        ok: true,
+        documentId,
+        documentTitle: title,
+        bibliographyAdded,
+        message: `Документ "${title}" создан` + 
+          (bibliographyAdded > 0 ? `. Добавлено ${bibliographyAdded} ссылок из библиографии` : ""),
+      };
+    }
+  );
 };
 
 export default plugin;
