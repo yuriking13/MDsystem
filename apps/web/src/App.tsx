@@ -20,16 +20,18 @@ function ThemeToggle() {
   useEffect(() => {
     if (isLight) {
       document.body.classList.add("light-theme");
+      document.documentElement.classList.remove("dark");
       localStorage.setItem("theme", "light");
     } else {
       document.body.classList.remove("light-theme");
+      document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
     }
   }, [isLight]);
 
   return (
     <button 
-      className="theme-toggle-btn"
+      className="fixed bottom-5 left-5 z-[9999] w-11 h-11 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 transition-transform text-xl"
       onClick={() => setIsLight(!isLight)}
       title={isLight ? "Switch to Dark Mode" : "Switch to Light Mode"}
     >
@@ -40,6 +42,16 @@ function ThemeToggle() {
 
 export default function App() {
   const { token } = useAuth();
+
+  // Set initial dark mode based on localStorage
+  useEffect(() => {
+    const theme = localStorage.getItem("theme");
+    if (theme === "light") {
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+    }
+  }, []);
 
   return (
     <>
