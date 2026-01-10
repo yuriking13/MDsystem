@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiImportFromGraph, apiGetArticleByPmid, apiTranslateText, apiGraphAIAssistant, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts, type ClusterInfo, type SearchSuggestion, type FoundArticle, type GraphArticleForAI } from "../lib/api";
+import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiCancelFetchReferences, apiImportFromGraph, apiGetArticleByPmid, apiTranslateText, apiGraphAIAssistant, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts, type ClusterInfo, type SearchSuggestion, type FoundArticle, type GraphArticleForAI } from "../lib/api";
 
 type Props = {
   projectId: string;
@@ -23,6 +23,12 @@ type FetchJobStatus = {
   totalArticles?: number;
   processedArticles?: number;
   message?: string;
+  // Новые поля для детального прогресса
+  currentPhase?: string;
+  phaseProgress?: string;
+  secondsSinceProgress?: number | null;
+  isStalled?: boolean;
+  cancelReason?: string;
 };
 
 // Форматирование времени MM:SS
@@ -225,6 +231,9 @@ export default function CitationGraph({ projectId }: Props) {
             status: status.status,
             totalArticles: status.totalArticles,
             processedArticles: status.processedArticles,
+            currentPhase: status.currentPhase,
+            phaseProgress: status.phaseProgress,
+            secondsSinceProgress: status.secondsSinceProgress,
           });
           startStatusPolling();
         }
@@ -250,8 +259,8 @@ export default function CitationGraph({ projectId }: Props) {
       try {
         const status = await apiFetchReferencesStatus(projectId);
         
-        if (!status.hasJob || status.status === 'completed' || status.status === 'failed') {
-          // Загрузка завершена
+        if (!status.hasJob || status.status === 'completed' || status.status === 'failed' || status.status === 'cancelled') {
+          // Загрузка завершена или отменена
           if (fetchStatusIntervalRef.current) {
             clearInterval(fetchStatusIntervalRef.current);
             fetchStatusIntervalRef.current = null;
@@ -260,7 +269,16 @@ export default function CitationGraph({ projectId }: Props) {
           setFetchJobStatus(null);
           setFetchingRefs(false);
           
-          if (status.status === 'completed') {
+          if (status.status === 'cancelled') {
+            // Показываем сообщение об отмене с причиной
+            const reasonText = status.cancelReason === 'stalled' 
+              ? '⚠️ Загрузка отменена автоматически: нет прогресса более 60 сек. Сервер PubMed не отвечает. Попробуйте позже.'
+              : status.cancelReason === 'timeout'
+              ? '⚠️ Загрузка отменена: превышено максимальное время (30 мин). Попробуйте загрузить меньше статей.'
+              : '⚠️ Загрузка отменена. Вы можете запустить её снова.';
+            setRefsMessage(reasonText);
+            setTimeout(() => setRefsMessage(null), 10000);
+          } else if (status.status === 'completed') {
             setRefsMessage('✅ Загрузка связей завершена! Граф обновляется...');
             // Небольшая задержка перед обновлением графа, чтобы БД успела записать данные
               setTimeout(async () => {
@@ -301,7 +319,7 @@ export default function CitationGraph({ projectId }: Props) {
             setRefsMessage(`❌ Ошибка: ${status.errorMessage || 'Неизвестная ошибка'}`);
           }
         } else {
-          // Обновляем прогресс
+          // Обновляем прогресс с новыми полями
           setFetchJobStatus({
             isRunning: true,
             progress: status.progress || 0,
@@ -309,12 +327,28 @@ export default function CitationGraph({ projectId }: Props) {
             status: status.status,
             totalArticles: status.totalArticles,
             processedArticles: status.processedArticles,
+            currentPhase: status.currentPhase,
+            phaseProgress: status.phaseProgress,
+            secondsSinceProgress: status.secondsSinceProgress,
           });
         }
       } catch (err) {
         console.error('Error polling status:', err);
       }
     }, 2000); // Каждые 2 секунды
+  };
+  
+  // Функция отмены загрузки
+  const handleCancelFetch = async () => {
+    try {
+      await apiCancelFetchReferences(projectId);
+      setFetchJobStatus(null);
+      setFetchingRefs(false);
+      setRefsMessage('⚠️ Загрузка отменена. Вы можете запустить её снова.');
+      setTimeout(() => setRefsMessage(null), 5000);
+    } catch (err) {
+      console.error('Error cancelling fetch:', err);
+    }
   };
 
   const handleFetchReferences = async () => {
@@ -1153,12 +1187,28 @@ export default function CitationGraph({ projectId }: Props) {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
             <div className="loading-spinner" />
-            <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
-              Загрузка связей (PubMed + Crossref)...
-            </span>
-            <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)' }}>
+            <div style={{ flex: 1 }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text-primary)' }}>
+                Загрузка связей (PubMed + Crossref)...
+              </span>
+              {fetchJobStatus.currentPhase && (
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                  {fetchJobStatus.currentPhase}
+                  {fetchJobStatus.phaseProgress && ` — ${fetchJobStatus.phaseProgress}`}
+                </div>
+              )}
+            </div>
+            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
               {formatTime(fetchJobStatus.elapsedSeconds)}
             </span>
+            <button
+              onClick={handleCancelFetch}
+              className="btn secondary"
+              style={{ padding: '4px 8px', fontSize: 11 }}
+              title="Отменить загрузку"
+            >
+              ✕ Отмена
+            </button>
           </div>
           
           <div className="progress-bar-animated" style={{ 
@@ -1186,7 +1236,14 @@ export default function CitationGraph({ projectId }: Props) {
             <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Загрузка выполняется в фоне. Граф обновится автоматически.
+            <span>
+              Загрузка выполняется в фоне. Граф обновится автоматически.
+              {fetchJobStatus.secondsSinceProgress != null && fetchJobStatus.secondsSinceProgress > 30 && (
+                <span style={{ color: '#f97316' }}>
+                  {' '}(нет обновлений {fetchJobStatus.secondsSinceProgress} сек — возможно, сервер PubMed медленно отвечает)
+                </span>
+              )}
+            </span>
           </div>
         </div>
       )}

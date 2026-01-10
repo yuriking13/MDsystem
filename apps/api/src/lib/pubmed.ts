@@ -458,6 +458,8 @@ export async function pubmedGetReferences(args: {
   apiKey?: string;
   pmids: string[];
   throttleMs?: number;
+  onProgress?: (processed: number, total: number) => Promise<void>;
+  checkCancelled?: () => Promise<boolean>;
 }): Promise<PubMedReferences[]> {
   if (args.pmids.length === 0) return [];
   
@@ -471,6 +473,12 @@ export async function pubmedGetReferences(args: {
   let totalCitedBy = 0;
   
   for (let i = 0; i < args.pmids.length; i += BATCH_SIZE) {
+    // Проверяем отмену перед каждым батчем
+    if (args.checkCancelled && await args.checkCancelled()) {
+      console.log(`[PubMed eLink] Job cancelled, stopping at batch ${i}`);
+      break;
+    }
+    
     const batch = args.pmids.slice(i, i + BATCH_SIZE);
     
     // Получаем исходящие ссылки (references) - pubmed_pubmed_refs
@@ -544,12 +552,22 @@ export async function pubmedGetReferences(args: {
         console.log(`[PubMed eLink] Batch ${i}-${Math.min(i + BATCH_SIZE, args.pmids.length)}/${args.pmids.length}: ${batchRefs} refs, ${batchCitedBy} citedBy`);
       }
       
+      // Вызываем callback прогресса
+      if (args.onProgress) {
+        await args.onProgress(Math.min(i + BATCH_SIZE, args.pmids.length), args.pmids.length);
+      }
+      
       if (args.throttleMs) await sleep(args.throttleMs);
     } catch (err) {
       console.error('[PubMed eLink] Fetch error after retries:', err);
       // Add empty results for batch so we don't lose progress
       for (const pmid of batch) {
         results.push({ pmid, references: [], citedBy: [] });
+      }
+      
+      // Всё равно обновляем прогресс
+      if (args.onProgress) {
+        await args.onProgress(Math.min(i + BATCH_SIZE, args.pmids.length), args.pmids.length);
       }
     }
   }
@@ -611,6 +629,8 @@ export async function enrichArticlesWithReferences(args: {
   apiKey?: string;
   pmids: string[];
   throttleMs?: number;
+  onProgress?: (processed: number, total: number) => Promise<void>;
+  checkCancelled?: () => Promise<boolean>;
 }): Promise<Map<string, PubMedReferences>> {
   const refs = await pubmedGetReferences(args);
   const map = new Map<string, PubMedReferences>();

@@ -1474,6 +1474,49 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       
       const job = jobRes.rows[0];
       
+      // Проверяем на зависание: если job running, но last_progress_at > 60 сек назад
+      const STALL_TIMEOUT_SEC = 60;
+      let isStalled = false;
+      let stalledSeconds = 0;
+      
+      if (job.status === 'running' && job.last_progress_at) {
+        stalledSeconds = Math.round((Date.now() - new Date(job.last_progress_at).getTime()) / 1000);
+        isStalled = stalledSeconds > STALL_TIMEOUT_SEC;
+        
+        // Автоматически отменяем зависший job
+        if (isStalled) {
+          await pool.query(
+            `UPDATE graph_fetch_jobs SET 
+              status = 'cancelled',
+              cancelled_at = now(),
+              cancel_reason = 'stalled',
+              error_message = 'Загрузка автоматически отменена: нет прогресса более 60 секунд. Попробуйте снова позже.'
+             WHERE id = $1`,
+            [job.id]
+          );
+          
+          return {
+            hasJob: true,
+            jobId: job.id,
+            status: 'cancelled',
+            progress: 0,
+            totalArticles: job.total_articles,
+            processedArticles: job.processed_articles,
+            totalPmidsToFetch: job.total_pmids_to_fetch,
+            fetchedPmids: job.fetched_pmids,
+            elapsedSeconds: job.started_at 
+              ? Math.round((Date.now() - new Date(job.started_at).getTime()) / 1000)
+              : 0,
+            startedAt: job.started_at,
+            completedAt: new Date().toISOString(),
+            errorMessage: 'Загрузка автоматически отменена: нет прогресса более 60 секунд. Попробуйте снова позже.',
+            isStalled: true,
+            stalledSeconds,
+            cancelReason: 'stalled',
+          };
+        }
+      }
+      
       // Вычисляем прогресс
       const progress = job.total_articles > 0 
         ? Math.round((job.processed_articles / job.total_articles) * 50 + 
@@ -1484,6 +1527,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const elapsedSeconds = job.started_at 
         ? Math.round((Date.now() - new Date(job.started_at).getTime()) / 1000)
         : 0;
+      
+      // Извлекаем текущую фазу из error_message (используется для прогресса)
+      let currentPhase: string | null = null;
+      let phaseProgress: string | null = null;
+      if (job.status === 'running' && job.error_message?.startsWith('[Phase:')) {
+        const match = job.error_message.match(/\[Phase: ([^\]]+)\]\s*(.*)/);
+        if (match) {
+          currentPhase = match[1];
+          phaseProgress = match[2] || null;
+        }
+      }
       
       return {
         hasJob: true,
@@ -1497,7 +1551,57 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         elapsedSeconds,
         startedAt: job.started_at,
         completedAt: job.completed_at,
-        errorMessage: job.error_message,
+        errorMessage: job.status === 'running' ? null : job.error_message, // Не показываем phase info как error
+        currentPhase,
+        phaseProgress,
+        lastProgressAt: job.last_progress_at,
+        secondsSinceProgress: job.last_progress_at 
+          ? Math.round((Date.now() - new Date(job.last_progress_at).getTime()) / 1000)
+          : null,
+        isStalled: false,
+        cancelReason: job.cancel_reason,
+      };
+    }
+  );
+  
+  // POST /api/projects/:id/articles/fetch-references/cancel - отмена загрузки
+  fastify.post(
+    "/projects/:id/articles/fetch-references/cancel",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+      
+      // Проверка доступа (нужен edit)
+      const access = await checkProjectAccess(paramsP.data.id, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access" });
+      }
+      
+      // Отменяем активный job
+      const result = await pool.query(
+        `UPDATE graph_fetch_jobs SET 
+          status = 'cancelled',
+          cancelled_at = now(),
+          cancel_reason = 'user_cancelled',
+          error_message = 'Загрузка отменена пользователем'
+         WHERE project_id = $1 AND status IN ('pending', 'running')
+         RETURNING id`,
+        [paramsP.data.id]
+      );
+      
+      if (result.rowCount === 0) {
+        return reply.code(404).send({ error: "Нет активной загрузки для отмены" });
+      }
+      
+      return {
+        ok: true,
+        jobId: result.rows[0].id,
+        message: "Загрузка отменена. Вы можете запустить её снова."
       };
     }
   );
