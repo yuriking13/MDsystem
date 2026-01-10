@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiCancelFetchReferences, apiImportFromGraph, apiGetArticleByPmid, apiTranslateText, apiGraphAIAssistant, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts, type ClusterInfo, type SearchSuggestion, type FoundArticle, type GraphArticleForAI } from "../lib/api";
+import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiCancelFetchReferences, apiImportFromGraph, apiGetArticleByPmid, apiTranslateText, apiGraphAIAssistant, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts, type ClusterInfo, type SearchSuggestion, type FoundArticle, type GraphArticleForAI, type GraphFiltersForAI } from "../lib/api";
 
 type Props = {
   projectId: string;
@@ -691,7 +691,19 @@ export default function CitationGraph({ projectId }: Props) {
         doi: n.doi,
         citedByCount: n.citedByCount,
         graphLevel: n.graphLevel,
+        source: n.source, // Источник статьи (pubmed, doaj, wiley)
+        status: n.status, // Статус в проекте
       }));
+      
+      // Формируем информацию о текущих фильтрах для AI
+      const currentFilters: GraphFiltersForAI = {
+        filter: filter,
+        depth: depth,
+        sources: selectedSources.length > 0 ? selectedSources : undefined,
+        yearFrom: yearFrom,
+        yearTo: yearTo,
+        statsQuality: statsQuality > 0 ? statsQuality : undefined,
+      };
       
       console.log(`[AI] Sending ${graphArticles.length} articles to AI (with real data)`);
       console.log(`[AI DEBUG] Total: ${allNodes.length}, External: ${externalNodes.length}, With data: ${articlesWithData.length}`);
@@ -724,7 +736,8 @@ export default function CitationGraph({ projectId }: Props) {
         {
           articleCount: stats.totalNodes,
           yearRange: yearRange,
-        }
+        },
+        currentFilters
       );
       
       if (res.ok) {

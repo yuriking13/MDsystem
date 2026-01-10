@@ -4,6 +4,7 @@ import { pool } from "../pg.js";
 import { formatCitation, type CitationStyle, type BibliographyArticle } from "../lib/bibliography.js";
 import { pubmedFetchByPmids } from "../lib/pubmed.js";
 import { extractStats, calculateStatsQuality } from "../lib/stats.js";
+import { getCrossrefByDOI } from "../lib/crossref.js";
 import {
   cacheGet,
   cacheSet,
@@ -1824,10 +1825,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Для расширения графа используем ТОЛЬКО статьи с загруженными ссылками
       // (references_fetched_at IS NOT NULL означает что reference_pmids заполнены)
       
+      // Уровень 2 DOIs для DOAJ/Wiley статей (ссылки по DOI через Crossref)
+      const level2Dois = new Set<string>(); // DOIs для расширения графа
+      const level1ToLevel2DoiLinks: { sourceId: string; targetDoi: string }[] = [];
+      const doiFrequencyMap = new Map<string, number>(); // Частота DOI в ссылках
+      
       if (depth >= 2) {
-        // Шаг 1: Собираем ВСЕ уникальные reference PMIDs и считаем частоту
+        // Шаг 1: Собираем ВСЕ уникальные reference PMIDs и DOIs, считаем частоту
         const allRefPmidsCollected: string[] = [];
+        const allRefDoisCollected: string[] = [];
         const articleRefMap = new Map<string, string[]>(); // articleId -> [refPmids]
+        const articleRefDoiMap = new Map<string, string[]>(); // articleId -> [refDois]
         
         for (const article of articlesRes.rows) {
           // Parse reference_pmids properly
@@ -1838,14 +1846,34 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             refPmids = article.reference_pmids.slice(1, -1).split(',').filter(Boolean);
           }
           
-          // Сохраняем для последующей обработки
+          // Parse reference_dois properly (для DOAJ/Wiley статей)
+          let refDois: string[] = [];
+          if (Array.isArray(article.reference_dois)) {
+            refDois = article.reference_dois;
+          } else if (typeof article.reference_dois === 'string' && article.reference_dois.startsWith('{')) {
+            refDois = article.reference_dois.slice(1, -1).split(',').filter(Boolean);
+          }
+          
+          // Сохраняем для последующей обработки (только внешние)
           const externalRefs = refPmids.filter(pmid => !pmidToId.has(pmid));
           articleRefMap.set(article.id, externalRefs);
+          
+          // DOI ссылки - исключаем те, что уже в проекте
+          const externalDoiRefs = refDois
+            .map(d => d.toLowerCase())
+            .filter(doi => !doiToId.has(doi));
+          articleRefDoiMap.set(article.id, externalDoiRefs);
           
           // Считаем частоту каждого PMID
           for (const refPmid of externalRefs) {
             allRefPmidsCollected.push(refPmid);
             pmidFrequencyMap.set(refPmid, (pmidFrequencyMap.get(refPmid) || 0) + 1);
+          }
+          
+          // Считаем частоту каждого DOI
+          for (const refDoi of externalDoiRefs) {
+            allRefDoisCollected.push(refDoi);
+            doiFrequencyMap.set(refDoi, (doiFrequencyMap.get(refDoi) || 0) + 1);
           }
         }
         
@@ -1859,8 +1887,18 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         const sortedRefPmids = sortPmids(uniqueRefPmids, sortBy);
         
         // Шаг 4: Выбираем топ PMIDs с учётом лимитов
-        // Приоритет отдаём наиболее важным по выбранному критерию
-        const topPmidsSet = new Set(sortedRefPmids.slice(0, maxExtraNodes));
+        // Выделяем часть лимита для DOI ссылок (20% для DOI, 80% для PMID)
+        const uniqueRefDois = [...new Set(allRefDoisCollected)];
+        const doiSlots = Math.min(Math.floor(maxExtraNodes * 0.3), uniqueRefDois.length);
+        const pmidSlots = maxExtraNodes - doiSlots;
+        
+        const topPmidsSet = new Set(sortedRefPmids.slice(0, pmidSlots));
+        
+        // Сортируем DOI по частоте (самые часто цитируемые первые)
+        const sortedRefDois = [...uniqueRefDois].sort((a, b) => 
+          (doiFrequencyMap.get(b) || 0) - (doiFrequencyMap.get(a) || 0)
+        );
+        const topDoisSet = new Set(sortedRefDois.slice(0, doiSlots));
         
         // Шаг 5: Добавляем связи для отобранных PMIDs
         for (const article of articlesRes.rows) {
@@ -1878,7 +1916,25 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             }
           }
         }
-        console.log(`[CitationGraph] Depth ${depth}: collected ${level2Pmids.size} external reference PMIDs (sorted by ${sortBy})`);
+        
+        // Шаг 6: Добавляем связи для отобранных DOIs (DOAJ/Wiley статьи)
+        for (const article of articlesRes.rows) {
+          const refDois = articleRefDoiMap.get(article.id) || [];
+          let addedForThisArticle = 0;
+          
+          for (const refDoi of refDois) {
+            // Ограничиваем количество связей на статью
+            if (addedForThisArticle >= maxLinksPerNode) break;
+            // Добавляем только если DOI в топе
+            if (topDoisSet.has(refDoi)) {
+              level2Dois.add(refDoi);
+              level1ToLevel2DoiLinks.push({ sourceId: article.id, targetDoi: refDoi });
+              addedForThisArticle++;
+            }
+          }
+        }
+        
+        console.log(`[CitationGraph] Depth ${depth}: collected ${level2Pmids.size} external reference PMIDs + ${level2Dois.size} DOIs (sorted by ${sortBy})`);
       }
       
       // Уровень 0 (cited_by) загружаем при depth >= 3
@@ -2075,6 +2131,116 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           extraNodesAdded++;
           pmidToId.set(pmid, nodeId);
         }
+      }
+      
+      // Загружаем статьи уровня 2 по DOI (для DOAJ/Wiley ссылок через Crossref)
+      const level2DoiInDb = new Map<string, any>(); // doi -> article data
+      const level2DoiNotInDb = new Set<string>(); // DOIs не в БД
+      
+      if (depth >= 2 && level2Dois.size > 0 && canAddMore()) {
+        const remainingDoiSlots = Math.max(0, maxExtraNodes - extraNodesAdded);
+        const level2DoisArr = Array.from(level2Dois).slice(0, remainingDoiSlots);
+        
+        // Ищем статьи с этими DOI в нашей БД
+        const level2DoiRes = await pool.query(
+          `SELECT id, doi, pmid, title_en, title_ru, abstract_en, abstract_ru, authors, year, journal, source, raw_json,
+                  ${hasRefColumns ? 'reference_pmids, cited_by_pmids,' : "ARRAY[]::text[] as reference_pmids, ARRAY[]::text[] as cited_by_pmids,"}
+                  ${hasStatsQuality ? 'COALESCE(stats_quality, 0) as stats_quality' : '0 as stats_quality'}
+           FROM articles 
+           WHERE LOWER(doi) = ANY($1)`,
+          [level2DoisArr]
+        );
+        
+        // Помечаем найденные в БД
+        for (const article of level2DoiRes.rows) {
+          if (article.doi) {
+            level2DoiInDb.set(article.doi.toLowerCase(), article);
+          }
+        }
+        
+        // Определяем какие DOIs не в БД
+        for (const doi of level2DoisArr) {
+          if (!level2DoiInDb.has(doi)) {
+            level2DoiNotInDb.add(doi);
+          }
+        }
+        
+        // Добавляем узлы для DOI статей из БД
+        for (const article of level2DoiRes.rows) {
+          if (addedNodeIds.has(article.id)) continue;
+          if (!canAddMore()) break;
+          
+          const authorsArr = article.authors || [];
+          const firstAuthor = (Array.isArray(authorsArr) ? authorsArr[0] : authorsArr)?.split?.(' ')?.[0] || 'Unknown';
+          const label = `${firstAuthor} (${article.year || '?'})`;
+          const pubmedCitedBy = article.cited_by_pmids?.length || 0;
+          const europePMCCitations = article.raw_json?.europePMCCitations || 0;
+          const crossrefCitations = article.raw_json?.crossrefCitedByCount || 0;
+          const citedByCount = Math.max(pubmedCitedBy, europePMCCitations, crossrefCitations);
+          const authorsStr = Array.isArray(authorsArr) ? authorsArr.join(', ') : authorsArr;
+          
+          nodes.push({
+            id: article.id,
+            label,
+            title: article.title_en || null,
+            title_ru: article.title_ru || null,
+            abstract: article.abstract_en || null,
+            abstract_ru: article.abstract_ru || null,
+            authors: authorsStr || null,
+            journal: article.journal || null,
+            year: article.year,
+            status: 'reference',
+            doi: article.doi,
+            pmid: article.pmid,
+            citedByCount,
+            graphLevel: 2,
+            statsQuality: article.stats_quality || 0,
+            source: article.source || 'crossref',
+          });
+          addedNodeIds.add(article.id);
+          extraNodesAdded++;
+          
+          if (article.doi) {
+            doiToId.set(article.doi.toLowerCase(), article.id);
+          }
+          if (article.pmid) {
+            pmidToId.set(article.pmid, article.id);
+          }
+        }
+        
+        // Добавляем placeholder узлы для DOI которых нет в БД
+        for (const doi of level2DoiNotInDb) {
+          if (!canAddMore()) break;
+          const nodeId = `doi:${doi}`;
+          if (addedNodeIds.has(nodeId)) continue;
+          
+          nodes.push({
+            id: nodeId,
+            label: `DOI:${doi.substring(0, 20)}...`,
+            title: null,
+            title_ru: null,
+            abstract: null,
+            abstract_ru: null,
+            authors: null,
+            journal: null,
+            year: null,
+            status: 'reference',
+            doi: doi,
+            pmid: null,
+            citedByCount: 0,
+            graphLevel: 2,
+            statsQuality: 0,
+            source: 'crossref',
+          });
+          addedNodeIds.add(nodeId);
+          extraNodesAdded++;
+          doiToId.set(doi, nodeId);
+        }
+        
+        console.log(`[CitationGraph] DOI level 2: ${level2DoiRes.rows.length} from DB, ${level2DoiNotInDb.size} placeholders`);
+        
+        // Добавляем DOI статьи в level2Articles для обработки связей
+        level2Articles = [...level2Articles, ...level2DoiRes.rows];
       }
 
       // Загружаем статьи уровня 0 (citing articles - те кто цитирует нас) - сначала ищем в БД
@@ -2571,6 +2737,80 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           // не падаем, если PubMed недоступен/лимит
           console.error('Citation graph enrichment (PubMed) error:', err);
         }
+      }
+      
+      // Обогащение DOI placeholder узлов (doi:xxxxx) из Crossref
+      const placeholderDois = nodes
+        .filter((n) => typeof n.id === 'string' && n.id.startsWith('doi:') && typeof n.doi === 'string' && n.doi)
+        .map((n) => ({ nodeId: n.id, doi: n.doi as string }));
+      
+      const uniquePlaceholderDois = placeholderDois.slice(0, 100); // Лимит для скорости
+      if (uniquePlaceholderDois.length > 0) {
+        console.log(`[CitationGraph] Enriching ${uniquePlaceholderDois.length} DOI placeholders from Crossref`);
+        
+        // Загружаем метаданные из Crossref батчами
+        for (const { nodeId, doi } of uniquePlaceholderDois) {
+          try {
+            // Throttle для Crossref API
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const crossrefWork = await getCrossrefByDOI(doi);
+            if (!crossrefWork) continue;
+            
+            // Находим узел и обновляем его
+            const node = nodes.find(n => n.id === nodeId);
+            if (!node) continue;
+            
+            // Извлекаем данные
+            const title = crossrefWork.title?.[0] || null;
+            const journal = crossrefWork['container-title']?.[0] || null;
+            const year = crossrefWork.issued?.['date-parts']?.[0]?.[0] || 
+                         crossrefWork.published?.['date-parts']?.[0]?.[0] || null;
+            const citedByCount = crossrefWork['is-referenced-by-count'] || 0;
+            
+            // Форматируем авторов
+            let authors: string | null = null;
+            if (crossrefWork.author && crossrefWork.author.length > 0) {
+              authors = crossrefWork.author
+                .slice(0, 5)
+                .map(a => `${a.family || ''} ${a.given || ''}`.trim())
+                .filter(Boolean)
+                .join(', ');
+              if (crossrefWork.author.length > 5) {
+                authors += ' et al.';
+              }
+            }
+            
+            const firstAuthor = crossrefWork.author?.[0]?.family || 'Unknown';
+            
+            // Обновляем узел
+            node.title = title;
+            node.journal = journal;
+            node.year = year;
+            node.authors = authors;
+            node.citedByCount = citedByCount;
+            node.label = `${firstAuthor} (${year || '?'})`;
+            
+            // Извлекаем абстракт если есть
+            if (crossrefWork.abstract) {
+              // Crossref abstract может содержать HTML теги
+              const cleanAbstract = crossrefWork.abstract
+                .replace(/<[^>]*>/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+              (node as any).abstract = cleanAbstract;
+              
+              const stats = extractStats(cleanAbstract);
+              const quality = calculateStatsQuality(stats);
+              node.statsQuality = quality;
+            }
+          } catch (err) {
+            // Игнорируем ошибки для отдельных DOI
+            console.error(`Crossref enrichment error for ${doi}:`, err);
+          }
+        }
+        
+        console.log(`[CitationGraph] DOI enrichment completed`);
       }
       
       // Применяем фильтр годов ко ВСЕМ узлам (включая placeholder)

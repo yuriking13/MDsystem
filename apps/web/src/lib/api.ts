@@ -1368,6 +1368,8 @@ export type GraphArticleForAI = {
   doi?: string | null;
   citedByCount?: number;
   graphLevel?: number;
+  source?: string; // 'pubmed' | 'doaj' | 'wiley' | 'crossref'
+  status?: string; // статус статьи в проекте
 };
 
 // Найденная статья с причиной
@@ -1393,6 +1395,16 @@ export type GraphAIAssistantResponse = {
   error?: string;
 };
 
+// Активные фильтры графа для AI
+export type GraphFiltersForAI = {
+  filter?: 'all' | 'selected' | 'excluded'; // Фильтр статуса
+  depth?: number; // Глубина графа (1-3)
+  sources?: string[]; // Фильтр по источникам (pubmed, doaj, wiley)
+  yearFrom?: number; // Минимальный год
+  yearTo?: number; // Максимальный год
+  statsQuality?: number; // Минимальное качество p-value (0-3)
+};
+
 export async function apiGraphAIAssistant(
   projectId: string,
   message: string,
@@ -1400,13 +1412,14 @@ export async function apiGraphAIAssistant(
   context?: {
     articleCount?: number;
     yearRange?: { min: number | null; max: number | null };
-  }
+  },
+  filters?: GraphFiltersForAI
 ): Promise<GraphAIAssistantResponse> {
   return apiFetch<GraphAIAssistantResponse>(
     `/api/projects/${projectId}/graph-ai-assistant`,
     {
       method: "POST",
-      body: JSON.stringify({ message, graphArticles, context }),
+      body: JSON.stringify({ message, graphArticles, context, filters }),
     }
   );
 }
