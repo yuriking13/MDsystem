@@ -3,6 +3,8 @@ import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
 
 // Extension для автоматической нумерации таблиц и графиков
+// Формат: "Таблица №X – Название" (над таблицей, выравнивание влево)
+// Формат: "Рисунок №X – Название" (под рисунком/графиком)
 export const TableFigureNumbering = Extension.create({
   name: 'tableFigureNumbering',
 
@@ -18,59 +20,99 @@ export const TableFigureNumbering = Extension.create({
             let figureNumber = 0;
 
             state.doc.descendants((node, pos) => {
-              // Нумерация таблиц
+              // Нумерация таблиц - формат "Таблица №X – Название"
               if (node?.type?.name === 'table') {
                 tableNumber++;
-                // Важно: захватываем текущее значение в локальную переменную
                 const currentTableNumber = tableNumber;
+                
+                // Пытаемся получить название таблицы из атрибутов
+                const tableTitle = node.attrs?.tableTitle || node.attrs?.caption || '';
+                const titleText = tableTitle 
+                  ? `Таблица №${currentTableNumber} – ${tableTitle}`
+                  : `Таблица №${currentTableNumber}`;
                 
                 const decoration = Decoration.widget(
                   pos,
                   () => {
-                    const el = document.createElement('div');
-                    el.className = 'table-number-label';
-                    el.textContent = `Таблица ${currentTableNumber}`;
-                    el.contentEditable = 'false';
-                    el.style.cssText = `
-                      font-weight: bold;
-                      text-align: center;
+                    const container = document.createElement('div');
+                    container.className = 'table-caption-container';
+                    container.contentEditable = 'false';
+                    container.style.cssText = `
+                      text-align: left;
                       margin-bottom: 8px;
-                      color: #1e293b;
-                      font-size: 14px;
                       user-select: none;
                       pointer-events: none;
                     `;
-                    return el;
+                    
+                    // Номер таблицы (жирный)
+                    const numberSpan = document.createElement('span');
+                    numberSpan.style.fontWeight = 'bold';
+                    numberSpan.style.color = '#1e293b';
+                    numberSpan.style.fontSize = '14px';
+                    numberSpan.textContent = `Таблица №${currentTableNumber}`;
+                    container.appendChild(numberSpan);
+                    
+                    // Название таблицы (обычный шрифт)
+                    if (tableTitle) {
+                      const titleSpan = document.createElement('span');
+                      titleSpan.style.color = '#1e293b';
+                      titleSpan.style.fontSize = '14px';
+                      titleSpan.textContent = ` – ${tableTitle}`;
+                      container.appendChild(titleSpan);
+                    }
+                    
+                    return container;
                   },
                   { side: -1, key: `table-${pos}` }
                 );
                 decorations.push(decoration);
               }
 
-              // Нумерация графиков (chartNode)
-              if (node?.type?.name === 'chartNode') {
+              // Нумерация графиков и рисунков (chartNode, image) - формат "Рисунок №X – Название"
+              if (node?.type?.name === 'chartNode' || node?.type?.name === 'image') {
                 figureNumber++;
-                // Важно: захватываем текущее значение в локальную переменную
                 const currentFigureNumber = figureNumber;
+                
+                // Получаем название из атрибутов
+                let figureTitle = '';
+                if (node?.type?.name === 'chartNode') {
+                  figureTitle = node.attrs?.title || node.attrs?.config?.title || '';
+                } else if (node?.type?.name === 'image') {
+                  figureTitle = node.attrs?.figureTitle || node.attrs?.alt || node.attrs?.title || '';
+                }
                 
                 const decoration = Decoration.widget(
                   pos + node.nodeSize,
                   () => {
-                    const el = document.createElement('div');
-                    el.className = 'figure-number-label';
-                    el.textContent = `Рисунок ${currentFigureNumber}`;
-                    el.contentEditable = 'false';
-                    el.style.cssText = `
-                      font-weight: bold;
+                    const container = document.createElement('div');
+                    container.className = 'figure-caption-container';
+                    container.contentEditable = 'false';
+                    container.style.cssText = `
                       text-align: center;
                       margin-top: 8px;
                       margin-bottom: 16px;
-                      color: #1e293b;
-                      font-size: 14px;
                       user-select: none;
                       pointer-events: none;
                     `;
-                    return el;
+                    
+                    // Номер рисунка (жирный)
+                    const numberSpan = document.createElement('span');
+                    numberSpan.style.fontWeight = 'bold';
+                    numberSpan.style.color = '#1e293b';
+                    numberSpan.style.fontSize = '14px';
+                    numberSpan.textContent = `Рисунок №${currentFigureNumber}`;
+                    container.appendChild(numberSpan);
+                    
+                    // Название рисунка (обычный шрифт)
+                    if (figureTitle) {
+                      const titleSpan = document.createElement('span');
+                      titleSpan.style.color = '#1e293b';
+                      titleSpan.style.fontSize = '14px';
+                      titleSpan.textContent = ` – ${figureTitle}`;
+                      container.appendChild(titleSpan);
+                    }
+                    
+                    return container;
                   },
                   { side: 1, key: `figure-${pos}` }
                 );

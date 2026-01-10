@@ -44,7 +44,7 @@ const SearchBodySchema = z.object({
     publicationTypesLogic: z.enum(["or", "and"]).optional(),
     translate: z.boolean().optional(),
   }).optional(),
-  maxResults: z.number().int().min(1).max(1000).default(100),
+  maxResults: z.number().int().min(1).max(10000).default(100),
 });
 
 const ArticleStatusSchema = z.object({

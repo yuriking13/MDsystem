@@ -1395,3 +1395,82 @@ export async function apiGraphAIAssistant(
     }
   );
 }
+
+// ========== Document Versioning ==========
+
+export type DocumentVersion = {
+  id: string;
+  document_id: string;
+  version_number: number;
+  version_type: 'auto' | 'manual' | 'exit';
+  version_note?: string;
+  content_length: number;
+  created_at: string;
+  created_by_email?: string;
+  content?: string;
+  title?: string;
+};
+
+export type DocumentVersionsResponse = {
+  versions: DocumentVersion[];
+  tableNotReady?: boolean;
+};
+
+export async function apiGetDocumentVersions(
+  projectId: string,
+  docId: string
+): Promise<DocumentVersionsResponse> {
+  return apiFetch<DocumentVersionsResponse>(
+    `/api/projects/${projectId}/documents/${docId}/versions`
+  );
+}
+
+export async function apiGetDocumentVersion(
+  projectId: string,
+  docId: string,
+  versionId: string
+): Promise<{ version: DocumentVersion }> {
+  return apiFetch<{ version: DocumentVersion }>(
+    `/api/projects/${projectId}/documents/${docId}/versions/${versionId}`
+  );
+}
+
+export async function apiCreateDocumentVersion(
+  projectId: string,
+  docId: string,
+  versionNote?: string,
+  versionType: 'manual' | 'auto' | 'exit' = 'manual'
+): Promise<{ version: DocumentVersion }> {
+  return apiFetch<{ version: DocumentVersion }>(
+    `/api/projects/${projectId}/documents/${docId}/versions`,
+    {
+      method: "POST",
+      body: JSON.stringify({ versionNote, versionType }),
+    }
+  );
+}
+
+export async function apiRestoreDocumentVersion(
+  projectId: string,
+  docId: string,
+  versionId: string
+): Promise<{ success: boolean; restoredContent: string; restoredTitle: string }> {
+  return apiFetch<{ success: boolean; restoredContent: string; restoredTitle: string }>(
+    `/api/projects/${projectId}/documents/${docId}/versions/${versionId}/restore`,
+    { method: "POST" }
+  );
+}
+
+export async function apiTriggerAutoVersion(
+  projectId: string,
+  docId: string,
+  content: string
+): Promise<{ created: boolean; version?: DocumentVersion; reason?: string; tableNotReady?: boolean }> {
+  return apiFetch<{ created: boolean; version?: DocumentVersion; reason?: string; tableNotReady?: boolean }>(
+    `/api/projects/${projectId}/documents/${docId}/auto-version`,
+    {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    }
+  );
+}

@@ -22,6 +22,11 @@ import {
   apiGetFileDownloadUrl,
   apiMarkFileUsed,
   apiSyncFileUsage,
+  apiGetDocumentVersions,
+  apiGetDocumentVersion,
+  apiCreateDocumentVersion,
+  apiRestoreDocumentVersion,
+  apiTriggerAutoVersion,
   type Document,
   type Article,
   type Citation,
@@ -29,6 +34,7 @@ import {
   type ProjectStatistic,
   type DataClassification,
   type ProjectFile,
+  type DocumentVersion,
 } from "../lib/api";
 import { type ProjectFileNodeAttrs } from "../components/TiptapEditor/extensions/ProjectFileNode";
 import ChartFromTable, { CHART_TYPE_INFO, ChartCreatorModal, type ChartType, type TableData } from "../components/ChartFromTable";
@@ -241,6 +247,14 @@ export default function DocumentPage() {
   
   // Состояние для обновления библиографии проекта
   const [updatingBibliography, setUpdatingBibliography] = useState(false);
+  
+  // Версионирование документа
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+  const [creatingVersion, setCreatingVersion] = useState(false);
+  const [restoringVersion, setRestoringVersion] = useState<string | null>(null);
+  const [versionNote, setVersionNote] = useState('');
 
   // Загрузка документа и проекта
   useEffect(() => {
@@ -529,6 +543,118 @@ export default function DocumentPage() {
     },
     [projectId, docId, doc?.content, parseStatisticsFromContent, parseCitationsFromContent, parseFilesFromContent, statistics]
   );
+
+  // ========== Document Versioning Functions ==========
+  
+  // Load document versions
+  const loadVersions = useCallback(async () => {
+    if (!projectId || !docId) return;
+    setLoadingVersions(true);
+    try {
+      const res = await apiGetDocumentVersions(projectId, docId);
+      setVersions(res.versions || []);
+    } catch (err) {
+      console.error('Error loading versions:', err);
+      setVersions([]);
+    } finally {
+      setLoadingVersions(false);
+    }
+  }, [projectId, docId]);
+
+  // Create a manual version
+  const createManualVersion = useCallback(async () => {
+    if (!projectId || !docId) return;
+    setCreatingVersion(true);
+    try {
+      await apiCreateDocumentVersion(projectId, docId, versionNote || 'Ручное сохранение версии', 'manual');
+      setVersionNote('');
+      await loadVersions();
+    } catch (err) {
+      console.error('Error creating version:', err);
+    } finally {
+      setCreatingVersion(false);
+    }
+  }, [projectId, docId, versionNote, loadVersions]);
+
+  // Restore a specific version
+  const restoreVersion = useCallback(async (versionId: string) => {
+    if (!projectId || !docId) return;
+    
+    if (!confirm('Восстановить эту версию документа? Текущие изменения будут сохранены как отдельная версия.')) {
+      return;
+    }
+    
+    setRestoringVersion(versionId);
+    try {
+      const res = await apiRestoreDocumentVersion(projectId, docId, versionId);
+      if (res.success) {
+        // Update editor content
+        if (editorRef.current) {
+          editorRef.current.forceSetContent(res.restoredContent);
+        }
+        setContent(res.restoredContent);
+        setTitle(res.restoredTitle);
+        setDoc(prev => prev ? { ...prev, content: res.restoredContent, title: res.restoredTitle } : prev);
+        
+        // Reload versions to show the new auto-version created before restore
+        await loadVersions();
+      }
+    } catch (err) {
+      console.error('Error restoring version:', err);
+      alert('Ошибка восстановления версии');
+    } finally {
+      setRestoringVersion(null);
+    }
+  }, [projectId, docId, loadVersions]);
+
+  // Trigger auto-version check (called periodically or on significant changes)
+  const triggerAutoVersion = useCallback(async () => {
+    if (!projectId || !docId || !content) return;
+    try {
+      const res = await apiTriggerAutoVersion(projectId, docId, content);
+      if (res.created) {
+        console.log('Auto-version created:', res.reason);
+        // Optionally refresh versions list
+      }
+    } catch (err) {
+      // Silently fail - auto-versioning shouldn't interrupt the user
+      console.warn('Auto-version check failed:', err);
+    }
+  }, [projectId, docId, content]);
+
+  // Load versions when history panel is opened
+  useEffect(() => {
+    if (showVersionHistory) {
+      loadVersions();
+    }
+  }, [showVersionHistory, loadVersions]);
+
+  // Periodic auto-version check (every 5 minutes)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      triggerAutoVersion();
+    }, 5 * 60 * 1000); // 5 minutes
+    
+    return () => clearInterval(interval);
+  }, [triggerAutoVersion]);
+
+  // Create exit version when leaving the page
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Try to create an exit version (best effort)
+      if (projectId && docId && content) {
+        // Use sendBeacon for reliability on page unload
+        const token = localStorage.getItem('token');
+        navigator.sendBeacon(
+          `/api/projects/${projectId}/documents/${docId}/versions`,
+          new Blob([JSON.stringify({ versionType: 'exit', versionNote: 'Автосохранение при выходе' })], { type: 'application/json' })
+        );
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [projectId, docId, content]);
 
   // Build table HTML from statistic data (used to refresh document tables from Statistics)
   const buildTableHtmlFromStatistic = useCallback((tableData: TableData, statisticId?: string | null) => {
@@ -1256,8 +1382,150 @@ export default function DocumentPage() {
           )}
           {saving && <span className="muted">Сохранение...</span>}
           {!saving && !updatingBibliography && <span className="muted" style={{ color: "#4ade80" }}>✓ Сохранено</span>}
+          
+          {/* Version History Button */}
+          <button
+            className="btn secondary"
+            onClick={() => setShowVersionHistory(!showVersionHistory)}
+            title="История версий"
+            style={{ marginLeft: 8, padding: '6px 10px' }}
+          >
+            <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Версии
+          </button>
         </div>
       </div>
+
+      {/* Version History Panel */}
+      {showVersionHistory && (
+        <div className="version-history-panel" style={{
+          marginBottom: 16,
+          padding: 16,
+          background: 'var(--bg-secondary)',
+          borderRadius: 8,
+          border: '1px solid var(--border-color)',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 style={{ margin: 0, fontSize: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <svg className="icon-md" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              История версий документа
+            </h3>
+            <button
+              className="btn secondary"
+              onClick={() => setShowVersionHistory(false)}
+              style={{ padding: '4px 8px' }}
+            >
+              <svg className="icon-sm" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          
+          {/* Create manual version */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16, alignItems: 'flex-end' }}>
+            <div style={{ flex: 1 }}>
+              <label className="muted" style={{ fontSize: 11, display: 'block', marginBottom: 4 }}>
+                Комментарий к версии (необязательно)
+              </label>
+              <input
+                type="text"
+                value={versionNote}
+                onChange={(e) => setVersionNote(e.target.value)}
+                placeholder="Например: Добавлены графики исследования"
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 6 }}
+              />
+            </div>
+            <button
+              className="btn"
+              onClick={createManualVersion}
+              disabled={creatingVersion}
+              style={{ whiteSpace: 'nowrap' }}
+            >
+              <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              {creatingVersion ? 'Сохранение...' : 'Сохранить версию'}
+            </button>
+          </div>
+          
+          {/* Versions list */}
+          {loadingVersions ? (
+            <div className="muted" style={{ textAlign: 'center', padding: 20 }}>
+              Загрузка истории версий...
+            </div>
+          ) : versions.length === 0 ? (
+            <div className="muted" style={{ textAlign: 'center', padding: 20 }}>
+              Нет сохранённых версий. Версии создаются автоматически при значительных изменениях или вручную.
+            </div>
+          ) : (
+            <div style={{ maxHeight: 300, overflowY: 'auto' }}>
+              {versions.map((v) => (
+                <div
+                  key={v.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '10px 12px',
+                    borderBottom: '1px solid var(--border-color)',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontWeight: 500 }}>Версия {v.version_number}</span>
+                      <span 
+                        className="id-badge"
+                        style={{
+                          fontSize: 10,
+                          padding: '2px 6px',
+                          background: v.version_type === 'manual' ? 'rgba(75, 116, 255, 0.2)' : 
+                                     v.version_type === 'exit' ? 'rgba(251, 191, 36, 0.2)' : 
+                                     'rgba(100, 116, 139, 0.2)',
+                          color: v.version_type === 'manual' ? '#4b74ff' :
+                                 v.version_type === 'exit' ? '#fbbf24' : '#64748b',
+                        }}
+                      >
+                        {v.version_type === 'manual' ? 'Ручная' : 
+                         v.version_type === 'exit' ? 'При выходе' : 'Авто'}
+                      </span>
+                    </div>
+                    <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
+                      {new Date(v.created_at).toLocaleString('ru-RU')}
+                      {v.version_note && <span> — {v.version_note}</span>}
+                    </div>
+                    <div className="muted" style={{ fontSize: 10, marginTop: 2 }}>
+                      {v.content_length ? `${Math.round(v.content_length / 1000)}K символов` : ''}
+                      {v.created_by_email && ` • ${v.created_by_email}`}
+                    </div>
+                  </div>
+                  <button
+                    className="btn secondary"
+                    onClick={() => restoreVersion(v.id)}
+                    disabled={!!restoringVersion}
+                    style={{ padding: '6px 12px', fontSize: 12 }}
+                    title="Восстановить эту версию"
+                  >
+                    {restoringVersion === v.id ? (
+                      'Восстановление...'
+                    ) : (
+                      <>
+                        <svg className="icon-sm" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                        </svg>
+                        Восстановить
+                      </>
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
 

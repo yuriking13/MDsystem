@@ -491,6 +491,17 @@ export default function CitationGraph({ projectId }: Props) {
       displayTitle = `\n🔗 DOI: ${node.doi}`;
     }
     
+    // Показываем авторов для внешних статей (level !== 1)
+    let authorsText = '';
+    if (level !== 1 && node.authors) {
+      const authorsStr = typeof node.authors === 'string' 
+        ? node.authors 
+        : Array.isArray(node.authors) ? node.authors.join(', ') : '';
+      if (authorsStr) {
+        authorsText = `\n👤 ${authorsStr.substring(0, 80)}${authorsStr.length > 80 ? '...' : ''}`;
+      }
+    }
+    
     // Добавляем год и журнал если есть
     let metaInfo = '';
     if (node.year) {
@@ -500,7 +511,7 @@ export default function CitationGraph({ projectId }: Props) {
       }
     }
     
-    return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ''}${statsText}${displayTitle}${metaInfo}`;
+    return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ''}${statsText}${displayTitle}${authorsText}${metaInfo}`;
   }, [globalLang]);
 
   // Размер узла зависит от количества цитирований - как в ResearchRabbit

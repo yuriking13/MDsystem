@@ -93,6 +93,11 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   const [maxResults, setMaxResults] = useState(100);
   const [searching, setSearching] = useState(false);
   
+  // Поиск всех статей
+  const [showAllArticlesConfirm, setShowAllArticlesConfirm] = useState(false);
+  const [allArticlesCount, setAllArticlesCount] = useState<number | null>(null);
+  const [countingArticles, setCountingArticles] = useState(false);
+  
   // Перевод постфактум
   const [translating, setTranslating] = useState(false);
   const [translatingOne, setTranslatingOne] = useState(false);
@@ -319,6 +324,109 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       setShowSearch(false);
       setMultiQueries([]);
       setSearchQuery("");
+      await loadArticles();
+    } catch (err: any) {
+      setError(err?.message || "Ошибка поиска");
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  // Поиск всех статей - сначала получаем количество, затем подтверждение
+  async function handleSearchAllArticles() {
+    if (!searchQuery.trim()) {
+      setError("Введите поисковый запрос для поиска всех статей");
+      return;
+    }
+    
+    setCountingArticles(true);
+    setError(null);
+    
+    const { yearFrom, yearTo } = getYearsFromPreset();
+    
+    const filters: SearchFilters = {
+      yearFrom,
+      yearTo,
+    };
+    
+    if (searchField && searchField !== "All Fields") {
+      filters.searchField = searchField;
+    }
+    
+    if (searchSources.includes('pubmed')) {
+      if (textAvailability === "free_full") {
+        filters.freeFullTextOnly = true;
+      } else if (textAvailability === "full") {
+        filters.fullTextOnly = true;
+      }
+    }
+    
+    if (searchSources.includes('pubmed') && pubTypes.length > 0) {
+      const pubmedTypes = PUBLICATION_TYPES
+        .filter((pt) => pubTypes.includes(pt.id))
+        .map((pt) => pt.pubmed);
+      filters.publicationTypes = pubmedTypes;
+      filters.publicationTypesLogic = pubTypesLogic;
+    }
+
+    try {
+      // Запрашиваем количество статей (используем специальный endpoint или maxResults: 1 для получения count)
+      const res = await apiSearchArticles(projectId, searchQuery.trim(), filters, 1, searchSources);
+      const totalCount = res.totalFound || 0;
+      setAllArticlesCount(totalCount);
+      setShowAllArticlesConfirm(true);
+    } catch (err: any) {
+      setError(err?.message || "Ошибка получения количества статей");
+    } finally {
+      setCountingArticles(false);
+    }
+  }
+
+  // Подтверждение загрузки всех статей
+  async function handleConfirmSearchAll() {
+    setShowAllArticlesConfirm(false);
+    
+    if (!searchQuery.trim() || !allArticlesCount) return;
+    
+    setSearching(true);
+    setError(null);
+    setOk(null);
+    
+    const { yearFrom, yearTo } = getYearsFromPreset();
+    
+    const filters: SearchFilters = {
+      yearFrom,
+      yearTo,
+    };
+    
+    if (searchField && searchField !== "All Fields") {
+      filters.searchField = searchField;
+    }
+    
+    if (searchSources.includes('pubmed')) {
+      if (textAvailability === "free_full") {
+        filters.freeFullTextOnly = true;
+      } else if (textAvailability === "full") {
+        filters.fullTextOnly = true;
+      }
+    }
+    
+    if (searchSources.includes('pubmed') && pubTypes.length > 0) {
+      const pubmedTypes = PUBLICATION_TYPES
+        .filter((pt) => pubTypes.includes(pt.id))
+        .map((pt) => pt.pubmed);
+      filters.publicationTypes = pubmedTypes;
+      filters.publicationTypesLogic = pubTypesLogic;
+    }
+    
+    filters.translate = translateAfterSearch;
+
+    try {
+      // Загружаем все статьи используя maxResults = 10000 (практический максимум)
+      const res = await apiSearchArticles(projectId, searchQuery.trim(), filters, 10000, searchSources);
+      setOk(res.message);
+      setShowSearch(false);
+      setAllArticlesCount(null);
       await loadArticles();
     } catch (err: any) {
       setError(err?.message || "Ошибка поиска");
@@ -975,16 +1083,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 <span>Макс. результатов на источник</span>
                 <select
                   value={maxResults}
-                  onChange={(e) => setMaxResults(Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'all') {
+                      handleSearchAllArticles();
+                    } else {
+                      setMaxResults(Number(val));
+                    }
+                  }}
                   style={{ padding: "10px 12px", borderRadius: 10 }}
                   title="Лимит применяется к каждому выбранному источнику отдельно"
                 >
-                  <option value={10}>10 (тест)</option>
+                  <option value={10}>10</option>
                   <option value={50}>50</option>
                   <option value={100}>100</option>
-                  <option value={200}>200</option>
                   <option value={500}>500</option>
                   <option value={1000}>1000</option>
+                  <option value="all">Все статьи</option>
                 </select>
               </label>
               
@@ -1750,6 +1865,57 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Confirm search all articles */}
+      {showAllArticlesConfirm && (
+        <div className="rabbit-overlay" onClick={() => setShowAllArticlesConfirm(false)}>
+          <div className="rabbit-sidebar" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 450, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <svg className="icon-lg" style={{ color: '#fbbf24' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 style={{ margin: 0 }}>Загрузка всех статей</h3>
+            </div>
+            
+            <p style={{ marginBottom: 16, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              По запросу <strong>"{searchQuery}"</strong> найдено примерно <strong>{allArticlesCount?.toLocaleString('ru-RU')}</strong> статей.
+            </p>
+            
+            <p style={{ marginBottom: 24, color: 'var(--text-muted)', fontSize: 13 }}>
+              Загрузка большого количества статей может занять значительное время. Вы уверены, что хотите загрузить все?
+            </p>
+            
+            <div className="row gap">
+              <button
+                className="btn"
+                onClick={handleConfirmSearchAll}
+                disabled={searching}
+                type="button"
+                style={{ flex: 1 }}
+              >
+                {searching ? (
+                  <>Загрузка...</>
+                ) : (
+                  <>
+                    <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Загрузить все
+                  </>
+                )}
+              </button>
+              <button
+                className="btn secondary"
+                onClick={() => { setShowAllArticlesConfirm(false); setAllArticlesCount(null); }}
+                type="button"
+                style={{ flex: 1 }}
+              >
+                Отмена
+              </button>
             </div>
           </div>
         </div>

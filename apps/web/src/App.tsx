@@ -8,6 +8,8 @@ import SettingsPage from "./pages/SettingsPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import ProjectDetailPage from "./pages/ProjectDetailPage";
 import DocumentPage from "./pages/DocumentPage";
+import DocumentationPage from "./pages/DocumentationPage";
+import OnboardingTour from "./components/OnboardingTour";
 import { RequireAuth, useAuth } from "./lib/AuthContext";
 
 function ThemeToggle() {
@@ -42,6 +44,8 @@ export default function App() {
   return (
     <>
       <ThemeToggle />
+      {/* Show onboarding for authenticated users on first visit */}
+      {token && <OnboardingTour />}
       <Routes>
         <Route path="/" element={<Navigate to={token ? "/projects" : "/login"} replace />} />
         <Route path="/login" element={<LoginPage />} />
@@ -77,6 +81,14 @@ export default function App() {
           element={
             <RequireAuth>
               <SettingsPage />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/docs"
+          element={
+            <RequireAuth>
+              <DocumentationPage />
             </RequireAuth>
           }
         />
