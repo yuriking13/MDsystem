@@ -886,6 +886,10 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       const { projectId, fileId } = req.params;
       const { metadata, includeFullText = true } = req.body;
 
+      if (!isStorageConfigured()) {
+        return reply.serviceUnavailable("File storage is not configured");
+      }
+
       const access = await checkProjectAccess(userId, projectId);
       if (!access.hasAccess) {
         return reply.forbidden("You don't have access to this project");
@@ -910,24 +914,34 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       try {
         // Get full text from cache or re-extract if needed
         let fullText = "";
+        const fileAny = file as any;
         
         // Try to get from cache first
-        if (file.extractedText) {
-          fullText = file.extractedText;
+        if (fileAny.extractedText) {
+          fullText = fileAny.extractedText;
           app.log.info(`Using cached text for document import: ${file.name}`);
         } else if (includeFullText) {
           // Re-extract if cache is empty
-          app.log.info(`Extracting text for document import: ${file.name}`);
-          const { buffer } = await downloadFile(file.storagePath);
-          fullText = await extractTextFromFile(buffer, file.mimeType);
+          app.log.info(`Extracting text for document import: ${file.name} (storage: ${file.storagePath})`);
+          try {
+            const { buffer } = await downloadFile(file.storagePath);
+            app.log.info(`Downloaded file ${file.name}, size: ${buffer.length} bytes`);
+            fullText = await extractTextFromFile(buffer, file.mimeType);
+            app.log.info(`Extracted text from ${file.name}, length: ${fullText.length} chars`);
+          } catch (extractErr: any) {
+            app.log.error({ err: extractErr }, `Failed to extract text from file: ${file.name}`);
+            // Continue without full text
+          }
           
           // Cache the text for future use
-          await prisma.projectFile.update({
-            where: { id: fileId },
-            data: { extractedText: fullText },
-          }).catch(() => {
-            // Ignore if column doesn't exist yet
-          });
+          if (fullText) {
+            await prisma.projectFile.update({
+              where: { id: fileId },
+              data: { extractedText: fullText },
+            }).catch(() => {
+              // Ignore if column doesn't exist yet
+            });
+          }
         }
 
         // Build document content
