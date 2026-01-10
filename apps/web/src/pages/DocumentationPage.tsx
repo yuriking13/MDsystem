@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import SidebarLayout from '../components/Layout/SidebarLayout';
 
 type DocSection = 
   | 'overview'
@@ -101,71 +102,62 @@ export default function DocumentationPage() {
   const [activeSection, setActiveSection] = useState<DocSection>('overview');
 
   return (
-    <div className="container" style={{ maxWidth: 1200 }}>
-      <div className="row space" style={{ marginBottom: 24 }}>
-        <div className="row gap">
-          <Link to="/projects" className="btn secondary">
-            ← К проектам
-          </Link>
-          <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <svg className="icon-lg" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" style={{ color: 'var(--accent)' }}>
+    <SidebarLayout>
+      <div className="max-w-screen-xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-white sm:text-3xl flex items-center gap-3">
+            <svg className="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
             </svg>
             Документация
           </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Руководство по использованию платформы
+          </p>
         </div>
-      </div>
 
-      <div style={{ display: 'flex', gap: 24 }}>
-        {/* Sidebar */}
-        <div style={{ width: 280, flexShrink: 0 }}>
-          <div className="card" style={{ position: 'sticky', top: 20 }}>
-            <nav style={{ padding: 8 }}>
-              {DOC_SECTIONS.map(section => (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`doc-nav-item ${activeSection === section.id ? 'active' : ''}`}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    width: '100%',
-                    padding: '10px 12px',
-                    border: 'none',
-                    background: activeSection === section.id ? 'rgba(75, 116, 255, 0.15)' : 'transparent',
-                    color: activeSection === section.id ? 'var(--accent)' : 'var(--text-primary)',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    textAlign: 'left',
-                    marginBottom: 4,
-                  }}
-                >
-                  <span style={{ width: 20, height: 20 }}>{section.icon}</span>
-                  {section.title}
-                </button>
-              ))}
-            </nav>
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Sidebar */}
+          <div className="w-full lg:w-72 flex-shrink-0">
+            <div className="sticky top-24 bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 dark:bg-gray-800 p-2">
+              <nav className="space-y-1">
+                {DOC_SECTIONS.map(section => (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveSection(section.id)}
+                    className={`flex items-center gap-3 w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      activeSection === section.id
+                        ? 'bg-primary-100 text-primary-700 dark:bg-primary-900 dark:text-primary-300'
+                        : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                    }`}
+                  >
+                    <span className="w-5 h-5">{section.icon}</span>
+                    {section.title}
+                  </button>
+                ))}
+              </nav>
+            </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div style={{ flex: 1 }}>
-          <div className="card" style={{ padding: 32 }}>
-            {activeSection === 'overview' && <OverviewSection />}
-            {activeSection === 'articles' && <ArticlesSection />}
-            {activeSection === 'documents' && <DocumentsSection />}
-            {activeSection === 'files' && <FilesSection />}
-            {activeSection === 'statistics' && <StatisticsSection />}
-            {activeSection === 'graph' && <GraphSection />}
-            {activeSection === 'team' && <TeamSection />}
-            {activeSection === 'settings' && <SettingsSection />}
-            {activeSection === 'api-keys' && <ApiKeysSection />}
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="bg-white border border-gray-200 rounded-lg shadow-sm dark:border-gray-700 dark:bg-gray-800 p-6">
+              <div className="prose prose-sm dark:prose-invert max-w-none">
+                {activeSection === 'overview' && <OverviewSection />}
+                {activeSection === 'articles' && <ArticlesSection />}
+                {activeSection === 'documents' && <DocumentsSection />}
+                {activeSection === 'files' && <FilesSection />}
+                {activeSection === 'statistics' && <StatisticsSection />}
+                {activeSection === 'graph' && <GraphSection />}
+                {activeSection === 'team' && <TeamSection />}
+                {activeSection === 'settings' && <SettingsSection />}
+                {activeSection === 'api-keys' && <ApiKeysSection />}
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </SidebarLayout>
   );
 }
 

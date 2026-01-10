@@ -73,132 +73,132 @@ export default function RegisterPage() {
   }
 
   return (
-    <section className="auth-page">
-      <div className="auth-container">
-        <div className="auth-grid">
-          {/* Left side - Feature list */}
-          <div className="auth-features">
-            <a href="/" className="auth-logo">
-              <svg className="auth-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <section className="bg-white dark:bg-gray-900">
+      <div className="lg:grid lg:min-h-screen lg:grid-cols-12">
+        {/* Left side - Background image */}
+        <aside className="relative block h-16 lg:order-first lg:col-span-5 lg:h-full xl:col-span-6">
+          <img
+            alt="MDsystem Background"
+            src="/login-bg.png"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </aside>
+
+        {/* Right side - Register form */}
+        <main className="flex items-center justify-center px-8 py-8 sm:px-12 lg:col-span-7 lg:px-16 lg:py-12 xl:col-span-6">
+          <div className="max-w-xl lg:max-w-3xl">
+            {/* Logo */}
+            <a className="flex items-center mb-6 text-2xl font-semibold text-gray-900 dark:text-white" href="/">
+              <svg className="w-8 h-8 mr-2 text-primary-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               MDsystem
             </a>
 
-            <div className="auth-features-list">
-              <div className="auth-feature">
-                <svg className="auth-feature-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <div>
-                  <h3>Умный поиск статей</h3>
-                  <p>Интеграция с PubMed, DOAJ, Wiley для поиска научных публикаций по ключевым словам и MeSH терминам.</p>
-                </div>
+            <h1 className="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl md:text-4xl dark:text-white">
+              Создать аккаунт
+            </h1>
+
+            <p className="mt-4 leading-relaxed text-gray-500 dark:text-gray-400">
+              Зарегистрируйтесь для доступа к системе управления научными исследованиями.
+            </p>
+
+            <form onSubmit={submit} className="mt-8 grid grid-cols-6 gap-6">
+              <div className="col-span-6">
+                <label htmlFor="email" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  placeholder="name@example.com"
+                  autoComplete="email"
+                  required
+                />
               </div>
 
-              <div className="auth-feature">
-                <svg className="auth-feature-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <div>
-                  <h3>Граф цитирований</h3>
-                  <p>Визуализация связей между статьями, выявление ключевых работ и анализ citation network.</p>
-                </div>
+              <div className="col-span-6">
+                <label htmlFor="password" className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
+                  Пароль <span className="text-gray-400 font-normal">(минимум 8 символов)</span>
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                  minLength={8}
+                  required
+                />
               </div>
 
-              <div className="auth-feature">
-                <svg className="auth-feature-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <div>
-                  <h3>AI-ассистент</h3>
-                  <p>Интеллектуальный помощник для формирования поисковых запросов и анализа результатов.</p>
-                </div>
-              </div>
-
-              <div className="auth-feature">
-                <svg className="auth-feature-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <div>
-                  <h3>Редактор документов</h3>
-                  <p>Создание научных обзоров с автоматической вставкой цитирований и генерацией библиографии.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right side - Register form */}
-          <div className="auth-form-container">
-            <div className="auth-form-card">
-              <h1 className="auth-title">Создать аккаунт</h1>
-              
-              <form onSubmit={submit} className="auth-form">
-                <div className="auth-field">
-                  <label htmlFor="email">Email</label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    autoComplete="email"
-                    required
-                  />
-                </div>
-
-                <div className="auth-field">
-                  <label htmlFor="password">
-                    Пароль <span className="auth-hint">(минимум 8 символов)</span>
-                  </label>
-                  <input
-                    type="password"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                    minLength={8}
-                    required
-                  />
-                </div>
-
-                <div className="auth-terms">
-                  <label className="auth-checkbox">
+              <div className="col-span-6">
+                <div className="flex items-start">
+                  <div className="flex items-center h-5">
                     <input
+                      id="terms"
                       type="checkbox"
                       checked={agreeTerms}
                       onChange={(e) => setAgreeTerms(e.target.checked)}
+                      className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
                     />
-                    <span>
+                  </div>
+                  <div className="ml-3 text-sm">
+                    <label htmlFor="terms" className="text-gray-500 dark:text-gray-300">
                       Регистрируясь, вы соглашаетесь с{" "}
-                      <a href="#" className="auth-link">Условиями использования</a> и{" "}
-                      <a href="#" className="auth-link">Политикой конфиденциальности</a>.
-                    </span>
-                  </label>
+                      <a href="#" className="font-medium text-primary-600 hover:underline dark:text-primary-500">
+                        Условиями использования
+                      </a>{" "}
+                      и{" "}
+                      <a href="#" className="font-medium text-primary-600 hover:underline dark:text-primary-500">
+                        Политикой конфиденциальности
+                      </a>
+                    </label>
+                  </div>
                 </div>
+              </div>
 
-                {error && <div className="auth-error">{error}</div>}
+              {error && (
+                <div className="col-span-6 p-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                  {error}
+                </div>
+              )}
 
-                <button type="submit" className="auth-submit" disabled={busy}>
-                  {busy ? "Создание..." : "Создать аккаунт"}
+              <div className="col-span-6">
+                <button
+                  type="submit"
+                  disabled={busy}
+                  className="w-full text-white bg-primary-600 hover:bg-primary-700 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {busy ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Создание...
+                    </span>
+                  ) : (
+                    "Создать аккаунт"
+                  )}
                 </button>
+              </div>
 
-                <p className="auth-footer-text">
-                  Уже есть аккаунт?{" "}
-                  <Link to="/login" className="auth-link">
-                    Войти
-                  </Link>
-                </p>
-              </form>
-            </div>
+              <p className="col-span-6 text-sm font-light text-gray-500 dark:text-gray-400">
+                Уже есть аккаунт?{" "}
+                <Link to="/login" className="font-medium text-primary-600 hover:underline dark:text-primary-500">
+                  Войти
+                </Link>
+              </p>
+            </form>
           </div>
-        </div>
+        </main>
       </div>
-
-      <footer className="auth-footer">
-        <span>© 2024-2026 MDsystem. Все права защищены.</span>
-      </footer>
     </section>
   );
 }
