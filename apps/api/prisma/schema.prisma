@@ -270,18 +270,21 @@ model GraphFetchJob {
 
 // Файлы проекта (хранятся в S3-совместимом хранилище)
 model ProjectFile {
-  id              String   @id @default(dbgenerated("gen_random_uuid()"))
-  projectId       String   @map("project_id")
-  name            String   // Оригинальное имя файла
-  storagePath     String   @map("storage_path") // Путь в S3: {projectId}/{uuid}.{ext}
-  mimeType        String   @map("mime_type")
-  size            Int      // Размер в байтах
-  category        String   @default("other") // document, image, video, audio, other
-  description     String?
-  usedInDocuments String[] @default([]) @map("used_in_documents") // ID документов где используется
-  uploadedBy      String?  @map("uploaded_by")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  id                String   @id @default(dbgenerated("gen_random_uuid()"))
+  projectId         String   @map("project_id")
+  name              String   // Оригинальное имя файла
+  storagePath       String   @map("storage_path") // Путь в S3: {projectId}/{uuid}.{ext}
+  mimeType          String   @map("mime_type")
+  size              Int      // Размер в байтах
+  category          String   @default("other") // document, image, video, audio, other
+  description       String?
+  usedInDocuments   String[] @default([]) @map("used_in_documents") // ID документов где используется
+  uploadedBy        String?  @map("uploaded_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @default(now()) @updatedAt @map("updated_at")
+  extractedMetadata Json?    @map("extracted_metadata") // Cached AI-extracted metadata
+  extractedText     String?  @map("extracted_text") // Cached full text from PDF/Word
+  extractionDate    DateTime? @map("extraction_date") // When metadata was extracted
 
   project  Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   uploader User?   @relation(fields: [uploadedBy], references: [id])

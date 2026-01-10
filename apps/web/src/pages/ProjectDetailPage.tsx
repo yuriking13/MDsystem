@@ -25,6 +25,7 @@ import {
   apiGetFileDownloadUrl,
   apiAnalyzeFile,
   apiImportFileAsArticle,
+  apiImportFileAsDocument,
   type Project,
   type ProjectMember,
   type Document,
@@ -449,9 +450,12 @@ export default function ProjectDetailPage() {
     fileName: string;
     metadata: ExtractedArticleMetadata;
     textPreview: string;
+    fullText?: string;
+    cached?: boolean;
   } | null>(null);
   const [importingArticle, setImportingArticle] = useState(false);
   const [importStatus, setImportStatus] = useState<"selected" | "candidate">("selected");
+  const [importType, setImportType] = useState<"article" | "document">("article");
   
   // Экспорт глав
   const [showChapterSelectModal, setShowChapterSelectModal] = useState(false);
@@ -655,20 +659,23 @@ export default function ProjectDetailPage() {
   }
 
   // Анализ файла для импорта как статья
-  async function handleAnalyzeFile(file: ProjectFile) {
+  async function handleAnalyzeFile(file: ProjectFile, forceReanalyze: boolean = false) {
     if (!id) return;
     
     setAnalyzingFile(file.id);
     setError(null);
     
     try {
-      const result = await apiAnalyzeFile(id, file.id);
+      const result = await apiAnalyzeFile(id, file.id, forceReanalyze);
       setFileImportModal({
         fileId: file.id,
         fileName: file.name,
         metadata: result.metadata,
         textPreview: result.textPreview,
+        fullText: result.fullText,
+        cached: result.cached,
       });
+      setImportType("article"); // Reset to default
     } catch (err: any) {
       setError(err.message || "Ошибка анализа файла");
     } finally {
@@ -695,6 +702,31 @@ export default function ProjectDetailPage() {
       setImportStatus("selected");
     } catch (err: any) {
       setError(err.message || "Ошибка импорта статьи");
+    } finally {
+      setImportingArticle(false);
+    }
+  }
+
+  // Импорт файла как документа проекта
+  async function handleImportAsDocument() {
+    if (!id || !fileImportModal) return;
+    
+    setImportingArticle(true);
+    setError(null);
+    
+    try {
+      const result = await apiImportFileAsDocument(
+        id,
+        fileImportModal.fileId,
+        fileImportModal.metadata,
+        true // includeFullText
+      );
+      setOk(result.message);
+      setFileImportModal(null);
+      // Refresh documents list
+      await load();
+    } catch (err: any) {
+      setError(err.message || "Ошибка создания документа");
     } finally {
       setImportingArticle(false);
     }
@@ -1984,8 +2016,21 @@ export default function ProjectDetailPage() {
                     </button>
                   </div>
                   <div className="modal-body" style={{ padding: 20 }}>
-                    <div className="muted" style={{ fontSize: 13, marginBottom: 16 }}>
-                      Файл: <strong>{fileImportModal.fileName}</strong>
+                    <div className="row space" style={{ fontSize: 13, marginBottom: 16 }}>
+                      <span className="muted">
+                        Файл: <strong>{fileImportModal.fileName}</strong>
+                      </span>
+                      {fileImportModal.cached && (
+                        <span style={{ 
+                          fontSize: 11, 
+                          padding: '2px 8px', 
+                          background: 'var(--bg-tertiary)', 
+                          borderRadius: 4,
+                          color: 'var(--text-muted)'
+                        }}>
+                          ⚡ Из кэша
+                        </span>
+                      )}
                     </div>
 
                     {/* Заголовок */}
@@ -2125,48 +2170,117 @@ export default function ProjectDetailPage() {
                       </div>
                     )}
 
-                    {/* Статус импорта */}
+                    {/* Тип импорта */}
                     <div style={{ marginBottom: 16 }}>
-                      <span style={{ fontWeight: 500, marginBottom: 8, display: 'block' }}>Добавить в:</span>
+                      <span style={{ fontWeight: 500, marginBottom: 8, display: 'block' }}>Импортировать как:</span>
                       <div className="row gap">
                         <label className="row gap" style={{ alignItems: 'center', cursor: 'pointer' }}>
                           <input
                             type="radio"
-                            name="importStatus"
-                            checked={importStatus === "selected"}
-                            onChange={() => setImportStatus("selected")}
+                            name="importType"
+                            checked={importType === "article"}
+                            onChange={() => setImportType("article")}
                             style={{ width: 'auto' }}
                           />
                           <span>
-                            <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#4ade80' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#60a5fa' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
                             </svg>
-                            Отобранные
+                            Статья (в библиотеку)
                           </span>
                         </label>
                         <label className="row gap" style={{ alignItems: 'center', cursor: 'pointer' }}>
                           <input
                             type="radio"
-                            name="importStatus"
-                            checked={importStatus === "candidate"}
-                            onChange={() => setImportStatus("candidate")}
+                            name="importType"
+                            checked={importType === "document"}
+                            onChange={() => setImportType("document")}
                             style={{ width: 'auto' }}
                           />
                           <span>
-                            <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#fbbf24' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                            <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#a78bfa' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                             </svg>
-                            Кандидаты
+                            Документ проекта
                           </span>
                         </label>
                       </div>
                     </div>
 
+                    {/* Статус импорта (только для статьи) */}
+                    {importType === "article" && (
+                      <div style={{ marginBottom: 16 }}>
+                        <span style={{ fontWeight: 500, marginBottom: 8, display: 'block' }}>Добавить в:</span>
+                        <div className="row gap">
+                          <label className="row gap" style={{ alignItems: 'center', cursor: 'pointer' }}>
+                            <input
+                              type="radio"
+                              name="importStatus"
+                              checked={importStatus === "selected"}
+                              onChange={() => setImportStatus("selected")}
+                              style={{ width: 'auto' }}
+                            />
+                            <span>
+                              <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#4ade80' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              Отобранные
+                            </span>
+                          </label>
+                          <label className="row gap" style={{ alignItems: 'center', cursor: 'pointer' }}>
+                            <input
+                              type="radio"
+                              name="importStatus"
+                              checked={importStatus === "candidate"}
+                              onChange={() => setImportStatus("candidate")}
+                              style={{ width: 'auto' }}
+                            />
+                            <span>
+                              <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#fbbf24' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                              </svg>
+                              Кандидаты
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="muted" style={{ fontSize: 11, padding: 12, background: 'var(--bg-secondary)', borderRadius: 8 }}>
-                      <strong>ℹ️ Важно:</strong> При удалении файла из проекта статья останется в базе статей.
+                      {importType === "article" ? (
+                        <>
+                          <strong>ℹ️ Важно:</strong> При удалении файла из проекта статья останется в базе статей.
+                        </>
+                      ) : (
+                        <>
+                          <strong>ℹ️ Документ:</strong> Будет создан новый документ с полным текстом статьи, который можно редактировать.
+                        </>
+                      )}
                     </div>
                   </div>
                   <div className="modal-footer">
+                    <div className="row gap" style={{ flex: 1 }}>
+                      {fileImportModal.cached && (
+                        <button
+                          className="btn secondary"
+                          onClick={() => {
+                            const file = files.find(f => f.id === fileImportModal.fileId);
+                            if (file) {
+                              setFileImportModal(null);
+                              handleAnalyzeFile(file, true);
+                            }
+                          }}
+                          disabled={importingArticle}
+                          type="button"
+                          title="Повторно проанализировать файл с помощью AI"
+                        >
+                          <svg className="w-4 h-4" style={{ marginRight: 4 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                          </svg>
+                          Переанализ
+                        </button>
+                      )}
+                    </div>
                     <button
                       className="btn secondary"
                       onClick={() => setFileImportModal(null)}
@@ -2176,18 +2290,25 @@ export default function ProjectDetailPage() {
                     </button>
                     <button
                       className="btn"
-                      onClick={handleImportArticleFromFile}
+                      onClick={importType === "article" ? handleImportArticleFromFile : handleImportAsDocument}
                       disabled={importingArticle || !fileImportModal.metadata.title}
                       type="button"
                     >
                       {importingArticle ? (
                         <>Импортируем...</>
-                      ) : (
+                      ) : importType === "article" ? (
                         <>
                           <svg className="w-4 h-4" style={{ marginRight: 6 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                           </svg>
                           Импортировать в {importStatus === "selected" ? "Отобранные" : "Кандидаты"}
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" style={{ marginRight: 6 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                          </svg>
+                          Создать документ
                         </>
                       )}
                     </button>
