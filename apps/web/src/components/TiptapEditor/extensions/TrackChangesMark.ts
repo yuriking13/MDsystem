@@ -1,6 +1,6 @@
 import { Mark, mergeAttributes, CommandProps } from '@tiptap/react';
-import { Transaction } from '@tiptap/pm/state';
-import { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import type { Transaction } from 'prosemirror-state';
+import type { Node as ProseMirrorNode } from 'prosemirror-model';
 
 export interface TrackChangesMarkOptions {
   HTMLAttributes: Record<string, any>;
