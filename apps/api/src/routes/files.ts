@@ -992,7 +992,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
               content: [{ type: "text", text: "Содержание" }],
             },
             ...(includeFullText && fullText ? 
-              fullText.split(/\n\n+/).slice(0, 100).map(para => ({
+              fullText.split(/\n\n+/).slice(0, 300).map(para => ({
                 type: "paragraph",
                 content: para.trim() ? [{ type: "text", text: para.trim() }] : [],
               })) : 
@@ -1001,6 +1001,8 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
                 content: [{ type: "text", text: "[Здесь будет основной текст статьи...]" }],
               }]
             ),
+            // Note: Bibliography is added via citations table, not inline
+            // It will appear in the sidebar bibliography panel
           ],
         };
 
@@ -1033,11 +1035,73 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
 
         app.log.info(`Created document from file: ${documentId}`);
 
+        // Import bibliography references as articles and create citations
+        let bibliographyCount = 0;
+        if (metadata.bibliography && metadata.bibliography.length > 0) {
+          app.log.info(`Importing ${metadata.bibliography.length} bibliography references`);
+          
+          for (let i = 0; i < metadata.bibliography.length; i++) {
+            const ref = metadata.bibliography[i];
+            if (!ref.title && !ref.text) continue; // Skip empty refs
+            
+            try {
+              // Check if article with this DOI already exists
+              let articleId: string | null = null;
+              
+              if (ref.doi) {
+                const existingByDoi = await pool.query(
+                  `SELECT id FROM articles WHERE doi = $1`,
+                  [ref.doi.toLowerCase()]
+                );
+                if ((existingByDoi.rowCount ?? 0) > 0) {
+                  articleId = existingByDoi.rows[0].id;
+                }
+              }
+              
+              // Create new article if not found
+              if (!articleId) {
+                const insertRes = await pool.query(
+                  `INSERT INTO articles (
+                    title_en, authors, year, journal, doi, source, created_at
+                  ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+                  RETURNING id`,
+                  [
+                    ref.title || ref.text?.slice(0, 500) || "Без названия",
+                    ref.authors ? [ref.authors] : null,
+                    ref.year || null,
+                    ref.journal || null,
+                    ref.doi?.toLowerCase() || null,
+                    "file_import",
+                    new Date(),
+                  ]
+                );
+                articleId = insertRes.rows[0].id;
+              }
+              
+              // Create citation linking document to article
+              await pool.query(
+                `INSERT INTO citations (document_id, article_id, order_index, inline_number)
+                 VALUES ($1, $2, $3, $4)
+                 ON CONFLICT DO NOTHING`,
+                [documentId, articleId, i, i + 1]
+              );
+              
+              bibliographyCount++;
+            } catch (refErr: any) {
+              app.log.warn({ err: refErr }, `Failed to import reference: ${ref.title || ref.text?.slice(0, 50)}`);
+            }
+          }
+          
+          app.log.info(`Imported ${bibliographyCount} bibliography references for document ${documentId}`);
+        }
+
         return {
           ok: true,
           documentId,
           documentName: metadata.title,
-          message: `Документ "${metadata.title}" создан из файла`,
+          bibliographyCount,
+          message: `Документ "${metadata.title}" создан из файла` + 
+            (bibliographyCount > 0 ? `. Добавлено ${bibliographyCount} источников в библиографию.` : ""),
         };
       } catch (err: any) {
         app.log.error({ err }, "Failed to import file as document");
