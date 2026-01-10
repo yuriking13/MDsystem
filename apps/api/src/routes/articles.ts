@@ -2251,7 +2251,19 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     doi: z.string().nullable().optional(),
     citedByCount: z.number().nullable().optional(),
     graphLevel: z.number().nullable().optional(),
+    source: z.string().nullable().optional(), // 'pubmed' | 'doaj' | 'wiley' | 'crossref'
+    status: z.string().nullable().optional(), // статус в проекте
   });
+  
+  // Схема активных фильтров графа
+  const GraphFiltersSchema = z.object({
+    filter: z.enum(['all', 'selected', 'excluded']).optional(),
+    depth: z.number().min(1).max(3).optional(),
+    sources: z.array(z.enum(['pubmed', 'doaj', 'wiley'])).optional(),
+    yearFrom: z.number().optional(),
+    yearTo: z.number().optional(),
+    statsQuality: z.number().min(0).max(3).optional(),
+  }).optional();
   
   const GraphAIAssistantSchema = z.object({
     message: z.string().min(1).max(2000),
@@ -2260,6 +2272,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       articleCount: z.number().optional(),
       yearRange: z.object({ min: z.number().nullable(), max: z.number().nullable() }).optional(),
     }).optional(),
+    filters: GraphFiltersSchema, // Активные фильтры графа
   });
 
   fastify.post(
@@ -2289,7 +2302,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
       
       const projectId = paramsP.data.id;
-      const { message, graphArticles, context } = bodyP.data;
+      const { message, graphArticles, context, filters } = bodyP.data;
       
       console.log(`[AI Assistant] After Zod: graphArticles length:`, graphArticles?.length);
       
@@ -2344,6 +2357,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         
         console.log(`[AI Assistant] Articles with real data: ${articlesWithData.length}`);
         
+        // Преобразуем graphLevel в читаемый тип
+        const graphLevelToType = (level: number | null | undefined): string => {
+          switch (level) {
+            case 0: return 'citing'; // Цитирует статью из проекта
+            case 1: return 'project'; // В проекте
+            case 2: return 'reference'; // Ссылка
+            case 3: return 'related'; // Связанная
+            default: return 'unknown';
+          }
+        };
+        
         // Формируем список статей для AI (передаём ВСЕ статьи с данными)
         const articlesForAI = articlesWithData
           .map((a, idx) => {
@@ -2354,11 +2378,52 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               a.journal ? `Журнал: ${a.journal}` : null,
               a.authors ? `Авторы: ${a.authors.substring(0, 150)}` : null,
               a.citedByCount ? `Цитирований: ${a.citedByCount}` : null,
+              a.pmid ? `PMID: ${a.pmid}` : null,
+              a.doi ? `DOI: ${a.doi}` : null,
+              a.source ? `Источник: ${a.source.toUpperCase()}` : null,
+              `Тип связи: ${graphLevelToType(a.graphLevel)}`,
               a.abstract ? `Аннотация: ${a.abstract.substring(0, 500)}` : null,
             ].filter(Boolean);
             return parts.join('\n');
           })
           .join('\n\n---\n\n');
+        
+        // Формируем описание активных фильтров
+        const filterDescriptions: string[] = [];
+        if (filters?.filter && filters.filter !== 'all') {
+          filterDescriptions.push(`Статус: ${filters.filter === 'selected' ? 'Только отобранные' : 'Только исключённые'}`);
+        }
+        if (filters?.depth) {
+          const depthNames: Record<number, string> = {
+            1: 'Только статьи проекта',
+            2: 'Статьи проекта + Ссылки (references)',
+            3: 'Статьи проекта + Ссылки + Цитирующие'
+          };
+          filterDescriptions.push(`Глубина: ${depthNames[filters.depth] || filters.depth}`);
+        }
+        if (filters?.sources && filters.sources.length > 0) {
+          filterDescriptions.push(`Источники: ${filters.sources.map(s => s.toUpperCase()).join(', ')}`);
+        }
+        if (filters?.yearFrom || filters?.yearTo) {
+          filterDescriptions.push(`Годы: ${filters.yearFrom || '...'} - ${filters.yearTo || '...'}`);
+        }
+        if (filters?.statsQuality && filters.statsQuality > 0) {
+          filterDescriptions.push(`Мин. качество p-value: ${filters.statsQuality}`);
+        }
+        
+        // Подсчёт статей по типам связей
+        const levelStats = {
+          citing: externalArticles.filter(a => a.graphLevel === 0).length, // Цитируют статьи из базы
+          reference: externalArticles.filter(a => a.graphLevel === 2).length, // Ссылки
+          related: externalArticles.filter(a => a.graphLevel === 3).length, // Связанные
+        };
+        
+        // Подсчёт по источникам
+        const sourceStats = {
+          pubmed: articlesWithData.filter(a => a.source === 'pubmed' || !a.source).length,
+          doaj: articlesWithData.filter(a => a.source === 'doaj').length,
+          wiley: articlesWithData.filter(a => a.source === 'wiley').length,
+        };
         
         // Формируем системный промпт для поиска в графе
         const systemPrompt = `Ты - AI ассистент для научного исследователя. Твоя задача - искать релевантные статьи СРЕДИ УЖЕ ЗАГРУЖЕННЫХ в граф цитирований.
@@ -2371,6 +2436,24 @@ ${context?.yearRange ? `- Годы публикаций в графе: ${context
 - Всего статей в графе: ${context?.articleCount || 0}
 - Внешних статей (ссылки/цитирующие): ${externalArticles.length}
 - Статей с полными данными для поиска: ${articlesWithData.length}
+
+АКТИВНЫЕ ФИЛЬТРЫ ГРАФА:
+${filterDescriptions.length > 0 ? filterDescriptions.map(f => `- ${f}`).join('\n') : '- Фильтры не применены'}
+
+СТАТИСТИКА ПО ТИПАМ СТАТЕЙ:
+- Цитирующие (citing): ${levelStats.citing} статей
+- Ссылки (references): ${levelStats.reference} статей
+- Связанные (related): ${levelStats.related} статей
+
+СТАТИСТИКА ПО ИСТОЧНИКАМ (с данными):
+- PubMed: ${sourceStats.pubmed} статей
+- DOAJ: ${sourceStats.doaj} статей
+- Wiley: ${sourceStats.wiley} статей
+
+ПОНИМАНИЕ ТИПОВ СВЯЗЕЙ:
+- "citing" (цитирующие) - статьи, которые ССЫЛАЮТСЯ на статьи из проекта (более новые работы)
+- "reference" (ссылки) - статьи, НА КОТОРЫЕ ссылаются статьи проекта (первоисточники)
+- "related" (связанные) - статьи, которые тоже ссылаются на те же источники (похожие работы)
 
 ДОСТУПНЫЕ СТАТЬИ ДЛЯ ПОИСКА (${articlesWithData.length} шт.):
 ${articlesForAI || 'Нет статей с полными данными для поиска. Статьи-placeholder (только PMID без метаданных) пропущены.'}
