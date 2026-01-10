@@ -32,6 +32,8 @@ import {
   extractTextFromFile,
   extractArticleMetadataWithAI,
   extractDoiFromText,
+  extractHtmlFromWord,
+  htmlToTiptapContent,
   type ExtractedArticle,
 } from "../lib/article-extractor.js";
 
@@ -916,93 +918,47 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         let fullText = "";
         const fileAny = file as any;
         
-        // Try to get from cache first
-        if (fileAny.extractedText) {
-          fullText = fileAny.extractedText;
-          app.log.info(`Using cached text for document import: ${file.name}`);
-        } else if (includeFullText) {
-          // Re-extract if cache is empty
-          app.log.info(`Extracting text for document import: ${file.name} (storage: ${file.storagePath})`);
+        // Extract content with structure (HTML for Word, text for PDF)
+        let structuredContent: any[] = [];
+        
+        if (includeFullText) {
+          app.log.info(`Extracting content for document import: ${file.name} (storage: ${file.storagePath})`);
           try {
             const { buffer } = await downloadFile(file.storagePath);
             app.log.info(`Downloaded file ${file.name}, size: ${buffer.length} bytes`);
-            fullText = await extractTextFromFile(buffer, file.mimeType);
-            app.log.info(`Extracted text from ${file.name}, length: ${fullText.length} chars`);
+            
+            // For Word files, use HTML extraction to preserve tables and structure
+            const isWord = file.mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+                           file.mimeType === "application/msword";
+            
+            if (isWord) {
+              const html = await extractHtmlFromWord(buffer);
+              app.log.info(`Extracted HTML from ${file.name}, length: ${html.length} chars`);
+              structuredContent = htmlToTiptapContent(html);
+              app.log.info(`Converted to TipTap: ${structuredContent.length} blocks`);
+            } else {
+              // For PDF, use text extraction
+              fullText = await extractTextFromFile(buffer, file.mimeType);
+              app.log.info(`Extracted text from ${file.name}, length: ${fullText.length} chars`);
+              structuredContent = fullText.split(/\n\n+/).slice(0, 500).map(para => ({
+                type: "paragraph",
+                content: para.trim() ? [{ type: "text", text: para.trim() }] : [],
+              }));
+            }
           } catch (extractErr: any) {
-            app.log.error({ err: extractErr }, `Failed to extract text from file: ${file.name}`);
-            // Continue without full text
-          }
-          
-          // Cache the text for future use
-          if (fullText) {
-            await prisma.projectFile.update({
-              where: { id: fileId },
-              data: { extractedText: fullText },
-            }).catch(() => {
-              // Ignore if column doesn't exist yet
-            });
+            app.log.error({ err: extractErr }, `Failed to extract content from file: ${file.name}`);
           }
         }
 
-        // Build document content
-        const authors = metadata.authors?.join(", ") || "";
-        const doiLink = metadata.doi ? `https://doi.org/${metadata.doi}` : "";
-        
-        // Create structured document content
+        // Build document content - just add the extracted content directly
+        // No need for metadata header since it's already in the file
         const documentContent = {
           type: "doc",
-          content: [
+          content: structuredContent.length > 0 ? structuredContent : [
             {
-              type: "heading",
-              attrs: { level: 1 },
-              content: [{ type: "text", text: metadata.title }],
-            },
-            ...(authors ? [{
               type: "paragraph",
-              content: [
-                { type: "text", marks: [{ type: "bold" }], text: "Авторы: " },
-                { type: "text", text: authors },
-              ],
-            }] : []),
-            ...(metadata.doi ? [{
-              type: "paragraph",
-              content: [
-                { type: "text", marks: [{ type: "bold" }], text: "DOI: " },
-                { 
-                  type: "text", 
-                  marks: [{ type: "link", attrs: { href: doiLink, target: "_blank" } }], 
-                  text: metadata.doi 
-                },
-              ],
-            }] : []),
-            ...(metadata.abstract ? [
-              {
-                type: "heading",
-                attrs: { level: 2 },
-                content: [{ type: "text", text: "Аннотация" }],
-              },
-              {
-                type: "paragraph",
-                content: [{ type: "text", text: metadata.abstract }],
-              },
-            ] : []),
-            {
-              type: "heading",
-              attrs: { level: 2 },
-              content: [{ type: "text", text: "Содержание" }],
+              content: [{ type: "text", text: "[Не удалось извлечь содержимое файла]" }],
             },
-            ...(includeFullText && fullText ? 
-              fullText.split(/\n\n+/).slice(0, 300).map(para => ({
-                type: "paragraph",
-                content: para.trim() ? [{ type: "text", text: para.trim() }] : [],
-              })) : 
-              [{
-                type: "paragraph",
-                content: [{ type: "text", text: "[Здесь будет основной текст статьи...]" }],
-              }]
-            ),
-            // Note: Bibliography is added via citations table, not inline
-            // It will appear in the sidebar bibliography panel
           ],
         };
 
@@ -1037,12 +993,20 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
 
         // Import bibliography references as articles and create citations
         let bibliographyCount = 0;
+        const mainArticleDoi = metadata.doi?.toLowerCase();
+        
         if (metadata.bibliography && metadata.bibliography.length > 0) {
           app.log.info(`Importing ${metadata.bibliography.length} bibliography references`);
           
           for (let i = 0; i < metadata.bibliography.length; i++) {
             const ref = metadata.bibliography[i];
             if (!ref.title && !ref.text) continue; // Skip empty refs
+            
+            // Skip if this reference is the main article itself (by DOI)
+            if (ref.doi && mainArticleDoi && ref.doi.toLowerCase() === mainArticleDoi) {
+              app.log.info(`Skipping self-reference: ${ref.doi}`);
+              continue;
+            }
             
             try {
               // Check if article with this DOI already exists
