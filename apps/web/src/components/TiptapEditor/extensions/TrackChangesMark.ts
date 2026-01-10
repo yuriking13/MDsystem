@@ -1,4 +1,6 @@
-import { Mark, mergeAttributes } from '@tiptap/react';
+import { Mark, mergeAttributes, CommandProps } from '@tiptap/react';
+import { Transaction } from '@tiptap/pm/state';
+import { Node as ProseMirrorNode } from '@tiptap/pm/model';
 
 export interface TrackChangesMarkOptions {
   HTMLAttributes: Record<string, any>;
@@ -13,17 +15,6 @@ export interface TrackChangeAttrs {
   authorEmail?: string;
   createdAt: string;
   accepted?: boolean;
-}
-
-declare module '@tiptap/core' {
-  interface Commands<ReturnType> {
-    trackChange: {
-      setTrackChange: (attrs: TrackChangeAttrs) => ReturnType;
-      unsetTrackChange: () => ReturnType;
-      acceptChange: (changeId: string) => ReturnType;
-      rejectChange: (changeId: string) => ReturnType;
-    };
-  }
 }
 
 export const TrackChangesMark = Mark.create<TrackChangesMarkOptions>({
@@ -130,22 +121,22 @@ export const TrackChangesMark = Mark.create<TrackChangesMarkOptions>({
     return {
       setTrackChange:
         (attrs: TrackChangeAttrs) =>
-        ({ commands }) => {
+        ({ commands }: CommandProps) => {
           return commands.setMark(this.name, attrs);
         },
       unsetTrackChange:
         () =>
-        ({ commands }) => {
+        ({ commands }: CommandProps) => {
           return commands.unsetMark(this.name);
         },
       acceptChange:
         (changeId: string) =>
-        ({ tr, state, dispatch }) => {
+        ({ tr, state, dispatch }: { tr: Transaction; state: any; dispatch: any }) => {
           // Find and accept the change
           let found = false;
-          state.doc.descendants((node, pos) => {
+          state.doc.descendants((node: ProseMirrorNode, pos: number) => {
             if (node.marks) {
-              const mark = node.marks.find(m => 
+              const mark = node.marks.find((m: any) => 
                 m.type.name === 'trackChange' && 
                 m.attrs.changeId === changeId
               );
@@ -172,12 +163,12 @@ export const TrackChangesMark = Mark.create<TrackChangesMarkOptions>({
         },
       rejectChange:
         (changeId: string) =>
-        ({ tr, state, dispatch }) => {
+        ({ tr, state, dispatch }: { tr: Transaction; state: any; dispatch: any }) => {
           // Find and reject the change
           let found = false;
-          state.doc.descendants((node, pos) => {
+          state.doc.descendants((node: ProseMirrorNode, pos: number) => {
             if (node.marks) {
-              const mark = node.marks.find(m => 
+              const mark = node.marks.find((m: any) => 
                 m.type.name === 'trackChange' && 
                 m.attrs.changeId === changeId
               );
@@ -202,7 +193,7 @@ export const TrackChangesMark = Mark.create<TrackChangesMarkOptions>({
           
           return found;
         },
-    };
+    } as any;
   },
 });
 

@@ -1,4 +1,4 @@
-import { Mark, mergeAttributes } from '@tiptap/react';
+import { Mark, mergeAttributes, CommandProps } from '@tiptap/react';
 
 export interface CommentMarkOptions {
   HTMLAttributes: Record<string, any>;
@@ -11,15 +11,6 @@ export interface CommentAttrs {
   text: string;
   createdAt: string;
   resolved?: boolean;
-}
-
-declare module '@tiptap/core' {
-  interface Commands<ReturnType> {
-    comment: {
-      setComment: (attrs: CommentAttrs) => ReturnType;
-      unsetComment: () => ReturnType;
-    };
-  }
 }
 
 export const CommentMark = Mark.create<CommentMarkOptions>({
@@ -110,15 +101,15 @@ export const CommentMark = Mark.create<CommentMarkOptions>({
     return {
       setComment:
         (attrs: CommentAttrs) =>
-        ({ commands }) => {
+        ({ commands }: CommandProps) => {
           return commands.setMark(this.name, attrs);
         },
       unsetComment:
         () =>
-        ({ commands }) => {
+        ({ commands }: CommandProps) => {
           return commands.unsetMark(this.name);
         },
-    };
+    } as any;
   },
 });
 
