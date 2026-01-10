@@ -2,8 +2,7 @@
  * Library for extracting article metadata from PDF and Word files using AI
  */
 
-// @ts-ignore - pdf-parse doesn't have types
-import pdfParse from "pdf-parse";
+import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 
 export type ExtractedArticle = {
@@ -33,8 +32,10 @@ export type ExtractedReference = {
  * Extract text from PDF file
  */
 export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
-  const data = await pdfParse(buffer);
-  return data.text;
+  const parser = new PDFParse({ data: buffer });
+  const result = await parser.getText();
+  parser.destroy();
+  return result.text;
 }
 
 /**
