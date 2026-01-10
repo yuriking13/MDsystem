@@ -239,13 +239,16 @@ model GraphCache {
 model GraphFetchJob {
   id                 String    @id @default(dbgenerated("gen_random_uuid()"))
   projectId          String    @map("project_id")
-  status             String    @default("pending") // pending, running, completed, failed
+  status             String    @default("pending") // pending, running, completed, failed, cancelled
   totalArticles      Int       @default(0) @map("total_articles")
   processedArticles  Int       @default(0) @map("processed_articles")
   totalPmidsToFetch  Int       @default(0) @map("total_pmids_to_fetch")
   fetchedPmids       Int       @default(0) @map("fetched_pmids")
   startedAt          DateTime? @map("started_at")
   completedAt        DateTime? @map("completed_at")
+  lastProgressAt     DateTime? @map("last_progress_at") // Время последнего обновления прогресса
+  cancelledAt        DateTime? @map("cancelled_at") // Время отмены
+  cancelReason       String?   @map("cancel_reason") // stalled, user_cancelled, timeout
   errorMessage       String?   @map("error_message")
   createdAt          DateTime  @default(now()) @map("created_at")
 

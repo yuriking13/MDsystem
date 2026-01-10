@@ -3,7 +3,12 @@ import { enrichArticlesWithReferences, pubmedFetchByPmids, europePMCGetCitationC
 import { decryptApiKey } from '../../utils/apiKeyCrypto.js';
 import { getCrossrefByDOI, extractEnrichedData } from '../../lib/crossref.js';
 
-// Поfлучаесм API кDалюч пользователя из бВазы
+// Константы для контроля времени выполнения
+const STALL_CHECK_INTERVAL_MS = 10000; // Проверка зависания каждые 10 сек
+const STALL_TIMEOUT_MS = 60000; // 60 секунд без прогресса = зависание
+const MAX_JOB_DURATION_MS = 30 * 60 * 1000; // 30 минут максимум на весь job
+
+// Получаем API ключ пользователя из базы
 async function getUserApiKey(userId: string, provider: string): Promise<string | null> {
   const result = await pool.query(
     `SELECT encrypted_key FROM user_api_keys WHERE user_id = $1 AND provider = $2`,
@@ -11,6 +16,54 @@ async function getUserApiKey(userId: string, provider: string): Promise<string |
   );
   if (result.rows.length === 0) return null;
   return decryptApiKey(result.rows[0].encrypted_key);
+}
+
+// Обновление времени последнего прогресса
+async function updateProgress(jobId: string, updates: {
+  processed_articles?: number;
+  fetched_pmids?: number;
+  total_pmids_to_fetch?: number;
+  phase?: string;
+  phase_progress?: string;
+}) {
+  const setClauses: string[] = ['last_progress_at = now()'];
+  const values: any[] = [];
+  let paramIdx = 1;
+  
+  if (updates.processed_articles !== undefined) {
+    setClauses.push(`processed_articles = $${paramIdx++}`);
+    values.push(updates.processed_articles);
+  }
+  if (updates.fetched_pmids !== undefined) {
+    setClauses.push(`fetched_pmids = $${paramIdx++}`);
+    values.push(updates.fetched_pmids);
+  }
+  if (updates.total_pmids_to_fetch !== undefined) {
+    setClauses.push(`total_pmids_to_fetch = $${paramIdx++}`);
+    values.push(updates.total_pmids_to_fetch);
+  }
+  // Сохраняем текущую фазу и прогресс в error_message временно (для отладки)
+  if (updates.phase) {
+    setClauses.push(`error_message = $${paramIdx++}`);
+    values.push(`[Phase: ${updates.phase}] ${updates.phase_progress || ''}`);
+  }
+  
+  values.push(jobId);
+  
+  await pool.query(
+    `UPDATE graph_fetch_jobs SET ${setClauses.join(', ')} WHERE id = $${paramIdx}`,
+    values
+  );
+}
+
+// Проверка, не отменён ли job
+async function isJobCancelled(jobId: string): Promise<boolean> {
+  const res = await pool.query(
+    `SELECT status, cancelled_at FROM graph_fetch_jobs WHERE id = $1`,
+    [jobId]
+  );
+  if (res.rows.length === 0) return true;
+  return res.rows[0].status === 'cancelled' || res.rows[0].cancelled_at != null;
 }
 
 export type GraphFetchJobPayload = {
@@ -23,14 +76,41 @@ export type GraphFetchJobPayload = {
 
 export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
   const { projectId, jobId, userId, selectedOnly, articleIds } = payload;
+  const startTime = Date.now();
   
   console.log(`[GraphFetch] Starting job ${jobId} for project ${projectId}, userId: ${userId}, selectedOnly: ${selectedOnly}, articleIds: ${articleIds?.length || 0}`);
   
+  // Функция проверки таймаута и отмены
+  const checkTimeoutAndCancellation = async (): Promise<boolean> => {
+    // Проверяем общий таймаут
+    if (Date.now() - startTime > MAX_JOB_DURATION_MS) {
+      console.log(`[GraphFetch] Job ${jobId} exceeded max duration (${MAX_JOB_DURATION_MS}ms), cancelling`);
+      await pool.query(
+        `UPDATE graph_fetch_jobs SET 
+          status = 'cancelled', 
+          cancelled_at = now(),
+          cancel_reason = 'timeout',
+          error_message = 'Превышено максимальное время выполнения (30 мин). Попробуйте загрузить связи для меньшего числа статей.'
+         WHERE id = $1`,
+        [jobId]
+      );
+      return true;
+    }
+    
+    // Проверяем отмену пользователем
+    if (await isJobCancelled(jobId)) {
+      console.log(`[GraphFetch] Job ${jobId} was cancelled`);
+      return true;
+    }
+    
+    return false;
+  };
+  
   try {
     console.log(`[GraphFetch] Updating job status to 'running'`);
-    // Обновляем статус на running
+    // Обновляем статус на running с начальным временем прогресса
     await pool.query(
-      `UPDATE graph_fetch_jobs SET status = 'running', started_at = now() WHERE id = $1`,
+      `UPDATE graph_fetch_jobs SET status = 'running', started_at = now(), last_progress_at = now() WHERE id = $1`,
       [jobId]
     );
     console.log(`[GraphFetch] Job status updated, fetching articles...`);
@@ -82,11 +162,30 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
       idByPmid.set(row.pmid, row.id);
     }
     
-    // Получаем references из PubMed
+    // Обновляем прогресс перед началом фазы 1
+    await updateProgress(jobId, { 
+      phase: '1 - Загрузка references из PubMed', 
+      phase_progress: `0/${pmids.length} статей` 
+    });
+    
+    // Проверяем отмену перед длительной операцией
+    if (await checkTimeoutAndCancellation()) return;
+    
+    // Получаем references из PubMed с промежуточными обновлениями прогресса
     const refsMap = await enrichArticlesWithReferences({
       apiKey: apiKey || undefined,
       pmids,
       throttleMs: apiKey ? 100 : 350,
+      onProgress: async (processed: number, total: number) => {
+        // Обновляем прогресс каждые 10 статей или при завершении
+        if (processed % 10 === 0 || processed === total) {
+          await updateProgress(jobId, {
+            phase: '1 - Загрузка references из PubMed',
+            phase_progress: `${processed}/${total} статей`
+          });
+        }
+      },
+      checkCancelled: async () => isJobCancelled(jobId),
     });
     
     // Собираем все уникальные PMIDs для кэширования
@@ -151,29 +250,35 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
       
       processedArticles++;
       
-      // Обновляем прогресс каждые 10 статей
+      // Обновляем прогресс каждые 10 статей с обновлением last_progress_at
       if (processedArticles % 10 === 0) {
-        await pool.query(
-          `UPDATE graph_fetch_jobs SET processed_articles = $1 WHERE id = $2`,
-          [processedArticles, jobId]
-        );
+        await updateProgress(jobId, {
+          processed_articles: processedArticles,
+          phase: '1.5 - Обработка результатов',
+          phase_progress: `${processedArticles}/${refsMap.size} статей обработано`
+        });
+        
+        // Проверяем отмену
+        if (await checkTimeoutAndCancellation()) return;
       }
     }
     
     console.log(`[GraphFetch] Phase 1 complete: ${articlesWithReferences}/${processedArticles} articles have references (${totalReferencesFound} total), ${articlesWithCitedBy} have cited_by (${totalCitedByFound} total)`);
+    
+    // Проверяем отмену перед фазой 2
+    if (await checkTimeoutAndCancellation()) return;
     
     // Фаза 2: Кэшируем информацию о связанных статьях
     const pmidsToFetch = Array.from(allPmidsToCache);
     
     console.log(`[GraphFetch] Phase 2 starting: ${pmidsToFetch.length} unique PMIDs to cache`);
     
-    await pool.query(
-      `UPDATE graph_fetch_jobs SET 
-        processed_articles = $1, 
-        total_pmids_to_fetch = $2 
-       WHERE id = $3`,
-      [processedArticles, pmidsToFetch.length, jobId]
-    );
+    await updateProgress(jobId, {
+      processed_articles: processedArticles,
+      total_pmids_to_fetch: pmidsToFetch.length,
+      phase: '2 - Кэширование метаданных статей',
+      phase_progress: `0/${pmidsToFetch.length} PMIDs`
+    });
     
     // Загружаем информацию батчами
     const batchSize = 50;
@@ -182,6 +287,9 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
     let fetchedFromPubmed = 0;
     
     for (let i = 0; i < pmidsToFetch.length; i += batchSize) {
+      // Проверяем отмену перед каждым батчем
+      if (await checkTimeoutAndCancellation()) return;
+      
       const batch = pmidsToFetch.slice(i, i + batchSize);
       
       // Проверяем какие уже есть в кэше (не истёкшие)
@@ -230,22 +338,32 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
       
       fetchedPmids += batch.length;
       
-      // Логируем прогресс каждые 200 PMIDs
-      if (fetchedPmids % 200 === 0 || fetchedPmids === pmidsToFetch.length) {
+      // Логируем и обновляем прогресс каждые 100 PMIDs или при завершении
+      if (fetchedPmids % 100 === 0 || fetchedPmids === pmidsToFetch.length) {
         console.log(`[GraphFetch] Phase 2 progress: ${fetchedPmids}/${pmidsToFetch.length} PMIDs (${cachedFromDb} cached, ${fetchedFromPubmed} fetched)`);
+        
+        await updateProgress(jobId, {
+          fetched_pmids: fetchedPmids,
+          phase: '2 - Кэширование метаданных статей',
+          phase_progress: `${fetchedPmids}/${pmidsToFetch.length} PMIDs (${cachedFromDb} из кэша, ${fetchedFromPubmed} загружено)`
+        });
       }
-      
-      // Обновляем прогресс
-      await pool.query(
-        `UPDATE graph_fetch_jobs SET fetched_pmids = $1 WHERE id = $2`,
-        [fetchedPmids, jobId]
-      );
     }
     
     console.log(`[GraphFetch] Phase 2 complete: ${cachedFromDb} PMIDs from cache, ${fetchedFromPubmed} fetched from PubMed`);
     
+    // Проверяем отмену перед фазой 3
+    if (await checkTimeoutAndCancellation()) return;
+    
     // Фаза 3: Загружаем citation counts из Europe PMC (быстрее чем PubMed)
-    console.log(`[GraphFetch] Phase 3 starting: fetching citation counts from Europe PMC for ${Math.min(pmids.length, 200)} articles`);
+    const phase3PmidsCount = Math.min(pmids.length, 200);
+    console.log(`[GraphFetch] Phase 3 starting: fetching citation counts from Europe PMC for ${phase3PmidsCount} articles`);
+    
+    await updateProgress(jobId, {
+      phase: '3 - Загрузка счётчиков цитирований',
+      phase_progress: `0/${phase3PmidsCount} статей`
+    });
+    
     try {
       const citationCounts = await europePMCGetCitationCounts({
         pmids: pmids.slice(0, 200), // Ограничиваем для скорости
@@ -264,15 +382,32 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
           [count, articleId]
         );
         citationUpdates++;
+        
+        // Обновляем прогресс каждые 20 статей
+        if (citationUpdates % 20 === 0) {
+          await updateProgress(jobId, {
+            phase: '3 - Загрузка счётчиков цитирований',
+            phase_progress: `${citationUpdates}/${phase3PmidsCount} статей`
+          });
+        }
       }
       console.log(`[GraphFetch] Phase 3 complete: updated citation counts for ${citationUpdates} articles`);
     } catch (err) {
       console.error('[GraphFetch] Europe PMC error:', err);
     }
     
+    // Проверяем отмену перед фазой 4
+    if (await checkTimeoutAndCancellation()) return;
+    
     // Фаза 4: Загружаем Crossref references для статей БЕЗ PMID (DOAJ, Wiley, Crossref)
     // Это позволяет строить связи для не-PubMed статей
     console.log(`[GraphFetch] Phase 4 starting: fetching Crossref references for non-PubMed articles`);
+    
+    await updateProgress(jobId, {
+      phase: '4 - Загрузка Crossref references',
+      phase_progress: 'Поиск статей без PMID...'
+    });
+    
     try {
       // Получаем статьи проекта без PMID, но с DOI
       let doiSql = `SELECT a.id, a.doi, a.source
@@ -304,8 +439,12 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
       let crossrefProcessed = 0;
       let crossrefWithRefs = 0;
       let totalCrossrefRefs = 0;
+      const totalDoiArticles = doiArticles.rows.length;
       
       for (const article of doiArticles.rows) {
+        // Проверяем отмену каждые 5 статей
+        if (crossrefProcessed % 5 === 0 && await checkTimeoutAndCancellation()) return;
+        
         try {
           // Throttle для Crossref API (polite pool)
           await new Promise(resolve => setTimeout(resolve, 200));
@@ -359,10 +498,15 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
           crossrefProcessed++;
           
           if (crossrefProcessed % 10 === 0) {
-            console.log(`[GraphFetch] Phase 4 progress: ${crossrefProcessed}/${doiArticles.rows.length} DOI articles`);
+            console.log(`[GraphFetch] Phase 4 progress: ${crossrefProcessed}/${totalDoiArticles} DOI articles`);
+            await updateProgress(jobId, {
+              phase: '4 - Загрузка Crossref references',
+              phase_progress: `${crossrefProcessed}/${totalDoiArticles} статей (${crossrefWithRefs} с ссылками)`
+            });
           }
         } catch (err) {
           console.error(`[GraphFetch] Crossref error for DOI ${article.doi}:`, err);
+          crossrefProcessed++;
         }
       }
       
@@ -371,18 +515,23 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
       console.error('[GraphFetch] Phase 4 Crossref error:', err);
     }
     
-    // Завершаем job
+    // Завершаем job успешно
+    const elapsedMs = Date.now() - startTime;
+    const elapsedMin = Math.round(elapsedMs / 60000);
+    
     await pool.query(
       `UPDATE graph_fetch_jobs SET 
         status = 'completed', 
         completed_at = now(),
+        last_progress_at = now(),
         processed_articles = $1,
-        fetched_pmids = $2
+        fetched_pmids = $2,
+        error_message = NULL
        WHERE id = $3`,
       [processedArticles, fetchedPmids, jobId]
     );
     
-    console.log(`[GraphFetch] Completed job ${jobId}: ${processedArticles} articles, ${fetchedPmids} cached PMIDs`);
+    console.log(`[GraphFetch] Completed job ${jobId}: ${processedArticles} articles, ${fetchedPmids} cached PMIDs in ${elapsedMin} min`);
     
   } catch (err: any) {
     console.error(`[GraphFetch] Job ${jobId} failed:`, err);
@@ -391,6 +540,7 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
       `UPDATE graph_fetch_jobs SET 
         status = 'failed', 
         completed_at = now(),
+        last_progress_at = now(),
         error_message = $1
        WHERE id = $2`,
       [err?.message || 'Unknown error', jobId]

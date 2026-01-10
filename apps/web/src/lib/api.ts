@@ -883,7 +883,7 @@ export type FetchReferencesResult = {
 export type FetchReferencesStatusResult = {
   hasJob: boolean;
   jobId?: string;
-  status?: 'pending' | 'running' | 'completed' | 'failed';
+  status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
   progress?: number;
   totalArticles?: number;
   processedArticles?: number;
@@ -893,6 +893,14 @@ export type FetchReferencesStatusResult = {
   startedAt?: string;
   completedAt?: string;
   errorMessage?: string;
+  // Новые поля для детального прогресса
+  currentPhase?: string;
+  phaseProgress?: string;
+  lastProgressAt?: string;
+  secondsSinceProgress?: number | null;
+  isStalled?: boolean;
+  stalledSeconds?: number;
+  cancelReason?: 'stalled' | 'user_cancelled' | 'timeout';
 };
 
 export type FetchReferencesOptions = {
@@ -916,6 +924,13 @@ export async function apiFetchReferences(
 export async function apiFetchReferencesStatus(projectId: string): Promise<FetchReferencesStatusResult> {
   return apiFetch<FetchReferencesStatusResult>(
     `/api/projects/${projectId}/articles/fetch-references/status`
+  );
+}
+
+export async function apiCancelFetchReferences(projectId: string): Promise<{ ok: boolean; jobId?: string; message?: string; error?: string }> {
+  return apiFetch<{ ok: boolean; jobId?: string; message?: string; error?: string }>(
+    `/api/projects/${projectId}/articles/fetch-references/cancel`,
+    { method: "POST" }
   );
 }
 
