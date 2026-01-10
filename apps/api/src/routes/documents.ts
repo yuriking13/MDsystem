@@ -2928,7 +2928,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       );
 
       // Invalidate cache
-      await invalidateDocument(params.docId);
+      await invalidateDocument(params.projectId, params.docId);
       await invalidateDocuments(params.projectId);
 
       return { 

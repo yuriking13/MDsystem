@@ -1161,7 +1161,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(function 
                     resolved: false,
                   };
                   
-                  editor.chain().focus().setComment(commentAttrs).run();
+                  (editor.chain().focus() as any).setComment(commentAttrs).run();
                   
                   setCommentText('');
                   setShowCommentModal(false);
