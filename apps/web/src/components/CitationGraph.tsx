@@ -1,7 +1,23 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { apiGetCitationGraph, apiFetchReferences, apiFetchReferencesStatus, apiCancelFetchReferences, apiImportFromGraph, apiGetArticleByPmid, apiTranslateText, apiGraphAIAssistant, type GraphNode, type GraphLink, type GraphFilterOptions, type LevelCounts, type ClusterInfo, type SearchSuggestion, type FoundArticle, type GraphArticleForAI, type GraphFiltersForAI } from "../lib/api";
-import { IconInfoCircle, IconLinkChain } from "./FlowbiteIcons";
+import { 
+  IconInfoCircle, 
+  IconLinkChain, 
+  IconGraph, 
+  IconSparkles, 
+  IconRefresh, 
+  IconPlay, 
+  IconStop, 
+  IconAdjustments, 
+  IconFilter, 
+  IconSearch, 
+  IconCheckBadge,
+  IconQuestionMark,
+  IconExternalLink,
+  IconPlus,
+  IconTranslate,
+} from "./FlowbiteIcons";
 
 type Props = {
   projectId: string;
@@ -144,6 +160,8 @@ export default function CitationGraph({ projectId }: Props) {
   // Новые состояния для найденных статей из графа
   const [aiFoundArticleIds, setAiFoundArticleIds] = useState<Set<string>>(new Set());
   const [aiFoundArticles, setAiFoundArticles] = useState<FoundArticle[]>([]);
+  // Выбранные статьи для индивидуального добавления
+  const [aiSelectedForAdd, setAiSelectedForAdd] = useState<Set<string>>(new Set());
   
   // Глобальный язык для всех узлов графа
   const [globalLang, setGlobalLang] = useState<'en' | 'ru'>('en');
@@ -311,13 +329,18 @@ export default function CitationGraph({ projectId }: Props) {
                   }
                   await loadGraph(options);
                   setRefsMessage('✅ Граф успешно обновлён!');
+                  // Автоматически скрываем уведомление через 5 секунд
+                  setTimeout(() => setRefsMessage(null), 5000);
                 } catch (refreshErr) {
                   console.error('Error refreshing graph:', refreshErr);
                   setRefsMessage('✅ Загрузка связей завершена! Обновите страницу для просмотра графа.');
+                  setTimeout(() => setRefsMessage(null), 7000);
                 }
               }, 1000);
           } else if (status.status === 'failed') {
             setRefsMessage(`❌ Ошибка: ${status.errorMessage || 'Неизвестная ошибка'}`);
+            // Автоматически скрываем уведомление об ошибке через 10 секунд
+            setTimeout(() => setRefsMessage(null), 10000);
           }
         } else {
           // Обновляем прогресс с новыми полями
@@ -388,11 +411,13 @@ export default function CitationGraph({ projectId }: Props) {
       } else {
         setFetchJobStatus(null);
         setRefsMessage(res.message || 'Загрузка не требуется');
+        setTimeout(() => setRefsMessage(null), 5000);
         setFetchingRefs(false);
       }
     } catch (err: any) {
       setFetchJobStatus(null);
       setRefsMessage(err?.message || "Ошибка запуска загрузки");
+      setTimeout(() => setRefsMessage(null), 7000);
       setFetchingRefs(false);
     }
   };
@@ -804,6 +829,8 @@ export default function CitationGraph({ projectId }: Props) {
       
       const statusLabel = status === 'selected' ? 'Отобранные' : 'Кандидаты';
       setImportMessage(`✅ AI добавил ${res.added || aiFoundArticles.length} статей в ${statusLabel}`);
+      // Автоматически скрываем уведомление через 5 секунд
+      setTimeout(() => setImportMessage(null), 5000);
       
       // Очищаем найденные статьи
       setAiFoundArticleIds(new Set());
@@ -828,6 +855,8 @@ export default function CitationGraph({ projectId }: Props) {
       }, 500);
     } catch (err: any) {
       setImportMessage(`❌ Ошибка: ${err?.message || 'Неизвестная ошибка'}`);
+      // Автоматически скрываем уведомление об ошибке через 7 секунд
+      setTimeout(() => setImportMessage(null), 7000);
     } finally {
       setAiAddingArticles(false);
     }
@@ -837,39 +866,59 @@ export default function CitationGraph({ projectId }: Props) {
   const handleAIClearHighlight = () => {
     setAiFoundArticleIds(new Set());
     setAiFoundArticles([]);
+    setAiSelectedForAdd(new Set());
   };
-
-  // Добавить все статьи с P-value в проект
-  const handleAddAllWithPValue = async () => {
-    if (!data) return;
-    
-    setAddingPValueArticles(true);
-    setImportMessage(null);
-    
-    try {
-      // Собираем все внешние статьи с P-value
-      const articlesToAdd = data.nodes.filter(n => 
-        n.graphLevel !== 1 && // Не в проекте
-        (n.statsQuality || 0) > 0 && // Есть P-value
-        (n.pmid || n.doi) // Есть идентификатор
-      );
-      
-      if (articlesToAdd.length === 0) {
-        setImportMessage('Нет статей с P-value для добавления');
-        setAddingPValueArticles(false);
-        return;
+  
+  // Переключить выбор статьи для добавления
+  const toggleArticleSelection = (articleId: string) => {
+    setAiSelectedForAdd(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(articleId)) {
+        newSet.delete(articleId);
+      } else {
+        newSet.add(articleId);
       }
+      return newSet;
+    });
+  };
+  
+  // Выбрать/снять все статьи
+  const toggleSelectAll = () => {
+    if (aiSelectedForAdd.size === aiFoundArticles.length) {
+      setAiSelectedForAdd(new Set());
+    } else {
+      setAiSelectedForAdd(new Set(aiFoundArticles.map(a => a.id)));
+    }
+  };
+  
+  // Добавить выбранные статьи (или все если ничего не выбрано)
+  const handleAIAddSelectedArticles = async (status: 'candidate' | 'selected' = 'candidate') => {
+    const articlesToAdd = aiSelectedForAdd.size > 0 
+      ? aiFoundArticles.filter(a => aiSelectedForAdd.has(a.id))
+      : aiFoundArticles;
+    
+    if (articlesToAdd.length === 0) return;
+    
+    setAiAddingArticles(true);
+    try {
+      const pmids = articlesToAdd.filter(a => a.pmid).map(a => a.pmid!);
+      const dois = articlesToAdd.filter(a => !a.pmid && a.doi).map(a => a.doi!);
       
-      const pmids = articlesToAdd.filter(n => n.pmid).map(n => n.pmid!);
-      const dois = articlesToAdd.filter(n => !n.pmid && n.doi).map(n => n.doi!);
+      const res = await apiImportFromGraph(projectId, { pmids, dois, status });
       
-      const res = await apiImportFromGraph(projectId, {
-        pmids,
-        dois,
-        status: 'candidate',
+      const statusLabel = status === 'selected' ? 'Отобранные' : 'Кандидаты';
+      setImportMessage(`✅ Добавлено ${res.added || articlesToAdd.length} статей в ${statusLabel}`);
+      setTimeout(() => setImportMessage(null), 5000);
+      
+      // Убираем добавленные статьи из списка
+      const addedIds = new Set(articlesToAdd.map(a => a.id));
+      setAiFoundArticles(prev => prev.filter(a => !addedIds.has(a.id)));
+      setAiFoundArticleIds(prev => {
+        const newSet = new Set(prev);
+        addedIds.forEach(id => newSet.delete(id));
+        return newSet;
       });
-      
-      setImportMessage(`✅ Добавлено ${res.added || articlesToAdd.length} статей с P-value в Кандидаты`);
+      setAiSelectedForAdd(new Set());
       
       // Перезагружаем граф
       setTimeout(() => {
@@ -890,6 +939,68 @@ export default function CitationGraph({ projectId }: Props) {
       }, 500);
     } catch (err: any) {
       setImportMessage(`❌ Ошибка: ${err?.message || 'Неизвестная ошибка'}`);
+      setTimeout(() => setImportMessage(null), 7000);
+    } finally {
+      setAiAddingArticles(false);
+    }
+  };
+
+  // Добавить все статьи с P-value в проект
+  const handleAddAllWithPValue = async () => {
+    if (!data) return;
+    
+    setAddingPValueArticles(true);
+    setImportMessage(null);
+    
+    try {
+      // Собираем все внешние статьи с P-value
+      const articlesToAdd = data.nodes.filter(n => 
+        n.graphLevel !== 1 && // Не в проекте
+        (n.statsQuality || 0) > 0 && // Есть P-value
+        (n.pmid || n.doi) // Есть идентификатор
+      );
+      
+      if (articlesToAdd.length === 0) {
+        setImportMessage('Нет статей с P-value для добавления');
+        setTimeout(() => setImportMessage(null), 5000);
+        setAddingPValueArticles(false);
+        return;
+      }
+      
+      const pmids = articlesToAdd.filter(n => n.pmid).map(n => n.pmid!);
+      const dois = articlesToAdd.filter(n => !n.pmid && n.doi).map(n => n.doi!);
+      
+      const res = await apiImportFromGraph(projectId, {
+        pmids,
+        dois,
+        status: 'candidate',
+      });
+      
+      setImportMessage(`✅ Добавлено ${res.added || articlesToAdd.length} статей с P-value в Кандидаты`);
+      // Автоматически скрываем уведомление через 5 секунд
+      setTimeout(() => setImportMessage(null), 5000);
+      
+      // Перезагружаем граф
+      setTimeout(() => {
+        loadGraph({
+          filter,
+          sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined,
+          depth,
+          yearFrom,
+          yearTo,
+          statsQuality,
+          sources: selectedSources.length > 0 ? selectedSources : undefined,
+          sortBy,
+          maxTotalNodes: debouncedMaxNodes,
+          maxLinksPerNode: debouncedMaxLinksPerNode,
+          enableClustering,
+          clusterBy,
+        });
+      }, 500);
+    } catch (err: any) {
+      setImportMessage(`❌ Ошибка: ${err?.message || 'Неизвестная ошибка'}`);
+      // Автоматически скрываем уведомление об ошибке через 7 секунд
+      setTimeout(() => setImportMessage(null), 7000);
     } finally {
       setAddingPValueArticles(false);
     }
@@ -920,9 +1031,7 @@ export default function CitationGraph({ projectId }: Props) {
       <div className="graph-header-filters">
         {/* Title */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 8 }}>
-          <svg style={{ width: 18, height: 18, color: 'var(--accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
+          <IconGraph size="md" className="text-accent" />
           <span style={{ fontWeight: 600, fontSize: 14 }}>Граф</span>
         </div>
 
@@ -1043,14 +1152,12 @@ export default function CitationGraph({ projectId }: Props) {
         {/* Actions */}
         <button
           className="btn secondary"
-          style={{ padding: '5px 10px', fontSize: 11 }}
+          style={{ padding: '5px 10px', fontSize: 11, display: 'flex', alignItems: 'center' }}
           onClick={handleFetchReferences}
           disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
         >
-          <svg style={{ width: 14, height: 14, marginRight: 4 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-          {fetchingRefs ? '...' : 'Связи'}
+          <IconRefresh size="sm" className={fetchingRefs ? 'animate-spin' : ''} />
+          <span style={{ marginLeft: 4 }}>{fetchingRefs ? '...' : 'Связи'}</span>
         </button>
 
         <button
@@ -1058,10 +1165,7 @@ export default function CitationGraph({ projectId }: Props) {
           className="graph-compact-btn"
           title="Настройки"
         >
-          <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-          </svg>
+          <IconAdjustments size="sm" />
         </button>
 
         <button 
@@ -1069,19 +1173,16 @@ export default function CitationGraph({ projectId }: Props) {
           className="graph-compact-btn"
           title="Как работает"
         >
-          <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <IconQuestionMark size="sm" />
         </button>
 
         <button 
           onClick={() => setShowAIAssistant(!showAIAssistant)}
           className={showAIAssistant ? 'graph-compact-btn-active' : 'graph-compact-btn'}
           title="AI Ассистент"
+          style={{ display: 'flex', alignItems: 'center', gap: 4 }}
         >
-          <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
+          <IconSparkles size="sm" />
           AI
         </button>
       </div>
@@ -1501,9 +1602,7 @@ export default function CitationGraph({ projectId }: Props) {
                 flexShrink: 0,
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <svg style={{ width: 18, height: 18, color: '#8b5cf6' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
+                  <IconSparkles size="md" className="text-purple-400" />
                   <span style={{ fontWeight: 600, fontSize: 13 }}>AI Ассистент</span>
                 </div>
                 <button
@@ -1619,23 +1718,49 @@ export default function CitationGraph({ projectId }: Props) {
                       marginBottom: 10,
                     }}>
                       <div style={{ fontWeight: 600, fontSize: 12, color: '#00ffff' }}>
-                        🔍 Найдено в графе: {aiFoundArticles.length}
+                        🔍 Найдено: {aiFoundArticles.length}
+                        {aiSelectedForAdd.size > 0 && (
+                          <span style={{ color: '#4ade80', marginLeft: 6 }}>
+                            (выбрано: {aiSelectedForAdd.size})
+                          </span>
+                        )}
                       </div>
-                      <button
-                        onClick={handleAIClearHighlight}
-                        style={{
-                          padding: '4px 8px',
-                          borderRadius: 4,
-                          border: 'none',
-                          background: 'rgba(255,255,255,0.1)',
-                          color: 'var(--text-secondary)',
-                          fontSize: 10,
-                          cursor: 'pointer',
-                        }}
-                        title="Сбросить подсветку"
-                      >
-                        ✕ Сбросить
-                      </button>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        <button
+                          onClick={toggleSelectAll}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: 4,
+                            border: 'none',
+                            background: aiSelectedForAdd.size === aiFoundArticles.length 
+                              ? 'rgba(74, 222, 128, 0.3)' 
+                              : 'rgba(255,255,255,0.1)',
+                            color: aiSelectedForAdd.size === aiFoundArticles.length 
+                              ? '#4ade80' 
+                              : 'var(--text-secondary)',
+                            fontSize: 10,
+                            cursor: 'pointer',
+                          }}
+                          title={aiSelectedForAdd.size === aiFoundArticles.length ? "Снять все" : "Выбрать все"}
+                        >
+                          {aiSelectedForAdd.size === aiFoundArticles.length ? '☑ Все' : '☐ Все'}
+                        </button>
+                        <button
+                          onClick={handleAIClearHighlight}
+                          style={{
+                            padding: '4px 8px',
+                            borderRadius: 4,
+                            border: 'none',
+                            background: 'rgba(255,255,255,0.1)',
+                            color: 'var(--text-secondary)',
+                            fontSize: 10,
+                            cursor: 'pointer',
+                          }}
+                          title="Сбросить подсветку"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                     
                     {/* Article List (scrollable) */}
@@ -1647,42 +1772,60 @@ export default function CitationGraph({ projectId }: Props) {
                       flexDirection: 'column',
                       gap: 6,
                     }}>
-                      {aiFoundArticles.slice(0, 20).map((article, idx) => (
-                        <div 
-                          key={article.id}
-                          style={{
-                            padding: '8px 10px',
-                            background: 'var(--bg-primary)',
-                            borderRadius: 6,
-                            borderLeft: '3px solid #00ffff',
-                          }}
-                        >
-                          <div style={{ fontWeight: 500, fontSize: 11, lineHeight: 1.3 }}>
-                            {idx + 1}. {article.title?.substring(0, 80) || article.id}
-                            {article.title && article.title.length > 80 ? '...' : ''}
-                          </div>
-                          <div style={{ 
-                            fontSize: 10, 
-                            color: 'var(--text-secondary)', 
-                            marginTop: 4,
-                            display: 'flex',
-                            gap: 8,
-                          }}>
-                            {article.year && <span>📅 {article.year}</span>}
-                            {article.citedByCount ? <span>📊 {article.citedByCount} цит.</span> : null}
-                          </div>
-                          {article.reason && (
-                            <div style={{ 
-                              fontSize: 10, 
-                              color: '#00ffff', 
-                              marginTop: 4,
-                              fontStyle: 'italic',
-                            }}>
-                              💡 {article.reason.substring(0, 100)}{article.reason.length > 100 ? '...' : ''}
+                      {aiFoundArticles.slice(0, 20).map((article, idx) => {
+                        const isSelected = aiSelectedForAdd.has(article.id);
+                        return (
+                          <div 
+                            key={article.id}
+                            onClick={() => toggleArticleSelection(article.id)}
+                            style={{
+                              padding: '8px 10px',
+                              background: isSelected ? 'rgba(74, 222, 128, 0.15)' : 'var(--bg-primary)',
+                              borderRadius: 6,
+                              borderLeft: `3px solid ${isSelected ? '#4ade80' : '#00ffff'}`,
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                              <span style={{ 
+                                fontSize: 14, 
+                                color: isSelected ? '#4ade80' : 'var(--text-secondary)',
+                                flexShrink: 0,
+                                marginTop: 1,
+                              }}>
+                                {isSelected ? '☑' : '☐'}
+                              </span>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontWeight: 500, fontSize: 11, lineHeight: 1.3 }}>
+                                  {idx + 1}. {article.title?.substring(0, 70) || article.id}
+                                  {article.title && article.title.length > 70 ? '...' : ''}
+                                </div>
+                                <div style={{ 
+                                  fontSize: 10, 
+                                  color: 'var(--text-secondary)', 
+                                  marginTop: 4,
+                                  display: 'flex',
+                                  gap: 8,
+                                }}>
+                                  {article.year && <span>📅 {article.year}</span>}
+                                  {article.citedByCount ? <span>📊 {article.citedByCount} цит.</span> : null}
+                                </div>
+                                {article.reason && (
+                                  <div style={{ 
+                                    fontSize: 10, 
+                                    color: '#00ffff', 
+                                    marginTop: 4,
+                                    fontStyle: 'italic',
+                                  }}>
+                                    💡 {article.reason.substring(0, 80)}{article.reason.length > 80 ? '...' : ''}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                          </div>
+                        );
+                      })}
                       {aiFoundArticles.length > 20 && (
                         <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'center', padding: 4 }}>
                           ... и ещё {aiFoundArticles.length - 20} статей
@@ -1693,7 +1836,7 @@ export default function CitationGraph({ projectId }: Props) {
                     {/* Action Buttons */}
                     <div style={{ display: 'flex', gap: 6 }}>
                       <button
-                        onClick={() => handleAIAddArticles('candidate')}
+                        onClick={() => handleAIAddSelectedArticles('candidate')}
                         disabled={aiAddingArticles}
                         style={{
                           flex: 1,
@@ -1706,11 +1849,16 @@ export default function CitationGraph({ projectId }: Props) {
                           fontSize: 11,
                           cursor: aiAddingArticles ? 'not-allowed' : 'pointer',
                         }}
+                        title={aiSelectedForAdd.size > 0 
+                          ? `Добавить ${aiSelectedForAdd.size} выбранных в Кандидаты` 
+                          : `Добавить все ${aiFoundArticles.length} в Кандидаты`}
                       >
-                        {aiAddingArticles ? '...' : '+ В Кандидаты'}
+                        {aiAddingArticles ? '...' : aiSelectedForAdd.size > 0 
+                          ? `+ ${aiSelectedForAdd.size} в Кандидаты` 
+                          : '+ Все в Кандидаты'}
                       </button>
                       <button
-                        onClick={() => handleAIAddArticles('selected')}
+                        onClick={() => handleAIAddSelectedArticles('selected')}
                         disabled={aiAddingArticles}
                         style={{
                           flex: 1,
@@ -1723,8 +1871,13 @@ export default function CitationGraph({ projectId }: Props) {
                           fontSize: 11,
                           cursor: aiAddingArticles ? 'not-allowed' : 'pointer',
                         }}
+                        title={aiSelectedForAdd.size > 0 
+                          ? `Добавить ${aiSelectedForAdd.size} выбранных в Отобранные` 
+                          : `Добавить все ${aiFoundArticles.length} в Отобранные`}
                       >
-                        {aiAddingArticles ? '...' : '+ В Отобранные'}
+                        {aiAddingArticles ? '...' : aiSelectedForAdd.size > 0 
+                          ? `+ ${aiSelectedForAdd.size} в Отобранные` 
+                          : '+ Все в Отобранные'}
                       </button>
                     </div>
                   </div>

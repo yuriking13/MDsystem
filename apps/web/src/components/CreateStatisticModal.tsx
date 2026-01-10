@@ -483,7 +483,7 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
             <div style={{ flex: 1, background: 'rgba(0,0,0,0.2)', borderRadius: 12, padding: 16 }}>
               <div className="muted" style={{ marginBottom: 8, fontSize: 12 }}>Предпросмотр:</div>
               {(chartType === 'scatter' || chartType === 'histogram' || dataColumns.length > 0) ? (
-                <ChartFromTable tableData={tableData} config={config} height={280} />
+                <ChartFromTable tableData={tableData} config={config} height={280} theme="dark" />
               ) : (
                 <div className="muted" style={{ textAlign: 'center', padding: 40 }}>
                   Выберите колонки с данными

@@ -403,3 +403,84 @@ export function IconLinkChain({ className, size = 'md' }: IconProps) {
     </svg>
   );
 }
+
+// Graph/Network icon
+export function IconGraph({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
+    </svg>
+  );
+}
+
+// Sparkles/AI icon
+export function IconSparkles({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+    </svg>
+  );
+}
+
+// Arrows pointing out (expand)
+export function IconArrowsExpand({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+    </svg>
+  );
+}
+
+// Play icon
+export function IconPlay({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z" />
+    </svg>
+  );
+}
+
+// Stop/Cancel icon
+export function IconStop({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
+    </svg>
+  );
+}
+
+// Adjustments/Settings icon
+export function IconAdjustments({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+    </svg>
+  );
+}
+
+// Bolt/Lightning icon
+export function IconBolt({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+    </svg>
+  );
+}
+
+// Circle stack/Layers icon
+export function IconCircleStack({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+    </svg>
+  );
+}
+
+// Check badge icon
+export function IconCheckBadge({ className, size = 'md' }: IconProps) {
+  return (
+    <svg className={getClass(className, size)} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+    </svg>
+  );
+}
