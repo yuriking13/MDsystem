@@ -992,7 +992,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
               content: [{ type: "text", text: "Содержание" }],
             },
             ...(includeFullText && fullText ? 
-              fullText.split(/\n\n+/).slice(0, 100).map(para => ({
+              fullText.split(/\n\n+/).slice(0, 200).map(para => ({
                 type: "paragraph",
                 content: para.trim() ? [{ type: "text", text: para.trim() }] : [],
               })) : 
@@ -1001,6 +1001,25 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
                 content: [{ type: "text", text: "[Здесь будет основной текст статьи...]" }],
               }]
             ),
+            // Add bibliography section if available
+            ...(metadata.bibliography && metadata.bibliography.length > 0 ? [
+              {
+                type: "heading",
+                attrs: { level: 2 },
+                content: [{ type: "text", text: "Список литературы" }],
+              },
+              ...metadata.bibliography.map((ref, idx) => ({
+                type: "paragraph",
+                content: [
+                  { type: "text", text: `${idx + 1}. ` },
+                  ...(ref.authors ? [{ type: "text", text: `${ref.authors} ` }] : []),
+                  ...(ref.title ? [{ type: "text", marks: [{ type: "italic" }], text: ref.title }] : []),
+                  ...(ref.journal ? [{ type: "text", text: ` // ${ref.journal}` }] : []),
+                  ...(ref.year ? [{ type: "text", text: `. ${ref.year}` }] : []),
+                  ...(ref.doi ? [{ type: "text", text: `. DOI: ${ref.doi}` }] : []),
+                ],
+              })),
+            ] : []),
           ],
         };
 
