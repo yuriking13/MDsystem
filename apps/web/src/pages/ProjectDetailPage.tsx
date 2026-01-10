@@ -25,7 +25,7 @@ import {
   apiGetFileDownloadUrl,
   apiAnalyzeFile,
   apiImportFileAsArticle,
-  apiImportFileAsDocument,
+  // apiImportFileAsDocument, // Temporarily disabled
   type Project,
   type ProjectMember,
   type Document,
@@ -455,7 +455,7 @@ export default function ProjectDetailPage() {
   } | null>(null);
   const [importingArticle, setImportingArticle] = useState(false);
   const [importStatus, setImportStatus] = useState<"selected" | "candidate">("selected");
-  const [importType, setImportType] = useState<"article" | "document">("article");
+  // const [importType, setImportType] = useState<"article" | "document">("article"); // Temporarily disabled
   
   // Экспорт глав
   const [showChapterSelectModal, setShowChapterSelectModal] = useState(false);
@@ -675,7 +675,7 @@ export default function ProjectDetailPage() {
         fullText: result.fullText,
         cached: result.cached,
       });
-      setImportType("article"); // Reset to default
+      // setImportType("article"); // Reset to default (temporarily disabled)
     } catch (err: any) {
       setError(err.message || "Ошибка анализа файла");
     } finally {
@@ -707,30 +707,30 @@ export default function ProjectDetailPage() {
     }
   }
 
-  // Импорт файла как документа проекта
-  async function handleImportAsDocument() {
-    if (!id || !fileImportModal) return;
-    
-    setImportingArticle(true);
-    setError(null);
-    
-    try {
-      const result = await apiImportFileAsDocument(
-        id,
-        fileImportModal.fileId,
-        fileImportModal.metadata,
-        true // includeFullText
-      );
-      setOk(result.message);
-      setFileImportModal(null);
-      // Refresh documents list
-      await load();
-    } catch (err: any) {
-      setError(err.message || "Ошибка создания документа");
-    } finally {
-      setImportingArticle(false);
-    }
-  }
+  // Импорт файла как документа проекта (temporarily disabled)
+  // async function handleImportAsDocument() {
+  //   if (!id || !fileImportModal) return;
+  //   
+  //   setImportingArticle(true);
+  //   setError(null);
+  //   
+  //   try {
+  //     const result = await apiImportFileAsDocument(
+  //       id,
+  //       fileImportModal.fileId,
+  //       fileImportModal.metadata,
+  //       true // includeFullText
+  //     );
+  //     setOk(result.message);
+  //     setFileImportModal(null);
+  //     // Refresh documents list
+  //     await load();
+  //   } catch (err: any) {
+  //     setError(err.message || "Ошибка создания документа");
+  //   } finally {
+  //     setImportingArticle(false);
+  //   }
+  // }
 
   // Обновить метаданные в модальном окне
   function updateImportMetadata(field: keyof ExtractedArticleMetadata, value: any) {
@@ -1738,7 +1738,7 @@ export default function ProjectDetailPage() {
                       type="file"
                       onChange={handleFileUpload}
                       style={{ display: "none" }}
-                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.svg,.webp,.mp4,.webm,.mp3,.wav,.ogg"
+                      accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.svg,.webp"
                     />
                     <button
                       className="btn"
@@ -1783,9 +1783,9 @@ export default function ProjectDetailPage() {
 
             {storageConfigured && (
               <>
-                {/* Фильтр по категориям */}
+                {/* Фильтр по категориям (video/audio temporarily disabled) */}
                 <div className="row gap" style={{ marginBottom: 16, flexWrap: 'wrap' }}>
-                  {(["all", "document", "image", "video", "audio"] as const).map((cat) => (
+                  {(["all", "document", "image"] as const).map((cat) => (
                     <button
                       key={cat}
                       className={`btn ${filesCategory === cat ? "" : "secondary"}`}
@@ -1801,12 +1801,6 @@ export default function ProjectDetailPage() {
                       )}
                       {cat === "image" && (
                         <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg> Изображения</>
-                      )}
-                      {cat === "video" && (
-                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" /></svg> Видео</>
-                      )}
-                      {cat === "audio" && (
-                        <><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" /></svg> Аудио</>
                       )}
                     </button>
                   ))}
@@ -2170,45 +2164,9 @@ export default function ProjectDetailPage() {
                       </div>
                     )}
 
-                    {/* Тип импорта */}
-                    <div style={{ marginBottom: 16 }}>
-                      <span style={{ fontWeight: 500, marginBottom: 8, display: 'block' }}>Импортировать как:</span>
-                      <div className="row gap">
-                        <label className="row gap" style={{ alignItems: 'center', cursor: 'pointer' }}>
-                          <input
-                            type="radio"
-                            name="importType"
-                            checked={importType === "article"}
-                            onChange={() => setImportType("article")}
-                            style={{ width: 'auto' }}
-                          />
-                          <span>
-                            <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#60a5fa' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                            </svg>
-                            Статья (в библиотеку)
-                          </span>
-                        </label>
-                        <label className="row gap" style={{ alignItems: 'center', cursor: 'pointer' }}>
-                          <input
-                            type="radio"
-                            name="importType"
-                            checked={importType === "document"}
-                            onChange={() => setImportType("document")}
-                            style={{ width: 'auto' }}
-                          />
-                          <span>
-                            <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#a78bfa' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                            </svg>
-                            Документ проекта
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Статус импорта (только для статьи) */}
-                    {importType === "article" && (
+                    {/* Статус импорта */}
+                    {/* Note: "Документ проекта" option temporarily disabled */}
+                    {(
                       <div style={{ marginBottom: 16 }}>
                         <span style={{ fontWeight: 500, marginBottom: 8, display: 'block' }}>Добавить в:</span>
                         <div className="row gap">
@@ -2247,15 +2205,7 @@ export default function ProjectDetailPage() {
                     )}
 
                     <div className="muted" style={{ fontSize: 11, padding: 12, background: 'var(--bg-secondary)', borderRadius: 8 }}>
-                      {importType === "article" ? (
-                        <>
-                          <strong>ℹ️ Важно:</strong> При удалении файла из проекта статья останется в базе статей.
-                        </>
-                      ) : (
-                        <>
-                          <strong>ℹ️ Документ:</strong> Будет создан новый документ с полным текстом статьи, который можно редактировать.
-                        </>
-                      )}
+                      <strong>ℹ️ Важно:</strong> При удалении файла из проекта статья останется в базе статей.
                     </div>
                   </div>
                   <div className="modal-footer">
@@ -2290,25 +2240,18 @@ export default function ProjectDetailPage() {
                     </button>
                     <button
                       className="btn"
-                      onClick={importType === "article" ? handleImportArticleFromFile : handleImportAsDocument}
+                      onClick={handleImportArticleFromFile}
                       disabled={importingArticle || !fileImportModal.metadata.title}
                       type="button"
                     >
                       {importingArticle ? (
                         <>Импортируем...</>
-                      ) : importType === "article" ? (
+                      ) : (
                         <>
                           <svg className="w-4 h-4" style={{ marginRight: 6 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                           </svg>
                           Импортировать в {importStatus === "selected" ? "Отобранные" : "Кандидаты"}
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-4 h-4" style={{ marginRight: 6 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
-                          </svg>
-                          Создать документ
                         </>
                       )}
                     </button>
