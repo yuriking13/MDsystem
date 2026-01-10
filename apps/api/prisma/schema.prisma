@@ -113,6 +113,11 @@ model Article {
   issue               String?
   pages               String?
   searchQueries       String[]  @default([]) @map("search_queries")
+  
+  // Import from file support
+  sourceFileId           String?  @map("source_file_id")
+  extractedBibliography  Json?    @map("extracted_bibliography")
+  isFromFile             Boolean  @default(false) @map("is_from_file")
 
   projectArticles ProjectArticle[]
   citations       Citation[]
@@ -129,6 +134,10 @@ model ProjectArticle {
   addedBy     String?  @map("added_by")
   addedAt     DateTime @default(now()) @map("added_at")
   sourceQuery String?  @map("source_query")
+  
+  // Track if imported from file (article persists even if file is deleted)
+  importedFromFileId String?   @map("imported_from_file_id")
+  fileImportDate     DateTime? @map("file_import_date")
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)

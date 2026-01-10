@@ -8,6 +8,7 @@ import {
   apiDetectStatsWithAI,
   apiGetPdfSource,
   getPdfDownloadUrl,
+  apiConvertArticleToDocument,
   PUBMED_SEARCH_FIELDS,
   SEARCH_SOURCES,
   type Article,
@@ -117,6 +118,12 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   // Выбранная статья для просмотра
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
+  
+  // Конвертация в документ
+  const [showConvertModal, setShowConvertModal] = useState(false);
+  const [convertingToDoc, setConvertingToDoc] = useState(false);
+  const [convertIncludeBibliography, setConvertIncludeBibliography] = useState(false);
+  const [convertDocTitle, setConvertDocTitle] = useState("");
   
   // Глобальные настройки отображения
   const [listLang, setListLang] = useState<"ru" | "en">("ru"); // Язык в списке
@@ -597,6 +604,35 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       setError(err?.message || "Ошибка перевода");
     } finally {
       setTranslatingOne(false);
+    }
+  }
+
+  // Конвертация статьи в документ
+  function openConvertModal() {
+    if (!selectedArticle) return;
+    setConvertDocTitle(selectedArticle.title_ru || selectedArticle.title_en);
+    setConvertIncludeBibliography(false);
+    setShowConvertModal(true);
+  }
+
+  async function handleConvertToDocument() {
+    if (!selectedArticle) return;
+    
+    setConvertingToDoc(true);
+    setError(null);
+    
+    try {
+      const result = await apiConvertArticleToDocument(projectId, selectedArticle.id, {
+        includeBibliography: convertIncludeBibliography,
+        documentTitle: convertDocTitle || undefined,
+      });
+      setOk(result.message);
+      setShowConvertModal(false);
+      setSelectedArticle(null);
+    } catch (err: any) {
+      setError(err?.message || "Ошибка создания документа");
+    } finally {
+      setConvertingToDoc(false);
     }
   }
 
@@ -1801,6 +1837,20 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                     {translatingOne ? "Переводим..." : "Перевести"}
                   </button>
                 )}
+                {canEdit && (
+                  <button
+                    className="rabbit-link-btn"
+                    onClick={openConvertModal}
+                    type="button"
+                    style={{ background: 'var(--accent-secondary)', color: 'var(--text-primary)' }}
+                    title="Добавить как документ проекта"
+                  >
+                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Документ
+                  </button>
+                )}
               </div>
 
               {/* Abstract Section */}
@@ -1865,6 +1915,90 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Convert article to document */}
+      {showConvertModal && selectedArticle && (
+        <div className="rabbit-overlay" onClick={() => setShowConvertModal(false)}>
+          <div className="rabbit-sidebar" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500, padding: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <svg className="icon-lg" style={{ color: 'var(--accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 style={{ margin: 0 }}>Добавить как документ</h3>
+            </div>
+            
+            <p style={{ marginBottom: 16, color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: 14 }}>
+              Статья будет добавлена как новый редактируемый документ проекта.
+            </p>
+            
+            <label className="stack" style={{ marginBottom: 16 }}>
+              <span>Название документа</span>
+              <input
+                type="text"
+                value={convertDocTitle}
+                onChange={(e) => setConvertDocTitle(e.target.value)}
+                placeholder="Введите название документа"
+              />
+            </label>
+            
+            {/* Опция импорта библиографии */}
+            {selectedArticle.extracted_bibliography && (
+              <label className="row gap" style={{ alignItems: 'center', marginBottom: 16, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={convertIncludeBibliography}
+                  onChange={(e) => setConvertIncludeBibliography(e.target.checked)}
+                  style={{ width: 'auto' }}
+                />
+                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>
+                  Импортировать библиографию из статьи
+                </span>
+              </label>
+            )}
+            
+            <div className="muted" style={{ fontSize: 12, padding: 12, background: 'var(--bg-secondary)', borderRadius: 8, marginBottom: 24 }}>
+              <strong>Будет создано:</strong>
+              <ul style={{ margin: '8px 0 0 0', paddingLeft: 20 }}>
+                <li>Документ с метаданными статьи</li>
+                <li>Заготовка для основного текста</li>
+                {convertIncludeBibliography && <li>Цитирования из библиографии статьи</li>}
+              </ul>
+            </div>
+            
+            <div className="row gap">
+              <button
+                className="btn"
+                onClick={handleConvertToDocument}
+                disabled={convertingToDoc || !convertDocTitle.trim()}
+                type="button"
+                style={{ flex: 1 }}
+              >
+                {convertingToDoc ? (
+                  <>Создаём...</>
+                ) : (
+                  <>
+                    <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Создать документ
+                  </>
+                )}
+              </button>
+              <button
+                className="btn secondary"
+                onClick={() => setShowConvertModal(false)}
+                type="button"
+                style={{ flex: 1 }}
+              >
+                Отмена
+              </button>
             </div>
           </div>
         </div>

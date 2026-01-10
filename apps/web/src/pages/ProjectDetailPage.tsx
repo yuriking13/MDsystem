@@ -23,6 +23,8 @@ import {
   apiDeleteFile,
   apiGetStorageStatus,
   apiGetFileDownloadUrl,
+  apiAnalyzeFile,
+  apiImportFileAsArticle,
   type Project,
   type ProjectMember,
   type Document,
@@ -34,6 +36,7 @@ import {
   type DataClassification,
   type ProjectFile,
   type FileCategory,
+  type ExtractedArticleMetadata,
 } from "../lib/api";
 import { useProjectWebSocket } from "../lib/useProjectWebSocket";
 import { useAuth } from "../lib/AuthContext";
@@ -439,6 +442,17 @@ export default function ProjectDetailPage() {
   const [filesCategory, setFilesCategory] = useState<FileCategory | "all">("all");
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Импорт статьи из файла
+  const [analyzingFile, setAnalyzingFile] = useState<string | null>(null);
+  const [fileImportModal, setFileImportModal] = useState<{
+    fileId: string;
+    fileName: string;
+    metadata: ExtractedArticleMetadata;
+    textPreview: string;
+  } | null>(null);
+  const [importingArticle, setImportingArticle] = useState(false);
+  const [importStatus, setImportStatus] = useState<"selected" | "candidate">("selected");
+  
   // Экспорт глав
   const [showChapterSelectModal, setShowChapterSelectModal] = useState(false);
   const [selectedChaptersForExport, setSelectedChaptersForExport] = useState<Set<string>>(new Set());
@@ -638,6 +652,64 @@ export default function ProjectDetailPage() {
   function closePreview() {
     setPreviewFile(null);
     setPreviewUrl(null);
+  }
+
+  // Анализ файла для импорта как статья
+  async function handleAnalyzeFile(file: ProjectFile) {
+    if (!id) return;
+    
+    setAnalyzingFile(file.id);
+    setError(null);
+    
+    try {
+      const result = await apiAnalyzeFile(id, file.id);
+      setFileImportModal({
+        fileId: file.id,
+        fileName: file.name,
+        metadata: result.metadata,
+        textPreview: result.textPreview,
+      });
+    } catch (err: any) {
+      setError(err.message || "Ошибка анализа файла");
+    } finally {
+      setAnalyzingFile(null);
+    }
+  }
+
+  // Импорт статьи из файла
+  async function handleImportArticleFromFile() {
+    if (!id || !fileImportModal) return;
+    
+    setImportingArticle(true);
+    setError(null);
+    
+    try {
+      const result = await apiImportFileAsArticle(
+        id,
+        fileImportModal.fileId,
+        fileImportModal.metadata,
+        importStatus
+      );
+      setOk(result.message);
+      setFileImportModal(null);
+      setImportStatus("selected");
+    } catch (err: any) {
+      setError(err.message || "Ошибка импорта статьи");
+    } finally {
+      setImportingArticle(false);
+    }
+  }
+
+  // Обновить метаданные в модальном окне
+  function updateImportMetadata(field: keyof ExtractedArticleMetadata, value: any) {
+    if (!fileImportModal) return;
+    setFileImportModal({
+      ...fileImportModal,
+      metadata: {
+        ...fileImportModal.metadata,
+        [field]: value,
+      },
+    });
   }
 
   useEffect(() => {
@@ -1791,6 +1863,26 @@ export default function ProjectDetailPage() {
                             )}
                           </div>
                           <div className="file-actions" onClick={(e) => e.stopPropagation()}>
+                            {/* Импорт как статья - только для документов */}
+                            {canEdit && file.category === "document" && (
+                              <button
+                                className="btn secondary"
+                                onClick={() => handleAnalyzeFile(file)}
+                                disabled={analyzingFile === file.id}
+                                title="Импортировать как статью"
+                                type="button"
+                              >
+                                {analyzingFile === file.id ? (
+                                  <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                  </svg>
+                                ) : (
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                                  </svg>
+                                )}
+                              </button>
+                            )}
                             {canPreview && (
                               <button
                                 className="btn secondary"
@@ -1868,6 +1960,236 @@ export default function ProjectDetailPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                       </svg>
                       Скачать
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Модальное окно импорта статьи из файла */}
+            {fileImportModal && (
+              <div className="modal-overlay" onClick={() => setFileImportModal(null)}>
+                <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 700, maxHeight: '90vh', overflow: 'auto' }}>
+                  <div className="modal-header">
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                      </svg>
+                      Импорт статьи из файла
+                    </h3>
+                    <button className="btn secondary" onClick={() => setFileImportModal(null)} type="button">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="modal-body" style={{ padding: 20 }}>
+                    <div className="muted" style={{ fontSize: 13, marginBottom: 16 }}>
+                      Файл: <strong>{fileImportModal.fileName}</strong>
+                    </div>
+
+                    {/* Заголовок */}
+                    <label className="stack" style={{ marginBottom: 12 }}>
+                      <span>Заголовок статьи *</span>
+                      <input
+                        type="text"
+                        value={fileImportModal.metadata.title || ""}
+                        onChange={(e) => updateImportMetadata("title", e.target.value)}
+                        placeholder="Введите заголовок статьи"
+                        required
+                      />
+                    </label>
+
+                    {/* Авторы */}
+                    <label className="stack" style={{ marginBottom: 12 }}>
+                      <span>Авторы</span>
+                      <input
+                        type="text"
+                        value={fileImportModal.metadata.authors?.join(", ") || ""}
+                        onChange={(e) => updateImportMetadata("authors", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                        placeholder="Автор 1, Автор 2, ..."
+                      />
+                    </label>
+
+                    <div className="row gap" style={{ marginBottom: 12 }}>
+                      {/* Год */}
+                      <label className="stack" style={{ flex: 1 }}>
+                        <span>Год</span>
+                        <input
+                          type="number"
+                          value={fileImportModal.metadata.year || ""}
+                          onChange={(e) => updateImportMetadata("year", e.target.value ? parseInt(e.target.value) : null)}
+                          placeholder="2024"
+                          min={1900}
+                          max={2100}
+                        />
+                      </label>
+
+                      {/* DOI */}
+                      <label className="stack" style={{ flex: 2 }}>
+                        <span>DOI</span>
+                        <input
+                          type="text"
+                          value={fileImportModal.metadata.doi || ""}
+                          onChange={(e) => updateImportMetadata("doi", e.target.value || null)}
+                          placeholder="10.1234/xxxxx"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Журнал */}
+                    <label className="stack" style={{ marginBottom: 12 }}>
+                      <span>Журнал</span>
+                      <input
+                        type="text"
+                        value={fileImportModal.metadata.journal || ""}
+                        onChange={(e) => updateImportMetadata("journal", e.target.value || null)}
+                        placeholder="Название журнала"
+                      />
+                    </label>
+
+                    <div className="row gap" style={{ marginBottom: 12 }}>
+                      {/* Том */}
+                      <label className="stack" style={{ flex: 1 }}>
+                        <span>Том</span>
+                        <input
+                          type="text"
+                          value={fileImportModal.metadata.volume || ""}
+                          onChange={(e) => updateImportMetadata("volume", e.target.value || null)}
+                          placeholder="12"
+                        />
+                      </label>
+
+                      {/* Выпуск */}
+                      <label className="stack" style={{ flex: 1 }}>
+                        <span>Выпуск</span>
+                        <input
+                          type="text"
+                          value={fileImportModal.metadata.issue || ""}
+                          onChange={(e) => updateImportMetadata("issue", e.target.value || null)}
+                          placeholder="3"
+                        />
+                      </label>
+
+                      {/* Страницы */}
+                      <label className="stack" style={{ flex: 1 }}>
+                        <span>Страницы</span>
+                        <input
+                          type="text"
+                          value={fileImportModal.metadata.pages || ""}
+                          onChange={(e) => updateImportMetadata("pages", e.target.value || null)}
+                          placeholder="100-115"
+                        />
+                      </label>
+                    </div>
+
+                    {/* Аннотация */}
+                    <label className="stack" style={{ marginBottom: 12 }}>
+                      <span>Аннотация</span>
+                      <textarea
+                        value={fileImportModal.metadata.abstract || ""}
+                        onChange={(e) => updateImportMetadata("abstract", e.target.value || null)}
+                        placeholder="Текст аннотации..."
+                        rows={4}
+                        style={{ resize: 'vertical' }}
+                      />
+                    </label>
+
+                    {/* Библиография */}
+                    {fileImportModal.metadata.bibliography && fileImportModal.metadata.bibliography.length > 0 && (
+                      <div style={{ marginBottom: 16 }}>
+                        <div className="row space" style={{ marginBottom: 8 }}>
+                          <span style={{ fontWeight: 500 }}>
+                            <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 6, verticalAlign: 'middle' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            </svg>
+                            Библиография ({fileImportModal.metadata.bibliography.length} ссылок)
+                          </span>
+                        </div>
+                        <div style={{ maxHeight: 150, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 8, padding: 12, fontSize: 12 }}>
+                          {fileImportModal.metadata.bibliography.slice(0, 10).map((ref, idx) => (
+                            <div key={idx} style={{ marginBottom: 8, paddingBottom: 8, borderBottom: idx < 9 ? '1px solid var(--border)' : 'none' }}>
+                              <div style={{ fontWeight: 500 }}>{idx + 1}. {ref.title || "Без названия"}</div>
+                              {ref.authors && <div className="muted">{ref.authors}</div>}
+                              {ref.year && <div className="muted">Год: {ref.year}</div>}
+                              {ref.doi && <div className="muted">DOI: {ref.doi}</div>}
+                            </div>
+                          ))}
+                          {fileImportModal.metadata.bibliography.length > 10 && (
+                            <div className="muted">...и ещё {fileImportModal.metadata.bibliography.length - 10} ссылок</div>
+                          )}
+                        </div>
+                        <div className="muted" style={{ fontSize: 11, marginTop: 8 }}>
+                          ℹ️ Библиография будет сохранена вместе со статьёй
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Статус импорта */}
+                    <div style={{ marginBottom: 16 }}>
+                      <span style={{ fontWeight: 500, marginBottom: 8, display: 'block' }}>Добавить в:</span>
+                      <div className="row gap">
+                        <label className="row gap" style={{ alignItems: 'center', cursor: 'pointer' }}>
+                          <input
+                            type="radio"
+                            name="importStatus"
+                            checked={importStatus === "selected"}
+                            onChange={() => setImportStatus("selected")}
+                            style={{ width: 'auto' }}
+                          />
+                          <span>
+                            <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#4ade80' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Отобранные
+                          </span>
+                        </label>
+                        <label className="row gap" style={{ alignItems: 'center', cursor: 'pointer' }}>
+                          <input
+                            type="radio"
+                            name="importStatus"
+                            checked={importStatus === "candidate"}
+                            onChange={() => setImportStatus("candidate")}
+                            style={{ width: 'auto' }}
+                          />
+                          <span>
+                            <svg className="w-4 h-4" style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle', color: '#fbbf24' }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                            </svg>
+                            Кандидаты
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="muted" style={{ fontSize: 11, padding: 12, background: 'var(--bg-secondary)', borderRadius: 8 }}>
+                      <strong>ℹ️ Важно:</strong> При удалении файла из проекта статья останется в базе статей.
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      className="btn secondary"
+                      onClick={() => setFileImportModal(null)}
+                      type="button"
+                    >
+                      Отмена
+                    </button>
+                    <button
+                      className="btn"
+                      onClick={handleImportArticleFromFile}
+                      disabled={importingArticle || !fileImportModal.metadata.title}
+                      type="button"
+                    >
+                      {importingArticle ? (
+                        <>Импортируем...</>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" style={{ marginRight: 6 }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                          </svg>
+                          Импортировать в {importStatus === "selected" ? "Отобранные" : "Кандидаты"}
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
