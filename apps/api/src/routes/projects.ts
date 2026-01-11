@@ -11,18 +11,18 @@ const UpdateProjectSchema = z.object({
   name: z.string().min(1).max(500).optional(),
   description: z.string().max(2000).optional().nullable(),
   citationStyle: z.enum(['gost-r-7-0-5-2008', 'gost', 'apa', 'vancouver']).optional(),
-  // Тип исследования
+  // Тип исследования - только если передано, иначе игнорируем
   researchType: z.enum([
     'observational_descriptive',
     'observational_analytical',
     'experimental',
     'second_order',
     'other'
-  ]).optional().nullable(),
-  researchSubtype: z.string().max(100).optional().nullable(),
-  // Протокол исследования
-  researchProtocol: z.enum(['CARE', 'STROBE', 'CONSORT', 'PRISMA', 'OTHER']).optional().nullable(),
-  protocolCustomName: z.string().max(200).optional().nullable(),
+  ]).nullish().optional(),
+  researchSubtype: z.string().max(100).nullish().optional(),
+  // Протокол исследования - только если передано, иначе игнорируем
+  researchProtocol: z.enum(['CARE', 'STROBE', 'CONSORT', 'PRISMA', 'OTHER']).nullish().optional(),
+  protocolCustomName: z.string().max(200).nullish().optional(),
   // AI-анализ
   aiErrorAnalysisEnabled: z.boolean().optional(),
   aiProtocolCheckEnabled: z.boolean().optional(),
@@ -162,7 +162,6 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (role !== "owner" && role !== "editor") {
         return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
       }
-
       const updates: string[] = [];
       const values: any[] = [];
       let idx = 1;
@@ -179,19 +178,19 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         updates.push(`citation_style = $${idx++}`);
         values.push(bodyP.data.citationStyle);
       }
-      if (bodyP.data.researchType !== undefined) {
+      if (bodyP.data.researchType !== undefined && bodyP.data.researchType !== null) {
         updates.push(`research_type = $${idx++}`);
         values.push(bodyP.data.researchType);
       }
-      if (bodyP.data.researchSubtype !== undefined) {
+      if (bodyP.data.researchSubtype !== undefined && bodyP.data.researchSubtype !== null) {
         updates.push(`research_subtype = $${idx++}`);
         values.push(bodyP.data.researchSubtype);
       }
-      if (bodyP.data.researchProtocol !== undefined) {
+      if (bodyP.data.researchProtocol !== undefined && bodyP.data.researchProtocol !== null) {
         updates.push(`research_protocol = $${idx++}`);
         values.push(bodyP.data.researchProtocol);
       }
-      if (bodyP.data.protocolCustomName !== undefined) {
+      if (bodyP.data.protocolCustomName !== undefined && bodyP.data.protocolCustomName !== null) {
         updates.push(`protocol_custom_name = $${idx++}`);
         values.push(bodyP.data.protocolCustomName);
       }

@@ -805,13 +805,19 @@ export default function ProjectDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      const updateData: any = {
+      const updateData: Record<string, any> = {
         name: editName.trim(),
-        description: editDesc.trim() || undefined,
         citationStyle,
       };
       
-      // Только отправляем поля если они имеют значение
+      // Только отправляем description если она не пустая
+      const descTrimmed = editDesc.trim();
+      if (descTrimmed) {
+        updateData.description = descTrimmed;
+      }
+      
+      // Опциональные поля отправляем только если они имеют непустое значение
+      // (не отправляем null/undefined/пустые строки)
       if (researchType) {
         updateData.researchType = researchType;
       }
@@ -825,6 +831,7 @@ export default function ProjectDetailPage() {
         updateData.protocolCustomName = protocolCustomName;
       }
       
+      // Всегда отправляем флаги
       updateData.aiErrorAnalysisEnabled = aiErrorAnalysisEnabled;
       updateData.aiProtocolCheckEnabled = aiProtocolCheckEnabled;
       
