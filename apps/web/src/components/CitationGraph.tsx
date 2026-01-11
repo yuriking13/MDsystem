@@ -172,6 +172,36 @@ export default function CitationGraph({ projectId }: Props) {
   const graphRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
+  // Вспомогательная функция для создания опций графа с учетом режима "без ограничений"
+  const getGraphOptions = useCallback((): GraphFilterOptions => {
+    const options: GraphFilterOptions = {
+      filter,
+      depth,
+      sortBy,
+      maxTotalNodes: unlimitedNodes ? 999999 : debouncedMaxNodes,
+      maxLinksPerNode: unlimitedLinks ? 999999 : debouncedMaxLinksPerNode,
+      enableClustering,
+      clusterBy,
+    };
+    if (selectedQueries.length > 0) {
+      options.sourceQueries = selectedQueries;
+    }
+    if (yearFrom !== undefined) {
+      options.yearFrom = yearFrom;
+    }
+    if (yearTo !== undefined) {
+      options.yearTo = yearTo;
+    }
+    if (statsQuality > 0) {
+      options.statsQuality = statsQuality;
+    }
+    if (selectedSources.length > 0) {
+      options.sources = selectedSources;
+    }
+    return options;
+  }, [filter, depth, sortBy, unlimitedNodes, unlimitedLinks, debouncedMaxNodes, debouncedMaxLinksPerNode, 
+      enableClustering, clusterBy, selectedQueries, yearFrom, yearTo, statsQuality, selectedSources]);
+
   const loadGraph = useCallback(async (options?: GraphFilterOptions) => {
     setLoading(true);
     setError(null);
@@ -212,32 +242,8 @@ export default function CitationGraph({ projectId }: Props) {
 
   // Перезагрузка при изменении фильтров (с debounce для слайдеров)
   useEffect(() => {
-    const options: GraphFilterOptions = { 
-      filter,
-      depth,
-      sortBy,
-      maxTotalNodes: unlimitedNodes ? undefined : debouncedMaxNodes,
-      maxLinksPerNode: unlimitedLinks ? undefined : debouncedMaxLinksPerNode,
-      enableClustering,
-      clusterBy,
-    };
-    if (selectedQueries.length > 0) {
-      options.sourceQueries = selectedQueries;
-    }
-    if (yearFrom !== undefined) {
-      options.yearFrom = yearFrom;
-    }
-    if (yearTo !== undefined) {
-      options.yearTo = yearTo;
-    }
-    if (statsQuality > 0) {
-      options.statsQuality = statsQuality;
-    }
-    if (selectedSources.length > 0) {
-      options.sources = selectedSources;
-    }
-    loadGraph(options);
-  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources, sortBy, debouncedMaxNodes, debouncedMaxLinksPerNode, unlimitedNodes, unlimitedLinks, enableClustering, clusterBy]);
+    loadGraph(getGraphOptions());
+  }, [loadGraph, getGraphOptions]);
 
   // Проверка статуса загрузки при монтировании
   useEffect(() => {
@@ -305,31 +311,7 @@ export default function CitationGraph({ projectId }: Props) {
               setTimeout(async () => {
                 try {
                   // Принудительно перезагружаем граф с текущими фильтрами
-                  const options: GraphFilterOptions = { 
-                    filter,
-                    depth,
-                    sortBy,
-                    maxTotalNodes: debouncedMaxNodes,
-                    maxLinksPerNode: debouncedMaxLinksPerNode,
-                    enableClustering,
-                    clusterBy,
-                  };
-                  if (selectedQueries.length > 0) {
-                    options.sourceQueries = selectedQueries;
-                  }
-                  if (yearFrom !== undefined) {
-                    options.yearFrom = yearFrom;
-                  }
-                  if (yearTo !== undefined) {
-                    options.yearTo = yearTo;
-                  }
-                  if (statsQuality > 0) {
-                    options.statsQuality = statsQuality;
-                  }
-                  if (selectedSources.length > 0) {
-                    options.sources = selectedSources;
-                  }
-                  await loadGraph(options);
+                  await loadGraph(getGraphOptions());
                   setRefsMessage('✅ Граф успешно обновлён!');
                   // Автоматически скрываем уведомление через 5 секунд
                   setTimeout(() => setRefsMessage(null), 5000);
@@ -840,20 +822,7 @@ export default function CitationGraph({ projectId }: Props) {
       
       // Перезагружаем граф
       setTimeout(() => {
-        loadGraph({
-          filter,
-          sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined,
-          depth,
-          yearFrom,
-          yearTo,
-          statsQuality,
-          sources: selectedSources.length > 0 ? selectedSources : undefined,
-          sortBy,
-          maxTotalNodes: debouncedMaxNodes,
-          maxLinksPerNode: debouncedMaxLinksPerNode,
-          enableClustering,
-          clusterBy,
-        });
+        loadGraph(getGraphOptions());
       }, 500);
     } catch (err: any) {
       setImportMessage(`❌ Ошибка: ${err?.message || 'Неизвестная ошибка'}`);
@@ -924,20 +893,7 @@ export default function CitationGraph({ projectId }: Props) {
       
       // Перезагружаем граф
       setTimeout(() => {
-        loadGraph({
-          filter,
-          sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined,
-          depth,
-          yearFrom,
-          yearTo,
-          statsQuality,
-          sources: selectedSources.length > 0 ? selectedSources : undefined,
-          sortBy,
-          maxTotalNodes: debouncedMaxNodes,
-          maxLinksPerNode: debouncedMaxLinksPerNode,
-          enableClustering,
-          clusterBy,
-        });
+        loadGraph(getGraphOptions());
       }, 500);
     } catch (err: any) {
       setImportMessage(`❌ Ошибка: ${err?.message || 'Неизвестная ошибка'}`);
@@ -984,20 +940,7 @@ export default function CitationGraph({ projectId }: Props) {
       
       // Перезагружаем граф
       setTimeout(() => {
-        loadGraph({
-          filter,
-          sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined,
-          depth,
-          yearFrom,
-          yearTo,
-          statsQuality,
-          sources: selectedSources.length > 0 ? selectedSources : undefined,
-          sortBy,
-          maxTotalNodes: debouncedMaxNodes,
-          maxLinksPerNode: debouncedMaxLinksPerNode,
-          enableClustering,
-          clusterBy,
-        });
+        loadGraph(getGraphOptions());
       }, 500);
     } catch (err: any) {
       setImportMessage(`❌ Ошибка: ${err?.message || 'Неизвестная ошибка'}`);
@@ -1989,20 +1932,7 @@ export default function CitationGraph({ projectId }: Props) {
             <NodeInfoPanel 
               node={selectedNodeForDisplay} 
               projectId={projectId} 
-              onRefresh={() => loadGraph({ 
-                filter, 
-                sourceQueries: selectedQueries.length > 0 ? selectedQueries : undefined, 
-                depth, 
-                yearFrom, 
-                yearTo, 
-                statsQuality, 
-                sources: selectedSources.length > 0 ? selectedSources : undefined,
-                sortBy,
-                maxTotalNodes: debouncedMaxNodes,
-                maxLinksPerNode: debouncedMaxLinksPerNode,
-                enableClustering,
-                clusterBy,
-              })}
+              onRefresh={() => loadGraph(getGraphOptions())}
               globalLang={globalLang}
             />
           </div>
