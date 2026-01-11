@@ -719,7 +719,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
               extractedMetadata: metadata as any,
               extractedText: text,
               extractionDate: new Date(),
-            },
+            } as any,
           });
           app.log.info(`Cached metadata for file: ${file.name}`);
         } catch (cacheErr) {
