@@ -91,7 +91,7 @@ export async function apiDeleteApiKey(provider: string): Promise<{ ok: true }> {
 
 // ========== Projects ==========
 
-export type CitationStyle = "gost" | "apa" | "vancouver";
+export type CitationStyle = "gost-r-7-0-5-2008" | "gost" | "apa" | "vancouver";
 
 export type ResearchType = 
   | "observational_descriptive"

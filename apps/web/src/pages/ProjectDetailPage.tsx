@@ -414,7 +414,7 @@ export default function ProjectDetailPage() {
   // Edit mode (settings)
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
-  const [citationStyle, setCitationStyle] = useState<"gost" | "apa" | "vancouver">("gost");
+  const [citationStyle, setCitationStyle] = useState<CitationStyle>("gost-r-7-0-5-2008");
   const [saving, setSaving] = useState(false);
   
   // Новые настройки проекта
@@ -531,7 +531,7 @@ export default function ProjectDetailPage() {
       setDocuments(dRes.documents);
       setEditName(pRes.project.name);
       setEditDesc(pRes.project.description || "");
-      setCitationStyle(pRes.project.citation_style || "gost");
+      setCitationStyle(pRes.project.citation_style || "gost-r-7-0-5-2008");
       // Новые поля
       setResearchType(pRes.project.research_type);
       setResearchSubtype(pRes.project.research_subtype || "");
@@ -805,17 +805,30 @@ export default function ProjectDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      await apiUpdateProject(id, {
+      const updateData: any = {
         name: editName.trim(),
         description: editDesc.trim() || undefined,
         citationStyle,
-        researchType,
-        researchSubtype: researchSubtype || undefined,
-        researchProtocol,
-        protocolCustomName: protocolCustomName || undefined,
-        aiErrorAnalysisEnabled,
-        aiProtocolCheckEnabled,
-      });
+      };
+      
+      // Только отправляем поля если они имеют значение
+      if (researchType) {
+        updateData.researchType = researchType;
+      }
+      if (researchSubtype) {
+        updateData.researchSubtype = researchSubtype;
+      }
+      if (researchProtocol) {
+        updateData.researchProtocol = researchProtocol;
+      }
+      if (protocolCustomName) {
+        updateData.protocolCustomName = protocolCustomName;
+      }
+      
+      updateData.aiErrorAnalysisEnabled = aiErrorAnalysisEnabled;
+      updateData.aiProtocolCheckEnabled = aiProtocolCheckEnabled;
+      
+      await apiUpdateProject(id, updateData);
       setOk("Настройки сохранены");
       await load();
     } catch (err: any) {

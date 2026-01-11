@@ -218,7 +218,7 @@ export default function DocumentPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [citationStyle, setCitationStyle] = useState<CitationStyle>("gost");
+  const [citationStyle, setCitationStyle] = useState<CitationStyle>("gost-r-7-0-5-2008");
   const hasSyncedStatistics = useRef(false);
   const isSyncingStatistics = useRef(false);
   const lastUserEditRef = useRef(0);
@@ -270,7 +270,7 @@ export default function DocumentPage() {
         setDoc(docRes.document);
         setTitle(docRes.document.title);
         setContent(docRes.document.content || "");
-        setCitationStyle(projRes.project.citation_style || "gost");
+        setCitationStyle(projRes.project.citation_style || "gost-r-7-0-5-2008");
       } catch (err: any) {
         setError(err?.message || "Ошибка загрузки");
       } finally {

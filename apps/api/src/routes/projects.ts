@@ -9,8 +9,8 @@ const CreateProjectSchema = z.object({
 
 const UpdateProjectSchema = z.object({
   name: z.string().min(1).max(500).optional(),
-  description: z.string().max(2000).optional(),
-  citationStyle: z.enum(['gost', 'apa', 'vancouver']).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  citationStyle: z.enum(['gost-r-7-0-5-2008', 'gost', 'apa', 'vancouver']).optional(),
   // Тип исследования
   researchType: z.enum([
     'observational_descriptive',
@@ -18,11 +18,11 @@ const UpdateProjectSchema = z.object({
     'experimental',
     'second_order',
     'other'
-  ]).optional(),
-  researchSubtype: z.string().max(100).optional(),
+  ]).optional().nullable(),
+  researchSubtype: z.string().max(100).optional().nullable(),
   // Протокол исследования
-  researchProtocol: z.enum(['CARE', 'STROBE', 'CONSORT', 'PRISMA', 'OTHER']).optional(),
-  protocolCustomName: z.string().max(200).optional(),
+  researchProtocol: z.enum(['CARE', 'STROBE', 'CONSORT', 'PRISMA', 'OTHER']).optional().nullable(),
+  protocolCustomName: z.string().max(200).optional().nullable(),
   // AI-анализ
   aiErrorAnalysisEnabled: z.boolean().optional(),
   aiProtocolCheckEnabled: z.boolean().optional(),
