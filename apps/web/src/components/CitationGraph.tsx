@@ -128,6 +128,8 @@ export default function CitationGraph({ projectId }: Props) {
   const [sortBy, setSortBy] = useState<'citations' | 'frequency' | 'year' | 'default'>('citations');
   const [maxNodes, setMaxNodes] = useState<number>(2000);
   const [maxLinksPerNode, setMaxLinksPerNode] = useState<number>(20);
+  const [unlimitedNodes, setUnlimitedNodes] = useState(false);
+  const [unlimitedLinks, setUnlimitedLinks] = useState(false);
   const [enableClustering, setEnableClustering] = useState(false);
   const [clusterBy, setClusterBy] = useState<'year' | 'journal' | 'auto'>('auto');
   
@@ -214,8 +216,8 @@ export default function CitationGraph({ projectId }: Props) {
       filter,
       depth,
       sortBy,
-      maxTotalNodes: debouncedMaxNodes,
-      maxLinksPerNode: debouncedMaxLinksPerNode,
+      maxTotalNodes: unlimitedNodes ? undefined : debouncedMaxNodes,
+      maxLinksPerNode: unlimitedLinks ? undefined : debouncedMaxLinksPerNode,
       enableClustering,
       clusterBy,
     };
@@ -235,7 +237,7 @@ export default function CitationGraph({ projectId }: Props) {
       options.sources = selectedSources;
     }
     loadGraph(options);
-  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources, sortBy, debouncedMaxNodes, debouncedMaxLinksPerNode, enableClustering, clusterBy]);
+  }, [loadGraph, filter, selectedQueries, depth, yearFrom, yearTo, statsQuality, selectedSources, sortBy, debouncedMaxNodes, debouncedMaxLinksPerNode, unlimitedNodes, unlimitedLinks, enableClustering, clusterBy]);
 
   // Проверка статуса загрузки при монтировании
   useEffect(() => {
@@ -1204,18 +1206,30 @@ export default function CitationGraph({ projectId }: Props) {
               <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <span>Макс. узлов: <strong>{maxNodes}</strong></span>
+              <span>Узлов: <strong>{unlimitedNodes ? '∞' : maxNodes}</strong></span>
             </div>
             <input
               type="range"
-              min={500}
+              min={0}
               max={5000}
-              step={500}
+              step={100}
               value={maxNodes}
-              onChange={(e) => setMaxNodes(parseInt(e.target.value, 10))}
-              style={{ width: 120, cursor: 'pointer' }}
-              title="Максимальное количество дополнительных узлов в графе"
+              onChange={(e) => {
+                setMaxNodes(parseInt(e.target.value, 10));
+                setUnlimitedNodes(false);
+              }}
+              disabled={unlimitedNodes}
+              style={{ width: 120, cursor: unlimitedNodes ? 'not-allowed' : 'pointer', opacity: unlimitedNodes ? 0.5 : 1 }}
+              title="Максимальное количество узлов в графе"
             />
+            <button
+              onClick={() => setUnlimitedNodes(!unlimitedNodes)}
+              className={unlimitedNodes ? 'btn primary' : 'btn secondary'}
+              style={{ padding: '4px 10px', fontSize: 10, marginLeft: 8, whiteSpace: 'nowrap' }}
+              title="Без ограничений"
+            >
+              ∞
+            </button>
           </div>
           
           {/* Max Links Per Node */}
@@ -1224,18 +1238,30 @@ export default function CitationGraph({ projectId }: Props) {
               <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
-              <span>Связей/узел: <strong>{maxLinksPerNode}</strong></span>
+              <span>Связей/узел: <strong>{unlimitedLinks ? '∞' : maxLinksPerNode}</strong></span>
             </div>
             <input
               type="range"
-              min={5}
-              max={100}
-              step={5}
+              min={0}
+              max={5000}
+              step={10}
               value={maxLinksPerNode}
-              onChange={(e) => setMaxLinksPerNode(parseInt(e.target.value, 10))}
-              style={{ width: 100, cursor: 'pointer' }}
+              onChange={(e) => {
+                setMaxLinksPerNode(parseInt(e.target.value, 10));
+                setUnlimitedLinks(false);
+              }}
+              disabled={unlimitedLinks}
+              style={{ width: 120, cursor: unlimitedLinks ? 'not-allowed' : 'pointer', opacity: unlimitedLinks ? 0.5 : 1 }}
               title="Максимум связей на каждый узел"
             />
+            <button
+              onClick={() => setUnlimitedLinks(!unlimitedLinks)}
+              className={unlimitedLinks ? 'btn primary' : 'btn secondary'}
+              style={{ padding: '4px 10px', fontSize: 10, marginLeft: 8, whiteSpace: 'nowrap' }}
+              title="Без ограничений"
+            >
+              ∞
+            </button>
           </div>
           
           {/* Clustering Toggle */}
@@ -1270,7 +1296,7 @@ export default function CitationGraph({ projectId }: Props) {
           </div>
           
           {/* Load More Button */}
-          {canLoadMore && maxNodes < 5000 && (
+          {canLoadMore && !unlimitedNodes && maxNodes < 5000 && (
             <button
               className="btn secondary"
               style={{ padding: '6px 12px', fontSize: 11 }}
@@ -1285,9 +1311,14 @@ export default function CitationGraph({ projectId }: Props) {
           )}
           
           {/* Current Limits Info */}
-          {currentLimits && (
+          {currentLimits && !unlimitedNodes && !unlimitedLinks && (
             <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)' }}>
               Текущие лимиты: {currentLimits.maxExtraNodes} узлов, {currentLimits.maxLinksPerNode} связей/узел
+            </div>
+          )}
+          {(unlimitedNodes || unlimitedLinks) && (
+            <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-success)', fontWeight: 600 }}>
+              ∞ Без ограничений {unlimitedNodes && unlimitedLinks ? '' : unlimitedNodes ? '(узлы)' : '(связи)'}
             </div>
           )}
         </div>
