@@ -280,3 +280,97 @@ export async function detectStatsCombined(args: {
     aiStats,
   };
 }
+/**
+ * Пакетная параллельная детекция статистики в нескольких статьях
+ * Обрабатывает несколько абстрактов параллельно для ускорения анализа
+ */
+export async function detectStatsParallel(args: {
+  articles: Array<{
+    id: string;
+    abstract: string | null | undefined;
+  }>;
+  openrouterKey?: string;
+  useAI?: boolean;
+  parallelCount?: number;
+  onProgress?: (done: number, total: number, speed?: number) => void;
+  onSpeedUpdate?: (articlesPerSecond: number) => void;
+}): Promise<{
+  analyzed: number;
+  found: number;
+  results: Map<string, {
+    hasStats: boolean;
+    quality: number;
+    stats: ExtractedStats;
+    aiStats?: AIStatsResult;
+  }>;
+}> {
+  const { articles, openrouterKey, useAI = true, parallelCount = 5 } = args;
+  const results = new Map();
+  let analyzed = 0;
+  let found = 0;
+  let processed = 0;
+  const startTime = Date.now();
+
+  // Очередь для обработки
+  const queue = articles.filter(a => a.abstract);
+  const inProgress = new Set<Promise<void>>();
+
+  const processQueue = async () => {
+    while (queue.length > 0) {
+      // Ждём, пока есть свободные слоты
+      if (inProgress.size >= parallelCount) {
+        await Promise.race(inProgress);
+      }
+
+      const article = queue.shift();
+      if (!article || !article.abstract) break;
+
+      const promise = (async () => {
+        try {
+          const result = await detectStatsCombined({
+            text: article.abstract,
+            openrouterKey,
+            useAI,
+          });
+
+          results.set(article.id, result);
+          analyzed++;
+
+          if (result.hasStats || (result.aiStats && result.aiStats.hasStats)) {
+            found++;
+          }
+        } catch (err) {
+          console.error(`Stats detection failed for ${article.id}:`, err);
+          // Даже при ошибке отмечаем как проанализированную
+          analyzed++;
+        } finally {
+          processed++;
+
+          // Обновляем прогресс
+          if (args.onProgress) {
+            const elapsedSeconds = (Date.now() - startTime) / 1000;
+            const speed = processed / Math.max(elapsedSeconds, 0.1);
+            args.onProgress(processed, queue.length + processed, speed);
+          }
+
+          if (args.onSpeedUpdate && processed % 3 === 0) {
+            const elapsedSeconds = (Date.now() - startTime) / 1000;
+            const speed = processed / Math.max(elapsedSeconds, 0.1);
+            args.onSpeedUpdate(speed);
+          }
+
+          inProgress.delete(promise);
+        }
+      })();
+
+      inProgress.add(promise);
+    }
+
+    // Ждём завершения всех оставшихся промисов
+    await Promise.all(inProgress);
+  };
+
+  await processQueue();
+
+  return { analyzed, found, results };
+}

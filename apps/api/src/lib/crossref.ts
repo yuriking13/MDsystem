@@ -226,3 +226,86 @@ export async function enrichArticleByDOI(doi: string): Promise<EnrichedArticleDa
   
   return extractEnrichedData(work);
 }
+/**
+ * Пакетное обогащение статей данными из Crossref с параллелизмом
+ * Обрабатывает несколько DOI параллельно для быстрого обогащения
+ */
+export async function enrichArticlesByDOIBatch(
+  articles: Array<{
+    id: string;
+    doi: string;
+  }>,
+  options: {
+    parallelCount?: number; // Количество параллельных запросов
+    onProgress?: (done: number, total: number, speed?: number) => void;
+    onSpeedUpdate?: (articlesPerSecond: number) => void;
+  } = {}
+): Promise<{
+  enriched: number;
+  failed: number;
+  results: Map<string, EnrichedArticleData>;
+}> {
+  const parallelCount = options.parallelCount ?? 5;
+  const results = new Map<string, EnrichedArticleData>();
+  let enriched = 0;
+  let failed = 0;
+  let processed = 0;
+  const startTime = Date.now();
+
+  // Очередь для обработки
+  const queue = [...articles];
+  const inProgress = new Set<Promise<void>>();
+
+  const processQueue = async () => {
+    while (queue.length > 0) {
+      // Ждём, пока есть свободные слоты
+      if (inProgress.size >= parallelCount) {
+        await Promise.race(inProgress);
+      }
+
+      const article = queue.shift();
+      if (!article) break;
+
+      const promise = (async () => {
+        try {
+          const enrichedData = await enrichArticleByDOI(article.doi);
+          if (enrichedData) {
+            results.set(article.id, enrichedData);
+            enriched++;
+          } else {
+            failed++;
+          }
+        } catch (err) {
+          console.error(`Enrichment failed for ${article.doi}:`, err);
+          failed++;
+        } finally {
+          processed++;
+
+          // Обновляем прогресс
+          if (options.onProgress) {
+            const elapsedSeconds = (Date.now() - startTime) / 1000;
+            const speed = processed / Math.max(elapsedSeconds, 0.1);
+            options.onProgress(processed, articles.length, speed);
+          }
+
+          if (options.onSpeedUpdate && processed % 5 === 0) {
+            const elapsedSeconds = (Date.now() - startTime) / 1000;
+            const speed = processed / Math.max(elapsedSeconds, 0.1);
+            options.onSpeedUpdate(speed);
+          }
+
+          inProgress.delete(promise);
+        }
+      })();
+
+      inProgress.add(promise);
+    }
+
+    // Ждём завершения всех оставшихся промисов
+    await Promise.all(inProgress);
+  };
+
+  await processQueue();
+
+  return { enriched, failed, results };
+}

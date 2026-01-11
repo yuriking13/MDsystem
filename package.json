@@ -14,5 +14,8 @@
     "prosemirror-state": "^1.4.4",
     "prosemirror-view": "^1.41.4",
     "tiptap-pagination-plus": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.6"
   }
 }

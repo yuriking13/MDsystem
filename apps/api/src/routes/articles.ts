@@ -4,10 +4,10 @@ import { pool } from "../pg.js";
 import { pubmedFetchAll, enrichArticlesWithReferences, europePMCGetCitationCounts, pubmedFetchByPmids, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
 import { doajFetchAll, type DOAJArticle } from "../lib/doaj.js";
 import { wileyFetchAll, type WileyArticle } from "../lib/wiley.js";
-import { extractStats, hasAnyStats, calculateStatsQuality } from "../lib/stats.js";
-import { translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
+import { extractStats, hasAnyStats, calculateStatsQuality, detectStatsParallel } from "../lib/stats.js";
+import { translateArticlesParallel, translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
-import { getCrossrefByDOI } from "../lib/crossref.js";
+import { getCrossrefByDOI, enrichArticlesByDOIBatch } from "../lib/crossref.js";
 import { getBoss, startBoss } from "../worker/boss.js";
 import { 
   cacheGet, 
@@ -43,6 +43,8 @@ const SearchBodySchema = z.object({
     publicationTypes: z.array(z.string()).optional(),
     publicationTypesLogic: z.enum(["or", "and"]).optional(),
     translate: z.boolean().optional(),
+    enrichByDOI: z.boolean().optional(),
+    detectStats: z.boolean().optional(),
   }).optional(),
   maxResults: z.number().int().min(1).max(10000).default(100),
 });
@@ -890,6 +892,48 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
       
+      // Обогащение Crossref если запрошено
+      let enriched = 0;
+      const shouldEnrichByDOI = bodyP.data.filters?.enrichByDOI;
+      if (shouldEnrichByDOI && newArticleIds.length > 0) {
+        // Получаем статьи с DOI без Crossref данных
+        const toEnrich = await pool.query(
+          `SELECT id, doi FROM articles 
+           WHERE id = ANY($1) AND doi IS NOT NULL 
+           AND (raw_json->>'crossref' IS NULL OR raw_json->>'crossref' = '{}')`,
+          [newArticleIds]
+        );
+        
+        if (toEnrich.rows.length > 0) {
+          try {
+            const result = await enrichArticlesByDOIBatch(toEnrich.rows, {
+              parallelCount: 3,
+            });
+            
+            enriched = result.enriched;
+            
+            // Сохраняем результаты
+            for (const [articleId, data] of result.results) {
+              try {
+                await pool.query(
+                  `UPDATE articles SET 
+                    raw_json = raw_json || $1::jsonb
+                   WHERE id = $2`,
+                  [
+                    JSON.stringify({ crossref: data }),
+                    articleId,
+                  ]
+                );
+              } catch (err) {
+                console.error("Crossref update error:", err);
+              }
+            }
+          } catch (err) {
+            console.error("Crossref enrichment error:", err);
+          }
+        }
+      }
+      
       // Перевод если запрошен
       let translated = 0;
       if (shouldTranslate && newArticleIds.length > 0) {
@@ -936,6 +980,75 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
       
+      // Детектирование AI статистики если запрошено
+      let statsAnalyzed = 0;
+      let statsFound = 0;
+      const shouldDetectStats = bodyP.data.filters?.detectStats;
+      if (shouldDetectStats && newArticleIds.length > 0) {
+        const openrouterKey = await getUserApiKey(userId, "openrouter");
+        
+        if (openrouterKey) {
+          // Получаем статьи с абстрактами без AI статистики
+          const toAnalyze = await pool.query(
+            `SELECT id, abstract_en, abstract_ru FROM articles 
+             WHERE id = ANY($1) 
+             AND (abstract_en IS NOT NULL OR abstract_ru IS NOT NULL)
+             AND (stats_json->>'ai' IS NULL OR stats_json->>'ai' = '{}')`,
+            [newArticleIds]
+          );
+          
+          if (toAnalyze.rows.length > 0) {
+            try {
+              const articles = toAnalyze.rows.map(r => ({
+                id: r.id,
+                abstract: r.abstract_en || r.abstract_ru || '',
+              }));
+              
+              const result = await detectStatsParallel({
+                articles,
+                openrouterKey,
+                useAI: true,
+                parallelCount: 3,
+              });
+              
+              statsAnalyzed = result.analyzed;
+              statsFound = result.found;
+              
+              // Сохраняем результаты
+              for (const [articleId, statsResult] of result.results) {
+                try {
+                  if (statsResult.aiStats && statsResult.aiStats.stats && statsResult.aiStats.stats.length > 0) {
+                    await pool.query(
+                      `UPDATE articles SET 
+                        has_stats = true,
+                        stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
+                        stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
+                       WHERE id = $3`,
+                      [
+                        statsResult.quality,
+                        JSON.stringify({ ai: statsResult.aiStats }),
+                        articleId
+                      ]
+                    );
+                  } else {
+                    await pool.query(
+                      `UPDATE articles SET 
+                        stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": false, "stats": []}}'::jsonb
+                       WHERE id = $1`,
+                      [articleId]
+                    );
+                  }
+                } catch (err) {
+                  console.error("Stats update error:", err);
+                }
+              }
+            } catch (err) {
+              console.error("AI stats detection error:", err);
+            }
+          }
+        }
+      }
+      
       // Обновляем updated_at проекта
       await pool.query(
         `UPDATE projects SET updated_at = now() WHERE id = $1`,
@@ -967,6 +1080,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (translated > 0) {
         message += `, ${translated} переведено`;
       }
+      if (enriched > 0) {
+        message += `, ${enriched} обогащено Crossref`;
+      }
+      if (statsFound > 0) {
+        message += `, найдена статистика в ${statsFound}`;
+      }
       
       return {
         totalFound: totalCount,
@@ -974,6 +1093,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         added,
         skipped,
         translated,
+        enriched,
+        statsAnalyzed,
+        statsFound,
         sources: sourceResults,
         message,
       };
@@ -1226,7 +1348,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // POST /api/projects/:id/articles/translate - перевод статей
+  // POST /api/projects/:id/articles/translate - перевод статей со SSE потоком
   fastify.post(
     "/projects/:id/articles/translate",
     { preHandler: [fastify.authenticate] },
@@ -1239,8 +1361,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
       
       const bodySchema = z.object({
-        articleIds: z.array(z.string().uuid()).min(1).max(50).optional(),
+        articleIds: z.array(z.string().uuid()).min(1).max(500).optional(),
         untranslatedOnly: z.boolean().default(true),
+        useParallel: z.boolean().default(true),
+        parallelCount: z.number().int().min(1).max(10).default(3),
       });
       
       const bodyP = bodySchema.safeParse(request.body);
@@ -1280,33 +1404,75 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         sql += ` AND a.title_ru IS NULL`;
       }
       
-      sql += ` LIMIT 200`; // Увеличенный лимит для перевода
+      sql += ` LIMIT 500`; // Большой лимит для параллельного перевода
       
       const toTranslate = await pool.query(sql, params);
       
       if (toTranslate.rows.length === 0) {
-        return { 
+        return reply.code(200).send({ 
           ok: true, 
-          translated: 0, 
+          translated: 0,
+          total: 0,
+          speed: 0,
           message: "Нет статей для перевода" 
-        };
+        });
       }
       
-      // Переводим (маленькие батчи для надёжности)
-      let translated = 0;
-      const BATCH_SIZE = 5;
-      
-      for (let i = 0; i < toTranslate.rows.length; i += BATCH_SIZE) {
-        const batch = toTranslate.rows.slice(i, i + BATCH_SIZE);
-        
+      // Устанавливаем SSE заголовки
+      reply.raw.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      });
+
+      // Функция отправки SSE события
+      const sendEvent = (event: string, data: any) => {
         try {
-          const { results } = await translateArticlesBatchOptimized(
-            openrouterKey,
-            batch
-          );
-          
-          for (const [articleId, tr] of results) {
-            if (tr.title_ru || tr.abstract_ru) {
+          reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        } catch (err) {
+          console.error("SSE write error:", err);
+        }
+      };
+
+      // Отправляем начальное событие
+      sendEvent('start', { 
+        total: toTranslate.rows.length,
+        parallel: bodyP.data.useParallel,
+        parallelCount: bodyP.data.parallelCount
+      });
+
+      let translated = 0;
+      let failed = 0;
+      const startTime = Date.now();
+      
+      try {
+        if (bodyP.data.useParallel) {
+          // Параллельный перевод с отслеживанием прогресса
+          const result = await translateArticlesParallel(openrouterKey, toTranslate.rows, {
+            parallelCount: bodyP.data.parallelCount,
+            onProgress: (done, total, speed) => {
+              sendEvent('progress', {
+                done,
+                total,
+                percent: Math.round((done / total) * 100),
+                speed: Math.round(speed * 100) / 100,
+                eta: Math.round((total - done) / Math.max(speed, 0.1)),
+              });
+            },
+            onSpeedUpdate: (speed) => {
+              sendEvent('speed', {
+                articlesPerSecond: Math.round(speed * 100) / 100,
+              });
+            },
+          });
+
+          translated = result.translated;
+          failed = result.failed;
+
+          // Сохраняем результаты в БД
+          for (const [articleId, tr] of result.results) {
+            try {
               await pool.query(
                 `UPDATE articles SET 
                   title_ru = COALESCE($1, title_ru), 
@@ -1314,24 +1480,80 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                  WHERE id = $3`,
                 [tr.title_ru || null, tr.abstract_ru || null, articleId]
               );
-              translated++;
+            } catch (err) {
+              console.error("DB update error:", err);
             }
           }
-        } catch (err) {
-          console.error("Translation batch error:", err);
+        } else {
+          // Последовательный перевод с батчами
+          const BATCH_SIZE = 5;
+          for (let i = 0; i < toTranslate.rows.length; i += BATCH_SIZE) {
+            const batch = toTranslate.rows.slice(i, i + BATCH_SIZE);
+            
+            try {
+              const { results } = await translateArticlesBatchOptimized(
+                openrouterKey,
+                batch
+              );
+              
+              for (const [articleId, tr] of results) {
+                if (tr.title_ru || tr.abstract_ru) {
+                  await pool.query(
+                    `UPDATE articles SET 
+                      title_ru = COALESCE($1, title_ru), 
+                      abstract_ru = COALESCE($2, abstract_ru)
+                     WHERE id = $3`,
+                    [tr.title_ru || null, tr.abstract_ru || null, articleId]
+                  );
+                  translated++;
+                } else {
+                  failed++;
+                }
+              }
+            } catch (err) {
+              console.error("Translation batch error:", err);
+              failed += batch.length;
+            }
+
+            const elapsedSeconds = (Date.now() - startTime) / 1000;
+            const speed = (i + batch.length) / Math.max(elapsedSeconds, 0.1);
+            
+            sendEvent('progress', {
+              done: i + batch.length,
+              total: toTranslate.rows.length,
+              percent: Math.round(((i + batch.length) / toTranslate.rows.length) * 100),
+              speed: Math.round(speed * 100) / 100,
+              eta: Math.round((toTranslate.rows.length - i - batch.length) / Math.max(speed, 0.1)),
+            });
+          }
         }
+
+        const elapsedSeconds = (Date.now() - startTime) / 1000;
+        const finalSpeed = translated / Math.max(elapsedSeconds, 0.1);
+
+        sendEvent('complete', {
+          ok: true,
+          translated,
+          failed,
+          total: toTranslate.rows.length,
+          elapsedSeconds: Math.round(elapsedSeconds * 10) / 10,
+          speed: Math.round(finalSpeed * 100) / 100,
+          message: `Переведено ${translated} из ${toTranslate.rows.length} статей за ${Math.round(elapsedSeconds)}с`,
+        });
+
+      } catch (err) {
+        console.error("Translation error:", err);
+        sendEvent('error', {
+          error: (err instanceof Error) ? err.message : 'Unknown error',
+        });
       }
-      
-      return { 
-        ok: true, 
-        translated, 
-        total: toTranslate.rows.length,
-        message: `Переведено ${translated} из ${toTranslate.rows.length} статей` 
-      };
+
+      reply.raw.end();
     }
+  );    }
   );
 
-  // POST /api/projects/:id/articles/enrich - обогащение данных через Crossref
+  // POST /api/projects/:id/articles/enrich - обогащение данных через Crossref со SSE потоком
   fastify.post(
     "/projects/:id/articles/enrich",
     { preHandler: [fastify.authenticate] },
@@ -1344,7 +1566,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
       
       const bodySchema = z.object({
-        articleIds: z.array(z.string().uuid()).min(1).max(50).optional(),
+        articleIds: z.array(z.string().uuid()).min(1).max(500).optional(),
+        parallelCount: z.number().int().min(1).max(10).default(5),
       });
       
       const bodyP = bodySchema.safeParse(request.body);
@@ -1357,9 +1580,6 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (!access.ok) {
         return reply.code(403).send({ error: "No edit access" });
       }
-      
-      // Импортируем Crossref
-      const { enrichArticleByDOI } = await import("../lib/crossref.js");
       
       // Получить статьи с DOI для обогащения
       let sql = `
@@ -1380,47 +1600,103 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const toEnrich = await pool.query(sql, params);
       
       if (toEnrich.rows.length === 0) {
-        return { 
+        return reply.code(200).send({ 
           ok: true, 
-          enriched: 0, 
+          enriched: 0,
+          total: 0,
+          speed: 0,
           message: "Нет статей с DOI для обогащения" 
-        };
+        });
       }
-      
-      // Обогащаем
-      let enriched = 0;
-      
-      for (const row of toEnrich.rows) {
+
+      // Устанавливаем SSE заголовки
+      reply.raw.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      });
+
+      // Функция отправки SSE события
+      const sendEvent = (event: string, data: any) => {
         try {
-          const data = await enrichArticleByDOI(row.doi);
-          
-          if (data) {
-            // Сохраняем обогащённые данные в raw_json
+          reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        } catch (err) {
+          console.error("SSE write error:", err);
+        }
+      };
+
+      // Отправляем начальное событие
+      sendEvent('start', { 
+        total: toEnrich.rows.length,
+        parallelCount: bodyP.data.parallelCount
+      });
+
+      let enriched = 0;
+      let failed = 0;
+      const startTime = Date.now();
+
+      try {
+        // Используем параллельное обогащение
+        const result = await enrichArticlesByDOIBatch(toEnrich.rows, {
+          parallelCount: bodyP.data.parallelCount,
+          onProgress: (done, total, speed) => {
+            sendEvent('progress', {
+              done,
+              total,
+              percent: Math.round((done / total) * 100),
+              speed: Math.round(speed * 100) / 100,
+              eta: Math.round((total - done) / Math.max(speed, 0.1)),
+            });
+          },
+          onSpeedUpdate: (speed) => {
+            sendEvent('speed', {
+              articlesPerSecond: Math.round(speed * 100) / 100,
+            });
+          },
+        });
+
+        enriched = result.enriched;
+        failed = result.failed;
+
+        // Сохраняем результаты в БД
+        for (const [articleId, data] of result.results) {
+          try {
             await pool.query(
               `UPDATE articles SET 
                 raw_json = raw_json || $1::jsonb
                WHERE id = $2`,
               [
                 JSON.stringify({ crossref: data }),
-                row.id,
+                articleId,
               ]
             );
-            enriched++;
+          } catch (err) {
+            console.error("DB update error:", err);
           }
-          
-          // Задержка чтобы не превысить лимиты API
-          await new Promise((r) => setTimeout(r, 100));
-        } catch (err) {
-          console.error(`Enrich error for ${row.doi}:`, err);
         }
+
+        const elapsedSeconds = (Date.now() - startTime) / 1000;
+        const finalSpeed = enriched / Math.max(elapsedSeconds, 0.1);
+
+        sendEvent('complete', {
+          ok: true,
+          enriched,
+          failed,
+          total: toEnrich.rows.length,
+          elapsedSeconds: Math.round(elapsedSeconds * 10) / 10,
+          speed: Math.round(finalSpeed * 100) / 100,
+          message: `Обогащено ${enriched} из ${toEnrich.rows.length} статей за ${Math.round(elapsedSeconds)}с`,
+        });
+
+      } catch (err) {
+        console.error("Enrichment error:", err);
+        sendEvent('error', {
+          error: (err instanceof Error) ? err.message : 'Unknown error',
+        });
       }
-      
-      return { 
-        ok: true, 
-        enriched, 
-        total: toEnrich.rows.length,
-        message: `Обогащено ${enriched} из ${toEnrich.rows.length} статей` 
-      };
+
+      reply.raw.end();
     }
   );
 
@@ -2057,7 +2333,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     }
   );
 
-  // POST /api/projects/:id/articles/ai-detect-stats - AI детекция статистики (SSE streaming)
+  // POST /api/projects/:id/articles/ai-detect-stats - AI детекция статистики (SSE streaming с оптимизацией)
   fastify.post(
     "/projects/:id/articles/ai-detect-stats",
     { preHandler: [fastify.authenticate] },
@@ -2082,19 +2358,16 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         });
       }
       
-      // Парсим articleIds из тела запроса
-      const body = request.body as { articleIds?: string[] } | undefined;
-      const articleIds = body?.articleIds;
+      // Парсим параметры из тела запроса
+      const bodySchema = z.object({
+        articleIds: z.array(z.string().uuid()).optional(),
+        parallelCount: z.number().int().min(1).max(10).default(5),
+      });
+      const bodyP = bodySchema.safeParse(request.body || {});
+      const articleIds = bodyP.success ? bodyP.data.articleIds : undefined;
+      const parallelCount = bodyP.success ? bodyP.data.parallelCount : 5;
       
-      // Импортируем функцию
-      const { detectStatsCombined } = await import("../lib/stats.js");
-      
-      // Настройки батчинга
-      const BATCH_SIZE = 10; // Размер пачки
-      const PARALLEL_LIMIT = 5; // Параллельных запросов в пачке
-      const BATCH_DELAY_MS = 500; // Пауза между пачками для rate limiting
-      
-      // Получить ВСЕ статьи для анализа (без AI статистики)
+      // Получить статьи для анализа (без AI статистики)
       let articlesRes;
       
       if (articleIds && articleIds.length > 0) {
@@ -2122,19 +2395,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         );
       }
       
-      const articles = articlesRes.rows;
+      const articles = articlesRes.rows.map(r => ({
+        id: r.id,
+        abstract: r.abstract_en,
+      }));
       const total = articles.length;
       
       if (total === 0) {
-        return { 
+        return reply.code(200).send({ 
           ok: true, 
           analyzed: 0, 
           found: 0,
           total: 0,
+          speed: 0,
           message: articleIds?.length 
             ? "Выбранные статьи уже проанализированы или не имеют абстрактов" 
             : "Все статьи уже проанализированы AI" 
-        };
+        });
       }
       
       // Устанавливаем SSE заголовки
@@ -2142,116 +2419,114 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
-        'X-Accel-Buffering': 'no', // Отключаем буферизацию nginx
+        'X-Accel-Buffering': 'no',
       });
       
       // Функция отправки SSE события
       const sendEvent = (event: string, data: any) => {
-        reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        try {
+          reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+        } catch (err) {
+          console.error("SSE write error:", err);
+        }
       };
       
       // Отправляем начальное событие
-      sendEvent('start', { total, batchSize: BATCH_SIZE });
+      sendEvent('start', { 
+        total,
+        parallelCount
+      });
       
       let analyzed = 0;
       let found = 0;
-      let errors = 0;
+      const startTime = Date.now();
       
-      // Обрабатываем пачками
-      for (let batchStart = 0; batchStart < articles.length; batchStart += BATCH_SIZE) {
-        const batch = articles.slice(batchStart, batchStart + BATCH_SIZE);
-        const batchNum = Math.floor(batchStart / BATCH_SIZE) + 1;
-        const totalBatches = Math.ceil(articles.length / BATCH_SIZE);
-        
-        // Обрабатываем пачку параллельно (по PARALLEL_LIMIT за раз)
-        for (let i = 0; i < batch.length; i += PARALLEL_LIMIT) {
-          const parallelBatch = batch.slice(i, i + PARALLEL_LIMIT);
-          
-          const results = await Promise.allSettled(
-            parallelBatch.map(async (article) => {
-              const result = await detectStatsCombined({
-                text: article.abstract_en,
-                openrouterKey,
-                useAI: true,
-              });
-              return { article, result };
-            })
-          );
-          
-          for (const res of results) {
-            if (res.status === 'fulfilled') {
-              const { article, result } = res.value;
-              
-              // Сохраняем результат AI-анализа
-              if (result.aiStats && result.aiStats.stats && result.aiStats.stats.length > 0) {
-                await pool.query(
-                  `UPDATE articles SET 
-                    has_stats = true,
-                    stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
-                    stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
-                   WHERE id = $3`,
-                  [
-                    result.quality,
-                    JSON.stringify({ ai: result.aiStats }),
-                    article.id
-                  ]
-                );
-                found++;
-              } else if (result.hasStats) {
-                // Отмечаем что AI анализ был проведён (пустой результат)
-                await pool.query(
-                  `UPDATE articles SET 
-                    has_stats = true,
-                    stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
-                    stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": false, "stats": []}}'::jsonb
-                   WHERE id = $2`,
-                  [result.quality, article.id]
-                );
-              } else {
-                // Отмечаем что AI анализ был проведён (ничего не найдено)
-                await pool.query(
-                  `UPDATE articles SET 
-                    stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": false, "stats": []}}'::jsonb
-                   WHERE id = $1`,
-                  [article.id]
-                );
-              }
-              
-              analyzed++;
+      try {
+        // Используем параллельную детекцию статистики
+        const result = await detectStatsParallel({
+          articles,
+          openrouterKey,
+          useAI: true,
+          parallelCount,
+          onProgress: (done, total, speed) => {
+            sendEvent('progress', {
+              done,
+              total,
+              percent: Math.round((done / total) * 100),
+              speed: Math.round(speed * 100) / 100,
+              eta: Math.round((total - done) / Math.max(speed, 0.1)),
+            });
+          },
+          onSpeedUpdate: (speed) => {
+            sendEvent('speed', {
+              articlesPerSecond: Math.round(speed * 100) / 100,
+            });
+          },
+        });
+
+        analyzed = result.analyzed;
+        found = result.found;
+
+        // Сохраняем результаты в БД
+        for (const [articleId, statsResult] of result.results) {
+          try {
+            if (statsResult.aiStats && statsResult.aiStats.stats && statsResult.aiStats.stats.length > 0) {
+              await pool.query(
+                `UPDATE articles SET 
+                  has_stats = true,
+                  stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
+                  stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
+                 WHERE id = $3`,
+                [
+                  statsResult.quality,
+                  JSON.stringify({ ai: statsResult.aiStats }),
+                  articleId
+                ]
+              );
+            } else if (statsResult.hasStats) {
+              // Отмечаем что AI анализ был проведён (пустой результат)
+              await pool.query(
+                `UPDATE articles SET 
+                  has_stats = true,
+                  stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
+                  stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": false, "stats": []}}'::jsonb
+                 WHERE id = $2`,
+                [statsResult.quality, articleId]
+              );
             } else {
-              console.error(`AI stats detection error:`, res.reason);
-              errors++;
+              // Отмечаем что AI анализ был проведён (ничего не найдено)
+              await pool.query(
+                `UPDATE articles SET 
+                  stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": false, "stats": []}}'::jsonb
+                 WHERE id = $1`,
+                [articleId]
+              );
             }
+          } catch (err) {
+            console.error("DB update error:", err);
           }
         }
-        
-        // Отправляем прогресс после каждой пачки
-        sendEvent('progress', { 
-          batch: batchNum, 
-          totalBatches,
-          analyzed, 
+
+        const elapsedSeconds = (Date.now() - startTime) / 1000;
+        const finalSpeed = analyzed / Math.max(elapsedSeconds, 0.1);
+
+        sendEvent('complete', {
+          ok: true,
+          analyzed,
           found,
-          errors,
           total,
-          percent: Math.round((analyzed / total) * 100)
+          elapsedSeconds: Math.round(elapsedSeconds * 10) / 10,
+          speed: Math.round(finalSpeed * 100) / 100,
+          message: `Проанализировано ${analyzed} статей, найдено статистики в ${found} за ${Math.round(elapsedSeconds)}с`,
         });
-        
-        // Пауза между пачками чтобы не превысить rate limits
-        if (batchStart + BATCH_SIZE < articles.length) {
-          await new Promise(r => setTimeout(r, BATCH_DELAY_MS));
-        }
+
+      } catch (err) {
+        console.error("AI stats detection error:", err);
+        sendEvent('error', {
+          error: (err instanceof Error) ? err.message : 'Unknown error',
+        });
       }
-      
-      // Отправляем финальное событие
-      sendEvent('complete', { 
-        ok: true,
-        analyzed, 
-        found, 
-        errors,
-        total,
-        message: `Проанализировано ${analyzed} статей. AI нашёл статистику в ${found}.`
-      });
-      
+
       reply.raw.end();
     }
   );
