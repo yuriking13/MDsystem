@@ -15,6 +15,7 @@ import {
   type SearchFilters,
   type SearchSource,
 } from "../lib/api";
+import AddArticleByDoiModal from "./AddArticleByDoiModal";
 
 type Props = {
   projectId: string;
@@ -124,6 +125,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   const [convertingToDoc, setConvertingToDoc] = useState(false);
   const [convertIncludeBibliography, setConvertIncludeBibliography] = useState(false);
   const [convertDocTitle, setConvertDocTitle] = useState("");
+  
+  // Добавление статьи по DOI
+  const [showAddByDoiModal, setShowAddByDoiModal] = useState(false);
   
   // Глобальные настройки отображения
   const [listLang, setListLang] = useState<"ru" | "en">("ru"); // Язык в списке
@@ -876,16 +880,29 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             </button>
           )}
           {canEdit && (
-            <button
-              className="btn"
-              onClick={() => setShowSearch(!showSearch)}
-              type="button"
-            >
-              <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              {showSearch ? "Скрыть поиск" : "Поиск статей"}
-            </button>
+            <>
+              <button
+                className="btn secondary"
+                onClick={() => setShowAddByDoiModal(true)}
+                type="button"
+                title="Добавить статью по DOI"
+              >
+                <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                По DOI
+              </button>
+              <button
+                className="btn"
+                onClick={() => setShowSearch(!showSearch)}
+                type="button"
+              >
+                <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                {showSearch ? "Скрыть поиск" : "Поиск статей"}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -2053,6 +2070,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             </div>
           </div>
         </div>
+      )}
+
+      {/* Модальное окно добавления статьи по DOI */}
+      {showAddByDoiModal && (
+        <AddArticleByDoiModal
+          projectId={projectId}
+          onClose={() => setShowAddByDoiModal(false)}
+          onSuccess={() => {
+            loadArticles();
+            setOk("Статья успешно добавлена!");
+          }}
+        />
       )}
     </div>
   );

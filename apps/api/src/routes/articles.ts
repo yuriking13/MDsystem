@@ -69,6 +69,12 @@ const ImportFromGraphSchema = z.object({
   message: "Передайте хотя бы один PMID или DOI",
 });
 
+// Схема валидации для загрузки статьи по DOI
+const AddArticleByDoiSchema = z.object({
+  doi: z.string().trim().min(1).max(500),
+  status: z.enum(["candidate", "selected"]).optional().default("candidate"),
+});
+
 // Получить API ключ пользователя для провайдера
 async function getUserApiKey(userId: string, provider: string): Promise<string | null> {
   const res = await pool.query(
@@ -391,7 +397,176 @@ async function addArticleToProject(
   return true;
 }
 
+// Функция для создания статьи из данных Crossref
+async function createArticleFromCrossref(doi: string): Promise<{ articleId: string; created: boolean } | null> {
+  // Нормализуем DOI
+  const normalizedDoi = doi.toLowerCase().trim();
+  
+  // Проверяем, есть ли уже статья с таким DOI
+  const existing = await pool.query(
+    `SELECT id FROM articles WHERE doi = $1`,
+    [normalizedDoi]
+  );
+  
+  if ((existing.rowCount ?? 0) > 0) {
+    return { articleId: existing.rows[0].id, created: false };
+  }
+  
+  // Получаем данные из Crossref
+  const crossrefData = await getCrossrefByDOI(normalizedDoi);
+  
+  if (!crossrefData) {
+    return null;
+  }
+  
+  // Извлекаем авторов
+  const authors: string[] = [];
+  if (crossrefData.author && Array.isArray(crossrefData.author)) {
+    for (const author of crossrefData.author) {
+      const name = [];
+      if (author.family) name.push(author.family);
+      if (author.given) name.push(author.given);
+      if (name.length > 0) {
+        authors.push(name.join(' '));
+      }
+    }
+  }
+  
+  // Получаем год публикации
+  let year: number | null = null;
+  if (crossrefData.issued?.["date-parts"]?.[0]?.[0]) {
+    year = crossrefData.issued["date-parts"][0][0];
+  } else if (crossrefData.published?.["date-parts"]?.[0]?.[0]) {
+    year = crossrefData.published["date-parts"][0][0];
+  }
+  
+  // Получаем название журнала
+  const journal = crossrefData["container-title"]?.[0] || null;
+  
+  // Получаем заголовок
+  const titleEn = crossrefData.title?.[0] || "Unknown title";
+  
+  // Получаем аннотацию
+  const abstractEn = crossrefData.abstract || null;
+  
+  // Получаем URL
+  let url: string | null = null;
+  if (crossrefData.link?.[0]?.URL) {
+    url = crossrefData.link[0].URL;
+  }
+  
+  // Извлекаем статистику из аннотации
+  const stats = abstractEn ? extractStats(abstractEn) : null;
+  const hasStats = stats && hasAnyStats(stats);
+  const statsQuality = hasStats ? calculateStatsQuality(stats) : 0;
+  
+  // Получаем том, выпуск, страницы
+  const volume = crossrefData.volume || null;
+  const issue = crossrefData.issue || null;
+  const pages = crossrefData.page || null;
+  
+  // Создаём статью в БД
+  const res = await pool.query(
+    `INSERT INTO articles (
+      doi, title_en, abstract_en, authors, year, journal, url, source,
+      has_stats, stats_json, stats_quality, volume, issue, pages, 
+      raw_json, created_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+    RETURNING id`,
+    [
+      normalizedDoi,
+      titleEn,
+      abstractEn,
+      authors.length > 0 ? authors : null,
+      year,
+      journal,
+      url,
+      "crossref",
+      hasStats,
+      hasStats ? JSON.stringify(stats) : null,
+      statsQuality,
+      volume,
+      issue,
+      pages,
+      JSON.stringify(crossrefData),
+      new Date(),
+    ]
+  );
+  
+  return { articleId: res.rows[0].id, created: true };
+}
+
 const plugin: FastifyPluginAsync = async (fastify) => {
+  // POST /api/projects/:id/add-article-by-doi - добавить статью по DOI
+  fastify.post(
+    "/projects/:id/add-article-by-doi",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = (request as any).user.sub;
+      
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+      
+      const bodyP = AddArticleByDoiSchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply.code(400).send({ error: "Invalid body", details: bodyP.error.message });
+      }
+      
+      // Проверка доступа (нужен edit)
+      const access = await checkProjectAccess(paramsP.data.id, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No edit access to project" });
+      }
+      
+      try {
+        // Создаём или находим статью по DOI
+        const result = await createArticleFromCrossref(bodyP.data.doi);
+        
+        if (!result) {
+          return reply.code(404).send({ 
+            error: "Article not found in Crossref. Please check the DOI." 
+          });
+        }
+        
+        // Добавляем статью в проект
+        const wasAdded = await addArticleToProject(
+          paramsP.data.id,
+          result.articleId,
+          userId,
+          `DOI: ${bodyP.data.doi}`,
+          bodyP.data.status
+        );
+        
+        if (!wasAdded && !result.created) {
+          return reply.code(409).send({ 
+            error: "Article already added to this project" 
+          });
+        }
+        
+        // Invalidate cache
+        await invalidateArticles(paramsP.data.id);
+        
+        return {
+          ok: true,
+          articleId: result.articleId,
+          created: result.created,
+          status: bodyP.data.status,
+          message: result.created 
+            ? `Article added to project as ${bodyP.data.status}`
+            : `Article already exists in database and added to project as ${bodyP.data.status}`,
+        };
+      } catch (err) {
+        console.error("Error adding article by DOI:", err);
+        return reply.code(500).send({ 
+          error: "Failed to add article",
+          details: err instanceof Error ? err.message : "Unknown error"
+        });
+      }
+    }
+  );
+
   // POST /api/projects/:id/search - поиск статей в PubMed
   fastify.post(
     "/projects/:id/search",

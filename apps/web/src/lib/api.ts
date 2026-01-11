@@ -297,6 +297,26 @@ export async function apiSearchArticles(
   });
 }
 
+// Добавить статью по DOI
+export type AddArticleByDoiResult = {
+  ok: true;
+  articleId: string;
+  created: boolean;
+  status: "candidate" | "selected";
+  message: string;
+};
+
+export async function apiAddArticleByDoi(
+  projectId: string,
+  doi: string,
+  status: "candidate" | "selected" = "candidate"
+): Promise<AddArticleByDoiResult> {
+  return apiFetch<AddArticleByDoiResult>(`/api/projects/${projectId}/add-article-by-doi`, {
+    method: "POST",
+    body: JSON.stringify({ doi, status }),
+  });
+}
+
 export async function apiGetArticles(
   projectId: string,
   status?: "candidate" | "selected" | "excluded" | "deleted",
