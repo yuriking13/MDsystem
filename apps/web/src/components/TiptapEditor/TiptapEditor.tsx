@@ -100,6 +100,21 @@ export const STYLE_CONFIGS = {
     textAlign: 'justify',
     pageNumberPosition: 'center-top',
   },
+  'gost-r-7-0-5-2008': {
+    name: 'ГОСТ Р 7.0.5-2008',
+    pageWidth: 794,  // A4 at 96 DPI
+    pageHeight: 1123,
+    marginTop: 76,   // 20mm
+    marginBottom: 76, // 20mm
+    marginLeft: 95,  // 25mm (for binding)
+    marginRight: 38, // 10mm
+    fontSize: 14,
+    lineHeight: 1.5,
+    paragraphIndent: '1.25cm',
+    fontFamily: "'Times New Roman', Times, serif",
+    textAlign: 'justify',
+    pageNumberPosition: 'center-top',
+  },
   vancouver: {
     name: 'Vancouver',
     pageWidth: 794,
@@ -130,7 +145,7 @@ export const STYLE_CONFIGS = {
     textAlign: 'left',
     pageNumberPosition: 'right-top',
   },
-};
+} as const;
 
 const PAGE_GAP = 24;
 
