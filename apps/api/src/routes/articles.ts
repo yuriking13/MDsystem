@@ -1456,8 +1456,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 done,
                 total,
                 percent: Math.round((done / total) * 100),
-                speed: Math.round(speed * 100) / 100,
-                eta: Math.round((total - done) / Math.max(speed, 0.1)),
+                speed: Math.round((speed || 0) * 100) / 100,
+                eta: Math.round((total - done) / Math.max(speed || 0, 0.1)),
               });
             },
             onSpeedUpdate: (speed) => {
@@ -1550,7 +1550,6 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       reply.raw.end();
     }
-  );    }
   );
 
   // POST /api/projects/:id/articles/enrich - обогащение данных через Crossref со SSE потоком
@@ -1645,8 +1644,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               done,
               total,
               percent: Math.round((done / total) * 100),
-              speed: Math.round(speed * 100) / 100,
-              eta: Math.round((total - done) / Math.max(speed, 0.1)),
+              speed: Math.round((speed || 0) * 100) / 100,
+              eta: Math.round((total - done) / Math.max(speed || 0, 0.1)),
             });
           },
           onSpeedUpdate: (speed) => {
@@ -2453,8 +2452,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               done,
               total,
               percent: Math.round((done / total) * 100),
-              speed: Math.round(speed * 100) / 100,
-              eta: Math.round((total - done) / Math.max(speed, 0.1)),
+              speed: Math.round((speed || 0) * 100) / 100,
+              eta: Math.round((total - done) / Math.max(speed || 0, 0.1)),
             });
           },
           onSpeedUpdate: (speed) => {

@@ -328,7 +328,7 @@ export async function detectStatsParallel(args: {
       const promise = (async () => {
         try {
           const result = await detectStatsCombined({
-            text: article.abstract,
+            text: article.abstract || '',
             openrouterKey,
             useAI,
           });
@@ -358,10 +358,12 @@ export async function detectStatsParallel(args: {
             const speed = processed / Math.max(elapsedSeconds, 0.1);
             args.onSpeedUpdate(speed);
           }
-
-          inProgress.delete(promise);
         }
       })();
+
+      promise.finally(() => {
+        inProgress.delete(promise);
+      });
 
       inProgress.add(promise);
     }

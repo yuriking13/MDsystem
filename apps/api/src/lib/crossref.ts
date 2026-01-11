@@ -293,10 +293,12 @@ export async function enrichArticlesByDOIBatch(
             const speed = processed / Math.max(elapsedSeconds, 0.1);
             options.onSpeedUpdate(speed);
           }
-
-          inProgress.delete(promise);
         }
       })();
+
+      promise.finally(() => {
+        inProgress.delete(promise);
+      });
 
       inProgress.add(promise);
     }
