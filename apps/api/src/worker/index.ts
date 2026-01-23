@@ -1,4 +1,4 @@
-import { startBoss } from './boss.js';
+import { startBoss, stopBoss } from './boss.js';
 import { runPubmedSearchJob } from './jobs/pubmedSearchJob.js';
 import { runGraphFetchJob } from './jobs/graphFetchJob.js';
 import { createLogger } from '../utils/logger.js';
@@ -6,7 +6,14 @@ import { isPubmedSearchPayload, isGraphFetchPayload } from './types.js';
 
 const log = createLogger('workers');
 
+let workersStarted = false;
+
 export async function startWorkers() {
+  if (workersStarted) {
+    log.warn('Workers already started, skipping...');
+    return;
+  }
+  workersStarted = true;
   log.info('Starting workers...');
   const boss = await startBoss();
   log.info('pg-boss started, registering job handlers...');
@@ -42,4 +49,21 @@ export async function startWorkers() {
   });
 
   log.info('All workers started successfully');
+}
+
+export async function stopWorkers() {
+  if (!workersStarted) {
+    log.debug('Workers not started, nothing to stop');
+    return;
+  }
+  
+  log.info('Stopping workers...');
+  try {
+    await stopBoss();
+    workersStarted = false;
+    log.info('Workers stopped successfully');
+  } catch (error) {
+    log.error('Error stopping workers', error instanceof Error ? error : new Error(String(error)));
+    throw error;
+  }
 }

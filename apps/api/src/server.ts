@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import multipart from '@fastify/multipart';
 import helmet from '@fastify/helmet';
+import compress from '@fastify/compress';
 
 import { env } from './env.js';
 import authPlugin from './auth.js';
@@ -17,10 +18,13 @@ import statisticsRoutes from './routes/statistics.js';
 import filesRoutes from './routes/files.js';
 
 import envGuard from './plugins/00-env-guard.js';
-import { startWorkers } from './worker/index.js';
+import { startWorkers, stopWorkers } from './worker/index.js';
 import { registerWebSocket, getConnectionStats } from './websocket.js';
 import { initCache, getCacheBackend, closeCache } from './lib/redis.js';
 import { getRateLimitStats } from './plugins/rate-limit.js';
+
+// Request timeout (30 секунд по умолчанию)
+const REQUEST_TIMEOUT_MS = 30_000;
 
 const app = Fastify({ 
   logger: {
@@ -40,6 +44,8 @@ const app = Fastify({
   },
   // Генерация request ID для трассировки
   genReqId: () => `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
+  // Request timeout
+  requestTimeout: REQUEST_TIMEOUT_MS,
 });
 
 // Централизованная обработка ошибок
@@ -47,6 +53,13 @@ setupErrorHandler(app);
 setupNotFoundHandler(app);
 
 await app.register(envGuard);
+
+// HTTP Compression (gzip, brotli)
+await app.register(compress, {
+  global: true,
+  encodings: ['gzip', 'deflate'],
+  threshold: 1024, // Сжимать ответы больше 1KB
+});
 
 // Security headers (Helmet)
 await app.register(helmet, {
@@ -152,15 +165,38 @@ app.get('/api/perf-stats', async () => {
 await initCache();
 
 // Graceful shutdown
-const shutdown = async () => {
-  app.log.info('Shutting down...');
-  await closeCache();
-  await app.close();
+const shutdown = async (signal: string) => {
+  app.log.info({ signal }, 'Received shutdown signal, gracefully stopping...');
+  
+  // 1. Останавливаем воркеры (завершают текущие задачи)
+  try {
+    await stopWorkers();
+    app.log.info('Workers stopped');
+  } catch (err) {
+    app.log.error({ err }, 'Error stopping workers');
+  }
+  
+  // 2. Закрываем кэш
+  try {
+    await closeCache();
+    app.log.info('Cache closed');
+  } catch (err) {
+    app.log.error({ err }, 'Error closing cache');
+  }
+  
+  // 3. Закрываем сервер (завершает активные соединения)
+  try {
+    await app.close();
+    app.log.info('Server closed');
+  } catch (err) {
+    app.log.error({ err }, 'Error closing server');
+  }
+  
   process.exit(0);
 };
 
-process.on('SIGINT', shutdown);
-process.on('SIGTERM', shutdown);
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
 
 app.listen({ host: env.HOST, port: env.PORT })
   .then(() => {

@@ -1,7 +1,9 @@
 import pg from 'pg';
 import { env } from './env.js';
+import { createLogger } from './utils/logger.js';
 
 const { Pool } = pg;
+const log = createLogger('pg-pool');
 
 function needsSsl(databaseUrl: string): boolean {
   const u = databaseUrl.toLowerCase();
@@ -33,7 +35,7 @@ pool.on('connect', (client) => {
 
 // Логирование ошибок пула
 pool.on('error', (err) => {
-  console.error('[Pool] Unexpected error on idle client:', err.message);
+  log.error('Unexpected error on idle client', err);
 });
 
 /**

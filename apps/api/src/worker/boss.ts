@@ -61,3 +61,22 @@ export async function startBoss(): Promise<PgBoss> {
 
   return startPromise;
 }
+
+export async function stopBoss(): Promise<void> {
+  if (!boss) {
+    log.debug('No boss instance to stop');
+    return;
+  }
+
+  log.info('Stopping pg-boss...');
+  try {
+    await boss.stop({ graceful: true, timeout: 10000 });
+    log.info('pg-boss stopped gracefully');
+  } catch (err) {
+    log.error('Error stopping pg-boss', err);
+    throw err;
+  } finally {
+    boss = null;
+    startPromise = null;
+  }
+}

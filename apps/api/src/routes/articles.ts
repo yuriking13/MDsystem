@@ -17,6 +17,9 @@ import {
   TTL 
 } from "../lib/redis.js";
 import { getUserId } from "../types/fastify.js";
+import { createLogger } from "../utils/logger.js";
+
+const log = createLogger('articles');
 
 // Поля поиска PubMed
 const PUBMED_SEARCH_FIELDS = [
@@ -543,7 +546,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             : `Article already exists in database and added to project as ${bodyP.data.status}`,
         };
       } catch (err) {
-        console.error("Error adding article by DOI:", err);
+        log.error("Error adding article by DOI", err instanceof Error ? err : new Error(String(err)));
         return reply.code(500).send({ 
           error: "Failed to add article",
           details: err instanceof Error ? err.message : "Unknown error"
@@ -700,11 +703,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                     skipped++;
                   }
                 } catch (err) {
-                  console.error("Error saving article:", err);
+                  log.error("Error saving article", err instanceof Error ? err : new Error(String(err)));
                 }
               }
             } catch (err) {
-              console.error(`Error searching PubMed for ${pubType}:`, err);
+              log.error("Error searching PubMed", err instanceof Error ? err : new Error(String(err)), { pubType });
             }
           }
         } else {
@@ -754,11 +757,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                   skipped++;
                 }
               } catch (err) {
-                console.error("Error saving article:", err);
+                log.error("Error saving article", err instanceof Error ? err : new Error(String(err)));
               }
             }
           } catch (err) {
-            console.error("Error searching PubMed:", err);
+            log.error("Error searching PubMed", err instanceof Error ? err : new Error(String(err)));
           }
         }
       }
@@ -811,11 +814,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 skipped++;
               }
             } catch (err) {
-              console.error("Error saving DOAJ article:", err);
+              log.error("Error saving DOAJ article", err instanceof Error ? err : new Error(String(err)));
             }
           }
         } catch (err) {
-          console.error("Error searching DOAJ:", err);
+          log.error("Error searching DOAJ", err instanceof Error ? err : new Error(String(err)));
         }
       }
       
@@ -867,11 +870,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 skipped++;
               }
             } catch (err) {
-              console.error("Error saving Wiley article:", err);
+              log.error("Error saving Wiley article", err instanceof Error ? err : new Error(String(err)));
             }
           }
         } catch (err) {
-          console.error("Error searching Wiley:", err);
+          log.error("Error searching Wiley", err instanceof Error ? err : new Error(String(err)));
         }
       }
       
@@ -908,11 +911,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                   ]
                 );
               } catch (err) {
-                console.error("Crossref update error:", err);
+                log.error("Crossref update error", err instanceof Error ? err : new Error(String(err)));
               }
             }
           } catch (err) {
-            console.error("Crossref enrichment error:", err);
+            log.error("Crossref enrichment error", err instanceof Error ? err : new Error(String(err)));
           }
         }
       }
@@ -2285,7 +2288,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let wileyToken: string | undefined;
       try {
         wileyToken = await getUserApiKey(userId, "wiley") || undefined;
-      } catch (e) {}
+      } catch {
+        // Ignore - wileyToken will remain undefined
+      }
 
       // Ищем источник PDF
       const source = await findPdfSource(doi, pmid, wileyToken);
