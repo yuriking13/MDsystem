@@ -77,7 +77,51 @@ await app.register(documentsRoutes, { prefix: '/api' });
 await app.register(statisticsRoutes, { prefix: '/api' });
 await app.register(filesRoutes, { prefix: '/api' });
 
-app.get('/api/health', async () => ({ ok: true }));
+// Basic health check (для load balancer)
+app.get('/api/health', async () => ({ ok: true, timestamp: Date.now() }));
+
+// Расширенный health check с проверкой зависимостей
+app.get('/api/health/ready', async () => {
+  const checks: Record<string, { ok: boolean; latencyMs?: number; error?: string }> = {};
+  
+  // Проверка PostgreSQL
+  const pgStart = Date.now();
+  try {
+    const { pool } = await import('./pg.js');
+    await pool.query('SELECT 1');
+    checks.postgres = { ok: true, latencyMs: Date.now() - pgStart };
+  } catch (err) {
+    checks.postgres = { ok: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+  
+  // Проверка Redis (если настроен)
+  const redisStart = Date.now();
+  try {
+    const { getRedisClient, isRedisConfigured } = await import('./lib/redis.js');
+    if (isRedisConfigured()) {
+      const redis = await getRedisClient();
+      if (redis) {
+        await redis.ping();
+        checks.redis = { ok: true, latencyMs: Date.now() - redisStart };
+      } else {
+        checks.redis = { ok: false, error: 'Redis configured but not connected' };
+      }
+    } else {
+      checks.redis = { ok: true, latencyMs: 0 }; // Memory cache - всегда OK
+    }
+  } catch (err) {
+    checks.redis = { ok: false, error: err instanceof Error ? err.message : 'Unknown error' };
+  }
+  
+  const allOk = Object.values(checks).every(c => c.ok);
+  
+  return {
+    ok: allOk,
+    timestamp: Date.now(),
+    uptime: Math.round(process.uptime()),
+    checks,
+  };
+});
 
 // Статистика WebSocket подключений
 app.get('/api/ws-stats', async () => getConnectionStats());

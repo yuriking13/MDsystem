@@ -1,24 +1,25 @@
 import { prisma } from '../../db.js';
-import { pubmedFetchAll } from '../../lib/pubmed.js';
+import { pubmedFetchAll, type PubMedFilters } from '../../lib/pubmed.js';
 import { extractStats, hasAnyStats } from '../../lib/stats.js';
+import type { PubmedSearchJobPayload } from '../types.js';
 
-export async function runPubmedSearchJob(payload: { projectId: string; queryId: string }) {
+export async function runPubmedSearchJob(payload: PubmedSearchJobPayload) {
   const query = await prisma.searchQuery.findUnique({ where: { id: payload.queryId } });
   if (!query) return;
 
   await prisma.searchQuery.update({ where: { id: query.id }, data: { status: 'running' } });
 
   try {
-    const filters = query.filters as any;
+    const filters = query.filters as PubMedFilters | null;
 
     const result = await pubmedFetchAll({
       // apiKey: env.PUBMED_API_KEY || undefined,
       topic: query.topic,
       filters: {
-        publishedFrom: filters.publishedFrom,
-        publishedTo: filters.publishedTo,
-        freeFullTextOnly: filters.freeFullTextOnly ?? true,
-        publicationTypes: filters.publicationTypes ?? []
+        publishedFrom: filters?.publishedFrom,
+        publishedTo: filters?.publishedTo,
+        freeFullTextOnly: filters?.freeFullTextOnly ?? true,
+        publicationTypes: filters?.publicationTypes ?? []
       },
       batchSize: 200,
       throttleMs: 120,

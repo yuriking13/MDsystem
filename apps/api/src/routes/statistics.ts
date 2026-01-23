@@ -10,6 +10,7 @@ import {
   CACHE_KEYS,
   TTL,
 } from "../lib/redis.js";
+import { getUserId } from "../types/fastify.js";
 
 const ProjectIdSchema = z.object({
   id: z.string().uuid(),
@@ -61,7 +62,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/statistics",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const parsed = ProjectIdSchema.safeParse(request.params);
       
       if (!parsed.success) {
@@ -110,7 +111,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/statistics/:statId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const parsed = StatIdSchema.safeParse(request.params);
 
       if (!parsed.success) {
@@ -147,7 +148,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/statistics",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const paramsP = ProjectIdSchema.safeParse(request.params);
       
       if (!paramsP.success) {
@@ -212,7 +213,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/statistics/:statId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const paramsP = StatIdSchema.safeParse(request.params);
       
       if (!paramsP.success) {
@@ -342,7 +343,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/statistics/:statId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       // Используем StatIdSchemaAny чтобы можно было удалять записи с любым ID (включая поврежденные)
       const paramsP = StatIdSchemaAny.safeParse(request.params);
       
@@ -409,7 +410,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/statistics/:statId/use",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const paramsP = StatIdSchema.safeParse(request.params);
       
       if (!paramsP.success) {
@@ -455,7 +456,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/statistics/:statId/use",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const paramsP = StatIdSchema.safeParse(request.params);
       
       if (!paramsP.success) {
@@ -501,7 +502,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/statistics/sync",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const paramsP = ProjectIdSchema.safeParse(request.params);
       
       if (!paramsP.success) {
@@ -665,7 +666,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/statistics/cleanup",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const paramsP = ProjectIdSchema.safeParse(request.params);
       
       if (!paramsP.success) {

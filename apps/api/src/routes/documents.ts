@@ -13,6 +13,7 @@ import {
   CACHE_KEYS,
   TTL,
 } from "../lib/redis.js";
+import { getUserId } from "../types/fastify.js";
 
 const ProjectIdSchema = z.object({
   projectId: z.string().uuid(),
@@ -57,7 +58,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -86,7 +87,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = DocumentIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -153,7 +154,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -203,7 +204,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = DocumentIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -265,7 +266,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = DocumentIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -294,7 +295,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/reorder",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -335,7 +336,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/renumber-citations",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -472,7 +473,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId/citations",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = DocumentIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -628,7 +629,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId/citations/:citationId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsSchema = z.object({
         projectId: z.string().uuid(),
@@ -700,7 +701,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId/citations/:citationId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsSchema = z.object({
         projectId: z.string().uuid(),
@@ -806,7 +807,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId/sync-citations",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = DocumentIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -993,7 +994,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/export",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1211,7 +1212,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/bibliography",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1360,7 +1361,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/citation-graph",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -3099,7 +3100,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId/versions",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = DocumentIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -3139,7 +3140,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId/versions/:versionId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const params = request.params as { projectId: string; docId: string; versionId: string };
       
@@ -3167,7 +3168,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId/versions",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = DocumentIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -3205,7 +3206,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId/versions/:versionId/restore",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const params = request.params as { projectId: string; docId: string; versionId: string };
       
@@ -3258,7 +3259,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:projectId/documents/:docId/auto-version",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = DocumentIdSchema.safeParse(request.params);
       if (!paramsP.success) {

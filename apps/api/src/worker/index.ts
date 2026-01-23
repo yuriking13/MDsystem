@@ -2,6 +2,7 @@ import { startBoss } from './boss.js';
 import { runPubmedSearchJob } from './jobs/pubmedSearchJob.js';
 import { runGraphFetchJob } from './jobs/graphFetchJob.js';
 import { createLogger } from '../utils/logger.js';
+import { isPubmedSearchPayload, isGraphFetchPayload } from './types.js';
 
 const log = createLogger('workers');
 
@@ -13,18 +14,26 @@ export async function startWorkers() {
   // PubMed search worker (1 concurrent)
   // Note: pg-boss 10.x passes an array of jobs to the handler
   log.debug('Registering search:pubmed handler');
-  await boss.work('search:pubmed', async ([job]: any) => {
+  await boss.work('search:pubmed', async ([job]) => {
     log.info('Processing PubMed search job', { jobId: job.id });
-    await runPubmedSearchJob(job.data as any);
+    if (!isPubmedSearchPayload(job.data)) {
+      log.error('Invalid PubMed search job payload', undefined, { jobId: job.id, data: job.data });
+      return;
+    }
+    await runPubmedSearchJob(job.data);
   });
   log.debug('search:pubmed handler registered');
 
   // Graph fetch worker (1 concurrent для rate limiting)
   // Note: pg-boss 10.x passes an array of jobs to the handler
   log.debug('Registering graph:fetch-references handler');
-  await boss.work('graph:fetch-references', async ([job]: any) => {
+  await boss.work('graph:fetch-references', async ([job]) => {
     log.info('Processing graph fetch job', { jobId: job.id });
-    await runGraphFetchJob(job.data as any);
+    if (!isGraphFetchPayload(job.data)) {
+      log.error('Invalid graph fetch job payload', undefined, { jobId: job.id, data: job.data });
+      return;
+    }
+    await runGraphFetchJob(job.data);
   });
   log.debug('graph:fetch-references handler registered');
 

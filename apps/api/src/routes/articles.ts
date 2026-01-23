@@ -16,6 +16,7 @@ import {
   CACHE_KEYS, 
   TTL 
 } from "../lib/redis.js";
+import { getUserId } from "../types/fastify.js";
 
 // Поля поиска PubMed
 const PUBMED_SEARCH_FIELDS = [
@@ -486,7 +487,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/add-article-by-doi",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -556,7 +557,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/search",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1089,7 +1090,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1219,7 +1220,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/:articleId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ArticleIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1261,7 +1262,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/:articleId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ArticleIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1291,7 +1292,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/bulk-status",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1335,7 +1336,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/translate",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1539,7 +1540,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/enrich",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1689,7 +1690,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/fetch-references",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -1878,7 +1879,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/fetch-references/status",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -2001,7 +2002,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/fetch-references/cancel",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -2043,7 +2044,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/import-from-graph",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -2180,7 +2181,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/:articleId/pdf-source",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsSchema = z.object({
         id: z.string().uuid(),
@@ -2246,7 +2247,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/:articleId/pdf",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const paramsSchema = z.object({
         id: z.string().uuid(),
@@ -2319,7 +2320,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/articles/ai-detect-stats",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -2611,7 +2612,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { title, abstract, pmid } = request.body || {};
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       if (!title && !abstract) {
         return reply.code(400).send({ ok: false, error: "Nothing to translate" });
@@ -2713,7 +2714,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       bodyLimit: 5 * 1024 * 1024, // 5MB для передачи статей графа
     },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -3019,7 +3020,7 @@ ${articlesForAI || 'Нет статей с полными данными для 
     "/projects/:id/articles/:articleId/convert-to-document",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ArticleIdSchema.safeParse(request.params);
       if (!paramsP.success) {

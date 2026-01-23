@@ -2,6 +2,7 @@ import { pool } from '../../pg.js';
 import { enrichArticlesWithReferences, pubmedFetchByPmids, europePMCGetCitationCounts } from '../../lib/pubmed.js';
 import { decryptApiKey } from '../../utils/apiKeyCrypto.js';
 import { getCrossrefByDOI, extractEnrichedData } from '../../lib/crossref.js';
+import type { GraphFetchJobPayload } from '../types.js';
 
 // Константы для контроля времени выполнения
 const MAX_JOB_DURATION_MS = 30 * 60 * 1000; // 30 минут максимум на весь job
@@ -64,15 +65,12 @@ async function isJobCancelled(jobId: string): Promise<boolean> {
   return res.rows[0].status === 'cancelled' || res.rows[0].cancelled_at != null;
 }
 
-export type GraphFetchJobPayload = {
-  projectId: string;
+// Локальный тип с jobId (расширяет базовый)
+interface GraphFetchJobPayloadWithJobId extends GraphFetchJobPayload {
   jobId: string;
-  userId: string;
-  selectedOnly?: boolean; // Загружать связи только для отобранных статей
-  articleIds?: string[] | null; // Загружать связи только для указанных статей
-};
+}
 
-export async function runGraphFetchJob(payload: GraphFetchJobPayload) {
+export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
   const { projectId, jobId, userId, selectedOnly, articleIds } = payload;
   const startTime = Date.now();
   

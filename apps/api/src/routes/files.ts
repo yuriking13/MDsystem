@@ -36,6 +36,7 @@ import {
   htmlToTiptapContent,
   type ExtractedArticle,
 } from "../lib/article-extractor.js";
+import { getUserId } from "../types/fastify.js";
 
 const filesRoutes: FastifyPluginAsync = async (app) => {
   // Check if user has access to project
@@ -63,7 +64,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
 
       const { projectId } = req.params;
       const { category } = req.query;
@@ -144,7 +145,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
 
       if (!isStorageConfigured()) {
         return reply.serviceUnavailable("File storage is not configured");
@@ -235,7 +236,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
 
       const { projectId, fileId } = req.params;
 
@@ -280,7 +281,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId/download",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
 
       if (!isStorageConfigured()) {
         return reply.serviceUnavailable("File storage is not configured");
@@ -331,7 +332,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId/url",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
 
       if (!isStorageConfigured()) {
         return reply.serviceUnavailable("File storage is not configured");
@@ -366,7 +367,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
 
       const { projectId, fileId } = req.params;
       const { name, description } = req.body;
@@ -416,7 +417,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
 
       const { projectId, fileId } = req.params;
 
@@ -465,7 +466,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId/use",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
       const { projectId, fileId } = req.params;
       const { documentId } = req.body;
 
@@ -511,7 +512,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId/use",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
       const { projectId, fileId } = req.params;
       const { documentId } = req.body;
 
@@ -554,7 +555,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/sync",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
       const { projectId } = req.params;
       const { documentId, fileIds } = req.body;
 
@@ -630,7 +631,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId/analyze",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
       const { projectId, fileId } = req.params;
       const forceReanalyze = req.query.force === "true";
 
@@ -753,7 +754,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId/import-as-article",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
       const { projectId, fileId } = req.params;
       const { metadata, status = "selected" } = req.body;
 
@@ -884,7 +885,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
     "/projects/:projectId/files/:fileId/import-as-document",
     { preHandler: [app.authenticate] },
     async (req, reply) => {
-      const userId = (req as any).user.sub;
+      const userId = getUserId(req);
       const { projectId, fileId } = req.params;
       const { metadata, includeFullText = true } = req.body;
 

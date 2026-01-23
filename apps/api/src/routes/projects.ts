@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
+import { getUserId } from "../types/fastify.js";
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(500),
@@ -38,7 +39,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects",
     { preHandler: [fastify.authenticate] },
     async (request, _reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
 
       const res = await pool.query(
         `SELECT p.id, p.name, p.description, p.created_at, p.updated_at,
@@ -59,7 +60,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const parsed = CreateProjectSchema.safeParse(request.body);
       
       if (!parsed.success) {
@@ -105,7 +106,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       const parsed = ProjectIdSchema.safeParse(request.params);
       
       if (!parsed.success) {
@@ -136,7 +137,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -235,7 +236,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const parsed = ProjectIdSchema.safeParse(request.params);
       if (!parsed.success) {
@@ -287,7 +288,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/members",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const parsed = ProjectIdSchema.safeParse(request.params);
       if (!parsed.success) {
@@ -322,7 +323,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/members",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const userId = (request as any).user.sub;
+      const userId = getUserId(request);
       
       const paramsP = ProjectIdSchema.safeParse(request.params);
       if (!paramsP.success) {
@@ -386,7 +387,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     "/projects/:id/members/:userId",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
-      const currentUserId = (request as any).user.sub;
+      const currentUserId = getUserId(request);
       
       const paramsSchema = z.object({
         id: z.string().uuid(),
