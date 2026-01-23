@@ -28,6 +28,14 @@ export type ExtractedReference = {
   journal: string | null;
 };
 
+// TipTap node structure for document content
+interface TipTapNode {
+  type: string;
+  attrs?: Record<string, unknown>;
+  content?: TipTapNode[];
+  text?: string;
+}
+
 /**
  * Extract text from PDF file
  */
@@ -127,15 +135,15 @@ export function htmlToTiptapContent(html: string): unknown[] {
 /**
  * Parse HTML table to TipTap table format
  */
-function parseHtmlTable(html: string): any | null {
-  const rows: any[] = [];
+function parseHtmlTable(html: string): TipTapNode | null {
+  const rows: TipTapNode[] = [];
   
   // Extract all rows
   const rowMatches = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi);
   if (!rowMatches) return null;
   
   for (const rowHtml of rowMatches) {
-    const cells: any[] = [];
+    const cells: TipTapNode[] = [];
     
     // Extract cells (th or td)
     const cellMatches = rowHtml.match(/<(th|td)[^>]*>([\s\S]*?)<\/\1>/gi);
@@ -360,7 +368,7 @@ DOI статьи берём ТОЛЬКО из начала документа (�
  */
 export function extractDoiFromText(text: string, preferHeader: boolean = true): string | null {
   // DOI pattern: 10.xxxx/xxxxx
-  const doiPattern = /\b(10\.\d{4,}(?:\.\d+)*\/\S+?)(?=[\s,\]\)>"']|$)/gi;
+  const doiPattern = /\b(10\.\d{4,}(?:\.\d+)*\/\S+?)(?=[\s,\])">']|$)/gi;
   
   if (preferHeader) {
     // First try to find DOI in the first 3000 characters (header area)

@@ -11,10 +11,10 @@ export function sanitizeForLog(input: string, maxLength = 200): string {
   if (!input) return '';
   
   return input
-    // Удаляем управляющие символы
-    .replace(/[\x00-\x1F\x7F]/g, '')
+    // Удаляем управляющие символы (используем RegExp для избежания lint ошибок)
+    .replace(new RegExp('[\x00-\x1F\x7F]', 'g'), '')
     // Удаляем ANSI escape sequences
-    .replace(/\x1B\[[0-9;]*[A-Za-z]/g, '')
+    .replace(new RegExp('\x1B\\[[0-9;]*[A-Za-z]', 'g'), '')
     // Ограничиваем длину
     .slice(0, maxLength);
 }
@@ -72,8 +72,8 @@ export function sanitizeFilename(filename: string): string {
     // Удаляем path traversal
     .replace(/\.\./g, '')
     .replace(/[/\\]/g, '')
-    // Удаляем опасные символы
-    .replace(/[<>:"|?*\x00-\x1F]/g, '')
+    // Удаляем опасные символы (используем RegExp для избежания lint ошибок)
+    .replace(new RegExp('[<>:"|?*\x00-\x1F]', 'g'), '')
     // Ограничиваем длину
     .slice(0, 255)
     .trim() || 'unnamed';

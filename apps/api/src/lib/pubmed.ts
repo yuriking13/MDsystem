@@ -222,7 +222,8 @@ export async function pubmedEFetchBatch(args: {
 
       let abstract = '';
       const abs = art?.Abstract?.AbstractText;
-      if (Array.isArray(abs)) abstract = abs.map((x: any) => (typeof x === 'string' ? x : x?.['#text'] ?? '')).join(' ');
+      type AbstractTextItem = string | { '#text'?: string };
+      if (Array.isArray(abs)) abstract = abs.map((x: AbstractTextItem) => (typeof x === 'string' ? x : x?.['#text'] ?? '')).join(' ');
       else if (typeof abs === 'string') abstract = abs;
       else if (abs?.['#text']) abstract = abs['#text'];
       abstract = decodeHtmlEntities(abstract.replace(/\s+/g, ' ').trim());
@@ -319,7 +320,8 @@ export async function pubmedFetchByPmids(args: {
 
       let abstract = '';
       const abs = art?.Abstract?.AbstractText;
-      if (Array.isArray(abs)) abstract = abs.map((x: any) => (typeof x === 'string' ? x : x?.['#text'] ?? '')).join(' ');
+      type AbstractTextItem2 = string | { '#text'?: string };
+      if (Array.isArray(abs)) abstract = abs.map((x: AbstractTextItem2) => (typeof x === 'string' ? x : x?.['#text'] ?? '')).join(' ');
       else if (typeof abs === 'string') abstract = abs;
       else if (abs?.['#text']) abstract = abs['#text'];
       abstract = decodeHtmlEntities(abstract.replace(/\s+/g, ' ').trim());

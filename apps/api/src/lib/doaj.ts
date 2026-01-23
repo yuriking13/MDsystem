@@ -86,16 +86,49 @@ export async function doajSearch(args: {
       throw new Error(`DOAJ API error: HTTP ${response.status}`);
     }
     
-    const data: any = await response.json();
+    // Define types for DOAJ API response
+    interface DOAJAuthor {
+      name?: string;
+      family?: string;
+      given?: string;
+    }
+    interface DOAJIdentifier {
+      type: string;
+      id?: string;
+    }
+    interface DOAJLink {
+      type?: string;
+      url?: string;
+    }
+    interface DOAJBibJson {
+      title?: string;
+      abstract?: string;
+      author?: DOAJAuthor[];
+      identifier?: DOAJIdentifier[];
+      link?: DOAJLink[];
+      journal?: { title?: string };
+      year?: string;
+      keywords?: string[];
+    }
+    interface DOAJResult {
+      id?: string;
+      bibjson?: DOAJBibJson;
+    }
+    interface DOAJResponse {
+      total?: number;
+      results?: DOAJResult[];
+    }
     
-    const items: DOAJArticle[] = (data.results || []).map((result: any) => {
+    const data = await response.json() as DOAJResponse;
+    
+    const items: DOAJArticle[] = (data.results || []).map((result: DOAJResult) => {
       const bib = result.bibjson || {};
       
       // Extract authors
       let authors = '';
       if (Array.isArray(bib.author)) {
         authors = bib.author
-          .map((a: any) => a.name || `${a.family || ''} ${a.given || ''}`.trim())
+          .map((a: DOAJAuthor) => a.name || `${a.family || ''} ${a.given || ''}`.trim())
           .filter(Boolean)
           .join(', ');
       }
@@ -103,7 +136,7 @@ export async function doajSearch(args: {
       // Extract DOI from identifiers
       let doi: string | undefined;
       if (Array.isArray(bib.identifier)) {
-        const doiObj = bib.identifier.find((id: any) => id.type === 'doi');
+        const doiObj = bib.identifier.find((id: DOAJIdentifier) => id.type === 'doi');
         if (doiObj) {
           doi = doiObj.id?.replace('https://doi.org/', '').toLowerCase();
         }
@@ -112,8 +145,8 @@ export async function doajSearch(args: {
       // Get article URL - prefer DOI, then link
       let articleUrl = doi ? `https://doi.org/${doi}` : '';
       if (!articleUrl && Array.isArray(bib.link)) {
-        const fulltext = bib.link.find((l: any) => l.type === 'fulltext');
-        if (fulltext) articleUrl = fulltext.url;
+        const fulltext = bib.link.find((l: DOAJLink) => l.type === 'fulltext');
+        if (fulltext) articleUrl = fulltext.url || '';
       }
       
       // Extract year
