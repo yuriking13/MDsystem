@@ -916,10 +916,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       try {
         // Get full text from cache or re-extract if needed
         let fullText = "";
-        const fileAny = file as any;
         
         // Extract content with structure (HTML for Word, text for PDF)
-        let structuredContent: any[] = [];
+        let structuredContent: unknown[] = [];
         
         if (includeFullText) {
           app.log.info(`Extracting content for document import: ${file.name} (storage: ${file.storagePath})`);

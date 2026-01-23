@@ -149,7 +149,7 @@ export const CitationMark = Node.create<CitationMarkOptions>({
       // Удалить цитату по ID
       removeCitationById:
         (citationId: string) =>
-        ({ tr, state, dispatch }: any) => {
+        ({ tr, state, dispatch }: { tr: any; state: any; dispatch?: (tr: any) => void }) => {
           let found = false;
           
           state.doc.descendants((node: any, pos: number) => {
@@ -158,6 +158,7 @@ export const CitationMark = Node.create<CitationMarkOptions>({
               found = true;
               return false; // stop iteration
             }
+            return true;
           });
           
           if (found && dispatch) {

@@ -3,7 +3,7 @@
  * Запуск: npx tsx test-optimizations.ts
  */
 
-import { translateArticlesParallel, translateArticlesBatchOptimized } from './src/lib/translate.js';
+import { translateArticlesParallel } from './src/lib/translate.js';
 import { enrichArticlesByDOIBatch } from './src/lib/crossref.js';
 import { detectStatsParallel } from './src/lib/stats.js';
 

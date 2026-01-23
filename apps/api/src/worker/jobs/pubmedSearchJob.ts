@@ -1,6 +1,5 @@
 import { prisma } from '../../db.js';
 import { pubmedFetchAll } from '../../lib/pubmed.js';
-import { env } from '../../env.js';
 import { extractStats, hasAnyStats } from '../../lib/stats.js';
 
 export async function runPubmedSearchJob(payload: { projectId: string; queryId: string }) {

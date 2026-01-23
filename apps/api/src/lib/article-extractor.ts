@@ -57,12 +57,8 @@ export async function extractHtmlFromWord(buffer: Buffer): Promise<string> {
 /**
  * Convert HTML to TipTap JSON format
  */
-export function htmlToTiptapContent(html: string): any[] {
-  const content: any[] = [];
-  
-  // Simple HTML parser - split by tags
-  // This is a basic implementation; for production, use a proper HTML parser
-  const tagRegex = /<(\/?)(h[1-6]|p|table|tr|td|th|strong|b|em|i|ul|ol|li|br)[^>]*>([\s\S]*?)(?=<(?:\/?\1|h[1-6]|p|table|tr|td|th|ul|ol|li|br))|<(\/?)(h[1-6]|p|table|tr|td|th|strong|b|em|i|ul|ol|li|br)[^>]*>/gi;
+export function htmlToTiptapContent(html: string): unknown[] {
+  const content: unknown[] = [];
   
   // Split HTML into lines/blocks for simpler processing
   const blocks = html

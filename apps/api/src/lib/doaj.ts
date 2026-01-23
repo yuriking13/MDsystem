@@ -6,7 +6,7 @@
  * All articles indexed in DOAJ are open access.
  */
 
-import { fetchJson, sleep } from './http.js';
+import { sleep } from './http.js';
 
 export type DOAJFilters = {
   publishedFrom?: string; // YYYY-MM-DD

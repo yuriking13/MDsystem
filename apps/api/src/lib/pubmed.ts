@@ -84,10 +84,6 @@ export type PubMedArticle = {
   studyTypes: string[];
 };
 
-function encodeTerm(term: string): string {
-  return encodeURIComponent(term);
-}
-
 // Маппинг полей поиска на PubMed теги
 const SEARCH_FIELD_TAGS: Record<PubMedSearchField, string> = {
   'All Fields': '',           // Без тега - PubMed ищет везде

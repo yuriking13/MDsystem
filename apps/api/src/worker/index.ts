@@ -1,4 +1,4 @@
-import { startBoss, getBoss } from './boss.js';
+import { startBoss } from './boss.js';
 import { runPubmedSearchJob } from './jobs/pubmedSearchJob.js';
 import { runGraphFetchJob } from './jobs/graphFetchJob.js';
 

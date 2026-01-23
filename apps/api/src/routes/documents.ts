@@ -10,7 +10,6 @@ import {
   cacheSet,
   invalidateDocuments,
   invalidateDocument,
-  invalidateCitationGraph,
   CACHE_KEYS,
   TTL,
 } from "../lib/redis.js";
@@ -498,13 +497,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Получаем PMID и DOI добавляемой статьи для дедупликации
       const articleInfo = await pool.query(
-        `SELECT pmid, doi, title_en FROM articles WHERE id = $1`,
+        `SELECT pmid, doi FROM articles WHERE id = $1`,
         [bodyP.data.articleId]
       );
       
       const articlePmid = articleInfo.rows[0]?.pmid;
       const articleDoi = articleInfo.rows[0]?.doi;
-      const articleTitle = articleInfo.rows[0]?.title_en;
 
       // Проверяем, есть ли уже цитаты на этот источник (по article_id)
       let existingCitations = await pool.query(

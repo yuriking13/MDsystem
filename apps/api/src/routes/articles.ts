@@ -1,18 +1,17 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
-import { pubmedFetchAll, enrichArticlesWithReferences, europePMCGetCitationCounts, pubmedFetchByPmids, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
+import { pubmedFetchAll, pubmedFetchByPmids, type PubMedArticle, type PubMedFilters } from "../lib/pubmed.js";
 import { doajFetchAll, type DOAJArticle } from "../lib/doaj.js";
 import { wileyFetchAll, type WileyArticle } from "../lib/wiley.js";
 import { extractStats, hasAnyStats, calculateStatsQuality, detectStatsParallel } from "../lib/stats.js";
-import { translateArticlesParallel, translateArticlesBatchOptimized, type TranslationResult } from "../lib/translate.js";
+import { translateArticlesParallel, translateArticlesBatchOptimized } from "../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../lib/pdf-download.js";
 import { getCrossrefByDOI, enrichArticlesByDOIBatch } from "../lib/crossref.js";
-import { getBoss, startBoss } from "../worker/boss.js";
+import { startBoss } from "../worker/boss.js";
 import { 
   cacheGet, 
   cacheSet, 
-  cacheThrough, 
   invalidateArticles, 
   CACHE_KEYS, 
   TTL 
@@ -28,7 +27,6 @@ const PUBMED_SEARCH_FIELDS = [
 
 // Источники поиска
 const SEARCH_SOURCES = ['pubmed', 'doaj', 'wiley'] as const;
-type SearchSource = typeof SEARCH_SOURCES[number];
 
 // Схемы валидации
 const SearchBodySchema = z.object({
@@ -130,22 +128,6 @@ type UniversalArticle = {
   keywords?: string[];
   source: 'pubmed' | 'doaj' | 'wiley';
 };
-
-// Convert PubMed article to universal format
-function pubmedToUniversal(article: PubMedArticle): UniversalArticle {
-  return {
-    pmid: article.pmid,
-    doi: article.doi,
-    title: article.title,
-    abstract: article.abstract,
-    authors: article.authors,
-    journal: article.journal,
-    year: article.year,
-    url: article.url,
-    studyTypes: article.studyTypes,
-    source: 'pubmed',
-  };
-}
 
 // Convert DOAJ article to universal format
 function doajToUniversal(article: DOAJArticle): UniversalArticle {

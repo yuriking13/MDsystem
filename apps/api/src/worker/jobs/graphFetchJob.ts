@@ -4,8 +4,6 @@ import { decryptApiKey } from '../../utils/apiKeyCrypto.js';
 import { getCrossrefByDOI, extractEnrichedData } from '../../lib/crossref.js';
 
 // Константы для контроля времени выполнения
-const STALL_CHECK_INTERVAL_MS = 10000; // Проверка зависания каждые 10 сек
-const STALL_TIMEOUT_MS = 60000; // 60 секунд без прогресса = зависание
 const MAX_JOB_DURATION_MS = 30 * 60 * 1000; // 30 минут максимум на весь job
 
 // Получаем API ключ пользователя из базы

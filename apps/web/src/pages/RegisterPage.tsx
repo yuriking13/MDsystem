@@ -2,39 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { apiRegister } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
-
-// Парсинг ошибки в человекочитаемое сообщение
-function parseError(msg: string): string {
-  if (msg.includes('"code"') && msg.includes('"path"')) {
-    try {
-      const parsed = JSON.parse(msg.replace(/^API \d+:\s*/, ""));
-      if (Array.isArray(parsed)) {
-        const messages = parsed.map((e: any) => {
-          const field = e.path?.[0] || "field";
-          if (e.code === "too_small" && e.minimum) {
-            return `${field === "password" ? "Пароль" : field}: минимум ${e.minimum} символов`;
-          }
-          if (e.code === "invalid_string" && e.validation === "email") {
-            return "Введите корректный email";
-          }
-          return e.message || "Ошибка валидации";
-        });
-        return messages.join(". ");
-      }
-    } catch {
-      // не JSON
-    }
-  }
-  
-  if (msg.includes("User already exists") || msg.includes("API 409")) {
-    return "Пользователь с таким email уже существует";
-  }
-  if (msg.includes("too_small") && msg.includes("password")) {
-    return "Пароль должен быть минимум 8 символов";
-  }
-  
-  return msg;
-}
+import { parseApiError, getErrorMessage } from "../lib/errors";
 
 export default function RegisterPage() {
   const nav = useNavigate();
@@ -65,8 +33,8 @@ export default function RegisterPage() {
       const res = await apiRegister(email.trim(), password);
       await loginWithToken(res.token);
       nav("/projects", { replace: true });
-    } catch (err: any) {
-      setError(parseError(err?.message || "Ошибка регистрации"));
+    } catch (err: unknown) {
+      setError(parseApiError(getErrorMessage(err)));
     } finally {
       setBusy(false);
     }

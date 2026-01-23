@@ -2,43 +2,11 @@ import React, { useMemo, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { apiLogin } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
-
-// Парсинг ошибки в человекочитаемое сообщение
-function parseError(msg: string): string {
-  if (msg.includes('"code"') && msg.includes('"path"')) {
-    try {
-      const parsed = JSON.parse(msg.replace(/^API \d+:\s*/, ""));
-      if (Array.isArray(parsed)) {
-        const messages = parsed.map((e: any) => {
-          const field = e.path?.[0] || "field";
-          if (e.code === "too_small" && e.minimum) {
-            return `${field === "password" ? "Пароль" : field}: минимум ${e.minimum} символов`;
-          }
-          if (e.code === "invalid_string" && e.validation === "email") {
-            return "Введите корректный email";
-          }
-          return e.message || "Ошибка валидации";
-        });
-        return messages.join(". ");
-      }
-    } catch {
-      // не JSON
-    }
-  }
-  
-  if (msg.includes("Invalid credentials")) {
-    return "Неверный email или пароль";
-  }
-  if (msg.includes("API 401")) {
-    return "Неверный email или пароль";
-  }
-  
-  return msg;
-}
+import { parseApiError, getErrorMessage } from "../lib/errors";
 
 export default function LoginPage() {
   const nav = useNavigate();
-  const loc = useLocation() as any;
+  const loc = useLocation() as { state?: { from?: string } };
   const { loginWithToken } = useAuth();
 
   const redirectTo = useMemo(() => loc.state?.from || "/projects", [loc.state]);
@@ -57,8 +25,8 @@ export default function LoginPage() {
       const res = await apiLogin(email.trim(), password);
       await loginWithToken(res.token);
       nav(redirectTo, { replace: true });
-    } catch (err: any) {
-      setError(parseError(err?.message || "Ошибка входа"));
+    } catch (err: unknown) {
+      setError(parseApiError(getErrorMessage(err)));
     } finally {
       setBusy(false);
     }

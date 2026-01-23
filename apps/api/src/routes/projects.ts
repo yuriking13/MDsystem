@@ -37,7 +37,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/projects",
     { preHandler: [fastify.authenticate] },
-    async (request, reply) => {
+    async (request, _reply) => {
       const userId = (request as any).user.sub;
 
       const res = await pool.query(

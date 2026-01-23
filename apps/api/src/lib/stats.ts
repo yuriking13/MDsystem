@@ -229,11 +229,11 @@ Return ONLY valid JSON.`;
       
       // Filter out purely descriptive stats that slipped through
       rawResult.stats = rawResult.stats.filter(stat => {
-        const text = stat.text.toLowerCase();
+        const statText = stat.text.toLowerCase();
         // Reject simple percentages without statistical context
         if (/^\d+[.,]\d*\s*%/.test(stat.text) && !pValuePattern.test(stat.text)) {
           // Check if it has statistical context
-          if (!/(ci|or|rr|hr|odds|risk|hazard|interval)/i.test(stat.text)) {
+          if (!/(ci|or|rr|hr|odds|risk|hazard|interval)/i.test(statText)) {
             return false;
           }
         }
