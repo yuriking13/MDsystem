@@ -54,6 +54,24 @@ app.get('/api/ws-stats', async () => getConnectionStats());
 // Статистика кэша
 app.get('/api/cache-stats', async () => getCacheBackend());
 
+// Статистика производительности (pool, кэши)
+app.get('/api/perf-stats', async () => {
+  const { getPoolStats } = await import('./pg.js');
+  const { getAccessCacheStats } = await import('./utils/project-access.js');
+  
+  return {
+    pool: getPoolStats(),
+    accessCache: getAccessCacheStats(),
+    cache: getCacheBackend(),
+    memory: {
+      heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
+      heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB',
+      rss: Math.round(process.memoryUsage().rss / 1024 / 1024) + ' MB',
+    },
+    uptime: Math.round(process.uptime()) + ' sec',
+  };
+});
+
 // Initialize cache on startup
 await initCache();
 

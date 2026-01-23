@@ -27,11 +27,13 @@ export {
   type ApiError,
 } from "./schemas.js";
 
-// Проверка доступа к проекту
+// Проверка доступа к проекту (с кэшированием)
 export {
   checkProjectAccessPool,
   checkProjectAccessPrisma,
   getUserApiKey,
+  invalidateProjectAccess,
+  getAccessCacheStats,
   type ProjectAccessResult,
 } from "./project-access.js";
 
@@ -43,3 +45,34 @@ export { encryptApiKey, decryptApiKey } from "./apiKeyCrypto.js";
 
 // Работа с БД
 export { getDb } from "./db.js";
+
+// Batch операции для статей (оптимизация N+1)
+export {
+  findExistingArticlesBatch,
+  insertArticlesBatch,
+  addArticlesToProjectBatch,
+  updateArticleStatusBatch,
+  getProjectArticlesBatch,
+  checkArticlesInProjectBatch,
+  type ArticleData,
+  type BatchArticleResult,
+} from "./batch-operations.js";
+
+// Prepared statements для горячих путей
+export {
+  findArticleByPmid,
+  findArticleByDoi,
+  checkArticleInProject,
+  getProjectMemberRole,
+  countProjectArticlesByStatus,
+  getProjectDocuments,
+  getDocumentById,
+  getDocumentCitations,
+  getUserApiKeyEncrypted,
+  getProjectStatistics,
+  getProjectFiles,
+  insertProjectArticle,
+  updateProjectArticleStatus,
+  getActiveGraphJob,
+  getLastGraphJob,
+} from "./prepared-statements.js";
