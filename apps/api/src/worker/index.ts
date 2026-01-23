@@ -1,34 +1,36 @@
 import { startBoss } from './boss.js';
 import { runPubmedSearchJob } from './jobs/pubmedSearchJob.js';
 import { runGraphFetchJob } from './jobs/graphFetchJob.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('workers');
 
 export async function startWorkers() {
-  console.log('[workers] Starting workers...');
+  log.info('Starting workers...');
   const boss = await startBoss();
-  console.log('[workers] pg-boss started, registering job handlers...');
+  log.info('pg-boss started, registering job handlers...');
 
   // PubMed search worker (1 concurrent)
   // Note: pg-boss 10.x passes an array of jobs to the handler
-  console.log('[workers] Registering search:pubmed handler');
+  log.debug('Registering search:pubmed handler');
   await boss.work('search:pubmed', async ([job]: any) => {
-    console.log('[worker-pubmed] Processing job', job.id);
+    log.info('Processing PubMed search job', { jobId: job.id });
     await runPubmedSearchJob(job.data as any);
   });
-  console.log('[workers] search:pubmed handler registered');
+  log.debug('search:pubmed handler registered');
 
   // Graph fetch worker (1 concurrent для rate limiting)
   // Note: pg-boss 10.x passes an array of jobs to the handler
-  console.log('[workers] Registering graph:fetch-references handler');
+  log.debug('Registering graph:fetch-references handler');
   await boss.work('graph:fetch-references', async ([job]: any) => {
-    console.log('[worker-graph] Processing job', job.id);
+    log.info('Processing graph fetch job', { jobId: job.id });
     await runGraphFetchJob(job.data as any);
   });
-  console.log('[workers] graph:fetch-references handler registered');
+  log.debug('graph:fetch-references handler registered');
 
   boss.on('error', (err) => {
-    console.error('[pg-boss error]', err);
+    log.error('pg-boss error', err);
   });
 
-  console.log('[workers] All workers started successfully');
+  log.info('All workers started successfully');
 }
-

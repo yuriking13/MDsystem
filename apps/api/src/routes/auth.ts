@@ -2,9 +2,11 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { pool } from '../pg.js';
 import { hashPassword, verifyPassword } from '../lib/password.js';
+import { rateLimits } from '../plugins/rate-limit.js';
 
 export async function authRoutes(app: FastifyInstance) {
-  app.post('/api/auth/register', async (req, reply) => {
+  // Rate limiting: 3 регистрации за час с одного IP
+  app.post('/api/auth/register', { preHandler: [rateLimits.register] }, async (req, reply) => {
     const body = z.object({
       email: z.string().email(),
       password: z.string().min(8)
@@ -28,7 +30,8 @@ export async function authRoutes(app: FastifyInstance) {
     return { user: { id: user.id, email: user.email }, token };
   });
 
-  app.post('/api/auth/login', async (req, reply) => {
+  // Rate limiting: 5 попыток логина за 15 минут с одного IP
+  app.post('/api/auth/login', { preHandler: [rateLimits.login] }, async (req, reply) => {
     const body = z.object({
       email: z.string().email(),
       password: z.string().min(1)

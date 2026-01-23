@@ -1,6 +1,9 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import websocketPlugin from "@fastify/websocket";
 import type { WebSocket } from "ws";
+import { createLogger } from './utils/logger.js';
+
+const log = createLogger('WebSocket');
 
 // Типы событий WebSocket
 export type WSEventType = 
@@ -15,16 +18,31 @@ export type WSEventType =
 export interface WSEvent {
   type: WSEventType;
   projectId: string;
-  payload: Record<string, any>;
+  payload: Record<string, unknown>;
   timestamp: number;
   userId?: string;
 }
 
+// Расширенный тип WebSocket с метаданными
+interface AppWebSocket extends WebSocket {
+  __userId?: string | null;
+  __projectId?: string;
+}
+
+// Типы для параметров запроса
+interface WSParams {
+  projectId: string;
+}
+
+interface WSQuery {
+  token?: string;
+}
+
 // Хранилище соединений по projectId
-const projectConnections = new Map<string, Set<WebSocket>>();
+const projectConnections = new Map<string, Set<AppWebSocket>>();
 
 // Хранилище соединений по userId для персональных уведомлений
-const userConnections = new Map<string, Set<WebSocket>>();
+const userConnections = new Map<string, Set<AppWebSocket>>();
 
 /**
  * Отправить событие всем подключённым клиентам проекта
@@ -40,13 +58,12 @@ export function broadcastToProject(projectId: string, event: WSEvent, excludeUse
       // Проверяем что соединение открыто
       if (ws.readyState === 1) { // WebSocket.OPEN
         // Исключаем отправителя если указано
-        const wsUserId = (ws as any).__userId;
-        if (excludeUserId && wsUserId === excludeUserId) continue;
+        if (excludeUserId && ws.__userId === excludeUserId) continue;
         
         ws.send(message);
       }
     } catch (err) {
-      console.error("WebSocket send error:", err);
+      log.error("Send error", err);
     }
   }
 }
@@ -66,7 +83,7 @@ export function sendToUser(userId: string, event: WSEvent) {
         ws.send(message);
       }
     } catch (err) {
-      console.error("WebSocket send to user error:", err);
+      log.error("Send to user error", err, { userId });
     }
   }
 }
@@ -75,7 +92,7 @@ export function sendToUser(userId: string, event: WSEvent) {
  * Хелперы для отправки типовых событий
  */
 export const wsEvents = {
-  statisticCreated(projectId: string, statistic: any, userId?: string) {
+  statisticCreated(projectId: string, statistic: Record<string, unknown>, userId?: string) {
     broadcastToProject(projectId, {
       type: "statistic:created",
       projectId,
@@ -85,7 +102,7 @@ export const wsEvents = {
     }, userId);
   },
 
-  statisticUpdated(projectId: string, statistic: any, userId?: string) {
+  statisticUpdated(projectId: string, statistic: Record<string, unknown>, userId?: string) {
     broadcastToProject(projectId, {
       type: "statistic:updated",
       projectId,
@@ -105,7 +122,7 @@ export const wsEvents = {
     }, userId);
   },
 
-  documentUpdated(projectId: string, document: any, userId?: string) {
+  documentUpdated(projectId: string, document: Record<string, unknown>, userId?: string) {
     broadcastToProject(projectId, {
       type: "document:updated",
       projectId,
@@ -133,27 +150,27 @@ export async function registerWebSocket(app: FastifyInstance) {
   await app.register(websocketPlugin);
 
   // WebSocket endpoint для подписки на проект
-  app.get("/ws/project/:projectId", { websocket: true }, (socket, req) => {
-    const projectId = (req.params as any).projectId;
-    const token = (req.query as any).token;
+  app.get("/ws/project/:projectId", { websocket: true }, (socket: AppWebSocket, req: FastifyRequest<{ Params: WSParams; Querystring: WSQuery }>) => {
+    const { projectId } = req.params;
+    const { token } = req.query;
 
     // Верификация токена через Fastify JWT
     let userId: string | null = null;
     try {
       if (token) {
         // Используем встроенный jwt.verify из @fastify/jwt
-        const decoded = app.jwt.verify(token) as any;
+        const decoded = app.jwt.verify(token) as { sub: string };
         userId = decoded.sub;
       }
     } catch (err) {
-      console.log("[WS] Token verification failed:", err);
+      log.warn("Token verification failed", { error: err instanceof Error ? err.message : String(err) });
       socket.close(4001, "Invalid token");
       return;
     }
 
     // Сохраняем userId на сокете для фильтрации
-    (socket as any).__userId = userId;
-    (socket as any).__projectId = projectId;
+    socket.__userId = userId;
+    socket.__projectId = projectId;
 
     // Добавляем в Map проекта
     if (!projectConnections.has(projectId)) {
@@ -169,7 +186,7 @@ export async function registerWebSocket(app: FastifyInstance) {
       userConnections.get(userId)!.add(socket);
     }
 
-    console.log(`[WS] Client connected to project ${projectId}, userId: ${userId}`);
+    log.info("Client connected", { projectId, userId });
 
     // Отправляем приветственное сообщение
     socket.send(JSON.stringify({
@@ -181,20 +198,21 @@ export async function registerWebSocket(app: FastifyInstance) {
     // Обработка входящих сообщений (ping/pong, подписки и т.д.)
     socket.on("message", (message) => {
       try {
-        const data = JSON.parse(message.toString());
+        const data = JSON.parse(message.toString()) as { type?: string };
         
         // Обработка ping
         if (data.type === "ping") {
           socket.send(JSON.stringify({ type: "pong", timestamp: Date.now() }));
         }
-      } catch (err) {
-        // Игнорируем невалидные сообщения
+      } catch {
+        // Игнорируем невалидные сообщения (не JSON)
+        log.debug("Invalid message received", { projectId });
       }
     });
 
     // Очистка при закрытии
     socket.on("close", () => {
-      console.log(`[WS] Client disconnected from project ${projectId}`);
+      log.info("Client disconnected", { projectId, userId });
       
       // Удаляем из Map проекта
       const projectSockets = projectConnections.get(projectId);
@@ -218,7 +236,7 @@ export async function registerWebSocket(app: FastifyInstance) {
     });
 
     socket.on("error", (err) => {
-      console.error(`[WS] Socket error for project ${projectId}:`, err);
+      log.error("Socket error", err, { projectId, userId });
     });
   });
 }

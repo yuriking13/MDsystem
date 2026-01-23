@@ -2,9 +2,11 @@ import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import sensible from '@fastify/sensible';
 import multipart from '@fastify/multipart';
+import helmet from '@fastify/helmet';
 
 import { env } from './env.js';
 import authPlugin from './auth.js';
+import { setupErrorHandler, setupNotFoundHandler } from './utils/errors.js';
 
 import { authRoutes } from './routes/auth.js';
 import settingsRoutes from './routes/settings.js';
@@ -18,10 +20,39 @@ import envGuard from './plugins/00-env-guard.js';
 import { startWorkers } from './worker/index.js';
 import { registerWebSocket, getConnectionStats } from './websocket.js';
 import { initCache, getCacheBackend, closeCache } from './lib/redis.js';
+import { getRateLimitStats } from './plugins/rate-limit.js';
 
-const app = Fastify({ logger: true });
+const app = Fastify({ 
+  logger: {
+    level: env.NODE_ENV === 'production' ? 'info' : 'debug',
+    // Добавляем request ID в логи
+    serializers: {
+      req(request) {
+        return {
+          method: request.method,
+          url: request.url,
+          hostname: request.hostname,
+          remoteAddress: request.ip,
+          remotePort: request.socket?.remotePort,
+        };
+      },
+    },
+  },
+  // Генерация request ID для трассировки
+  genReqId: () => `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
+});
+
+// Централизованная обработка ошибок
+setupErrorHandler(app);
+setupNotFoundHandler(app);
 
 await app.register(envGuard);
+
+// Security headers (Helmet)
+await app.register(helmet, {
+  contentSecurityPolicy: env.NODE_ENV === 'production' ? undefined : false, // Отключаем CSP в dev для удобства
+  crossOriginEmbedderPolicy: false, // Для совместимости с S3 файлами
+});
 
 await app.register(cors, {
   origin: env.CORS_ORIGIN,
@@ -63,6 +94,7 @@ app.get('/api/perf-stats', async () => {
     pool: getPoolStats(),
     accessCache: getAccessCacheStats(),
     cache: getCacheBackend(),
+    rateLimit: getRateLimitStats(),
     memory: {
       heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
       heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB',
