@@ -57,7 +57,7 @@ function StatCard({ title, value, icon, color, link, subtitle }: StatCardProps) 
   };
 
   const content = (
-    <div className={`admin-stat-card \${colorClasses[color]}`}>
+    <div className={`admin-stat-card ${colorClasses[color]}`}>
       <div className="admin-stat-icon">{icon}</div>
       <div className="admin-stat-content">
         <span className="admin-stat-value">{value}</span>
@@ -89,10 +89,10 @@ function MiniBarChart({ data, label }: { data: { date: string; count: string }[]
           const height = maxCount > 0 ? (parseInt(item.count) / maxCount) * 100 : 0;
           const day = new Date(item.date).toLocaleDateString("ru-RU", { weekday: "short" });
           return (
-            <div key={i} className="admin-mini-chart-bar-wrapper" title={`\${day}: \${item.count}`}>
+            <div key={i} className="admin-mini-chart-bar-wrapper" title={`${day}: ${item.count}`}>
               <div 
                 className="admin-mini-chart-bar" 
-                style={{ height: `\${Math.max(height, 5)}%` }}
+                style={{ height: `${Math.max(height, 5)}%` }}
               />
               <span className="admin-mini-chart-day">{day}</span>
             </div>
@@ -291,7 +291,7 @@ export default function AdminDashboard() {
                       {extended.topUsers.slice(0, 5).map((user) => (
                         <tr key={user.id}>
                           <td className="admin-table-email">
-                            <Link to={`/admin/users/\${user.id}`}>{user.email}</Link>
+                            <Link to={`/admin/users/${user.id}`}>{user.email}</Link>
                           </td>
                           <td>{user.projects_count}</td>
                           <td>{user.documents_count}</td>
@@ -361,7 +361,7 @@ export default function AdminDashboard() {
                           <div className="admin-storage-bar">
                             <div 
                               className="admin-storage-fill"
-                              style={{ width: `\${percentage}%` }}
+                              style={{ width: `${percentage}%` }}
                             />
                           </div>
                         </div>
@@ -383,7 +383,7 @@ export default function AdminDashboard() {
                 {overview?.activeJobs.length ? (
                   <div className="admin-jobs-grid">
                     {overview.activeJobs.map((job) => (
-                      <div key={job.status} className={`admin-job-item admin-job-\${job.status}`}>
+                      <div key={job.status} className={`admin-job-item admin-job-${job.status}`}>
                         <span className="admin-job-count">{job.count}</span>
                         <span className="admin-job-status">{job.status}</span>
                       </div>
