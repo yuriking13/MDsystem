@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import AdminLayout from "./AdminLayout";
 import {
   apiAdminGetUsers,
   apiAdminGetUser,
@@ -453,9 +452,5 @@ function UserDetail() {
 export default function AdminUsersPage() {
   const { userId } = useParams<{ userId: string }>();
 
-  return (
-    <AdminLayout>
-      {userId ? <UserDetail /> : <UsersList />}
-    </AdminLayout>
-  );
+  return userId ? <UserDetail /> : <UsersList />;
 }

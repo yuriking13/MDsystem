@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import AdminLayout from "./AdminLayout";
 import {
   apiAdminGetActivity,
   apiAdminGetCalendar,
@@ -245,8 +244,7 @@ export default function AdminActivityPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="admin-page">
+    <div className="admin-page">
         <div className="admin-page-header">
           <div>
             <h1>
@@ -473,7 +471,6 @@ export default function AdminActivityPage() {
             )}
           </div>
         )}
-      </div>
-    </AdminLayout>
+    </div>
   );
 }

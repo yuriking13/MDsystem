@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import AdminLayout from "./AdminLayout";
 import {
   apiAdminStats,
   apiAdminSystemOverview,
@@ -100,8 +99,7 @@ export default function AdminDashboard() {
   ) || 0;
 
   return (
-    <AdminLayout unresolvedErrors={stats?.unresolvedErrorsToday}>
-      <div className="admin-page">
+    <div className="admin-page">
         <div className="admin-page-header">
           <div>
             <h1>Дашборд</h1>
@@ -304,7 +302,6 @@ export default function AdminDashboard() {
             </div>
           </>
         )}
-      </div>
-    </AdminLayout>
+    </div>
   );
 }

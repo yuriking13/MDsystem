@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import AdminLayout from "./AdminLayout";
 import {
   apiAdminGetAudit,
   type AuditLogItem,
@@ -63,8 +62,7 @@ export default function AdminAuditPage() {
   }, [page, actionFilter]);
 
   return (
-    <AdminLayout>
-      <div className="admin-page">
+    <div className="admin-page">
         <div className="admin-page-header">
           <div>
             <h1>
@@ -192,7 +190,6 @@ export default function AdminAuditPage() {
             </div>
           )}
         </div>
-      </div>
-    </AdminLayout>
+    </div>
   );
 }

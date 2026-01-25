@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import AdminLayout from "./AdminLayout";
 import {
   apiAdminGetErrors,
   apiAdminResolveError,
@@ -202,8 +201,7 @@ export default function AdminErrorsPage() {
   const unresolvedCount = errors.filter(e => !e.resolved).length;
 
   return (
-    <AdminLayout unresolvedErrors={resolvedFilter === "false" ? total : undefined}>
-      <div className="admin-page">
+    <div className="admin-page">
         <div className="admin-page-header">
           <div>
             <h1>
@@ -380,7 +378,6 @@ export default function AdminErrorsPage() {
             </div>
           )}
         </div>
-      </div>
 
       {/* Error Detail Modal */}
       {selectedError && (
@@ -390,6 +387,6 @@ export default function AdminErrorsPage() {
           onResolve={handleErrorResolved}
         />
       )}
-    </AdminLayout>
+    </div>
   );
 }

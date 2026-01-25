@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import AdminLayout from "./AdminLayout";
 import { apiAdminGenerateToken } from "../../lib/adminApi";
 import { useAdminAuth } from "../../lib/AdminContext";
 import {
@@ -39,8 +38,7 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <AdminLayout>
-      <div className="admin-page">
+    <div className="admin-page">
         <div className="admin-page-header">
           <div>
             <h1>
@@ -208,7 +206,6 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         </div>
-      </div>
-    </AdminLayout>
+    </div>
   );
 }

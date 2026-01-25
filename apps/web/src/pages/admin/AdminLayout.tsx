@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAdminAuth } from "../../lib/AdminContext";
 import {
   IconUsers,
@@ -18,12 +18,7 @@ type SidebarItem = {
   badge?: number;
 };
 
-type AdminLayoutProps = {
-  children: React.ReactNode;
-  unresolvedErrors?: number;
-};
-
-export default function AdminLayout({ children, unresolvedErrors = 0 }: AdminLayoutProps) {
+export default function AdminLayout() {
   const { admin, logout } = useAdminAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -32,12 +27,7 @@ export default function AdminLayout({ children, unresolvedErrors = 0 }: AdminLay
     { path: "/admin", label: "Дашборд", icon: <IconChartBar /> },
     { path: "/admin/users", label: "Пользователи", icon: <IconUsers /> },
     { path: "/admin/activity", label: "Активность", icon: <IconCalendar /> },
-    { 
-      path: "/admin/errors", 
-      label: "Ошибки", 
-      icon: <IconExclamation />,
-      badge: unresolvedErrors > 0 ? unresolvedErrors : undefined
-    },
+    { path: "/admin/errors", label: "Ошибки", icon: <IconExclamation /> },
     { path: "/admin/audit", label: "Аудит", icon: <IconShield /> },
     { path: "/admin/settings", label: "Настройки", icon: <IconSettings /> },
   ];
@@ -125,7 +115,7 @@ export default function AdminLayout({ children, unresolvedErrors = 0 }: AdminLay
 
       {/* Main Content */}
       <main className="admin-main">
-        {children}
+        <Outlet />
       </main>
     </div>
   );
