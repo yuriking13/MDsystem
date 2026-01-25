@@ -17,6 +17,7 @@ import documentsRoutes from './routes/documents.js';
 import statisticsRoutes from './routes/statistics.js';
 import filesRoutes from './routes/files.js';
 import { adminRoutes } from './routes/admin.js';
+import { healthRoutes } from './routes/health.js';
 
 import envGuard from './plugins/00-env-guard.js';
 import swaggerPlugin from './plugins/swagger.js';
@@ -100,51 +101,8 @@ await app.register(documentsRoutes, { prefix: '/api' });
 await app.register(statisticsRoutes, { prefix: '/api' });
 await app.register(filesRoutes, { prefix: '/api' });
 
-// Basic health check (для load balancer)
-app.get('/api/health', async () => ({ ok: true, timestamp: Date.now() }));
-
-// Расширенный health check с проверкой зависимостей
-app.get('/api/health/ready', async () => {
-  const checks: Record<string, { ok: boolean; latencyMs?: number; error?: string }> = {};
-  
-  // Проверка PostgreSQL
-  const pgStart = Date.now();
-  try {
-    const { pool } = await import('./pg.js');
-    await pool.query('SELECT 1');
-    checks.postgres = { ok: true, latencyMs: Date.now() - pgStart };
-  } catch (err) {
-    checks.postgres = { ok: false, error: err instanceof Error ? err.message : 'Unknown error' };
-  }
-  
-  // Проверка Redis (если настроен)
-  const redisStart = Date.now();
-  try {
-    const { getRedisClient, isRedisConfigured } = await import('./lib/redis.js');
-    if (isRedisConfigured()) {
-      const redis = await getRedisClient();
-      if (redis) {
-        await redis.ping();
-        checks.redis = { ok: true, latencyMs: Date.now() - redisStart };
-      } else {
-        checks.redis = { ok: false, error: 'Redis configured but not connected' };
-      }
-    } else {
-      checks.redis = { ok: true, latencyMs: 0 }; // Memory cache - всегда OK
-    }
-  } catch (err) {
-    checks.redis = { ok: false, error: err instanceof Error ? err.message : 'Unknown error' };
-  }
-  
-  const allOk = Object.values(checks).every(c => c.ok);
-  
-  return {
-    ok: allOk,
-    timestamp: Date.now(),
-    uptime: Math.round(process.uptime()),
-    checks,
-  };
-});
+// Health check endpoints (улучшенная версия с circuit breaker stats)
+await healthRoutes(app);
 
 // Статистика WebSocket подключений
 app.get('/api/ws-stats', async () => getConnectionStats());
@@ -156,12 +114,14 @@ app.get('/api/cache-stats', async () => getCacheBackend());
 app.get('/api/perf-stats', async () => {
   const { getPoolStats } = await import('./pg.js');
   const { getAccessCacheStats } = await import('./utils/project-access.js');
+  const { getHttpClientStats } = await import('./lib/http-client.js');
   
   return {
     pool: getPoolStats(),
     accessCache: getAccessCacheStats(),
     cache: getCacheBackend(),
     rateLimit: getRateLimitStats(),
+    httpClient: getHttpClientStats(),
     memory: {
       heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + ' MB',
       heapTotal: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + ' MB',

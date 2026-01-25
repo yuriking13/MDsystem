@@ -1,5 +1,6 @@
 import { XMLParser } from 'fast-xml-parser';
-import { fetchJson, sleep } from './http.js';
+import { sleep } from './http.js';
+import { resilientFetch, resilientFetchJson } from './http-client.js';
 
 // Декодирование HTML entities в тексте (&#xe3; -> ã, &#x2264; -> ≤)
 function decodeHtmlEntities(text: string): string {
@@ -166,7 +167,11 @@ export async function pubmedESearch(args: {
 
   if (args.apiKey) url.searchParams.set('api_key', args.apiKey);
 
-  const data = await fetchJson<ESearchResp>(url.toString());
+  const data = await resilientFetchJson<ESearchResp>(url.toString(), { 
+    apiName: 'pubmed',
+    retry: { maxRetries: 3 },
+    timeoutMs: 30000,
+  });
   const webenv = data.esearchresult.webenv;
   const queryKey = data.esearchresult.querykey;
   if (!webenv || !queryKey) {
@@ -196,7 +201,11 @@ export async function pubmedEFetchBatch(args: {
 
   if (args.throttleMs) await sleep(args.throttleMs);
 
-  const res = await fetch(url.toString());
+  const res = await resilientFetch(url.toString(), {
+    apiName: 'pubmed',
+    retry: { maxRetries: 3 },
+    timeoutMs: 60000, // Longer timeout for batch fetches
+  });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`PubMed efetch HTTP ${res.status}: ${text.slice(0, 200)}`);

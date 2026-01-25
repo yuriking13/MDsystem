@@ -3,6 +3,8 @@
  * Для обогащения метаданных статей по DOI
  */
 
+import { resilientFetch } from './http-client.js';
+
 const CROSSREF_API = "https://api.crossref.org";
 
 export interface CrossrefWork {
@@ -88,10 +90,13 @@ export async function getCrossrefByDOI(
   const url = `${CROSSREF_API}/works/${encodeURIComponent(doi)}`;
   
   try {
-    const res = await fetch(url, {
+    const res = await resilientFetch(url, {
+      apiName: 'crossref',
       headers: {
         "User-Agent": userAgent,
       },
+      retry: { maxRetries: 2 },
+      timeoutMs: 15000,
     });
     
     if (!res.ok) {

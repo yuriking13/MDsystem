@@ -251,13 +251,70 @@ Return ONLY valid JSON.`;
 }
 
 /**
+ * Расширенная regex детекция для fallback режима
+ * Используется когда AI недоступен
+ */
+export function extractStatsEnhanced(text: string | undefined | null): ExtractedStats & { additionalFindings: string[] } {
+  const baseStats = extractStats(text);
+  const additionalFindings: string[] = [];
+  const s = (text ?? '').replace(/\s+/g, ' ');
+
+  // Additional patterns for better coverage when AI is unavailable
+  
+  // F-statistic: F(1, 234) = 5.67, p < 0.05
+  const fRe = /\bF\s*\(\s*\d+\s*,\s*\d+\s*\)\s*=\s*[\d.]+/gi;
+  for (const m of s.matchAll(fRe)) {
+    additionalFindings.push(m[0]);
+  }
+
+  // Chi-square: χ² = 15.3, chi-square = 12.4
+  const chiRe = /(?:χ²|chi-?square)\s*[=:]\s*[\d.]+/gi;
+  for (const m of s.matchAll(chiRe)) {
+    additionalFindings.push(m[0]);
+  }
+
+  // Correlation: r = 0.45, r² = 0.20
+  const corrRe = /\br²?\s*=\s*-?[\d.]+/gi;
+  for (const m of s.matchAll(corrRe)) {
+    additionalFindings.push(m[0]);
+  }
+
+  // Sample size in results context: n = 150, N = 1234
+  const nRe = /\b[nN]\s*=\s*\d+/g;
+  for (const m of s.matchAll(nRe)) {
+    additionalFindings.push(m[0]);
+  }
+
+  // Mean ± SD: 12.5 ± 3.2
+  const meanSdRe = /[\d.]+\s*[±]\s*[\d.]+/g;
+  for (const m of s.matchAll(meanSdRe)) {
+    additionalFindings.push(m[0]);
+  }
+
+  // Statistical significance phrases
+  const sigPhrases = [
+    /statistically\s+significant/gi,
+    /significantly\s+(?:higher|lower|greater|reduced|increased|decreased)/gi,
+    /no\s+significant\s+difference/gi,
+  ];
+  for (const re of sigPhrases) {
+    for (const m of s.matchAll(re)) {
+      additionalFindings.push(m[0]);
+    }
+  }
+
+  return { ...baseStats, additionalFindings };
+}
+
+/**
  * Комбинированная детекция: сначала regex, потом AI если нужно
+ * С graceful degradation при недоступности AI
  */
 export async function detectStatsCombined(args: {
   text: string;
   openrouterKey?: string;
   useAI?: boolean;
-}): Promise<{ hasStats: boolean; quality: number; stats: ExtractedStats; aiStats?: AIStatsResult }> {
+}): Promise<{ hasStats: boolean; quality: number; stats: ExtractedStats; aiStats?: AIStatsResult; usedFallback?: boolean }> {
   const { text, openrouterKey, useAI = true } = args;
   
   // Сначала regex
@@ -270,15 +327,37 @@ export async function detectStatsCombined(args: {
     return { hasStats: hasRegexStats, quality, stats: regexStats };
   }
   
-  // Если regex не нашёл - пробуем AI
-  const aiStats = await detectStatsWithAI({ text, openrouterKey });
-  
-  return {
-    hasStats: hasRegexStats || aiStats.hasStats,
-    quality: aiStats.hasStats ? Math.max(quality, 1) : quality,
-    stats: regexStats,
-    aiStats,
-  };
+  // Если regex не нашёл - пробуем AI с fallback
+  try {
+    const aiStats = await detectStatsWithAI({ text, openrouterKey });
+    
+    return {
+      hasStats: hasRegexStats || aiStats.hasStats,
+      quality: aiStats.hasStats ? Math.max(quality, 1) : quality,
+      stats: regexStats,
+      aiStats,
+    };
+  } catch (aiError) {
+    // AI недоступен - используем расширенный regex как fallback
+    console.warn('[Stats] AI detection failed, using enhanced regex fallback:', (aiError as Error).message);
+    
+    const enhancedStats = extractStatsEnhanced(text);
+    const hasEnhancedFindings = enhancedStats.additionalFindings.length > 0;
+    
+    // Обновляем качество если нашли дополнительные паттерны
+    let fallbackQuality = quality;
+    if (hasEnhancedFindings && !hasRegexStats) {
+      // Даём минимальное качество если нашли что-то через enhanced regex
+      fallbackQuality = 1;
+    }
+    
+    return {
+      hasStats: hasRegexStats || hasEnhancedFindings,
+      quality: fallbackQuality,
+      stats: regexStats,
+      usedFallback: true,
+    };
+  }
 }
 /**
  * Пакетная параллельная детекция статистики в нескольких статьях
