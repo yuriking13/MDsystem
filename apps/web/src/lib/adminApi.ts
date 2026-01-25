@@ -1,4 +1,35 @@
-import { apiFetch } from "./api";
+import { getAdminToken } from "./adminToken";
+
+// Admin API fetch function that uses admin token
+async function adminApiFetch<T>(
+  path: string,
+  init: RequestInit & { auth?: boolean } = {},
+): Promise<T> {
+  const headers = new Headers(init.headers);
+
+  if (!headers.has("content-type") && init.body) {
+    headers.set("content-type", "application/json");
+  }
+
+  const auth = init.auth ?? true;
+  if (auth) {
+    const token = getAdminToken();
+    if (token) headers.set("authorization", `Bearer ${token}`);
+  }
+
+  const res = await fetch(path, {
+    ...init,
+    headers,
+  });
+
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null);
+    const msg = payload?.message || payload?.error || `HTTP ${res.status}`;
+    throw new Error(msg);
+  }
+
+  return (await res.json()) as T;
+}
 
 // ========== Admin Types ==========
 
@@ -195,7 +226,7 @@ export async function apiAdminLogin(
   password: string,
   adminToken?: string
 ): Promise<AdminAuthResponse> {
-  return apiFetch<AdminAuthResponse>("/api/admin/login", {
+  return adminApiFetch<AdminAuthResponse>("/api/admin/login", {
     method: "POST",
     body: JSON.stringify({ email, password, adminToken }),
     auth: false,
@@ -203,17 +234,17 @@ export async function apiAdminLogin(
 }
 
 export async function apiAdminMe(): Promise<{ user: AdminUser }> {
-  return apiFetch<{ user: AdminUser }>("/api/admin/me");
+  return adminApiFetch<{ user: AdminUser }>("/api/admin/me");
 }
 
 export async function apiAdminGenerateToken(): Promise<{ token: string; message: string }> {
-  return apiFetch<{ token: string; message: string }>("/api/admin/generate-token", {
+  return adminApiFetch<{ token: string; message: string }>("/api/admin/generate-token", {
     method: "POST",
   });
 }
 
 export async function apiAdminStats(): Promise<AdminStats> {
-  return apiFetch<AdminStats>("/api/admin/stats");
+  return adminApiFetch<AdminStats>("/api/admin/stats");
 }
 
 // Users
@@ -227,18 +258,18 @@ export async function apiAdminGetUsers(
     limit: String(limit),
   });
   if (search) params.append("search", search);
-  return apiFetch<UsersListResponse>(`/api/admin/users?${params}`);
+  return adminApiFetch<UsersListResponse>(`/api/admin/users?${params}`);
 }
 
 export async function apiAdminGetUser(userId: string): Promise<UserDetailResponse> {
-  return apiFetch<UserDetailResponse>(`/api/admin/users/${userId}`);
+  return adminApiFetch<UserDetailResponse>(`/api/admin/users/${userId}`);
 }
 
 export async function apiAdminUpdateUserAdmin(
   userId: string,
   isAdmin: boolean
 ): Promise<{ ok: true }> {
-  return apiFetch<{ ok: true }>(`/api/admin/users/${userId}/admin`, {
+  return adminApiFetch<{ ok: true }>(`/api/admin/users/${userId}/admin`, {
     method: "PATCH",
     body: JSON.stringify({ isAdmin }),
   });
@@ -260,7 +291,7 @@ export async function apiAdminGetActivity(params: {
   if (params.actionType) urlParams.append("actionType", params.actionType);
   if (params.page) urlParams.append("page", String(params.page));
   if (params.limit) urlParams.append("limit", String(params.limit));
-  return apiFetch<ActivityListResponse>(`/api/admin/activity?${urlParams}`);
+  return adminApiFetch<ActivityListResponse>(`/api/admin/activity?${urlParams}`);
 }
 
 export async function apiAdminGetCalendar(
@@ -273,7 +304,7 @@ export async function apiAdminGetCalendar(
     month: String(month),
   });
   if (userId) params.append("userId", userId);
-  return apiFetch<CalendarResponse>(`/api/admin/activity/calendar?${params}`);
+  return adminApiFetch<CalendarResponse>(`/api/admin/activity/calendar?${params}`);
 }
 
 export async function apiAdminGetDailyActivity(
@@ -282,7 +313,7 @@ export async function apiAdminGetDailyActivity(
 ): Promise<DailyActivityResponse> {
   const params = new URLSearchParams();
   if (userId) params.append("userId", userId);
-  return apiFetch<DailyActivityResponse>(`/api/admin/activity/daily/${date}?${params}`);
+  return adminApiFetch<DailyActivityResponse>(`/api/admin/activity/daily/${date}?${params}`);
 }
 
 // Errors
@@ -297,14 +328,14 @@ export async function apiAdminGetErrors(params: {
   if (params.errorType) urlParams.append("errorType", params.errorType);
   if (params.page) urlParams.append("page", String(params.page));
   if (params.limit) urlParams.append("limit", String(params.limit));
-  return apiFetch<ErrorsListResponse>(`/api/admin/errors?${urlParams}`);
+  return adminApiFetch<ErrorsListResponse>(`/api/admin/errors?${urlParams}`);
 }
 
 export async function apiAdminResolveError(
   errorId: string,
   notes?: string
 ): Promise<{ ok: true }> {
-  return apiFetch<{ ok: true }>(`/api/admin/errors/${errorId}/resolve`, {
+  return adminApiFetch<{ ok: true }>(`/api/admin/errors/${errorId}/resolve`, {
     method: "PATCH",
     body: JSON.stringify({ notes }),
   });
@@ -322,10 +353,10 @@ export async function apiAdminGetAudit(params: {
   if (params.action) urlParams.append("action", params.action);
   if (params.page) urlParams.append("page", String(params.page));
   if (params.limit) urlParams.append("limit", String(params.limit));
-  return apiFetch<AuditListResponse>(`/api/admin/audit?${urlParams}`);
+  return adminApiFetch<AuditListResponse>(`/api/admin/audit?${urlParams}`);
 }
 
 // System
 export async function apiAdminSystemOverview(): Promise<SystemOverview> {
-  return apiFetch<SystemOverview>("/api/admin/system/overview");
+  return adminApiFetch<SystemOverview>("/api/admin/system/overview");
 }

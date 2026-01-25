@@ -1,20 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { apiAdminMe, type AdminUser } from "./adminApi";
+import { getAdminToken, setAdminToken, clearAdminToken } from "./adminToken";
 
-const ADMIN_TOKEN_KEY = "admin_token";
-
-export function getAdminToken(): string | null {
-  return sessionStorage.getItem(ADMIN_TOKEN_KEY);
-}
-
-export function setAdminToken(token: string): void {
-  sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
-}
-
-export function clearAdminToken(): void {
-  sessionStorage.removeItem(ADMIN_TOKEN_KEY);
-}
+export { getAdminToken, setAdminToken, clearAdminToken };
 
 type AdminAuthState = {
   token: string | null;
