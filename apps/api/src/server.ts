@@ -20,7 +20,6 @@ import filesRoutes from './routes/files.js';
 import envGuard from './plugins/00-env-guard.js';
 import swaggerPlugin from './plugins/swagger.js';
 import metricsPlugin from './plugins/metrics.js';
-import sentryPlugin from './plugins/sentry.js';
 import { startWorkers, stopWorkers } from './worker/index.js';
 import { registerWebSocket, getConnectionStats } from './websocket.js';
 import { initCache, getCacheBackend, closeCache } from './lib/redis.js';
@@ -56,9 +55,6 @@ setupErrorHandler(app);
 setupNotFoundHandler(app);
 
 await app.register(envGuard);
-
-// Sentry error tracking (должен быть первым для перехвата всех ошибок)
-await app.register(sentryPlugin);
 
 // OpenAPI/Swagger documentation
 await app.register(swaggerPlugin);

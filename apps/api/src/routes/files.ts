@@ -5,7 +5,12 @@
 import { FastifyPluginAsync } from "fastify";
 import { prisma } from "../db.js";
 import { pool } from "../pg.js";
-import type { ProjectFile, User } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+
+// Infer types from Prisma schema
+type ProjectFile = Prisma.ProjectFileGetPayload<object>;
+type User = Prisma.UserGetPayload<object>;
+
 import {
   isStorageConfigured,
   validateFileType,
