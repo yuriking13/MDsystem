@@ -10,6 +10,7 @@ import ProjectDetailPage from "./pages/ProjectDetailPage";
 import DocumentPage from "./pages/DocumentPage";
 import DocumentationPage from "./pages/DocumentationPage";
 import OnboardingTour from "./components/OnboardingTour";
+import { ToastProvider } from "./components/Toast";
 import { RequireAuth, useAuth } from "./lib/AuthContext";
 import { AdminAuthProvider, RequireAdmin } from "./lib/AdminContext";
 import {
@@ -54,7 +55,7 @@ export default function App() {
   const { token } = useAuth();
 
   return (
-    <>
+    <ToastProvider>
       <ThemeToggle />
       {/* Show onboarding for authenticated users on first visit */}
       {token && <OnboardingTour />}
@@ -127,6 +128,6 @@ export default function App() {
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+    </ToastProvider>
   );
 }

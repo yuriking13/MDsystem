@@ -223,6 +223,13 @@ export const CACHE_KEYS = {
   // Project metadata
   project: (projectId: string) => `proj:${projectId}:meta`,
   bibliography: (projectId: string) => `proj:${projectId}:bib`,
+  
+  // External API caches (longer TTL since data rarely changes)
+  crossref: (doi: string) => `ext:crossref:${encodeURIComponent(doi)}`,
+  pubmed: (pmid: string) => `ext:pubmed:${pmid}`,
+  pubmedSearch: (queryHash: string) => `ext:pubmed:search:${queryHash}`,
+  unpaywall: (doi: string) => `ext:unpaywall:${encodeURIComponent(doi)}`,
+  doaj: (query: string) => `ext:doaj:${query}`,
 };
 
 /**
@@ -231,6 +238,7 @@ export const CACHE_KEYS = {
 const DEFAULT_TTL = env.REDIS_CACHE_TTL || 300; // 5 minutes
 const SHORT_TTL = 60; // 1 minute for frequently changing data
 const LONG_TTL = 600; // 10 minutes for rarely changing data
+const EXTERNAL_API_TTL = 86400; // 24 hours for external API data (DOIs don't change)
 
 /**
  * Get cached data
@@ -485,6 +493,7 @@ export const TTL = {
   DEFAULT: DEFAULT_TTL,
   SHORT: SHORT_TTL,
   LONG: LONG_TTL,
+  EXTERNAL_API: EXTERNAL_API_TTL,
 };
 
 /**
@@ -520,4 +529,140 @@ export async function initCache(): Promise<void> {
   } else {
     console.log("[Cache] Initialized with in-memory LRU backend (Redis not available)");
   }
+}
+
+// ============================================================
+// DOI Validation
+// ============================================================
+
+/**
+ * Validate DOI format according to DOI handbook
+ * DOI format: 10.prefix/suffix
+ * - prefix: at least 4 digits after 10.
+ * - suffix: can contain alphanumeric, -, ., _, :, ;, /, (, ), <, >
+ */
+const DOI_REGEX = /^10\.\d{4,}(?:\.\d+)*\/[^\s]+$/;
+
+export function isValidDOI(doi: string | null | undefined): boolean {
+  if (!doi || typeof doi !== 'string') return false;
+  const cleaned = doi.trim().toLowerCase();
+  return DOI_REGEX.test(cleaned);
+}
+
+/**
+ * Normalize DOI to standard format
+ * Handles various input formats:
+ * - https://doi.org/10.1234/example
+ * - doi:10.1234/example  
+ * - 10.1234/example
+ */
+export function normalizeDOI(doi: string): string | null {
+  if (!doi || typeof doi !== 'string') return null;
+  
+  let cleaned = doi.trim();
+  
+  // Remove URL prefixes
+  cleaned = cleaned
+    .replace(/^https?:\/\/doi\.org\//i, '')
+    .replace(/^https?:\/\/dx\.doi\.org\//i, '')
+    .replace(/^doi:/i, '')
+    .trim();
+  
+  // Validate
+  if (!DOI_REGEX.test(cleaned)) {
+    return null;
+  }
+  
+  return cleaned;
+}
+
+// ============================================================
+// Cached External API helpers
+// ============================================================
+
+/**
+ * Get cached Crossref data or fetch fresh
+ */
+export async function getCachedCrossref<T>(
+  doi: string,
+  fetcher: () => Promise<T | null>
+): Promise<T | null> {
+  const normalizedDoi = normalizeDOI(doi);
+  if (!normalizedDoi) return null;
+  
+  const key = CACHE_KEYS.crossref(normalizedDoi);
+  
+  // Check cache first
+  const cached = await cacheGet<T>(key);
+  if (cached !== null) {
+    return cached;
+  }
+  
+  // Fetch fresh
+  const data = await fetcher();
+  if (data !== null) {
+    // Cache for 24 hours (DOI metadata rarely changes)
+    await cacheSet(key, data, EXTERNAL_API_TTL);
+  }
+  
+  return data;
+}
+
+/**
+ * Get cached PubMed article or fetch fresh
+ */
+export async function getCachedPubMed<T>(
+  pmid: string,
+  fetcher: () => Promise<T | null>
+): Promise<T | null> {
+  const key = CACHE_KEYS.pubmed(pmid);
+  
+  // Check cache first
+  const cached = await cacheGet<T>(key);
+  if (cached !== null) {
+    return cached;
+  }
+  
+  // Fetch fresh
+  const data = await fetcher();
+  if (data !== null) {
+    await cacheSet(key, data, EXTERNAL_API_TTL);
+  }
+  
+  return data;
+}
+
+/**
+ * Get cached PubMed search results or fetch fresh
+ * Uses a hash of the query parameters as key
+ */
+export async function getCachedPubMedSearch<T>(
+  queryHash: string,
+  fetcher: () => Promise<T>,
+  ttl = 3600 // 1 hour for search results (may change more often)
+): Promise<T> {
+  const key = CACHE_KEYS.pubmedSearch(queryHash);
+  
+  const cached = await cacheGet<T>(key);
+  if (cached !== null) {
+    return cached;
+  }
+  
+  const data = await fetcher();
+  await cacheSet(key, data, ttl);
+  
+  return data;
+}
+
+/**
+ * Simple hash function for query strings
+ */
+export function hashQuery(query: string): string {
+  let hash = 0;
+  for (let i = 0; i < query.length; i++) {
+    const char = query.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return Math.abs(hash).toString(36);
 }

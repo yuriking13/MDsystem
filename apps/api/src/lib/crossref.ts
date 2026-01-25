@@ -4,6 +4,7 @@
  */
 
 import { resilientFetch } from './http-client.js';
+import { getCachedCrossref, normalizeDOI } from './redis.js';
 
 const CROSSREF_API = "https://api.crossref.org";
 
@@ -81,35 +82,45 @@ export interface EnrichedArticleData {
 }
 
 /**
- * Получить метаданные работы по DOI
+ * Получить метаданные работы по DOI (с кэшированием)
  */
 export async function getCrossrefByDOI(
   doi: string,
   userAgent = "ThesisMD/1.0 (mailto:support@thesis.app)"
 ): Promise<CrossrefWork | null> {
-  const url = `${CROSSREF_API}/works/${encodeURIComponent(doi)}`;
-  
-  try {
-    const res = await resilientFetch(url, {
-      apiName: 'crossref',
-      headers: {
-        "User-Agent": userAgent,
-      },
-      retry: { maxRetries: 2 },
-      timeoutMs: 15000,
-    });
-    
-    if (!res.ok) {
-      if (res.status === 404) return null;
-      throw new Error(`Crossref API error: ${res.status}`);
-    }
-    
-    const data = (await res.json()) as CrossrefResponse;
-    return data.message as CrossrefWork;
-  } catch (err) {
-    console.error("Crossref fetch error:", err);
+  // Validate and normalize DOI
+  const normalizedDoi = normalizeDOI(doi);
+  if (!normalizedDoi) {
+    console.warn(`[Crossref] Invalid DOI format: ${doi}`);
     return null;
   }
+  
+  // Use caching wrapper
+  return getCachedCrossref<CrossrefWork>(normalizedDoi, async () => {
+    const url = `${CROSSREF_API}/works/${encodeURIComponent(normalizedDoi)}`;
+    
+    try {
+      const res = await resilientFetch(url, {
+        apiName: 'crossref',
+        headers: {
+          "User-Agent": userAgent,
+        },
+        retry: { maxRetries: 2 },
+        timeoutMs: 15000,
+      });
+      
+      if (!res.ok) {
+        if (res.status === 404) return null;
+        throw new Error(`Crossref API error: ${res.status}`);
+      }
+      
+      const data = (await res.json()) as CrossrefResponse;
+      return data.message as CrossrefWork;
+    } catch (err) {
+      console.error("Crossref fetch error:", err);
+      return null;
+    }
+  });
 }
 
 /**

@@ -1,6 +1,7 @@
 import { XMLParser } from 'fast-xml-parser';
 import { sleep } from './http.js';
 import { resilientFetch, resilientFetchJson } from './http-client.js';
+import { cacheSet, cacheGet, CACHE_KEYS, TTL } from './redis.js';
 
 // Декодирование HTML entities в тексте (&#xe3; -> ã, &#x2264; -> ≤)
 function decodeHtmlEntities(text: string): string {
@@ -295,15 +296,37 @@ export async function pubmedFetchByPmids(args: {
 }): Promise<PubMedArticle[]> {
   if (!args.pmids.length) return [];
 
+  // Check cache for each PMID
+  const cachedArticles: PubMedArticle[] = [];
+  const uncachedPmids: string[] = [];
+  
+  for (const pmid of args.pmids) {
+    const cached = await cacheGet<PubMedArticle>(CACHE_KEYS.pubmed(pmid));
+    if (cached) {
+      cachedArticles.push(cached);
+    } else {
+      uncachedPmids.push(pmid);
+    }
+  }
+  
+  // If all cached, return immediately
+  if (uncachedPmids.length === 0) {
+    return cachedArticles;
+  }
+
   const url = new URL('https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi');
   url.searchParams.set('db', 'pubmed');
-  url.searchParams.set('id', args.pmids.join(','));
+  url.searchParams.set('id', uncachedPmids.join(','));
   url.searchParams.set('retmode', 'xml');
 
   if (args.apiKey) url.searchParams.set('api_key', args.apiKey);
   if (args.throttleMs) await sleep(args.throttleMs);
 
-  const res = await fetch(url.toString());
+  const res = await resilientFetch(url.toString(), {
+    apiName: 'pubmed',
+    retry: { maxRetries: 2 },
+    timeoutMs: 30000,
+  });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
     throw new Error(`PubMed efetch by pmid HTTP ${res.status}: ${text.slice(0, 200)}`);
@@ -316,7 +339,7 @@ export async function pubmedFetchByPmids(args: {
   const articles = obj?.PubmedArticleSet?.PubmedArticle ?? [];
   const arr = Array.isArray(articles) ? articles : [articles];
 
-  const out: PubMedArticle[] = [];
+  const fetchedArticles: PubMedArticle[] = [];
 
   for (const a of arr) {
     try {
@@ -364,7 +387,7 @@ export async function pubmedFetchByPmids(args: {
 
       const urlPubmed = `https://pubmed.ncbi.nlm.nih.gov/${pmid}/`;
 
-      out.push({
+      const article: PubMedArticle = {
         pmid,
         doi,
         title,
@@ -374,13 +397,19 @@ export async function pubmedFetchByPmids(args: {
         year: Number.isFinite(year) ? year : undefined,
         url: urlPubmed,
         studyTypes: [],
-      });
+      };
+      
+      fetchedArticles.push(article);
+      
+      // Cache each article for 24 hours
+      cacheSet(CACHE_KEYS.pubmed(pmid), article, TTL.EXTERNAL_API).catch(() => {});
     } catch {
       // skip bad article
     }
   }
 
-  return out;
+  // Combine cached and fetched articles
+  return [...cachedArticles, ...fetchedArticles];
 }
 
 export async function pubmedFetchAll(args: {

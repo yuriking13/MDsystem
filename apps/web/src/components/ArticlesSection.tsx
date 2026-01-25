@@ -16,6 +16,7 @@ import {
   type SearchSource,
 } from "../lib/api";
 import AddArticleByDoiModal from "./AddArticleByDoiModal";
+import { useToast } from "./Toast";
 
 type Props = {
   projectId: string;
@@ -50,6 +51,7 @@ const TEXT_AVAILABILITY = [
 ];
 
 export default function ArticlesSection({ projectId, canEdit, onCountsChange }: Props) {
+  const toast = useToast();
   const [articles, setArticles] = useState<Article[]>([]);
   const [counts, setCounts] = useState({ candidate: 0, selected: 0, excluded: 0, deleted: 0 });
   const [loading, setLoading] = useState(true);
@@ -447,27 +449,66 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   }
 
   async function handleStatusChange(article: Article, newStatus: "candidate" | "selected" | "excluded" | "deleted") {
+    // Optimistic update - immediately update UI
+    const previousStatus = article.status;
+    const previousArticles = [...articles];
+    
+    // Update local state immediately
+    setArticles(prev => prev.map(a => 
+      a.id === article.id ? { ...a, status: newStatus } : a
+    ));
+    
+    // Update counts optimistically
+    setCounts(prev => ({
+      ...prev,
+      [previousStatus]: Math.max(0, prev[previousStatus as keyof typeof prev] - 1),
+      [newStatus]: (prev[newStatus as keyof typeof prev] || 0) + 1,
+    }));
+    
     try {
       await apiUpdateArticleStatus(projectId, article.id, newStatus);
-      await loadArticles();
+      // Show success toast for important status changes
+      if (newStatus === 'selected') {
+        toast.success('Статья включена', article.title_en?.slice(0, 50) + '...');
+      } else if (newStatus === 'excluded') {
+        toast.info('Статья исключена');
+      }
     } catch (err: any) {
-      setError(err?.message || "Ошибка обновления статуса");
+      // Revert on error
+      setArticles(previousArticles);
+      setCounts(prev => ({
+        ...prev,
+        [newStatus]: Math.max(0, prev[newStatus as keyof typeof prev] - 1),
+        [previousStatus]: (prev[previousStatus as keyof typeof prev] || 0) + 1,
+      }));
+      toast.error('Ошибка обновления статуса', err?.message);
     }
   }
 
-  // Массовое изменение статуса
+  // Массовое изменение статуса с оптимистичным обновлением
   async function handleBulkStatus(status: "candidate" | "selected" | "excluded" | "deleted") {
     if (selectedIds.size === 0) return;
     
+    const ids = Array.from(selectedIds);
+    const count = ids.length;
+    const previousArticles = [...articles];
+    
+    // Optimistic update
+    setArticles(prev => prev.map(a => 
+      selectedIds.has(a.id) ? { ...a, status } : a
+    ));
+    setSelectedIds(new Set());
+    
     try {
-      const ids = Array.from(selectedIds);
-      for (const id of ids) {
-        await apiUpdateArticleStatus(projectId, id, status);
-      }
-      setSelectedIds(new Set());
-      await loadArticles();
+      // Batch update - API should support this ideally
+      await Promise.all(ids.map(id => apiUpdateArticleStatus(projectId, id, status)));
+      
+      toast.success(`${count} статей обновлено`, `Статус: ${status}`);
+      await loadArticles(); // Reload to sync counts
     } catch (err: any) {
-      setError(err?.message || "Ошибка обновления");
+      // Revert on error
+      setArticles(previousArticles);
+      toast.error('Ошибка массового обновления', err?.message);
     }
   }
   
@@ -479,10 +520,11 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     
     try {
       await apiTranslateArticles(projectId, Array.from(selectedIds), true);
+      toast.success('Перевод завершён');
       setSelectedIds(new Set());
       await loadArticles();
     } catch (err: any) {
-      setError(err?.message || "Ошибка перевода");
+      toast.error('Ошибка перевода', err?.message);
     } finally {
       setTranslating(false);
     }
