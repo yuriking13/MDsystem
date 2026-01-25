@@ -119,7 +119,7 @@ export function healthRoutes(app: FastifyInstance) {
    * Basic liveness probe - just returns 200 if server is running
    * Use for Kubernetes liveness probe
    */
-  app.get('/health/live', async () => {
+  app.get('/api/health/live', async () => {
     return { status: 'ok' };
   });
 
@@ -127,7 +127,7 @@ export function healthRoutes(app: FastifyInstance) {
    * Readiness probe - checks if the server can handle requests
    * Use for Kubernetes readiness probe
    */
-  app.get('/health/ready', async (_, reply) => {
+  app.get('/api/health/ready', async (_, reply) => {
     const db = await checkDatabase();
     
     if (db.status === 'unhealthy') {
@@ -144,8 +144,9 @@ export function healthRoutes(app: FastifyInstance) {
   /**
    * Full health check with all dependencies
    * Returns detailed status of all components
+   * Also serves as basic health check for load balancer at /api/health
    */
-  app.get('/health', async (_, reply) => {
+  app.get('/api/health', async (_, reply) => {
     const [database, cache, storage] = await Promise.all([
       checkDatabase(),
       checkCache(),
@@ -183,7 +184,7 @@ export function healthRoutes(app: FastifyInstance) {
   /**
    * Detailed health check (admin only style, no auth for simplicity)
    */
-  app.get('/health/detailed', async () => {
+  app.get('/api/health/detailed', async () => {
     const [database, cache, storage] = await Promise.all([
       checkDatabase(),
       checkCache(),
@@ -217,7 +218,7 @@ export function healthRoutes(app: FastifyInstance) {
   /**
    * Reset circuit breaker for an API (for admin/debugging)
    */
-  app.post('/health/circuit-breaker/:apiName/reset', async (req) => {
+  app.post('/api/health/circuit-breaker/:apiName/reset', async (req) => {
     const { apiName } = req.params as { apiName: string };
     resetCircuitBreaker(apiName);
     return { status: 'ok', message: `Circuit breaker for ${apiName} reset` };
