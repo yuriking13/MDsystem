@@ -6,3 +6,4 @@ export { default as AdminActivityPage } from './AdminActivityPage';
 export { default as AdminErrorsPage } from './AdminErrorsPage';
 export { default as AdminAuditPage } from './AdminAuditPage';
 export { default as AdminSettingsPage } from './AdminSettingsPage';
+export { default as AdminSessionsPage } from './AdminSessionsPage';

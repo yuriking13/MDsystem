@@ -41,11 +41,38 @@ async function logAdminAction(
   details: any,
   ipAddress: string | null
 ) {
-  await pool.query(
-    `INSERT INTO admin_audit_log (admin_id, action, target_type, target_id, details, ip_address)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [adminId, action, targetType, targetId, JSON.stringify(details), ipAddress]
-  );
+  try {
+    await pool.query(
+      `INSERT INTO admin_audit_log (admin_id, action, target_type, target_id, details, ip_address)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [adminId, action, targetType, targetId, JSON.stringify(details), ipAddress]
+    );
+  } catch (err) {
+    console.error('Failed to log admin action:', err);
+  }
+}
+
+// Log system error
+async function logSystemError(
+  errorType: string,
+  errorMessage: string,
+  errorStack: string | null,
+  userId: string | null,
+  requestPath: string | null,
+  requestMethod: string | null,
+  requestBody: any,
+  ipAddress: string | null
+) {
+  try {
+    await pool.query(
+      `INSERT INTO system_error_logs 
+       (error_type, error_message, error_stack, user_id, request_path, request_method, request_body, ip_address)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [errorType, errorMessage, errorStack, userId, requestPath, requestMethod, JSON.stringify(requestBody), ipAddress]
+    );
+  } catch (err) {
+    console.error('Failed to log system error:', err);
+  }
 }
 
 export async function adminRoutes(app: FastifyInstance) {
@@ -593,8 +620,8 @@ export async function adminRoutes(app: FastifyInstance) {
       pool.query(`
         SELECT 
           COUNT(*) as total_files,
-          SUM(size) as total_size_bytes,
-          category,
+          COALESCE(SUM(size), 0) as total_size_bytes,
+          COALESCE(category, 'unknown') as category,
           COUNT(*) as category_count
         FROM project_files
         GROUP BY category
@@ -624,5 +651,399 @@ export async function adminRoutes(app: FastifyInstance) {
       recentProjects: recentProjects.rows,
       activeJobs: activeJobs.rows
     };
+  });
+
+  // ===== Extended Statistics =====
+  app.get('/api/admin/stats/extended', { preHandler: [requireAdmin] }, async () => {
+    const [
+      usersGrowth,
+      projectsGrowth,
+      activeUsersWeekly,
+      topUsers,
+      errorsByType,
+      activityByType
+    ] = await Promise.all([
+      // Users created per day (last 30 days)
+      pool.query(`
+        SELECT DATE(created_at) as date, COUNT(*) as count
+        FROM users
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `),
+      // Projects created per day (last 30 days)
+      pool.query(`
+        SELECT DATE(created_at) as date, COUNT(*) as count
+        FROM projects
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `),
+      // Active users per day (last 7 days)
+      pool.query(`
+        SELECT DATE(created_at) as date, COUNT(DISTINCT user_id) as count
+        FROM user_activity
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `),
+      // Top 10 users by projects count
+      pool.query(`
+        SELECT u.id, u.email, COUNT(p.id) as projects_count,
+               (SELECT COUNT(*) FROM documents d JOIN projects pr ON d.project_id = pr.id WHERE pr.created_by = u.id) as documents_count,
+               (SELECT COUNT(*) FROM project_articles pa JOIN projects pr ON pa.project_id = pr.id WHERE pr.created_by = u.id) as articles_count
+        FROM users u
+        LEFT JOIN projects p ON p.created_by = u.id
+        GROUP BY u.id
+        ORDER BY projects_count DESC
+        LIMIT 10
+      `),
+      // Errors by type (last 7 days)
+      pool.query(`
+        SELECT error_type, COUNT(*) as count
+        FROM system_error_logs
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY error_type
+        ORDER BY count DESC
+      `),
+      // Activity by type (last 7 days)
+      pool.query(`
+        SELECT action_type, COUNT(*) as count, SUM(duration_seconds) / 60 as total_minutes
+        FROM user_activity
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY action_type
+        ORDER BY count DESC
+      `)
+    ]);
+
+    return {
+      usersGrowth: usersGrowth.rows,
+      projectsGrowth: projectsGrowth.rows,
+      activeUsersWeekly: activeUsersWeekly.rows,
+      topUsers: topUsers.rows,
+      errorsByType: errorsByType.rows,
+      activityByType: activityByType.rows
+    };
+  });
+
+  // ===== User Management Extended =====
+  
+  // Block/Unblock user
+  app.patch('/api/admin/users/:userId/block', { preHandler: [requireAdmin] }, async (req: any) => {
+    const { userId } = req.params;
+    const body = z.object({ blocked: z.boolean(), reason: z.string().optional() }).parse(req.body);
+
+    await pool.query(
+      `UPDATE users SET is_blocked = $1, blocked_reason = $2, blocked_at = $3 WHERE id = $4`,
+      [body.blocked, body.reason || null, body.blocked ? new Date() : null, userId]
+    );
+
+    await logAdminAction(req.user.sub, body.blocked ? 'block_user' : 'unblock_user', 'user', userId, { reason: body.reason }, req.ip);
+
+    return { ok: true };
+  });
+
+  // Delete user (with all their data)
+  app.delete('/api/admin/users/:userId', { preHandler: [requireAdmin] }, async (req: any) => {
+    const { userId } = req.params;
+    // Validate confirm flag
+    z.object({ confirm: z.literal(true) }).parse(req.body);
+
+    // Get user info before deletion
+    const user = await pool.query('SELECT email FROM users WHERE id = $1', [userId]);
+    if (!user.rowCount) {
+      return { error: 'User not found' };
+    }
+
+    // Delete in correct order (respecting foreign keys)
+    await pool.query('DELETE FROM user_activity WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM user_sessions WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM user_subscriptions WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM user_api_keys WHERE user_id = $1', [userId]);
+    await pool.query('DELETE FROM project_members WHERE user_id = $1', [userId]);
+    
+    // Delete user's projects and related data
+    const userProjects = await pool.query('SELECT id FROM projects WHERE created_by = $1', [userId]);
+    for (const project of userProjects.rows) {
+      await pool.query('DELETE FROM project_files WHERE project_id = $1', [project.id]);
+      await pool.query('DELETE FROM project_articles WHERE project_id = $1', [project.id]);
+      await pool.query('DELETE FROM documents WHERE project_id = $1', [project.id]);
+      await pool.query('DELETE FROM project_members WHERE project_id = $1', [project.id]);
+      await pool.query('DELETE FROM project_statistics WHERE project_id = $1', [project.id]);
+    }
+    await pool.query('DELETE FROM projects WHERE created_by = $1', [userId]);
+    
+    // Finally delete user
+    await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+
+    await logAdminAction(req.user.sub, 'delete_user', 'user', userId, { email: user.rows[0].email }, req.ip);
+
+    return { ok: true };
+  });
+
+  // Reset user password
+  app.post('/api/admin/users/:userId/reset-password', { preHandler: [requireAdmin] }, async (req: any) => {
+    const { userId } = req.params;
+    const argon2 = await import('argon2');
+    
+    // Generate temporary password
+    const tempPassword = crypto.randomBytes(8).toString('hex');
+    const passwordHash = await argon2.hash(tempPassword);
+
+    await pool.query(
+      `UPDATE users SET password_hash = $1, password_reset_required = true WHERE id = $2`,
+      [passwordHash, userId]
+    );
+
+    await logAdminAction(req.user.sub, 'reset_password', 'user', userId, {}, req.ip);
+
+    return { tempPassword, message: 'Send this password to the user. They will be required to change it on next login.' };
+  });
+
+  // Get user's projects with details (without file contents)
+  app.get('/api/admin/users/:userId/projects', { preHandler: [requireAdmin] }, async (req: any) => {
+    const { userId } = req.params;
+    const query = z.object({
+      page: z.string().optional().transform(v => parseInt(v || '1')),
+      limit: z.string().optional().transform(v => parseInt(v || '20'))
+    }).parse(req.query);
+
+    const offset = (query.page - 1) * query.limit;
+
+    const [projects, total] = await Promise.all([
+      pool.query(`
+        SELECT 
+          p.id, p.name, p.created_at, p.updated_at,
+          COUNT(DISTINCT d.id) as documents_count,
+          COUNT(DISTINCT pa.article_id) as articles_count,
+          COUNT(DISTINCT pf.id) as files_count,
+          COALESCE(SUM(pf.size), 0) as total_size
+        FROM projects p
+        LEFT JOIN documents d ON d.project_id = p.id
+        LEFT JOIN project_articles pa ON pa.project_id = p.id
+        LEFT JOIN project_files pf ON pf.project_id = p.id
+        WHERE p.created_by = $1
+        GROUP BY p.id
+        ORDER BY p.created_at DESC
+        LIMIT $2 OFFSET $3
+      `, [userId, query.limit, offset]),
+      pool.query('SELECT COUNT(*) FROM projects WHERE created_by = $1', [userId])
+    ]);
+
+    return {
+      projects: projects.rows,
+      total: parseInt(total.rows[0].count),
+      page: query.page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit)
+    };
+  });
+
+  // ===== Export Endpoints =====
+  
+  // Export users to CSV
+  app.get('/api/admin/export/users', { preHandler: [requireAdmin] }, async (req: any, reply) => {
+    const users = await pool.query(`
+      SELECT 
+        u.id, u.email, u.created_at, u.last_login_at, u.is_admin, u.is_blocked,
+        COUNT(DISTINCT p.id) as projects_count,
+        COALESCE(sub.status, 'free') as subscription_status
+      FROM users u
+      LEFT JOIN projects p ON p.created_by = u.id
+      LEFT JOIN user_subscriptions sub ON sub.user_id = u.id
+      GROUP BY u.id, sub.status
+      ORDER BY u.created_at DESC
+    `);
+
+    const csv = [
+      'ID,Email,Created At,Last Login,Is Admin,Is Blocked,Projects Count,Subscription',
+      ...users.rows.map(u => 
+        `${u.id},"${u.email}",${u.created_at},${u.last_login_at || ''},${u.is_admin},${u.is_blocked || false},${u.projects_count},${u.subscription_status}`
+      )
+    ].join('\n');
+
+    await logAdminAction(req.user.sub, 'export_users', null, null, { count: users.rowCount }, req.ip);
+
+    reply.header('Content-Type', 'text/csv');
+    reply.header('Content-Disposition', 'attachment; filename=users.csv');
+    return csv;
+  });
+
+  // Export activity to CSV
+  app.get('/api/admin/export/activity', { preHandler: [requireAdmin] }, async (req: any, reply) => {
+    const query = z.object({
+      startDate: z.string().optional(),
+      endDate: z.string().optional()
+    }).parse(req.query);
+
+    let whereClause = '';
+    const params: any[] = [];
+
+    if (query.startDate) {
+      params.push(query.startDate);
+      whereClause = `WHERE a.created_at >= $${params.length}`;
+    }
+    if (query.endDate) {
+      params.push(query.endDate);
+      whereClause += whereClause ? ` AND a.created_at <= $${params.length}` : `WHERE a.created_at <= $${params.length}`;
+    }
+
+    const activity = await pool.query(`
+      SELECT a.id, u.email, a.action_type, a.created_at, a.duration_seconds, a.ip_address
+      FROM user_activity a
+      JOIN users u ON u.id = a.user_id
+      ${whereClause}
+      ORDER BY a.created_at DESC
+      LIMIT 10000
+    `, params);
+
+    const csv = [
+      'ID,Email,Action Type,Created At,Duration (seconds),IP Address',
+      ...activity.rows.map(a => 
+        `${a.id},"${a.email}",${a.action_type},${a.created_at},${a.duration_seconds || 0},"${a.ip_address || ''}"`
+      )
+    ].join('\n');
+
+    await logAdminAction(req.user.sub, 'export_activity', null, null, { count: activity.rowCount }, req.ip);
+
+    reply.header('Content-Type', 'text/csv');
+    reply.header('Content-Disposition', 'attachment; filename=activity.csv');
+    return csv;
+  });
+
+  // Export errors to CSV
+  app.get('/api/admin/export/errors', { preHandler: [requireAdmin] }, async (req: any, reply) => {
+    const errors = await pool.query(`
+      SELECT e.id, e.error_type, e.error_message, e.created_at, e.resolved, 
+             e.request_path, e.request_method, u.email as user_email
+      FROM system_error_logs e
+      LEFT JOIN users u ON u.id = e.user_id
+      ORDER BY e.created_at DESC
+      LIMIT 10000
+    `);
+
+    const csv = [
+      'ID,Error Type,Message,Created At,Resolved,Request Path,Request Method,User Email',
+      ...errors.rows.map(e => 
+        `${e.id},"${e.error_type}","${(e.error_message || '').replace(/"/g, '""')}",${e.created_at},${e.resolved},"${e.request_path || ''}","${e.request_method || ''}","${e.user_email || ''}"`
+      )
+    ].join('\n');
+
+    await logAdminAction(req.user.sub, 'export_errors', null, null, { count: errors.rowCount }, req.ip);
+
+    reply.header('Content-Type', 'text/csv');
+    reply.header('Content-Disposition', 'attachment; filename=errors.csv');
+    return csv;
+  });
+
+  // ===== Real-time Stats =====
+  app.get('/api/admin/stats/realtime', { preHandler: [requireAdmin] }, async () => {
+    const [
+      onlineNow,
+      activityLast5min,
+      errorsLast1h
+    ] = await Promise.all([
+      pool.query(`
+        SELECT COUNT(DISTINCT user_id) as count
+        FROM user_sessions
+        WHERE is_active = true AND last_activity_at >= NOW() - INTERVAL '5 minutes'
+      `),
+      pool.query(`
+        SELECT action_type, COUNT(*) as count
+        FROM user_activity
+        WHERE created_at >= NOW() - INTERVAL '5 minutes'
+        GROUP BY action_type
+      `),
+      pool.query(`
+        SELECT error_type, COUNT(*) as count
+        FROM system_error_logs
+        WHERE created_at >= NOW() - INTERVAL '1 hour' AND NOT resolved
+        GROUP BY error_type
+        ORDER BY count DESC
+      `)
+    ]);
+
+    return {
+      onlineUsers: parseInt(onlineNow.rows[0]?.count || '0'),
+      recentActivity: activityLast5min.rows,
+      recentErrors: errorsLast1h.rows
+    };
+  });
+
+  // ===== Client-side Error Logging =====
+  app.post('/api/errors/client', async (req) => {
+    const body = z.object({
+      errorType: z.string(),
+      errorMessage: z.string(),
+      errorStack: z.string().optional(),
+      url: z.string().optional(),
+      userAgent: z.string().optional(),
+      componentStack: z.string().optional()
+    }).parse(req.body);
+
+    // Try to get user from token if present
+    let userId = null;
+    try {
+      await req.jwtVerify();
+      userId = (req.user as any)?.sub;
+    } catch {}
+
+    await logSystemError(
+      `client_${body.errorType}`,
+      body.errorMessage,
+      body.errorStack || body.componentStack || null,
+      userId,
+      body.url || null,
+      'CLIENT',
+      { userAgent: body.userAgent },
+      req.ip
+    );
+
+    return { ok: true };
+  });
+
+  // ===== Bulk Operations =====
+  app.post('/api/admin/errors/bulk-resolve', { preHandler: [requireAdmin] }, async (req: any) => {
+    const body = z.object({
+      errorIds: z.array(z.string().uuid()),
+      notes: z.string().optional()
+    }).parse(req.body);
+
+    await pool.query(
+      `UPDATE system_error_logs 
+       SET resolved = TRUE, resolved_at = NOW(), resolved_by = $1, notes = $2
+       WHERE id = ANY($3::uuid[])`,
+      [req.user.sub, body.notes, body.errorIds]
+    );
+
+    await logAdminAction(req.user.sub, 'bulk_resolve_errors', 'error', null, { count: body.errorIds.length }, req.ip);
+
+    return { ok: true, resolvedCount: body.errorIds.length };
+  });
+
+  // ===== Session Management =====
+  app.get('/api/admin/sessions/active', { preHandler: [requireAdmin] }, async () => {
+    const sessions = await pool.query(`
+      SELECT s.*, u.email
+      FROM user_sessions s
+      JOIN users u ON u.id = s.user_id
+      WHERE s.is_active = true
+      ORDER BY s.last_activity_at DESC
+      LIMIT 100
+    `);
+
+    return { sessions: sessions.rows };
+  });
+
+  app.post('/api/admin/sessions/:sessionId/terminate', { preHandler: [requireAdmin] }, async (req: any) => {
+    const { sessionId } = req.params;
+
+    await pool.query(
+      `UPDATE user_sessions SET is_active = false, ended_at = NOW() WHERE id = $1`,
+      [sessionId]
+    );
+
+    await logAdminAction(req.user.sub, 'terminate_session', 'session', sessionId, {}, req.ip);
+
+    return { ok: true };
   });
 }

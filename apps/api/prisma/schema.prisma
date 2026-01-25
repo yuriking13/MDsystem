@@ -8,13 +8,17 @@ datasource db {
 }
 
 model User {
-  id             String    @id @default(dbgenerated("gen_random_uuid()"))
-  email          String    @unique
-  passwordHash   String    @map("password_hash")
-  createdAt      DateTime  @default(now()) @map("created_at")
-  lastLoginAt    DateTime? @map("last_login_at")
-  isAdmin        Boolean   @default(false) @map("is_admin")
-  adminTokenHash String?   @map("admin_token_hash") @db.VarChar(255)
+  id                    String    @id @default(dbgenerated("gen_random_uuid()"))
+  email                 String    @unique
+  passwordHash          String    @map("password_hash")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  lastLoginAt           DateTime? @map("last_login_at")
+  isAdmin               Boolean   @default(false) @map("is_admin")
+  adminTokenHash        String?   @map("admin_token_hash") @db.VarChar(255)
+  isBlocked             Boolean   @default(false) @map("is_blocked")
+  blockedReason         String?   @map("blocked_reason")
+  blockedAt             DateTime? @map("blocked_at")
+  passwordResetRequired Boolean   @default(false) @map("password_reset_required")
 
   projectsOwned     Project[]          @relation("OwnerProjects")
   memberships       ProjectMember[]

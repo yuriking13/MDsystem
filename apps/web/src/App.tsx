@@ -21,6 +21,7 @@ import {
   AdminErrorsPage,
   AdminAuditPage,
   AdminSettingsPage,
+  AdminSessionsPage,
 } from "./pages/admin";
 
 function ThemeToggle() {
@@ -119,6 +120,7 @@ export default function App() {
           <Route path="users/:userId" element={<AdminUsersPage />} />
           <Route path="activity" element={<AdminActivityPage />} />
           <Route path="errors" element={<AdminErrorsPage />} />
+          <Route path="sessions" element={<AdminSessionsPage />} />
           <Route path="audit" element={<AdminAuditPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
         </Route>

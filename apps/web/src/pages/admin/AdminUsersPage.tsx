@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   apiAdminGetUsers,
   apiAdminGetUser,
   apiAdminUpdateUserAdmin,
+  apiAdminBlockUser,
+  apiAdminDeleteUser,
+  apiAdminResetPassword,
+  getExportUsersUrl,
   type UserListItem,
   type UserDetailResponse,
 } from "../../lib/adminApi";
+import { getAdminToken } from "../../lib/adminToken";
 import {
   IconUsers,
   IconSearch,
@@ -19,6 +24,10 @@ import {
   IconChartBar,
   IconCalendar,
   IconFolder,
+  IconDownload,
+  IconLock,
+  IconKey,
+  IconTrash,
 } from "../../components/FlowbiteIcons";
 
 function formatDate(date: string | null): string {
@@ -93,10 +102,35 @@ function UsersList() {
           </h1>
           <p className="admin-page-subtitle">Всего: {total}</p>
         </div>
-        <button className="btn secondary" onClick={loadUsers} disabled={loading}>
-          <IconRefresh className={loading ? "spin" : ""} />
-          Обновить
-        </button>
+        <div className="admin-header-actions">
+          <a
+            href={getExportUsersUrl()}
+            className="btn secondary"
+            download
+            onClick={(e) => {
+              e.preventDefault();
+              // Manually fetch with auth header
+              fetch(getExportUsersUrl(), {
+                headers: { Authorization: `Bearer ${getAdminToken()}` }
+              })
+                .then(res => res.blob())
+                .then(blob => {
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'users.csv';
+                  a.click();
+                });
+            }}
+          >
+            <IconDownload size="sm" />
+            Экспорт CSV
+          </a>
+          <button className="btn secondary" onClick={loadUsers} disabled={loading}>
+            <IconRefresh className={loading ? "spin" : ""} />
+            Обновить
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -223,25 +257,85 @@ function UsersList() {
 // User Detail Component
 function UserDetail() {
   const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
   const [data, setData] = useState<UserDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  async function load() {
+    if (!userId) return;
+    setLoading(true);
+    try {
+      const result = await apiAdminGetUser(userId);
+      setData(result);
+    } catch (err: any) {
+      setError(err?.message || "Ошибка загрузки");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function load() {
-      if (!userId) return;
-      setLoading(true);
-      try {
-        const result = await apiAdminGetUser(userId);
-        setData(result);
-      } catch (err: any) {
-        setError(err?.message || "Ошибка загрузки");
-      } finally {
-        setLoading(false);
-      }
-    }
     load();
   }, [userId]);
+
+  async function handleBlock() {
+    if (!userId || !data) return;
+    const reason = prompt("Причина блокировки (опционально):");
+    setActionLoading(true);
+    try {
+      await apiAdminBlockUser(userId, true, reason || undefined);
+      await load();
+    } catch (err: any) {
+      alert(err?.message || "Ошибка");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleUnblock() {
+    if (!userId) return;
+    setActionLoading(true);
+    try {
+      await apiAdminBlockUser(userId, false);
+      await load();
+    } catch (err: any) {
+      alert(err?.message || "Ошибка");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleResetPassword() {
+    if (!userId) return;
+    if (!confirm("Сбросить пароль пользователя?")) return;
+    setActionLoading(true);
+    try {
+      const result = await apiAdminResetPassword(userId);
+      setTempPassword(result.tempPassword);
+    } catch (err: any) {
+      alert(err?.message || "Ошибка");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!userId || !data) return;
+    if (!confirm(`Удалить пользователя ${data.user.email}? Это действие необратимо!`)) return;
+    if (!confirm("Вы уверены? Все данные пользователя будут удалены!")) return;
+    setActionLoading(true);
+    try {
+      await apiAdminDeleteUser(userId);
+      navigate("/admin/users");
+    } catch (err: any) {
+      alert(err?.message || "Ошибка");
+    } finally {
+      setActionLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -266,6 +360,7 @@ function UserDetail() {
   }
 
   const { user, projects, recentActivity, sessions } = data;
+  const isBlocked = (user as any).is_blocked;
 
   // Group activity by date
   const activityByDate: Record<string, { total: number; duration: number; types: string[] }> = {};
@@ -295,12 +390,75 @@ function UserDetail() {
                 <IconShield size="sm" /> Администратор
               </span>
             )}
+            {isBlocked && (
+              <span className="admin-badge admin-badge-blocked">
+                <IconLock size="sm" /> Заблокирован
+              </span>
+            )}
             <span className={`admin-badge admin-badge-${user.subscription_status}`}>
               {user.subscription_status}
             </span>
           </div>
         </div>
       </div>
+
+      {/* User Actions */}
+      <div className="admin-user-actions">
+        {isBlocked ? (
+          <button
+            className="admin-user-action-btn"
+            onClick={handleUnblock}
+            disabled={actionLoading}
+          >
+            <IconCheckCircle size="sm" />
+            Разблокировать
+          </button>
+        ) : (
+          <button
+            className="admin-user-action-btn warning"
+            onClick={handleBlock}
+            disabled={actionLoading}
+          >
+            <IconLock size="sm" />
+            Заблокировать
+          </button>
+        )}
+        <button
+          className="admin-user-action-btn"
+          onClick={handleResetPassword}
+          disabled={actionLoading}
+        >
+          <IconKey size="sm" />
+          Сбросить пароль
+        </button>
+        <button
+          className="admin-user-action-btn danger"
+          onClick={handleDelete}
+          disabled={actionLoading}
+        >
+          <IconTrash size="sm" />
+          Удалить пользователя
+        </button>
+      </div>
+
+      {/* Temp Password Display */}
+      {tempPassword && (
+        <div className="admin-password-result">
+          <p>Новый временный пароль (покажите пользователю):</p>
+          <div className="admin-password-value">
+            <code>{tempPassword}</code>
+            <button
+              className="btn secondary"
+              onClick={() => {
+                navigator.clipboard.writeText(tempPassword);
+                alert("Скопировано!");
+              }}
+            >
+              Копировать
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="admin-user-detail-grid">
         {/* User Info */}

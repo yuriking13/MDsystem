@@ -61,6 +61,10 @@ jobs:
             echo "Fixing admin user..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/fix_admin_user.sql 2>/dev/null || echo "Admin user fix completed"
 
+            # Apply user blocking fields
+            echo "Applying user blocking migration..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_user_blocking.sql 2>/dev/null || echo "User blocking fields may already exist"
+
             # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'

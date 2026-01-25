@@ -360,3 +360,157 @@ export async function apiAdminGetAudit(params: {
 export async function apiAdminSystemOverview(): Promise<SystemOverview> {
   return adminApiFetch<SystemOverview>("/api/admin/system/overview");
 }
+// Extended Types
+export type ExtendedStats = {
+  usersGrowth: { date: string; count: string }[];
+  projectsGrowth: { date: string; count: string }[];
+  activeUsersWeekly: { date: string; count: string }[];
+  topUsers: {
+    id: string;
+    email: string;
+    projects_count: string;
+    documents_count: string;
+    articles_count: string;
+  }[];
+  errorsByType: { error_type: string; count: string }[];
+  activityByType: { action_type: string; count: string; total_minutes: string }[];
+};
+
+export type RealtimeStats = {
+  onlineUsers: number;
+  recentActivity: { action_type: string; count: string }[];
+  recentErrors: { error_type: string; count: string }[];
+};
+
+export type ActiveSession = {
+  id: string;
+  user_id: string;
+  email: string;
+  started_at: string;
+  last_activity_at: string;
+  ip_address: string;
+  user_agent: string;
+};
+
+export type UserProjectsResponse = {
+  projects: {
+    id: string;
+    name: string;
+    created_at: string;
+    updated_at: string;
+    documents_count: string;
+    articles_count: string;
+    files_count: string;
+    total_size: string;
+  }[];
+  total: number;
+  page: number;
+  totalPages: number;
+};
+
+// Extended Stats
+export async function apiAdminExtendedStats(): Promise<ExtendedStats> {
+  return adminApiFetch<ExtendedStats>("/api/admin/stats/extended");
+}
+
+export async function apiAdminRealtimeStats(): Promise<RealtimeStats> {
+  return adminApiFetch<RealtimeStats>("/api/admin/stats/realtime");
+}
+
+// User Management Extended
+export async function apiAdminBlockUser(
+  userId: string,
+  blocked: boolean,
+  reason?: string
+): Promise<{ ok: true }> {
+  return adminApiFetch<{ ok: true }>(`/api/admin/users/${userId}/block`, {
+    method: "PATCH",
+    body: JSON.stringify({ blocked, reason }),
+  });
+}
+
+export async function apiAdminDeleteUser(userId: string): Promise<{ ok: true }> {
+  return adminApiFetch<{ ok: true }>(`/api/admin/users/${userId}`, {
+    method: "DELETE",
+    body: JSON.stringify({ confirm: true }),
+  });
+}
+
+export async function apiAdminResetPassword(
+  userId: string
+): Promise<{ tempPassword: string; message: string }> {
+  return adminApiFetch<{ tempPassword: string; message: string }>(
+    `/api/admin/users/${userId}/reset-password`,
+    { method: "POST" }
+  );
+}
+
+export async function apiAdminGetUserProjects(
+  userId: string,
+  page = 1,
+  limit = 20
+): Promise<UserProjectsResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    limit: String(limit),
+  });
+  return adminApiFetch<UserProjectsResponse>(`/api/admin/users/${userId}/projects?${params}`);
+}
+
+// Export
+export function getExportUsersUrl(): string {
+  return "/api/admin/export/users";
+}
+
+export function getExportActivityUrl(startDate?: string, endDate?: string): string {
+  const params = new URLSearchParams();
+  if (startDate) params.append("startDate", startDate);
+  if (endDate) params.append("endDate", endDate);
+  return `/api/admin/export/activity?${params}`;
+}
+
+export function getExportErrorsUrl(): string {
+  return "/api/admin/export/errors";
+}
+
+// Bulk Operations
+export async function apiAdminBulkResolveErrors(
+  errorIds: string[],
+  notes?: string
+): Promise<{ ok: true; resolvedCount: number }> {
+  return adminApiFetch<{ ok: true; resolvedCount: number }>("/api/admin/errors/bulk-resolve", {
+    method: "POST",
+    body: JSON.stringify({ errorIds, notes }),
+  });
+}
+
+// Sessions
+export async function apiAdminGetActiveSessions(): Promise<{ sessions: ActiveSession[] }> {
+  return adminApiFetch<{ sessions: ActiveSession[] }>("/api/admin/sessions/active");
+}
+
+export async function apiAdminTerminateSession(sessionId: string): Promise<{ ok: true }> {
+  return adminApiFetch<{ ok: true }>(`/api/admin/sessions/${sessionId}/terminate`, {
+    method: "POST",
+  });
+}
+
+// Client Error Logging (public endpoint)
+export async function logClientError(error: {
+  errorType: string;
+  errorMessage: string;
+  errorStack?: string;
+  url?: string;
+  userAgent?: string;
+  componentStack?: string;
+}): Promise<void> {
+  try {
+    await fetch("/api/errors/client", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(error),
+    });
+  } catch {
+    // Silently fail - don't cause more errors when logging errors
+  }
+}
