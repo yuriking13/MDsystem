@@ -41,7 +41,7 @@ import {
   htmlToTiptapContent,
   type ExtractedArticle,
 } from "../lib/article-extractor.js";
-import { getUserId } from "../types/fastify.js";
+import { getUserId } from "../utils/auth-helpers.js";
 
 const filesRoutes: FastifyPluginAsync = async (app) => {
   // Check if user has access to project

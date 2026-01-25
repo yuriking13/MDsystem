@@ -16,7 +16,7 @@ import {
   CACHE_KEYS, 
   TTL 
 } from "../lib/redis.js";
-import { getUserId } from "../types/fastify.js";
+import { getUserId } from "../utils/auth-helpers.js";
 import { createLogger } from "../utils/logger.js";
 
 const log = createLogger('articles');

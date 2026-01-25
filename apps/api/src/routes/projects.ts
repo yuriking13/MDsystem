@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
-import { getUserId } from "../types/fastify.js";
+import { getUserId } from "../utils/auth-helpers.js";
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(500),

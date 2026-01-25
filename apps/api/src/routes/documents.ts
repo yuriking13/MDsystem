@@ -13,7 +13,7 @@ import {
   CACHE_KEYS,
   TTL,
 } from "../lib/redis.js";
-import { getUserId } from "../types/fastify.js";
+import { getUserId } from "../utils/auth-helpers.js";
 
 const ProjectIdSchema = z.object({
   projectId: z.string().uuid(),
