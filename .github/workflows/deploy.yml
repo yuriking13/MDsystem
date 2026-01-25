@@ -57,6 +57,10 @@ jobs:
             echo "Applying file metadata cache migration..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_file_extracted_metadata.sql 2>/dev/null || echo "file metadata columns may already exist"
 
+            # Fix admin user password and permissions
+            echo "Fixing admin user..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/fix_admin_user.sql 2>/dev/null || echo "Admin user fix completed"
+
             # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'
