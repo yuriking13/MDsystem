@@ -11,6 +11,17 @@ import DocumentPage from "./pages/DocumentPage";
 import DocumentationPage from "./pages/DocumentationPage";
 import OnboardingTour from "./components/OnboardingTour";
 import { RequireAuth, useAuth } from "./lib/AuthContext";
+import { AdminAuthProvider, RequireAdmin } from "./lib/AdminContext";
+import {
+  AdminLoginPage,
+  AdminLayout,
+  AdminDashboard,
+  AdminUsersPage,
+  AdminActivityPage,
+  AdminErrorsPage,
+  AdminAuditPage,
+  AdminSettingsPage,
+} from "./pages/admin";
 
 function ThemeToggle() {
   const [isLight, setIsLight] = useState(() => {
@@ -92,6 +103,26 @@ export default function App() {
             </RequireAuth>
           }
         />
+        
+        {/* Admin Routes */}
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route
+          path="/admin"
+          element={
+            <RequireAdmin>
+              <AdminLayout />
+            </RequireAdmin>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="users/:userId" element={<AdminUsersPage />} />
+          <Route path="activity" element={<AdminActivityPage />} />
+          <Route path="errors" element={<AdminErrorsPage />} />
+          <Route path="audit" element={<AdminAuditPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+        </Route>
+        
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

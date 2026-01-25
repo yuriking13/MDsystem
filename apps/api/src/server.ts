@@ -16,6 +16,7 @@ import articlesRoutes from './routes/articles.js';
 import documentsRoutes from './routes/documents.js';
 import statisticsRoutes from './routes/statistics.js';
 import filesRoutes from './routes/files.js';
+import { adminRoutes } from './routes/admin.js';
 
 import envGuard from './plugins/00-env-guard.js';
 import swaggerPlugin from './plugins/swagger.js';
@@ -91,6 +92,7 @@ await app.register(authPlugin);
 await registerWebSocket(app);
 
 await authRoutes(app);
+await adminRoutes(app);
 await app.register(settingsRoutes, { prefix: '/api' });
 await app.register(projectsRoutes, { prefix: '/api' });
 await app.register(articlesRoutes, { prefix: '/api' });
