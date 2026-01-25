@@ -8,11 +8,13 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(dbgenerated("gen_random_uuid()"))
-  email        String    @unique
-  passwordHash String    @map("password_hash")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  lastLoginAt  DateTime? @map("last_login_at")
+  id             String    @id @default(dbgenerated("gen_random_uuid()"))
+  email          String    @unique
+  passwordHash   String    @map("password_hash")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  lastLoginAt    DateTime? @map("last_login_at")
+  isAdmin        Boolean   @default(false) @map("is_admin")
+  adminTokenHash String?   @map("admin_token_hash") @db.VarChar(255)
 
   projectsOwned     Project[]          @relation("OwnerProjects")
   memberships       ProjectMember[]
@@ -21,6 +23,12 @@ model User {
   addedArticles     ProjectArticle[]
   apiKeys           UserApiKey[]
   uploadedFiles     ProjectFile[]
+  activities        UserActivity[]
+  sessions          UserSession[]
+  subscriptions     UserSubscription[]
+  adminAuditLogs    AdminAuditLog[]
+  resolvedErrors    SystemErrorLog[]   @relation("ResolvedBy")
+  userErrors        SystemErrorLog[]   @relation("UserErrors")
 
   @@map("users")
 }
@@ -292,4 +300,122 @@ model ProjectFile {
   @@index([projectId])
   @@index([category])
   @@map("project_files")
+}
+
+// ===== Admin Panel Models =====
+
+model UserActivity {
+  id              String   @id @default(dbgenerated("gen_random_uuid()"))
+  userId          String   @map("user_id")
+  sessionId       String   @map("session_id") @db.Uuid
+  actionType      String   @map("action_type") @db.VarChar(50)
+  actionDetail    Json?    @map("action_detail")
+  ipAddress       String?  @map("ip_address") @db.VarChar(45)
+  userAgent       String?  @map("user_agent")
+  createdAt       DateTime @default(now()) @map("created_at")
+  durationSeconds Int      @default(0) @map("duration_seconds")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([actionType])
+  @@index([sessionId])
+  @@map("user_activity")
+}
+
+model UserSession {
+  id             String    @id @default(dbgenerated("gen_random_uuid()"))
+  userId         String    @map("user_id")
+  startedAt      DateTime  @default(now()) @map("started_at")
+  endedAt        DateTime? @map("ended_at")
+  lastActivityAt DateTime  @default(now()) @map("last_activity_at")
+  ipAddress      String?   @map("ip_address") @db.VarChar(45)
+  userAgent      String?   @map("user_agent")
+  isActive       Boolean   @default(true) @map("is_active")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([startedAt])
+  @@index([isActive])
+  @@map("user_sessions")
+}
+
+model SystemErrorLog {
+  id            String    @id @default(dbgenerated("gen_random_uuid()"))
+  errorType     String    @map("error_type") @db.VarChar(100)
+  errorMessage  String    @map("error_message")
+  errorStack    String?   @map("error_stack")
+  userId        String?   @map("user_id")
+  requestPath   String?   @map("request_path") @db.VarChar(500)
+  requestMethod String?   @map("request_method") @db.VarChar(10)
+  requestBody   Json?     @map("request_body")
+  ipAddress     String?   @map("ip_address") @db.VarChar(45)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  resolved      Boolean   @default(false)
+  resolvedAt    DateTime? @map("resolved_at")
+  resolvedBy    String?   @map("resolved_by")
+  notes         String?
+
+  user     User? @relation("UserErrors", fields: [userId], references: [id], onDelete: SetNull)
+  resolver User? @relation("ResolvedBy", fields: [resolvedBy], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([errorType])
+  @@index([resolved])
+  @@map("system_error_logs")
+}
+
+model SubscriptionPlan {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  description   String?
+  priceMonthly  Decimal? @map("price_monthly") @db.Decimal(10, 2)
+  priceYearly   Decimal? @map("price_yearly") @db.Decimal(10, 2)
+  features      Json     @default("{}")
+  maxProjects   Int?     @map("max_projects")
+  maxDocuments  Int?     @map("max_documents")
+  maxStorageMb  Int?     @map("max_storage_mb")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  subscriptions UserSubscription[]
+
+  @@map("subscription_plans")
+}
+
+model UserSubscription {
+  id            String    @id @default(dbgenerated("gen_random_uuid()"))
+  userId        String    @map("user_id")
+  planId        Int?      @map("plan_id")
+  status        String    @default("free") @db.VarChar(20)
+  startedAt     DateTime  @default(now()) @map("started_at")
+  expiresAt     DateTime? @map("expires_at")
+  paymentMethod String?   @map("payment_method") @db.VarChar(50)
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan SubscriptionPlan? @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("user_subscriptions")
+}
+
+model AdminAuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()"))
+  adminId    String   @map("admin_id")
+  action     String   @db.VarChar(100)
+  targetType String?  @map("target_type") @db.VarChar(50)
+  targetId   String?  @map("target_id") @db.VarChar(100)
+  details    Json?
+  ipAddress  String?  @map("ip_address") @db.VarChar(45)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin User @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("admin_audit_log")
 }

@@ -97,19 +97,8 @@ INSERT INTO subscription_plans (name, description, price_monthly, price_yearly, 
 VALUES ('Free', 'Бесплатный план', 0, 0, '{"search": true, "export": false, "ai_assistant": false}', 3, 10, 100, true)
 ON CONFLICT DO NOTHING;
 
--- Daily activity summary view for analytics
-CREATE OR REPLACE VIEW user_activity_daily AS
-SELECT 
-    user_id,
-    DATE(created_at) as activity_date,
-    COUNT(*) as total_actions,
-    SUM(duration_seconds) as total_duration_seconds,
-    COUNT(DISTINCT session_id) as session_count,
-    MIN(created_at) as first_activity,
-    MAX(created_at) as last_activity,
-    ARRAY_AGG(DISTINCT action_type) as action_types
-FROM user_activity
-GROUP BY user_id, DATE(created_at);
+-- Note: user_activity_daily view should be created manually if needed
+-- Prisma does not manage views, so we skip it here to avoid conflicts with db push
 
 -- Admin audit log
 CREATE TABLE IF NOT EXISTS admin_audit_log (

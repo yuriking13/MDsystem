@@ -42,6 +42,10 @@ jobs:
             echo "Resetting pg-boss schema..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/reset_boss_schema.sql || echo "pg-boss schema reset completed (or schema did not exist)"
             
+            # Drop views that conflict with Prisma db push
+            echo "Dropping conflicting views..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/drop_admin_views.sql || echo "Views dropped or did not exist"
+            
             # Using db push because the database is not baselined for migrations
             pnpm --filter api exec prisma db push --accept-data-loss
 
