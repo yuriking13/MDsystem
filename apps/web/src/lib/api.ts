@@ -996,6 +996,81 @@ export async function apiGetGraphRecommendations(
   );
 }
 
+// === Semantic Search ===
+
+export type SemanticSearchResult = {
+  id: string;
+  title: string;
+  titleEn: string;
+  abstract: string | null;
+  year: number | null;
+  authors: string[];
+  journal: string | null;
+  doi: string | null;
+  pmid: string | null;
+  status: string;
+  similarity: number;
+};
+
+export type SemanticSearchResponse = {
+  query: string;
+  results: SemanticSearchResult[];
+  totalFound: number;
+  threshold: number;
+};
+
+export async function apiSemanticSearch(
+  projectId: string,
+  query: string,
+  limit: number = 20,
+  threshold: number = 0.7,
+): Promise<SemanticSearchResponse> {
+  return apiFetch<SemanticSearchResponse>(
+    `/api/projects/${projectId}/citation-graph/semantic-search`,
+    {
+      method: "POST",
+      body: JSON.stringify({ query, limit, threshold }),
+    },
+  );
+}
+
+export type GenerateEmbeddingsResponse = {
+  success: boolean;
+  total: number;
+  processed: number;
+  errors: number;
+  remaining: number;
+};
+
+export async function apiGenerateEmbeddings(
+  projectId: string,
+  articleIds?: string[],
+  batchSize: number = 50,
+): Promise<GenerateEmbeddingsResponse> {
+  return apiFetch<GenerateEmbeddingsResponse>(
+    `/api/projects/${projectId}/citation-graph/generate-embeddings`,
+    {
+      method: "POST",
+      body: JSON.stringify({ articleIds, batchSize }),
+    },
+  );
+}
+
+export type EmbeddingStatsResponse = {
+  totalArticles: number;
+  withEmbeddings: number;
+  withoutEmbeddings: number;
+  completionRate: number;
+};
+
+export async function apiGetEmbeddingStats(
+  projectId: string,
+): Promise<EmbeddingStatsResponse> {
+  return apiFetch<EmbeddingStatsResponse>(
+    `/api/projects/${projectId}/citation-graph/embedding-stats`,
+  );
+}
+
 // Получение связей между статьями из PubMed (фоновая загрузка)
 export type FetchReferencesResult = {
   ok: true;
@@ -1261,9 +1336,7 @@ export async function apiSyncStatistics(
   });
 }
 
-export async function apiCleanupStatistics(
-  projectId: string,
-): Promise<{
+export async function apiCleanupStatistics(projectId: string): Promise<{
   ok: boolean;
   deleted: number;
   deletedItems: Array<{ id: string; title: string }>;

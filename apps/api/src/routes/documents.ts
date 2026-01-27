@@ -3556,12 +3556,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       } catch (e: any) {
         // Table doesn't exist yet
         if (e.message?.includes("does not exist")) {
-          return reply
-            .code(503)
-            .send({
-              error: "Versioning not available yet",
-              tableNotReady: true,
-            });
+          return reply.code(503).send({
+            error: "Versioning not available yet",
+            tableNotReady: true,
+          });
         }
         throw e;
       }
@@ -3822,108 +3820,160 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         action?: any;
       }> = [];
 
-      // 1. Orphan nodes - статьи без связей
-      const orphansRes = await pool.query(
-        `SELECT a.id, a.title_en, a.pmid, a.year, a.references_fetched_at
-         FROM project_articles pa
-         JOIN articles a ON a.id = pa.article_id
-         WHERE pa.project_id = $1 AND pa.status != 'deleted'`,
-        [paramsP.data.projectId],
-      );
+      try {
+        // Проверяем наличие колонки reference_pmids
+        let hasRefPmids = false;
+        try {
+          const checkCol = await pool.query(
+            `SELECT column_name FROM information_schema.columns 
+             WHERE table_name = 'articles' AND column_name = 'reference_pmids'`,
+          );
+          hasRefPmids = (checkCol.rowCount ?? 0) > 0;
+        } catch {
+          hasRefPmids = false;
+        }
 
-      const articles = orphansRes.rows;
-      const articleIds = articles.map((a) => a.id);
+        // 1. Orphan nodes - статьи без связей
+        const orphansRes = await pool.query(
+          `SELECT a.id, a.title_en, a.pmid, a.year, a.references_fetched_at
+           FROM project_articles pa
+           JOIN articles a ON a.id = pa.article_id
+           WHERE pa.project_id = $1 AND pa.status != 'deleted'`,
+          [paramsP.data.projectId],
+        );
 
-      // Проверяем какие статьи имеют связи
-      const connectedRes = await pool.query(
-        `SELECT DISTINCT a1.id
-         FROM articles a1
-         JOIN articles a2 ON (
-           a2.pmid = ANY(a1.reference_pmids)
-           OR a1.pmid = ANY(a2.reference_pmids)
-         )
-         WHERE a1.id = ANY($1) AND a2.id = ANY($1)`,
-        [articleIds],
-      );
+        const articles = orphansRes.rows;
+        const articleIds = articles.map((a) => a.id);
 
-      const connectedIds = new Set(connectedRes.rows.map((r) => r.id));
-      const orphans = articles.filter((a) => !connectedIds.has(a.id));
+        if (articleIds.length > 0 && hasRefPmids) {
+          // Проверяем какие статьи имеют связи (только если есть колонка)
+          const connectedRes = await pool.query(
+            `SELECT DISTINCT a1.id
+             FROM articles a1
+             JOIN articles a2 ON (
+               (a1.reference_pmids IS NOT NULL AND a2.pmid = ANY(a1.reference_pmids))
+               OR (a2.reference_pmids IS NOT NULL AND a1.pmid = ANY(a2.reference_pmids))
+             )
+             WHERE a1.id = ANY($1) AND a2.id = ANY($1)`,
+            [articleIds],
+          );
 
-      if (orphans.length > 0) {
-        const unfetched = orphans.filter((a) => !a.references_fetched_at);
+          const connectedIds = new Set(connectedRes.rows.map((r) => r.id));
+          const orphans = articles.filter((a) => !connectedIds.has(a.id));
 
-        if (unfetched.length > 0) {
+          if (orphans.length > 0) {
+            const unfetched = orphans.filter((a) => !a.references_fetched_at);
+
+            if (unfetched.length > 0) {
+              recommendations.push({
+                type: "orphan_unfetched",
+                title: `${unfetched.length} статей без загруженных ссылок`,
+                description:
+                  "Эти статьи изолированы потому что их references не загружены из PubMed",
+                priority: "high",
+                articleIds: unfetched.map((a) => a.id),
+                action: { type: "fetch_references", count: unfetched.length },
+              });
+            }
+
+            const fetched = orphans.filter((a) => a.references_fetched_at);
+            if (fetched.length > 0) {
+              recommendations.push({
+                type: "orphan_isolated",
+                title: `${fetched.length} полностью изолированных статей`,
+                description:
+                  "Статьи без связей с остальным графом даже после загрузки ссылок",
+                priority: "medium",
+                articleIds: fetched.map((a) => a.id),
+              });
+            }
+          }
+        } else if (articleIds.length > 0) {
+          // Если колонки нет - все статьи считаем orphans
+          const unfetched = articles.filter((a) => !a.references_fetched_at);
+          if (unfetched.length > 0) {
+            recommendations.push({
+              type: "orphan_unfetched",
+              title: `${unfetched.length} статей без загруженных ссылок`,
+              description: "Загрузите ссылки для построения графа",
+              priority: "high",
+              articleIds: unfetched.map((a) => a.id),
+              action: { type: "fetch_references", count: unfetched.length },
+            });
+          }
+        }
+
+        // 2. Статьи со старыми данными (>1 года без обновления cited_by)
+        const staleRes = await pool.query(
+          `SELECT a.id, a.title_en, a.year, a.cited_by_last_fetched
+           FROM project_articles pa
+           JOIN articles a ON a.id = pa.article_id
+           WHERE pa.project_id = $1 
+             AND pa.status = 'selected'
+             AND (a.cited_by_last_fetched IS NULL 
+                  OR a.cited_by_last_fetched < NOW() - INTERVAL '1 year')
+             AND a.year >= EXTRACT(YEAR FROM NOW()) - 10`,
+          [paramsP.data.projectId],
+        );
+
+        if (staleRes.rowCount && staleRes.rowCount > 0) {
+          recommendations.push({
+            type: "stale_citations",
+            title: `${staleRes.rowCount} статей с устаревшими данными о цитированиях`,
+            description: "Обновите информацию о том, кто цитирует эти работы",
+            priority: "low",
+            articleIds: staleRes.rows.map((r) => r.id),
+            action: { type: "refresh_citations", count: staleRes.rowCount },
+          });
+        }
+
+        // 3. Высокоцитируемые статьи без загруженных ссылок
+        const highCitedRes = await pool.query(
+          `SELECT a.id, a.title_en, a.pmid,
+                  COALESCE(array_length(a.cited_by_pmids, 1), 0) as cited_count
+           FROM project_articles pa
+           JOIN articles a ON a.id = pa.article_id
+           WHERE pa.project_id = $1 
+             AND pa.status = 'selected'
+             AND a.references_fetched_at IS NULL
+             AND COALESCE(array_length(a.cited_by_pmids, 1), 0) > 20`,
+          [paramsP.data.projectId],
+        );
+
+        if (highCitedRes.rowCount && highCitedRes.rowCount > 0) {
+          recommendations.push({
+            type: "high_cited_unfetched",
+            title: `${highCitedRes.rowCount} важных статей требуют загрузки ссылок`,
+            description:
+              "Высокоцитируемые работы без загруженных references - приоритет для расширения графа",
+            priority: "high",
+            articleIds: highCitedRes.rows.map((r) => r.id),
+            action: { type: "fetch_references", count: highCitedRes.rowCount },
+          });
+        }
+      } catch (error) {
+        console.error("Error in recommendations:", error);
+        // Возвращаем базовые рекомендации даже при ошибке
+        const basicRes = await pool.query(
+          `SELECT a.id, a.title_en, a.pmid, a.year, a.references_fetched_at
+           FROM project_articles pa
+           JOIN articles a ON a.id = pa.article_id
+           WHERE pa.project_id = $1 AND pa.status != 'deleted'
+             AND a.references_fetched_at IS NULL
+           LIMIT 100`,
+          [paramsP.data.projectId],
+        );
+
+        if (basicRes.rows.length > 0) {
           recommendations.push({
             type: "orphan_unfetched",
-            title: `${unfetched.length} статей без загруженных ссылок`,
-            description:
-              "Эти статьи изолированы потому что их references не загружены из PubMed",
+            title: `${basicRes.rows.length}+ статей без загруженных ссылок`,
+            description: "Загрузите ссылки для построения графа цитирований",
             priority: "high",
-            articleIds: unfetched.map((a) => a.id),
-            action: { type: "fetch_references", count: unfetched.length },
+            articleIds: basicRes.rows.map((r) => r.id),
+            action: { type: "fetch_references", count: basicRes.rows.length },
           });
         }
-
-        const fetched = orphans.filter((a) => a.references_fetched_at);
-        if (fetched.length > 0) {
-          recommendations.push({
-            type: "orphan_isolated",
-            title: `${fetched.length} полностью изолированных статей`,
-            description:
-              "Статьи без связей с остальным графом даже после загрузки ссылок",
-            priority: "medium",
-            articleIds: fetched.map((a) => a.id),
-          });
-        }
-      }
-
-      // 2. Статьи со старыми данными (>1 года без обновления cited_by)
-      const staleRes = await pool.query(
-        `SELECT a.id, a.title_en, a.year, a.cited_by_last_fetched
-         FROM project_articles pa
-         JOIN articles a ON a.id = pa.article_id
-         WHERE pa.project_id = $1 
-           AND pa.status = 'selected'
-           AND (a.cited_by_last_fetched IS NULL 
-                OR a.cited_by_last_fetched < NOW() - INTERVAL '1 year')
-           AND a.year >= EXTRACT(YEAR FROM NOW()) - 10`,
-        [paramsP.data.projectId],
-      );
-
-      if (staleRes.rowCount && staleRes.rowCount > 0) {
-        recommendations.push({
-          type: "stale_citations",
-          title: `${staleRes.rowCount} статей с устаревшими данными о цитированиях`,
-          description: "Обновите информацию о том, кто цитирует эти работы",
-          priority: "low",
-          articleIds: staleRes.rows.map((r) => r.id),
-          action: { type: "refresh_citations", count: staleRes.rowCount },
-        });
-      }
-
-      // 3. Высокоцитируемые статьи без загруженных ссылок
-      const highCitedRes = await pool.query(
-        `SELECT a.id, a.title_en, a.pmid,
-                COALESCE(array_length(a.cited_by_pmids, 1), 0) as cited_count
-         FROM project_articles pa
-         JOIN articles a ON a.id = pa.article_id
-         WHERE pa.project_id = $1 
-           AND pa.status = 'selected'
-           AND a.references_fetched_at IS NULL
-           AND COALESCE(array_length(a.cited_by_pmids, 1), 0) > 20`,
-        [paramsP.data.projectId],
-      );
-
-      if (highCitedRes.rowCount && highCitedRes.rowCount > 0) {
-        recommendations.push({
-          type: "high_cited_unfetched",
-          title: `${highCitedRes.rowCount} важных статей требуют загрузки ссылок`,
-          description:
-            "Высокоцитируемые работы без загруженных references - приоритет для расширения графа",
-          priority: "high",
-          articleIds: highCitedRes.rows.map((r) => r.id),
-          action: { type: "fetch_references", count: highCitedRes.rowCount },
-        });
       }
 
       return { recommendations, totalCount: recommendations.length };
