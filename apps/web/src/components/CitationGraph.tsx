@@ -9,6 +9,8 @@ import {
   apiGetArticleByPmid,
   apiTranslateText,
   apiGraphAIAssistant,
+  apiExportCitationGraph,
+  apiGetGraphRecommendations,
   type GraphNode,
   type GraphLink,
   type GraphFilterOptions,
@@ -18,6 +20,7 @@ import {
   type FoundArticle,
   type GraphArticleForAI,
   type GraphFiltersForAI,
+  type GraphRecommendation,
 } from "../lib/api";
 import {
   IconInfoCircle,
@@ -245,6 +248,13 @@ export default function CitationGraph({ projectId }: Props) {
     new Set(),
   );
   const [aiFoundArticles, setAiFoundArticles] = useState<FoundArticle[]>([]);
+
+  // Рекомендации
+  const [recommendations, setRecommendations] = useState<GraphRecommendation[]>(
+    [],
+  );
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   // Выбранные статьи для индивидуального добавления
   const [aiSelectedForAdd, setAiSelectedForAdd] = useState<Set<string>>(
     new Set(),
@@ -297,6 +307,41 @@ export default function CitationGraph({ projectId }: Props) {
     return () =>
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
+
+  // Экспорт графа
+  const handleExport = async (
+    format: "json" | "graphml" | "cytoscape" | "gexf",
+  ) => {
+    try {
+      const blob = await apiExportCitationGraph(projectId, format);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `citation-graph-${projectId}.${format === "cytoscape" ? "cytoscape.json" : format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error("Export failed:", err);
+      alert(`Ошибка экспорта: ${err.message}`);
+    }
+  };
+
+  // Загрузка рекомендаций
+  const loadRecommendations = async () => {
+    setLoadingRecommendations(true);
+    try {
+      const result = await apiGetGraphRecommendations(projectId);
+      setRecommendations(result.recommendations);
+      setShowRecommendations(true);
+    } catch (err: any) {
+      console.error("Failed to load recommendations:", err);
+      alert(`Ошибка загрузки рекомендаций: ${err.message}`);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
 
   // Вспомогательная функция для создания опций графа с учетом режима "без ограничений"
   const getGraphOptions = useCallback((): GraphFilterOptions => {
@@ -1383,6 +1428,156 @@ export default function CitationGraph({ projectId }: Props) {
             {fetchingRefs ? "..." : "Связи"}
           </span>
         </button>
+
+        {/* Рекомендации */}
+        <button
+          className="btn secondary"
+          style={{
+            padding: "5px 10px",
+            fontSize: 11,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+          onClick={loadRecommendations}
+          disabled={loadingRecommendations}
+          title="Рекомендации по улучшению графа"
+        >
+          <IconSparkles size="sm" />
+          {recommendations.length > 0 && (
+            <span
+              style={{
+                background: "var(--accent)",
+                color: "white",
+                borderRadius: 10,
+                padding: "1px 5px",
+                fontSize: 9,
+                fontWeight: 600,
+              }}
+            >
+              {recommendations.length}
+            </span>
+          )}
+        </button>
+
+        {/* Экспорт */}
+        <div className="dropdown" style={{ position: "relative" }}>
+          <button
+            className="graph-compact-btn"
+            title="Экспорт графа"
+            onClick={(e) => {
+              const menu = e.currentTarget.nextElementSibling as HTMLElement;
+              if (menu)
+                menu.style.display =
+                  menu.style.display === "none" ? "block" : "none";
+            }}
+          >
+            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+            </svg>
+          </button>
+          <div
+            style={{
+              display: "none",
+              position: "absolute",
+              right: 0,
+              top: "100%",
+              marginTop: 4,
+              background: "var(--bg-secondary)",
+              border: "1px solid var(--border-glass)",
+              borderRadius: 8,
+              padding: 4,
+              minWidth: 140,
+              zIndex: 1000,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+          >
+            <button
+              onClick={() => handleExport("json")}
+              style={{
+                display: "block",
+                width: "100%",
+                padding: "6px 10px",
+                textAlign: "left",
+                background: "none",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                fontSize: 12,
+                borderRadius: 4,
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "var(--bg-hover)")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+            >
+              JSON
+            </button>
+            <button
+              onClick={() => handleExport("graphml")}
+              style={{
+                display: "block",
+                width: "100%",
+                padding: "6px 10px",
+                textAlign: "left",
+                background: "none",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                fontSize: 12,
+                borderRadius: 4,
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "var(--bg-hover)")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+            >
+              GraphML
+            </button>
+            <button
+              onClick={() => handleExport("cytoscape")}
+              style={{
+                display: "block",
+                width: "100%",
+                padding: "6px 10px",
+                textAlign: "left",
+                background: "none",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                fontSize: 12,
+                borderRadius: 4,
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "var(--bg-hover)")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+            >
+              Cytoscape
+            </button>
+            <button
+              onClick={() => handleExport("gexf")}
+              style={{
+                display: "block",
+                width: "100%",
+                padding: "6px 10px",
+                textAlign: "left",
+                background: "none",
+                border: "none",
+                color: "inherit",
+                cursor: "pointer",
+                fontSize: 12,
+                borderRadius: 4,
+              }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "var(--bg-hover)")
+              }
+              onMouseLeave={(e) => (e.currentTarget.style.background = "none")}
+            >
+              GEXF (Gephi)
+            </button>
+          </div>
+        </div>
 
         <button
           onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
@@ -2852,6 +3047,159 @@ export default function CitationGraph({ projectId }: Props) {
               onRefresh={() => loadGraph(getGraphOptions())}
               globalLang={globalLang}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations Modal */}
+      {showRecommendations && (
+        <div
+          className="node-info-modal-overlay"
+          onClick={() => setShowRecommendations(false)}
+        >
+          <div
+            className="node-info-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 700 }}
+          >
+            <button
+              className="node-info-modal-close"
+              onClick={() => setShowRecommendations(false)}
+            >
+              <svg
+                className="icon-md"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            <h3
+              style={{
+                marginTop: 0,
+                marginBottom: 20,
+                fontSize: 18,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <span style={{ color: "#f59e0b" }}>
+                <IconSparkles size="md" />
+              </span>
+              Рекомендации по улучшению графа
+            </h3>
+
+            {recommendations.length === 0 ? (
+              <div
+                style={{
+                  padding: 40,
+                  textAlign: "center",
+                  color: "var(--text-muted)",
+                }}
+              >
+                <div style={{ opacity: 0.5, marginBottom: 12 }}>
+                  <IconCheckBadge size="lg" />
+                </div>
+                <p>Отлично! Граф в хорошем состоянии, рекомендаций нет.</p>
+              </div>
+            ) : (
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: 12 }}
+              >
+                {recommendations.map((rec, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background:
+                        rec.priority === "high"
+                          ? "rgba(239, 68, 68, 0.1)"
+                          : rec.priority === "medium"
+                            ? "rgba(249, 115, 22, 0.1)"
+                            : "rgba(59, 130, 246, 0.1)",
+                      border: `1px solid ${
+                        rec.priority === "high"
+                          ? "rgba(239, 68, 68, 0.3)"
+                          : rec.priority === "medium"
+                            ? "rgba(249, 115, 22, 0.3)"
+                            : "rgba(59, 130, 246, 0.3)"
+                      }`,
+                      borderRadius: 8,
+                      padding: 16,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 12,
+                      }}
+                    >
+                      <div
+                        style={{
+                          background:
+                            rec.priority === "high"
+                              ? "#ef4444"
+                              : rec.priority === "medium"
+                                ? "#f97316"
+                                : "#3b82f6",
+                          color: "white",
+                          borderRadius: 6,
+                          padding: "4px 8px",
+                          fontSize: 10,
+                          fontWeight: 600,
+                          textTransform: "uppercase",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {rec.priority === "high"
+                          ? "Важно"
+                          : rec.priority === "medium"
+                            ? "Средне"
+                            : "Низко"}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                          {rec.title}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            color: "var(--text-muted)",
+                            marginBottom: 10,
+                          }}
+                        >
+                          {rec.description}
+                        </div>
+                        {rec.action &&
+                          rec.action.type === "fetch_references" && (
+                            <button
+                              className="btn secondary"
+                              style={{ fontSize: 12, padding: "6px 12px" }}
+                              onClick={() => {
+                                setShowRecommendations(false);
+                                handleFetchReferences();
+                              }}
+                            >
+                              <IconRefresh size="sm" />
+                              <span style={{ marginLeft: 6 }}>
+                                Загрузить ссылки ({rec.action.count})
+                              </span>
+                            </button>
+                          )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

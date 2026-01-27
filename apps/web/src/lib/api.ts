@@ -36,7 +36,10 @@ export async function apiFetch<T>(
   });
 
   if (!res.ok) {
-    const payload = (await readJsonSafe(res)) as ApiErrorPayload | string | null;
+    const payload = (await readJsonSafe(res)) as
+      | ApiErrorPayload
+      | string
+      | null;
     const msg =
       typeof payload === "string"
         ? payload
@@ -50,7 +53,10 @@ export async function apiFetch<T>(
 export type AuthUser = { id: string; email: string };
 export type AuthResponse = { user: AuthUser; token: string };
 
-export async function apiRegister(email: string, password: string): Promise<AuthResponse> {
+export async function apiRegister(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
   return apiFetch<AuthResponse>("/api/auth/register", {
     method: "POST",
     body: JSON.stringify({ email, password }),
@@ -58,7 +64,10 @@ export async function apiRegister(email: string, password: string): Promise<Auth
   });
 }
 
-export async function apiLogin(email: string, password: string): Promise<AuthResponse> {
+export async function apiLogin(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
   return apiFetch<AuthResponse>("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
@@ -76,7 +85,10 @@ export async function apiGetApiKeys(): Promise<ApiKeysResponse> {
   return apiFetch<ApiKeysResponse>("/api/user/api-keys");
 }
 
-export async function apiSaveApiKey(provider: string, key: string): Promise<{ ok: true }> {
+export async function apiSaveApiKey(
+  provider: string,
+  key: string,
+): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>("/api/user/api-keys", {
     method: "POST",
     body: JSON.stringify({ provider, key }),
@@ -84,23 +96,31 @@ export async function apiSaveApiKey(provider: string, key: string): Promise<{ ok
 }
 
 export async function apiDeleteApiKey(provider: string): Promise<{ ok: true }> {
-  return apiFetch<{ ok: true }>(`/api/user/api-keys/${encodeURIComponent(provider)}`, {
-    method: "DELETE",
-  });
+  return apiFetch<{ ok: true }>(
+    `/api/user/api-keys/${encodeURIComponent(provider)}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 // ========== Projects ==========
 
 export type CitationStyle = "gost-r-7-0-5-2008" | "gost" | "apa" | "vancouver";
 
-export type ResearchType = 
+export type ResearchType =
   | "observational_descriptive"
   | "observational_analytical"
   | "experimental"
   | "second_order"
   | "other";
 
-export type ResearchProtocol = "CARE" | "STROBE" | "CONSORT" | "PRISMA" | "OTHER";
+export type ResearchProtocol =
+  | "CARE"
+  | "STROBE"
+  | "CONSORT"
+  | "PRISMA"
+  | "OTHER";
 
 export type Project = {
   id: string;
@@ -138,7 +158,7 @@ export async function apiGetProject(id: string): Promise<{ project: Project }> {
 
 export async function apiCreateProject(
   name: string,
-  description?: string
+  description?: string,
 ): Promise<{ project: Project }> {
   return apiFetch<{ project: Project }>("/api/projects", {
     method: "POST",
@@ -160,7 +180,7 @@ export type UpdateProjectData = {
 
 export async function apiUpdateProject(
   id: string,
-  data: UpdateProjectData
+  data: UpdateProjectData,
 ): Promise<{ project: Project }> {
   return apiFetch<{ project: Project }>(`/api/projects/${id}`, {
     method: "PATCH",
@@ -175,15 +195,17 @@ export async function apiDeleteProject(id: string): Promise<{ ok: true }> {
 }
 
 export async function apiGetProjectMembers(
-  projectId: string
+  projectId: string,
 ): Promise<{ members: ProjectMember[] }> {
-  return apiFetch<{ members: ProjectMember[] }>(`/api/projects/${projectId}/members`);
+  return apiFetch<{ members: ProjectMember[] }>(
+    `/api/projects/${projectId}/members`,
+  );
 }
 
 export async function apiInviteProjectMember(
   projectId: string,
   email: string,
-  role: "viewer" | "editor" = "viewer"
+  role: "viewer" | "editor" = "viewer",
 ): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(`/api/projects/${projectId}/members`, {
     method: "POST",
@@ -193,11 +215,14 @@ export async function apiInviteProjectMember(
 
 export async function apiRemoveProjectMember(
   projectId: string,
-  userId: string
+  userId: string,
 ): Promise<{ ok: true }> {
-  return apiFetch<{ ok: true }>(`/api/projects/${projectId}/members/${userId}`, {
-    method: "DELETE",
-  });
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/members/${userId}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 // ========== Articles ==========
@@ -232,35 +257,60 @@ export type Article = {
 
 export type ArticlesResponse = {
   articles: Article[];
-  counts: { candidate: number; selected: number; excluded: number; deleted: number };
+  counts: {
+    candidate: number;
+    selected: number;
+    excluded: number;
+    deleted: number;
+  };
   total: number;
   searchQueries?: string[]; // Уникальные поисковые запросы для фильтрации
 };
 
 // Поля поиска PubMed
 export const PUBMED_SEARCH_FIELDS = [
-  { value: 'All Fields', label: 'Все поля', labelEn: 'All Fields' },
-  { value: 'Title', label: 'Заголовок', labelEn: 'Title' },
-  { value: 'Title/Abstract', label: 'Заголовок/Аннотация', labelEn: 'Title/Abstract' },
-  { value: 'Text Word', label: 'Текст статьи', labelEn: 'Text Word' },
-  { value: 'Author', label: 'Автор', labelEn: 'Author' },
-  { value: 'Author - First', label: 'Первый автор', labelEn: 'First Author' },
-  { value: 'Author - Last', label: 'Последний автор', labelEn: 'Last Author' },
-  { value: 'Journal', label: 'Журнал', labelEn: 'Journal' },
-  { value: 'MeSH Terms', label: 'MeSH термины', labelEn: 'MeSH Terms' },
-  { value: 'MeSH Major Topic', label: 'MeSH основная тема', labelEn: 'MeSH Major Topic' },
-  { value: 'Affiliation', label: 'Аффилиация', labelEn: 'Affiliation' },
-  { value: 'Publication Type', label: 'Тип публикации', labelEn: 'Publication Type' },
-  { value: 'Language', label: 'Язык', labelEn: 'Language' },
+  { value: "All Fields", label: "Все поля", labelEn: "All Fields" },
+  { value: "Title", label: "Заголовок", labelEn: "Title" },
+  {
+    value: "Title/Abstract",
+    label: "Заголовок/Аннотация",
+    labelEn: "Title/Abstract",
+  },
+  { value: "Text Word", label: "Текст статьи", labelEn: "Text Word" },
+  { value: "Author", label: "Автор", labelEn: "Author" },
+  { value: "Author - First", label: "Первый автор", labelEn: "First Author" },
+  { value: "Author - Last", label: "Последний автор", labelEn: "Last Author" },
+  { value: "Journal", label: "Журнал", labelEn: "Journal" },
+  { value: "MeSH Terms", label: "MeSH термины", labelEn: "MeSH Terms" },
+  {
+    value: "MeSH Major Topic",
+    label: "MeSH основная тема",
+    labelEn: "MeSH Major Topic",
+  },
+  { value: "Affiliation", label: "Аффилиация", labelEn: "Affiliation" },
+  {
+    value: "Publication Type",
+    label: "Тип публикации",
+    labelEn: "Publication Type",
+  },
+  { value: "Language", label: "Язык", labelEn: "Language" },
 ] as const;
 
 // Источники поиска
-export type SearchSource = 'pubmed' | 'doaj' | 'wiley';
+export type SearchSource = "pubmed" | "doaj" | "wiley";
 
-export const SEARCH_SOURCES: { value: SearchSource; label: string; description: string }[] = [
-  { value: 'pubmed', label: 'PubMed', description: 'Биомедицинская база данных NIH' },
-  { value: 'doaj', label: 'DOAJ', description: 'Журналы открытого доступа' },
-  { value: 'wiley', label: 'Wiley', description: 'Научное издательство Wiley' },
+export const SEARCH_SOURCES: {
+  value: SearchSource;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "pubmed",
+    label: "PubMed",
+    description: "Биомедицинская база данных NIH",
+  },
+  { value: "doaj", label: "DOAJ", description: "Журналы открытого доступа" },
+  { value: "wiley", label: "Wiley", description: "Научное издательство Wiley" },
 ];
 
 export type SearchFilters = {
@@ -289,7 +339,7 @@ export async function apiSearchArticles(
   query: string,
   filters?: SearchFilters,
   maxResults = 100,
-  sources: SearchSource[] = ['pubmed']
+  sources: SearchSource[] = ["pubmed"],
 ): Promise<SearchResult> {
   return apiFetch<SearchResult>(`/api/projects/${projectId}/search`, {
     method: "POST",
@@ -309,28 +359,31 @@ export type AddArticleByDoiResult = {
 export async function apiAddArticleByDoi(
   projectId: string,
   doi: string,
-  status: "candidate" | "selected" = "candidate"
+  status: "candidate" | "selected" = "candidate",
 ): Promise<AddArticleByDoiResult> {
-  return apiFetch<AddArticleByDoiResult>(`/api/projects/${projectId}/add-article-by-doi`, {
-    method: "POST",
-    body: JSON.stringify({ doi, status }),
-  });
+  return apiFetch<AddArticleByDoiResult>(
+    `/api/projects/${projectId}/add-article-by-doi`,
+    {
+      method: "POST",
+      body: JSON.stringify({ doi, status }),
+    },
+  );
 }
 
 export async function apiGetArticles(
   projectId: string,
   status?: "candidate" | "selected" | "excluded" | "deleted",
   hasStats?: boolean,
-  sourceQuery?: string
+  sourceQuery?: string,
 ): Promise<ArticlesResponse> {
   const params = new URLSearchParams();
   if (status) params.set("status", status);
   if (hasStats) params.set("hasStats", "true");
   if (sourceQuery) params.set("sourceQuery", sourceQuery);
-  
+
   const qs = params.toString();
   return apiFetch<ArticlesResponse>(
-    `/api/projects/${projectId}/articles${qs ? `?${qs}` : ""}`
+    `/api/projects/${projectId}/articles${qs ? `?${qs}` : ""}`,
   );
 }
 
@@ -338,34 +391,40 @@ export async function apiUpdateArticleStatus(
   projectId: string,
   articleId: string,
   status: "candidate" | "selected" | "excluded" | "deleted",
-  notes?: string
+  notes?: string,
 ): Promise<{ ok: true }> {
-  return apiFetch<{ ok: true }>(`/api/projects/${projectId}/articles/${articleId}`, {
-    method: "PATCH",
-    body: JSON.stringify({ status, notes }),
-  });
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/articles/${articleId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ status, notes }),
+    },
+  );
 }
 
 export async function apiRemoveArticle(
   projectId: string,
-  articleId: string
+  articleId: string,
 ): Promise<{ ok: true }> {
-  return apiFetch<{ ok: true }>(`/api/projects/${projectId}/articles/${articleId}`, {
-    method: "DELETE",
-  });
+  return apiFetch<{ ok: true }>(
+    `/api/projects/${projectId}/articles/${articleId}`,
+    {
+      method: "DELETE",
+    },
+  );
 }
 
 export async function apiBulkUpdateStatus(
   projectId: string,
   articleIds: string[],
-  status: "candidate" | "selected" | "excluded" | "deleted"
+  status: "candidate" | "selected" | "excluded" | "deleted",
 ): Promise<{ ok: true; updated: number }> {
   return apiFetch<{ ok: true; updated: number }>(
     `/api/projects/${projectId}/articles/bulk-status`,
     {
       method: "POST",
       body: JSON.stringify({ articleIds, status }),
-    }
+    },
   );
 }
 
@@ -380,14 +439,14 @@ export type TranslateResult = {
 export async function apiTranslateArticles(
   projectId: string,
   articleIds?: string[],
-  untranslatedOnly = true
+  untranslatedOnly = true,
 ): Promise<TranslateResult> {
   return apiFetch<TranslateResult>(
     `/api/projects/${projectId}/articles/translate`,
     {
       method: "POST",
       body: JSON.stringify({ articleIds, untranslatedOnly }),
-    }
+    },
   );
 }
 
@@ -421,58 +480,61 @@ export type AIStatsCallbacks = {
 export async function apiDetectStatsWithAI(
   projectId: string,
   articleIds?: string[],
-  callbacks?: AIStatsCallbacks
+  callbacks?: AIStatsCallbacks,
 ): Promise<AIStatsResult> {
   const token = getToken();
-  
-  const response = await fetch(`/api/projects/${projectId}/articles/ai-detect-stats`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+
+  const response = await fetch(
+    `/api/projects/${projectId}/articles/ai-detect-stats`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ articleIds }),
     },
-    body: JSON.stringify({ articleIds }),
-  });
-  
+  );
+
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `HTTP ${response.status}`);
   }
-  
+
   const contentType = response.headers.get("content-type");
-  
+
   // Если это SSE - обрабатываем стрим
   if (contentType?.includes("text/event-stream")) {
     return new Promise((resolve, reject) => {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
-      let buffer = '';
+      let buffer = "";
       let result: AIStatsResult | null = null;
-      
+
       const processLine = (line: string) => {
-        if (line.startsWith('event: ')) {
+        if (line.startsWith("event: ")) {
           // Сохраняем тип события для следующей строки data
           buffer = line.slice(7);
-        } else if (line.startsWith('data: ')) {
+        } else if (line.startsWith("data: ")) {
           const eventType = buffer;
-          buffer = '';
+          buffer = "";
           try {
             const data = JSON.parse(line.slice(6));
-            
-            if (eventType === 'start' && callbacks?.onStart) {
+
+            if (eventType === "start" && callbacks?.onStart) {
               callbacks.onStart(data);
-            } else if (eventType === 'progress' && callbacks?.onProgress) {
+            } else if (eventType === "progress" && callbacks?.onProgress) {
               callbacks.onProgress(data);
-            } else if (eventType === 'complete') {
+            } else if (eventType === "complete") {
               result = data;
               callbacks?.onComplete?.(data);
             }
           } catch (e) {
-            console.error('SSE parse error:', e);
+            console.error("SSE parse error:", e);
           }
         }
       };
-      
+
       const read = async () => {
         try {
           while (true) {
@@ -481,13 +543,13 @@ export async function apiDetectStatsWithAI(
               if (result) {
                 resolve(result);
               } else {
-                reject(new Error('Stream ended without complete event'));
+                reject(new Error("Stream ended without complete event"));
               }
               break;
             }
-            
+
             const text = decoder.decode(value, { stream: true });
-            const lines = text.split('\n');
+            const lines = text.split("\n");
             for (const line of lines) {
               if (line.trim()) {
                 processLine(line);
@@ -499,11 +561,11 @@ export async function apiDetectStatsWithAI(
           reject(err);
         }
       };
-      
+
       read();
     });
   }
-  
+
   // Если обычный JSON ответ (для совместимости)
   const data = await response.json();
   callbacks?.onComplete?.(data);
@@ -520,15 +582,12 @@ export type EnrichResult = {
 
 export async function apiEnrichArticles(
   projectId: string,
-  articleIds?: string[]
+  articleIds?: string[],
 ): Promise<EnrichResult> {
-  return apiFetch<EnrichResult>(
-    `/api/projects/${projectId}/articles/enrich`,
-    {
-      method: "POST",
-      body: JSON.stringify({ articleIds }),
-    }
-  );
+  return apiFetch<EnrichResult>(`/api/projects/${projectId}/articles/enrich`, {
+    method: "POST",
+    body: JSON.stringify({ articleIds }),
+  });
 }
 
 // ========== Documents ==========
@@ -566,19 +625,19 @@ export type Citation = {
 };
 
 export async function apiGetDocuments(
-  projectId: string
+  projectId: string,
 ): Promise<{ documents: Document[] }> {
   return apiFetch<{ documents: Document[] }>(
-    `/api/projects/${projectId}/documents`
+    `/api/projects/${projectId}/documents`,
   );
 }
 
 export async function apiGetDocument(
   projectId: string,
-  docId: string
+  docId: string,
 ): Promise<{ document: Document }> {
   return apiFetch<{ document: Document }>(
-    `/api/projects/${projectId}/documents/${docId}`
+    `/api/projects/${projectId}/documents/${docId}`,
   );
 }
 
@@ -586,62 +645,62 @@ export async function apiCreateDocument(
   projectId: string,
   title: string,
   content?: string,
-  parentId?: string
+  parentId?: string,
 ): Promise<{ document: Document }> {
   return apiFetch<{ document: Document }>(
     `/api/projects/${projectId}/documents`,
     {
       method: "POST",
       body: JSON.stringify({ title, content, parentId }),
-    }
+    },
   );
 }
 
 export async function apiUpdateDocument(
   projectId: string,
   docId: string,
-  data: { title?: string; content?: string; orderIndex?: number }
+  data: { title?: string; content?: string; orderIndex?: number },
 ): Promise<{ document: Document }> {
   return apiFetch<{ document: Document }>(
     `/api/projects/${projectId}/documents/${docId}`,
     {
       method: "PATCH",
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
 export async function apiReorderDocuments(
   projectId: string,
-  documentIds: string[]
+  documentIds: string[],
 ): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>(
     `/api/projects/${projectId}/documents/reorder`,
     {
       method: "PUT",
       body: JSON.stringify({ documentIds }),
-    }
+    },
   );
 }
 
 export async function apiRenumberCitations(
-  projectId: string
+  projectId: string,
 ): Promise<{ ok: boolean; renumbered: number; documents: Document[] }> {
   return apiFetch<{ ok: boolean; renumbered: number; documents: Document[] }>(
     `/api/projects/${projectId}/renumber-citations`,
     {
       method: "POST",
-    }
+    },
   );
 }
 
 export async function apiDeleteDocument(
   projectId: string,
-  docId: string
+  docId: string,
 ): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(
     `/api/projects/${projectId}/documents/${docId}`,
-    { method: "DELETE" }
+    { method: "DELETE" },
   );
 }
 
@@ -649,25 +708,25 @@ export async function apiAddCitation(
   projectId: string,
   docId: string,
   articleId: string,
-  pageRange?: string
+  pageRange?: string,
 ): Promise<{ citation: Citation }> {
   return apiFetch<{ citation: Citation }>(
     `/api/projects/${projectId}/documents/${docId}/citations`,
     {
       method: "POST",
       body: JSON.stringify({ articleId, pageRange }),
-    }
+    },
   );
 }
 
 export async function apiRemoveCitation(
   projectId: string,
   docId: string,
-  citationId: string
+  citationId: string,
 ): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(
     `/api/projects/${projectId}/documents/${docId}/citations/${citationId}`,
-    { method: "DELETE" }
+    { method: "DELETE" },
   );
 }
 
@@ -675,14 +734,14 @@ export async function apiUpdateCitation(
   projectId: string,
   docId: string,
   citationId: string,
-  data: { note?: string; pageRange?: string }
+  data: { note?: string; pageRange?: string },
 ): Promise<{ citation: Citation }> {
   return apiFetch<{ citation: Citation }>(
     `/api/projects/${projectId}/documents/${docId}/citations/${citationId}`,
     {
       method: "PATCH",
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
@@ -691,14 +750,14 @@ export async function apiUpdateCitation(
 export async function apiSyncCitations(
   projectId: string,
   docId: string,
-  citationIds: string[]
+  citationIds: string[],
 ): Promise<{ ok: boolean; deleted: number; document: Document }> {
   return apiFetch<{ ok: boolean; deleted: number; document: Document }>(
     `/api/projects/${projectId}/documents/${docId}/sync-citations`,
     {
       method: "POST",
       body: JSON.stringify({ citationIds }),
-    }
+    },
   );
 }
 
@@ -718,9 +777,9 @@ export type BibliographyResponse = {
 
 export async function apiGetBibliography(
   projectId: string,
-  style?: CitationStyle
+  style?: CitationStyle,
 ): Promise<BibliographyResponse> {
-  const url = style 
+  const url = style
     ? `/api/projects/${projectId}/bibliography?style=${style}`
     : `/api/projects/${projectId}/bibliography`;
   return apiFetch<BibliographyResponse>(url);
@@ -734,7 +793,9 @@ export type ExportResponse = {
   mergedContent?: string; // Объединённый контент с общей нумерацией цитат
 };
 
-export async function apiExportProject(projectId: string): Promise<ExportResponse> {
+export async function apiExportProject(
+  projectId: string,
+): Promise<ExportResponse> {
   return apiFetch<ExportResponse>(`/api/projects/${projectId}/export`);
 }
 
@@ -766,8 +827,8 @@ export type GraphLink = {
 
 export type LevelCounts = {
   level0?: number; // Цитирующие нас (citing)
-  level1: number;  // Статьи в проекте
-  level2: number;  // References
+  level1: number; // Статьи в проекте
+  level2: number; // References
   level3?: number; // Связанные (также ссылаются на level2)
 };
 
@@ -779,7 +840,7 @@ export type ClusterInfo = {
   representativePmid: string;
   avgYear: number | null;
   avgCitations: number;
-  clusterType: 'year' | 'journal';
+  clusterType: "year" | "journal";
 };
 
 export type CitationGraphResponse = {
@@ -805,7 +866,7 @@ export type CitationGraphResponse = {
 };
 
 export type GraphFilterOptions = {
-  filter?: 'all' | 'selected' | 'excluded';
+  filter?: "all" | "selected" | "excluded";
   sourceQueries?: string[];
   depth?: 1 | 2 | 3; // Уровень глубины графа
   yearFrom?: number;
@@ -813,56 +874,56 @@ export type GraphFilterOptions = {
   statsQuality?: number; // Минимальное качество статистики (0-3)
   maxLinksPerNode?: number; // Макс связей на узел (по умолчанию 20, макс 100)
   maxTotalNodes?: number; // Макс узлов (по умолчанию 2000, макс 5000)
-  sources?: ('pubmed' | 'doaj' | 'wiley')[]; // Фильтр по источнику статей
-  sortBy?: 'citations' | 'frequency' | 'year' | 'default'; // Сортировка ссылок
+  sources?: ("pubmed" | "doaj" | "wiley")[]; // Фильтр по источнику статей
+  sortBy?: "citations" | "frequency" | "year" | "default"; // Сортировка ссылок
   enableClustering?: boolean; // Включить кластеризацию для больших графов
-  clusterBy?: 'year' | 'journal' | 'auto'; // Метод кластеризации
+  clusterBy?: "year" | "journal" | "auto"; // Метод кластеризации
 };
 
 export async function apiGetCitationGraph(
   projectId: string,
-  options?: GraphFilterOptions
+  options?: GraphFilterOptions,
 ): Promise<CitationGraphResponse> {
   const params = new URLSearchParams();
   if (options?.filter) {
-    params.set('filter', options.filter);
+    params.set("filter", options.filter);
   }
   if (options?.sourceQueries && options.sourceQueries.length > 0) {
-    params.set('sourceQueries', JSON.stringify(options.sourceQueries));
+    params.set("sourceQueries", JSON.stringify(options.sourceQueries));
   }
   if (options?.depth) {
-    params.set('depth', String(options.depth));
+    params.set("depth", String(options.depth));
   }
   if (options?.yearFrom !== undefined) {
-    params.set('yearFrom', String(options.yearFrom));
+    params.set("yearFrom", String(options.yearFrom));
   }
   if (options?.yearTo !== undefined) {
-    params.set('yearTo', String(options.yearTo));
+    params.set("yearTo", String(options.yearTo));
   }
   if (options?.statsQuality !== undefined) {
-    params.set('statsQuality', String(options.statsQuality));
+    params.set("statsQuality", String(options.statsQuality));
   }
   if (options?.maxLinksPerNode !== undefined) {
-    params.set('maxLinksPerNode', String(options.maxLinksPerNode));
+    params.set("maxLinksPerNode", String(options.maxLinksPerNode));
   }
   if (options?.maxTotalNodes !== undefined) {
-    params.set('maxTotalNodes', String(options.maxTotalNodes));
+    params.set("maxTotalNodes", String(options.maxTotalNodes));
   }
   if (options?.sources && options.sources.length > 0) {
-    params.set('sources', JSON.stringify(options.sources));
+    params.set("sources", JSON.stringify(options.sources));
   }
   // Новые параметры
   if (options?.sortBy) {
-    params.set('sortBy', options.sortBy);
+    params.set("sortBy", options.sortBy);
   }
   if (options?.enableClustering !== undefined) {
-    params.set('enableClustering', String(options.enableClustering));
+    params.set("enableClustering", String(options.enableClustering));
   }
   if (options?.clusterBy) {
-    params.set('clusterBy', options.clusterBy);
+    params.set("clusterBy", options.clusterBy);
   }
   const queryString = params.toString();
-  const url = `/api/projects/${projectId}/citation-graph${queryString ? `?${queryString}` : ''}`;
+  const url = `/api/projects/${projectId}/citation-graph${queryString ? `?${queryString}` : ""}`;
   return apiFetch<CitationGraphResponse>(url);
 }
 
@@ -881,15 +942,57 @@ export type ImportFromGraphResponse = {
 
 export async function apiImportFromGraph(
   projectId: string,
-  payload: ImportFromGraphPayload
+  payload: ImportFromGraphPayload,
 ): Promise<ImportFromGraphResponse> {
   return apiFetch<ImportFromGraphResponse>(
     `/api/projects/${projectId}/articles/import-from-graph`,
     {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }
+    },
+  );
+}
+
+// Экспорт графа цитирований
+export async function apiExportCitationGraph(
+  projectId: string,
+  format: "json" | "graphml" | "cytoscape" | "gexf" = "json",
+): Promise<Blob> {
+  const url = `/api/projects/${projectId}/citation-graph/export?format=${format}`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Export failed: ${response.statusText}`);
+  }
+
+  return response.blob();
+}
+
+// Рекомендации по улучшению графа
+export type GraphRecommendation = {
+  type: string;
+  title: string;
+  description: string;
+  priority: "high" | "medium" | "low";
+  articleIds?: string[];
+  action?: any;
+};
+
+export type GraphRecommendationsResponse = {
+  recommendations: GraphRecommendation[];
+  totalCount: number;
+};
+
+export async function apiGetGraphRecommendations(
+  projectId: string,
+): Promise<GraphRecommendationsResponse> {
+  return apiFetch<GraphRecommendationsResponse>(
+    `/api/projects/${projectId}/citation-graph/recommendations`,
   );
 }
 
@@ -907,7 +1010,7 @@ export type FetchReferencesResult = {
 export type FetchReferencesStatusResult = {
   hasJob: boolean;
   jobId?: string;
-  status?: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled';
+  status?: "pending" | "running" | "completed" | "failed" | "cancelled";
   progress?: number;
   totalArticles?: number;
   processedArticles?: number;
@@ -924,7 +1027,7 @@ export type FetchReferencesStatusResult = {
   secondsSinceProgress?: number | null;
   isStalled?: boolean;
   stalledSeconds?: number;
-  cancelReason?: 'stalled' | 'user_cancelled' | 'timeout';
+  cancelReason?: "stalled" | "user_cancelled" | "timeout";
 };
 
 export type FetchReferencesOptions = {
@@ -933,29 +1036,37 @@ export type FetchReferencesOptions = {
 };
 
 export async function apiFetchReferences(
-  projectId: string, 
-  options?: FetchReferencesOptions
+  projectId: string,
+  options?: FetchReferencesOptions,
 ): Promise<FetchReferencesResult> {
   return apiFetch<FetchReferencesResult>(
     `/api/projects/${projectId}/articles/fetch-references`,
-    { 
+    {
       method: "POST",
       body: options ? JSON.stringify(options) : undefined,
-    }
+    },
   );
 }
 
-export async function apiFetchReferencesStatus(projectId: string): Promise<FetchReferencesStatusResult> {
+export async function apiFetchReferencesStatus(
+  projectId: string,
+): Promise<FetchReferencesStatusResult> {
   return apiFetch<FetchReferencesStatusResult>(
-    `/api/projects/${projectId}/articles/fetch-references/status`
+    `/api/projects/${projectId}/articles/fetch-references/status`,
   );
 }
 
-export async function apiCancelFetchReferences(projectId: string): Promise<{ ok: boolean; jobId?: string; message?: string; error?: string }> {
-  return apiFetch<{ ok: boolean; jobId?: string; message?: string; error?: string }>(
-    `/api/projects/${projectId}/articles/fetch-references/cancel`,
-    { method: "POST" }
-  );
+export async function apiCancelFetchReferences(
+  projectId: string,
+): Promise<{ ok: boolean; jobId?: string; message?: string; error?: string }> {
+  return apiFetch<{
+    ok: boolean;
+    jobId?: string;
+    message?: string;
+    error?: string;
+  }>(`/api/projects/${projectId}/articles/fetch-references/cancel`, {
+    method: "POST",
+  });
 }
 
 // ========== PDF Download ==========
@@ -969,14 +1080,17 @@ export type PdfSourceResponse = {
 
 export async function apiGetPdfSource(
   projectId: string,
-  articleId: string
+  articleId: string,
 ): Promise<PdfSourceResponse> {
   return apiFetch<PdfSourceResponse>(
-    `/api/projects/${projectId}/articles/${articleId}/pdf-source`
+    `/api/projects/${projectId}/articles/${articleId}/pdf-source`,
   );
 }
 
-export function getPdfDownloadUrl(projectId: string, articleId: string): string {
+export function getPdfDownloadUrl(
+  projectId: string,
+  articleId: string,
+): string {
   return `/api/projects/${projectId}/articles/${articleId}/pdf`;
 }
 
@@ -1005,19 +1119,19 @@ export type ProjectStatistic = {
 };
 
 export async function apiGetStatistics(
-  projectId: string
+  projectId: string,
 ): Promise<{ statistics: ProjectStatistic[] }> {
   return apiFetch<{ statistics: ProjectStatistic[] }>(
-    `/api/projects/${projectId}/statistics`
+    `/api/projects/${projectId}/statistics`,
   );
 }
 
 export async function apiGetStatistic(
   projectId: string,
-  statId: string
+  statId: string,
 ): Promise<{ statistic: ProjectStatistic }> {
   return apiFetch<{ statistic: ProjectStatistic }>(
-    `/api/projects/${projectId}/statistics/${statId}`
+    `/api/projects/${projectId}/statistics/${statId}`,
   );
 }
 
@@ -1031,14 +1145,14 @@ export async function apiCreateStatistic(
     tableData?: Record<string, any>;
     dataClassification?: DataClassification;
     chartType?: string;
-  }
+  },
 ): Promise<{ statistic: ProjectStatistic }> {
   return apiFetch<{ statistic: ProjectStatistic }>(
     `/api/projects/${projectId}/statistics`,
     {
       method: "POST",
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
@@ -1054,37 +1168,37 @@ export async function apiUpdateStatistic(
     chartType?: string;
     orderIndex?: number;
     version?: number; // Optimistic locking - отправлять для проверки конфликтов
-  }
+  },
 ): Promise<{ statistic: ProjectStatistic }> {
   return apiFetch<{ statistic: ProjectStatistic }>(
     `/api/projects/${projectId}/statistics/${statId}`,
     {
       method: "PATCH",
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
 export async function apiMarkStatisticUsedInDocument(
   projectId: string,
   statId: string,
-  documentId: string
+  documentId: string,
 ): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>(
     `/api/projects/${projectId}/statistics/${statId}/use`,
     {
       method: "POST",
       body: JSON.stringify({ documentId }),
-    }
+    },
   );
 }
 
 export async function apiDeleteStatistic(
   projectId: string,
   statId: string,
-  force = false
+  force = false,
 ): Promise<{ ok: true }> {
-  const url = force 
+  const url = force
     ? `/api/projects/${projectId}/statistics/${statId}?force=true`
     : `/api/projects/${projectId}/statistics/${statId}`;
   return apiFetch<{ ok: true }>(url, { method: "DELETE" });
@@ -1093,28 +1207,28 @@ export async function apiDeleteStatistic(
 export async function apiMarkStatisticUsed(
   projectId: string,
   statId: string,
-  documentId: string
+  documentId: string,
 ): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(
     `/api/projects/${projectId}/statistics/${statId}/use`,
     {
       method: "POST",
       body: JSON.stringify({ documentId }),
-    }
+    },
   );
 }
 
 export async function apiUnmarkStatisticUsed(
   projectId: string,
   statId: string,
-  documentId: string
+  documentId: string,
 ): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>(
     `/api/projects/${projectId}/statistics/${statId}/use`,
     {
       method: "DELETE",
       body: JSON.stringify({ documentId }),
-    }
+    },
   );
 }
 
@@ -1135,24 +1249,30 @@ export type SyncStatisticsData = {
 
 export async function apiSyncStatistics(
   projectId: string,
-  data: SyncStatisticsData
+  data: SyncStatisticsData,
 ): Promise<{ ok: boolean; created: number; statistics: ProjectStatistic[] }> {
-  return apiFetch<{ ok: boolean; created: number; statistics: ProjectStatistic[] }>(
-    `/api/projects/${projectId}/statistics/sync`,
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    }
-  );
+  return apiFetch<{
+    ok: boolean;
+    created: number;
+    statistics: ProjectStatistic[];
+  }>(`/api/projects/${projectId}/statistics/sync`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 export async function apiCleanupStatistics(
-  projectId: string
-): Promise<{ ok: boolean; deleted: number; deletedItems: Array<{ id: string; title: string }> }> {
-  return apiFetch<{ ok: boolean; deleted: number; deletedItems: Array<{ id: string; title: string }> }>(
-    `/api/projects/${projectId}/statistics/cleanup`,
-    { method: "POST" }
-  );
+  projectId: string,
+): Promise<{
+  ok: boolean;
+  deleted: number;
+  deletedItems: Array<{ id: string; title: string }>;
+}> {
+  return apiFetch<{
+    ok: boolean;
+    deleted: number;
+    deletedItems: Array<{ id: string; title: string }>;
+  }>(`/api/projects/${projectId}/statistics/cleanup`, { method: "POST" });
 }
 
 // =====================================================
@@ -1160,7 +1280,7 @@ export async function apiCleanupStatistics(
 // =====================================================
 export type ArticleByPmidResult = {
   ok: boolean;
-  source: 'database' | 'pubmed';
+  source: "database" | "pubmed";
   article: {
     pmid: string | null;
     doi: string | null;
@@ -1175,7 +1295,9 @@ export type ArticleByPmidResult = {
   };
 };
 
-export async function apiGetArticleByPmid(pmid: string): Promise<ArticleByPmidResult> {
+export async function apiGetArticleByPmid(
+  pmid: string,
+): Promise<ArticleByPmidResult> {
   return apiFetch<ArticleByPmidResult>(`/api/articles/by-pmid/${pmid}`);
 }
 
@@ -1192,11 +1314,11 @@ export type TranslateTextResult = {
 export async function apiTranslateText(
   title?: string,
   abstract?: string,
-  pmid?: string
+  pmid?: string,
 ): Promise<TranslateTextResult> {
-  return apiFetch<TranslateTextResult>('/api/articles/translate-text', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  return apiFetch<TranslateTextResult>("/api/articles/translate-text", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title, abstract, pmid }),
   });
 }
@@ -1237,20 +1359,20 @@ export async function apiGetStorageStatus(): Promise<StorageStatusResponse> {
 
 export async function apiGetProjectFiles(
   projectId: string,
-  category?: FileCategory
+  category?: FileCategory,
 ): Promise<FilesResponse> {
   const params = new URLSearchParams();
   if (category) params.set("category", category);
   const qs = params.toString();
   return apiFetch<FilesResponse>(
-    `/api/projects/${projectId}/files${qs ? `?${qs}` : ""}`
+    `/api/projects/${projectId}/files${qs ? `?${qs}` : ""}`,
   );
 }
 
 export async function apiUploadFile(
   projectId: string,
   file: File,
-  onProgress?: (percent: number) => void
+  onProgress?: (percent: number) => void,
 ): Promise<{ file: ProjectFile }> {
   const token = getToken();
   const formData = new FormData();
@@ -1258,7 +1380,7 @@ export async function apiUploadFile(
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    
+
     if (onProgress) {
       xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable) {
@@ -1273,7 +1395,9 @@ export async function apiUploadFile(
       } else {
         try {
           const error = JSON.parse(xhr.responseText);
-          reject(new Error(error.message || error.error || `HTTP ${xhr.status}`));
+          reject(
+            new Error(error.message || error.error || `HTTP ${xhr.status}`),
+          );
         } catch {
           reject(new Error(`HTTP ${xhr.status}`));
         }
@@ -1291,10 +1415,10 @@ export async function apiUploadFile(
 
 export async function apiGetFileDownloadUrl(
   projectId: string,
-  fileId: string
+  fileId: string,
 ): Promise<{ url: string; expiresIn: number }> {
   return apiFetch<{ url: string; expiresIn: number }>(
-    `/api/projects/${projectId}/files/${fileId}/url`
+    `/api/projects/${projectId}/files/${fileId}/url`,
   );
 }
 
@@ -1305,66 +1429,65 @@ export function getFileDownloadPath(projectId: string, fileId: string): string {
 export async function apiUpdateFile(
   projectId: string,
   fileId: string,
-  data: { name?: string; description?: string }
+  data: { name?: string; description?: string },
 ): Promise<{ file: Partial<ProjectFile> }> {
   return apiFetch<{ file: Partial<ProjectFile> }>(
     `/api/projects/${projectId}/files/${fileId}`,
     {
       method: "PATCH",
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
 export async function apiDeleteFile(
   projectId: string,
-  fileId: string
+  fileId: string,
 ): Promise<{ ok: true }> {
-  return apiFetch<{ ok: true }>(
-    `/api/projects/${projectId}/files/${fileId}`,
-    { method: "DELETE" }
-  );
+  return apiFetch<{ ok: true }>(`/api/projects/${projectId}/files/${fileId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function apiMarkFileUsed(
   projectId: string,
   fileId: string,
-  documentId: string
+  documentId: string,
 ): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(
     `/api/projects/${projectId}/files/${fileId}/use`,
     {
       method: "POST",
       body: JSON.stringify({ documentId }),
-    }
+    },
   );
 }
 
 export async function apiUnmarkFileUsed(
   projectId: string,
   fileId: string,
-  documentId: string
+  documentId: string,
 ): Promise<{ ok: true }> {
   return apiFetch<{ ok: true }>(
     `/api/projects/${projectId}/files/${fileId}/use`,
     {
       method: "DELETE",
       body: JSON.stringify({ documentId }),
-    }
+    },
   );
 }
 
 export async function apiSyncFileUsage(
   projectId: string,
   documentId: string,
-  fileIds: string[]
+  fileIds: string[],
 ): Promise<{ ok: true; synced: number }> {
   return apiFetch<{ ok: true; synced: number }>(
     `/api/projects/${projectId}/files/sync`,
     {
       method: "POST",
       body: JSON.stringify({ documentId, fileIds }),
-    }
+    },
   );
 }
 
@@ -1407,7 +1530,7 @@ export type FileAnalysisResponse = {
 export async function apiAnalyzeFile(
   projectId: string,
   fileId: string,
-  force: boolean = false
+  force: boolean = false,
 ): Promise<FileAnalysisResponse> {
   const url = force
     ? `/api/projects/${projectId}/files/${fileId}/analyze?force=true`
@@ -1426,14 +1549,14 @@ export async function apiImportFileAsArticle(
   projectId: string,
   fileId: string,
   metadata: ExtractedArticleMetadata,
-  status: "selected" | "candidate" = "selected"
+  status: "selected" | "candidate" = "selected",
 ): Promise<ImportFileAsArticleResponse> {
   return apiFetch<ImportFileAsArticleResponse>(
     `/api/projects/${projectId}/files/${fileId}/import-as-article`,
     {
       method: "POST",
       body: JSON.stringify({ metadata, status }),
-    }
+    },
   );
 }
 
@@ -1448,14 +1571,14 @@ export async function apiImportFileAsDocument(
   projectId: string,
   fileId: string,
   metadata: ExtractedArticleMetadata,
-  includeFullText: boolean = true
+  includeFullText: boolean = true,
 ): Promise<ImportFileAsDocumentResponse> {
   return apiFetch<ImportFileAsDocumentResponse>(
     `/api/projects/${projectId}/files/${fileId}/import-as-document`,
     {
       method: "POST",
       body: JSON.stringify({ metadata, includeFullText }),
-    }
+    },
   );
 }
 
@@ -1475,14 +1598,14 @@ export async function apiConvertArticleToDocument(
   options: {
     includeBibliography?: boolean;
     documentTitle?: string;
-  } = {}
+  } = {},
 ): Promise<ConvertArticleToDocumentResponse> {
   return apiFetch<ConvertArticleToDocumentResponse>(
     `/api/projects/${projectId}/articles/${articleId}/convert-to-document`,
     {
       method: "POST",
       body: JSON.stringify(options),
-    }
+    },
   );
 }
 
@@ -1529,17 +1652,17 @@ export type FoundArticle = {
 export type GraphAIAssistantResponse = {
   ok: boolean;
   response: string;
-  foundArticleIds: string[];  // ID найденных статей для подсветки
-  foundArticles: FoundArticle[];  // Полная информация о найденных статьях
-  searchSuggestions: SearchSuggestion[];  // Deprecated, но оставляем для совместимости
-  pmidsToAdd: string[];  // Deprecated
-  doisToAdd: string[];   // Deprecated
+  foundArticleIds: string[]; // ID найденных статей для подсветки
+  foundArticles: FoundArticle[]; // Полная информация о найденных статьях
+  searchSuggestions: SearchSuggestion[]; // Deprecated, но оставляем для совместимости
+  pmidsToAdd: string[]; // Deprecated
+  doisToAdd: string[]; // Deprecated
   error?: string;
 };
 
 // Активные фильтры графа для AI
 export type GraphFiltersForAI = {
-  filter?: 'all' | 'selected' | 'excluded'; // Фильтр статуса
+  filter?: "all" | "selected" | "excluded"; // Фильтр статуса
   depth?: number; // Глубина графа (1-3)
   sources?: string[]; // Фильтр по источникам (pubmed, doaj, wiley)
   yearFrom?: number; // Минимальный год
@@ -1555,14 +1678,14 @@ export async function apiGraphAIAssistant(
     articleCount?: number;
     yearRange?: { min: number | null; max: number | null };
   },
-  filters?: GraphFiltersForAI
+  filters?: GraphFiltersForAI,
 ): Promise<GraphAIAssistantResponse> {
   return apiFetch<GraphAIAssistantResponse>(
     `/api/projects/${projectId}/graph-ai-assistant`,
     {
       method: "POST",
       body: JSON.stringify({ message, graphArticles, context, filters }),
-    }
+    },
   );
 }
 
@@ -1572,7 +1695,7 @@ export type DocumentVersion = {
   id: string;
   document_id: string;
   version_number: number;
-  version_type: 'auto' | 'manual' | 'exit';
+  version_type: "auto" | "manual" | "exit";
   version_note?: string;
   content_length: number;
   created_at: string;
@@ -1588,20 +1711,20 @@ export type DocumentVersionsResponse = {
 
 export async function apiGetDocumentVersions(
   projectId: string,
-  docId: string
+  docId: string,
 ): Promise<DocumentVersionsResponse> {
   return apiFetch<DocumentVersionsResponse>(
-    `/api/projects/${projectId}/documents/${docId}/versions`
+    `/api/projects/${projectId}/documents/${docId}/versions`,
   );
 }
 
 export async function apiGetDocumentVersion(
   projectId: string,
   docId: string,
-  versionId: string
+  versionId: string,
 ): Promise<{ version: DocumentVersion }> {
   return apiFetch<{ version: DocumentVersion }>(
-    `/api/projects/${projectId}/documents/${docId}/versions/${versionId}`
+    `/api/projects/${projectId}/documents/${docId}/versions/${versionId}`,
   );
 }
 
@@ -1609,38 +1732,53 @@ export async function apiCreateDocumentVersion(
   projectId: string,
   docId: string,
   versionNote?: string,
-  versionType: 'manual' | 'auto' | 'exit' = 'manual'
+  versionType: "manual" | "auto" | "exit" = "manual",
 ): Promise<{ version: DocumentVersion }> {
   return apiFetch<{ version: DocumentVersion }>(
     `/api/projects/${projectId}/documents/${docId}/versions`,
     {
       method: "POST",
       body: JSON.stringify({ versionNote, versionType }),
-    }
+    },
   );
 }
 
 export async function apiRestoreDocumentVersion(
   projectId: string,
   docId: string,
-  versionId: string
-): Promise<{ success: boolean; restoredContent: string; restoredTitle: string }> {
-  return apiFetch<{ success: boolean; restoredContent: string; restoredTitle: string }>(
+  versionId: string,
+): Promise<{
+  success: boolean;
+  restoredContent: string;
+  restoredTitle: string;
+}> {
+  return apiFetch<{
+    success: boolean;
+    restoredContent: string;
+    restoredTitle: string;
+  }>(
     `/api/projects/${projectId}/documents/${docId}/versions/${versionId}/restore`,
-    { method: "POST" }
+    { method: "POST" },
   );
 }
 
 export async function apiTriggerAutoVersion(
   projectId: string,
   docId: string,
-  content: string
-): Promise<{ created: boolean; version?: DocumentVersion; reason?: string; tableNotReady?: boolean }> {
-  return apiFetch<{ created: boolean; version?: DocumentVersion; reason?: string; tableNotReady?: boolean }>(
-    `/api/projects/${projectId}/documents/${docId}/auto-version`,
-    {
-      method: "POST",
-      body: JSON.stringify({ content }),
-    }
-  );
+  content: string,
+): Promise<{
+  created: boolean;
+  version?: DocumentVersion;
+  reason?: string;
+  tableNotReady?: boolean;
+}> {
+  return apiFetch<{
+    created: boolean;
+    version?: DocumentVersion;
+    reason?: string;
+    tableNotReady?: boolean;
+  }>(`/api/projects/${projectId}/documents/${docId}/auto-version`, {
+    method: "POST",
+    body: JSON.stringify({ content }),
+  });
 }
