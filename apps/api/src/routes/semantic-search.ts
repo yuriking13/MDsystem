@@ -36,15 +36,17 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
     Body: z.infer<typeof semanticSearchQuerySchema>;
   }>(
     "/projects/:projectId/citation-graph/semantic-search",
-    {
-      schema: {
-        params: z.object({ projectId: z.string().uuid() }),
-        body: semanticSearchQuerySchema,
-      },
-    },
     async (request, reply) => {
       const { projectId } = request.params;
-      const { query, limit, threshold } = request.body;
+      const parsedBody = semanticSearchQuerySchema.safeParse(request.body);
+
+      if (!parsedBody.success) {
+        return reply
+          .code(400)
+          .send({ error: "Invalid request body", details: parsedBody.error });
+      }
+
+      const { query, limit, threshold } = parsedBody.data;
       const userId = getUserId(request);
 
       if (!userId) {
@@ -125,15 +127,17 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
     Body: z.infer<typeof generateEmbeddingsBodySchema>;
   }>(
     "/projects/:projectId/citation-graph/generate-embeddings",
-    {
-      schema: {
-        params: z.object({ projectId: z.string().uuid() }),
-        body: generateEmbeddingsBodySchema,
-      },
-    },
     async (request, reply) => {
       const { projectId } = request.params;
-      const { articleIds, batchSize } = request.body;
+      const parsedBody = generateEmbeddingsBodySchema.safeParse(request.body);
+
+      if (!parsedBody.success) {
+        return reply
+          .code(400)
+          .send({ error: "Invalid request body", details: parsedBody.error });
+      }
+
+      const { articleIds, batchSize } = parsedBody.data;
       const userId = getUserId(request);
 
       if (!userId) {

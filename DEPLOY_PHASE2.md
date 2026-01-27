@@ -1,5 +1,34 @@
 # 🚀 Инструкция по деплою Phase 2
 
+## ⚠️ ВАЖНО: Сначала установите pgvector
+
+**Перед применением миграции необходимо установить pgvector extension на сервере!**
+
+### Установка pgvector на сервере
+
+```bash
+# SSH на продакшен сервер
+ssh user@your-server
+
+# Автоматическая установка
+cd /path/to/MDsystem
+bash scripts/install-pgvector.sh
+
+# ИЛИ вручную для Ubuntu/Debian:
+sudo apt-get update
+sudo apt-get install -y postgresql-16-pgvector
+
+# Для других систем см. https://github.com/pgvector/pgvector#installation
+```
+
+**После установки перезапустите PostgreSQL:**
+
+```bash
+sudo systemctl restart postgresql
+```
+
+---
+
 ## ✅ Что уже сделано
 
 1. ✅ Код запушен в `main`
