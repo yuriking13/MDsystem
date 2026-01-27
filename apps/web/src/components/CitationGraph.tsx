@@ -1207,13 +1207,18 @@ export default function CitationGraph({ projectId }: Props) {
 
   return (
     <div
-      className="graph-container graph-fixed-height"
+      className={`graph-container graph-fixed-height ${isFullscreen ? "graph-fullscreen" : ""}`}
       ref={containerRef}
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100vh - 180px)",
+        height: isFullscreen ? "100vh" : "calc(100vh - 180px)",
         minHeight: "600px",
+        width: isFullscreen ? "100vw" : "auto",
+        position: isFullscreen ? "fixed" : "relative",
+        top: isFullscreen ? 0 : "auto",
+        left: isFullscreen ? 0 : "auto",
+        zIndex: isFullscreen ? 9999 : "auto",
       }}
     >
       {/* Compact Header Panel with Dropdowns - horizontal layout */}
@@ -2077,68 +2082,40 @@ export default function CitationGraph({ projectId }: Props) {
                   const citedByCount = node.citedByCount || 0;
                   const level = node.graphLevel ?? 1;
 
-                  // Базовый размер зависит от цитирований
+                  // Базовый размер зависит от цитирований - аккуратнее
                   let baseSize: number;
                   if (citedByCount === 0) {
-                    baseSize = 4; // Минимальный размер для нецитируемых
+                    baseSize = 3; // Минимальный размер
                   } else if (citedByCount <= 10) {
-                    baseSize = 4 + citedByCount * 0.8; // 4-12
+                    baseSize = 3 + citedByCount * 0.6; // 3-9
                   } else if (citedByCount <= 100) {
-                    baseSize = 12 + Math.log10(citedByCount) * 6; // 12-24
+                    baseSize = 9 + Math.log10(citedByCount) * 4; // 9-17
                   } else if (citedByCount <= 1000) {
-                    baseSize = 24 + Math.log10(citedByCount) * 5; // 24-39
+                    baseSize = 17 + Math.log10(citedByCount) * 3; // 17-26
                   } else {
-                    baseSize = 39 + Math.log10(citedByCount) * 4; // 39-55+
+                    baseSize = 26 + Math.log10(citedByCount) * 2.5; // 26-36
                   }
 
                   // Статьи проекта (level 1) немного крупнее
-                  if (level === 1) baseSize *= 1.2;
+                  if (level === 1) baseSize *= 1.1;
 
                   const size = baseSize;
                   const isAIFound = aiFoundArticleIds.has(node.id);
                   const color = nodeColor(node);
 
-                  // === СТИЛЬ GRADIENT - красивые градиенты с эффектами ===
-                  if (nodeStyle === "gradient" || nodeStyle === "glow") {
-                    // Свечение для высокоцитируемых и AI-найденных
-                    const shouldGlow =
-                      isAIFound ||
-                      citedByCount > 50 ||
-                      (level === 1 && citedByCount > 10);
-
-                    if (shouldGlow || nodeStyle === "glow") {
-                      ctx.shadowColor = isAIFound ? "#00ffff" : color;
-                      ctx.shadowBlur = isAIFound
-                        ? 25
-                        : citedByCount > 100
-                          ? 15
-                          : 8;
-                    }
-
-                    // Градиент от центра
-                    const gradient = ctx.createRadialGradient(
-                      node.x - size * 0.3,
-                      node.y - size * 0.3,
-                      0,
-                      node.x,
-                      node.y,
-                      size,
-                    );
-
-                    // Светлый центр, насыщенный край
-                    gradient.addColorStop(0, adjustBrightness(color, 60));
-                    gradient.addColorStop(0.5, color);
-                    gradient.addColorStop(1, adjustBrightness(color, -30));
-
-                    ctx.fillStyle = gradient;
-                  } else {
-                    // Простой стиль
-                    if (isAIFound) {
-                      ctx.shadowColor = "#00ffff";
-                      ctx.shadowBlur = 20;
-                    }
-                    ctx.fillStyle = color;
+                  // === Аккуратный, академичный стиль ===
+                  // Только легкое свечение для AI-найденных
+                  if (isAIFound) {
+                    ctx.shadowColor = "rgba(0, 212, 255, 0.6)";
+                    ctx.shadowBlur = 12;
+                  } else if (citedByCount > 200) {
+                    // Очень тонкое свечение для самых цитируемых
+                    ctx.shadowColor = "rgba(100, 150, 200, 0.3)";
+                    ctx.shadowBlur = 4;
                   }
+
+                  // Простая чистая заливка
+                  ctx.fillStyle = color;
 
                   // Рисуем узел
                   ctx.beginPath();
@@ -2148,25 +2125,19 @@ export default function CitationGraph({ projectId }: Props) {
                   // Сбрасываем свечение
                   ctx.shadowBlur = 0;
 
-                  // Обводка для высокоцитируемых (кольца показывают важность)
-                  if (citedByCount > 20) {
-                    const rings =
-                      citedByCount > 500 ? 3 : citedByCount > 100 ? 2 : 1;
-                    for (let i = 0; i < rings; i++) {
-                      ctx.strokeStyle = `rgba(255, 255, 255, ${0.3 - i * 0.08})`;
-                      ctx.lineWidth = 1.5 - i * 0.3;
-                      ctx.beginPath();
-                      ctx.arc(node.x, node.y, size + 2 + i * 3, 0, 2 * Math.PI);
-                      ctx.stroke();
-                    }
-                  }
+                  // Одна тонкая обводка для всех узлов (академичный вид)
+                  ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
+                  ctx.lineWidth = 0.8;
+                  ctx.beginPath();
+                  ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                  ctx.stroke();
 
-                  // Двойная обводка для AI-найденных
+                  // Обводка для AI-найденных (заметнее, но не кричащо)
                   if (isAIFound) {
-                    ctx.strokeStyle = "#00ffff";
-                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = "rgba(0, 212, 255, 0.6)";
+                    ctx.lineWidth = 1.5;
                     ctx.beginPath();
-                    ctx.arc(node.x, node.y, size + 1, 0, 2 * Math.PI);
+                    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
                     ctx.stroke();
                   }
 
@@ -2174,15 +2145,15 @@ export default function CitationGraph({ projectId }: Props) {
                   if (
                     showLabelsOnZoom &&
                     globalScale > 1.5 &&
-                    citedByCount > 30
+                    citedByCount > 50
                   ) {
                     const label = node.label || "";
-                    const fontSize = Math.max(10, 12 / globalScale);
+                    const fontSize = Math.max(9, 11 / globalScale);
                     ctx.font = `${fontSize}px Inter, sans-serif`;
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
                     ctx.textAlign = "center";
                     ctx.textBaseline = "top";
-                    ctx.fillText(label, node.x, node.y + size + 3);
+                    ctx.fillText(label, node.x, node.y + size + 4);
                   }
                 }}
                 linkColor={() => "rgba(100, 130, 180, 0.25)"}

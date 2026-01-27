@@ -3284,6 +3284,19 @@ input:focus::placeholder {
   overflow: hidden;
 }
 
+/* Fullscreen mode */
+.graph-container.graph-fixed-height.graph-fullscreen {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  width: 100vw !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 9999 !important;
+  border-radius: 0 !important;
+  border: none !important;
+}
+
 .graph-container.graph-fixed-height > div {
   min-height: 0; /* Important for flex children to shrink */
 }
