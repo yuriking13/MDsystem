@@ -2068,6 +2068,11 @@ export default function CitationGraph({ projectId }: Props) {
                 nodeVal={nodeVal}
                 nodeRelSize={6}
                 nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
+                  // Проверка на валидность координат (могут быть undefined при инициализации)
+                  if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) {
+                    return; // Пропускаем отрисовку пока координаты не определены
+                  }
+
                   // Размер узла на основе citedByCount (логарифмическая шкала)
                   const citedByCount = node.citedByCount || 0;
                   const level = node.graphLevel ?? 1;
