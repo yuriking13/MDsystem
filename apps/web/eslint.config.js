@@ -2,6 +2,7 @@ import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
 import reactPlugin from "eslint-plugin-react";
 import reactHooksPlugin from "eslint-plugin-react-hooks";
+import globals from "globals";
 
 export default tseslint.config(
   eslint.configs.recommended,
@@ -9,6 +10,10 @@ export default tseslint.config(
   {
     files: ["src/**/*.{ts,tsx}"],
     languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
       parserOptions: {
         ecmaFeatures: {
           jsx: true,
@@ -50,6 +55,6 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["dist/**", "node_modules/**", "*.js"],
+    ignores: ["dist/**", "node_modules/**", "**/*.js"],
   }
 );

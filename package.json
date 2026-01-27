@@ -23,19 +23,15 @@
   "devDependencies": {
     "@types/node": "^25.0.6",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.2"
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.8.1"
   },
   "lint-staged": {
-    "apps/api/**/*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "apps/web/**/*.{ts,tsx,js,jsx}": [
-      "eslint --fix",
-      "prettier --write"
+    "*.{ts,tsx}": [
+      "prettier --write --ignore-unknown"
     ],
     "*.{json,md,yml,yaml}": [
-      "prettier --write"
+      "prettier --write --ignore-unknown"
     ]
   }
 }

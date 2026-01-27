@@ -21,14 +21,27 @@ import { useToast } from "./Toast";
 type Props = {
   projectId: string;
   canEdit: boolean;
-  onCountsChange?: (counts: { candidate: number; selected: number; excluded: number; total: number }) => void;
+  onCountsChange?: (counts: {
+    candidate: number;
+    selected: number;
+    excluded: number;
+    total: number;
+  }) => void;
 };
 
 const PUBLICATION_TYPES = [
-  { id: "systematic_review", label: "Систематический обзор", pubmed: "Systematic Review" },
+  {
+    id: "systematic_review",
+    label: "Систематический обзор",
+    pubmed: "Systematic Review",
+  },
   { id: "meta_analysis", label: "Мета-анализ", pubmed: "Meta-Analysis" },
   { id: "rct", label: "РКИ", pubmed: "Randomized Controlled Trial" },
-  { id: "clinical_trial", label: "Клиническое исследование", pubmed: "Clinical Trial" },
+  {
+    id: "clinical_trial",
+    label: "Клиническое исследование",
+    pubmed: "Clinical Trial",
+  },
   { id: "review", label: "Обзор", pubmed: "Review" },
   { id: "books", label: "Книги", pubmed: "Book" },
 ];
@@ -50,65 +63,86 @@ const TEXT_AVAILABILITY = [
   { id: "free_full", label: "Бесплатный полный текст" },
 ];
 
-export default function ArticlesSection({ projectId, canEdit, onCountsChange }: Props) {
+export default function ArticlesSection({
+  projectId,
+  canEdit,
+  onCountsChange,
+}: Props) {
   const toast = useToast();
   const [articles, setArticles] = useState<Article[]>([]);
-  const [counts, setCounts] = useState({ candidate: 0, selected: 0, excluded: 0, deleted: 0 });
+  const [counts, setCounts] = useState({
+    candidate: 0,
+    selected: 0,
+    excluded: 0,
+    deleted: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
   // Фильтр отображения
-  const [viewStatus, setViewStatus] = useState<"candidate" | "selected" | "excluded" | "deleted" | "all">("candidate");
+  const [viewStatus, setViewStatus] = useState<
+    "candidate" | "selected" | "excluded" | "deleted" | "all"
+  >("candidate");
   const [showStatsOnly, setShowStatsOnly] = useState(false);
   const [filterPubType, setFilterPubType] = useState<string | null>(null);
-  const [filterSourceQuery, setFilterSourceQuery] = useState<string | null>(null);
-  const [availableSourceQueries, setAvailableSourceQueries] = useState<string[]>([]);
+  const [filterSourceQuery, setFilterSourceQuery] = useState<string | null>(
+    null,
+  );
+  const [availableSourceQueries, setAvailableSourceQueries] = useState<
+    string[]
+  >([]);
 
   // Поиск
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   // Источники поиска (PubMed, DOAJ, Wiley)
-  const [searchSources, setSearchSources] = useState<SearchSource[]>(['pubmed']);
-  
+  const [searchSources, setSearchSources] = useState<SearchSource[]>([
+    "pubmed",
+  ]);
+
   // Поле поиска PubMed
   const [searchField, setSearchField] = useState<string>("All Fields");
-  
+
   // Мультипоиск - несколько запросов
-  const [multiQueries, setMultiQueries] = useState<Array<{ query: string; id: string }>>([]);
+  const [multiQueries, setMultiQueries] = useState<
+    Array<{ query: string; id: string }>
+  >([]);
   const [showMultiSearch, setShowMultiSearch] = useState(false);
-  
+
   // Период
   const [datePreset, setDatePreset] = useState("5y");
   const [customYearFrom, setCustomYearFrom] = useState<number>(2020);
-  const [customYearTo, setCustomYearTo] = useState<number>(new Date().getFullYear());
-  
+  const [customYearTo, setCustomYearTo] = useState<number>(
+    new Date().getFullYear(),
+  );
+
   // Доступность текста
   const [textAvailability, setTextAvailability] = useState("any");
-  
+
   // Типы публикаций
   const [pubTypes, setPubTypes] = useState<string[]>([]);
   const [pubTypesLogic, setPubTypesLogic] = useState<"or" | "and">("or");
-  
+
   // Перевод
   const [translateAfterSearch, setTranslateAfterSearch] = useState(false);
-  
+
   const [maxResults, setMaxResults] = useState(100);
   const [searching, setSearching] = useState(false);
-  
+
   // Поиск всех статей
   const [showAllArticlesConfirm, setShowAllArticlesConfirm] = useState(false);
   const [allArticlesCount, setAllArticlesCount] = useState<number | null>(null);
   const [countingArticles, setCountingArticles] = useState(false);
-  
+
   // Перевод постфактум
   const [translating, setTranslating] = useState(false);
   const [translatingOne, setTranslatingOne] = useState(false);
-  
+
   // Обогащение Crossref
   const [enriching, setEnriching] = useState(false);
-  
+
   // AI детекция статистики
   const [detectingStats, setDetectingStats] = useState(false);
   const [aiStatsProgress, setAiStatsProgress] = useState<{
@@ -121,29 +155,32 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   // Выбранная статья для просмотра
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [showOriginal, setShowOriginal] = useState(false);
-  
+
   // Конвертация в документ
   const [showConvertModal, setShowConvertModal] = useState(false);
   const [convertingToDoc, setConvertingToDoc] = useState(false);
-  const [convertIncludeBibliography, setConvertIncludeBibliography] = useState(false);
+  const [convertIncludeBibliography, setConvertIncludeBibliography] =
+    useState(false);
   const [convertDocTitle, setConvertDocTitle] = useState("");
-  
+
   // Добавление статьи по DOI
   const [showAddByDoiModal, setShowAddByDoiModal] = useState(false);
-  
+
   // Глобальные настройки отображения
   const [listLang, setListLang] = useState<"ru" | "en">("ru"); // Язык в списке
   const [highlightStats, setHighlightStats] = useState(true); // Подсветка статистики
-  
+
   // Массовый выбор
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  
+
   // Сортировка
-  const [sortBy, setSortBy] = useState<"date" | "stats" | "year_desc" | "year_asc">("date");
-  
+  const [sortBy, setSortBy] = useState<
+    "date" | "stats" | "year_desc" | "year_asc"
+  >("date");
+
   // Локальный поиск по названию в базе
   const [localSearch, setLocalSearch] = useState("");
-  
+
   // Фильтр по периоду годов
   const [yearFromFilter, setYearFromFilter] = useState<number | null>(null);
   const [yearToFilter, setYearToFilter] = useState<number | null>(null);
@@ -153,7 +190,12 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     setError(null);
     try {
       const status = viewStatus === "all" ? undefined : viewStatus;
-      const res = await apiGetArticles(projectId, status, showStatsOnly || undefined, filterSourceQuery || undefined);
+      const res = await apiGetArticles(
+        projectId,
+        status,
+        showStatsOnly || undefined,
+        filterSourceQuery || undefined,
+      );
       setArticles(res.articles);
       setCounts({
         candidate: res.counts.candidate,
@@ -167,8 +209,14 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       }
       // Передаём counts наверх для отображения в табах
       if (onCountsChange) {
-        const total = res.counts.candidate + res.counts.selected + res.counts.excluded;
-        onCountsChange({ candidate: res.counts.candidate, selected: res.counts.selected, excluded: res.counts.excluded, total });
+        const total =
+          res.counts.candidate + res.counts.selected + res.counts.excluded;
+        onCountsChange({
+          candidate: res.counts.candidate,
+          selected: res.counts.selected,
+          excluded: res.counts.excluded,
+          total,
+        });
       }
     } catch (err: any) {
       setError(err?.message || "Ошибка загрузки статей");
@@ -185,29 +233,29 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   function getYearsFromPreset(): { yearFrom: number; yearTo: number } {
     const now = new Date();
     const currentYear = now.getFullYear();
-    
+
     if (datePreset === "custom") {
       return { yearFrom: customYearFrom, yearTo: customYearTo };
     }
-    
+
     const preset = DATE_PRESETS.find((p) => p.id === datePreset);
     if (!preset || preset.months === 0) {
       return { yearFrom: currentYear - 5, yearTo: currentYear };
     }
-    
+
     const fromDate = new Date(now);
     fromDate.setMonth(fromDate.getMonth() - preset.months);
-    
+
     return { yearFrom: fromDate.getFullYear(), yearTo: currentYear };
   }
 
   // Toggle search source
   function toggleSearchSource(source: SearchSource) {
-    setSearchSources(prev => {
+    setSearchSources((prev) => {
       if (prev.includes(source)) {
         // Don't allow removing last source
         if (prev.length === 1) return prev;
-        return prev.filter(s => s !== source);
+        return prev.filter((s) => s !== source);
       } else {
         return [...prev, source];
       }
@@ -223,40 +271,46 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     setOk(null);
 
     const { yearFrom, yearTo } = getYearsFromPreset();
-    
+
     const filters: SearchFilters = {
       yearFrom,
       yearTo,
     };
-    
+
     // Поле поиска PubMed
     if (searchField && searchField !== "All Fields") {
       filters.searchField = searchField;
     }
-    
+
     // Доступность текста (only for PubMed)
-    if (searchSources.includes('pubmed')) {
+    if (searchSources.includes("pubmed")) {
       if (textAvailability === "free_full") {
         filters.freeFullTextOnly = true;
       } else if (textAvailability === "full") {
         filters.fullTextOnly = true;
       }
     }
-    
+
     // Типы публикаций (only for PubMed)
-    if (searchSources.includes('pubmed') && pubTypes.length > 0) {
-      const pubmedTypes = PUBLICATION_TYPES
-        .filter((pt) => pubTypes.includes(pt.id))
-        .map((pt) => pt.pubmed);
+    if (searchSources.includes("pubmed") && pubTypes.length > 0) {
+      const pubmedTypes = PUBLICATION_TYPES.filter((pt) =>
+        pubTypes.includes(pt.id),
+      ).map((pt) => pt.pubmed);
       filters.publicationTypes = pubmedTypes;
       filters.publicationTypesLogic = pubTypesLogic;
     }
-    
+
     // Перевод
     filters.translate = translateAfterSearch;
 
     try {
-      const res = await apiSearchArticles(projectId, searchQuery.trim(), filters, maxResults, searchSources);
+      const res = await apiSearchArticles(
+        projectId,
+        searchQuery.trim(),
+        filters,
+        maxResults,
+        searchSources,
+      );
       setOk(res.message);
       setShowSearch(false);
       await loadArticles();
@@ -270,23 +324,26 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   // Мультипоиск - добавить новый запрос
   function addMultiQuery() {
     if (!searchQuery.trim()) return;
-    setMultiQueries(prev => [...prev, { query: searchQuery.trim(), id: crypto.randomUUID() }]);
+    setMultiQueries((prev) => [
+      ...prev,
+      { query: searchQuery.trim(), id: crypto.randomUUID() },
+    ]);
     setSearchQuery("");
   }
 
   function removeMultiQuery(id: string) {
-    setMultiQueries(prev => prev.filter(q => q.id !== id));
+    setMultiQueries((prev) => prev.filter((q) => q.id !== id));
   }
 
   // Выполнить мультипоиск
   async function handleMultiSearch(e: React.FormEvent) {
     e.preventDefault();
-    
-    const allQueries = [...multiQueries.map(q => q.query)];
+
+    const allQueries = [...multiQueries.map((q) => q.query)];
     if (searchQuery.trim()) {
       allQueries.push(searchQuery.trim());
     }
-    
+
     if (allQueries.length === 0) return;
 
     setSearching(true);
@@ -294,46 +351,54 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     setOk(null);
 
     const { yearFrom, yearTo } = getYearsFromPreset();
-    
+
     const filters: SearchFilters = {
       yearFrom,
       yearTo,
     };
-    
+
     // Поле поиска PubMed
     if (searchField && searchField !== "All Fields") {
       filters.searchField = searchField;
     }
-    
-    if (searchSources.includes('pubmed')) {
+
+    if (searchSources.includes("pubmed")) {
       if (textAvailability === "free_full") {
         filters.freeFullTextOnly = true;
       } else if (textAvailability === "full") {
         filters.fullTextOnly = true;
       }
     }
-    
-    if (searchSources.includes('pubmed') && pubTypes.length > 0) {
-      const pubmedTypes = PUBLICATION_TYPES
-        .filter((pt) => pubTypes.includes(pt.id))
-        .map((pt) => pt.pubmed);
+
+    if (searchSources.includes("pubmed") && pubTypes.length > 0) {
+      const pubmedTypes = PUBLICATION_TYPES.filter((pt) =>
+        pubTypes.includes(pt.id),
+      ).map((pt) => pt.pubmed);
       filters.publicationTypes = pubmedTypes;
       filters.publicationTypesLogic = pubTypesLogic;
     }
-    
+
     filters.translate = translateAfterSearch;
 
     const results: string[] = [];
     let totalFound = 0;
-    
+
     try {
       for (const query of allQueries) {
-        const res = await apiSearchArticles(projectId, query, filters, maxResults, searchSources);
+        const res = await apiSearchArticles(
+          projectId,
+          query,
+          filters,
+          maxResults,
+          searchSources,
+        );
         results.push(`${query}: ${res.message}`);
         totalFound += res.added;
       }
-      
-      setOk(`Мультипоиск завершён. Найдено: ${totalFound} статей.\n${results.join('\n')}`);
+
+      setOk(
+        `Мультипоиск завершён. Найдено: ${totalFound} статей.\n${results.join("\n")}`,
+      );
       setShowSearch(false);
       setMultiQueries([]);
       setSearchQuery("");
@@ -351,40 +416,46 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       setError("Введите поисковый запрос для поиска всех статей");
       return;
     }
-    
+
     setCountingArticles(true);
     setError(null);
-    
+
     const { yearFrom, yearTo } = getYearsFromPreset();
-    
+
     const filters: SearchFilters = {
       yearFrom,
       yearTo,
     };
-    
+
     if (searchField && searchField !== "All Fields") {
       filters.searchField = searchField;
     }
-    
-    if (searchSources.includes('pubmed')) {
+
+    if (searchSources.includes("pubmed")) {
       if (textAvailability === "free_full") {
         filters.freeFullTextOnly = true;
       } else if (textAvailability === "full") {
         filters.fullTextOnly = true;
       }
     }
-    
-    if (searchSources.includes('pubmed') && pubTypes.length > 0) {
-      const pubmedTypes = PUBLICATION_TYPES
-        .filter((pt) => pubTypes.includes(pt.id))
-        .map((pt) => pt.pubmed);
+
+    if (searchSources.includes("pubmed") && pubTypes.length > 0) {
+      const pubmedTypes = PUBLICATION_TYPES.filter((pt) =>
+        pubTypes.includes(pt.id),
+      ).map((pt) => pt.pubmed);
       filters.publicationTypes = pubmedTypes;
       filters.publicationTypesLogic = pubTypesLogic;
     }
 
     try {
       // Запрашиваем количество статей (используем специальный endpoint или maxResults: 1 для получения count)
-      const res = await apiSearchArticles(projectId, searchQuery.trim(), filters, 1, searchSources);
+      const res = await apiSearchArticles(
+        projectId,
+        searchQuery.trim(),
+        filters,
+        1,
+        searchSources,
+      );
       const totalCount = res.totalFound || 0;
       setAllArticlesCount(totalCount);
       setShowAllArticlesConfirm(true);
@@ -398,45 +469,51 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   // Подтверждение загрузки всех статей
   async function handleConfirmSearchAll() {
     setShowAllArticlesConfirm(false);
-    
+
     if (!searchQuery.trim() || !allArticlesCount) return;
-    
+
     setSearching(true);
     setError(null);
     setOk(null);
-    
+
     const { yearFrom, yearTo } = getYearsFromPreset();
-    
+
     const filters: SearchFilters = {
       yearFrom,
       yearTo,
     };
-    
+
     if (searchField && searchField !== "All Fields") {
       filters.searchField = searchField;
     }
-    
-    if (searchSources.includes('pubmed')) {
+
+    if (searchSources.includes("pubmed")) {
       if (textAvailability === "free_full") {
         filters.freeFullTextOnly = true;
       } else if (textAvailability === "full") {
         filters.fullTextOnly = true;
       }
     }
-    
-    if (searchSources.includes('pubmed') && pubTypes.length > 0) {
-      const pubmedTypes = PUBLICATION_TYPES
-        .filter((pt) => pubTypes.includes(pt.id))
-        .map((pt) => pt.pubmed);
+
+    if (searchSources.includes("pubmed") && pubTypes.length > 0) {
+      const pubmedTypes = PUBLICATION_TYPES.filter((pt) =>
+        pubTypes.includes(pt.id),
+      ).map((pt) => pt.pubmed);
       filters.publicationTypes = pubmedTypes;
       filters.publicationTypesLogic = pubTypesLogic;
     }
-    
+
     filters.translate = translateAfterSearch;
 
     try {
       // Загружаем все статьи используя maxResults = 10000 (практический максимум)
-      const res = await apiSearchArticles(projectId, searchQuery.trim(), filters, 10000, searchSources);
+      const res = await apiSearchArticles(
+        projectId,
+        searchQuery.trim(),
+        filters,
+        10000,
+        searchSources,
+      );
       setOk(res.message);
       setShowSearch(false);
       setAllArticlesCount(null);
@@ -448,94 +525,107 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     }
   }
 
-  async function handleStatusChange(article: Article, newStatus: "candidate" | "selected" | "excluded" | "deleted") {
+  async function handleStatusChange(
+    article: Article,
+    newStatus: "candidate" | "selected" | "excluded" | "deleted",
+  ) {
     // Optimistic update - immediately update UI
     const previousStatus = article.status;
     const previousArticles = [...articles];
-    
+
     // Update local state immediately
-    setArticles(prev => prev.map(a => 
-      a.id === article.id ? { ...a, status: newStatus } : a
-    ));
-    
+    setArticles((prev) =>
+      prev.map((a) => (a.id === article.id ? { ...a, status: newStatus } : a)),
+    );
+
     // Update counts optimistically
-    setCounts(prev => ({
+    setCounts((prev) => ({
       ...prev,
-      [previousStatus]: Math.max(0, prev[previousStatus as keyof typeof prev] - 1),
+      [previousStatus]: Math.max(
+        0,
+        prev[previousStatus as keyof typeof prev] - 1,
+      ),
       [newStatus]: (prev[newStatus as keyof typeof prev] || 0) + 1,
     }));
-    
+
     try {
       await apiUpdateArticleStatus(projectId, article.id, newStatus);
       // Show success toast for important status changes
-      if (newStatus === 'selected') {
-        toast.success('Статья включена', article.title_en?.slice(0, 50) + '...');
-      } else if (newStatus === 'excluded') {
-        toast.info('Статья исключена');
+      if (newStatus === "selected") {
+        toast.success(
+          "Статья включена",
+          article.title_en?.slice(0, 50) + "...",
+        );
+      } else if (newStatus === "excluded") {
+        toast.info("Статья исключена");
       }
     } catch (err: any) {
       // Revert on error
       setArticles(previousArticles);
-      setCounts(prev => ({
+      setCounts((prev) => ({
         ...prev,
         [newStatus]: Math.max(0, prev[newStatus as keyof typeof prev] - 1),
         [previousStatus]: (prev[previousStatus as keyof typeof prev] || 0) + 1,
       }));
-      toast.error('Ошибка обновления статуса', err?.message);
+      toast.error("Ошибка обновления статуса", err?.message);
     }
   }
 
   // Массовое изменение статуса с оптимистичным обновлением
-  async function handleBulkStatus(status: "candidate" | "selected" | "excluded" | "deleted") {
+  async function handleBulkStatus(
+    status: "candidate" | "selected" | "excluded" | "deleted",
+  ) {
     if (selectedIds.size === 0) return;
-    
+
     const ids = Array.from(selectedIds);
     const count = ids.length;
     const previousArticles = [...articles];
-    
+
     // Optimistic update
-    setArticles(prev => prev.map(a => 
-      selectedIds.has(a.id) ? { ...a, status } : a
-    ));
+    setArticles((prev) =>
+      prev.map((a) => (selectedIds.has(a.id) ? { ...a, status } : a)),
+    );
     setSelectedIds(new Set());
-    
+
     try {
       // Batch update - API should support this ideally
-      await Promise.all(ids.map(id => apiUpdateArticleStatus(projectId, id, status)));
-      
+      await Promise.all(
+        ids.map((id) => apiUpdateArticleStatus(projectId, id, status)),
+      );
+
       toast.success(`${count} статей обновлено`, `Статус: ${status}`);
       await loadArticles(); // Reload to sync counts
     } catch (err: any) {
       // Revert on error
       setArticles(previousArticles);
-      toast.error('Ошибка массового обновления', err?.message);
+      toast.error("Ошибка массового обновления", err?.message);
     }
   }
-  
+
   // Массовый перевод выбранных
   async function handleBulkTranslate() {
     if (selectedIds.size === 0) return;
     setTranslating(true);
     setError(null);
-    
+
     try {
       await apiTranslateArticles(projectId, Array.from(selectedIds), true);
-      toast.success('Перевод завершён');
+      toast.success("Перевод завершён");
       setSelectedIds(new Set());
       await loadArticles();
     } catch (err: any) {
-      toast.error('Ошибка перевода', err?.message);
+      toast.error("Ошибка перевода", err?.message);
     } finally {
       setTranslating(false);
     }
   }
-  
+
   // Обогащение через Crossref
   async function handleEnrich() {
     setEnriching(true);
     setError(null);
     setOk(null);
-    
+
     try {
       const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
       const res = await apiEnrichArticles(projectId, ids);
@@ -548,20 +638,25 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       setEnriching(false);
     }
   }
-  
+
   // AI детекция статистики
   async function handleAIDetectStats() {
     setDetectingStats(true);
     setError(null);
     setOk(null);
     setAiStatsProgress(null);
-    
+
     try {
       // Если выбраны статьи - анализируем только их
       const ids = selectedIds.size > 0 ? Array.from(selectedIds) : undefined;
       const res = await apiDetectStatsWithAI(projectId, ids, {
         onStart: (data) => {
-          setAiStatsProgress({ percent: 0, analyzed: 0, found: 0, total: data.total });
+          setAiStatsProgress({
+            percent: 0,
+            analyzed: 0,
+            found: 0,
+            total: data.total,
+          });
         },
         onProgress: (data) => {
           setAiStatsProgress({
@@ -589,16 +684,16 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       setDetectingStats(false);
     }
   }
-  
+
   // Выбрать/снять все
   function toggleSelectAll() {
     if (selectedIds.size === filteredArticles.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredArticles.map(a => a.id)));
+      setSelectedIds(new Set(filteredArticles.map((a) => a.id)));
     }
   }
-  
+
   // Переключить выбор одной статьи
   function toggleSelect(id: string) {
     const newSet = new Set(selectedIds);
@@ -612,7 +707,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
   function togglePubType(pt: string) {
     setPubTypes((prev) =>
-      prev.includes(pt) ? prev.filter((x) => x !== pt) : [...prev, pt]
+      prev.includes(pt) ? prev.filter((x) => x !== pt) : [...prev, pt],
     );
   }
 
@@ -621,7 +716,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
     setTranslating(true);
     setError(null);
     setOk(null);
-    
+
     try {
       const res = await apiTranslateArticles(projectId);
       setOk(res.message);
@@ -637,13 +732,13 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   async function handleTranslateOne(articleId: string) {
     setTranslatingOne(true);
     setError(null);
-    
+
     try {
       await apiTranslateArticles(projectId, [articleId], true);
       await loadArticles();
       // Обновить выбранную статью если она открыта
       if (selectedArticle?.id === articleId) {
-        const updated = articles.find(a => a.id === articleId);
+        const updated = articles.find((a) => a.id === articleId);
         if (updated) setSelectedArticle(updated);
       }
     } catch (err: any) {
@@ -663,15 +758,19 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
   async function handleConvertToDocument() {
     if (!selectedArticle) return;
-    
+
     setConvertingToDoc(true);
     setError(null);
-    
+
     try {
-      const result = await apiConvertArticleToDocument(projectId, selectedArticle.id, {
-        includeBibliography: convertIncludeBibliography,
-        documentTitle: convertDocTitle || undefined,
-      });
+      const result = await apiConvertArticleToDocument(
+        projectId,
+        selectedArticle.id,
+        {
+          includeBibliography: convertIncludeBibliography,
+          documentTitle: convertDocTitle || undefined,
+        },
+      );
       setOk(result.message);
       setShowConvertModal(false);
       setSelectedArticle(null);
@@ -685,7 +784,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   // Функция подсветки статистики в тексте
   function highlightStatistics(text: string, aiStats?: any): React.ReactNode {
     if (!highlightStats || !text) return text;
-    
+
     // Паттерны для статистики (EN + RU) - расширенные
     const patterns = [
       // p-value с разной значимостью
@@ -695,35 +794,68 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       { regex: /[PpРр]\s*[=]\s*0[.,]\d+/g, className: "stat-pval" },
       { regex: /[PpРр]\s*[>]\s*0[.,]05/g, className: "stat-pval" },
       // p= в скобках: (p=0.0268)
-      { regex: /\(\s*[PpРр]\s*[=<>≤≥]\s*0[.,]\d+\s*\)/g, className: "stat-pval" },
+      {
+        regex: /\(\s*[PpРр]\s*[=<>≤≥]\s*0[.,]\d+\s*\)/g,
+        className: "stat-pval",
+      },
       // CI / ДИ (доверительный интервал) - все форматы
-      { regex: /95\s*%?\s*(?:CI|ДИ)[:\s]*\(?[\d.,]+[\s–\-−—to]+[\d.,]+\)?/gi, className: "stat-ci" },
-      { regex: /(?:CI|ДИ)[:\s]+\(?[\d.,]+[\s–\-−—to]+[\d.,]+\)?/gi, className: "stat-ci" },
+      {
+        regex: /95\s*%?\s*(?:CI|ДИ)[:\s]*\(?[\d.,]+[\s–\-−—to]+[\d.,]+\)?/gi,
+        className: "stat-ci",
+      },
+      {
+        regex: /(?:CI|ДИ)[:\s]+\(?[\d.,]+[\s–\-−—to]+[\d.,]+\)?/gi,
+        className: "stat-ci",
+      },
       // CI в скобках после значения: (0.778-0.985)
-      { regex: /\(\s*[\d.,]+\s*[\-–−—to]+\s*[\d.,]+\s*\)/g, className: "stat-ci" },
-      // I² (гетерогенность) 
+      {
+        regex: /\(\s*[\d.,]+\s*[-–−—to]+\s*[\d.,]+\s*\)/g,
+        className: "stat-ci",
+      },
+      // I² (гетерогенность)
       { regex: /I[²2]\s*[=:]\s*[\d.,]+\s*%?/gi, className: "stat-ci" },
       // OR, RR, HR - все форматы включая с пробелами и скобками
-      { regex: /\b(?:a?OR|a?RR|a?HR|SMD|ОШ|ОР|NNT|NNH)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
-      { regex: /\(\s*(?:a?OR|a?RR|a?HR|SMD)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
+      {
+        regex: /\b(?:a?OR|a?RR|a?HR|SMD|ОШ|ОР|NNT|NNH)\s*[=:]\s*[\d.,]+/gi,
+        className: "stat-ratio",
+      },
+      {
+        regex: /\(\s*(?:a?OR|a?RR|a?HR|SMD)\s*[=:]\s*[\d.,]+/gi,
+        className: "stat-ratio",
+      },
       // Хи-квадрат, F-статистика, t-test
       { regex: /[χχ²X²]\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
-      { regex: /\bF\s*\(\s*\d+\s*,\s*\d+\s*\)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
-      { regex: /\bt\s*\(\s*\d+\s*\)\s*[=:]\s*[\d.,]+/gi, className: "stat-ratio" },
+      {
+        regex: /\bF\s*\(\s*\d+\s*,\s*\d+\s*\)\s*[=:]\s*[\d.,]+/gi,
+        className: "stat-ratio",
+      },
+      {
+        regex: /\bt\s*\(\s*\d+\s*\)\s*[=:]\s*[\d.,]+/gi,
+        className: "stat-ratio",
+      },
       // Корреляция
-      { regex: /\b[rR]\s*[=:]\s*[\-−]?0[.,]\d+/g, className: "stat-ratio" },
+      { regex: /\b[rR]\s*[=:]\s*[-−]?0[.,]\d+/g, className: "stat-ratio" },
       // Шкалы качества
       { regex: /\b(?:NOS|AHRQ|GRADE)[:\s]+[\d.,]+/gi, className: "stat-n" },
       // Размер выборки - разные форматы
       { regex: /\b[nN]\s*[=]\s*[\d,\s]+/g, className: "stat-n" },
-      { regex: /\d+\s+(?:patients|subjects|participants|cases)/gi, className: "stat-n" },
+      {
+        regex: /\d+\s+(?:patients|subjects|participants|cases)/gi,
+        className: "stat-n",
+      },
       // Mean ± SD
       { regex: /\d+[.,]\d*\s*[±]\s*\d+[.,]?\d*/g, className: "stat-ratio" },
     ];
-    
+
     // Применяем все паттерны
-    const replacements: Array<{ start: number; end: number; match: string; className: string; source: 'regex' | 'ai' }> = [];
-    
+    const replacements: Array<{
+      start: number;
+      end: number;
+      match: string;
+      className: string;
+      source: "regex" | "ai";
+    }> = [];
+
     for (const { regex, className } of patterns) {
       let match;
       const r = new RegExp(regex.source, regex.flags);
@@ -733,32 +865,35 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           end: match.index + match[0].length,
           match: match[0],
           className,
-          source: 'regex',
+          source: "regex",
         });
       }
     }
-    
+
     // Добавляем результаты AI-анализа (из stats_json.ai)
     if (aiStats?.ai?.stats && Array.isArray(aiStats.ai.stats)) {
       for (const stat of aiStats.ai.stats) {
         if (!stat.text) continue;
-        
+
         // Ищем текст статистики в абстракте
         const statText = stat.text;
         let idx = text.indexOf(statText);
-        
+
         // Если точное совпадение не найдено, пробуем нечёткий поиск
         if (idx === -1) {
           // Убираем лишние пробелы и ищем снова
-          const normalizedStat = statText.replace(/\s+/g, ' ').trim();
-          const normalizedText = text.replace(/\s+/g, ' ');
+          const normalizedStat = statText.replace(/\s+/g, " ").trim();
+          const normalizedText = text.replace(/\s+/g, " ");
           const normalizedIdx = normalizedText.indexOf(normalizedStat);
           if (normalizedIdx !== -1) {
             // Находим соответствующую позицию в оригинальном тексте
             let origIdx = 0;
             let normIdx = 0;
             while (normIdx < normalizedIdx && origIdx < text.length) {
-              if (text[origIdx] === ' ' && (origIdx === 0 || text[origIdx-1] === ' ')) {
+              if (
+                text[origIdx] === " " &&
+                (origIdx === 0 || text[origIdx - 1] === " ")
+              ) {
                 origIdx++;
               } else {
                 origIdx++;
@@ -768,47 +903,50 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             idx = origIdx;
           }
         }
-        
+
         if (idx !== -1) {
           // Пропускаем not-significant статистику - она не важна для подсветки
-          if (stat.significance === 'not-significant') {
+          if (stat.significance === "not-significant") {
             continue;
           }
-          
+
           // Определяем CSS класс по значимости (только для реальных p-values)
-          let className = 'stat-ai'; // базовый класс для AI-найденной статистики
-          if (stat.significance === 'high') {
-            className = 'stat-p001'; // зелёный - высокая значимость (p < 0.001)
-          } else if (stat.significance === 'medium') {
-            className = 'stat-p01'; // жёлтый - средняя (p < 0.01)
-          } else if (stat.significance === 'low') {
-            className = 'stat-p05'; // оранжевый - низкая (p < 0.05)
-          } else if (stat.type === 'confidence-interval') {
-            className = 'stat-ci';
-          } else if (stat.type === 'effect-size') {
-            className = 'stat-ratio';
-          } else if (stat.type === 'p-value' || stat.type === 'test-statistic') {
-            className = 'stat-pval';
+          let className = "stat-ai"; // базовый класс для AI-найденной статистики
+          if (stat.significance === "high") {
+            className = "stat-p001"; // зелёный - высокая значимость (p < 0.001)
+          } else if (stat.significance === "medium") {
+            className = "stat-p01"; // жёлтый - средняя (p < 0.01)
+          } else if (stat.significance === "low") {
+            className = "stat-p05"; // оранжевый - низкая (p < 0.05)
+          } else if (stat.type === "confidence-interval") {
+            className = "stat-ci";
+          } else if (stat.type === "effect-size") {
+            className = "stat-ratio";
+          } else if (
+            stat.type === "p-value" ||
+            stat.type === "test-statistic"
+          ) {
+            className = "stat-pval";
           }
-          
+
           replacements.push({
             start: idx,
             end: idx + statText.length,
             match: statText,
             className,
-            source: 'ai',
+            source: "ai",
           });
         }
       }
     }
-    
+
     // Сортируем по позиции и удаляем пересечения (приоритет regex над AI для избежания дублей)
     replacements.sort((a, b) => {
       if (a.start !== b.start) return a.start - b.start;
       // При одинаковой позиции - приоритет regex
-      return a.source === 'regex' ? -1 : 1;
+      return a.source === "regex" ? -1 : 1;
     });
-    
+
     const filtered: typeof replacements = [];
     for (const r of replacements) {
       const last = filtered[filtered.length - 1];
@@ -816,7 +954,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         filtered.push(r);
       }
     }
-    
+
     // Собираем результат
     const parts: React.ReactNode[] = [];
     let lastEnd = 0;
@@ -825,44 +963,44 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         parts.push(text.slice(lastEnd, r.start));
       }
       parts.push(
-        <span 
-          key={r.start} 
+        <span
+          key={r.start}
           className={r.className}
-          title={r.source === 'ai' ? 'Найдено AI' : undefined}
+          title={r.source === "ai" ? "Найдено AI" : undefined}
         >
           {r.match}
-        </span>
+        </span>,
       );
       lastEnd = r.end;
     }
     if (lastEnd < text.length) {
       parts.push(text.slice(lastEnd));
     }
-    
+
     return parts.length > 0 ? parts : text;
   }
 
   const total = counts.candidate + counts.selected + counts.excluded; // deleted не включаем в общий счёт
-  
+
   // Подсчёт непереведённых статей
   const untranslatedCount = articles.filter((a) => !a.title_ru).length;
-  
+
   // Получить заголовок статьи в зависимости от выбранного языка
   function getTitle(a: Article): string {
     if (listLang === "ru" && a.title_ru) return a.title_ru;
     return a.title_en;
   }
-  
+
   // Собрать уникальные типы публикаций из текущих статей
   const availablePubTypes = Array.from(
-    new Set(articles.flatMap((a) => a.publication_types || []))
+    new Set(articles.flatMap((a) => a.publication_types || [])),
   ).sort();
-  
+
   // Фильтрация статей по типу публикации
   const filteredByType = filterPubType
     ? articles.filter((a) => a.publication_types?.includes(filterPubType))
     : articles;
-  
+
   // Фильтрация по локальному поиску (название)
   const filteredBySearch = localSearch.trim()
     ? filteredByType.filter((a) => {
@@ -870,18 +1008,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         return (
           a.title_en?.toLowerCase().includes(query) ||
           a.title_ru?.toLowerCase().includes(query) ||
-          a.authors?.some(auth => auth.toLowerCase().includes(query))
+          a.authors?.some((auth) => auth.toLowerCase().includes(query))
         );
       })
     : filteredByType;
-  
+
   // Фильтрация по периоду годов
   const filteredByYear = filteredBySearch.filter((a) => {
     if (yearFromFilter && a.year && a.year < yearFromFilter) return false;
     if (yearToFilter && a.year && a.year > yearToFilter) return false;
     return true;
   });
-  
+
   // Сортировка
   const filteredArticles = [...filteredByYear].sort((a, b) => {
     if (sortBy === "stats") {
@@ -900,9 +1038,19 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
   return (
     <div style={{ marginTop: 24 }}>
       <div className="row space" style={{ marginBottom: 12 }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <svg className="icon-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <svg
+            className="icon-lg"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            />
           </svg>
           База статей ({total})
         </h2>
@@ -915,10 +1063,27 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               type="button"
               title={`Перевести ${untranslatedCount} статей без перевода`}
             >
-              <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+              <svg
+                className="icon-sm"
+                style={{
+                  marginRight: 6,
+                  display: "inline",
+                  verticalAlign: "middle",
+                }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                />
               </svg>
-              {translating ? "Переводим..." : `Перевести (${untranslatedCount})`}
+              {translating
+                ? "Переводим..."
+                : `Перевести (${untranslatedCount})`}
             </button>
           )}
           {canEdit && (
@@ -929,8 +1094,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 title="Добавить статью по DOI"
               >
-                <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <svg
+                  className="icon-sm"
+                  style={{
+                    marginRight: 6,
+                    display: "inline",
+                    verticalAlign: "middle",
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
                 По DOI
               </button>
@@ -939,8 +1119,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 onClick={() => setShowSearch(!showSearch)}
                 type="button"
               >
-                <svg className="icon-sm" style={{ marginRight: 6, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="icon-sm"
+                  style={{
+                    marginRight: 6,
+                    display: "inline",
+                    verticalAlign: "middle",
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
                 {showSearch ? "Скрыть поиск" : "Поиск статей"}
               </button>
@@ -949,17 +1144,39 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         </div>
       </div>
 
-      {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
-      {ok && <div className="ok" style={{ marginBottom: 12 }}>{ok}</div>}
+      {error && (
+        <div className="alert" style={{ marginBottom: 12 }}>
+          {error}
+        </div>
+      )}
+      {ok && (
+        <div className="ok" style={{ marginBottom: 12 }}>
+          {ok}
+        </div>
+      )}
 
       {/* Форма поиска */}
       {showSearch && (
-        <form onSubmit={multiQueries.length > 0 ? handleMultiSearch : handleSearch} className="card search-form-card" style={{ marginBottom: 16 }}>
+        <form
+          onSubmit={multiQueries.length > 0 ? handleMultiSearch : handleSearch}
+          className="card search-form-card"
+          style={{ marginBottom: 16 }}
+        >
           {/* Header */}
           <div className="search-form-header">
             <div className="search-form-title">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
               </svg>
               <h3 style={{ margin: 0 }}>Поиск научных статей</h3>
             </div>
@@ -970,21 +1187,36 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 onChange={(e) => setShowMultiSearch(e.target.checked)}
                 className="search-checkbox"
               />
-              <span className="muted" style={{ fontSize: 12 }}>Мультипоиск</span>
+              <span className="muted" style={{ fontSize: 12 }}>
+                Мультипоиск
+              </span>
             </label>
           </div>
-          
+
           {/* Источники поиска */}
           <div className="search-sources-section">
             <div className="search-section-label">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                />
               </svg>
               <span>Источники:</span>
             </div>
             <div className="search-sources-grid">
               {SEARCH_SOURCES.map((source) => (
-                <label key={source.value} className={`search-source-option ${searchSources.includes(source.value) ? 'active' : ''}`}>
+                <label
+                  key={source.value}
+                  className={`search-source-option ${searchSources.includes(source.value) ? "active" : ""}`}
+                >
                   <input
                     type="checkbox"
                     checked={searchSources.includes(source.value)}
@@ -993,7 +1225,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   />
                   <div className="search-source-content">
                     <span className="search-source-name">{source.label}</span>
-                    <span className="search-source-desc">{source.description}</span>
+                    <span className="search-source-desc">
+                      {source.description}
+                    </span>
                   </div>
                 </label>
               ))}
@@ -1003,10 +1237,28 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             {/* Мультипоиск - список запросов */}
             {showMultiSearch && multiQueries.length > 0 && (
               <div style={{ marginBottom: 12 }}>
-                <span className="muted" style={{ fontSize: 12 }}>Запросы для мультипоиска:</span>
-                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <span className="muted" style={{ fontSize: 12 }}>
+                  Запросы для мультипоиска:
+                </span>
+                <div
+                  style={{
+                    marginTop: 8,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                  }}
+                >
                   {multiQueries.map((q, idx) => (
-                    <div key={q.id} className="row gap" style={{ alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: 8 }}>
+                    <div
+                      key={q.id}
+                      className="row gap"
+                      style={{
+                        alignItems: "center",
+                        background: "rgba(0,0,0,0.2)",
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                      }}
+                    >
                       <span style={{ flex: 1, fontSize: 13 }}>
                         <span className="muted">{idx + 1}.</span> {q.query}
                       </span>
@@ -1014,7 +1266,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                         type="button"
                         onClick={() => removeMultiQuery(q.id)}
                         className="btn secondary"
-                        style={{ padding: '2px 8px', fontSize: 12 }}
+                        style={{ padding: "2px 8px", fontSize: 12 }}
                       >
                         ✕
                       </button>
@@ -1023,10 +1275,12 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 </div>
               </div>
             )}
-            
-            <div className="row gap" style={{ alignItems: 'flex-end' }}>
+
+            <div className="row gap" style={{ alignItems: "flex-end" }}>
               <label className="stack" style={{ flex: 1 }}>
-                <span>Поисковый запрос {multiQueries.length > 0 ? '' : '*'}</span>
+                <span>
+                  Поисковый запрос {multiQueries.length > 0 ? "" : "*"}
+                </span>
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -1034,14 +1288,14 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   required={multiQueries.length === 0}
                 />
               </label>
-              
+
               {/* Поле поиска PubMed */}
               <label className="stack" style={{ minWidth: 180 }}>
                 <span>Искать в поле:</span>
                 <select
                   value={searchField}
                   onChange={(e) => setSearchField(e.target.value)}
-                  style={{ padding: '8px 12px' }}
+                  style={{ padding: "8px 12px" }}
                 >
                   {PUBMED_SEARCH_FIELDS.map((field) => (
                     <option key={field.value} value={field.value}>
@@ -1050,14 +1304,14 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   ))}
                 </select>
               </label>
-              
+
               {showMultiSearch && (
                 <button
                   type="button"
                   onClick={addMultiQuery}
                   className="btn secondary"
                   disabled={!searchQuery.trim()}
-                  style={{ padding: '10px 16px' }}
+                  style={{ padding: "10px 16px" }}
                   title="Добавить запрос в список"
                 >
                   + Добавить
@@ -1068,9 +1322,16 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             {/* Период публикации */}
             <div>
               <span className="muted">Период публикации:</span>
-              <div className="row gap" style={{ flexWrap: "wrap", marginTop: 6 }}>
+              <div
+                className="row gap"
+                style={{ flexWrap: "wrap", marginTop: 6 }}
+              >
                 {DATE_PRESETS.map((preset) => (
-                  <label key={preset.id} className="row gap" style={{ alignItems: "center" }}>
+                  <label
+                    key={preset.id}
+                    className="row gap"
+                    style={{ alignItems: "center" }}
+                  >
                     <input
                       type="radio"
                       name="datePreset"
@@ -1082,7 +1343,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   </label>
                 ))}
               </div>
-              
+
               {datePreset === "custom" && (
                 <div className="row gap" style={{ marginTop: 8 }}>
                   <label className="stack" style={{ flex: 1 }}>
@@ -1090,7 +1351,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                     <input
                       type="number"
                       value={customYearFrom}
-                      onChange={(e) => setCustomYearFrom(Number(e.target.value))}
+                      onChange={(e) =>
+                        setCustomYearFrom(Number(e.target.value))
+                      }
                       min={1900}
                       max={2100}
                     />
@@ -1112,9 +1375,16 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             {/* Доступность текста */}
             <div>
               <span className="muted">Доступность текста:</span>
-              <div className="row gap" style={{ flexWrap: "wrap", marginTop: 6 }}>
+              <div
+                className="row gap"
+                style={{ flexWrap: "wrap", marginTop: 6 }}
+              >
                 {TEXT_AVAILABILITY.map((opt) => (
-                  <label key={opt.id} className="row gap" style={{ alignItems: "center" }}>
+                  <label
+                    key={opt.id}
+                    className="row gap"
+                    style={{ alignItems: "center" }}
+                  >
                     <input
                       type="radio"
                       name="textAvailability"
@@ -1130,7 +1400,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
             {/* Тип публикации */}
             <div>
-              <div className="row gap" style={{ alignItems: "center", marginBottom: 6 }}>
+              <div
+                className="row gap"
+                style={{ alignItems: "center", marginBottom: 6 }}
+              >
                 <span className="muted">Тип публикации:</span>
                 {pubTypes.length > 1 && (
                   <div className="row gap" style={{ marginLeft: 12 }}>
@@ -1159,7 +1432,11 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               </div>
               <div className="row gap" style={{ flexWrap: "wrap" }}>
                 {PUBLICATION_TYPES.map((pt) => (
-                  <label key={pt.id} className="row gap" style={{ alignItems: "center" }}>
+                  <label
+                    key={pt.id}
+                    className="row gap"
+                    style={{ alignItems: "center" }}
+                  >
                     <input
                       type="checkbox"
                       checked={pubTypes.includes(pt.id)}
@@ -1173,14 +1450,17 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             </div>
 
             {/* Дополнительные опции */}
-            <div className="row gap" style={{ flexWrap: "wrap", alignItems: "center" }}>
+            <div
+              className="row gap"
+              style={{ flexWrap: "wrap", alignItems: "center" }}
+            >
               <label className="stack" style={{ minWidth: 180 }}>
                 <span>Макс. результатов на источник</span>
                 <select
                   value={maxResults}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val === 'all') {
+                    if (val === "all") {
                       handleSearchAllArticles();
                     } else {
                       setMaxResults(Number(val));
@@ -1197,17 +1477,30 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   <option value="all">Все статьи</option>
                 </select>
               </label>
-              
-              <label className="row gap" style={{ alignItems: "center", marginTop: 20 }}>
+
+              <label
+                className="row gap"
+                style={{ alignItems: "center", marginTop: 20 }}
+              >
                 <input
                   type="checkbox"
                   checked={translateAfterSearch}
                   onChange={(e) => setTranslateAfterSearch(e.target.checked)}
                   style={{ width: "auto" }}
                 />
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <svg
+                    className="icon-sm"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                    />
                   </svg>
                   Перевести заголовки и абстракты (RU)
                 </span>
@@ -1215,16 +1508,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             </div>
 
             <div className="row gap">
-              <button className="btn search-submit-btn" disabled={searching || searchSources.length === 0} type="submit">
-                {searching 
-                  ? "Поиск..." 
-                  : multiQueries.length > 0 
-                    ? `Мультипоиск (${multiQueries.length + (searchQuery.trim() ? 1 : 0)} запросов)` 
-                    : `Найти в ${searchSources.map(s => s === 'pubmed' ? 'PubMed' : s === 'doaj' ? 'DOAJ' : 'Wiley').join(', ')}`}
+              <button
+                className="btn search-submit-btn"
+                disabled={searching || searchSources.length === 0}
+                type="submit"
+              >
+                {searching
+                  ? "Поиск..."
+                  : multiQueries.length > 0
+                    ? `Мультипоиск (${multiQueries.length + (searchQuery.trim() ? 1 : 0)} запросов)`
+                    : `Найти в ${searchSources.map((s) => (s === "pubmed" ? "PubMed" : s === "doaj" ? "DOAJ" : "Wiley")).join(", ")}`}
               </button>
               <button
                 className="btn secondary"
-                onClick={() => { setShowSearch(false); setMultiQueries([]); }}
+                onClick={() => {
+                  setShowSearch(false);
+                  setMultiQueries([]);
+                }}
                 type="button"
               >
                 Отмена
@@ -1241,8 +1541,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           onClick={() => setViewStatus("candidate")}
           type="button"
         >
-          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          <svg
+            className="icon-sm"
+            style={{
+              marginRight: 4,
+              display: "inline",
+              verticalAlign: "middle",
+            }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
           </svg>
           Кандидаты ({counts.candidate})
         </button>
@@ -1251,8 +1566,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           onClick={() => setViewStatus("selected")}
           type="button"
         >
-          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="icon-sm"
+            style={{
+              marginRight: 4,
+              display: "inline",
+              verticalAlign: "middle",
+            }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           Отобранные ({counts.selected})
         </button>
@@ -1261,8 +1591,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           onClick={() => setViewStatus("excluded")}
           type="button"
         >
-          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="icon-sm"
+            style={{
+              marginRight: 4,
+              display: "inline",
+              verticalAlign: "middle",
+            }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           Исключённые ({counts.excluded})
         </button>
@@ -1271,8 +1616,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           onClick={() => setViewStatus("all")}
           type="button"
         >
-          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+          <svg
+            className="icon-sm"
+            style={{
+              marginRight: 4,
+              display: "inline",
+              verticalAlign: "middle",
+            }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 6h16M4 10h16M4 14h16M4 18h16"
+            />
           </svg>
           Все ({total})
         </button>
@@ -1281,36 +1641,86 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           onClick={() => setViewStatus("deleted")}
           type="button"
         >
-          <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          <svg
+            className="icon-sm"
+            style={{
+              marginRight: 4,
+              display: "inline",
+              verticalAlign: "middle",
+            }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
           </svg>
           Корзина ({counts.deleted})
         </button>
       </div>
-      
+
       {/* Локальный поиск по базе */}
-      <div className="row gap" style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 400 }}>
-          <svg className="icon-sm" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      <div
+        className="row gap"
+        style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}
+      >
+        <div
+          style={{
+            position: "relative",
+            flex: 1,
+            minWidth: 200,
+            maxWidth: 400,
+          }}
+        >
+          <svg
+            className="icon-sm"
+            style={{
+              position: "absolute",
+              left: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "var(--text-muted)",
+            }}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
           </svg>
           <input
             type="text"
             placeholder="Поиск по названию/автору..."
             value={localSearch}
             onChange={(e) => setLocalSearch(e.target.value)}
-            style={{ width: '100%', padding: "8px 12px 8px 36px", fontSize: 13 }}
+            style={{
+              width: "100%",
+              padding: "8px 12px 8px 36px",
+              fontSize: 13,
+            }}
           />
         </div>
-        
+
         {/* Фильтр по периоду годов */}
         <div className="row gap" style={{ alignItems: "center" }}>
-          <span className="muted" style={{ fontSize: 12 }}>Год:</span>
+          <span className="muted" style={{ fontSize: 12 }}>
+            Год:
+          </span>
           <input
             type="number"
             placeholder="от"
             value={yearFromFilter || ""}
-            onChange={(e) => setYearFromFilter(e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) =>
+              setYearFromFilter(e.target.value ? Number(e.target.value) : null)
+            }
             style={{ width: 70, padding: "6px 8px", fontSize: 12 }}
             min={1900}
             max={2100}
@@ -1320,7 +1730,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             type="number"
             placeholder="до"
             value={yearToFilter || ""}
-            onChange={(e) => setYearToFilter(e.target.value ? Number(e.target.value) : null)}
+            onChange={(e) =>
+              setYearToFilter(e.target.value ? Number(e.target.value) : null)
+            }
             style={{ width: 70, padding: "6px 8px", fontSize: 12 }}
             min={1900}
             max={2100}
@@ -1328,7 +1740,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           {(yearFromFilter || yearToFilter) && (
             <button
               className="btn secondary"
-              onClick={() => { setYearFromFilter(null); setYearToFilter(null); }}
+              onClick={() => {
+                setYearFromFilter(null);
+                setYearToFilter(null);
+              }}
               style={{ padding: "4px 8px", fontSize: 11 }}
               type="button"
             >
@@ -1339,7 +1754,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
       </div>
 
       {/* Фильтры - строка 2: настройки отображения */}
-      <div className="row gap" style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        className="row gap"
+        style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}
+      >
         {/* Переключатель языка */}
         <div className="lang-toggle">
           <button
@@ -1359,7 +1777,7 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             EN
           </button>
         </div>
-        
+
         <label className="row gap" style={{ alignItems: "center" }}>
           <input
             type="checkbox"
@@ -1367,14 +1785,27 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             onChange={(e) => setShowStatsOnly(e.target.checked)}
             style={{ width: "auto" }}
           />
-          <span className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          <span
+            className="muted"
+            style={{ display: "flex", alignItems: "center", gap: 4 }}
+          >
+            <svg
+              className="icon-sm"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+              />
             </svg>
             Статистика
           </span>
         </label>
-        
+
         <label className="row gap" style={{ alignItems: "center" }}>
           <input
             type="checkbox"
@@ -1382,14 +1813,27 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             onChange={(e) => setHighlightStats(e.target.checked)}
             style={{ width: "auto" }}
           />
-          <span className="muted" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+          <span
+            className="muted"
+            style={{ display: "flex", alignItems: "center", gap: 4 }}
+          >
+            <svg
+              className="icon-sm"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+              />
             </svg>
             Подсветка
           </span>
         </label>
-        
+
         {/* Фильтр по типу публикации */}
         {availablePubTypes.length > 0 && (
           <select
@@ -1399,11 +1843,13 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           >
             <option value="">Все типы</option>
             {availablePubTypes.map((pt) => (
-              <option key={pt} value={pt}>{pt}</option>
+              <option key={pt} value={pt}>
+                {pt}
+              </option>
             ))}
           </select>
         )}
-        
+
         {/* Сортировка */}
         <select
           value={sortBy}
@@ -1415,19 +1861,24 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           <option value="year_desc">По году ↓ (новые)</option>
           <option value="year_asc">По году ↑ (старые)</option>
         </select>
-        
+
         {/* Фильтр по поисковому запросу (подбазы) */}
         {availableSourceQueries.length > 0 && (
           <select
             value={filterSourceQuery || ""}
             onChange={(e) => setFilterSourceQuery(e.target.value || null)}
-            style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12, maxWidth: 200 }}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 6,
+              fontSize: 12,
+              maxWidth: 200,
+            }}
             title="Фильтр по поисковому запросу"
           >
             <option value="">Все запросы</option>
             {availableSourceQueries.map((q) => (
               <option key={q} value={q} title={q}>
-                {q.length > 25 ? q.slice(0, 25) + '...' : q}
+                {q.length > 25 ? q.slice(0, 25) + "..." : q}
               </option>
             ))}
           </select>
@@ -1440,17 +1891,20 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
           <label className="row gap" style={{ alignItems: "center" }}>
             <input
               type="checkbox"
-              checked={selectedIds.size > 0 && selectedIds.size === filteredArticles.length}
+              checked={
+                selectedIds.size > 0 &&
+                selectedIds.size === filteredArticles.length
+              }
               onChange={toggleSelectAll}
               style={{ width: 18, height: 18 }}
             />
             <span className="muted" style={{ fontSize: 13 }}>
-              {selectedIds.size > 0 
-                ? `Выбрано: ${selectedIds.size}` 
+              {selectedIds.size > 0
+                ? `Выбрано: ${selectedIds.size}`
                 : "Выбрать все"}
             </span>
           </label>
-          
+
           {selectedIds.size > 0 && (
             <div className="row gap" style={{ marginLeft: 16 }}>
               <button
@@ -1460,8 +1914,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
-                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                <svg
+                  className="icon-sm"
+                  style={{
+                    marginRight: 4,
+                    display: "inline",
+                    verticalAlign: "middle",
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
                 Отобрать
               </button>
@@ -1472,8 +1941,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
-                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="icon-sm"
+                  style={{
+                    marginRight: 4,
+                    display: "inline",
+                    verticalAlign: "middle",
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
                 Исключить
               </button>
@@ -1485,8 +1969,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
-                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                <svg
+                  className="icon-sm"
+                  style={{
+                    marginRight: 4,
+                    display: "inline",
+                    verticalAlign: "middle",
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                  />
                 </svg>
                 Перевести
               </button>
@@ -1498,8 +1997,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 type="button"
                 style={{ padding: "4px 10px", fontSize: 12 }}
               >
-                <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                <svg
+                  className="icon-sm"
+                  style={{
+                    marginRight: 4,
+                    display: "inline",
+                    verticalAlign: "middle",
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
                 </svg>
                 Crossref
               </button>
@@ -1509,17 +2023,40 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 disabled={detectingStats}
                 title="AI детекция статистики (OpenRouter)"
                 type="button"
-                style={{ padding: "4px 10px", fontSize: 12, minWidth: aiStatsProgress ? 180 : undefined }}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: 12,
+                  minWidth: aiStatsProgress ? 180 : undefined,
+                }}
               >
                 {detectingStats && aiStatsProgress ? (
                   <>
-                    <span className="spinner-small" style={{ marginRight: 6 }} />
-                    {aiStatsProgress.percent}% ({aiStatsProgress.analyzed}/{aiStatsProgress.total})
+                    <span
+                      className="spinner-small"
+                      style={{ marginRight: 6 }}
+                    />
+                    {aiStatsProgress.percent}% ({aiStatsProgress.analyzed}/
+                    {aiStatsProgress.total})
                   </>
                 ) : (
                   <>
-                    <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    <svg
+                      className="icon-sm"
+                      style={{
+                        marginRight: 4,
+                        display: "inline",
+                        verticalAlign: "middle",
+                      }}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
                     </svg>
                     AI Статистика
                   </>
@@ -1533,8 +2070,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   type="button"
                   style={{ padding: "4px 10px", fontSize: 12 }}
                 >
-                  <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                  <svg
+                    className="icon-sm"
+                    style={{
+                      marginRight: 4,
+                      display: "inline",
+                      verticalAlign: "middle",
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                    />
                   </svg>
                   В кандидаты
                 </button>
@@ -1547,8 +2099,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   type="button"
                   style={{ padding: "4px 10px", fontSize: 12 }}
                 >
-                  <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  <svg
+                    className="icon-sm"
+                    style={{
+                      marginRight: 4,
+                      display: "inline",
+                      verticalAlign: "middle",
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                   Удалить
                 </button>
@@ -1561,8 +2128,23 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   type="button"
                   style={{ padding: "4px 10px", fontSize: 12 }}
                 >
-                  <svg className="icon-sm" style={{ marginRight: 4, display: 'inline', verticalAlign: 'middle' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  <svg
+                    className="icon-sm"
+                    style={{
+                      marginRight: 4,
+                      display: "inline",
+                      verticalAlign: "middle",
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
                   Восстановить
                 </button>
@@ -1577,10 +2159,9 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
         <div className="muted">Загрузка...</div>
       ) : filteredArticles.length === 0 ? (
         <div className="muted">
-          {articles.length === 0 
+          {articles.length === 0
             ? `Нет статей. ${canEdit ? "Используйте поиск чтобы добавить статьи из PubMed." : ""}`
-            : "Нет статей соответствующих фильтру."
-          }
+            : "Нет статей соответствующих фильтру."}
         </div>
       ) : (
         <div className="articles-table">
@@ -1591,7 +2172,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
             >
               {/* Чекбокс для выбора */}
               {canEdit && (
-                <div className="article-checkbox" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className="article-checkbox"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <input
                     type="checkbox"
                     checked={selectedIds.has(a.id)}
@@ -1600,22 +2184,59 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   />
                 </div>
               )}
-              
-              <div className="article-main" onClick={() => setSelectedArticle(a)}>
+
+              <div
+                className="article-main"
+                onClick={() => setSelectedArticle(a)}
+              >
                 <div className="article-title">
                   {getTitle(a)}
                   {a.title_ru && (
                     <span className="translate-badge" title="Есть перевод">
-                      <svg className="icon-sm" style={{ display: 'inline', verticalAlign: 'middle', color: '#38bdf8' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                      <svg
+                        className="icon-sm"
+                        style={{
+                          display: "inline",
+                          verticalAlign: "middle",
+                          color: "#38bdf8",
+                        }}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                        />
                       </svg>
                     </span>
                   )}
-                  {!a.title_ru && <span className="no-translate-badge" title="Нет перевода">EN</span>}
+                  {!a.title_ru && (
+                    <span className="no-translate-badge" title="Нет перевода">
+                      EN
+                    </span>
+                  )}
                   {a.has_stats && (
                     <span className="stats-badge" title="Содержит статистику">
-                      <svg className="icon-sm" style={{ display: 'inline', verticalAlign: 'middle', color: '#4ade80' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      <svg
+                        className="icon-sm"
+                        style={{
+                          display: "inline",
+                          verticalAlign: "middle",
+                          color: "#4ade80",
+                        }}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                        />
                       </svg>
                     </span>
                   )}
@@ -1630,19 +2251,29 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   {a.pmid && <span className="id-badge">PMID: {a.pmid}</span>}
                   {a.doi && <span className="id-badge">DOI: {a.doi}</span>}
                   {a.publication_types?.map((pt) => (
-                    <span key={pt} className="id-badge pub-type">{pt}</span>
+                    <span key={pt} className="id-badge pub-type">
+                      {pt}
+                    </span>
                   ))}
                   {(a.stats_quality ?? 0) > 0 && (
                     <span className={`id-badge stats-q${a.stats_quality}`}>
-                      p&lt;{a.stats_quality === 3 ? "0.001" : a.stats_quality === 2 ? "0.01" : "0.05"}
+                      p&lt;
+                      {a.stats_quality === 3
+                        ? "0.001"
+                        : a.stats_quality === 2
+                          ? "0.01"
+                          : "0.05"}
                     </span>
                   )}
                 </div>
               </div>
-              
+
               {/* Кнопки действий */}
               {canEdit && (
-                <div className="article-actions" onClick={(e) => e.stopPropagation()}>
+                <div
+                  className="article-actions"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   {a.status !== "selected" && a.status !== "deleted" && (
                     <button
                       className="action-btn select"
@@ -1650,8 +2281,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Добавить в отобранные"
                       type="button"
                     >
-                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="icon-md"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     </button>
                   )}
@@ -1662,8 +2303,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Исключить из выборки"
                       type="button"
                     >
-                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        className="icon-md"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   )}
@@ -1674,8 +2325,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Вернуть в кандидаты"
                       type="button"
                     >
-                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                      <svg
+                        className="icon-md"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                        />
                       </svg>
                     </button>
                   )}
@@ -1686,8 +2347,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Удалить в корзину"
                       type="button"
                     >
-                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        className="icon-md"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </button>
                   )}
@@ -1698,8 +2369,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                       title="Восстановить из корзины"
                       type="button"
                     >
-                      <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      <svg
+                        className="icon-md"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
                       </svg>
                     </button>
                   )}
@@ -1712,37 +2393,78 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
       {/* ResearchRabbit-style Article Sidebar/Modal */}
       {selectedArticle && (
-        <div className="rabbit-overlay" onClick={() => { setSelectedArticle(null); setShowOriginal(false); }}>
+        <div
+          className="rabbit-overlay"
+          onClick={() => {
+            setSelectedArticle(null);
+            setShowOriginal(false);
+          }}
+        >
           <div className="rabbit-sidebar" onClick={(e) => e.stopPropagation()}>
             {/* Header */}
             <div className="rabbit-header">
               <div className="rabbit-header-title">
-                <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <svg
+                  className="icon-md"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
                 </svg>
                 <span>Детали статьи</span>
               </div>
               <div className="rabbit-header-actions">
                 {selectedArticle.title_ru && (
                   <button
-                    className={`rabbit-lang-btn ${!showOriginal ? 'active' : ''}`}
+                    className={`rabbit-lang-btn ${!showOriginal ? "active" : ""}`}
                     onClick={() => setShowOriginal(!showOriginal)}
                     type="button"
-                    title={showOriginal ? "Показать перевод" : "Показать оригинал"}
+                    title={
+                      showOriginal ? "Показать перевод" : "Показать оригинал"
+                    }
                   >
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                      />
                     </svg>
                     {showOriginal ? "RU" : "EN"}
                   </button>
                 )}
                 <button
                   className="rabbit-close-btn"
-                  onClick={() => { setSelectedArticle(null); setShowOriginal(false); }}
+                  onClick={() => {
+                    setSelectedArticle(null);
+                    setShowOriginal(false);
+                  }}
                   type="button"
                 >
-                  <svg className="icon-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="icon-md"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -1753,8 +2475,8 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               {/* Title Section */}
               <div className="rabbit-title-section">
                 <h2 className="rabbit-article-title">
-                  {showOriginal || !selectedArticle.title_ru 
-                    ? selectedArticle.title_en 
+                  {showOriginal || !selectedArticle.title_ru
+                    ? selectedArticle.title_en
                     : selectedArticle.title_ru}
                 </h2>
                 {selectedArticle.title_ru && !showOriginal && (
@@ -1767,40 +2489,77 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               {/* Metadata Card */}
               <div className="rabbit-meta-card">
                 {/* Authors */}
-                {selectedArticle.authors && selectedArticle.authors.length > 0 && (
-                  <div className="rabbit-meta-row">
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <div className="rabbit-meta-content">
-                      <span className="rabbit-meta-label">Авторы</span>
-                      <span className="rabbit-meta-value">{selectedArticle.authors.join(", ")}</span>
+                {selectedArticle.authors &&
+                  selectedArticle.authors.length > 0 && (
+                    <div className="rabbit-meta-row">
+                      <svg
+                        className="icon-sm"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                        />
+                      </svg>
+                      <div className="rabbit-meta-content">
+                        <span className="rabbit-meta-label">Авторы</span>
+                        <span className="rabbit-meta-value">
+                          {selectedArticle.authors.join(", ")}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                )}
-                
+                  )}
+
                 {/* Year */}
                 {selectedArticle.year && (
                   <div className="rabbit-meta-row">
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                      />
                     </svg>
                     <div className="rabbit-meta-content">
                       <span className="rabbit-meta-label">Год</span>
-                      <span className="rabbit-meta-value">{selectedArticle.year}</span>
+                      <span className="rabbit-meta-value">
+                        {selectedArticle.year}
+                      </span>
                     </div>
                   </div>
                 )}
-                
+
                 {/* Journal */}
                 {selectedArticle.journal && (
                   <div className="rabbit-meta-row">
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                      />
                     </svg>
                     <div className="rabbit-meta-content">
                       <span className="rabbit-meta-label">Журнал</span>
-                      <span className="rabbit-meta-value">{selectedArticle.journal}</span>
+                      <span className="rabbit-meta-value">
+                        {selectedArticle.journal}
+                      </span>
                     </div>
                   </div>
                 )}
@@ -1809,25 +2568,54 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               {/* Tags / Badges */}
               <div className="rabbit-tags">
                 {selectedArticle.publication_types?.map((pt) => (
-                  <span key={pt} className="rabbit-tag pub-type">{pt}</span>
+                  <span key={pt} className="rabbit-tag pub-type">
+                    {pt}
+                  </span>
                 ))}
                 {selectedArticle.has_stats && (
                   <span className="rabbit-tag stats">
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      />
                     </svg>
                     Статистика
                   </span>
                 )}
                 {(selectedArticle.stats_quality ?? 0) > 0 && (
-                  <span className={`rabbit-tag stats-q${selectedArticle.stats_quality}`}>
-                    p&lt;{selectedArticle.stats_quality === 3 ? "0.001" : selectedArticle.stats_quality === 2 ? "0.01" : "0.05"}
+                  <span
+                    className={`rabbit-tag stats-q${selectedArticle.stats_quality}`}
+                  >
+                    p&lt;
+                    {selectedArticle.stats_quality === 3
+                      ? "0.001"
+                      : selectedArticle.stats_quality === 2
+                        ? "0.01"
+                        : "0.05"}
                   </span>
                 )}
                 {selectedArticle.title_ru && (
                   <span className="rabbit-tag translated">
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                      />
                     </svg>
                     Переведено
                   </span>
@@ -1843,8 +2631,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                     rel="noopener noreferrer"
                     className="rabbit-link-btn pubmed"
                   >
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
                     </svg>
                     PubMed
                   </a>
@@ -1856,8 +2654,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                     rel="noopener noreferrer"
                     className="rabbit-link-btn doi"
                   >
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                      />
                     </svg>
                     DOI
                   </a>
@@ -1866,20 +2674,39 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   className="rabbit-link-btn pdf"
                   onClick={async () => {
                     try {
-                      const source = await apiGetPdfSource(projectId, selectedArticle.id);
+                      const source = await apiGetPdfSource(
+                        projectId,
+                        selectedArticle.id,
+                      );
                       if (source.directDownload) {
-                        window.open(source.url, '_blank');
+                        window.open(source.url, "_blank");
                       } else {
-                        window.open(getPdfDownloadUrl(projectId, selectedArticle.id), '_blank');
+                        window.open(
+                          getPdfDownloadUrl(projectId, selectedArticle.id),
+                          "_blank",
+                        );
                       }
                     } catch (err: any) {
-                      alert(err.message || 'PDF не найден. Попробуйте поискать на сайте журнала.');
+                      alert(
+                        err.message ||
+                          "PDF не найден. Попробуйте поискать на сайте журнала.",
+                      );
                     }
                   }}
                   type="button"
                 >
-                  <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="icon-sm"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                   PDF
                 </button>
@@ -1890,8 +2717,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                     disabled={translatingOne}
                     type="button"
                   >
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                      />
                     </svg>
                     {translatingOne ? "Переводим..." : "Перевести"}
                   </button>
@@ -1901,11 +2738,24 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                     className="rabbit-link-btn"
                     onClick={openConvertModal}
                     type="button"
-                    style={{ background: 'var(--accent-secondary)', color: 'var(--text-primary)' }}
+                    style={{
+                      background: "var(--accent-secondary)",
+                      color: "var(--text-primary)",
+                    }}
                     title="Добавить как документ проекта"
                   >
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
                     </svg>
                     Документ
                   </button>
@@ -1916,8 +2766,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               <div className="rabbit-abstract-section">
                 <div className="rabbit-section-header">
                   <div className="rabbit-section-title">
-                    <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h16M4 18h7"
+                      />
                     </svg>
                     Абстракт
                   </div>
@@ -1928,8 +2788,18 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                         checked={highlightStats}
                         onChange={(e) => setHighlightStats(e.target.checked)}
                       />
-                      <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                      <svg
+                        className="icon-sm"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                        />
                       </svg>
                       <span>Подсветка</span>
                     </label>
@@ -1937,26 +2807,38 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 </div>
                 <div className="rabbit-abstract-content">
                   {highlightStatistics(
-                    showOriginal || !selectedArticle.abstract_ru 
-                      ? (selectedArticle.abstract_en || "Нет абстракта")
+                    showOriginal || !selectedArticle.abstract_ru
+                      ? selectedArticle.abstract_en || "Нет абстракта"
                       : selectedArticle.abstract_ru,
-                    selectedArticle.stats_json
+                    selectedArticle.stats_json,
                   )}
                 </div>
-                
-                {selectedArticle.abstract_ru && !showOriginal && selectedArticle.abstract_en && (
-                  <details className="rabbit-original-abstract">
-                    <summary>
-                      <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                      Показать оригинал
-                    </summary>
-                    <div className="rabbit-abstract-original-text">
-                      {selectedArticle.abstract_en}
-                    </div>
-                  </details>
-                )}
+
+                {selectedArticle.abstract_ru &&
+                  !showOriginal &&
+                  selectedArticle.abstract_en && (
+                    <details className="rabbit-original-abstract">
+                      <summary>
+                        <svg
+                          className="icon-sm"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                        Показать оригинал
+                      </summary>
+                      <div className="rabbit-abstract-original-text">
+                        {selectedArticle.abstract_en}
+                      </div>
+                    </details>
+                  )}
               </div>
 
               {/* IDs Section */}
@@ -1964,13 +2846,17 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 {selectedArticle.pmid && (
                   <div className="rabbit-id-row">
                     <span className="rabbit-id-label">PMID</span>
-                    <span className="rabbit-id-value">{selectedArticle.pmid}</span>
+                    <span className="rabbit-id-value">
+                      {selectedArticle.pmid}
+                    </span>
                   </div>
                 )}
                 {selectedArticle.doi && (
                   <div className="rabbit-id-row">
                     <span className="rabbit-id-label">DOI</span>
-                    <span className="rabbit-id-value">{selectedArticle.doi}</span>
+                    <span className="rabbit-id-value">
+                      {selectedArticle.doi}
+                    </span>
                   </div>
                 )}
               </div>
@@ -1981,19 +2867,51 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
       {/* Modal: Convert article to document */}
       {showConvertModal && selectedArticle && (
-        <div className="rabbit-overlay" onClick={() => setShowConvertModal(false)}>
-          <div className="rabbit-sidebar" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500, padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <svg className="icon-lg" style={{ color: 'var(--accent)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <div
+          className="rabbit-overlay"
+          onClick={() => setShowConvertModal(false)}
+        >
+          <div
+            className="rabbit-sidebar"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 500, padding: 24 }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 16,
+              }}
+            >
+              <svg
+                className="icon-lg"
+                style={{ color: "var(--accent)" }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               <h3 style={{ margin: 0 }}>Добавить как документ</h3>
             </div>
-            
-            <p style={{ marginBottom: 16, color: 'var(--text-secondary)', lineHeight: 1.6, fontSize: 14 }}>
+
+            <p
+              style={{
+                marginBottom: 16,
+                color: "var(--text-secondary)",
+                lineHeight: 1.6,
+                fontSize: 14,
+              }}
+            >
               Статья будет добавлена как новый редактируемый документ проекта.
             </p>
-            
+
             <label className="stack" style={{ marginBottom: 16 }}>
               <span>Название документа</span>
               <input
@@ -2003,34 +2921,64 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                 placeholder="Введите название документа"
               />
             </label>
-            
+
             {/* Опция импорта библиографии */}
             {selectedArticle.extracted_bibliography && (
-              <label className="row gap" style={{ alignItems: 'center', marginBottom: 16, cursor: 'pointer' }}>
+              <label
+                className="row gap"
+                style={{
+                  alignItems: "center",
+                  marginBottom: 16,
+                  cursor: "pointer",
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={convertIncludeBibliography}
-                  onChange={(e) => setConvertIncludeBibliography(e.target.checked)}
-                  style={{ width: 'auto' }}
+                  onChange={(e) =>
+                    setConvertIncludeBibliography(e.target.checked)
+                  }
+                  style={{ width: "auto" }}
                 />
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <svg className="icon-sm" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <svg
+                    className="icon-sm"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+                    />
                   </svg>
                   Импортировать библиографию из статьи
                 </span>
               </label>
             )}
-            
-            <div className="muted" style={{ fontSize: 12, padding: 12, background: 'var(--bg-secondary)', borderRadius: 8, marginBottom: 24 }}>
+
+            <div
+              className="muted"
+              style={{
+                fontSize: 12,
+                padding: 12,
+                background: "var(--bg-secondary)",
+                borderRadius: 8,
+                marginBottom: 24,
+              }}
+            >
               <strong>Будет создано:</strong>
-              <ul style={{ margin: '8px 0 0 0', paddingLeft: 20 }}>
+              <ul style={{ margin: "8px 0 0 0", paddingLeft: 20 }}>
                 <li>Документ с метаданными статьи</li>
                 <li>Заготовка для основного текста</li>
-                {convertIncludeBibliography && <li>Цитирования из библиографии статьи</li>}
+                {convertIncludeBibliography && (
+                  <li>Цитирования из библиографии статьи</li>
+                )}
               </ul>
             </div>
-            
+
             <div className="row gap">
               <button
                 className="btn"
@@ -2043,8 +2991,19 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   <>Создаём...</>
                 ) : (
                   <>
-                    <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.5v15m7.5-7.5h-15" />
+                    <svg
+                      className="icon-sm"
+                      style={{ marginRight: 6 }}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4.5v15m7.5-7.5h-15"
+                      />
                     </svg>
                     Создать документ
                   </>
@@ -2065,23 +3024,63 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
 
       {/* Modal: Confirm search all articles */}
       {showAllArticlesConfirm && (
-        <div className="rabbit-overlay" onClick={() => setShowAllArticlesConfirm(false)}>
-          <div className="rabbit-sidebar" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 450, padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <svg className="icon-lg" style={{ color: '#fbbf24' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        <div
+          className="rabbit-overlay"
+          onClick={() => setShowAllArticlesConfirm(false)}
+        >
+          <div
+            className="rabbit-sidebar"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 450, padding: 24 }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 16,
+              }}
+            >
+              <svg
+                className="icon-lg"
+                style={{ color: "#fbbf24" }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
               <h3 style={{ margin: 0 }}>Загрузка всех статей</h3>
             </div>
-            
-            <p style={{ marginBottom: 16, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-              По запросу <strong>"{searchQuery}"</strong> найдено примерно <strong>{allArticlesCount?.toLocaleString('ru-RU')}</strong> статей.
+
+            <p
+              style={{
+                marginBottom: 16,
+                color: "var(--text-secondary)",
+                lineHeight: 1.6,
+              }}
+            >
+              По запросу <strong>"{searchQuery}"</strong> найдено примерно{" "}
+              <strong>{allArticlesCount?.toLocaleString("ru-RU")}</strong>{" "}
+              статей.
             </p>
-            
-            <p style={{ marginBottom: 24, color: 'var(--text-muted)', fontSize: 13 }}>
-              Загрузка большого количества статей может занять значительное время. Вы уверены, что хотите загрузить все?
+
+            <p
+              style={{
+                marginBottom: 24,
+                color: "var(--text-muted)",
+                fontSize: 13,
+              }}
+            >
+              Загрузка большого количества статей может занять значительное
+              время. Вы уверены, что хотите загрузить все?
             </p>
-            
+
             <div className="row gap">
               <button
                 className="btn"
@@ -2094,8 +3093,19 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
                   <>Загрузка...</>
                 ) : (
                   <>
-                    <svg className="icon-sm" style={{ marginRight: 6 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    <svg
+                      className="icon-sm"
+                      style={{ marginRight: 6 }}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
                     </svg>
                     Загрузить все
                   </>
@@ -2103,7 +3113,10 @@ export default function ArticlesSection({ projectId, canEdit, onCountsChange }: 
               </button>
               <button
                 className="btn secondary"
-                onClick={() => { setShowAllArticlesConfirm(false); setAllArticlesCount(null); }}
+                onClick={() => {
+                  setShowAllArticlesConfirm(false);
+                  setAllArticlesCount(null);
+                }}
                 type="button"
                 style={{ flex: 1 }}
               >
