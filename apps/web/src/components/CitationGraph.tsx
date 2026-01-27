@@ -579,13 +579,22 @@ export default function CitationGraph({ projectId }: Props) {
 
     const updateSize = () => {
       if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        // Subtract AI panel width (280px) when open, and headers height
-        const aiPanelWidth = showAIAssistant ? 280 : 0;
-        setDimensions({
-          width: Math.max(rect.width - aiPanelWidth, 400),
-          height: Math.max(rect.height - 150, 300),
-        });
+        // В fullscreen режиме используем window dimensions
+        if (isFullscreen) {
+          const aiPanelWidth = showAIAssistant ? 280 : 0;
+          setDimensions({
+            width: Math.max(window.innerWidth - aiPanelWidth, 400),
+            height: Math.max(window.innerHeight - 150, 300),
+          });
+        } else {
+          const rect = containerRef.current.getBoundingClientRect();
+          // Subtract AI panel width (280px) when open, and headers height
+          const aiPanelWidth = showAIAssistant ? 280 : 0;
+          setDimensions({
+            width: Math.max(rect.width - aiPanelWidth, 400),
+            height: Math.max(rect.height - 150, 300),
+          });
+        }
       }
     };
 
@@ -600,7 +609,7 @@ export default function CitationGraph({ projectId }: Props) {
       window.removeEventListener("resize", updateSize);
       resizeObserver.disconnect();
     };
-  }, [showAIAssistant]);
+  }, [showAIAssistant, isFullscreen]);
 
   // Настройка сил графа после загрузки данных
   useEffect(() => {
