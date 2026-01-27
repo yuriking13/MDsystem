@@ -1046,4 +1046,565 @@ export async function adminRoutes(app: FastifyInstance) {
 
     return { ok: true };
   });
+
+  // ===== Projects Management =====
+  app.get('/api/admin/projects', { preHandler: [requireAdmin] }, async (req: any) => {
+    const query = z.object({
+      page: z.string().optional().transform(v => parseInt(v || '1')),
+      limit: z.string().optional().transform(v => parseInt(v || '20')),
+      search: z.string().optional(),
+      sortBy: z.enum(['created_at', 'updated_at', 'name', 'documents_count', 'articles_count']).optional(),
+      sortOrder: z.enum(['asc', 'desc']).optional()
+    }).parse(req.query);
+
+    const offset = (query.page - 1) * query.limit;
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIdx = 1;
+
+    if (query.search) {
+      conditions.push(`(p.name ILIKE $${paramIdx} OR u.email ILIKE $${paramIdx})`);
+      params.push(`%${query.search}%`);
+      paramIdx++;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const sortColumn = query.sortBy || 'created_at';
+    const sortOrder = query.sortOrder || 'desc';
+
+    const [projects, total] = await Promise.all([
+      pool.query(`
+        SELECT 
+          p.id, p.name, p.description, p.created_at, p.updated_at,
+          p.citation_style, p.research_type, p.language,
+          u.id as owner_id, u.email as owner_email,
+          COUNT(DISTINCT d.id)::int as documents_count,
+          COUNT(DISTINCT pa.article_id)::int as articles_count,
+          COUNT(DISTINCT pf.id)::int as files_count,
+          COUNT(DISTINCT pm.user_id)::int as members_count,
+          COALESCE(SUM(pf.size), 0)::bigint as total_size
+        FROM projects p
+        LEFT JOIN users u ON u.id = p.created_by
+        LEFT JOIN documents d ON d.project_id = p.id
+        LEFT JOIN project_articles pa ON pa.project_id = p.id
+        LEFT JOIN project_files pf ON pf.project_id = p.id
+        LEFT JOIN project_members pm ON pm.project_id = p.id
+        ${whereClause}
+        GROUP BY p.id, u.id
+        ORDER BY ${sortColumn === 'documents_count' ? 'COUNT(DISTINCT d.id)' : 
+                  sortColumn === 'articles_count' ? 'COUNT(DISTINCT pa.article_id)' : 
+                  `p.${sortColumn}`} ${sortOrder}
+        LIMIT ${query.limit} OFFSET ${offset}
+      `, params),
+      pool.query(`SELECT COUNT(*) FROM projects p LEFT JOIN users u ON u.id = p.created_by ${whereClause}`, params)
+    ]);
+
+    return {
+      projects: projects.rows,
+      total: parseInt(total.rows[0].count),
+      page: query.page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit)
+    };
+  });
+
+  // Get single project details
+  app.get('/api/admin/projects/:projectId', { preHandler: [requireAdmin] }, async (req: any) => {
+    const { projectId } = req.params;
+
+    const [project, members, recentActivity, statistics] = await Promise.all([
+      pool.query(`
+        SELECT p.*, u.email as owner_email
+        FROM projects p
+        LEFT JOIN users u ON u.id = p.created_by
+        WHERE p.id = $1
+      `, [projectId]),
+      pool.query(`
+        SELECT pm.*, u.email
+        FROM project_members pm
+        JOIN users u ON u.id = pm.user_id
+        WHERE pm.project_id = $1
+      `, [projectId]),
+      pool.query(`
+        SELECT a.*, u.email
+        FROM user_activity a
+        JOIN users u ON u.id = a.user_id
+        WHERE a.action_detail->>'projectId' = $1
+        ORDER BY a.created_at DESC
+        LIMIT 20
+      `, [projectId]),
+      pool.query(`
+        SELECT type, COUNT(*)::int as count
+        FROM project_statistics
+        WHERE project_id = $1
+        GROUP BY type
+      `, [projectId])
+    ]);
+
+    if (!project.rowCount) {
+      return { error: 'Project not found' };
+    }
+
+    return {
+      project: project.rows[0],
+      members: members.rows,
+      recentActivity: recentActivity.rows,
+      statisticsSummary: statistics.rows
+    };
+  });
+
+  // Delete project (admin)
+  app.delete('/api/admin/projects/:projectId', { preHandler: [requireAdmin] }, async (req: any) => {
+    const { projectId } = req.params;
+    z.object({ confirm: z.literal(true) }).parse(req.body);
+
+    const project = await pool.query('SELECT name FROM projects WHERE id = $1', [projectId]);
+    if (!project.rowCount) {
+      return { error: 'Project not found' };
+    }
+
+    // Delete in correct order
+    await pool.query('DELETE FROM project_files WHERE project_id = $1', [projectId]);
+    await pool.query('DELETE FROM citations WHERE document_id IN (SELECT id FROM documents WHERE project_id = $1)', [projectId]);
+    await pool.query('DELETE FROM documents WHERE project_id = $1', [projectId]);
+    await pool.query('DELETE FROM project_articles WHERE project_id = $1', [projectId]);
+    await pool.query('DELETE FROM project_statistics WHERE project_id = $1', [projectId]);
+    await pool.query('DELETE FROM project_members WHERE project_id = $1', [projectId]);
+    await pool.query('DELETE FROM search_queries WHERE project_id = $1', [projectId]);
+    await pool.query('DELETE FROM graph_fetch_jobs WHERE project_id = $1', [projectId]);
+    await pool.query('DELETE FROM graph_cache WHERE project_id = $1', [projectId]);
+    await pool.query('DELETE FROM projects WHERE id = $1', [projectId]);
+
+    await logAdminAction(req.user.sub, 'delete_project', 'project', projectId, { name: project.rows[0].name }, req.ip);
+
+    return { ok: true };
+  });
+
+  // ===== Background Jobs Management =====
+  app.get('/api/admin/jobs', { preHandler: [requireAdmin] }, async (req: any) => {
+    const query = z.object({
+      status: z.enum(['pending', 'running', 'completed', 'failed', 'cancelled', 'all']).optional(),
+      page: z.string().optional().transform(v => parseInt(v || '1')),
+      limit: z.string().optional().transform(v => parseInt(v || '50'))
+    }).parse(req.query);
+
+    const offset = (query.page - 1) * query.limit;
+    let whereClause = '';
+    const params: any[] = [];
+
+    if (query.status && query.status !== 'all') {
+      whereClause = 'WHERE j.status = $1';
+      params.push(query.status);
+    }
+
+    const [jobs, total, summary] = await Promise.all([
+      pool.query(`
+        SELECT j.*, p.name as project_name, u.email as owner_email
+        FROM graph_fetch_jobs j
+        LEFT JOIN projects p ON p.id = j.project_id
+        LEFT JOIN users u ON u.id = p.created_by
+        ${whereClause}
+        ORDER BY j.created_at DESC
+        LIMIT ${query.limit} OFFSET ${offset}
+      `, params),
+      pool.query(`SELECT COUNT(*) FROM graph_fetch_jobs j ${whereClause}`, params),
+      pool.query(`
+        SELECT status, COUNT(*)::int as count
+        FROM graph_fetch_jobs
+        WHERE created_at >= NOW() - INTERVAL '7 days'
+        GROUP BY status
+      `)
+    ]);
+
+    return {
+      jobs: jobs.rows,
+      total: parseInt(total.rows[0].count),
+      page: query.page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+      summary: summary.rows
+    };
+  });
+
+  // Cancel job
+  app.post('/api/admin/jobs/:jobId/cancel', { preHandler: [requireAdmin] }, async (req: any) => {
+    const { jobId } = req.params;
+
+    const result = await pool.query(
+      `UPDATE graph_fetch_jobs 
+       SET status = 'cancelled', cancelled_at = NOW(), cancel_reason = 'admin_cancelled'
+       WHERE id = $1 AND status IN ('pending', 'running')
+       RETURNING id`,
+      [jobId]
+    );
+
+    if (!result.rowCount) {
+      return { error: 'Job not found or already finished' };
+    }
+
+    await logAdminAction(req.user.sub, 'cancel_job', 'job', jobId, {}, req.ip);
+
+    return { ok: true };
+  });
+
+  // Retry failed job
+  app.post('/api/admin/jobs/:jobId/retry', { preHandler: [requireAdmin] }, async (req: any) => {
+    const { jobId } = req.params;
+
+    const result = await pool.query(
+      `UPDATE graph_fetch_jobs 
+       SET status = 'pending', error_message = NULL, cancelled_at = NULL, cancel_reason = NULL
+       WHERE id = $1 AND status IN ('failed', 'cancelled')
+       RETURNING id`,
+      [jobId]
+    );
+
+    if (!result.rowCount) {
+      return { error: 'Job not found or not retriable' };
+    }
+
+    await logAdminAction(req.user.sub, 'retry_job', 'job', jobId, {}, req.ip);
+
+    return { ok: true };
+  });
+
+  // ===== Articles Management =====
+  app.get('/api/admin/articles', { preHandler: [requireAdmin] }, async (req: any) => {
+    const query = z.object({
+      page: z.string().optional().transform(v => parseInt(v || '1')),
+      limit: z.string().optional().transform(v => parseInt(v || '50')),
+      search: z.string().optional(),
+      source: z.string().optional(),
+      hasStats: z.enum(['true', 'false', 'all']).optional()
+    }).parse(req.query);
+
+    const offset = (query.page - 1) * query.limit;
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIdx = 1;
+
+    if (query.search) {
+      conditions.push(`(title_en ILIKE $${paramIdx} OR doi ILIKE $${paramIdx} OR pmid ILIKE $${paramIdx})`);
+      params.push(`%${query.search}%`);
+      paramIdx++;
+    }
+    if (query.source) {
+      conditions.push(`source = $${paramIdx}`);
+      params.push(query.source);
+      paramIdx++;
+    }
+    if (query.hasStats && query.hasStats !== 'all') {
+      conditions.push(`has_stats = $${paramIdx}`);
+      params.push(query.hasStats === 'true');
+      paramIdx++;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const [articles, total, sources, stats] = await Promise.all([
+      pool.query(`
+        SELECT a.id, a.doi, a.pmid, a.title_en, a.year, a.journal, a.source, 
+               a.has_stats, a.created_at,
+               COUNT(DISTINCT pa.project_id)::int as projects_using
+        FROM articles a
+        LEFT JOIN project_articles pa ON pa.article_id = a.id
+        ${whereClause}
+        GROUP BY a.id
+        ORDER BY a.created_at DESC
+        LIMIT ${query.limit} OFFSET ${offset}
+      `, params),
+      pool.query(`SELECT COUNT(*) FROM articles ${whereClause}`, params),
+      pool.query(`SELECT source, COUNT(*)::int as count FROM articles GROUP BY source ORDER BY count DESC`),
+      pool.query(`
+        SELECT 
+          COUNT(*)::int as total,
+          COUNT(*) FILTER (WHERE has_stats)::int as with_stats,
+          COUNT(*) FILTER (WHERE doi IS NOT NULL)::int as with_doi,
+          COUNT(*) FILTER (WHERE pmid IS NOT NULL)::int as with_pmid,
+          COUNT(*) FILTER (WHERE is_from_file)::int as from_files
+        FROM articles
+      `)
+    ]);
+
+    return {
+      articles: articles.rows,
+      total: parseInt(total.rows[0].count),
+      page: query.page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+      sources: sources.rows,
+      stats: stats.rows[0]
+    };
+  });
+
+  // Delete orphan articles (not used in any project)
+  app.delete('/api/admin/articles/orphans', { preHandler: [requireAdmin] }, async (req: any) => {
+    z.object({ confirm: z.literal(true) }).parse(req.body);
+
+    const result = await pool.query(`
+      DELETE FROM articles 
+      WHERE id NOT IN (SELECT DISTINCT article_id FROM project_articles)
+      AND id NOT IN (SELECT DISTINCT article_id FROM citations)
+      RETURNING id
+    `);
+
+    await logAdminAction(req.user.sub, 'delete_orphan_articles', null, null, { count: result.rowCount }, req.ip);
+
+    return { ok: true, deletedCount: result.rowCount };
+  });
+
+  // ===== Storage Management =====
+  app.get('/api/admin/storage', { preHandler: [requireAdmin] }, async (req: any) => {
+    const query = z.object({
+      page: z.string().optional().transform(v => parseInt(v || '1')),
+      limit: z.string().optional().transform(v => parseInt(v || '50')),
+      category: z.string().optional(),
+      projectId: z.string().uuid().optional()
+    }).parse(req.query);
+
+    const offset = (query.page - 1) * query.limit;
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let paramIdx = 1;
+
+    if (query.category) {
+      conditions.push(`pf.category = $${paramIdx}`);
+      params.push(query.category);
+      paramIdx++;
+    }
+    if (query.projectId) {
+      conditions.push(`pf.project_id = $${paramIdx}`);
+      params.push(query.projectId);
+      paramIdx++;
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    const [files, total, summary] = await Promise.all([
+      pool.query(`
+        SELECT pf.*, p.name as project_name, u.email as uploader_email
+        FROM project_files pf
+        LEFT JOIN projects p ON p.id = pf.project_id
+        LEFT JOIN users u ON u.id = pf.uploaded_by
+        ${whereClause}
+        ORDER BY pf.created_at DESC
+        LIMIT ${query.limit} OFFSET ${offset}
+      `, params),
+      pool.query(`SELECT COUNT(*) FROM project_files pf ${whereClause}`, params),
+      pool.query(`
+        SELECT 
+          category,
+          COUNT(*)::int as count,
+          SUM(size)::bigint as total_size
+        FROM project_files
+        GROUP BY category
+        ORDER BY total_size DESC
+      `)
+    ]);
+
+    return {
+      files: files.rows,
+      total: parseInt(total.rows[0].count),
+      page: query.page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+      summary: summary.rows
+    };
+  });
+
+  // ===== System Health Extended =====
+  app.get('/api/admin/health', { preHandler: [requireAdmin] }, async () => {
+    const [dbStats, tableStats, cacheStats] = await Promise.all([
+      pool.query(`
+        SELECT 
+          (SELECT COUNT(*) FROM pg_stat_activity WHERE state = 'active')::int as active_connections,
+          (SELECT COUNT(*) FROM pg_stat_activity)::int as total_connections,
+          (SELECT setting::int FROM pg_settings WHERE name = 'max_connections') as max_connections,
+          pg_database_size(current_database())::bigint as database_size
+      `),
+      pool.query(`
+        SELECT 
+          relname as table_name,
+          n_live_tup::bigint as row_count,
+          pg_total_relation_size(relid)::bigint as total_size
+        FROM pg_stat_user_tables
+        ORDER BY pg_total_relation_size(relid) DESC
+        LIMIT 15
+      `),
+      pool.query(`
+        SELECT 
+          (SELECT COUNT(*) FROM graph_cache)::int as cache_entries,
+          (SELECT COUNT(*) FROM graph_cache WHERE expires_at < NOW())::int as expired_entries
+      `)
+    ]);
+
+    // Pool stats
+    const poolStats = {
+      totalCount: pool.totalCount,
+      idleCount: pool.idleCount,
+      waitingCount: pool.waitingCount
+    };
+
+    return {
+      database: dbStats.rows[0],
+      tables: tableStats.rows,
+      cache: cacheStats.rows[0],
+      pool: poolStats,
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      nodeVersion: process.version
+    };
+  });
+
+  // ===== Bulk User Operations =====
+  app.post('/api/admin/users/bulk-block', { preHandler: [requireAdmin] }, async (req: any) => {
+    const body = z.object({
+      userIds: z.array(z.string().uuid()),
+      blocked: z.boolean(),
+      reason: z.string().optional()
+    }).parse(req.body);
+
+    await pool.query(
+      `UPDATE users 
+       SET is_blocked = $1, blocked_reason = $2, blocked_at = $3
+       WHERE id = ANY($4::uuid[])`,
+      [body.blocked, body.reason || null, body.blocked ? new Date() : null, body.userIds]
+    );
+
+    await logAdminAction(
+      req.user.sub, 
+      body.blocked ? 'bulk_block_users' : 'bulk_unblock_users', 
+      'user', 
+      null, 
+      { count: body.userIds.length, reason: body.reason }, 
+      req.ip
+    );
+
+    return { ok: true, affectedCount: body.userIds.length };
+  });
+
+  // ===== Retention & Analytics =====
+  app.get('/api/admin/analytics/retention', { preHandler: [requireAdmin] }, async () => {
+    const [dau, wau, mau, newUsers, churn] = await Promise.all([
+      // DAU - last 30 days
+      pool.query(`
+        SELECT DATE(created_at) as date, COUNT(DISTINCT user_id)::int as count
+        FROM user_activity
+        WHERE created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date
+      `),
+      // WAU - last 12 weeks  
+      pool.query(`
+        SELECT DATE_TRUNC('week', created_at) as week, COUNT(DISTINCT user_id)::int as count
+        FROM user_activity
+        WHERE created_at >= NOW() - INTERVAL '12 weeks'
+        GROUP BY DATE_TRUNC('week', created_at)
+        ORDER BY week
+      `),
+      // MAU - last 12 months
+      pool.query(`
+        SELECT DATE_TRUNC('month', created_at) as month, COUNT(DISTINCT user_id)::int as count
+        FROM user_activity
+        WHERE created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY DATE_TRUNC('month', created_at)
+        ORDER BY month
+      `),
+      // New users per week
+      pool.query(`
+        SELECT DATE_TRUNC('week', created_at) as week, COUNT(*)::int as count
+        FROM users
+        WHERE created_at >= NOW() - INTERVAL '12 weeks'
+        GROUP BY DATE_TRUNC('week', created_at)
+        ORDER BY week
+      `),
+      // Churn - users who haven't been active in 30 days but were active before
+      pool.query(`
+        SELECT COUNT(*)::int as churned_users
+        FROM users u
+        WHERE u.last_login_at < NOW() - INTERVAL '30 days'
+        AND u.last_login_at IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM user_activity ua 
+          WHERE ua.user_id = u.id
+        )
+      `)
+    ]);
+
+    return {
+      dau: dau.rows,
+      wau: wau.rows,
+      mau: mau.rows,
+      newUsers: newUsers.rows,
+      churnedUsers: churn.rows[0]?.churned_users || 0
+    };
+  });
+
+  // ===== Feature Flags / System Config =====
+  app.get('/api/admin/config', { preHandler: [requireAdmin] }, async () => {
+    // Return current system configuration (from env or defaults)
+    return {
+      config: {
+        maxProjectsPerUser: parseInt(process.env.MAX_PROJECTS_PER_USER || '50'),
+        maxDocumentsPerProject: parseInt(process.env.MAX_DOCUMENTS_PER_PROJECT || '100'),
+        maxFileSizeMb: parseInt(process.env.MAX_FILE_SIZE_MB || '50'),
+        maxStoragePerUserMb: parseInt(process.env.MAX_STORAGE_PER_USER_MB || '1000'),
+        rateLimits: {
+          register: process.env.RATE_LIMIT_REGISTER || '5/hour',
+          login: process.env.RATE_LIMIT_LOGIN || '10/minute',
+          api: process.env.RATE_LIMIT_API || '100/minute'
+        },
+        features: {
+          aiErrorAnalysis: process.env.FEATURE_AI_ERROR_ANALYSIS === 'true',
+          aiProtocolCheck: process.env.FEATURE_AI_PROTOCOL_CHECK === 'true',
+          fileExtraction: process.env.FEATURE_FILE_EXTRACTION !== 'false'
+        }
+      }
+    };
+  });
+
+  // ===== Cleanup Operations =====
+  app.post('/api/admin/cleanup/expired-cache', { preHandler: [requireAdmin] }, async (req: any) => {
+    const result = await pool.query(`
+      DELETE FROM graph_cache WHERE expires_at < NOW() RETURNING id
+    `);
+
+    await logAdminAction(req.user.sub, 'cleanup_expired_cache', null, null, { count: result.rowCount }, req.ip);
+
+    return { ok: true, deletedCount: result.rowCount };
+  });
+
+  app.post('/api/admin/cleanup/old-sessions', { preHandler: [requireAdmin] }, async (req: any) => {
+    const body = z.object({
+      olderThanDays: z.number().min(1).max(365).default(30)
+    }).parse(req.body);
+
+    const result = await pool.query(`
+      DELETE FROM user_sessions 
+      WHERE is_active = false AND ended_at < NOW() - INTERVAL '1 day' * $1
+      RETURNING id
+    `, [body.olderThanDays]);
+
+    await logAdminAction(req.user.sub, 'cleanup_old_sessions', null, null, { 
+      count: result.rowCount, 
+      olderThanDays: body.olderThanDays 
+    }, req.ip);
+
+    return { ok: true, deletedCount: result.rowCount };
+  });
+
+  app.post('/api/admin/cleanup/old-activity', { preHandler: [requireAdmin] }, async (req: any) => {
+    const body = z.object({
+      olderThanDays: z.number().min(30).max(365).default(90)
+    }).parse(req.body);
+
+    const result = await pool.query(`
+      DELETE FROM user_activity 
+      WHERE created_at < NOW() - INTERVAL '1 day' * $1
+      RETURNING id
+    `, [body.olderThanDays]);
+
+    await logAdminAction(req.user.sub, 'cleanup_old_activity', null, null, { 
+      count: result.rowCount, 
+      olderThanDays: body.olderThanDays 
+    }, req.ip);
+
+    return { ok: true, deletedCount: result.rowCount };
+  });
 }

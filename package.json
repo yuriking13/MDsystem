@@ -6,6 +6,11 @@
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint --fix",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm --filter api test",
+    "test:coverage": "pnpm --filter api test:coverage",
+    "prepare": "husky || true",
     "db:cleanup": "cd apps/api && node -e \"require('child_process').execSync('psql ' + process.env.DATABASE_URL + ' -f prisma/migrations/cleanup_invalid_statistics.sql', {stdio: 'inherit'})\""
   },
   "dependencies": {
@@ -16,6 +21,21 @@
     "tiptap-pagination-plus": "^3.0.3"
   },
   "devDependencies": {
-    "@types/node": "^25.0.6"
+    "@types/node": "^25.0.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.2"
+  },
+  "lint-staged": {
+    "apps/api/**/*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "apps/web/**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   }
 }

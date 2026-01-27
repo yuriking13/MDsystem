@@ -8,7 +8,11 @@ import {
   IconSettings,
   IconArrowLeft,
   IconExclamation,
-  IconShield
+  IconShield,
+  IconFolder,
+  IconBook,
+  IconClock,
+  IconGlobe,
 } from "../../components/FlowbiteIcons";
 
 type SidebarItem = {
@@ -26,9 +30,14 @@ export default function AdminLayout() {
   const sidebarItems: SidebarItem[] = [
     { path: "/admin", label: "Дашборд", icon: <IconChartBar /> },
     { path: "/admin/users", label: "Пользователи", icon: <IconUsers /> },
+    { path: "/admin/projects", label: "Проекты", icon: <IconFolder /> },
+    { path: "/admin/articles", label: "Статьи", icon: <IconBook /> },
     { path: "/admin/activity", label: "Активность", icon: <IconCalendar /> },
+    { path: "/admin/sessions", label: "Сессии", icon: <IconGlobe /> },
+    { path: "/admin/jobs", label: "Задачи", icon: <IconClock /> },
     { path: "/admin/errors", label: "Ошибки", icon: <IconExclamation /> },
     { path: "/admin/audit", label: "Аудит", icon: <IconShield /> },
+    { path: "/admin/system", label: "Система", icon: <IconSettings /> },
     { path: "/admin/settings", label: "Настройки", icon: <IconSettings /> },
   ];
 

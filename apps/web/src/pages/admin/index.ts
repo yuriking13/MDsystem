@@ -7,3 +7,7 @@ export { default as AdminErrorsPage } from './AdminErrorsPage';
 export { default as AdminAuditPage } from './AdminAuditPage';
 export { default as AdminSettingsPage } from './AdminSettingsPage';
 export { default as AdminSessionsPage } from './AdminSessionsPage';
+export { default as AdminProjectsPage } from './AdminProjectsPage';
+export { default as AdminJobsPage } from './AdminJobsPage';
+export { default as AdminSystemPage } from './AdminSystemPage';
+export { default as AdminArticlesPage } from './AdminArticlesPage';

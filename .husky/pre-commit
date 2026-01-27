@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint-staged for staged files
+npx lint-staged
+
+# Run type checking
+echo "Running type check..."
+pnpm --filter api tsc --noEmit || {
+  echo "❌ TypeScript errors found in API. Please fix before committing."
+  exit 1
+}

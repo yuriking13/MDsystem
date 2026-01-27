@@ -5028,3 +5028,106 @@ input:focus::placeholder {
     margin: 20px auto;
   }
 }
+
+/* ===== PAGE LOADER ===== */
+
+.page-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 1.5rem;
+  color: var(--text-secondary);
+}
+
+.page-loader-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border-glass);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.page-loader p {
+  font-size: 1rem;
+  margin: 0;
+  opacity: 0.8;
+}
+
+/* ===== ERROR BOUNDARY ===== */
+
+.error-boundary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.error-boundary-card {
+  background: var(--bg-glass);
+  border: 1px solid var(--danger-glow);
+  border-radius: 16px;
+  padding: 2.5rem;
+  max-width: 500px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(239, 68, 68, 0.1);
+}
+
+.error-boundary-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--danger-gradient);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2rem;
+}
+
+.error-boundary h2 {
+  color: var(--text-primary);
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+}
+
+.error-boundary p {
+  color: var(--text-secondary);
+  margin: 0 0 1.5rem;
+  line-height: 1.6;
+}
+
+.error-boundary-details {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--danger);
+  max-height: 150px;
+  overflow-y: auto;
+  word-break: break-word;
+}
+
+.error-boundary-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.error-boundary-actions .btn {
+  min-width: 140px;
+}
