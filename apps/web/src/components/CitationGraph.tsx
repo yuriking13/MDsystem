@@ -11,6 +11,10 @@ import {
   apiGraphAIAssistant,
   apiExportCitationGraph,
   apiGetGraphRecommendations,
+  apiSemanticSearch,
+  apiGenerateEmbeddings,
+  apiGetEmbeddingStats,
+  apiAnalyzeMethodologies,
   type GraphNode,
   type GraphLink,
   type GraphFilterOptions,
@@ -21,6 +25,9 @@ import {
   type GraphArticleForAI,
   type GraphFiltersForAI,
   type GraphRecommendation,
+  type SemanticSearchResult,
+  type EmbeddingStatsResponse,
+  type MethodologyCluster,
 } from "../lib/api";
 import {
   IconInfoCircle,
@@ -38,6 +45,7 @@ import {
   IconExternalLink,
   IconPlus,
   IconTranslate,
+  IconChartBar,
 } from "./FlowbiteIcons";
 
 type Props = {
@@ -260,6 +268,29 @@ export default function CitationGraph({ projectId }: Props) {
     new Set(),
   );
 
+  // === СЕМАНТИЧЕСКИЙ ПОИСК ===
+  const [showSemanticSearch, setShowSemanticSearch] = useState(false);
+  const [semanticQuery, setSemanticQuery] = useState("");
+  const [semanticResults, setSemanticResults] = useState<
+    SemanticSearchResult[]
+  >([]);
+  const [semanticSearching, setSemanticSearching] = useState(false);
+  const [semanticThreshold, setSemanticThreshold] = useState(0.7);
+  const [embeddingStats, setEmbeddingStats] =
+    useState<EmbeddingStatsResponse | null>(null);
+  const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false);
+  const [embeddingMessage, setEmbeddingMessage] = useState<string | null>(null);
+
+  // === КЛАСТЕРИЗАЦИЯ МЕТОДОЛОГИЙ ===
+  const [showMethodologyClusters, setShowMethodologyClusters] = useState(false);
+  const [methodologyClusters, setMethodologyClusters] = useState<
+    MethodologyCluster[]
+  >([]);
+  const [analyzingMethodologies, setAnalyzingMethodologies] = useState(false);
+  const [methodologyFilter, setMethodologyFilter] = useState<string | null>(
+    null,
+  );
+
   // Глобальный язык для всех узлов графа
   const [globalLang, setGlobalLang] = useState<"en" | "ru">("en");
 
@@ -341,6 +372,105 @@ export default function CitationGraph({ projectId }: Props) {
     } finally {
       setLoadingRecommendations(false);
     }
+  };
+
+  // === СЕМАНТИЧЕСКИЙ ПОИСК ===
+
+  // Загрузка статистики embeddings
+  const loadEmbeddingStats = async () => {
+    try {
+      const stats = await apiGetEmbeddingStats(projectId);
+      setEmbeddingStats(stats);
+    } catch (err: any) {
+      console.error("Failed to load embedding stats:", err);
+    }
+  };
+
+  // Генерация embeddings для статей
+  const handleGenerateEmbeddings = async () => {
+    setGeneratingEmbeddings(true);
+    setEmbeddingMessage(null);
+    try {
+      const result = await apiGenerateEmbeddings(projectId, undefined, 50);
+      setEmbeddingMessage(
+        `Обработано ${result.processed} статей. Осталось: ${result.remaining}`,
+      );
+      await loadEmbeddingStats();
+
+      // Если есть ещё статьи для обработки, продолжаем
+      if (result.remaining > 0) {
+        setTimeout(() => {
+          handleGenerateEmbeddings();
+        }, 1500);
+      }
+    } catch (err: any) {
+      console.error("Failed to generate embeddings:", err);
+      setEmbeddingMessage(`Ошибка: ${err.message}`);
+    } finally {
+      setGeneratingEmbeddings(false);
+    }
+  };
+
+  // Семантический поиск
+  const handleSemanticSearch = async () => {
+    if (!semanticQuery.trim()) return;
+
+    setSemanticSearching(true);
+    try {
+      const result = await apiSemanticSearch(
+        projectId,
+        semanticQuery,
+        20,
+        semanticThreshold,
+      );
+      setSemanticResults(result.results);
+    } catch (err: any) {
+      console.error("Semantic search failed:", err);
+      alert(`Ошибка поиска: ${err.message}`);
+    } finally {
+      setSemanticSearching(false);
+    }
+  };
+
+  // Подсветить статью на графе по результату семантического поиска
+  const highlightSemanticResult = (articleId: string) => {
+    if (!data) return;
+    const node = data.nodes.find((n) => n.id === articleId) as GraphNode & {
+      x?: number;
+      y?: number;
+    };
+    if (
+      node &&
+      graphRef.current &&
+      node.x !== undefined &&
+      node.y !== undefined
+    ) {
+      graphRef.current.centerAt(node.x, node.y, 1000);
+      graphRef.current.zoom(2, 1000);
+      setSelectedNodeForDisplay(node);
+    }
+  };
+
+  // === КЛАСТЕРИЗАЦИЯ МЕТОДОЛОГИЙ ===
+
+  const handleAnalyzeMethodologies = async () => {
+    setAnalyzingMethodologies(true);
+    try {
+      const result = await apiAnalyzeMethodologies(projectId);
+      setMethodologyClusters(result.clusters);
+      setShowMethodologyClusters(true);
+    } catch (err: any) {
+      console.error("Failed to analyze methodologies:", err);
+      alert(`Ошибка анализа: ${err.message}`);
+    } finally {
+      setAnalyzingMethodologies(false);
+    }
+  };
+
+  // Фильтровать граф по методологии
+  const filterByMethodology = (clusterType: string | null) => {
+    setMethodologyFilter(clusterType);
+    // Подсветка узлов принадлежащих к кластеру будет в nodeCanvasObject
   };
 
   // Вспомогательная функция для создания опций графа с учетом режима "без ограничений"
@@ -1460,6 +1590,52 @@ export default function CitationGraph({ projectId }: Props) {
           )}
         </button>
 
+        {/* Семантический поиск */}
+        <button
+          className={showSemanticSearch ? "btn primary" : "btn secondary"}
+          style={{
+            padding: "5px 10px",
+            fontSize: 11,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+          onClick={() => {
+            setShowSemanticSearch(!showSemanticSearch);
+            if (!showSemanticSearch) {
+              loadEmbeddingStats();
+            }
+          }}
+          title="Семантический поиск по статьям"
+        >
+          <IconSearch size="sm" />
+          <span>Сем.</span>
+        </button>
+
+        {/* Анализ методологий */}
+        <button
+          className={showMethodologyClusters ? "btn primary" : "btn secondary"}
+          style={{
+            padding: "5px 10px",
+            fontSize: 11,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+          onClick={() => {
+            if (!showMethodologyClusters && methodologyClusters.length === 0) {
+              handleAnalyzeMethodologies();
+            } else {
+              setShowMethodologyClusters(!showMethodologyClusters);
+            }
+          }}
+          disabled={analyzingMethodologies}
+          title="Анализ методологий исследований"
+        >
+          <IconChartBar size="sm" />
+          <span>{analyzingMethodologies ? "..." : "Метод."}</span>
+        </button>
+
         {/* Экспорт */}
         <div className="dropdown" style={{ position: "relative" }}>
           <button
@@ -1998,6 +2174,254 @@ export default function CitationGraph({ projectId }: Props) {
           style={{ margin: "8px 20px", padding: 12, fontSize: 13 }}
         >
           {importMessage}
+        </div>
+      )}
+
+      {/* Semantic Search Panel */}
+      {showSemanticSearch && (
+        <div
+          className="graph-filters"
+          style={{
+            padding: "12px 20px",
+            borderBottom: "1px solid var(--border-glass)",
+            background:
+              "linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
+          }}
+        >
+          <div style={{ marginBottom: 12 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                marginBottom: 8,
+              }}
+            >
+              <IconSearch size="sm" />
+              <span style={{ fontWeight: 600 }}>Семантический поиск</span>
+              {embeddingStats && (
+                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  ({embeddingStats.withEmbeddings}/
+                  {embeddingStats.totalArticles} статей с embeddings,
+                  {embeddingStats.completionRate.toFixed(0)}%)
+                </span>
+              )}
+            </div>
+
+            {embeddingStats && embeddingStats.withoutEmbeddings > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <button
+                  className="btn secondary"
+                  style={{ fontSize: 11, padding: "4px 8px" }}
+                  onClick={handleGenerateEmbeddings}
+                  disabled={generatingEmbeddings}
+                >
+                  {generatingEmbeddings
+                    ? "Генерация..."
+                    : `Создать embeddings (${embeddingStats.withoutEmbeddings})`}
+                </button>
+                {embeddingMessage && (
+                  <span
+                    style={{
+                      marginLeft: 8,
+                      fontSize: 11,
+                      color: "var(--text-muted)",
+                    }}
+                  >
+                    {embeddingMessage}
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <input
+              type="text"
+              value={semanticQuery}
+              onChange={(e) => setSemanticQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSemanticSearch()}
+              placeholder="Введите запрос для поиска похожих статей..."
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid var(--border-glass)",
+                background: "var(--bg-primary)",
+                color: "inherit",
+                fontSize: 13,
+              }}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                Порог:
+              </label>
+              <input
+                type="range"
+                min={0.3}
+                max={0.95}
+                step={0.05}
+                value={semanticThreshold}
+                onChange={(e) =>
+                  setSemanticThreshold(parseFloat(e.target.value))
+                }
+                style={{ width: 60 }}
+              />
+              <span style={{ fontSize: 11, minWidth: 30 }}>
+                {semanticThreshold.toFixed(2)}
+              </span>
+            </div>
+            <button
+              className="btn primary"
+              onClick={handleSemanticSearch}
+              disabled={semanticSearching || !semanticQuery.trim()}
+              style={{ padding: "8px 16px" }}
+            >
+              {semanticSearching ? "..." : "Найти"}
+            </button>
+          </div>
+
+          {semanticResults.length > 0 && (
+            <div style={{ marginTop: 12, maxHeight: 200, overflowY: "auto" }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--text-muted)",
+                  marginBottom: 6,
+                }}
+              >
+                Найдено {semanticResults.length} похожих статей:
+              </div>
+              {semanticResults.map((result) => (
+                <div
+                  key={result.id}
+                  onClick={() => highlightSemanticResult(result.id)}
+                  style={{
+                    padding: "6px 8px",
+                    marginBottom: 4,
+                    background: "var(--bg-secondary)",
+                    borderRadius: 4,
+                    cursor: "pointer",
+                    fontSize: 12,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span
+                    style={{
+                      flex: 1,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {result.titleEn || result.title}
+                  </span>
+                  <span
+                    style={{
+                      marginLeft: 8,
+                      padding: "2px 6px",
+                      background: `rgba(16, 185, 129, ${result.similarity})`,
+                      borderRadius: 4,
+                      fontSize: 10,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {(result.similarity * 100).toFixed(0)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Methodology Clusters Panel */}
+      {showMethodologyClusters && methodologyClusters.length > 0 && (
+        <div
+          className="graph-filters"
+          style={{
+            padding: "12px 20px",
+            borderBottom: "1px solid var(--border-glass)",
+            background:
+              "linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05))",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 12,
+            }}
+          >
+            <IconChartBar size="sm" />
+            <span style={{ fontWeight: 600 }}>
+              Кластеризация по методологиям
+            </span>
+            <button
+              className="btn secondary"
+              style={{ fontSize: 10, padding: "2px 6px", marginLeft: "auto" }}
+              onClick={() => filterByMethodology(null)}
+            >
+              Сбросить фильтр
+            </button>
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {methodologyClusters
+              .filter((c) => c.count > 0)
+              .sort((a, b) => b.count - a.count)
+              .map((cluster) => (
+                <button
+                  key={cluster.type}
+                  onClick={() =>
+                    filterByMethodology(
+                      methodologyFilter === cluster.type ? null : cluster.type,
+                    )
+                  }
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: 6,
+                    border:
+                      methodologyFilter === cluster.type
+                        ? "2px solid var(--accent)"
+                        : "1px solid var(--border-glass)",
+                    background:
+                      methodologyFilter === cluster.type
+                        ? "var(--accent)"
+                        : "var(--bg-secondary)",
+                    color:
+                      methodologyFilter === cluster.type ? "white" : "inherit",
+                    cursor: "pointer",
+                    fontSize: 11,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <span>{cluster.name}</span>
+                  <span
+                    style={{
+                      background:
+                        methodologyFilter === cluster.type
+                          ? "rgba(255,255,255,0.2)"
+                          : "var(--bg-tertiary)",
+                      padding: "1px 5px",
+                      borderRadius: 8,
+                      fontSize: 10,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {cluster.count}
+                  </span>
+                  <span style={{ fontSize: 9, color: "var(--text-muted)" }}>
+                    ({cluster.percentage.toFixed(0)}%)
+                  </span>
+                </button>
+              ))}
+          </div>
         </div>
       )}
 

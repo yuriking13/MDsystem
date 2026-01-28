@@ -1071,6 +1071,66 @@ export async function apiGetEmbeddingStats(
   );
 }
 
+// === Methodology Clustering ===
+
+export type MethodologyType =
+  | "rct"
+  | "meta_analysis"
+  | "cohort"
+  | "case_control"
+  | "cross_sectional"
+  | "case_report"
+  | "review"
+  | "experimental"
+  | "qualitative"
+  | "other";
+
+export type MethodologyCluster = {
+  type: MethodologyType;
+  name: string;
+  count: number;
+  percentage: number;
+  articleIds: string[];
+  keywords: string[];
+};
+
+export type MethodologyAnalysisResponse = {
+  success: boolean;
+  totalArticles: number;
+  clusters: MethodologyCluster[];
+  summary: {
+    top3: Array<{ type: MethodologyType; name: string; count: number }>;
+    hasRCT: boolean;
+    hasMetaAnalysis: boolean;
+    experimentalRatio: number;
+  };
+};
+
+export async function apiAnalyzeMethodologies(
+  projectId: string,
+): Promise<MethodologyAnalysisResponse> {
+  return apiFetch<MethodologyAnalysisResponse>(
+    `/api/projects/${projectId}/citation-graph/analyze-methodologies`,
+    { method: "POST" },
+  );
+}
+
+export type MethodologyStatsResponse = {
+  total: number;
+  rct: number;
+  metaAnalysis: number;
+  cohort: number;
+  rctPercentage: number;
+};
+
+export async function apiGetMethodologyStats(
+  projectId: string,
+): Promise<MethodologyStatsResponse> {
+  return apiFetch<MethodologyStatsResponse>(
+    `/api/projects/${projectId}/citation-graph/methodology-stats`,
+  );
+}
+
 // Получение связей между статьями из PubMed (фоновая загрузка)
 export type FetchReferencesResult = {
   ok: true;
