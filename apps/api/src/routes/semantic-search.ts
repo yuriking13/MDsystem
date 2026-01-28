@@ -214,18 +214,83 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           });
         }
 
-        // Получаем статьи для обработки - ВСЕ статьи графа
+        // Посчитаем сколько всего статей в графе без embeddings
+        let missingCount = 0;
+        if (articleIds && articleIds.length > 0) {
+          const res = await pool.query(
+            `SELECT COUNT(*) AS cnt FROM article_embeddings WHERE article_id = ANY($1)`,
+            [articleIds],
+          );
+          missingCount = articleIds.length - parseInt(res.rows[0].cnt, 10);
+        } else {
+          const missingQuery = `
+            WITH project_article_ids AS (
+              SELECT a.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+            ),
+            reference_article_ids AS (
+              SELECT DISTINCT ref_article.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
+              JOIN articles ref_article ON ref_article.pmid = ref_pmid
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+                AND $2 = true
+            ),
+            cited_by_article_ids AS (
+              SELECT DISTINCT cited_article.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+              JOIN articles cited_article ON cited_article.pmid = cited_pmid
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+                AND $3 = true
+            ),
+            all_graph_article_ids AS (
+              SELECT id FROM project_article_ids
+              UNION
+              SELECT id FROM reference_article_ids
+              UNION
+              SELECT id FROM cited_by_article_ids
+            )
+            SELECT COUNT(*) AS missing
+            FROM all_graph_article_ids ag
+            LEFT JOIN article_embeddings ae ON ae.article_id = ag.id
+            WHERE ae.article_id IS NULL
+          `;
+          const res = await pool.query(missingQuery, [
+            projectId,
+            includeReferences,
+            includeCitedBy,
+          ]);
+          missingCount = parseInt(res.rows[0].missing, 10);
+        }
+
+        // Если нечего обрабатывать
+        if (missingCount <= 0) {
+          return {
+            success: true,
+            total: 0,
+            processed: 0,
+            errors: 0,
+            remaining: 0,
+          };
+        }
+
+        // Получаем статьи для обработки - ВСЕ статьи графа без embeddings
         let articles;
         if (articleIds && articleIds.length > 0) {
-          // Если указаны конкретные ID - берём их
           articles = await pool.query(
             `SELECT a.id, a.title_en, a.abstract_en
              FROM articles a
-             WHERE a.id = ANY($1)`,
-            [articleIds],
+             WHERE a.id = ANY($1)
+               AND NOT EXISTS (SELECT 1 FROM article_embeddings ae WHERE ae.article_id = a.id)
+             LIMIT $2`,
+            [articleIds, batchSize],
           );
         } else {
-          // Берем ВСЕ статьи графа без embeddings
           const query = `
             WITH project_article_ids AS (
               SELECT a.id
@@ -329,7 +394,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           total: totalArticles,
           processed,
           errors,
-          remaining: totalArticles - processed - errors,
+          remaining: Math.max(0, missingCount - processed - errors),
         };
       } catch (error: any) {
         fastify.log.error("Generate embeddings error:", error);
