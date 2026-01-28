@@ -105,21 +105,40 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
       }
 
       try {
-        // Получаем все статьи проекта с аннотациями и типами публикаций
+        // Получаем все статьи из графа (включая цитируемые и цитирующие)
+        // Это позволяет анализировать методологии на всех уровнях графа
         const articlesRes = await pool.query(
-          `SELECT 
+          `SELECT DISTINCT
              a.id,
              a.title_en,
              a.abstract_en,
              a.publication_types,
              a.pmid,
              a.doi,
-             pa.status
-           FROM project_articles pa
-           JOIN articles a ON a.id = pa.article_id
-           WHERE pa.project_id = $1 
-             AND pa.status != 'deleted'
-             AND (a.title_en IS NOT NULL OR a.abstract_en IS NOT NULL)`,
+             COALESCE(pa.status, 'reference') as status
+           FROM articles a
+           LEFT JOIN project_articles pa ON pa.article_id = a.id AND pa.project_id = $1
+           WHERE (
+             -- Статьи проекта
+             pa.project_id = $1
+             OR
+             -- Статьи, на которые ссылаются статьи проекта
+             a.pmid IN (
+               SELECT DISTINCT unnest(a2.reference_pmids)
+               FROM project_articles pa2
+               JOIN articles a2 ON a2.id = pa2.article_id
+               WHERE pa2.project_id = $1 AND pa2.status != 'deleted'
+             )
+             OR
+             -- Статьи, которые цитируют статьи проекта
+             a.pmid IN (
+               SELECT DISTINCT unnest(a2.cited_by_pmids)
+               FROM project_articles pa2
+               JOIN articles a2 ON a2.id = pa2.article_id
+               WHERE pa2.project_id = $1 AND pa2.status != 'deleted'
+             )
+           )
+           AND (a.title_en IS NOT NULL OR a.abstract_en IS NOT NULL)`,
           [projectId],
         );
 
@@ -230,7 +249,7 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
       }
 
       try {
-        // Используем простой подсчёт через LIKE (быстро)
+        // Используем простой подсчёт через LIKE для всех статей из графа
         const stats = await pool.query(
           `SELECT 
              COUNT(*) FILTER (WHERE 
@@ -246,9 +265,23 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
                LIKE ANY(ARRAY['%cohort%', '%longitudinal%'])
              ) as cohort_count,
              COUNT(*) as total
-           FROM project_articles pa
-           JOIN articles a ON a.id = pa.article_id
-           WHERE pa.project_id = $1 AND pa.status != 'deleted'`,
+           FROM articles a
+           LEFT JOIN project_articles pa ON pa.article_id = a.id AND pa.project_id = $1
+           WHERE (
+             pa.project_id = $1
+             OR a.pmid IN (
+               SELECT DISTINCT unnest(a2.reference_pmids)
+               FROM project_articles pa2
+               JOIN articles a2 ON a2.id = pa2.article_id
+               WHERE pa2.project_id = $1 AND pa2.status != 'deleted'
+             )
+             OR a.pmid IN (
+               SELECT DISTINCT unnest(a2.cited_by_pmids)
+               FROM project_articles pa2
+               JOIN articles a2 ON a2.id = pa2.article_id
+               WHERE pa2.project_id = $1 AND pa2.status != 'deleted'
+             )
+           )`,
           [projectId],
         );
 

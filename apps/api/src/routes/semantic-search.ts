@@ -55,11 +55,12 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
       }
 
       try {
-        // Получаем API ключ OpenAI пользователя
-        const apiKey = await getUserApiKey(userId, "openai");
+        // Получаем API ключ OpenRouter пользователя
+        const apiKey = await getUserApiKey(userId, "openrouter");
         if (!apiKey) {
           return reply.code(400).send({
-            error: "OpenAI API key not configured. Please add it in settings.",
+            error:
+              "OpenRouter API key not configured. Please add it in settings.",
           });
         }
 
@@ -147,11 +148,12 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
       }
 
       try {
-        // Получаем API ключ
-        const apiKey = await getUserApiKey(userId, "openai");
+        // Получаем API ключ OpenRouter пользователя
+        const apiKey = await getUserApiKey(userId, "openrouter");
         if (!apiKey) {
           return reply.code(400).send({
-            error: "OpenAI API key required",
+            error:
+              "OpenRouter API key required to generate embeddings. Add it in user settings.",
           });
         }
 
