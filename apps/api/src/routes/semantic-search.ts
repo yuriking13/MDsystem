@@ -64,6 +64,32 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           });
         }
 
+        // Проверяем существование таблицы article_embeddings
+        const tableCheck = await pool.query(
+          `SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = 'article_embeddings'
+          )`,
+        );
+        if (!tableCheck.rows[0].exists) {
+          return reply.code(400).send({
+            error:
+              "Semantic search not available. Please run database migration first.",
+            details: "Table article_embeddings does not exist",
+          });
+        }
+
+        // Проверяем, включено ли расширение pgvector
+        const vectorCheck = await pool.query(
+          `SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')`,
+        );
+        if (!vectorCheck.rows[0].exists) {
+          return reply.code(400).send({
+            error:
+              "Semantic search not available. pgvector extension not installed.",
+          });
+        }
+
         // Генерируем embedding для запроса
         const queryEmbedding = await generateEmbedding(query, apiKey);
 
@@ -270,6 +296,35 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
       }
 
       try {
+        // Проверяем существование таблицы article_embeddings
+        const tableCheck = await pool.query(
+          `SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' AND table_name = 'article_embeddings'
+          )`,
+        );
+        const tableExists = tableCheck.rows[0].exists;
+
+        if (!tableExists) {
+          // Таблица не существует - возвращаем статистику без embeddings
+          const countRes = await pool.query(
+            `SELECT COUNT(DISTINCT a.id) as total_articles
+             FROM articles a
+             JOIN project_articles pa ON pa.article_id = a.id
+             WHERE pa.project_id = $1 AND pa.status != 'deleted'`,
+            [projectId],
+          );
+          const total = parseInt(countRes.rows[0].total_articles);
+          return {
+            totalArticles: total,
+            withEmbeddings: 0,
+            withoutEmbeddings: total,
+            completionRate: 0,
+            message:
+              "Embedding table not initialized. Run migration add_semantic_search.sql",
+          };
+        }
+
         const stats = await pool.query(
           `SELECT 
              COUNT(DISTINCT a.id) as total_articles,

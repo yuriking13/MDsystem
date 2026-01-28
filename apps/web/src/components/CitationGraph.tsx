@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import {
   apiGetCitationGraph,
@@ -297,6 +303,37 @@ export default function CitationGraph({ projectId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
+
+  // === ФИЛЬТРАЦИЯ ДАННЫХ ГРАФА ПО МЕТОДОЛОГИИ ===
+  const filteredGraphData = useMemo(() => {
+    if (!data) return null;
+    if (!methodologyFilter || methodologyClusters.length === 0) return data;
+
+    // Найти выбранный кластер
+    const selectedCluster = methodologyClusters.find(
+      (c) => c.type === methodologyFilter,
+    );
+    if (!selectedCluster || !selectedCluster.articleIds) return data;
+
+    // Фильтруем узлы по ID статей из кластера
+    const articleIdSet = new Set(selectedCluster.articleIds);
+    const filteredNodes = data.nodes.filter((node) =>
+      articleIdSet.has(node.id),
+    );
+    const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
+
+    // Фильтруем связи - только между отфильтрованными узлами
+    const filteredLinks = data.links.filter(
+      (link) =>
+        filteredNodeIds.has(link.source as string) &&
+        filteredNodeIds.has(link.target as string),
+    );
+
+    return {
+      nodes: filteredNodes,
+      links: filteredLinks,
+    };
+  }, [data, methodologyFilter, methodologyClusters]);
 
   // === ФУНКЦИИ УПРАВЛЕНИЯ ГРАФОМ ===
 
@@ -2693,7 +2730,7 @@ export default function CitationGraph({ projectId }: Props) {
             <div style={{ width: "100%", height: "100%" }}>
               <ForceGraph2D
                 ref={graphRef}
-                graphData={data}
+                graphData={filteredGraphData || data}
                 width={dimensions.width}
                 height={dimensions.height}
                 nodeColor={nodeColor}
