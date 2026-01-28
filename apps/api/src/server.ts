@@ -16,8 +16,8 @@ import articlesRoutes from "./routes/articles.js";
 import documentsRoutes from "./routes/documents.js";
 import statisticsRoutes from "./routes/statistics.js";
 import filesRoutes from "./routes/files.js";
-// import { semanticSearchRoutes } from "./routes/semantic-search.js";
-// import { methodologyClustersRoutes } from "./routes/methodology-clusters.js";
+import { semanticSearchRoutes } from "./routes/semantic-search.js";
+import { methodologyClustersRoutes } from "./routes/methodology-clusters.js";
 import { adminRoutes } from "./routes/admin.js";
 import { healthRoutes } from "./routes/health.js";
 
@@ -103,8 +103,8 @@ await app.register(articlesRoutes, { prefix: "/api" });
 await app.register(documentsRoutes, { prefix: "/api" });
 await app.register(statisticsRoutes, { prefix: "/api" });
 await app.register(filesRoutes, { prefix: "/api" });
-// await app.register(semanticSearchRoutes, { prefix: "/api" });
-// await app.register(methodologyClustersRoutes, { prefix: "/api" });
+await app.register(semanticSearchRoutes, { prefix: "/api" });
+await app.register(methodologyClustersRoutes, { prefix: "/api" });
 
 // Health check endpoints (улучшенная версия с circuit breaker stats)
 await healthRoutes(app);

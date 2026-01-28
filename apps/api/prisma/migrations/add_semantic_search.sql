@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 
 -- Add embeddings table for semantic search
 CREATE TABLE IF NOT EXISTS article_embeddings (
-    article_id UUID PRIMARY KEY REFERENCES articles(id) ON DELETE CASCADE,
+    article_id TEXT PRIMARY KEY REFERENCES articles(id) ON DELETE CASCADE,
     embedding vector(1536), -- OpenAI text-embedding-3-small размерность
     model VARCHAR(100) NOT NULL DEFAULT 'text-embedding-3-small',
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),

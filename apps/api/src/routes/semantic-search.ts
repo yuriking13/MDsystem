@@ -18,7 +18,7 @@ const semanticSearchQuerySchema = z.object({
 });
 
 const generateEmbeddingsBodySchema = z.object({
-  articleIds: z.array(z.string().uuid()).optional(),
+  articleIds: z.array(z.string()).optional(),
   batchSize: z.number().int().min(1).max(100).default(50),
 });
 
