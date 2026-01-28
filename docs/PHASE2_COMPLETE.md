@@ -295,12 +295,12 @@ const analysis = await apiFetch(
 
 ## 🚀 Следующие шаги
 
-### Frontend Integration (Phase 2.1)
+### Frontend Integration (Phase 2.1) ✅ ЗАВЕРШЕНО
 
-- [ ] Semantic search UI компонент
-- [ ] Embedding progress indicator
-- [ ] Methodology filter buttons
-- [ ] Cluster visualization (pie chart)
+- [x] Semantic search UI компонент
+- [x] Embedding progress indicator
+- [x] Methodology filter buttons
+- [ ] Cluster visualization (pie chart) - отложено
 
 ### Advanced Features (Phase 3+)
 
