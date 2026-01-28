@@ -36,6 +36,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
     Body: z.infer<typeof semanticSearchQuerySchema>;
   }>(
     "/projects/:projectId/citation-graph/semantic-search",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { projectId } = request.params;
       const parsedBody = semanticSearchQuerySchema.safeParse(request.body);
@@ -127,6 +128,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
     Body: z.infer<typeof generateEmbeddingsBodySchema>;
   }>(
     "/projects/:projectId/citation-graph/generate-embeddings",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { projectId } = request.params;
       const parsedBody = generateEmbeddingsBodySchema.safeParse(request.body);
@@ -256,6 +258,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
     Params: { projectId: string };
   }>(
     "/projects/:projectId/citation-graph/embedding-stats",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { projectId } = request.params;
       const userId = getUserId(request);

@@ -95,6 +95,7 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
     Params: { projectId: string };
   }>(
     "/projects/:projectId/citation-graph/analyze-methodologies",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { projectId } = request.params;
       const userId = getUserId(request);
@@ -219,6 +220,7 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
     Params: { projectId: string };
   }>(
     "/projects/:projectId/citation-graph/methodology-stats",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { projectId } = request.params;
       const userId = getUserId(request);
