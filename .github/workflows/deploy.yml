@@ -2,7 +2,7 @@ name: Deploy MDsystem
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
@@ -36,16 +36,16 @@ jobs:
 
             # ---- Run Database Migrations ----
             export DATABASE_URL="postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}"
-            
+
             # Reset pg-boss schema (drop old schema so pg-boss can recreate it correctly on start)
             # pg-boss manages its own schema and will create correct tables automatically
             echo "Resetting pg-boss schema..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/reset_boss_schema.sql || echo "pg-boss schema reset completed (or schema did not exist)"
-            
+
             # Drop views that conflict with Prisma db push
             echo "Dropping conflicting views..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/drop_admin_views.sql || echo "Views dropped or did not exist"
-            
+
             # Using db push because the database is not baselined for migrations
             pnpm --filter api exec prisma db push --accept-data-loss
 
@@ -64,6 +64,10 @@ jobs:
             # Apply user blocking fields
             echo "Applying user blocking migration..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_user_blocking.sql 2>/dev/null || echo "User blocking fields may already exist"
+
+            # Apply semantic search migration (pgvector + article_embeddings)
+            echo "Applying semantic search migration..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_search.sql 2>/dev/null || echo "Semantic search tables may already exist"
 
             # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
