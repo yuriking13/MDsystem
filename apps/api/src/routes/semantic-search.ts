@@ -367,21 +367,24 @@ async function generateEmbedding(
   text: string,
   apiKey: string,
 ): Promise<number[]> {
-  const response = await fetch("https://api.openai.com/v1/embeddings", {
+  // OpenRouter совместим с OpenAI API для embeddings
+  const response = await fetch("https://openrouter.ai/api/v1/embeddings", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${apiKey}`,
+      "HTTP-Referer": "https://lilitomukib.beget.app",
+      "X-Title": "MDsystem",
     },
     body: JSON.stringify({
-      input: text.trim().slice(0, 8000), // Truncate to OpenAI limit
-      model: "text-embedding-3-small",
+      input: text.trim().slice(0, 8000), // Truncate to limit
+      model: "openai/text-embedding-3-small",
     }),
   });
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} - ${error}`);
+    throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
   }
 
   const data = (await response.json()) as {
