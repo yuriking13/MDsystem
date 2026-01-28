@@ -20,6 +20,8 @@ const semanticSearchQuerySchema = z.object({
 const generateEmbeddingsBodySchema = z.object({
   articleIds: z.array(z.string()).optional(),
   batchSize: z.number().int().min(1).max(100).default(50),
+  includeReferences: z.boolean().default(true), // Включать статьи из references
+  includeCitedBy: z.boolean().default(true), // Включать статьи из cited_by
 });
 
 export const semanticSearchRoutes: FastifyPluginCallback = (
@@ -93,9 +95,35 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         // Генерируем embedding для запроса
         const queryEmbedding = await generateEmbedding(query, apiKey);
 
-        // Ищем похожие статьи в проекте
+        // Ищем похожие статьи во ВСЁМ графе (проект + references + cited_by)
         const results = await pool.query(
-          `SELECT 
+          `WITH project_article_ids AS (
+            SELECT a.id FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            WHERE pa.project_id = $2 AND pa.status != 'deleted'
+          ),
+          reference_article_ids AS (
+            SELECT DISTINCT ref_article.id
+            FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
+            JOIN articles ref_article ON ref_article.pmid = ref_pmid
+            WHERE pa.project_id = $2 AND pa.status != 'deleted'
+          ),
+          cited_by_article_ids AS (
+            SELECT DISTINCT cited_article.id
+            FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+            JOIN articles cited_article ON cited_article.pmid = cited_pmid
+            WHERE pa.project_id = $2 AND pa.status != 'deleted'
+          ),
+          all_graph_article_ids AS (
+            SELECT id FROM project_article_ids
+            UNION SELECT id FROM reference_article_ids
+            UNION SELECT id FROM cited_by_article_ids
+          )
+          SELECT 
              a.id,
              a.title_en,
              a.title_ru,
@@ -105,14 +133,16 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
              a.journal,
              a.doi,
              a.pmid,
-             pa.status,
+             CASE 
+               WHEN pa.article_id IS NOT NULL THEN pa.status 
+               ELSE 'reference' 
+             END as status,
              1 - (ae.embedding <=> $1::vector) as similarity
            FROM article_embeddings ae
            JOIN articles a ON a.id = ae.article_id
-           JOIN project_articles pa ON pa.article_id = a.id
-           WHERE pa.project_id = $2
-             AND pa.status != 'deleted'
-             AND 1 - (ae.embedding <=> $1::vector) >= $3
+           JOIN all_graph_article_ids ag ON ag.id = a.id
+           LEFT JOIN project_articles pa ON pa.article_id = a.id AND pa.project_id = $2
+           WHERE 1 - (ae.embedding <=> $1::vector) >= $3
            ORDER BY similarity DESC
            LIMIT $4`,
           [`[${queryEmbedding.join(",")}]`, projectId, threshold, limit],
@@ -166,7 +196,8 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           .send({ error: "Invalid request body", details: parsedBody.error });
       }
 
-      const { articleIds, batchSize } = parsedBody.data;
+      const { articleIds, batchSize, includeReferences, includeCitedBy } =
+        parsedBody.data;
       const userId = getUserId(request);
 
       if (!userId) {
@@ -183,31 +214,63 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           });
         }
 
-        // Получаем статьи для обработки
+        // Получаем статьи для обработки - ВСЕ статьи графа
         let articles;
         if (articleIds && articleIds.length > 0) {
+          // Если указаны конкретные ID - берём их
           articles = await pool.query(
             `SELECT a.id, a.title_en, a.abstract_en
              FROM articles a
-             JOIN project_articles pa ON pa.article_id = a.id
-             WHERE pa.project_id = $1 
-               AND a.id = ANY($2)
-               AND pa.status != 'deleted'`,
-            [projectId, articleIds],
+             WHERE a.id = ANY($1)`,
+            [articleIds],
           );
         } else {
-          // Берем статьи без embeddings
-          articles = await pool.query(
-            `SELECT a.id, a.title_en, a.abstract_en
-             FROM articles a
-             JOIN project_articles pa ON pa.article_id = a.id
-             LEFT JOIN article_embeddings ae ON ae.article_id = a.id
-             WHERE pa.project_id = $1 
-               AND pa.status != 'deleted'
-               AND ae.article_id IS NULL
-             LIMIT $2`,
-            [projectId, batchSize],
-          );
+          // Берем ВСЕ статьи графа без embeddings
+          const query = `
+            WITH project_article_ids AS (
+              SELECT a.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+            ),
+            reference_article_ids AS (
+              SELECT DISTINCT ref_article.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
+              JOIN articles ref_article ON ref_article.pmid = ref_pmid
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+                AND $3 = true
+            ),
+            cited_by_article_ids AS (
+              SELECT DISTINCT cited_article.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+              JOIN articles cited_article ON cited_article.pmid = cited_pmid
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+                AND $4 = true
+            ),
+            all_graph_article_ids AS (
+              SELECT id FROM project_article_ids
+              UNION
+              SELECT id FROM reference_article_ids
+              UNION
+              SELECT id FROM cited_by_article_ids
+            )
+            SELECT a.id, a.title_en, a.abstract_en
+            FROM articles a
+            JOIN all_graph_article_ids ag ON ag.id = a.id
+            LEFT JOIN article_embeddings ae ON ae.article_id = a.id
+            WHERE ae.article_id IS NULL
+            LIMIT $2
+          `;
+          articles = await pool.query(query, [
+            projectId,
+            batchSize,
+            includeReferences,
+            includeCitedBy,
+          ]);
         }
 
         const totalArticles = articles.rows.length;
@@ -306,12 +369,35 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         const tableExists = tableCheck.rows[0].exists;
 
         if (!tableExists) {
-          // Таблица не существует - возвращаем статистику без embeddings
+          // Таблица не существует - считаем ВСЕ статьи графа
           const countRes = await pool.query(
-            `SELECT COUNT(DISTINCT a.id) as total_articles
-             FROM articles a
-             JOIN project_articles pa ON pa.article_id = a.id
-             WHERE pa.project_id = $1 AND pa.status != 'deleted'`,
+            `WITH project_article_ids AS (
+              SELECT a.id FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+            ),
+            reference_article_ids AS (
+              SELECT DISTINCT ref_article.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
+              JOIN articles ref_article ON ref_article.pmid = ref_pmid
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+            ),
+            cited_by_article_ids AS (
+              SELECT DISTINCT cited_article.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+              JOIN articles cited_article ON cited_article.pmid = cited_pmid
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+            ),
+            all_graph_article_ids AS (
+              SELECT id FROM project_article_ids
+              UNION SELECT id FROM reference_article_ids
+              UNION SELECT id FROM cited_by_article_ids
+            )
+            SELECT COUNT(*) as total_articles FROM all_graph_article_ids`,
             [projectId],
           );
           const total = parseInt(countRes.rows[0].total_articles);
@@ -325,15 +411,40 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           };
         }
 
+        // Считаем статистику для ВСЕХ статей графа
         const stats = await pool.query(
-          `SELECT 
-             COUNT(DISTINCT a.id) as total_articles,
-             COUNT(DISTINCT ae.article_id) as articles_with_embeddings,
-             COUNT(DISTINCT a.id) - COUNT(DISTINCT ae.article_id) as articles_without_embeddings
-           FROM articles a
-           JOIN project_articles pa ON pa.article_id = a.id
-           LEFT JOIN article_embeddings ae ON ae.article_id = a.id
-           WHERE pa.project_id = $1 AND pa.status != 'deleted'`,
+          `WITH project_article_ids AS (
+            SELECT a.id FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            WHERE pa.project_id = $1 AND pa.status != 'deleted'
+          ),
+          reference_article_ids AS (
+            SELECT DISTINCT ref_article.id
+            FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
+            JOIN articles ref_article ON ref_article.pmid = ref_pmid
+            WHERE pa.project_id = $1 AND pa.status != 'deleted'
+          ),
+          cited_by_article_ids AS (
+            SELECT DISTINCT cited_article.id
+            FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+            JOIN articles cited_article ON cited_article.pmid = cited_pmid
+            WHERE pa.project_id = $1 AND pa.status != 'deleted'
+          ),
+          all_graph_article_ids AS (
+            SELECT id FROM project_article_ids
+            UNION SELECT id FROM reference_article_ids
+            UNION SELECT id FROM cited_by_article_ids
+          )
+          SELECT 
+            COUNT(DISTINCT ag.id) as total_articles,
+            COUNT(DISTINCT ae.article_id) as articles_with_embeddings,
+            COUNT(DISTINCT ag.id) - COUNT(DISTINCT ae.article_id) as articles_without_embeddings
+          FROM all_graph_article_ids ag
+          LEFT JOIN article_embeddings ae ON ae.article_id = ag.id`,
           [projectId],
         );
 
