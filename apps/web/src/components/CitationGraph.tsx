@@ -20,6 +20,7 @@ import {
   apiSemanticSearch,
   apiGenerateEmbeddings,
   apiGetEmbeddingStats,
+  apiGetSemanticNeighbors,
   apiAnalyzeMethodologies,
   type GraphNode,
   type GraphLink,
@@ -34,6 +35,7 @@ import {
   type SemanticSearchResult,
   type EmbeddingStatsResponse,
   type MethodologyCluster,
+  type SemanticNeighborsResponse,
 } from "../lib/api";
 import {
   IconInfoCircle,
@@ -287,6 +289,14 @@ export default function CitationGraph({ projectId }: Props) {
   const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false);
   const [embeddingMessage, setEmbeddingMessage] = useState<string | null>(null);
 
+  // === СЕМАНТИЧЕСКОЕ ЯДРО (визуализация связей) ===
+  const [showSemanticEdges, setShowSemanticEdges] = useState(false);
+  const [semanticEdges, setSemanticEdges] = useState<
+    Array<{ source: string; target: string; similarity: number }>
+  >([]);
+  const [semanticEdgeThreshold, setSemanticEdgeThreshold] = useState(0.8);
+  const [loadingSemanticEdges, setLoadingSemanticEdges] = useState(false);
+
   // === КЛАСТЕРИЗАЦИЯ МЕТОДОЛОГИЙ ===
   const [showMethodologyClusters, setShowMethodologyClusters] = useState(false);
   const [methodologyClusters, setMethodologyClusters] = useState<
@@ -334,6 +344,40 @@ export default function CitationGraph({ projectId }: Props) {
       links: filteredLinks,
     };
   }, [data, methodologyFilter, methodologyClusters]);
+
+  // Граф с добавленными семантическими связями
+  const graphDataWithSemanticEdges = useMemo(() => {
+    const baseData = filteredGraphData;
+    if (!baseData) return null;
+    if (!showSemanticEdges || semanticEdges.length === 0) return baseData;
+
+    // Создаём Set существующих связей для проверки дубликатов
+    const existingLinks = new Set(
+      baseData.links.map((l) => `${l.source}-${l.target}`),
+    );
+    const nodeIds = new Set(baseData.nodes.map((n) => n.id));
+
+    // Добавляем семантические связи (только между существующими узлами)
+    const semanticLinks = semanticEdges
+      .filter(
+        (edge) =>
+          nodeIds.has(edge.source) &&
+          nodeIds.has(edge.target) &&
+          !existingLinks.has(`${edge.source}-${edge.target}`) &&
+          !existingLinks.has(`${edge.target}-${edge.source}`),
+      )
+      .map((edge) => ({
+        source: edge.source,
+        target: edge.target,
+        isSemantic: true,
+        similarity: edge.similarity,
+      }));
+
+    return {
+      nodes: baseData.nodes,
+      links: [...baseData.links, ...semanticLinks],
+    };
+  }, [filteredGraphData, showSemanticEdges, semanticEdges]);
 
   // === ФУНКЦИИ УПРАВЛЕНИЯ ГРАФОМ ===
 
@@ -423,26 +467,42 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
-  // Генерация embeddings для статей
+  // Генерация embeddings для статей - автоматическая обработка всех
   const handleGenerateEmbeddings = async () => {
     setGeneratingEmbeddings(true);
     setEmbeddingMessage(null);
-    try {
-      const result = await apiGenerateEmbeddings(projectId, undefined, 50);
-      setEmbeddingMessage(
-        `Обработано ${result.processed} статей. Осталось: ${result.remaining}`,
-      );
-      await loadEmbeddingStats();
 
-      // Если есть ещё статьи для обработки, продолжаем
-      if (result.remaining > 0) {
-        setTimeout(() => {
-          handleGenerateEmbeddings();
-        }, 1500);
+    let totalProcessed = 0;
+    let totalErrors = 0;
+    let hasMore = true;
+
+    try {
+      while (hasMore) {
+        const result = await apiGenerateEmbeddings(projectId, undefined, 100); // Увеличили batch до 100
+        totalProcessed += result.processed;
+        totalErrors += result.errors;
+
+        setEmbeddingMessage(
+          `Обработано ${totalProcessed} статей... ${result.remaining > 0 ? `Осталось: ${result.remaining}` : "Завершено!"}`,
+        );
+        await loadEmbeddingStats();
+
+        hasMore = result.remaining > 0 && result.processed > 0;
+
+        // Небольшая пауза между батчами
+        if (hasMore) {
+          await new Promise((r) => setTimeout(r, 500));
+        }
       }
+
+      setEmbeddingMessage(
+        `✓ Готово! Обработано ${totalProcessed} статей${totalErrors > 0 ? `, ошибок: ${totalErrors}` : ""}`,
+      );
     } catch (err: any) {
       console.error("Failed to generate embeddings:", err);
-      setEmbeddingMessage(`Ошибка: ${err.message}`);
+      setEmbeddingMessage(
+        `Ошибка: ${err.message}. Обработано: ${totalProcessed}`,
+      );
     } finally {
       setGeneratingEmbeddings(false);
     }
@@ -466,6 +526,23 @@ export default function CitationGraph({ projectId }: Props) {
       alert(`Ошибка поиска: ${err.message}`);
     } finally {
       setSemanticSearching(false);
+    }
+  };
+
+  // Загрузка семантических связей для визуализации ядра
+  const loadSemanticEdges = async () => {
+    setLoadingSemanticEdges(true);
+    try {
+      const result = await apiGetSemanticNeighbors(
+        projectId,
+        semanticEdgeThreshold,
+      );
+      setSemanticEdges(result.edges);
+    } catch (err: any) {
+      console.error("Failed to load semantic edges:", err);
+      alert(`Ошибка загрузки семантических связей: ${err.message}`);
+    } finally {
+      setLoadingSemanticEdges(false);
     }
   };
 
@@ -2371,6 +2448,107 @@ export default function CitationGraph({ projectId }: Props) {
               ))}
             </div>
           )}
+
+          {/* Визуализация семантического ядра */}
+          {embeddingStats && embeddingStats.withEmbeddings > 10 && (
+            <div
+              style={{
+                marginTop: 16,
+                paddingTop: 16,
+                borderTop: "1px solid var(--border-glass)",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: 12,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontWeight: 600, fontSize: 13 }}>
+                    🔗 Семантическое ядро
+                  </span>
+                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                    (связи по смыслу)
+                  </span>
+                </div>
+                <label className="toggle-switch" style={{ fontSize: 11 }}>
+                  <input
+                    type="checkbox"
+                    checked={showSemanticEdges}
+                    onChange={(e) => {
+                      setShowSemanticEdges(e.target.checked);
+                      if (e.target.checked && semanticEdges.length === 0) {
+                        loadSemanticEdges();
+                      }
+                    }}
+                  />
+                  <span className="slider"></span>
+                </label>
+              </div>
+
+              {showSemanticEdges && (
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
+                  >
+                    <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                      Порог схожести:
+                    </label>
+                    <input
+                      type="range"
+                      min={0.6}
+                      max={0.95}
+                      step={0.05}
+                      value={semanticEdgeThreshold}
+                      onChange={(e) =>
+                        setSemanticEdgeThreshold(parseFloat(e.target.value))
+                      }
+                      style={{ width: 80 }}
+                    />
+                    <span style={{ fontSize: 11, minWidth: 35 }}>
+                      {(semanticEdgeThreshold * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <button
+                    className="btn secondary"
+                    style={{ fontSize: 11, padding: "4px 12px" }}
+                    onClick={loadSemanticEdges}
+                    disabled={loadingSemanticEdges}
+                  >
+                    {loadingSemanticEdges ? "Загрузка..." : "Обновить"}
+                  </button>
+                  {semanticEdges.length > 0 && (
+                    <span
+                      style={{ fontSize: 11, color: "var(--accent-secondary)" }}
+                    >
+                      {semanticEdges.length} связей
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {showSemanticEdges && semanticEdges.length > 0 && (
+                <div
+                  style={{
+                    marginTop: 8,
+                    padding: 8,
+                    background: "rgba(236, 72, 153, 0.1)",
+                    borderRadius: 6,
+                    fontSize: 11,
+                  }}
+                >
+                  <span style={{ color: "rgba(236, 72, 153, 0.8)" }}>
+                    — — —
+                  </span>{" "}
+                  Пунктирные розовые линии = семантическая близость (статьи про
+                  похожие темы, но без прямого цитирования)
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -2730,7 +2908,9 @@ export default function CitationGraph({ projectId }: Props) {
             <div style={{ width: "100%", height: "100%" }}>
               <ForceGraph2D
                 ref={graphRef}
-                graphData={filteredGraphData || data}
+                graphData={
+                  graphDataWithSemanticEdges || filteredGraphData || data
+                }
                 width={dimensions.width}
                 height={dimensions.height}
                 nodeColor={nodeColor}
@@ -2821,14 +3001,22 @@ export default function CitationGraph({ projectId }: Props) {
                     ctx.fillText(label, node.x, node.y + size + 4);
                   }
                 }}
-                linkColor={() => "rgba(100, 130, 180, 0.25)"}
-                linkWidth={
-                  linkThickness === "thin"
-                    ? 0.5
-                    : linkThickness === "thick"
-                      ? 1.5
-                      : 0.8
+                linkColor={
+                  (link: any) =>
+                    link.isSemantic
+                      ? `rgba(236, 72, 153, ${0.3 + (link.similarity - semanticEdgeThreshold) * 2})` // Розовый для семантических
+                      : "rgba(100, 130, 180, 0.25)" // Стандартный для цитирований
                 }
+                linkWidth={(link: any) =>
+                  link.isSemantic
+                    ? 1.5 + (link.similarity - semanticEdgeThreshold) * 3 // Толще для высокой схожести
+                    : linkThickness === "thin"
+                      ? 0.5
+                      : linkThickness === "thick"
+                        ? 1.5
+                        : 0.8
+                }
+                linkLineDash={(link: any) => (link.isSemantic ? [4, 4] : null)} // Пунктир для семантических
                 linkDirectionalArrowLength={3}
                 linkDirectionalArrowRelPos={0.95}
                 backgroundColor={isFullscreen ? "#050810" : "#0b0f19"}

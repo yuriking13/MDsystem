@@ -470,6 +470,123 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
     },
   );
 
+  /**
+   * GET /projects/:projectId/citation-graph/semantic-neighbors
+   * Получить семантических соседей для всех статей (для визуализации семантического ядра)
+   */
+  fastify.get<{
+    Params: { projectId: string };
+    Querystring: { threshold?: string; limit?: string };
+  }>(
+    "/projects/:projectId/citation-graph/semantic-neighbors",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { projectId } = request.params;
+      const threshold = parseFloat(request.query.threshold || "0.75");
+      // limit parameter reserved for future use
+      const userId = getUserId(request);
+
+      if (!userId) {
+        return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      try {
+        // Получаем все пары статей с высоким similarity
+        const neighbors = await pool.query(
+          `WITH project_article_ids AS (
+            SELECT a.id FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            WHERE pa.project_id = $1 AND pa.status != 'deleted'
+          ),
+          reference_article_ids AS (
+            SELECT DISTINCT ref_article.id
+            FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
+            JOIN articles ref_article ON ref_article.pmid = ref_pmid
+            WHERE pa.project_id = $1 AND pa.status != 'deleted'
+          ),
+          cited_by_article_ids AS (
+            SELECT DISTINCT cited_article.id
+            FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+            JOIN articles cited_article ON cited_article.pmid = cited_pmid
+            WHERE pa.project_id = $1 AND pa.status != 'deleted'
+          ),
+          all_graph_article_ids AS (
+            SELECT id FROM project_article_ids
+            UNION SELECT id FROM reference_article_ids
+            UNION SELECT id FROM cited_by_article_ids
+          ),
+          article_pairs AS (
+            SELECT 
+              ae1.article_id as source_id,
+              ae2.article_id as target_id,
+              1 - (ae1.embedding <=> ae2.embedding) as similarity
+            FROM article_embeddings ae1
+            JOIN article_embeddings ae2 ON ae1.article_id < ae2.article_id
+            JOIN all_graph_article_ids ag1 ON ag1.id = ae1.article_id
+            JOIN all_graph_article_ids ag2 ON ag2.id = ae2.article_id
+            WHERE 1 - (ae1.embedding <=> ae2.embedding) >= $2
+          )
+          SELECT source_id, target_id, similarity
+          FROM article_pairs
+          ORDER BY similarity DESC
+          LIMIT 1000`,
+          [projectId, threshold],
+        );
+
+        // Группируем по статьям для статистики
+        const articleStats: Record<
+          string,
+          { count: number; avgSimilarity: number }
+        > = {};
+
+        for (const row of neighbors.rows) {
+          if (!articleStats[row.source_id]) {
+            articleStats[row.source_id] = { count: 0, avgSimilarity: 0 };
+          }
+          if (!articleStats[row.target_id]) {
+            articleStats[row.target_id] = { count: 0, avgSimilarity: 0 };
+          }
+          articleStats[row.source_id].count++;
+          articleStats[row.target_id].count++;
+          articleStats[row.source_id].avgSimilarity += parseFloat(
+            row.similarity,
+          );
+          articleStats[row.target_id].avgSimilarity += parseFloat(
+            row.similarity,
+          );
+        }
+
+        // Вычисляем средние
+        for (const id of Object.keys(articleStats)) {
+          if (articleStats[id].count > 0) {
+            articleStats[id].avgSimilarity /= articleStats[id].count;
+          }
+        }
+
+        return {
+          edges: neighbors.rows.map((row: any) => ({
+            source: row.source_id,
+            target: row.target_id,
+            similarity: parseFloat(row.similarity),
+          })),
+          articleStats,
+          threshold,
+          totalEdges: neighbors.rows.length,
+        };
+      } catch (error: any) {
+        fastify.log.error("Semantic neighbors error:", error);
+        return reply.code(500).send({
+          error: "Failed to get semantic neighbors",
+          details: error.message,
+        });
+      }
+    },
+  );
+
   done();
 };
 

@@ -1071,6 +1071,31 @@ export async function apiGetEmbeddingStats(
   );
 }
 
+// === Semantic Neighbors (для визуализации семантического ядра) ===
+
+export type SemanticEdge = {
+  source: string;
+  target: string;
+  similarity: number;
+};
+
+export type SemanticNeighborsResponse = {
+  edges: SemanticEdge[];
+  articleStats: Record<string, { count: number; avgSimilarity: number }>;
+  threshold: number;
+  totalEdges: number;
+};
+
+export async function apiGetSemanticNeighbors(
+  projectId: string,
+  threshold: number = 0.75,
+  limit: number = 5,
+): Promise<SemanticNeighborsResponse> {
+  return apiFetch<SemanticNeighborsResponse>(
+    `/api/projects/${projectId}/citation-graph/semantic-neighbors?threshold=${threshold}&limit=${limit}`,
+  );
+}
+
 // === Methodology Clustering ===
 
 export type MethodologyType =
