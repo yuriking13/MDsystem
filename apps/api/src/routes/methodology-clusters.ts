@@ -12,7 +12,6 @@
  */
 
 import type { FastifyPluginCallback } from "fastify";
-import { z } from "zod";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
 
@@ -96,11 +95,6 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
     Params: { projectId: string };
   }>(
     "/projects/:projectId/citation-graph/analyze-methodologies",
-    {
-      schema: {
-        params: z.object({ projectId: z.string().uuid() }),
-      },
-    },
     async (request, reply) => {
       const { projectId } = request.params;
       const userId = getUserId(request);
@@ -225,11 +219,6 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
     Params: { projectId: string };
   }>(
     "/projects/:projectId/citation-graph/methodology-stats",
-    {
-      schema: {
-        params: z.object({ projectId: z.string().uuid() }),
-      },
-    },
     async (request, reply) => {
       const { projectId } = request.params;
       const userId = getUserId(request);

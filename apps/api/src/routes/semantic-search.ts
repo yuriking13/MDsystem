@@ -256,11 +256,6 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
     Params: { projectId: string };
   }>(
     "/projects/:projectId/citation-graph/embedding-stats",
-    {
-      schema: {
-        params: z.object({ projectId: z.string().uuid() }),
-      },
-    },
     async (request, reply) => {
       const { projectId } = request.params;
       const userId = getUserId(request);
