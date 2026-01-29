@@ -707,14 +707,9 @@ export default function CitationGraph({ projectId }: Props) {
           if (node) {
             return {
               id: node.id,
-              title: node.label || node.titleEn || "Без названия",
+              title: node.label || node.title || "Без названия",
               year: node.year || null,
-              authors:
-                typeof node.authors === "string"
-                  ? node.authors
-                  : Array.isArray(node.authors)
-                    ? node.authors.join(", ")
-                    : null,
+              authors: node.authors || null,
             };
           }
           return null;
@@ -4676,6 +4671,328 @@ export default function CitationGraph({ projectId }: Props) {
         </div>
       )}
 
+      {/* Cluster Detail Modal */}
+      {clusterDetailModal && (
+        <div
+          className="node-info-modal-overlay"
+          onClick={() => setClusterDetailModal(null)}
+        >
+          <div
+            className="node-info-modal"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: 700,
+              maxHeight: "80vh",
+              overflow: "hidden",
+              display: "flex",
+              flexDirection: "column",
+            }}
+          >
+            <button
+              className="node-info-modal-close"
+              onClick={() => setClusterDetailModal(null)}
+            >
+              <svg
+                className="icon-md"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                marginBottom: 16,
+              }}
+            >
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: "50%",
+                  background: clusterDetailModal.cluster.color,
+                  flexShrink: 0,
+                }}
+              />
+              <div>
+                <h3 style={{ margin: 0, fontSize: 18 }}>
+                  {clusterDetailModal.cluster.name}
+                </h3>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-muted)",
+                    marginTop: 4,
+                  }}
+                >
+                  {clusterDetailModal.cluster.articleCount} статей в кластере
+                </div>
+              </div>
+            </div>
+
+            {/* Keywords */}
+            {clusterDetailModal.cluster.keywords.length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-muted)",
+                    marginBottom: 6,
+                  }}
+                >
+                  Ключевые слова:
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {clusterDetailModal.cluster.keywords.map(
+                    (kw: string, i: number) => (
+                      <span
+                        key={i}
+                        style={{
+                          background: clusterDetailModal.cluster.color + "20",
+                          color: clusterDetailModal.cluster.color,
+                          padding: "4px 10px",
+                          borderRadius: 12,
+                          fontSize: 11,
+                          fontWeight: 500,
+                        }}
+                      >
+                        {kw}
+                      </span>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Central Article */}
+            {clusterDetailModal.cluster.centralArticleTitle && (
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: 12,
+                  background: "var(--bg-tertiary)",
+                  borderRadius: 8,
+                  borderLeft: `4px solid ${clusterDetailModal.cluster.color}`,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: "var(--text-muted)",
+                    marginBottom: 4,
+                  }}
+                >
+                  ⭐ Центральная статья кластера:
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 500 }}>
+                  {clusterDetailModal.cluster.centralArticleTitle}
+                </div>
+              </div>
+            )}
+
+            {/* Articles List */}
+            <div
+              style={{
+                fontSize: 12,
+                color: "var(--text-muted)",
+                marginBottom: 8,
+              }}
+            >
+              Все статьи кластера:
+            </div>
+            <div
+              style={{
+                flex: 1,
+                overflow: "auto",
+                border: "1px solid var(--border-glass)",
+                borderRadius: 8,
+              }}
+            >
+              {loadingClusterDetails ? (
+                <div
+                  style={{
+                    padding: 20,
+                    textAlign: "center",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  Загрузка статей...
+                </div>
+              ) : (
+                clusterDetailModal.articles.map(
+                  (
+                    article: {
+                      id: string;
+                      title: string;
+                      year: number | null;
+                      authors: string | null;
+                    },
+                    idx: number,
+                  ) => (
+                    <div
+                      key={article.id}
+                      onClick={() => {
+                        // Find and highlight this article on the graph
+                        const node = data?.nodes.find(
+                          (n) => n.id === article.id,
+                        ) as
+                          | (GraphNode & { x?: number; y?: number })
+                          | undefined;
+                        if (
+                          node &&
+                          graphRef.current &&
+                          node.x !== undefined &&
+                          node.y !== undefined
+                        ) {
+                          graphRef.current.centerAt(node.x, node.y, 500);
+                          graphRef.current.zoom(2, 500);
+                          setSelectedNodeForDisplay(node);
+                        }
+                      }}
+                      style={{
+                        padding: "10px 14px",
+                        borderBottom:
+                          idx < clusterDetailModal.articles.length - 1
+                            ? "1px solid var(--border-glass)"
+                            : "none",
+                        cursor: "pointer",
+                        transition: "background 0.15s",
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: 10,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "var(--bg-tertiary)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      <span
+                        style={{
+                          minWidth: 24,
+                          height: 24,
+                          borderRadius: "50%",
+                          background:
+                            article.id ===
+                            clusterDetailModal.cluster.centralArticleId
+                              ? clusterDetailModal.cluster.color
+                              : "var(--bg-secondary)",
+                          color:
+                            article.id ===
+                            clusterDetailModal.cluster.centralArticleId
+                              ? "white"
+                              : "var(--text-muted)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: 10,
+                          fontWeight: 600,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {article.id ===
+                        clusterDetailModal.cluster.centralArticleId
+                          ? "⭐"
+                          : idx + 1}
+                      </span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 13,
+                            fontWeight: 500,
+                            marginBottom: 4,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {article.title}
+                        </div>
+                        {article.authors && (
+                          <div
+                            style={{
+                              fontSize: 11,
+                              color: "var(--text-muted)",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {article.authors}
+                          </div>
+                        )}
+                        {article.year && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              color: "var(--text-muted)",
+                              background: "var(--bg-secondary)",
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              marginTop: 4,
+                              display: "inline-block",
+                            }}
+                          >
+                            {article.year}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ),
+                )
+              )}
+            </div>
+
+            {/* Actions */}
+            <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
+              <button
+                onClick={() => {
+                  // Filter graph to show only this cluster
+                  filterBySemanticCluster(clusterDetailModal.cluster.id);
+                  setClusterDetailModal(null);
+                }}
+                style={{
+                  flex: 1,
+                  padding: "10px 16px",
+                  borderRadius: 8,
+                  border: "none",
+                  background: clusterDetailModal.cluster.color,
+                  color: "white",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                Показать только этот кластер
+              </button>
+              <button
+                onClick={() => setClusterDetailModal(null)}
+                style={{
+                  padding: "10px 16px",
+                  borderRadius: 8,
+                  border: "1px solid var(--border-glass)",
+                  background: "var(--bg-secondary)",
+                  color: "var(--text-primary)",
+                  cursor: "pointer",
+                  fontSize: 13,
+                }}
+              >
+                Закрыть
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* How it works Modal */}
       {showHelpModal && (
         <div
@@ -5664,309 +5981,6 @@ function NodeInfoPanel({
               </>
             )}
           </button>
-        </div>
-      )}
-
-      {/* Cluster Detail Modal */}
-      {clusterDetailModal && (
-        <div
-          className="node-info-modal-overlay"
-          onClick={() => setClusterDetailModal(null)}
-        >
-          <div
-            className="node-info-modal"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: 700,
-              maxHeight: "80vh",
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <button
-              className="node-info-modal-close"
-              onClick={() => setClusterDetailModal(null)}
-            >
-              <svg
-                className="icon-md"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 16,
-              }}
-            >
-              <div
-                style={{
-                  width: 24,
-                  height: 24,
-                  borderRadius: "50%",
-                  background: clusterDetailModal.cluster.color,
-                  flexShrink: 0,
-                }}
-              />
-              <div>
-                <h3 style={{ margin: 0, fontSize: 18 }}>
-                  {clusterDetailModal.cluster.name}
-                </h3>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-muted)",
-                    marginTop: 4,
-                  }}
-                >
-                  {clusterDetailModal.cluster.articleCount} статей в кластере
-                </div>
-              </div>
-            </div>
-
-            {/* Keywords */}
-            {clusterDetailModal.cluster.keywords.length > 0 && (
-              <div style={{ marginBottom: 16 }}>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--text-muted)",
-                    marginBottom: 6,
-                  }}
-                >
-                  Ключевые слова:
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {clusterDetailModal.cluster.keywords.map((kw, i) => (
-                    <span
-                      key={i}
-                      style={{
-                        background: clusterDetailModal.cluster.color + "20",
-                        color: clusterDetailModal.cluster.color,
-                        padding: "4px 10px",
-                        borderRadius: 12,
-                        fontSize: 11,
-                        fontWeight: 500,
-                      }}
-                    >
-                      {kw}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Central Article */}
-            {clusterDetailModal.cluster.centralArticleTitle && (
-              <div
-                style={{
-                  marginBottom: 16,
-                  padding: 12,
-                  background: "var(--bg-tertiary)",
-                  borderRadius: 8,
-                  borderLeft: `4px solid ${clusterDetailModal.cluster.color}`,
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "var(--text-muted)",
-                    marginBottom: 4,
-                  }}
-                >
-                  ⭐ Центральная статья кластера:
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 500 }}>
-                  {clusterDetailModal.cluster.centralArticleTitle}
-                </div>
-              </div>
-            )}
-
-            {/* Articles List */}
-            <div
-              style={{
-                fontSize: 12,
-                color: "var(--text-muted)",
-                marginBottom: 8,
-              }}
-            >
-              Все статьи кластера:
-            </div>
-            <div
-              style={{
-                flex: 1,
-                overflow: "auto",
-                border: "1px solid var(--border-glass)",
-                borderRadius: 8,
-              }}
-            >
-              {loadingClusterDetails ? (
-                <div
-                  style={{
-                    padding: 20,
-                    textAlign: "center",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  Загрузка статей...
-                </div>
-              ) : (
-                clusterDetailModal.articles.map((article, idx) => (
-                  <div
-                    key={article.id}
-                    onClick={() => {
-                      // Find and highlight this article on the graph
-                      const node = graphData.nodes.find(
-                        (n) => n.id === article.id,
-                      );
-                      if (node && graphRef.current) {
-                        graphRef.current.centerAt(node.x, node.y, 500);
-                        graphRef.current.zoom(2, 500);
-                        setSelectedNode(node);
-                      }
-                    }}
-                    style={{
-                      padding: "10px 14px",
-                      borderBottom:
-                        idx < clusterDetailModal.articles.length - 1
-                          ? "1px solid var(--border-glass)"
-                          : "none",
-                      cursor: "pointer",
-                      transition: "background 0.15s",
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 10,
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "var(--bg-tertiary)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
-                  >
-                    <span
-                      style={{
-                        minWidth: 24,
-                        height: 24,
-                        borderRadius: "50%",
-                        background:
-                          article.id ===
-                          clusterDetailModal.cluster.centralArticleId
-                            ? clusterDetailModal.cluster.color
-                            : "var(--bg-secondary)",
-                        color:
-                          article.id ===
-                          clusterDetailModal.cluster.centralArticleId
-                            ? "white"
-                            : "var(--text-muted)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: 10,
-                        fontWeight: 600,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {article.id ===
-                      clusterDetailModal.cluster.centralArticleId
-                        ? "⭐"
-                        : idx + 1}
-                    </span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 500,
-                          marginBottom: 4,
-                          lineHeight: 1.4,
-                        }}
-                      >
-                        {article.title}
-                      </div>
-                      {article.authors && (
-                        <div
-                          style={{
-                            fontSize: 11,
-                            color: "var(--text-muted)",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {article.authors}
-                        </div>
-                      )}
-                      {article.year && (
-                        <span
-                          style={{
-                            fontSize: 10,
-                            color: "var(--text-muted)",
-                            background: "var(--bg-secondary)",
-                            padding: "2px 6px",
-                            borderRadius: 4,
-                            marginTop: 4,
-                            display: "inline-block",
-                          }}
-                        >
-                          {article.year}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            {/* Actions */}
-            <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
-              <button
-                onClick={() => {
-                  // Filter graph to show only this cluster
-                  filterBySemanticCluster(clusterDetailModal.cluster.id);
-                  setClusterDetailModal(null);
-                }}
-                style={{
-                  flex: 1,
-                  padding: "10px 16px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: clusterDetailModal.cluster.color,
-                  color: "white",
-                  cursor: "pointer",
-                  fontSize: 13,
-                  fontWeight: 500,
-                }}
-              >
-                Показать только этот кластер
-              </button>
-              <button
-                onClick={() => setClusterDetailModal(null)}
-                style={{
-                  padding: "10px 16px",
-                  borderRadius: 8,
-                  border: "1px solid var(--border-glass)",
-                  background: "var(--bg-secondary)",
-                  color: "var(--text-primary)",
-                  cursor: "pointer",
-                  fontSize: 13,
-                }}
-              >
-                Закрыть
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
