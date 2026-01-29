@@ -10,6 +10,8 @@ import { z } from "zod";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
 import { getUserApiKey } from "../utils/project-access.js";
+import { startBoss } from "../worker/boss.js";
+import type { EmbeddingsJobPayload } from "../worker/types.js";
 
 const semanticSearchQuerySchema = z.object({
   query: z.string().min(1).max(1000),
@@ -178,7 +180,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
   /**
    * POST /projects/:projectId/citation-graph/generate-embeddings
-   * Генерация embeddings для статей проекта
+   * Запуск асинхронной генерации embeddings для статей проекта
    */
   fastify.post<{
     Params: { projectId: string };
@@ -196,8 +198,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           .send({ error: "Invalid request body", details: parsedBody.error });
       }
 
-      const { articleIds, batchSize, includeReferences, includeCitedBy } =
-        parsedBody.data;
+      const { articleIds, includeReferences, includeCitedBy } = parsedBody.data;
       const userId = getUserId(request);
 
       if (!userId) {
@@ -212,6 +213,25 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
             error:
               "OpenRouter API key required to generate embeddings. Add it in user settings.",
           });
+        }
+
+        // Проверяем, нет ли уже активного job
+        const activeJob = await pool.query(
+          `SELECT id, status, processed, total FROM embedding_jobs 
+           WHERE project_id = $1 AND status IN ('pending', 'running')
+           ORDER BY created_at DESC LIMIT 1`,
+          [projectId],
+        );
+
+        if (activeJob.rows.length > 0) {
+          const job = activeJob.rows[0];
+          return {
+            jobId: job.id,
+            status: job.status,
+            processed: job.processed,
+            total: job.total,
+            message: "Embedding generation already in progress",
+          };
         }
 
         // Посчитаем сколько всего статей в графе без embeddings
@@ -271,135 +291,198 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         // Если нечего обрабатывать
         if (missingCount <= 0) {
           return {
-            success: true,
+            jobId: null,
+            status: "completed",
             total: 0,
             processed: 0,
             errors: 0,
-            remaining: 0,
+            message: "All articles already have embeddings",
           };
         }
 
-        // Получаем статьи для обработки - ВСЕ статьи графа без embeddings
-        let articles;
-        if (articleIds && articleIds.length > 0) {
-          articles = await pool.query(
-            `SELECT a.id, a.title_en, a.abstract_en
-             FROM articles a
-             WHERE a.id = ANY($1)
-               AND NOT EXISTS (SELECT 1 FROM article_embeddings ae WHERE ae.article_id = a.id)
-             LIMIT $2`,
-            [articleIds, batchSize],
-          );
-        } else {
-          const query = `
-            WITH project_article_ids AS (
-              SELECT a.id
-              FROM articles a
-              JOIN project_articles pa ON pa.article_id = a.id
-              WHERE pa.project_id = $1 AND pa.status != 'deleted'
-            ),
-            reference_article_ids AS (
-              SELECT DISTINCT ref_article.id
-              FROM articles a
-              JOIN project_articles pa ON pa.article_id = a.id
-              CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
-              JOIN articles ref_article ON ref_article.pmid = ref_pmid
-              WHERE pa.project_id = $1 AND pa.status != 'deleted'
-                AND $3 = true
-            ),
-            cited_by_article_ids AS (
-              SELECT DISTINCT cited_article.id
-              FROM articles a
-              JOIN project_articles pa ON pa.article_id = a.id
-              CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
-              JOIN articles cited_article ON cited_article.pmid = cited_pmid
-              WHERE pa.project_id = $1 AND pa.status != 'deleted'
-                AND $4 = true
-            ),
-            all_graph_article_ids AS (
-              SELECT id FROM project_article_ids
-              UNION
-              SELECT id FROM reference_article_ids
-              UNION
-              SELECT id FROM cited_by_article_ids
-            )
-            SELECT a.id, a.title_en, a.abstract_en
-            FROM articles a
-            JOIN all_graph_article_ids ag ON ag.id = a.id
-            LEFT JOIN article_embeddings ae ON ae.article_id = a.id
-            WHERE ae.article_id IS NULL
-            LIMIT $2
-          `;
-          articles = await pool.query(query, [
-            projectId,
-            batchSize,
-            includeReferences,
-            includeCitedBy,
-          ]);
-        }
+        // Создаём job в базе
+        const jobResult = await pool.query(
+          `INSERT INTO embedding_jobs (project_id, user_id, total, include_references, include_cited_by)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING id`,
+          [projectId, userId, missingCount, includeReferences, includeCitedBy],
+        );
+        const jobId = jobResult.rows[0].id;
 
-        const totalArticles = articles.rows.length;
-        let processed = 0;
-        let errors = 0;
+        // Запускаем pg-boss job
+        const boss = await startBoss();
+        const payload: EmbeddingsJobPayload = {
+          projectId,
+          userId,
+          jobId,
+          articleIds: articleIds || null,
+          includeReferences,
+          includeCitedBy,
+        };
+        await boss.send("embeddings:generate", payload);
 
-        // Обрабатываем пакетами
-        for (const article of articles.rows) {
-          try {
-            const text = [article.title_en, article.abstract_en]
-              .filter(Boolean)
-              .join(" ");
-
-            if (!text.trim()) {
-              errors++;
-              continue;
-            }
-
-            const embedding = await generateEmbedding(text, apiKey);
-
-            // Сохраняем embedding
-            await pool.query(
-              `INSERT INTO article_embeddings (article_id, embedding, model)
-               VALUES ($1, $2, 'text-embedding-3-small')
-               ON CONFLICT (article_id) 
-               DO UPDATE SET 
-                 embedding = EXCLUDED.embedding,
-                 model = EXCLUDED.model,
-                 updated_at = NOW()`,
-              [article.id, `[${embedding.join(",")}]`],
-            );
-
-            // Обновляем статус
-            await pool.query(
-              `UPDATE articles SET embedding_status = 'completed' WHERE id = $1`,
-              [article.id],
-            );
-
-            processed++;
-
-            // Небольшая задержка для rate limiting
-            if (processed % 10 === 0) {
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-            }
-          } catch (error: any) {
-            fastify.log.error(
-              `Failed to process article ${article.id}:`,
-              error,
-            );
-            errors++;
-          }
-        }
+        fastify.log.info(
+          `Started embeddings job ${jobId} for project ${projectId}`,
+        );
 
         return {
-          success: true,
-          total: totalArticles,
-          processed,
-          errors,
-          remaining: Math.max(0, missingCount - processed - errors),
+          jobId,
+          status: "pending",
+          total: missingCount,
+          processed: 0,
+          errors: 0,
+          message: "Embedding generation started",
         };
       } catch (error: any) {
         fastify.log.error("Generate embeddings error:", error);
         return reply.code(500).send({
-          error: "Failed to generate embeddings",
+          error: "Failed to start embedding generation",
+          details: error.message,
+        });
+      }
+    },
+  );
+
+  /**
+   * GET /projects/:projectId/citation-graph/embedding-job/:jobId
+   * Получить статус job генерации embeddings
+   */
+  fastify.get<{
+    Params: { projectId: string; jobId: string };
+  }>(
+    "/projects/:projectId/citation-graph/embedding-job/:jobId",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { projectId, jobId } = request.params;
+      const userId = getUserId(request);
+
+      if (!userId) {
+        return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      try {
+        const result = await pool.query(
+          `SELECT id, status, total, processed, errors, error_message, 
+                  created_at, started_at, completed_at
+           FROM embedding_jobs
+           WHERE id = $1 AND project_id = $2`,
+          [jobId, projectId],
+        );
+
+        if (result.rows.length === 0) {
+          return reply.code(404).send({ error: "Job not found" });
+        }
+
+        const job = result.rows[0];
+        return {
+          jobId: job.id,
+          status: job.status,
+          total: job.total,
+          processed: job.processed,
+          errors: job.errors,
+          errorMessage: job.error_message,
+          createdAt: job.created_at,
+          startedAt: job.started_at,
+          completedAt: job.completed_at,
+        };
+      } catch (error: any) {
+        fastify.log.error("Get embedding job error:", error);
+        return reply.code(500).send({
+          error: "Failed to get job status",
+          details: error.message,
+        });
+      }
+    },
+  );
+
+  /**
+   * POST /projects/:projectId/citation-graph/embedding-job/:jobId/cancel
+   * Отменить job генерации embeddings
+   */
+  fastify.post<{
+    Params: { projectId: string; jobId: string };
+  }>(
+    "/projects/:projectId/citation-graph/embedding-job/:jobId/cancel",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { projectId, jobId } = request.params;
+      const userId = getUserId(request);
+
+      if (!userId) {
+        return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      try {
+        const result = await pool.query(
+          `UPDATE embedding_jobs 
+           SET status = 'cancelled'
+           WHERE id = $1 AND project_id = $2 AND status IN ('pending', 'running')
+           RETURNING id, status`,
+          [jobId, projectId],
+        );
+
+        if (result.rows.length === 0) {
+          return reply
+            .code(404)
+            .send({ error: "Job not found or already finished" });
+        }
+
+        return { success: true, jobId, status: "cancelled" };
+      } catch (error: any) {
+        fastify.log.error("Cancel embedding job error:", error);
+        return reply.code(500).send({
+          error: "Failed to cancel job",
+          details: error.message,
+        });
+      }
+    },
+  );
+
+  /**
+   * GET /projects/:projectId/citation-graph/embedding-jobs
+   * Получить список последних jobs для проекта
+   */
+  fastify.get<{
+    Params: { projectId: string };
+  }>(
+    "/projects/:projectId/citation-graph/embedding-jobs",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const { projectId } = request.params;
+      const userId = getUserId(request);
+
+      if (!userId) {
+        return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      try {
+        const result = await pool.query(
+          `SELECT id, status, total, processed, errors, error_message, 
+                  created_at, started_at, completed_at
+           FROM embedding_jobs
+           WHERE project_id = $1
+           ORDER BY created_at DESC
+           LIMIT 10`,
+          [projectId],
+        );
+
+        return {
+          jobs: result.rows.map((job) => ({
+            jobId: job.id,
+            status: job.status,
+            total: job.total,
+            processed: job.processed,
+            errors: job.errors,
+            errorMessage: job.error_message,
+            createdAt: job.created_at,
+            startedAt: job.started_at,
+            completedAt: job.completed_at,
+          })),
+        };
+      } catch (error: any) {
+        fastify.log.error("Get embedding jobs error:", error);
+        return reply.code(500).send({
+          error: "Failed to get jobs",
           details: error.message,
         });
       }

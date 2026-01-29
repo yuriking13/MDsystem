@@ -1034,25 +1034,72 @@ export async function apiSemanticSearch(
   );
 }
 
-export type GenerateEmbeddingsResponse = {
-  success: boolean;
+// === Async Embedding Generation ===
+
+export type EmbeddingJobResponse = {
+  jobId: string | null;
+  status:
+    | "pending"
+    | "running"
+    | "completed"
+    | "failed"
+    | "cancelled"
+    | "timeout";
   total: number;
   processed: number;
   errors: number;
-  remaining: number;
+  message?: string;
+  errorMessage?: string;
+  createdAt?: string;
+  startedAt?: string;
+  completedAt?: string;
+};
+
+export type EmbeddingJobsResponse = {
+  jobs: EmbeddingJobResponse[];
 };
 
 export async function apiGenerateEmbeddings(
   projectId: string,
-  articleIds?: string[],
-  batchSize: number = 50,
-): Promise<GenerateEmbeddingsResponse> {
-  return apiFetch<GenerateEmbeddingsResponse>(
+  options?: {
+    articleIds?: string[];
+    includeReferences?: boolean;
+    includeCitedBy?: boolean;
+  },
+): Promise<EmbeddingJobResponse> {
+  return apiFetch<EmbeddingJobResponse>(
     `/api/projects/${projectId}/citation-graph/generate-embeddings`,
     {
       method: "POST",
-      body: JSON.stringify({ articleIds, batchSize }),
+      body: JSON.stringify(options || {}),
     },
+  );
+}
+
+export async function apiGetEmbeddingJob(
+  projectId: string,
+  jobId: string,
+): Promise<EmbeddingJobResponse> {
+  return apiFetch<EmbeddingJobResponse>(
+    `/api/projects/${projectId}/citation-graph/embedding-job/${jobId}`,
+  );
+}
+
+export async function apiCancelEmbeddingJob(
+  projectId: string,
+  jobId: string,
+): Promise<{ success: boolean; jobId: string; status: string }> {
+  return apiFetch<{ success: boolean; jobId: string; status: string }>(
+    `/api/projects/${projectId}/citation-graph/embedding-job/${jobId}/cancel`,
+    { method: "POST" },
+  );
+}
+
+export async function apiGetEmbeddingJobs(
+  projectId: string,
+): Promise<EmbeddingJobsResponse> {
+  return apiFetch<EmbeddingJobsResponse>(
+    `/api/projects/${projectId}/citation-graph/embedding-jobs`,
   );
 }
 

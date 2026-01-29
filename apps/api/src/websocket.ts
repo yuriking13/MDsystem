@@ -1,19 +1,23 @@
 import type { FastifyInstance, FastifyRequest } from "fastify";
 import websocketPlugin from "@fastify/websocket";
 import type { WebSocket } from "ws";
-import { createLogger } from './utils/logger.js';
+import { createLogger } from "./utils/logger.js";
 
-const log = createLogger('WebSocket');
+const log = createLogger("WebSocket");
 
 // Типы событий WebSocket
-export type WSEventType = 
+export type WSEventType =
   | "statistic:created"
-  | "statistic:updated" 
+  | "statistic:updated"
   | "statistic:deleted"
   | "document:updated"
   | "document:deleted"
   | "article:statusChanged"
-  | "project:updated";
+  | "project:updated"
+  | "embedding:progress"
+  | "embedding:completed"
+  | "embedding:error"
+  | "embedding:cancelled";
 
 export interface WSEvent {
   type: WSEventType;
@@ -47,19 +51,24 @@ const userConnections = new Map<string, Set<AppWebSocket>>();
 /**
  * Отправить событие всем подключённым клиентам проекта
  */
-export function broadcastToProject(projectId: string, event: WSEvent, excludeUserId?: string) {
+export function broadcastToProject(
+  projectId: string,
+  event: WSEvent,
+  excludeUserId?: string,
+) {
   const connections = projectConnections.get(projectId);
   if (!connections) return;
 
   const message = JSON.stringify(event);
-  
+
   for (const ws of connections) {
     try {
       // Проверяем что соединение открыто
-      if (ws.readyState === 1) { // WebSocket.OPEN
+      if (ws.readyState === 1) {
+        // WebSocket.OPEN
         // Исключаем отправителя если указано
         if (excludeUserId && ws.__userId === excludeUserId) continue;
-        
+
         ws.send(message);
       }
     } catch (err) {
@@ -76,7 +85,7 @@ export function sendToUser(userId: string, event: WSEvent) {
   if (!connections) return;
 
   const message = JSON.stringify(event);
-  
+
   for (const ws of connections) {
     try {
       if (ws.readyState === 1) {
@@ -92,54 +101,86 @@ export function sendToUser(userId: string, event: WSEvent) {
  * Хелперы для отправки типовых событий
  */
 export const wsEvents = {
-  statisticCreated(projectId: string, statistic: Record<string, unknown>, userId?: string) {
-    broadcastToProject(projectId, {
-      type: "statistic:created",
+  statisticCreated(
+    projectId: string,
+    statistic: Record<string, unknown>,
+    userId?: string,
+  ) {
+    broadcastToProject(
       projectId,
-      payload: { statistic },
-      timestamp: Date.now(),
+      {
+        type: "statistic:created",
+        projectId,
+        payload: { statistic },
+        timestamp: Date.now(),
+        userId,
+      },
       userId,
-    }, userId);
+    );
   },
 
-  statisticUpdated(projectId: string, statistic: Record<string, unknown>, userId?: string) {
-    broadcastToProject(projectId, {
-      type: "statistic:updated",
+  statisticUpdated(
+    projectId: string,
+    statistic: Record<string, unknown>,
+    userId?: string,
+  ) {
+    broadcastToProject(
       projectId,
-      payload: { statistic },
-      timestamp: Date.now(),
+      {
+        type: "statistic:updated",
+        projectId,
+        payload: { statistic },
+        timestamp: Date.now(),
+        userId,
+      },
       userId,
-    }, userId);
+    );
   },
 
   statisticDeleted(projectId: string, statisticId: string, userId?: string) {
-    broadcastToProject(projectId, {
-      type: "statistic:deleted",
+    broadcastToProject(
       projectId,
-      payload: { statisticId },
-      timestamp: Date.now(),
+      {
+        type: "statistic:deleted",
+        projectId,
+        payload: { statisticId },
+        timestamp: Date.now(),
+        userId,
+      },
       userId,
-    }, userId);
+    );
   },
 
-  documentUpdated(projectId: string, document: Record<string, unknown>, userId?: string) {
-    broadcastToProject(projectId, {
-      type: "document:updated",
+  documentUpdated(
+    projectId: string,
+    document: Record<string, unknown>,
+    userId?: string,
+  ) {
+    broadcastToProject(
       projectId,
-      payload: { document },
-      timestamp: Date.now(),
+      {
+        type: "document:updated",
+        projectId,
+        payload: { document },
+        timestamp: Date.now(),
+        userId,
+      },
       userId,
-    }, userId);
+    );
   },
 
   documentDeleted(projectId: string, documentId: string, userId?: string) {
-    broadcastToProject(projectId, {
-      type: "document:deleted",
+    broadcastToProject(
       projectId,
-      payload: { documentId },
-      timestamp: Date.now(),
+      {
+        type: "document:deleted",
+        projectId,
+        payload: { documentId },
+        timestamp: Date.now(),
+        userId,
+      },
       userId,
-    }, userId);
+    );
   },
 };
 
@@ -150,95 +191,108 @@ export async function registerWebSocket(app: FastifyInstance) {
   await app.register(websocketPlugin);
 
   // WebSocket endpoint для подписки на проект
-  app.get("/ws/project/:projectId", { websocket: true }, (socket: AppWebSocket, req: FastifyRequest<{ Params: WSParams; Querystring: WSQuery }>) => {
-    const { projectId } = req.params;
-    const { token } = req.query;
+  app.get(
+    "/ws/project/:projectId",
+    { websocket: true },
+    (
+      socket: AppWebSocket,
+      req: FastifyRequest<{ Params: WSParams; Querystring: WSQuery }>,
+    ) => {
+      const { projectId } = req.params;
+      const { token } = req.query;
 
-    // Верификация токена через Fastify JWT
-    let userId: string | null = null;
-    try {
-      if (token) {
-        // Используем встроенный jwt.verify из @fastify/jwt
-        const decoded = app.jwt.verify(token) as { sub: string };
-        userId = decoded.sub;
-      }
-    } catch (err) {
-      log.warn("Token verification failed", { error: err instanceof Error ? err.message : String(err) });
-      socket.close(4001, "Invalid token");
-      return;
-    }
-
-    // Сохраняем userId на сокете для фильтрации
-    socket.__userId = userId;
-    socket.__projectId = projectId;
-
-    // Добавляем в Map проекта
-    if (!projectConnections.has(projectId)) {
-      projectConnections.set(projectId, new Set());
-    }
-    projectConnections.get(projectId)!.add(socket);
-
-    // Добавляем в Map пользователя
-    if (userId) {
-      if (!userConnections.has(userId)) {
-        userConnections.set(userId, new Set());
-      }
-      userConnections.get(userId)!.add(socket);
-    }
-
-    log.info("Client connected", { projectId, userId });
-
-    // Отправляем приветственное сообщение
-    socket.send(JSON.stringify({
-      type: "connected",
-      projectId,
-      timestamp: Date.now(),
-    }));
-
-    // Обработка входящих сообщений (ping/pong, подписки и т.д.)
-    socket.on("message", (message) => {
+      // Верификация токена через Fastify JWT
+      let userId: string | null = null;
       try {
-        const data = JSON.parse(message.toString()) as { type?: string };
-        
-        // Обработка ping
-        if (data.type === "ping") {
-          socket.send(JSON.stringify({ type: "pong", timestamp: Date.now() }));
+        if (token) {
+          // Используем встроенный jwt.verify из @fastify/jwt
+          const decoded = app.jwt.verify(token) as { sub: string };
+          userId = decoded.sub;
         }
-      } catch {
-        // Игнорируем невалидные сообщения (не JSON)
-        log.debug("Invalid message received", { projectId });
-      }
-    });
-
-    // Очистка при закрытии
-    socket.on("close", () => {
-      log.info("Client disconnected", { projectId, userId });
-      
-      // Удаляем из Map проекта
-      const projectSockets = projectConnections.get(projectId);
-      if (projectSockets) {
-        projectSockets.delete(socket);
-        if (projectSockets.size === 0) {
-          projectConnections.delete(projectId);
-        }
+      } catch (err) {
+        log.warn("Token verification failed", {
+          error: err instanceof Error ? err.message : String(err),
+        });
+        socket.close(4001, "Invalid token");
+        return;
       }
 
-      // Удаляем из Map пользователя
+      // Сохраняем userId на сокете для фильтрации
+      socket.__userId = userId;
+      socket.__projectId = projectId;
+
+      // Добавляем в Map проекта
+      if (!projectConnections.has(projectId)) {
+        projectConnections.set(projectId, new Set());
+      }
+      projectConnections.get(projectId)!.add(socket);
+
+      // Добавляем в Map пользователя
       if (userId) {
-        const userSockets = userConnections.get(userId);
-        if (userSockets) {
-          userSockets.delete(socket);
-          if (userSockets.size === 0) {
-            userConnections.delete(userId);
+        if (!userConnections.has(userId)) {
+          userConnections.set(userId, new Set());
+        }
+        userConnections.get(userId)!.add(socket);
+      }
+
+      log.info("Client connected", { projectId, userId });
+
+      // Отправляем приветственное сообщение
+      socket.send(
+        JSON.stringify({
+          type: "connected",
+          projectId,
+          timestamp: Date.now(),
+        }),
+      );
+
+      // Обработка входящих сообщений (ping/pong, подписки и т.д.)
+      socket.on("message", (message) => {
+        try {
+          const data = JSON.parse(message.toString()) as { type?: string };
+
+          // Обработка ping
+          if (data.type === "ping") {
+            socket.send(
+              JSON.stringify({ type: "pong", timestamp: Date.now() }),
+            );
+          }
+        } catch {
+          // Игнорируем невалидные сообщения (не JSON)
+          log.debug("Invalid message received", { projectId });
+        }
+      });
+
+      // Очистка при закрытии
+      socket.on("close", () => {
+        log.info("Client disconnected", { projectId, userId });
+
+        // Удаляем из Map проекта
+        const projectSockets = projectConnections.get(projectId);
+        if (projectSockets) {
+          projectSockets.delete(socket);
+          if (projectSockets.size === 0) {
+            projectConnections.delete(projectId);
           }
         }
-      }
-    });
 
-    socket.on("error", (err) => {
-      log.error("Socket error", err, { projectId, userId });
-    });
-  });
+        // Удаляем из Map пользователя
+        if (userId) {
+          const userSockets = userConnections.get(userId);
+          if (userSockets) {
+            userSockets.delete(socket);
+            if (userSockets.size === 0) {
+              userConnections.delete(userId);
+            }
+          }
+        }
+      });
+
+      socket.on("error", (err) => {
+        log.error("Socket error", err, { projectId, userId });
+      });
+    },
+  );
 }
 
 /**

@@ -19,6 +19,8 @@ import {
   apiGetGraphRecommendations,
   apiSemanticSearch,
   apiGenerateEmbeddings,
+  apiGetEmbeddingJob,
+  apiCancelEmbeddingJob,
   apiGetEmbeddingStats,
   apiGetSemanticNeighbors,
   apiAnalyzeMethodologies,
@@ -33,6 +35,7 @@ import {
   type GraphFilterOptions,
   type LevelCounts,
   type ClusterInfo,
+  type EmbeddingJobResponse,
   type SearchSuggestion,
   type FoundArticle,
   type GraphArticleForAI,
@@ -297,6 +300,9 @@ export default function CitationGraph({ projectId }: Props) {
     useState<EmbeddingStatsResponse | null>(null);
   const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false);
   const [embeddingMessage, setEmbeddingMessage] = useState<string | null>(null);
+  const [embeddingJob, setEmbeddingJob] = useState<EmbeddingJobResponse | null>(
+    null,
+  );
 
   // === СЕМАНТИЧЕСКОЕ ЯДРО (визуализация связей) ===
   const [showSemanticEdges, setShowSemanticEdges] = useState(false);
@@ -543,44 +549,87 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
-  // Генерация embeddings для статей - автоматическая обработка всех
+  // Генерация embeddings для статей - асинхронная обработка
   const handleGenerateEmbeddings = async () => {
     setGeneratingEmbeddings(true);
     setEmbeddingMessage(null);
 
-    let totalProcessed = 0;
-    let totalErrors = 0;
-    let hasMore = true;
-
     try {
-      while (hasMore) {
-        const result = await apiGenerateEmbeddings(projectId, undefined, 100); // Увеличили batch до 100
-        totalProcessed += result.processed;
-        totalErrors += result.errors;
+      const result = await apiGenerateEmbeddings(projectId);
 
-        setEmbeddingMessage(
-          `Обработано ${totalProcessed} статей... ${result.remaining > 0 ? `Осталось: ${result.remaining}` : "Завершено!"}`,
-        );
-        await loadEmbeddingStats();
-
-        hasMore = result.remaining > 0 && result.processed > 0;
-
-        // Небольшая пауза между батчами
-        if (hasMore) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
+      if (result.status === "completed" && result.total === 0) {
+        setEmbeddingMessage("✓ Все статьи уже имеют embeddings!");
+        setGeneratingEmbeddings(false);
+        return;
       }
 
+      setEmbeddingJob(result);
       setEmbeddingMessage(
-        `✓ Готово! Обработано ${totalProcessed} статей${totalErrors > 0 ? `, ошибок: ${totalErrors}` : ""}`,
+        `Запущена генерация embeddings для ${result.total} статей...`,
       );
+
+      // Если job уже был, показываем прогресс
+      if (result.jobId && result.status !== "completed") {
+        pollEmbeddingJob(result.jobId);
+      }
     } catch (err: any) {
-      console.error("Failed to generate embeddings:", err);
-      setEmbeddingMessage(
-        `Ошибка: ${err.message}. Обработано: ${totalProcessed}`,
-      );
-    } finally {
+      console.error("Failed to start embeddings generation:", err);
+      setEmbeddingMessage(`Ошибка: ${err.message}`);
       setGeneratingEmbeddings(false);
+    }
+  };
+
+  // Polling для статуса job
+  const pollEmbeddingJob = async (jobId: string) => {
+    try {
+      const job = await apiGetEmbeddingJob(projectId, jobId);
+      setEmbeddingJob(job);
+
+      const percent =
+        job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
+
+      if (job.status === "running" || job.status === "pending") {
+        setEmbeddingMessage(
+          `Обработка: ${job.processed}/${job.total} (${percent}%)...`,
+        );
+        // Продолжаем polling каждые 2 секунды
+        setTimeout(() => pollEmbeddingJob(jobId), 2000);
+      } else if (job.status === "completed") {
+        setEmbeddingMessage(
+          `✓ Готово! Обработано ${job.processed} статей${job.errors > 0 ? `, ошибок: ${job.errors}` : ""}`,
+        );
+        setGeneratingEmbeddings(false);
+        await loadEmbeddingStats();
+      } else if (job.status === "failed" || job.status === "timeout") {
+        setEmbeddingMessage(
+          `Ошибка: ${job.errorMessage || "Неизвестная ошибка"}. Обработано: ${job.processed}`,
+        );
+        setGeneratingEmbeddings(false);
+        await loadEmbeddingStats();
+      } else if (job.status === "cancelled") {
+        setEmbeddingMessage(
+          `Отменено. Обработано: ${job.processed} из ${job.total}`,
+        );
+        setGeneratingEmbeddings(false);
+        await loadEmbeddingStats();
+      }
+    } catch (err: any) {
+      console.error("Failed to poll embedding job:", err);
+      setEmbeddingMessage(`Ошибка получения статуса: ${err.message}`);
+      setGeneratingEmbeddings(false);
+    }
+  };
+
+  // Отмена генерации embeddings
+  const handleCancelEmbeddings = async () => {
+    if (!embeddingJob?.jobId) return;
+
+    try {
+      await apiCancelEmbeddingJob(projectId, embeddingJob.jobId);
+      setEmbeddingMessage("Отмена...");
+    } catch (err: any) {
+      console.error("Failed to cancel embedding job:", err);
+      setEmbeddingMessage(`Ошибка отмены: ${err.message}`);
     }
   };
 
@@ -2619,7 +2668,14 @@ export default function CitationGraph({ projectId }: Props) {
             </div>
 
             {embeddingStats && embeddingStats.withoutEmbeddings > 0 && (
-              <div style={{ marginBottom: 8 }}>
+              <div
+                style={{
+                  marginBottom: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
                 <button
                   className="btn secondary"
                   style={{ fontSize: 11, padding: "4px 8px" }}
@@ -2630,16 +2686,53 @@ export default function CitationGraph({ projectId }: Props) {
                     ? "Генерация..."
                     : `Создать embeddings (${embeddingStats.withoutEmbeddings})`}
                 </button>
+                {generatingEmbeddings && embeddingJob?.jobId && (
+                  <button
+                    className="btn"
+                    style={{
+                      fontSize: 11,
+                      padding: "4px 8px",
+                      background: "var(--bg-error)",
+                      color: "white",
+                    }}
+                    onClick={handleCancelEmbeddings}
+                  >
+                    Отменить
+                  </button>
+                )}
                 {embeddingMessage && (
                   <span
                     style={{
-                      marginLeft: 8,
                       fontSize: 11,
-                      color: "var(--text-muted)",
+                      color: embeddingMessage.startsWith("✓")
+                        ? "#10b981"
+                        : embeddingMessage.startsWith("Ошибка")
+                          ? "#ef4444"
+                          : "var(--text-muted)",
                     }}
                   >
                     {embeddingMessage}
                   </span>
+                )}
+                {generatingEmbeddings && embeddingJob && (
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 6,
+                      background: "var(--bg-tertiary)",
+                      borderRadius: 3,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${embeddingJob.total > 0 ? Math.round((embeddingJob.processed / embeddingJob.total) * 100) : 0}%`,
+                        background: "linear-gradient(90deg, #10b981, #3b82f6)",
+                        transition: "width 0.3s ease",
+                      }}
+                    />
+                  </div>
                 )}
               </div>
             )}
