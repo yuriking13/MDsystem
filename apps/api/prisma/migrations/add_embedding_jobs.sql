@@ -3,8 +3,8 @@
 
 CREATE TABLE IF NOT EXISTS embedding_jobs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  project_id TEXT NOT NULL,
+  user_id UUID NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'completed', 'failed', 'cancelled', 'timeout')),
   total INTEGER NOT NULL DEFAULT 0,
   processed INTEGER NOT NULL DEFAULT 0,

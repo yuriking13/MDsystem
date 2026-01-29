@@ -203,12 +203,25 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
 
     log.info("Found articles to process", { jobId, total: totalArticles });
 
-    // Обновляем total
-    await updateProgress(jobId, projectId, {
-      total: totalArticles,
-      processed: 0,
-      errors: 0,
-      status: "running",
+    // Обновляем total - ВАЖНО: устанавливаем реальное количество статей
+    // Это может отличаться от изначального missingCount если статьи добавились
+    await pool.query(
+      `UPDATE embedding_jobs SET total = $2, processed = 0, errors = 0, status = 'running' WHERE id = $1`,
+      [jobId, totalArticles],
+    );
+
+    // Отправляем WebSocket событие с актуальным total
+    broadcastToProject(projectId, {
+      type: "embedding:progress" as any,
+      projectId,
+      payload: {
+        jobId,
+        total: totalArticles,
+        processed: 0,
+        errors: 0,
+        status: "running",
+      },
+      timestamp: Date.now(),
     });
 
     if (totalArticles === 0) {
