@@ -22,6 +22,12 @@ import {
   apiGetEmbeddingStats,
   apiGetSemanticNeighbors,
   apiAnalyzeMethodologies,
+  apiGetSemanticClusters,
+  apiCreateSemanticClusters,
+  apiDeleteSemanticClusters,
+  apiGapAnalysis,
+  apiSmartSemanticSearch,
+  apiGetArticleSemanticNeighbors,
   type GraphNode,
   type GraphLink,
   type GraphFilterOptions,
@@ -36,6 +42,9 @@ import {
   type EmbeddingStatsResponse,
   type MethodologyCluster,
   type SemanticNeighborsResponse,
+  type SemanticCluster,
+  type GapAnalysisItem,
+  type SmartSemanticSearchResult,
 } from "../lib/api";
 import {
   IconInfoCircle,
@@ -297,6 +306,32 @@ export default function CitationGraph({ projectId }: Props) {
   const [semanticEdgeThreshold, setSemanticEdgeThreshold] = useState(0.8);
   const [loadingSemanticEdges, setLoadingSemanticEdges] = useState(false);
 
+  // === СЕМАНТИЧЕСКИЕ КЛАСТЕРЫ ===
+  const [semanticClusters, setSemanticClusters] = useState<SemanticCluster[]>(
+    [],
+  );
+  const [loadingSemanticClusters, setLoadingSemanticClusters] = useState(false);
+  const [creatingSemanticClusters, setCreatingSemanticClusters] =
+    useState(false);
+  const [selectedSemanticCluster, setSelectedSemanticCluster] = useState<
+    string | null
+  >(null);
+  const [showSemanticClustersPanel, setShowSemanticClustersPanel] =
+    useState(false);
+  const [semanticClusterSettings, setSemanticClusterSettings] = useState({
+    numClusters: 5,
+    minClusterSize: 3,
+    similarityThreshold: 0.6,
+    generateNames: true,
+  });
+
+  // === GAP ANALYSIS ===
+  const [showGapAnalysis, setShowGapAnalysis] = useState(false);
+  const [gapAnalysisResults, setGapAnalysisResults] = useState<
+    GapAnalysisItem[]
+  >([]);
+  const [loadingGapAnalysis, setLoadingGapAnalysis] = useState(false);
+
   // === КЛАСТЕРИЗАЦИЯ МЕТОДОЛОГИЙ ===
   const [showMethodologyClusters, setShowMethodologyClusters] = useState(false);
   const [methodologyClusters, setMethodologyClusters] = useState<
@@ -345,9 +380,39 @@ export default function CitationGraph({ projectId }: Props) {
     };
   }, [data, methodologyFilter, methodologyClusters]);
 
+  // Фильтрация по семантическому кластеру
+  const semanticFilteredGraphData = useMemo(() => {
+    const baseData = filteredGraphData;
+    if (!baseData) return null;
+    if (!selectedSemanticCluster || semanticClusters.length === 0)
+      return baseData;
+
+    const selectedCluster = semanticClusters.find(
+      (c) => c.id === selectedSemanticCluster,
+    );
+    if (!selectedCluster || !selectedCluster.articleIds) return baseData;
+
+    const articleIdSet = new Set(selectedCluster.articleIds);
+    const filteredNodes = baseData.nodes.filter((node) =>
+      articleIdSet.has(node.id),
+    );
+    const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
+
+    const filteredLinks = baseData.links.filter(
+      (link) =>
+        filteredNodeIds.has(link.source as string) &&
+        filteredNodeIds.has(link.target as string),
+    );
+
+    return {
+      nodes: filteredNodes,
+      links: filteredLinks,
+    };
+  }, [filteredGraphData, selectedSemanticCluster, semanticClusters]);
+
   // Граф с добавленными семантическими связями
   const graphDataWithSemanticEdges = useMemo(() => {
-    const baseData = filteredGraphData;
+    const baseData = semanticFilteredGraphData;
     if (!baseData) return null;
     if (!showSemanticEdges || semanticEdges.length === 0) return baseData;
 
@@ -377,7 +442,7 @@ export default function CitationGraph({ projectId }: Props) {
       nodes: baseData.nodes,
       links: [...baseData.links, ...semanticLinks],
     };
-  }, [filteredGraphData, showSemanticEdges, semanticEdges]);
+  }, [semanticFilteredGraphData, showSemanticEdges, semanticEdges]);
 
   // === ФУНКЦИИ УПРАВЛЕНИЯ ГРАФОМ ===
 
@@ -562,6 +627,86 @@ export default function CitationGraph({ projectId }: Props) {
       graphRef.current.centerAt(node.x, node.y, 1000);
       graphRef.current.zoom(2, 1000);
       setSelectedNodeForDisplay(node);
+    }
+  };
+
+  // === СЕМАНТИЧЕСКИЕ КЛАСТЕРЫ ===
+
+  // Загрузка существующих кластеров
+  const loadSemanticClusters = async () => {
+    setLoadingSemanticClusters(true);
+    try {
+      const result = await apiGetSemanticClusters(projectId);
+      setSemanticClusters(result.clusters);
+    } catch (err: any) {
+      console.error("Failed to load semantic clusters:", err);
+    } finally {
+      setLoadingSemanticClusters(false);
+    }
+  };
+
+  // Создание семантических кластеров
+  const handleCreateSemanticClusters = async () => {
+    setCreatingSemanticClusters(true);
+    try {
+      const result = await apiCreateSemanticClusters(
+        projectId,
+        semanticClusterSettings,
+      );
+      setSemanticClusters(result.clusters);
+      setShowSemanticClustersPanel(true);
+    } catch (err: any) {
+      console.error("Failed to create semantic clusters:", err);
+      alert(`Ошибка создания кластеров: ${err.message}`);
+    } finally {
+      setCreatingSemanticClusters(false);
+    }
+  };
+
+  // Удаление кластеров
+  const handleDeleteSemanticClusters = async () => {
+    if (!confirm("Удалить все семантические кластеры?")) return;
+    try {
+      await apiDeleteSemanticClusters(projectId);
+      setSemanticClusters([]);
+      setSelectedSemanticCluster(null);
+    } catch (err: any) {
+      console.error("Failed to delete semantic clusters:", err);
+      alert(`Ошибка удаления кластеров: ${err.message}`);
+    }
+  };
+
+  // Фильтрация по семантическому кластеру
+  const filterBySemanticCluster = (clusterId: string | null) => {
+    setSelectedSemanticCluster(clusterId);
+  };
+
+  // Получить цвет узла по кластеру
+  const getNodeClusterColor = useCallback(
+    (nodeId: string): string | null => {
+      for (const cluster of semanticClusters) {
+        if (cluster.articleIds.includes(nodeId)) {
+          return cluster.color;
+        }
+      }
+      return null;
+    },
+    [semanticClusters],
+  );
+
+  // === GAP ANALYSIS ===
+
+  const handleGapAnalysis = async () => {
+    setLoadingGapAnalysis(true);
+    try {
+      const result = await apiGapAnalysis(projectId, 0.7, 30);
+      setGapAnalysisResults(result.gaps);
+      setShowGapAnalysis(true);
+    } catch (err: any) {
+      console.error("Gap analysis failed:", err);
+      alert(`Ошибка анализа пробелов: ${err.message}`);
+    } finally {
+      setLoadingGapAnalysis(false);
     }
   };
 
@@ -1750,6 +1895,83 @@ export default function CitationGraph({ projectId }: Props) {
           <span>{analyzingMethodologies ? "..." : "Метод."}</span>
         </button>
 
+        {/* Семантические кластеры */}
+        <button
+          className={
+            showSemanticClustersPanel ? "btn primary" : "btn secondary"
+          }
+          style={{
+            padding: "5px 10px",
+            fontSize: 11,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+          onClick={() => {
+            if (!showSemanticClustersPanel && semanticClusters.length === 0) {
+              loadSemanticClusters();
+            }
+            setShowSemanticClustersPanel(!showSemanticClustersPanel);
+          }}
+          disabled={loadingSemanticClusters}
+          title="Семантические кластеры статей"
+        >
+          <IconGraph size="sm" />
+          <span>{loadingSemanticClusters ? "..." : "Кластеры"}</span>
+          {semanticClusters.length > 0 && (
+            <span
+              style={{
+                background: "var(--accent-secondary)",
+                color: "white",
+                borderRadius: 10,
+                padding: "1px 5px",
+                fontSize: 9,
+                fontWeight: 600,
+              }}
+            >
+              {semanticClusters.length}
+            </span>
+          )}
+        </button>
+
+        {/* Gap Analysis */}
+        <button
+          className={showGapAnalysis ? "btn primary" : "btn secondary"}
+          style={{
+            padding: "5px 10px",
+            fontSize: 11,
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+          }}
+          onClick={() => {
+            if (!showGapAnalysis && gapAnalysisResults.length === 0) {
+              handleGapAnalysis();
+            } else {
+              setShowGapAnalysis(!showGapAnalysis);
+            }
+          }}
+          disabled={loadingGapAnalysis}
+          title="Анализ пропущенных связей"
+        >
+          <IconLinkChain size="sm" />
+          <span>{loadingGapAnalysis ? "..." : "Gaps"}</span>
+          {gapAnalysisResults.length > 0 && (
+            <span
+              style={{
+                background: "#f59e0b",
+                color: "white",
+                borderRadius: 10,
+                padding: "1px 5px",
+                fontSize: 9,
+                fontWeight: 600,
+              }}
+            >
+              {gapAnalysisResults.length}
+            </span>
+          )}
+        </button>
+
         {/* Экспорт */}
         <div className="dropdown" style={{ position: "relative" }}>
           <button
@@ -2640,6 +2862,453 @@ export default function CitationGraph({ projectId }: Props) {
         </div>
       )}
 
+      {/* Semantic Clusters Panel */}
+      {showSemanticClustersPanel && (
+        <div
+          className="graph-filters"
+          style={{
+            padding: "12px 20px",
+            borderBottom: "1px solid var(--border-glass)",
+            background:
+              "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(34, 197, 94, 0.05))",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 12,
+            }}
+          >
+            <IconGraph size="sm" />
+            <span style={{ fontWeight: 600 }}>🔮 Семантические кластеры</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              (группировка по смыслу)
+            </span>
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              {semanticClusters.length > 0 && (
+                <button
+                  className="btn secondary"
+                  style={{ fontSize: 10, padding: "2px 6px" }}
+                  onClick={() => filterBySemanticCluster(null)}
+                >
+                  Сбросить
+                </button>
+              )}
+              <button
+                className="btn secondary"
+                style={{ fontSize: 10, padding: "2px 6px" }}
+                onClick={handleCreateSemanticClusters}
+                disabled={creatingSemanticClusters}
+              >
+                {creatingSemanticClusters
+                  ? "Создание..."
+                  : semanticClusters.length > 0
+                    ? "Пересоздать"
+                    : "Создать кластеры"}
+              </button>
+              {semanticClusters.length > 0 && (
+                <button
+                  className="btn secondary"
+                  style={{
+                    fontSize: 10,
+                    padding: "2px 6px",
+                    color: "#ef4444",
+                  }}
+                  onClick={handleDeleteSemanticClusters}
+                >
+                  Удалить
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Настройки кластеризации */}
+          {semanticClusters.length === 0 && (
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 16,
+                marginBottom: 12,
+                padding: 12,
+                background: "var(--bg-secondary)",
+                borderRadius: 8,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  Кластеров:
+                </label>
+                <input
+                  type="number"
+                  min={2}
+                  max={15}
+                  value={semanticClusterSettings.numClusters}
+                  onChange={(e) =>
+                    setSemanticClusterSettings((s) => ({
+                      ...s,
+                      numClusters: parseInt(e.target.value) || 5,
+                    }))
+                  }
+                  style={{
+                    width: 50,
+                    padding: "4px 6px",
+                    borderRadius: 4,
+                    border: "1px solid var(--border-glass)",
+                    background: "var(--bg-primary)",
+                    color: "inherit",
+                    fontSize: 11,
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  Мин. размер:
+                </label>
+                <input
+                  type="number"
+                  min={2}
+                  max={20}
+                  value={semanticClusterSettings.minClusterSize}
+                  onChange={(e) =>
+                    setSemanticClusterSettings((s) => ({
+                      ...s,
+                      minClusterSize: parseInt(e.target.value) || 3,
+                    }))
+                  }
+                  style={{
+                    width: 50,
+                    padding: "4px 6px",
+                    borderRadius: 4,
+                    border: "1px solid var(--border-glass)",
+                    background: "var(--bg-primary)",
+                    color: "inherit",
+                    fontSize: 11,
+                  }}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  Порог схожести:
+                </label>
+                <input
+                  type="range"
+                  min={0.4}
+                  max={0.8}
+                  step={0.05}
+                  value={semanticClusterSettings.similarityThreshold}
+                  onChange={(e) =>
+                    setSemanticClusterSettings((s) => ({
+                      ...s,
+                      similarityThreshold: parseFloat(e.target.value),
+                    }))
+                  }
+                  style={{ width: 60 }}
+                />
+                <span style={{ fontSize: 11 }}>
+                  {(semanticClusterSettings.similarityThreshold * 100).toFixed(
+                    0,
+                  )}
+                  %
+                </span>
+              </div>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 11,
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={semanticClusterSettings.generateNames}
+                  onChange={(e) =>
+                    setSemanticClusterSettings((s) => ({
+                      ...s,
+                      generateNames: e.target.checked,
+                    }))
+                  }
+                />
+                AI-названия
+              </label>
+            </div>
+          )}
+
+          {/* Список кластеров */}
+          {semanticClusters.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {semanticClusters.map((cluster) => (
+                <button
+                  key={cluster.id}
+                  onClick={() =>
+                    filterBySemanticCluster(
+                      selectedSemanticCluster === cluster.id
+                        ? null
+                        : cluster.id,
+                    )
+                  }
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    border:
+                      selectedSemanticCluster === cluster.id
+                        ? `2px solid ${cluster.color}`
+                        : "1px solid var(--border-glass)",
+                    background:
+                      selectedSemanticCluster === cluster.id
+                        ? cluster.color
+                        : "var(--bg-secondary)",
+                    color:
+                      selectedSemanticCluster === cluster.id
+                        ? "white"
+                        : "inherit",
+                    cursor: "pointer",
+                    fontSize: 11,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    gap: 4,
+                    minWidth: 150,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      width: "100%",
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: "50%",
+                        background: cluster.color,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        flex: 1,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {cluster.name}
+                    </span>
+                    <span
+                      style={{
+                        background:
+                          selectedSemanticCluster === cluster.id
+                            ? "rgba(255,255,255,0.2)"
+                            : cluster.color + "30",
+                        color:
+                          selectedSemanticCluster === cluster.id
+                            ? "white"
+                            : cluster.color,
+                        padding: "2px 6px",
+                        borderRadius: 10,
+                        fontSize: 10,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {cluster.articleCount}
+                    </span>
+                  </div>
+                  {cluster.centralArticleTitle && (
+                    <div
+                      style={{
+                        fontSize: 9,
+                        color:
+                          selectedSemanticCluster === cluster.id
+                            ? "rgba(255,255,255,0.8)"
+                            : "var(--text-muted)",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        width: "100%",
+                      }}
+                      title={cluster.centralArticleTitle}
+                    >
+                      ⭐ {cluster.centralArticleTitle.slice(0, 40)}...
+                    </div>
+                  )}
+                  {cluster.keywords.length > 0 && (
+                    <div
+                      style={{
+                        fontSize: 9,
+                        color:
+                          selectedSemanticCluster === cluster.id
+                            ? "rgba(255,255,255,0.7)"
+                            : "var(--text-muted)",
+                      }}
+                    >
+                      {cluster.keywords.slice(0, 3).join(", ")}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {semanticClusters.length === 0 && !creatingSemanticClusters && (
+            <div
+              style={{
+                textAlign: "center",
+                padding: 16,
+                color: "var(--text-muted)",
+                fontSize: 12,
+              }}
+            >
+              Нажмите "Создать кластеры" для автоматической группировки статей
+              по семантической близости
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Gap Analysis Panel */}
+      {showGapAnalysis && (
+        <div
+          className="graph-filters"
+          style={{
+            padding: "12px 20px",
+            borderBottom: "1px solid var(--border-glass)",
+            background:
+              "linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(239, 68, 68, 0.05))",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+              marginBottom: 12,
+            }}
+          >
+            <IconLinkChain size="sm" />
+            <span style={{ fontWeight: 600 }}>🔍 Анализ пробелов</span>
+            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              (похожие статьи без цитирований)
+            </span>
+            <button
+              className="btn secondary"
+              style={{ fontSize: 10, padding: "2px 6px", marginLeft: "auto" }}
+              onClick={handleGapAnalysis}
+              disabled={loadingGapAnalysis}
+            >
+              {loadingGapAnalysis ? "Анализ..." : "Обновить"}
+            </button>
+          </div>
+
+          {gapAnalysisResults.length > 0 ? (
+            <div style={{ maxHeight: 200, overflowY: "auto" }}>
+              {gapAnalysisResults.map((gap, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: 10,
+                    marginBottom: 8,
+                    background: "var(--bg-secondary)",
+                    borderRadius: 6,
+                    fontSize: 11,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      marginBottom: 6,
+                    }}
+                  >
+                    <span
+                      style={{
+                        background: `rgba(245, 158, 11, ${gap.similarity})`,
+                        padding: "2px 8px",
+                        borderRadius: 10,
+                        fontWeight: 600,
+                        fontSize: 10,
+                      }}
+                    >
+                      {(gap.similarity * 100).toFixed(0)}% схожесть
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 9,
+                        color: "var(--text-muted)",
+                        maxWidth: "60%",
+                      }}
+                    >
+                      {gap.reason}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <div
+                      style={{ flex: 1, cursor: "pointer" }}
+                      onClick={() => highlightSemanticResult(gap.article1.id)}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 500,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {gap.article1.title?.slice(0, 50)}...
+                      </div>
+                      <div style={{ fontSize: 9, color: "var(--text-muted)" }}>
+                        {gap.article1.year || "N/A"}
+                      </div>
+                    </div>
+                    <div style={{ color: "#f59e0b", padding: "0 8px" }}>↔</div>
+                    <div
+                      style={{ flex: 1, cursor: "pointer" }}
+                      onClick={() => highlightSemanticResult(gap.article2.id)}
+                    >
+                      <div
+                        style={{
+                          fontWeight: 500,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {gap.article2.title?.slice(0, 50)}...
+                      </div>
+                      <div style={{ fontSize: 9, color: "var(--text-muted)" }}>
+                        {gap.article2.year || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div
+              style={{
+                textAlign: "center",
+                padding: 16,
+                color: "var(--text-muted)",
+                fontSize: 12,
+              }}
+            >
+              {loadingGapAnalysis
+                ? "Анализируем связи..."
+                : "Не найдено статей с высокой схожестью без цитирований"}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Stats Bar */}
       <div className="graph-stats-bar">
         <div className="graph-stat-item">
@@ -2946,13 +3615,20 @@ export default function CitationGraph({ projectId }: Props) {
 
                   const size = baseSize;
                   const isAIFound = aiFoundArticleIds.has(node.id);
-                  const color = nodeColor(node);
+
+                  // Цвет узла: приоритет - семантический кластер, иначе стандартный
+                  const clusterColor = getNodeClusterColor(node.id);
+                  const color = clusterColor || nodeColor(node);
 
                   // === Аккуратный, академичный стиль ===
                   // Только легкое свечение для AI-найденных
                   if (isAIFound) {
                     ctx.shadowColor = "rgba(0, 212, 255, 0.6)";
                     ctx.shadowBlur = 12;
+                  } else if (clusterColor) {
+                    // Легкое свечение для кластеризованных узлов
+                    ctx.shadowColor = clusterColor + "60";
+                    ctx.shadowBlur = 6;
                   } else if (citedByCount > 200) {
                     // Очень тонкое свечение для самых цитируемых
                     ctx.shadowColor = "rgba(100, 150, 200, 0.3)";
@@ -2971,8 +3647,10 @@ export default function CitationGraph({ projectId }: Props) {
                   ctx.shadowBlur = 0;
 
                   // Одна тонкая обводка для всех узлов (академичный вид)
-                  ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-                  ctx.lineWidth = 0.8;
+                  ctx.strokeStyle = clusterColor
+                    ? "rgba(255, 255, 255, 0.3)"
+                    : "rgba(255, 255, 255, 0.15)";
+                  ctx.lineWidth = clusterColor ? 1.2 : 0.8;
                   ctx.beginPath();
                   ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
                   ctx.stroke();
@@ -2984,6 +3662,18 @@ export default function CitationGraph({ projectId }: Props) {
                     ctx.beginPath();
                     ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
                     ctx.stroke();
+                  }
+
+                  // Звёздочка для центральных статей кластеров
+                  const isCentralArticle = semanticClusters.some(
+                    (c) => c.centralArticleId === node.id,
+                  );
+                  if (isCentralArticle) {
+                    ctx.fillStyle = "#fbbf24";
+                    ctx.font = `${Math.max(8, size * 0.8)}px sans-serif`;
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText("⭐", node.x, node.y - size - 4);
                   }
 
                   // Метки для крупных узлов при масштабе

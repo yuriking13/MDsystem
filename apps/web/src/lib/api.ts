@@ -1096,6 +1096,187 @@ export async function apiGetSemanticNeighbors(
   );
 }
 
+// === Semantic Clusters (семантические кластеры) ===
+
+export type SemanticCluster = {
+  id: string;
+  name: string;
+  nameEn: string;
+  color: string;
+  articleCount: number;
+  centralArticleId: string | null;
+  centralArticleTitle: string | null;
+  keywords: string[];
+  avgInternalSimilarity: number;
+  articleIds: string[];
+};
+
+export type SemanticClustersResponse = {
+  clusters: SemanticCluster[];
+  unclustered: string[];
+  stats: {
+    totalClusters: number;
+    totalArticles: number;
+    clusteredArticles: number;
+    avgClusterSize: number;
+  };
+};
+
+export type CreateSemanticClustersOptions = {
+  numClusters?: number;
+  minClusterSize?: number;
+  similarityThreshold?: number;
+  generateNames?: boolean;
+};
+
+export async function apiGetSemanticClusters(
+  projectId: string,
+): Promise<SemanticClustersResponse> {
+  return apiFetch<SemanticClustersResponse>(
+    `/api/projects/${projectId}/citation-graph/semantic-clusters`,
+  );
+}
+
+export async function apiCreateSemanticClusters(
+  projectId: string,
+  options?: CreateSemanticClustersOptions,
+): Promise<SemanticClustersResponse & { success: boolean }> {
+  return apiFetch<SemanticClustersResponse & { success: boolean }>(
+    `/api/projects/${projectId}/citation-graph/semantic-clusters`,
+    {
+      method: "POST",
+      body: JSON.stringify(options || {}),
+    },
+  );
+}
+
+export async function apiDeleteSemanticClusters(
+  projectId: string,
+): Promise<{ success: boolean }> {
+  return apiFetch<{ success: boolean }>(
+    `/api/projects/${projectId}/citation-graph/semantic-clusters`,
+    { method: "DELETE" },
+  );
+}
+
+// === Article Semantic Neighbors (соседи конкретной статьи) ===
+
+export type ArticleSemanticNeighbor = {
+  articleId: string;
+  title: string;
+  titleEn: string;
+  year: number | null;
+  similarity: number;
+  clusterId: string | null;
+  clusterName: string | null;
+  clusterColor: string | null;
+  hasDirectCitation: boolean;
+};
+
+export type ArticleSemanticNeighborsResponse = {
+  articleId: string;
+  neighbors: ArticleSemanticNeighbor[];
+  threshold: number;
+};
+
+export async function apiGetArticleSemanticNeighbors(
+  projectId: string,
+  articleId: string,
+  threshold: number = 0.6,
+  limit: number = 20,
+): Promise<ArticleSemanticNeighborsResponse> {
+  return apiFetch<ArticleSemanticNeighborsResponse>(
+    `/api/projects/${projectId}/articles/${articleId}/semantic-neighbors?threshold=${threshold}&limit=${limit}`,
+  );
+}
+
+// === Gap Analysis (поиск пропущенных связей) ===
+
+export type GapAnalysisItem = {
+  article1: {
+    id: string;
+    title: string;
+    year: number | null;
+  };
+  article2: {
+    id: string;
+    title: string;
+    year: number | null;
+  };
+  similarity: number;
+  reason: string;
+};
+
+export type GapAnalysisResponse = {
+  gaps: GapAnalysisItem[];
+  threshold: number;
+  totalGaps: number;
+};
+
+export async function apiGapAnalysis(
+  projectId: string,
+  threshold: number = 0.7,
+  limit: number = 20,
+): Promise<GapAnalysisResponse> {
+  return apiFetch<GapAnalysisResponse>(
+    `/api/projects/${projectId}/citation-graph/gap-analysis`,
+    {
+      method: "POST",
+      body: JSON.stringify({ threshold, limit }),
+    },
+  );
+}
+
+// === Smart Semantic Search (умный поиск с кластерами) ===
+
+export type SmartSemanticSearchResult = {
+  id: string;
+  title: string;
+  titleEn: string;
+  abstract: string | null;
+  year: number | null;
+  authors: string[];
+  journal: string | null;
+  doi: string | null;
+  pmid: string | null;
+  status: string;
+  similarity: number;
+  clusterId: string | null;
+  clusterName: string | null;
+  clusterColor: string | null;
+};
+
+export type SmartSemanticSearchResponse = {
+  query: string;
+  results: SmartSemanticSearchResult[];
+  resultsByCluster: Array<{
+    cluster: { id: string; name: string; color: string };
+    articles: SmartSemanticSearchResult[];
+  }>;
+  unclusteredResults: SmartSemanticSearchResult[];
+  totalFound: number;
+  threshold: number;
+};
+
+export async function apiSmartSemanticSearch(
+  projectId: string,
+  query: string,
+  options?: {
+    threshold?: number;
+    limit?: number;
+    clusterId?: string;
+    includeGapAnalysis?: boolean;
+  },
+): Promise<SmartSemanticSearchResponse> {
+  return apiFetch<SmartSemanticSearchResponse>(
+    `/api/projects/${projectId}/citation-graph/smart-semantic-search`,
+    {
+      method: "POST",
+      body: JSON.stringify({ query, ...options }),
+    },
+  );
+}
+
 // === Methodology Clustering ===
 
 export type MethodologyType =
