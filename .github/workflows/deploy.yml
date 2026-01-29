@@ -69,6 +69,10 @@ jobs:
             echo "Applying semantic search migration..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_search.sql 2>/dev/null || echo "Semantic search tables may already exist"
 
+            # Apply semantic clusters migration
+            echo "Applying semantic clusters migration..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_clusters.sql 2>/dev/null || echo "Semantic clusters tables may already exist"
+
             # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'
