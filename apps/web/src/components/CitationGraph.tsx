@@ -68,6 +68,12 @@ import {
   IconPlus,
   IconTranslate,
   IconChartBar,
+  IconClose,
+  IconDownload,
+  IconCheck,
+  IconArrowRight,
+  IconCircleStack,
+  IconEye,
 } from "./FlowbiteIcons";
 
 type Props = {
@@ -2220,9 +2226,7 @@ export default function CitationGraph({ projectId }: Props) {
                   menu.style.display === "none" ? "block" : "none";
             }}
           >
-            <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
-            </svg>
+            <IconDownload size="sm" />
           </button>
           <div
             style={{
@@ -5335,17 +5339,7 @@ export default function CitationGraph({ projectId }: Props) {
                       <>Добавляем...</>
                     ) : (
                       <>
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                        В отобранные
+                        <IconCheck size="sm" />В отобранные
                       </>
                     )}
                   </button>
@@ -5373,19 +5367,7 @@ export default function CitationGraph({ projectId }: Props) {
                       <>Добавляем...</>
                     ) : (
                       <>
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" y1="8" x2="12" y2="16" />
-                          <line x1="8" y1="12" x2="16" y2="12" />
-                        </svg>
-                        В кандидаты
+                        <IconPlus size="sm" />В кандидаты
                       </>
                     )}
                   </button>
@@ -5449,19 +5431,7 @@ export default function CitationGraph({ projectId }: Props) {
               className="node-info-modal-close"
               onClick={() => setShowHelpModal(false)}
             >
-              <svg
-                className="icon-md"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <IconClose className="icon-md" />
             </button>
 
             <h3
