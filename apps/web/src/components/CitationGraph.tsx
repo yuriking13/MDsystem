@@ -754,9 +754,12 @@ export default function CitationGraph({ projectId }: Props) {
         .map((id) => {
           const node = data?.nodes.find((n) => n.id === id);
           if (node) {
+            // Приоритет: title_ru > title > label (label обычно "Author (Year)")
+            const title =
+              node.title_ru || node.title || node.label || "Без названия";
             return {
               id: node.id,
-              title: node.label || node.title || "Без названия",
+              title: title,
               year: node.year || null,
               authors: node.authors || null,
             };
@@ -5426,6 +5429,190 @@ export default function CitationGraph({ projectId }: Props) {
                   цитированиях. Для PubMed статей данные берутся из PubMed API,
                   для DOAJ/Wiley — из Crossref по DOI. Это позволяет видеть, на
                   какие статьи ссылаются ваши работы.
+                </p>
+              </div>
+
+              {/* Семантический поиск */}
+              <div
+                style={{
+                  marginTop: 16,
+                  paddingTop: 16,
+                  borderTop: "1px solid var(--border-glass)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <svg
+                    className="icon-sm"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    viewBox="0 0 24 24"
+                    style={{ color: "#10b981" }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
+                    />
+                  </svg>
+                  <strong>Семантический поиск (Сем.)</strong>
+                </div>
+                <p
+                  style={{ margin: "6px 0 0", color: "var(--text-secondary)" }}
+                >
+                  Поиск статей по смыслу с помощью AI-эмбеддингов. Находит
+                  похожие статьи даже без прямых цитирований. Сначала создайте
+                  эмбеддинги для статей, затем используйте поиск.
+                </p>
+              </div>
+
+              {/* Семантические кластеры */}
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <svg
+                    className="icon-sm"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    viewBox="0 0 24 24"
+                    style={{ color: "#6366f1" }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
+                    />
+                  </svg>
+                  <strong>Семантические кластеры (Кластеры)</strong>
+                </div>
+                <p
+                  style={{ margin: "6px 0 0", color: "var(--text-secondary)" }}
+                >
+                  Автоматическая группировка статей по тематике с помощью
+                  K-Means кластеризации эмбеддингов. Каждый кластер получает
+                  название, цвет и центральную (наиболее типичную) статью.
+                  Кликните на кластер, чтобы увидеть все его статьи.
+                </p>
+              </div>
+
+              {/* Gap Analysis */}
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <svg
+                    className="icon-sm"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    viewBox="0 0 24 24"
+                    style={{ color: "#f59e0b" }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+                    />
+                  </svg>
+                  <strong>Анализ пробелов (Gaps)</strong>
+                </div>
+                <p
+                  style={{ margin: "6px 0 0", color: "var(--text-secondary)" }}
+                >
+                  Находит "мосты" между кластерами — статьи, которые
+                  семантически близки к нескольким тематическим группам.
+                  Помогает выявить междисциплинарные работы и потенциальные
+                  пробелы в вашем обзоре.
+                </p>
+              </div>
+
+              {/* Методологический фильтр */}
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <svg
+                    className="icon-sm"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    viewBox="0 0 24 24"
+                    style={{ color: "#ec4899" }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"
+                    />
+                  </svg>
+                  <strong>Методологический фильтр (Метод.)</strong>
+                </div>
+                <p
+                  style={{ margin: "6px 0 0", color: "var(--text-secondary)" }}
+                >
+                  Фильтрация статей по типу исследования: мета-анализы, РКИ
+                  (рандомизированные контролируемые исследования),
+                  систематические обзоры, когортные исследования и другие. Тип
+                  определяется автоматически по названию и аннотации.
+                </p>
+              </div>
+
+              {/* AI рекомендации */}
+              <div>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <svg
+                    className="icon-sm"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    viewBox="0 0 24 24"
+                    style={{ color: "#8b5cf6" }}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
+                    />
+                  </svg>
+                  <strong>AI-помощник</strong>
+                </div>
+                <p
+                  style={{ margin: "6px 0 0", color: "var(--text-secondary)" }}
+                >
+                  Умный поиск статей с помощью нейросетей. Опишите, что ищете, и
+                  AI найдёт релевантные статьи в вашем графе, а также предложит
+                  рекомендации по улучшению обзора.
                 </p>
               </div>
             </div>
