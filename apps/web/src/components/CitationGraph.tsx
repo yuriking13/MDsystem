@@ -338,9 +338,16 @@ export default function CitationGraph({ projectId }: Props) {
       title: string;
       year: number | null;
       authors: string | null;
+      status?: string;
     }>;
   } | null>(null);
   const [loadingClusterDetails, setLoadingClusterDetails] = useState(false);
+  // Выбранные статьи в кластере для массовых действий
+  const [selectedClusterArticles, setSelectedClusterArticles] = useState<
+    Set<string>
+  >(new Set());
+  // Состояние добавления статей из кластера
+  const [addingFromCluster, setAddingFromCluster] = useState(false);
 
   // === GAP ANALYSIS ===
   const [showGapAnalysis, setShowGapAnalysis] = useState(false);
@@ -748,6 +755,7 @@ export default function CitationGraph({ projectId }: Props) {
   // Открыть детали кластера
   const openClusterDetails = async (cluster: SemanticCluster) => {
     setLoadingClusterDetails(true);
+    setSelectedClusterArticles(new Set()); // Сбрасываем выбор при открытии
     try {
       // Получаем информацию о статьях кластера из данных графа
       const articles = cluster.articleIds
@@ -762,6 +770,9 @@ export default function CitationGraph({ projectId }: Props) {
               title: title,
               year: node.year || null,
               authors: node.authors || null,
+              status: node.status || "candidate",
+              pmid: node.pmid || null,
+              doi: node.doi || null,
             };
           }
           return null;
@@ -771,6 +782,9 @@ export default function CitationGraph({ projectId }: Props) {
         title: string;
         year: number | null;
         authors: string | null;
+        status: string;
+        pmid: string | null;
+        doi: string | null;
       }>;
 
       // Сортируем: центральная статья первая
@@ -786,6 +800,75 @@ export default function CitationGraph({ projectId }: Props) {
       alert(`Ошибка загрузки деталей кластера: ${err.message}`);
     } finally {
       setLoadingClusterDetails(false);
+    }
+  };
+
+  // Переключить выбор статьи в кластере
+  const toggleClusterArticleSelection = (articleId: string) => {
+    setSelectedClusterArticles((prev) => {
+      const next = new Set(prev);
+      if (next.has(articleId)) {
+        next.delete(articleId);
+      } else {
+        next.add(articleId);
+      }
+      return next;
+    });
+  };
+
+  // Выбрать все статьи кластера
+  const selectAllClusterArticles = () => {
+    if (!clusterDetailModal) return;
+    const allIds = clusterDetailModal.articles.map((a: any) => a.id);
+    setSelectedClusterArticles(new Set(allIds));
+  };
+
+  // Снять выбор со всех статей
+  const deselectAllClusterArticles = () => {
+    setSelectedClusterArticles(new Set());
+  };
+
+  // Добавить выбранные статьи из кластера в отобранные/кандидаты
+  const handleAddClusterArticles = async (status: "selected" | "candidate") => {
+    if (!clusterDetailModal || selectedClusterArticles.size === 0) return;
+
+    setAddingFromCluster(true);
+    try {
+      // Собираем PMIDs и DOIs из выбранных статей
+      const selectedArticles = clusterDetailModal.articles.filter((a: any) =>
+        selectedClusterArticles.has(a.id),
+      );
+      const pmids = selectedArticles
+        .filter((a: any) => a.pmid)
+        .map((a: any) => a.pmid);
+      const dois = selectedArticles
+        .filter((a: any) => !a.pmid && a.doi)
+        .map((a: any) => a.doi);
+
+      const res = await apiImportFromGraph(projectId, {
+        pmids,
+        dois,
+        status,
+      });
+
+      const statusLabel = status === "selected" ? "Отобранные" : "Кандидаты";
+      setImportMessage(
+        `✅ Добавлено ${res.added || selectedClusterArticles.size} статей в ${statusLabel}`,
+      );
+      setTimeout(() => setImportMessage(null), 5000);
+
+      // Сбрасываем выбор
+      setSelectedClusterArticles(new Set());
+
+      // Перезагружаем граф
+      setTimeout(() => {
+        loadGraph(getGraphOptions());
+      }, 500);
+    } catch (err: any) {
+      console.error("Failed to add cluster articles:", err);
+      alert(`Ошибка добавления статей: ${err.message}`);
+    } finally {
+      setAddingFromCluster(false);
     }
   };
 
@@ -4902,9 +4985,44 @@ export default function CitationGraph({ projectId }: Props) {
                 fontSize: 12,
                 color: "var(--text-muted)",
                 marginBottom: 8,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
               }}
             >
-              Все статьи кластера:
+              <span>Все статьи кластера:</span>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={selectAllClusterArticles}
+                  style={{
+                    padding: "4px 8px",
+                    fontSize: 11,
+                    borderRadius: 4,
+                    border: "1px solid var(--border-glass)",
+                    background: "var(--bg-secondary)",
+                    color: "var(--text-secondary)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Выбрать все
+                </button>
+                {selectedClusterArticles.size > 0 && (
+                  <button
+                    onClick={deselectAllClusterArticles}
+                    style={{
+                      padding: "4px 8px",
+                      fontSize: 11,
+                      borderRadius: 4,
+                      border: "1px solid var(--border-glass)",
+                      background: "var(--bg-secondary)",
+                      color: "var(--text-secondary)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Снять выбор ({selectedClusterArticles.size})
+                  </button>
+                )}
+              </div>
             </div>
             <div
               style={{
@@ -4932,121 +5050,308 @@ export default function CitationGraph({ projectId }: Props) {
                       title: string;
                       year: number | null;
                       authors: string | null;
+                      status?: string;
+                      pmid?: string | null;
+                      doi?: string | null;
                     },
                     idx: number,
-                  ) => (
-                    <div
-                      key={article.id}
-                      onClick={() => {
-                        // Find and highlight this article on the graph
-                        const node = data?.nodes.find(
-                          (n) => n.id === article.id,
-                        ) as
-                          | (GraphNode & { x?: number; y?: number })
-                          | undefined;
-                        if (
-                          node &&
-                          graphRef.current &&
-                          node.x !== undefined &&
-                          node.y !== undefined
-                        ) {
-                          graphRef.current.centerAt(node.x, node.y, 500);
-                          graphRef.current.zoom(2, 500);
-                          setSelectedNodeForDisplay(node);
-                        }
-                      }}
-                      style={{
-                        padding: "10px 14px",
-                        borderBottom:
-                          idx < clusterDetailModal.articles.length - 1
-                            ? "1px solid var(--border-glass)"
-                            : "none",
-                        cursor: "pointer",
-                        transition: "background 0.15s",
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 10,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "var(--bg-tertiary)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "transparent";
-                      }}
-                    >
-                      <span
+                  ) => {
+                    const isSelected = selectedClusterArticles.has(article.id);
+                    const articleStatus = article.status || "candidate";
+                    return (
+                      <div
+                        key={article.id}
                         style={{
-                          minWidth: 24,
-                          height: 24,
-                          borderRadius: "50%",
-                          background:
-                            article.id ===
-                            clusterDetailModal.cluster.centralArticleId
-                              ? clusterDetailModal.cluster.color
-                              : "var(--bg-secondary)",
-                          color:
-                            article.id ===
-                            clusterDetailModal.cluster.centralArticleId
-                              ? "white"
-                              : "var(--text-muted)",
+                          padding: "10px 14px",
+                          borderBottom:
+                            idx < clusterDetailModal.articles.length - 1
+                              ? "1px solid var(--border-glass)"
+                              : "none",
+                          cursor: "pointer",
+                          transition: "background 0.15s",
                           display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: 10,
-                          fontWeight: 600,
-                          flexShrink: 0,
+                          alignItems: "flex-start",
+                          gap: 10,
+                          background: isSelected
+                            ? "rgba(59, 130, 246, 0.1)"
+                            : "transparent",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background =
+                              "var(--bg-tertiary)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = "transparent";
+                          }
                         }}
                       >
-                        {article.id ===
-                        clusterDetailModal.cluster.centralArticleId
-                          ? "⭐"
-                          : idx + 1}
-                      </span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div
+                        {/* Checkbox */}
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() =>
+                            toggleClusterArticleSelection(article.id)
+                          }
+                          onClick={(e) => e.stopPropagation()}
                           style={{
-                            fontSize: 13,
-                            fontWeight: 500,
-                            marginBottom: 4,
-                            lineHeight: 1.4,
+                            width: 16,
+                            height: 16,
+                            marginTop: 4,
+                            cursor: "pointer",
+                            accentColor: "#3b82f6",
+                          }}
+                        />
+                        <span
+                          onClick={() => {
+                            // Find and highlight this article on the graph
+                            const node = data?.nodes.find(
+                              (n) => n.id === article.id,
+                            ) as
+                              | (GraphNode & { x?: number; y?: number })
+                              | undefined;
+                            if (
+                              node &&
+                              graphRef.current &&
+                              node.x !== undefined &&
+                              node.y !== undefined
+                            ) {
+                              graphRef.current.centerAt(node.x, node.y, 500);
+                              graphRef.current.zoom(2, 500);
+                              setSelectedNodeForDisplay(node);
+                            }
+                          }}
+                          style={{
+                            minWidth: 24,
+                            height: 24,
+                            borderRadius: "50%",
+                            background:
+                              article.id ===
+                              clusterDetailModal.cluster.centralArticleId
+                                ? clusterDetailModal.cluster.color
+                                : "var(--bg-secondary)",
+                            color:
+                              article.id ===
+                              clusterDetailModal.cluster.centralArticleId
+                                ? "white"
+                                : "var(--text-muted)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 10,
+                            fontWeight: 600,
+                            flexShrink: 0,
                           }}
                         >
-                          {article.title}
-                        </div>
-                        {article.authors && (
+                          {article.id ===
+                          clusterDetailModal.cluster.centralArticleId
+                            ? "⭐"
+                            : idx + 1}
+                        </span>
+                        <div
+                          onClick={() => {
+                            // Find and highlight this article on the graph
+                            const node = data?.nodes.find(
+                              (n) => n.id === article.id,
+                            ) as
+                              | (GraphNode & { x?: number; y?: number })
+                              | undefined;
+                            if (
+                              node &&
+                              graphRef.current &&
+                              node.x !== undefined &&
+                              node.y !== undefined
+                            ) {
+                              graphRef.current.centerAt(node.x, node.y, 500);
+                              graphRef.current.zoom(2, 500);
+                              setSelectedNodeForDisplay(node);
+                            }
+                          }}
+                          style={{ flex: 1, minWidth: 0 }}
+                        >
                           <div
                             style={{
-                              fontSize: 11,
-                              color: "var(--text-muted)",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
+                              fontSize: 13,
+                              fontWeight: 500,
+                              marginBottom: 4,
+                              lineHeight: 1.4,
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 8,
                             }}
                           >
-                            {article.authors}
+                            <span style={{ flex: 1 }}>{article.title}</span>
+                            {/* Status badge */}
+                            <span
+                              style={{
+                                fontSize: 9,
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                fontWeight: 600,
+                                textTransform: "uppercase",
+                                flexShrink: 0,
+                                background:
+                                  articleStatus === "selected"
+                                    ? "rgba(34, 197, 94, 0.2)"
+                                    : articleStatus === "excluded"
+                                      ? "rgba(239, 68, 68, 0.2)"
+                                      : "rgba(59, 130, 246, 0.2)",
+                                color:
+                                  articleStatus === "selected"
+                                    ? "#22c55e"
+                                    : articleStatus === "excluded"
+                                      ? "#ef4444"
+                                      : "#3b82f6",
+                              }}
+                            >
+                              {articleStatus === "selected"
+                                ? "Отобрана"
+                                : articleStatus === "excluded"
+                                  ? "Исключена"
+                                  : "Кандидат"}
+                            </span>
                           </div>
-                        )}
-                        {article.year && (
-                          <span
-                            style={{
-                              fontSize: 10,
-                              color: "var(--text-muted)",
-                              background: "var(--bg-secondary)",
-                              padding: "2px 6px",
-                              borderRadius: 4,
-                              marginTop: 4,
-                              display: "inline-block",
-                            }}
-                          >
-                            {article.year}
-                          </span>
-                        )}
+                          {article.authors && (
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "var(--text-muted)",
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {article.authors}
+                            </div>
+                          )}
+                          {article.year && (
+                            <span
+                              style={{
+                                fontSize: 10,
+                                color: "var(--text-muted)",
+                                background: "var(--bg-secondary)",
+                                padding: "2px 6px",
+                                borderRadius: 4,
+                                marginTop: 4,
+                                display: "inline-block",
+                              }}
+                            >
+                              {article.year}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ),
+                    );
+                  },
                 )
               )}
             </div>
+
+            {/* Actions for selected articles */}
+            {selectedClusterArticles.size > 0 && (
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  background: "rgba(59, 130, 246, 0.1)",
+                  borderRadius: 8,
+                  border: "1px solid rgba(59, 130, 246, 0.3)",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "var(--text-secondary)",
+                    marginBottom: 10,
+                  }}
+                >
+                  Выбрано статей:{" "}
+                  <strong>{selectedClusterArticles.size}</strong>
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    onClick={() => handleAddClusterArticles("selected")}
+                    disabled={addingFromCluster}
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      borderRadius: 6,
+                      border: "none",
+                      background: "#22c55e",
+                      color: "white",
+                      cursor: addingFromCluster ? "wait" : "pointer",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      opacity: addingFromCluster ? 0.6 : 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    {addingFromCluster ? (
+                      <>Добавляем...</>
+                    ) : (
+                      <>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        В отобранные
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handleAddClusterArticles("candidate")}
+                    disabled={addingFromCluster}
+                    style={{
+                      flex: 1,
+                      padding: "8px 12px",
+                      borderRadius: 6,
+                      border: "none",
+                      background: "#3b82f6",
+                      color: "white",
+                      cursor: addingFromCluster ? "wait" : "pointer",
+                      fontSize: 12,
+                      fontWeight: 500,
+                      opacity: addingFromCluster ? 0.6 : 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    {addingFromCluster ? (
+                      <>Добавляем...</>
+                    ) : (
+                      <>
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="16" />
+                          <line x1="8" y1="12" x2="16" y2="12" />
+                        </svg>
+                        В кандидаты
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Actions */}
             <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
