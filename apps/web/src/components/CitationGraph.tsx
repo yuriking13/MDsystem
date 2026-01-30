@@ -74,6 +74,18 @@ import {
   IconArrowRight,
   IconCircleStack,
   IconEye,
+  IconUsers,
+  IconLink,
+  IconExclamation,
+  IconArrowsExpand,
+  IconChevronRight,
+  IconSend,
+  IconCalendar,
+  IconTag,
+  IconDocumentText,
+  IconTrendingUp,
+  IconStar,
+  IconCheckCircle,
 } from "./FlowbiteIcons";
 
 type Props = {
@@ -2378,19 +2390,7 @@ export default function CitationGraph({ projectId }: Props) {
           {/* Max Nodes Slider */}
           <div className="graph-filter-group">
             <div className="graph-filter-label">
-              <svg
-                className="icon-sm"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />
-              </svg>
+              <IconUsers size="sm" />
               <span>
                 Узлов: <strong>{unlimitedNodes ? "∞" : maxNodes}</strong>
               </span>
@@ -2431,19 +2431,7 @@ export default function CitationGraph({ projectId }: Props) {
           {/* Max Links Per Node */}
           <div className="graph-filter-group">
             <div className="graph-filter-label">
-              <svg
-                className="icon-sm"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-                />
-              </svg>
+              <IconLink size="sm" />
               <span>
                 Связей/узел:{" "}
                 <strong>{unlimitedLinks ? "∞" : maxLinksPerNode}</strong>
@@ -2531,20 +2519,11 @@ export default function CitationGraph({ projectId }: Props) {
               onClick={handleLoadMore}
               title="Загрузить больше связанных статей"
             >
-              <svg
+              <IconPlus
+                size="sm"
                 className="icon-sm"
                 style={{ marginRight: 4 }}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                />
-              </svg>
+              />
               Загрузить больше (+1000)
             </button>
           )}
@@ -2684,19 +2663,7 @@ export default function CitationGraph({ projectId }: Props) {
               gap: 6,
             }}
           >
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <IconInfoCircle size="sm" />
             <span>
               Загрузка выполняется в фоне. Граф обновится автоматически.
               {fetchJobStatus.secondsSinceProgress != null &&
@@ -3650,36 +3617,12 @@ export default function CitationGraph({ projectId }: Props) {
       {/* Stats Bar */}
       <div className="graph-stats-bar">
         <div className="graph-stat-item">
-          <svg
-            className="icon-sm"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-            />
-          </svg>
+          <IconChartBar size="sm" />
           <span>Узлов:</span>
           <span className="graph-stat-value">{stats.totalNodes}</span>
         </div>
         <div className="graph-stat-item">
-          <svg
-            className="icon-sm"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-            />
-          </svg>
+          <IconLink size="sm" />
           <span>Связей:</span>
           <span className="graph-stat-value" style={{ color: "#10b981" }}>
             {stats.totalLinks}
@@ -3788,19 +3731,7 @@ export default function CitationGraph({ projectId }: Props) {
               gap: 8,
             }}
           >
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
+            <IconExclamation size="sm" />
             Данные о ссылках не загружены. Нажмите "Обновить связи" для
             загрузки.
           </div>
@@ -3890,25 +3821,7 @@ export default function CitationGraph({ projectId }: Props) {
         >
           {!data || data.nodes.length === 0 ? (
             <div className="muted" style={{ padding: 60, textAlign: "center" }}>
-              <svg
-                className="icon-lg"
-                style={{
-                  margin: "0 auto 16px",
-                  opacity: 0.5,
-                  width: 48,
-                  height: 48,
-                }}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
-              </svg>
+              <IconChartBar size="lg" className="icon-lg" />
               <p>Нет данных для графа с текущими фильтрами.</p>
             </div>
           ) : (
@@ -4093,23 +4006,9 @@ export default function CitationGraph({ projectId }: Props) {
                   }
                 >
                   {animationPaused ? (
-                    <svg
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
+                    <IconPlay size="sm" />
                   ) : (
-                    <svg
-                      width="16"
-                      height="16"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                    </svg>
+                    <IconStop size="sm" />
                   )}
                 </button>
 
@@ -4124,35 +4023,9 @@ export default function CitationGraph({ projectId }: Props) {
                   }
                 >
                   {isFullscreen ? (
-                    <svg
-                      width="16"
-                      height="16"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <IconClose size="sm" />
                   ) : (
-                    <svg
-                      width="16"
-                      height="16"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-                      />
-                    </svg>
+                    <IconArrowsExpand size="sm" />
                   )}
                 </button>
 
@@ -4170,20 +4043,7 @@ export default function CitationGraph({ projectId }: Props) {
                   className="graph-floating-btn"
                   title={`Стиль: ${nodeStyle}`}
                 >
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-                    />
-                  </svg>
+                  <IconAdjustments size="sm" />
                 </button>
               </div>
             </div>
@@ -4225,19 +4085,7 @@ export default function CitationGraph({ projectId }: Props) {
                 }}
                 title="Свернуть"
               >
-                <svg
-                  style={{ width: 16, height: 16 }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 5l7 7-7 7M5 5l7 7-7 7"
-                  />
-                </svg>
+                <IconChevronRight size="sm" />
               </button>
             </div>
 
@@ -4261,24 +4109,14 @@ export default function CitationGraph({ projectId }: Props) {
                     fontSize: 12,
                   }}
                 >
-                  <svg
+                  <IconSearch
+                    size="lg"
+                    className="icon-lg"
                     style={{
-                      width: 36,
-                      height: 36,
                       margin: "0 auto 12px",
                       opacity: 0.5,
                     }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
+                  />
                   <p style={{ marginBottom: 8, fontWeight: 500 }}>
                     Поиск в графе
                   </p>
@@ -4686,19 +4524,7 @@ export default function CitationGraph({ projectId }: Props) {
                     cursor: aiLoading ? "not-allowed" : "pointer",
                   }}
                 >
-                  <svg
-                    style={{ width: 16, height: 16 }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                    />
-                  </svg>
+                  <IconSend size="sm" />
                 </button>
               </div>
             </div>
@@ -4717,19 +4543,7 @@ export default function CitationGraph({ projectId }: Props) {
               className="node-info-modal-close"
               onClick={() => setSelectedNodeForDisplay(null)}
             >
-              <svg
-                className="icon-md"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <IconClose size="md" />
             </button>
             <NodeInfoPanel
               node={selectedNodeForDisplay}
@@ -4756,19 +4570,7 @@ export default function CitationGraph({ projectId }: Props) {
               className="node-info-modal-close"
               onClick={() => setShowRecommendations(false)}
             >
-              <svg
-                className="icon-md"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <IconClose size="md" />
             </button>
 
             <h3
@@ -4915,19 +4717,7 @@ export default function CitationGraph({ projectId }: Props) {
               className="node-info-modal-close"
               onClick={() => setClusterDetailModal(null)}
             >
-              <svg
-                className="icon-md"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
+              <IconClose size="md" />
             </button>
 
             <div
@@ -5444,20 +5234,7 @@ export default function CitationGraph({ projectId }: Props) {
                 gap: 10,
               }}
             >
-              <svg
-                className="icon-md"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                style={{ color: "#3b82f6" }}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+              <IconInfoCircle size="md" style={{ color: "#3b82f6" }} />
               Как работает граф цитирований
             </h3>
 
@@ -5479,20 +5256,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#3b82f6" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
+                  <IconCircleStack size="sm" style={{ color: "#3b82f6" }} />
                   <strong>Узлы (статьи)</strong>
                 </div>
                 <p
@@ -5512,20 +5276,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#3b82f6" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-                    />
-                  </svg>
+                  <IconArrowRight size="sm" style={{ color: "#3b82f6" }} />
                   <strong>Стрелки (связи)</strong>
                 </div>
                 <p
@@ -5545,20 +5296,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#3b82f6" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4.098 19.902a3.75 3.75 0 005.304 0l6.401-6.402M6.75 21A3.75 3.75 0 013 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 003.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008z"
-                    />
-                  </svg>
+                  <IconAdjustments size="sm" style={{ color: "#3b82f6" }} />
                   <strong>Цвета узлов</strong>
                 </div>
                 <div
@@ -5680,20 +5418,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#3b82f6" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zM12 2.25V4.5m5.834.166l-1.591 1.591M20.25 10.5H18M7.757 14.743l-1.59 1.59M6 10.5H3.75m4.007-4.243l-1.59-1.59"
-                    />
-                  </svg>
+                  <IconPlay size="sm" style={{ color: "#3b82f6" }} />
                   <strong>Действия</strong>
                 </div>
                 <div style={{ marginTop: 6, color: "var(--text-secondary)" }}>
@@ -5721,20 +5446,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#3b82f6" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-                    />
-                  </svg>
+                  <IconRefresh size="sm" style={{ color: "#3b82f6" }} />
                   <strong>Загрузка связей</strong>
                 </div>
                 <p
@@ -5763,20 +5475,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#10b981" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                    />
-                  </svg>
+                  <IconSearch size="sm" style={{ color: "#10b981" }} />
                   <strong>Семантический поиск (Сем.)</strong>
                 </div>
                 <p
@@ -5798,20 +5497,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#6366f1" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z"
-                    />
-                  </svg>
+                  <IconGraph size="sm" style={{ color: "#6366f1" }} />
                   <strong>Семантические кластеры (Кластеры)</strong>
                 </div>
                 <p
@@ -5834,20 +5520,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#f59e0b" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-                    />
-                  </svg>
+                  <IconExclamation size="sm" style={{ color: "#f59e0b" }} />
                   <strong>Анализ пробелов (Gaps)</strong>
                 </div>
                 <p
@@ -5870,20 +5543,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#ec4899" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75"
-                    />
-                  </svg>
+                  <IconFilter size="sm" style={{ color: "#ec4899" }} />
                   <strong>Методологический фильтр (Метод.)</strong>
                 </div>
                 <p
@@ -5906,20 +5566,7 @@ export default function CitationGraph({ projectId }: Props) {
                     color: "var(--text-primary)",
                   }}
                 >
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    viewBox="0 0 24 24"
-                    style={{ color: "#8b5cf6" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z"
-                    />
-                  </svg>
+                  <IconSparkles size="sm" style={{ color: "#8b5cf6" }} />
                   <strong>AI-помощник</strong>
                 </div>
                 <p
@@ -6353,19 +6000,7 @@ function NodeInfoPanel({
       {displayData.year && (
         <div className="node-info-row">
           <div className="node-info-label">
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
+            <IconCalendar size="sm" />
             Год
           </div>
           <div className="node-info-value">{displayData.year}</div>
@@ -6375,19 +6010,7 @@ function NodeInfoPanel({
       {node.pmid && (
         <div className="node-info-row">
           <div className="node-info-label">
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-              />
-            </svg>
+            <IconTag size="sm" />
             PMID
           </div>
           <a
@@ -6404,19 +6027,7 @@ function NodeInfoPanel({
       {displayData.doi && (
         <div className="node-info-row">
           <div className="node-info-label">
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
-            </svg>
+            <IconDocumentText size="sm" />
             DOI
           </div>
           <a
@@ -6434,19 +6045,7 @@ function NodeInfoPanel({
       {displayData.citedByCount > 0 && (
         <div className="node-info-row">
           <div className="node-info-label">
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-              />
-            </svg>
+            <IconTrendingUp size="sm" />
             Цитирований
           </div>
           <div className="node-info-value" style={{ color: "#10b981" }}>
@@ -6458,19 +6057,7 @@ function NodeInfoPanel({
       {node.statsQuality && node.statsQuality > 0 && (
         <div className="node-info-row">
           <div className="node-info-label">
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-              />
-            </svg>
+            <IconStar size="sm" />
             P-value
           </div>
           <div className="node-info-value" style={{ color: "#fbbf24" }}>
@@ -6510,24 +6097,15 @@ function NodeInfoPanel({
               </>
             ) : (
               <>
-                <svg
+                <IconPlus
+                  size="sm"
                   className="icon-sm"
                   style={{
                     marginRight: 6,
                     display: "inline",
                     verticalAlign: "middle",
                   }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
+                />
                 В Кандидаты
               </>
             )}
@@ -6554,24 +6132,15 @@ function NodeInfoPanel({
               </>
             ) : (
               <>
-                <svg
+                <IconCheckCircle
+                  size="sm"
                   className="icon-sm"
                   style={{
                     marginRight: 6,
                     display: "inline",
                     verticalAlign: "middle",
                   }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                />
                 В Отобранные
               </>
             )}
@@ -6593,19 +6162,7 @@ function NodeInfoPanel({
             gap: 8,
           }}
         >
-          <svg
-            className="icon-sm"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <IconCheckCircle size="sm" />
           {addMessage}
         </div>
       )}
