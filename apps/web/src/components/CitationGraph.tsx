@@ -1603,17 +1603,22 @@ export default function CitationGraph({ projectId }: Props) {
         id: c.id,
         name: c.name,
         articleCount: c.articleCount,
-        centralArticleTitle: c.centralArticleTitle,
+        centralArticleTitle: c.centralArticleTitle || undefined,
         articleIds: c.articleIds,
       }));
 
       // Подготавливаем информацию о gaps для AI
-      const gapsForAI: GapInfoForAI[] = gapAnalysis.map((g) => ({
-        type: g.type,
-        description: g.description,
-        severity: g.severity as "low" | "medium" | "high" | undefined,
-        period: g.period,
-        articleCount: g.articleCount,
+      // GapAnalysisItem содержит: article1, article2, similarity, reason
+      const gapsForAI: GapInfoForAI[] = gapAnalysisResults.map((g) => ({
+        type: "missing_link",
+        description: `${g.article1.title} ↔ ${g.article2.title}: ${g.reason}`,
+        severity:
+          g.similarity > 0.85 ? "high" : g.similarity > 0.75 ? "medium" : "low",
+        period:
+          g.article1.year && g.article2.year
+            ? `${Math.min(g.article1.year, g.article2.year)}-${Math.max(g.article1.year, g.article2.year)}`
+            : undefined,
+        articleCount: 2,
       }));
 
       const res = await apiGraphAIAssistant(
@@ -4295,13 +4300,13 @@ export default function CitationGraph({ projectId }: Props) {
                         💡 «Статьи из кластера про...»
                       </p>
                     )}
-                    {gapAnalysis.length > 0 && (
+                    {gapAnalysisResults.length > 0 && (
                       <p style={{ fontStyle: "italic" }}>
                         💡 «Статьи для закрытия gap...»
                       </p>
                     )}
                     {semanticClusters.length === 0 &&
-                      gapAnalysis.length === 0 && (
+                      gapAnalysisResults.length === 0 && (
                         <p style={{ fontStyle: "italic" }}>
                           💡 «Статьи про лечение»
                         </p>
