@@ -40,6 +40,8 @@ import {
   type FoundArticle,
   type GraphArticleForAI,
   type GraphFiltersForAI,
+  type ClusterInfoForAI,
+  type GapInfoForAI,
   type GraphRecommendation,
   type SemanticSearchResult,
   type EmbeddingStatsResponse,
@@ -1596,6 +1598,24 @@ export default function CitationGraph({ projectId }: Props) {
         return;
       }
 
+      // Подготавливаем информацию о кластерах для AI
+      const clustersForAI: ClusterInfoForAI[] = semanticClusters.map((c) => ({
+        id: c.id,
+        name: c.name,
+        articleCount: c.articleCount,
+        centralArticleTitle: c.centralArticleTitle,
+        articleIds: c.articleIds,
+      }));
+
+      // Подготавливаем информацию о gaps для AI
+      const gapsForAI: GapInfoForAI[] = gapAnalysis.map((g) => ({
+        type: g.type,
+        description: g.description,
+        severity: g.severity as "low" | "medium" | "high" | undefined,
+        period: g.period,
+        articleCount: g.articleCount,
+      }));
+
       const res = await apiGraphAIAssistant(
         projectId,
         userMessage,
@@ -1605,6 +1625,8 @@ export default function CitationGraph({ projectId }: Props) {
           yearRange: yearRange,
         },
         currentFilters,
+        clustersForAI.length > 0 ? clustersForAI : undefined,
+        gapsForAI.length > 0 ? gapsForAI : undefined,
       );
 
       if (res.ok) {
@@ -4266,11 +4288,24 @@ export default function CitationGraph({ projectId }: Props) {
                       💡 «Найди мета-анализы»
                     </p>
                     <p style={{ fontStyle: "italic", marginBottom: 4 }}>
-                      💡 «Статьи про лечение»
-                    </p>
-                    <p style={{ fontStyle: "italic" }}>
                       💡 «РКИ за последние 5 лет»
                     </p>
+                    {semanticClusters.length > 0 && (
+                      <p style={{ fontStyle: "italic", marginBottom: 4 }}>
+                        💡 «Статьи из кластера про...»
+                      </p>
+                    )}
+                    {gapAnalysis.length > 0 && (
+                      <p style={{ fontStyle: "italic" }}>
+                        💡 «Статьи для закрытия gap...»
+                      </p>
+                    )}
+                    {semanticClusters.length === 0 &&
+                      gapAnalysis.length === 0 && (
+                        <p style={{ fontStyle: "italic" }}>
+                          💡 «Статьи про лечение»
+                        </p>
+                      )}
                   </div>
                   {depth < 2 && (
                     <div

@@ -2056,6 +2056,23 @@ export type GraphFiltersForAI = {
   statsQuality?: number; // Минимальное качество p-value (0-3)
 };
 
+// Типы для кластеров и gaps для AI
+export type ClusterInfoForAI = {
+  id: string;
+  name: string;
+  articleCount: number;
+  centralArticleTitle?: string;
+  articleIds: string[];
+};
+
+export type GapInfoForAI = {
+  type: string;
+  description: string;
+  severity?: "low" | "medium" | "high";
+  period?: string;
+  articleCount?: number;
+};
+
 export async function apiGraphAIAssistant(
   projectId: string,
   message: string,
@@ -2065,12 +2082,21 @@ export async function apiGraphAIAssistant(
     yearRange?: { min: number | null; max: number | null };
   },
   filters?: GraphFiltersForAI,
+  clusters?: ClusterInfoForAI[],
+  gaps?: GapInfoForAI[],
 ): Promise<GraphAIAssistantResponse> {
   return apiFetch<GraphAIAssistantResponse>(
     `/api/projects/${projectId}/graph-ai-assistant`,
     {
       method: "POST",
-      body: JSON.stringify({ message, graphArticles, context, filters }),
+      body: JSON.stringify({
+        message,
+        graphArticles,
+        context,
+        filters,
+        clusters,
+        gaps,
+      }),
     },
   );
 }
