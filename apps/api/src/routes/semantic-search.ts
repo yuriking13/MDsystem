@@ -10,6 +10,7 @@ import { z } from "zod";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
 import { getUserApiKey } from "../utils/project-access.js";
+import { queryEmbeddingCache } from "../utils/embedding-cache.js";
 import { startBoss } from "../worker/boss.js";
 import type { EmbeddingsJobPayload } from "../worker/types.js";
 
@@ -738,11 +739,17 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
   done();
 };
 
-// Helper function для генерации embeddings через OpenAI
+// Helper function для генерации embeddings через OpenAI с кэшированием
 async function generateEmbedding(
   text: string,
   apiKey: string,
 ): Promise<number[]> {
+  // Проверяем кэш
+  const cached = queryEmbeddingCache.get(text);
+  if (cached) {
+    return cached;
+  }
+
   // OpenRouter совместим с OpenAI API для embeddings
   const response = await fetch("https://openrouter.ai/api/v1/embeddings", {
     method: "POST",
@@ -766,5 +773,11 @@ async function generateEmbedding(
   const data = (await response.json()) as {
     data: Array<{ embedding: number[] }>;
   };
-  return data.data[0].embedding;
+
+  const embedding = data.data[0].embedding;
+
+  // Сохраняем в кэш
+  queryEmbeddingCache.set(text, embedding);
+
+  return embedding;
 }

@@ -8,7 +8,9 @@ const log = createLogger("embeddings-job");
 
 // Константы
 const MAX_JOB_DURATION_MS = 60 * 60 * 1000; // 1 час максимум
-const RATE_LIMIT_DELAY_MS = 100; // 100ms между запросами
+const BATCH_SIZE = 50; // Размер batch для API (OpenRouter поддерживает до 2048)
+const BATCH_DELAY_MS = 200; // Задержка между batches для rate limiting
+const PARALLEL_BATCHES = 3; // Количество параллельных batch запросов
 
 // Получаем API ключ пользователя из базы
 async function getUserApiKey(
@@ -23,11 +25,16 @@ async function getUserApiKey(
   return decryptApiKey(result.rows[0].encrypted_key);
 }
 
-// Генерация embedding через OpenRouter
-async function generateEmbedding(
-  text: string,
+// BATCH генерация embeddings через OpenRouter (до 2048 inputs за раз)
+async function generateBatchEmbeddings(
+  texts: string[],
   apiKey: string,
-): Promise<number[]> {
+): Promise<number[][]> {
+  if (texts.length === 0) return [];
+
+  // Подготавливаем тексты (обрезаем до лимита)
+  const preparedTexts = texts.map((t) => t.trim().slice(0, 8000));
+
   const response = await fetch("https://openrouter.ai/api/v1/embeddings", {
     method: "POST",
     headers: {
@@ -37,7 +44,7 @@ async function generateEmbedding(
       "X-Title": "MDsystem",
     },
     body: JSON.stringify({
-      input: text.trim().slice(0, 8000),
+      input: preparedTexts, // Array of strings для batch
       model: "openai/text-embedding-3-small",
     }),
   });
@@ -48,9 +55,62 @@ async function generateEmbedding(
   }
 
   const data = (await response.json()) as {
-    data: Array<{ embedding: number[] }>;
+    data: Array<{ embedding: number[]; index: number }>;
   };
-  return data.data[0].embedding;
+
+  // Сортируем по index чтобы соответствовать входному порядку
+  const sorted = data.data.sort((a, b) => a.index - b.index);
+  return sorted.map((d) => d.embedding);
+}
+
+// Bulk INSERT embeddings в PostgreSQL
+async function bulkInsertEmbeddings(
+  articles: Array<{ id: string; embedding: number[] }>,
+): Promise<void> {
+  if (articles.length === 0) return;
+
+  // Строим VALUES для bulk insert
+  const values: any[] = [];
+  const placeholders: string[] = [];
+
+  articles.forEach((article, i) => {
+    const offset = i * 3;
+    placeholders.push(
+      `($${offset + 1}, $${offset + 2}::vector, $${offset + 3})`,
+    );
+    values.push(
+      article.id,
+      `[${article.embedding.join(",")}]`,
+      "text-embedding-3-small",
+    );
+  });
+
+  await pool.query(
+    `INSERT INTO article_embeddings (article_id, embedding, model)
+     VALUES ${placeholders.join(", ")}
+     ON CONFLICT (article_id) 
+     DO UPDATE SET 
+       embedding = EXCLUDED.embedding,
+       model = EXCLUDED.model,
+       updated_at = NOW()`,
+    values,
+  );
+
+  // Bulk update статусов статей
+  const articleIds = articles.map((a) => a.id);
+  await pool.query(
+    `UPDATE articles SET embedding_status = 'completed' WHERE id = ANY($1)`,
+    [articleIds],
+  );
+}
+
+// Разбивает массив на chunks
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
 }
 
 // Обновление прогресса в БД и через WebSocket
@@ -238,8 +298,37 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
       return;
     }
 
-    // Обрабатываем статьи
-    for (const article of articles.rows) {
+    // ============================================
+    // BATCH PROCESSING - ускорение в ~10-50x
+    // ============================================
+
+    // Подготавливаем статьи с текстом
+    const articlesWithText = articles.rows
+      .map((article: any) => ({
+        id: article.id,
+        text: [article.title_en, article.abstract_en]
+          .filter(Boolean)
+          .join(" ")
+          .trim(),
+      }))
+      .filter((a: any) => a.text.length > 0);
+
+    // Статьи без текста считаем ошибками
+    errors = articles.rows.length - articlesWithText.length;
+
+    // Разбиваем на batches
+    const batches = chunkArray(articlesWithText, BATCH_SIZE);
+
+    log.info("Processing with batch API", {
+      jobId,
+      totalArticles: articlesWithText.length,
+      batches: batches.length,
+      batchSize: BATCH_SIZE,
+      parallelBatches: PARALLEL_BATCHES,
+    });
+
+    // Обрабатываем batches параллельно (по PARALLEL_BATCHES за раз)
+    for (let i = 0; i < batches.length; i += PARALLEL_BATCHES) {
       // Проверяем таймаут
       if (Date.now() - startTime > MAX_JOB_DURATION_MS) {
         log.warn("Job exceeded max duration", { jobId });
@@ -274,59 +363,52 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
         return;
       }
 
-      try {
-        const text = [article.title_en, article.abstract_en]
-          .filter(Boolean)
-          .join(" ");
+      // Берём следующие PARALLEL_BATCHES батчей
+      const parallelBatches = batches.slice(i, i + PARALLEL_BATCHES);
 
-        if (!text.trim()) {
-          errors++;
-          continue;
+      // Запускаем параллельно
+      const batchResults = await Promise.allSettled(
+        parallelBatches.map(async (batch, batchIdx) => {
+          // Небольшая задержка для staggered start
+          await new Promise((resolve) => setTimeout(resolve, batchIdx * 50));
+
+          const texts = batch.map((a: any) => a.text);
+          const embeddings = await generateBatchEmbeddings(texts, apiKey);
+
+          // Формируем данные для bulk insert
+          const articlesWithEmbeddings = batch.map(
+            (article: any, idx: number) => ({
+              id: article.id,
+              embedding: embeddings[idx],
+            }),
+          );
+
+          // Bulk insert в PostgreSQL
+          await bulkInsertEmbeddings(articlesWithEmbeddings);
+
+          return batch.length;
+        }),
+      );
+
+      // Подсчитываем результаты
+      for (const result of batchResults) {
+        if (result.status === "fulfilled") {
+          processed += result.value;
+        } else {
+          // При ошибке batch-а считаем все статьи как ошибки
+          const failedBatchSize =
+            parallelBatches[batchResults.indexOf(result)]?.length || 0;
+          errors += failedBatchSize;
+          log.error("Batch failed", result.reason, { jobId });
         }
+      }
 
-        const embedding = await generateEmbedding(text, apiKey);
+      // Отправляем прогресс после каждой группы параллельных batches
+      await updateProgress(jobId, projectId, { processed, errors });
 
-        // Сохраняем embedding
-        await pool.query(
-          `INSERT INTO article_embeddings (article_id, embedding, model)
-           VALUES ($1, $2, 'text-embedding-3-small')
-           ON CONFLICT (article_id) 
-           DO UPDATE SET 
-             embedding = EXCLUDED.embedding,
-             model = EXCLUDED.model,
-             updated_at = NOW()`,
-          [article.id, `[${embedding.join(",")}]`],
-        );
-
-        // Обновляем статус статьи
-        await pool.query(
-          `UPDATE articles SET embedding_status = 'completed' WHERE id = $1`,
-          [article.id],
-        );
-
-        processed++;
-
-        // Отправляем прогресс каждые 5 статей или в конце
-        if (processed % 5 === 0 || processed === totalArticles) {
-          await updateProgress(jobId, projectId, { processed, errors });
-        }
-
-        // Rate limiting
-        await new Promise((resolve) =>
-          setTimeout(resolve, RATE_LIMIT_DELAY_MS),
-        );
-      } catch (err) {
-        log.error("Error processing article", err, {
-          jobId,
-          articleId: article.id,
-        });
-        errors++;
-
-        // Обновляем статус ошибки для статьи
-        await pool.query(
-          `UPDATE articles SET embedding_status = 'error' WHERE id = $1`,
-          [article.id],
-        );
+      // Rate limiting между группами batches
+      if (i + PARALLEL_BATCHES < batches.length) {
+        await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
       }
     }
 
