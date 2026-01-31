@@ -401,20 +401,8 @@ export default function CitationGraph({ projectId }: Props) {
 
   const containerRef = useRef<HTMLDivElement>(null);
   // ForceGraph2D ref - тип any необходим из-за отсутствия типов в библиотеке
-  const graphRef = useRef<{
-    centerAt: (x: number, y: number, duration?: number) => void;
-    zoom: (zoom: number, duration?: number) => void;
-    d3Force: (
-      name: string,
-    ) =>
-      | {
-          strength?: (val: number) => void;
-          distanceMax?: (val: number) => void;
-          distance?: (val: number) => void;
-        }
-      | undefined;
-    d3ReheatSimulation: () => void;
-  } | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const graphRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   // === ФИЛЬТРАЦИЯ ДАННЫХ ГРАФА ПО МЕТОДОЛОГИИ ===
