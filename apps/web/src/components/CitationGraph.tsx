@@ -2780,22 +2780,49 @@ export default function CitationGraph({ projectId }: Props) {
                 style={{
                   marginBottom: 8,
                   display: "flex",
-                  flexDirection: "column",
-                  gap: 6,
+                  alignItems: "center",
+                  gap: 10,
+                  flexWrap: "wrap",
                 }}
               >
-                {/* Чекбокс для импорта недостающих статей */}
+                {/* Кнопка генерации */}
+                <button
+                  className="btn secondary"
+                  style={{ fontSize: 11, padding: "4px 10px" }}
+                  onClick={handleGenerateEmbeddings}
+                  disabled={generatingEmbeddings}
+                >
+                  {generatingEmbeddings
+                    ? importMissingArticles
+                      ? "Импорт и генерация..."
+                      : "Генерация..."
+                    : `Создать embeddings (${embeddingStats.withoutEmbeddings})`}
+                </button>
+
+                {/* Чекбокс импорта - компактный, справа от кнопки */}
                 {missingArticlesStats &&
                   missingArticlesStats.totalMissing > 0 && (
                     <label
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 6,
+                        gap: 5,
                         fontSize: 11,
-                        color: "var(--text-secondary)",
-                        cursor: "pointer",
+                        color: importMissingArticles
+                          ? "var(--text-primary)"
+                          : "var(--text-muted)",
+                        cursor: generatingEmbeddings
+                          ? "not-allowed"
+                          : "pointer",
+                        padding: "3px 8px",
+                        borderRadius: 4,
+                        background: importMissingArticles
+                          ? "rgba(16, 185, 129, 0.1)"
+                          : "transparent",
+                        border: `1px solid ${importMissingArticles ? "rgba(16, 185, 129, 0.3)" : "var(--border-color)"}`,
+                        transition: "all 0.2s",
                       }}
+                      title="Импортировать цитирующие статьи из PubMed перед генерацией embeddings. Ретракции исключаются автоматически."
                     >
                       <input
                         type="checkbox"
@@ -2804,91 +2831,62 @@ export default function CitationGraph({ projectId }: Props) {
                           setImportMissingArticles(e.target.checked)
                         }
                         disabled={generatingEmbeddings}
-                        style={{ cursor: "pointer" }}
+                        style={{ cursor: "inherit", margin: 0 }}
                       />
                       <span>
-                        Импортировать цитирующие статьи (+
-                        {missingArticlesStats.totalMissing} из PubMed)
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          color: "var(--text-muted)",
-                          fontStyle: "italic",
-                        }}
-                        title="Статьи-ретракции и ошибки автоматически исключаются"
-                      >
-                        (без ретракций)
+                        +{missingArticlesStats.totalMissing.toLocaleString()}{" "}
+                        цитирующих
                       </span>
                     </label>
                   )}
-
-                {/* Кнопка и прогресс */}
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {generatingEmbeddings && embeddingJob?.jobId && (
                   <button
-                    className="btn secondary"
-                    style={{ fontSize: 11, padding: "4px 8px" }}
-                    onClick={handleGenerateEmbeddings}
-                    disabled={generatingEmbeddings}
+                    className="btn"
+                    style={{
+                      fontSize: 11,
+                      padding: "4px 8px",
+                      background: "var(--bg-error)",
+                      color: "white",
+                    }}
+                    onClick={handleCancelEmbeddings}
                   >
-                    {generatingEmbeddings
-                      ? importMissingArticles
-                        ? "Импорт и генерация..."
-                        : "Генерация..."
-                      : importMissingArticles
-                        ? `Импорт + Embeddings (${embeddingStats.withoutEmbeddings}+)`
-                        : `Создать embeddings (${embeddingStats.withoutEmbeddings})`}
+                    Отменить
                   </button>
-                  {generatingEmbeddings && embeddingJob?.jobId && (
-                    <button
-                      className="btn"
-                      style={{
-                        fontSize: 11,
-                        padding: "4px 8px",
-                        background: "var(--bg-error)",
-                        color: "white",
-                      }}
-                      onClick={handleCancelEmbeddings}
-                    >
-                      Отменить
-                    </button>
-                  )}
-                  {embeddingMessage && (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        color: embeddingMessage.startsWith("✓")
-                          ? "#10b981"
-                          : embeddingMessage.startsWith("Ошибка")
-                            ? "#ef4444"
-                            : "var(--text-muted)",
-                      }}
-                    >
-                      {embeddingMessage}
-                    </span>
-                  )}
-                  {generatingEmbeddings && embeddingJob && (
+                )}
+                {embeddingMessage && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: embeddingMessage.startsWith("✓")
+                        ? "#10b981"
+                        : embeddingMessage.startsWith("Ошибка")
+                          ? "#ef4444"
+                          : "var(--text-muted)",
+                    }}
+                  >
+                    {embeddingMessage}
+                  </span>
+                )}
+                {generatingEmbeddings && embeddingJob && (
+                  <div
+                    style={{
+                      flex: 1,
+                      height: 6,
+                      background: "var(--bg-tertiary)",
+                      borderRadius: 3,
+                      overflow: "hidden",
+                    }}
+                  >
                     <div
                       style={{
-                        flex: 1,
-                        height: 6,
-                        background: "var(--bg-tertiary)",
-                        borderRadius: 3,
-                        overflow: "hidden",
+                        height: "100%",
+                        width: `${embeddingJob.total > 0 ? Math.round((embeddingJob.processed / embeddingJob.total) * 100) : 0}%`,
+                        background: "linear-gradient(90deg, #10b981, #3b82f6)",
+                        transition: "width 0.3s ease",
                       }}
-                    >
-                      <div
-                        style={{
-                          height: "100%",
-                          width: `${embeddingJob.total > 0 ? Math.round((embeddingJob.processed / embeddingJob.total) * 100) : 0}%`,
-                          background:
-                            "linear-gradient(90deg, #10b981, #3b82f6)",
-                          transition: "width 0.3s ease",
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>
