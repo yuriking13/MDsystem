@@ -380,6 +380,9 @@ export default function CitationGraph({ projectId }: Props) {
     GapAnalysisItem[]
   >([]);
   const [loadingGapAnalysis, setLoadingGapAnalysis] = useState(false);
+  const [gapYearFrom, setGapYearFrom] = useState<number | undefined>(undefined);
+  const [gapYearTo, setGapYearTo] = useState<number | undefined>(undefined);
+  const [gapLimit, setGapLimit] = useState<number>(50);
 
   // === КЛАСТЕРИЗАЦИЯ МЕТОДОЛОГИЙ ===
   const [showMethodologyClusters, setShowMethodologyClusters] = useState(false);
@@ -635,9 +638,21 @@ export default function CitationGraph({ projectId }: Props) {
         job.total > 0 ? Math.round((job.processed / job.total) * 100) : 0;
 
       if (job.status === "running" || job.status === "pending") {
-        setEmbeddingMessage(
-          `Обработка: ${job.processed}/${job.total} (${percent}%)...`,
-        );
+        // Проверяем, идёт ли фаза импорта (по errorMessage)
+        if (job.errorMessage?.startsWith("[Import]")) {
+          // Парсим информацию об импорте: "[Import] PubMed: imported=50, skipped=2, errors=0"
+          const match = job.errorMessage.match(/imported=(\d+)/);
+          const imported = match ? parseInt(match[1], 10) : 0;
+          setEmbeddingMessage(
+            `Импорт цитирующих статей: ${imported} импортировано...`,
+          );
+        } else if (job.total === 0 && job.processed === 0) {
+          setEmbeddingMessage("Подготовка к обработке...");
+        } else {
+          setEmbeddingMessage(
+            `Генерация embeddings: ${job.processed}/${job.total} (${percent}%)...`,
+          );
+        }
         // Продолжаем polling каждые 2 секунды
         setTimeout(() => pollEmbeddingJob(jobId), 2000);
       } else if (job.status === "completed") {
@@ -951,7 +966,13 @@ export default function CitationGraph({ projectId }: Props) {
   const handleGapAnalysis = async () => {
     setLoadingGapAnalysis(true);
     try {
-      const result = await apiGapAnalysis(projectId, 0.7, 30);
+      const result = await apiGapAnalysis(
+        projectId,
+        0.7,
+        gapLimit,
+        gapYearFrom,
+        gapYearTo,
+      );
       setGapAnalysisResults(result.gaps);
       setShowGapAnalysis(true);
     } catch (err: any) {
@@ -3579,6 +3600,7 @@ export default function CitationGraph({ projectId }: Props) {
               alignItems: "center",
               gap: 8,
               marginBottom: 12,
+              flexWrap: "wrap",
             }}
           >
             <IconLinkChain size="sm" />
@@ -3586,14 +3608,96 @@ export default function CitationGraph({ projectId }: Props) {
             <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
               (похожие статьи без цитирований)
             </span>
-            <button
-              className="btn secondary"
-              style={{ fontSize: 10, padding: "2px 6px", marginLeft: "auto" }}
-              onClick={handleGapAnalysis}
-              disabled={loadingGapAnalysis}
+
+            {/* Фильтры */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                marginLeft: "auto",
+              }}
             >
-              {loadingGapAnalysis ? "Анализ..." : "Обновить"}
-            </button>
+              <label style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                Годы:
+              </label>
+              <input
+                type="number"
+                placeholder="с"
+                value={gapYearFrom || ""}
+                onChange={(e) =>
+                  setGapYearFrom(
+                    e.target.value ? parseInt(e.target.value, 10) : undefined,
+                  )
+                }
+                style={{
+                  width: 60,
+                  padding: "2px 4px",
+                  fontSize: 10,
+                  borderRadius: 4,
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-primary)",
+                  color: "inherit",
+                }}
+              />
+              <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                —
+              </span>
+              <input
+                type="number"
+                placeholder="по"
+                value={gapYearTo || ""}
+                onChange={(e) =>
+                  setGapYearTo(
+                    e.target.value ? parseInt(e.target.value, 10) : undefined,
+                  )
+                }
+                style={{
+                  width: 60,
+                  padding: "2px 4px",
+                  fontSize: 10,
+                  borderRadius: 4,
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-primary)",
+                  color: "inherit",
+                }}
+              />
+              <label
+                style={{
+                  fontSize: 10,
+                  color: "var(--text-muted)",
+                  marginLeft: 8,
+                }}
+              >
+                Лимит:
+              </label>
+              <select
+                value={gapLimit}
+                onChange={(e) => setGapLimit(parseInt(e.target.value, 10))}
+                style={{
+                  padding: "2px 4px",
+                  fontSize: 10,
+                  borderRadius: 4,
+                  border: "1px solid var(--border-color)",
+                  background: "var(--bg-primary)",
+                  color: "inherit",
+                }}
+              >
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={150}>150</option>
+                <option value={200}>200</option>
+              </select>
+              <button
+                className="btn secondary"
+                style={{ fontSize: 10, padding: "2px 8px" }}
+                onClick={handleGapAnalysis}
+                disabled={loadingGapAnalysis}
+              >
+                {loadingGapAnalysis ? "Анализ..." : "🔄 Обновить"}
+              </button>
+            </div>
           </div>
 
           {gapAnalysisResults.length > 0 ? (

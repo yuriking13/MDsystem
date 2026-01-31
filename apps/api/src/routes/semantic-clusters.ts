@@ -39,7 +39,9 @@ const clusterSettingsSchema = z.object({
 
 const gapAnalysisSchema = z.object({
   threshold: z.number().min(0.5).max(0.95).default(0.7),
-  limit: z.number().int().min(1).max(100).default(20),
+  limit: z.number().int().min(1).max(200).default(50),
+  yearFrom: z.number().int().min(1900).max(2100).optional(),
+  yearTo: z.number().int().min(1900).max(2100).optional(),
 });
 
 export const semanticClustersRoutes: FastifyPluginCallback = (
@@ -546,7 +548,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
           .send({ error: "Invalid request body", details: parsedBody.error });
       }
 
-      const { threshold, limit } = parsedBody.data;
+      const { threshold, limit, yearFrom, yearTo } = parsedBody.data;
       const userId = getUserId(request);
 
       if (!userId) {
@@ -554,6 +556,15 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
       }
 
       try {
+        // Строим фильтр по годам
+        const yearFilter =
+          yearFrom || yearTo
+            ? `AND (
+               (a1.year IS NULL OR (a1.year >= ${yearFrom || 1900} AND a1.year <= ${yearTo || 2100}))
+               AND (a2.year IS NULL OR (a2.year >= ${yearFrom || 1900} AND a2.year <= ${yearTo || 2100}))
+             )`
+            : "";
+
         // Находим пары статей с высокой схожестью, но без прямых цитирований
         const gaps = await pool.query(
           `WITH project_article_ids AS (
@@ -613,6 +624,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
             OR a1.cited_by_pmids @> ARRAY[a2.pmid]
             OR a2.cited_by_pmids @> ARRAY[a1.pmid]
           )
+          ${yearFilter}
           ORDER BY ap.similarity DESC
           LIMIT $3`,
           [projectId, threshold, limit],

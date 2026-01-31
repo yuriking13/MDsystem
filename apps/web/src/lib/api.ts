@@ -1284,13 +1284,15 @@ export type GapAnalysisResponse = {
 export async function apiGapAnalysis(
   projectId: string,
   threshold: number = 0.7,
-  limit: number = 20,
+  limit: number = 50,
+  yearFrom?: number,
+  yearTo?: number,
 ): Promise<GapAnalysisResponse> {
   return apiFetch<GapAnalysisResponse>(
     `/api/projects/${projectId}/citation-graph/gap-analysis`,
     {
       method: "POST",
-      body: JSON.stringify({ threshold, limit }),
+      body: JSON.stringify({ threshold, limit, yearFrom, yearTo }),
     },
   );
 }
