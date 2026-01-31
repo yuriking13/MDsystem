@@ -3588,7 +3588,7 @@ export default function CitationGraph({ projectId }: Props) {
         <div
           className="graph-filters"
           style={{
-            padding: "12px 20px",
+            padding: "10px 16px",
             borderBottom: "1px solid var(--border-glass)",
             background:
               "linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(239, 68, 68, 0.05))",
@@ -3598,29 +3598,35 @@ export default function CitationGraph({ projectId }: Props) {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: 8,
-              marginBottom: 12,
+              gap: 12,
               flexWrap: "wrap",
             }}
           >
-            <IconLinkChain size="sm" />
-            <span style={{ fontWeight: 600 }}>🔍 Анализ пробелов</span>
-            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-              (похожие статьи без цитирований)
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <IconLinkChain size="sm" />
+              <span style={{ fontWeight: 600, fontSize: 13 }}>
+                🔍 Анализ пробелов
+              </span>
+              <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                (похожие статьи без цитирований)
+              </span>
+            </div>
 
-            {/* Фильтры */}
+            {/* Фильтры - компактная версия */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 6,
+                gap: 8,
                 marginLeft: "auto",
+                background: "var(--bg-secondary)",
+                padding: "6px 10px",
+                borderRadius: 8,
               }}
             >
-              <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                 Годы:
-              </label>
+              </span>
               <select
                 value={gapYearFrom || ""}
                 onChange={(e) =>
@@ -3629,13 +3635,14 @@ export default function CitationGraph({ projectId }: Props) {
                   )
                 }
                 style={{
-                  padding: "3px 6px",
-                  fontSize: 11,
+                  padding: "4px 8px",
+                  fontSize: 12,
                   borderRadius: 4,
                   border: "1px solid var(--border-color)",
                   background: "var(--bg-primary)",
                   color: "inherit",
                   cursor: "pointer",
+                  minWidth: 70,
                 }}
               >
                 <option value="">с...</option>
@@ -3650,9 +3657,7 @@ export default function CitationGraph({ projectId }: Props) {
                     </option>
                   ))}
               </select>
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                —
-              </span>
+              <span style={{ color: "var(--text-muted)" }}>—</span>
               <select
                 value={gapYearTo || ""}
                 onChange={(e) =>
@@ -3661,13 +3666,14 @@ export default function CitationGraph({ projectId }: Props) {
                   )
                 }
                 style={{
-                  padding: "3px 6px",
-                  fontSize: 11,
+                  padding: "4px 8px",
+                  fontSize: 12,
                   borderRadius: 4,
                   border: "1px solid var(--border-color)",
                   background: "var(--bg-primary)",
                   color: "inherit",
                   cursor: "pointer",
+                  minWidth: 70,
                 }}
               >
                 <option value="">по...</option>
@@ -3682,26 +3688,28 @@ export default function CitationGraph({ projectId }: Props) {
                     </option>
                   ))}
               </select>
-              <label
+
+              <span
                 style={{
                   fontSize: 11,
                   color: "var(--text-muted)",
-                  marginLeft: 8,
+                  marginLeft: 4,
                 }}
               >
                 Лимит:
-              </label>
+              </span>
               <select
                 value={gapLimit}
                 onChange={(e) => setGapLimit(parseInt(e.target.value, 10))}
                 style={{
-                  padding: "3px 6px",
-                  fontSize: 11,
+                  padding: "4px 8px",
+                  fontSize: 12,
                   borderRadius: 4,
                   border: "1px solid var(--border-color)",
                   background: "var(--bg-primary)",
                   color: "inherit",
                   cursor: "pointer",
+                  minWidth: 55,
                 }}
               >
                 <option value={20}>20</option>
@@ -3710,34 +3718,35 @@ export default function CitationGraph({ projectId }: Props) {
                 <option value={150}>150</option>
                 <option value={200}>200</option>
               </select>
-              <button
-                className="btn"
-                style={{
-                  fontSize: 11,
-                  padding: "4px 12px",
-                  marginLeft: 8,
-                  background: loadingGapAnalysis
-                    ? "var(--bg-tertiary)"
-                    : "linear-gradient(135deg, #f59e0b, #ef4444)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: loadingGapAnalysis ? "wait" : "pointer",
-                  transition: "all 0.2s ease",
-                  boxShadow: loadingGapAnalysis
-                    ? "none"
-                    : "0 2px 8px rgba(245, 158, 11, 0.3)",
-                }}
-                onClick={handleGapAnalysis}
-                disabled={loadingGapAnalysis}
-              >
-                {loadingGapAnalysis ? "⏳ Анализ..." : "🔍 Найти"}
-              </button>
             </div>
+
+            <button
+              onClick={handleGapAnalysis}
+              disabled={loadingGapAnalysis}
+              style={{
+                fontSize: 12,
+                padding: "6px 16px",
+                background: loadingGapAnalysis
+                  ? "var(--bg-tertiary)"
+                  : "linear-gradient(135deg, #f59e0b, #ef4444)",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: loadingGapAnalysis ? "wait" : "pointer",
+                transition: "all 0.2s ease",
+                boxShadow: loadingGapAnalysis
+                  ? "none"
+                  : "0 2px 8px rgba(245, 158, 11, 0.3)",
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+              }}
+            >
+              {loadingGapAnalysis ? "⏳ Поиск..." : "🔍 Найти пробелы"}
+            </button>
           </div>
 
           {gapAnalysisResults.length > 0 ? (
-            <div style={{ maxHeight: 200, overflowY: "auto" }}>
+            <div style={{ maxHeight: 200, overflowY: "auto", marginTop: 12 }}>
               {gapAnalysisResults.map((gap, idx) => (
                 <div
                   key={idx}
