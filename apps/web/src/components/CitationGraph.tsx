@@ -3618,12 +3618,10 @@ export default function CitationGraph({ projectId }: Props) {
                 marginLeft: "auto",
               }}
             >
-              <label style={{ fontSize: 10, color: "var(--text-muted)" }}>
+              <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
                 Годы:
               </label>
-              <input
-                type="number"
-                placeholder="с"
+              <select
                 value={gapYearFrom || ""}
                 onChange={(e) =>
                   setGapYearFrom(
@@ -3631,21 +3629,31 @@ export default function CitationGraph({ projectId }: Props) {
                   )
                 }
                 style={{
-                  width: 60,
-                  padding: "2px 4px",
-                  fontSize: 10,
+                  padding: "3px 6px",
+                  fontSize: 11,
                   borderRadius: 4,
                   border: "1px solid var(--border-color)",
                   background: "var(--bg-primary)",
                   color: "inherit",
+                  cursor: "pointer",
                 }}
-              />
-              <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+              >
+                <option value="">с...</option>
+                {Array.from(
+                  { length: new Date().getFullYear() - 1950 + 1 },
+                  (_, i) => 1950 + i,
+                )
+                  .reverse()
+                  .map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+              </select>
+              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
                 —
               </span>
-              <input
-                type="number"
-                placeholder="по"
+              <select
                 value={gapYearTo || ""}
                 onChange={(e) =>
                   setGapYearTo(
@@ -3653,18 +3661,30 @@ export default function CitationGraph({ projectId }: Props) {
                   )
                 }
                 style={{
-                  width: 60,
-                  padding: "2px 4px",
-                  fontSize: 10,
+                  padding: "3px 6px",
+                  fontSize: 11,
                   borderRadius: 4,
                   border: "1px solid var(--border-color)",
                   background: "var(--bg-primary)",
                   color: "inherit",
+                  cursor: "pointer",
                 }}
-              />
+              >
+                <option value="">по...</option>
+                {Array.from(
+                  { length: new Date().getFullYear() - 1950 + 1 },
+                  (_, i) => 1950 + i,
+                )
+                  .reverse()
+                  .map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
+              </select>
               <label
                 style={{
-                  fontSize: 10,
+                  fontSize: 11,
                   color: "var(--text-muted)",
                   marginLeft: 8,
                 }}
@@ -3675,12 +3695,13 @@ export default function CitationGraph({ projectId }: Props) {
                 value={gapLimit}
                 onChange={(e) => setGapLimit(parseInt(e.target.value, 10))}
                 style={{
-                  padding: "2px 4px",
-                  fontSize: 10,
+                  padding: "3px 6px",
+                  fontSize: 11,
                   borderRadius: 4,
                   border: "1px solid var(--border-color)",
                   background: "var(--bg-primary)",
                   color: "inherit",
+                  cursor: "pointer",
                 }}
               >
                 <option value={20}>20</option>
@@ -3690,12 +3711,27 @@ export default function CitationGraph({ projectId }: Props) {
                 <option value={200}>200</option>
               </select>
               <button
-                className="btn secondary"
-                style={{ fontSize: 10, padding: "2px 8px" }}
+                className="btn"
+                style={{
+                  fontSize: 11,
+                  padding: "4px 12px",
+                  marginLeft: 8,
+                  background: loadingGapAnalysis
+                    ? "var(--bg-tertiary)"
+                    : "linear-gradient(135deg, #f59e0b, #ef4444)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 6,
+                  cursor: loadingGapAnalysis ? "wait" : "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: loadingGapAnalysis
+                    ? "none"
+                    : "0 2px 8px rgba(245, 158, 11, 0.3)",
+                }}
                 onClick={handleGapAnalysis}
                 disabled={loadingGapAnalysis}
               >
-                {loadingGapAnalysis ? "Анализ..." : "🔄 Обновить"}
+                {loadingGapAnalysis ? "⏳ Анализ..." : "🔍 Найти"}
               </button>
             </div>
           </div>
