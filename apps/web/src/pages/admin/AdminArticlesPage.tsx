@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetArticles,
   apiAdminDeleteOrphanArticles,
@@ -28,8 +29,12 @@ export default function AdminArticlesPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
-  const [hasStatsFilter, setHasStatsFilter] = useState<'true' | 'false' | 'all'>('all');
-  const [sources, setSources] = useState<{ source: string; count: number }[]>([]);
+  const [hasStatsFilter, setHasStatsFilter] = useState<
+    "true" | "false" | "all"
+  >("all");
+  const [sources, setSources] = useState<{ source: string; count: number }[]>(
+    [],
+  );
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,8 +56,8 @@ export default function AdminArticlesPage() {
       setTotalPages(data.totalPages);
       setSources(data.sources);
       setStats(data.stats);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -69,14 +74,19 @@ export default function AdminArticlesPage() {
   }
 
   async function handleDeleteOrphans() {
-    if (!confirm("Удалить все статьи, не используемые в проектах? Это действие необратимо!")) return;
+    if (
+      !confirm(
+        "Удалить все статьи, не используемые в проектах? Это действие необратимо!",
+      )
+    )
+      return;
     setCleanupLoading(true);
     try {
       const result = await apiAdminDeleteOrphanArticles();
       alert(`Удалено статей: ${result.deletedCount}`);
       loadArticles();
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     } finally {
       setCleanupLoading(false);
     }
@@ -93,15 +103,19 @@ export default function AdminArticlesPage() {
           <p className="admin-page-subtitle">Всего: {total}</p>
         </div>
         <div className="admin-header-actions">
-          <button 
-            className="btn danger" 
+          <button
+            className="btn danger"
             onClick={handleDeleteOrphans}
             disabled={cleanupLoading}
           >
             <IconTrash size="sm" />
-            {cleanupLoading ? 'Удаление...' : 'Удалить сироты'}
+            {cleanupLoading ? "Удаление..." : "Удалить сироты"}
           </button>
-          <button className="btn secondary" onClick={loadArticles} disabled={loading}>
+          <button
+            className="btn secondary"
+            onClick={loadArticles}
+            disabled={loading}
+          >
             <IconRefresh className={loading ? "spin" : ""} />
             Обновить
           </button>
@@ -147,13 +161,18 @@ export default function AdminArticlesPage() {
               className="admin-search-input"
             />
           </div>
-          <button type="submit" className="btn">Найти</button>
+          <button type="submit" className="btn">
+            Найти
+          </button>
         </form>
-        
+
         <div className="admin-filters">
           <select
             value={sourceFilter}
-            onChange={(e) => { setSourceFilter(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setSourceFilter(e.target.value);
+              setPage(1);
+            }}
             className="admin-select"
           >
             <option value="">Все источники</option>
@@ -163,10 +182,13 @@ export default function AdminArticlesPage() {
               </option>
             ))}
           </select>
-          
+
           <select
             value={hasStatsFilter}
-            onChange={(e) => { setHasStatsFilter(e.target.value as any); setPage(1); }}
+            onChange={(e) => {
+              setHasStatsFilter(e.target.value as any);
+              setPage(1);
+            }}
             className="admin-select"
           >
             <option value="all">Все статьи</option>
@@ -216,25 +238,39 @@ export default function AdminArticlesPage() {
                 articles.map((article) => (
                   <tr key={article.id}>
                     <td className="admin-table-title" title={article.title_en}>
-                      {article.title_en.length > 60 
-                        ? article.title_en.substring(0, 60) + '...' 
+                      {article.title_en.length > 60
+                        ? article.title_en.substring(0, 60) + "..."
                         : article.title_en}
                     </td>
                     <td className="mono">
                       {article.doi ? (
-                        <a href={`https://doi.org/${article.doi}`} target="_blank" rel="noopener noreferrer">
-                          {article.doi.length > 25 ? article.doi.substring(0, 25) + '...' : article.doi}
+                        <a
+                          href={`https://doi.org/${article.doi}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {article.doi.length > 25
+                            ? article.doi.substring(0, 25) + "..."
+                            : article.doi}
                         </a>
-                      ) : '—'}
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="mono">
                       {article.pmid ? (
-                        <a href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}`} target="_blank" rel="noopener noreferrer">
+                        <a
+                          href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
                           {article.pmid}
                         </a>
-                      ) : '—'}
+                      ) : (
+                        "—"
+                      )}
                     </td>
-                    <td>{article.year || '—'}</td>
+                    <td>{article.year || "—"}</td>
                     <td>
                       <span className="admin-badge">{article.source}</span>
                     </td>
@@ -246,7 +282,9 @@ export default function AdminArticlesPage() {
                       )}
                     </td>
                     <td>{article.projects_using}</td>
-                    <td className="admin-table-date">{formatDate(article.created_at)}</td>
+                    <td className="admin-table-date">
+                      {formatDate(article.created_at)}
+                    </td>
                   </tr>
                 ))
               )}
@@ -260,7 +298,7 @@ export default function AdminArticlesPage() {
             <button
               className="btn secondary"
               disabled={page <= 1}
-              onClick={() => setPage(p => p - 1)}
+              onClick={() => setPage((p) => p - 1)}
             >
               Назад
             </button>
@@ -270,7 +308,7 @@ export default function AdminArticlesPage() {
             <button
               className="btn secondary"
               disabled={page >= totalPages}
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => setPage((p) => p + 1)}
             >
               Вперёд
             </button>

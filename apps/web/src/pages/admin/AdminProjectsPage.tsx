@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetProjects,
   apiAdminDeleteProject,
@@ -38,8 +39,10 @@ export default function AdminProjectsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<'created_at' | 'updated_at' | 'name' | 'documents_count' | 'articles_count'>('created_at');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [sortBy, setSortBy] = useState<
+    "created_at" | "updated_at" | "name" | "documents_count" | "articles_count"
+  >("created_at");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,8 +60,8 @@ export default function AdminProjectsPage() {
       setProjects(data.projects);
       setTotal(data.total);
       setTotalPages(data.totalPages);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -75,21 +78,22 @@ export default function AdminProjectsPage() {
   }
 
   async function handleDelete(project: AdminProject) {
-    if (!confirm(`Удалить проект "${project.name}"? Это действие необратимо!`)) return;
+    if (!confirm(`Удалить проект "${project.name}"? Это действие необратимо!`))
+      return;
     try {
       await apiAdminDeleteProject(project.id);
       loadProjects();
-    } catch (err: any) {
-      alert(err?.message || "Ошибка удаления");
+    } catch (err) {
+      alert(getErrorMessage(err));
     }
   }
 
   function handleSort(column: typeof sortBy) {
     if (sortBy === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortBy(column);
-      setSortOrder('desc');
+      setSortOrder("desc");
     }
   }
 
@@ -103,7 +107,11 @@ export default function AdminProjectsPage() {
           </h1>
           <p className="admin-page-subtitle">Всего: {total}</p>
         </div>
-        <button className="btn secondary" onClick={loadProjects} disabled={loading}>
+        <button
+          className="btn secondary"
+          onClick={loadProjects}
+          disabled={loading}
+        >
           <IconRefresh className={loading ? "spin" : ""} />
           Обновить
         </button>
@@ -121,7 +129,9 @@ export default function AdminProjectsPage() {
             className="admin-search-input"
           />
         </div>
-        <button type="submit" className="btn">Найти</button>
+        <button type="submit" className="btn">
+          Найти
+        </button>
       </form>
 
       {error && (
@@ -136,32 +146,35 @@ export default function AdminProjectsPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th 
-                  className="sortable"
-                  onClick={() => handleSort('name')}
-                >
-                  Название {sortBy === 'name' && (sortOrder === 'asc' ? '↑' : '↓')}
+                <th className="sortable" onClick={() => handleSort("name")}>
+                  Название{" "}
+                  {sortBy === "name" && (sortOrder === "asc" ? "↑" : "↓")}
                 </th>
                 <th>Владелец</th>
-                <th 
+                <th
                   className="sortable"
-                  onClick={() => handleSort('documents_count')}
+                  onClick={() => handleSort("documents_count")}
                 >
-                  Документы {sortBy === 'documents_count' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  Документы{" "}
+                  {sortBy === "documents_count" &&
+                    (sortOrder === "asc" ? "↑" : "↓")}
                 </th>
-                <th 
+                <th
                   className="sortable"
-                  onClick={() => handleSort('articles_count')}
+                  onClick={() => handleSort("articles_count")}
                 >
-                  Статьи {sortBy === 'articles_count' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  Статьи{" "}
+                  {sortBy === "articles_count" &&
+                    (sortOrder === "asc" ? "↑" : "↓")}
                 </th>
                 <th>Участники</th>
                 <th>Размер</th>
-                <th 
+                <th
                   className="sortable"
-                  onClick={() => handleSort('created_at')}
+                  onClick={() => handleSort("created_at")}
                 >
-                  Создан {sortBy === 'created_at' && (sortOrder === 'asc' ? '↑' : '↓')}
+                  Создан{" "}
+                  {sortBy === "created_at" && (sortOrder === "asc" ? "↑" : "↓")}
                 </th>
                 <th>Действия</th>
               </tr>
@@ -215,10 +228,12 @@ export default function AdminProjectsPage() {
                       </span>
                     </td>
                     <td className="mono">{formatBytes(project.total_size)}</td>
-                    <td className="admin-table-date">{formatDate(project.created_at)}</td>
+                    <td className="admin-table-date">
+                      {formatDate(project.created_at)}
+                    </td>
                     <td>
                       <div className="admin-table-actions">
-                        <Link 
+                        <Link
                           to={`/admin/projects/${project.id}`}
                           className="admin-action-btn"
                           title="Просмотр"
@@ -247,7 +262,7 @@ export default function AdminProjectsPage() {
             <button
               className="btn secondary"
               disabled={page <= 1}
-              onClick={() => setPage(p => p - 1)}
+              onClick={() => setPage((p) => p - 1)}
             >
               Назад
             </button>
@@ -257,7 +272,7 @@ export default function AdminProjectsPage() {
             <button
               className="btn secondary"
               disabled={page >= totalPages}
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => setPage((p) => p + 1)}
             >
               Вперёд
             </button>

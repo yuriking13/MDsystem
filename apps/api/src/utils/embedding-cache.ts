@@ -126,8 +126,13 @@ export const queryEmbeddingCache = new EmbeddingCache(1000, 60 * 60 * 1000);
 setInterval(
   () => {
     const removed = queryEmbeddingCache.cleanup();
-    if (removed > 0) {
-      console.log(`[embedding-cache] Cleaned up ${removed} expired entries`);
+    // Логируем только при debug уровне или если удалено много записей
+    if (removed > 10) {
+      // Используем process.env напрямую чтобы избежать циклического импорта
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console
+        console.log(`[embedding-cache] Cleaned up ${removed} expired entries`);
+      }
     }
   },
   10 * 60 * 1000,

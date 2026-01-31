@@ -24,6 +24,30 @@ const EnvSchema = z.object({
   REDIS_URL: z.string().optional(), // e.g. redis://localhost:6379
   REDIS_PASSWORD: z.string().optional(),
   REDIS_CACHE_TTL: z.coerce.number().int().min(1).optional().default(300), // Default 5 minutes
+
+  // Server configuration (optional with sensible defaults)
+  MAX_FILE_SIZE_MB: z.coerce.number().int().min(1).optional().default(500), // Max upload file size in MB
+  DB_POOL_SIZE: z.coerce.number().int().min(1).max(100).optional().default(20), // PostgreSQL pool size
+  DB_POOL_MIN: z.coerce.number().int().min(0).optional().default(2), // Min pool connections
+  REQUEST_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .min(1000)
+    .optional()
+    .default(30000), // Request timeout
+  STATEMENT_TIMEOUT_MS: z.coerce
+    .number()
+    .int()
+    .min(1000)
+    .optional()
+    .default(30000), // SQL statement timeout
+
+  // JWT tokens configuration
+  ACCESS_TOKEN_EXPIRES: z.string().optional().default("15m"), // Access token lifetime
+  REFRESH_TOKEN_EXPIRES: z.string().optional().default("7d"), // Refresh token lifetime
+
+  // Logging
+  LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

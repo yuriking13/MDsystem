@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import { getErrorMessage } from "../../lib/errorUtils";
 import { apiAdminLogin } from "../../lib/adminApi";
 import { useAdminAuth } from "../../lib/AdminContext";
 import { IconShield, IconKey, IconLock } from "../../components/FlowbiteIcons";
@@ -26,16 +27,16 @@ export default function AdminLoginPage() {
       const res = await apiAdminLogin(
         email.trim(),
         password,
-        showTokenField ? adminToken : undefined
+        showTokenField ? adminToken : undefined,
       );
       await loginWithToken(res.token);
       nav(redirectTo, { replace: true });
-    } catch (err: any) {
-      if (err?.message?.includes("requiresToken")) {
+    } catch (err) {
+      if (getErrorMessage(err).includes("requiresToken")) {
         setShowTokenField(true);
         setError("Требуется токен администратора");
       } else {
-        setError(err?.message || "Ошибка входа");
+        setError(getErrorMessage(err));
       }
     } finally {
       setBusy(false);
@@ -57,7 +58,11 @@ export default function AdminLoginPage() {
           {error && (
             <div className="alert admin-alert">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
               </svg>
               <span>{error}</span>
             </div>
@@ -66,8 +71,18 @@ export default function AdminLoginPage() {
           <form onSubmit={submit} className="admin-login-form">
             <div className="admin-field">
               <label htmlFor="email">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
+                  />
                 </svg>
                 Email администратора
               </label>
@@ -118,7 +133,11 @@ export default function AdminLoginPage() {
               </div>
             )}
 
-            <button type="submit" className="btn admin-login-btn" disabled={busy}>
+            <button
+              type="submit"
+              className="btn admin-login-btn"
+              disabled={busy}
+            >
               {busy ? (
                 <>
                   <span className="admin-spinner"></span>
@@ -135,8 +154,18 @@ export default function AdminLoginPage() {
 
           <div className="admin-login-footer">
             <Link to="/login" className="admin-back-link">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
               Вернуться к обычному входу
             </Link>

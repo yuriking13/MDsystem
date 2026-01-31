@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from "react";
+import { getErrorMessage } from "../lib/errorUtils";
 
 interface ProgressData {
   done: number;
@@ -43,9 +44,11 @@ export function ProgressModal({
   const [total, setTotal] = useState(0);
   const [speed, setSpeed] = useState(0);
   const [eta, setEta] = useState(0);
-  const [status, setStatus] = useState<'idle' | 'running' | 'complete' | 'error'>('idle');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [status, setStatus] = useState<
+    "idle" | "running" | "complete" | "error"
+  >("idle");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
   const eventSourceRef = useRef<EventSource | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -69,27 +72,27 @@ export function ProgressModal({
     setTotal(0);
     setSpeed(0);
     setEta(0);
-    setStatus('idle');
-    setMessage('Инициализация...');
-    setError('');
+    setStatus("idle");
+    setMessage("Инициализация...");
+    setError("");
 
     // Начинаем SSE подключение
     const startProcess = async () => {
       try {
-        setStatus('running');
-        
-        const token = localStorage.getItem('token');
+        setStatus("running");
+
+        const token = localStorage.getItem("token");
         if (!token) {
-          throw new Error('Нет токена авторизации');
+          throw new Error("Нет токена авторизации");
         }
 
         // Используем fetch для POST запроса с SSE
         abortControllerRef.current = new AbortController();
         const response = await fetch(endpoint, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify(body || {}),
           signal: abortControllerRef.current.signal,
@@ -104,29 +107,29 @@ export function ProgressModal({
         const decoder = new TextDecoder();
 
         if (!reader) {
-          throw new Error('Не удалось получить поток данных');
+          throw new Error("Не удалось получить поток данных");
         }
 
         // Читаем SSE поток
         while (true) {
           const { done: readerDone, value } = await reader.read();
-          
+
           if (readerDone) {
             break;
           }
 
           const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
+          const lines = chunk.split("\n");
 
           for (const line of lines) {
-            if (line.startsWith('event: ')) {
+            if (line.startsWith("event: ")) {
               const eventType = line.substring(7).trim();
               continue;
             }
 
-            if (line.startsWith('data: ')) {
+            if (line.startsWith("data: ")) {
               const data = line.substring(6);
-              
+
               try {
                 const parsed = JSON.parse(data);
 
@@ -146,40 +149,41 @@ export function ProgressModal({
                   if (parsed.eta !== undefined) {
                     setEta(parsed.eta);
                   }
-                  setMessage(`Обработано ${parsed.done} из ${parsed.total} (${parsed.percent}%)`);
+                  setMessage(
+                    `Обработано ${parsed.done} из ${parsed.total} (${parsed.percent}%)`,
+                  );
                 } else if (parsed.articlesPerSecond !== undefined) {
                   // speed событие
                   setSpeed(parsed.articlesPerSecond);
                 } else if (parsed.ok !== undefined) {
                   // complete событие
-                  setStatus('complete');
+                  setStatus("complete");
                   setProgress(100);
-                  setMessage(parsed.message || 'Завершено');
-                  
+                  setMessage(parsed.message || "Завершено");
+
                   if (onComplete) {
                     onComplete(parsed as CompleteData);
                   }
                 } else if (parsed.error) {
                   // error событие
-                  setStatus('error');
+                  setStatus("error");
                   setError(parsed.error);
-                  setMessage('Ошибка при обработке');
+                  setMessage("Ошибка при обработке");
                 }
               } catch (e) {
-                console.error('Ошибка парсинга SSE данных:', e, data);
+                console.error("Ошибка парсинга SSE данных:", e, data);
               }
             }
           }
         }
-
       } catch (err: any) {
-        if (err.name === 'AbortError') {
-          console.log('Запрос отменён');
+        if (err.name === "AbortError") {
+          console.log("Запрос отменён");
         } else {
-          console.error('Ошибка SSE:', err);
-          setStatus('error');
-          setError(err.message || 'Неизвестная ошибка');
-          setMessage('Ошибка подключения');
+          console.error("Ошибка SSE:", err);
+          setStatus("error");
+          setError(getErrorMessage(err) || "Неизвестная ошибка");
+          setMessage("Ошибка подключения");
         }
       }
     };
@@ -198,8 +202,8 @@ export function ProgressModal({
   }, [show, endpoint, body, onComplete]);
 
   const handleClose = () => {
-    if (status === 'running') {
-      if (confirm('Процесс ещё выполняется. Закрыть окно?')) {
+    if (status === "running") {
+      if (confirm("Процесс ещё выполняется. Закрыть окно?")) {
         onClose();
       }
     } else {
@@ -220,60 +224,92 @@ export function ProgressModal({
 
   return (
     <div className="modal-overlay" onClick={handleClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: "600px" }}
+      >
         {/* Header */}
         <div className="modal-header">
           <h2>{title}</h2>
-          <button className="modal-close" onClick={handleClose}>×</button>
+          <button className="modal-close" onClick={handleClose}>
+            ×
+          </button>
         </div>
 
         {/* Body */}
         <div className="modal-body">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
+          >
             {/* Прогресс-бар */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "0.5rem",
+                  fontSize: "0.875rem",
+                }}
+              >
                 <span style={{ fontWeight: 500 }}>{message}</span>
-                <span style={{ color: '#6b7280' }}>{progress}%</span>
+                <span style={{ color: "#6b7280" }}>{progress}%</span>
               </div>
-              <div style={{ 
-                width: '100%', 
-                height: '1.5rem', 
-                backgroundColor: '#e5e7eb', 
-                borderRadius: '0.5rem',
-                overflow: 'hidden'
-              }}>
-                <div style={{
-                  height: '100%',
-                  width: `${progress}%`,
-                  backgroundColor: status === 'error' ? '#ef4444' : status === 'complete' ? '#10b981' : '#3b82f6',
-                  transition: 'width 0.3s ease',
-                }}></div>
+              <div
+                style={{
+                  width: "100%",
+                  height: "1.5rem",
+                  backgroundColor: "#e5e7eb",
+                  borderRadius: "0.5rem",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    height: "100%",
+                    width: `${progress}%`,
+                    backgroundColor:
+                      status === "error"
+                        ? "#ef4444"
+                        : status === "complete"
+                          ? "#10b981"
+                          : "#3b82f6",
+                    transition: "width 0.3s ease",
+                  }}
+                ></div>
               </div>
             </div>
 
             {/* Статистика */}
             {total > 0 && (
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
-                gap: '1rem', 
-                fontSize: '0.875rem' 
-              }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gap: "1rem",
+                  fontSize: "0.875rem",
+                }}
+              >
                 <div>
-                  <span style={{ color: '#6b7280' }}>Обработано:</span>
-                  <span style={{ marginLeft: '0.5rem', fontWeight: 500 }}>{done} / {total}</span>
+                  <span style={{ color: "#6b7280" }}>Обработано:</span>
+                  <span style={{ marginLeft: "0.5rem", fontWeight: 500 }}>
+                    {done} / {total}
+                  </span>
                 </div>
                 {speed > 0 && (
                   <div>
-                    <span style={{ color: '#6b7280' }}>Скорость:</span>
-                    <span style={{ marginLeft: '0.5rem', fontWeight: 500 }}>{speed.toFixed(1)} эл/сек</span>
+                    <span style={{ color: "#6b7280" }}>Скорость:</span>
+                    <span style={{ marginLeft: "0.5rem", fontWeight: 500 }}>
+                      {speed.toFixed(1)} эл/сек
+                    </span>
                   </div>
                 )}
-                {eta > 0 && status === 'running' && (
+                {eta > 0 && status === "running" && (
                   <div>
-                    <span style={{ color: '#6b7280' }}>Осталось:</span>
-                    <span style={{ marginLeft: '0.5rem', fontWeight: 500 }}>{formatTime(eta)}</span>
+                    <span style={{ color: "#6b7280" }}>Осталось:</span>
+                    <span style={{ marginLeft: "0.5rem", fontWeight: 500 }}>
+                      {formatTime(eta)}
+                    </span>
                   </div>
                 )}
               </div>
@@ -281,40 +317,66 @@ export function ProgressModal({
 
             {/* Ошибка */}
             {error && (
-              <div style={{ 
-                padding: '0.75rem', 
-                backgroundColor: '#fef2f2', 
-                border: '1px solid #fecaca', 
-                borderRadius: '0.5rem' 
-              }}>
-                <p style={{ fontSize: '0.875rem', color: '#991b1b' }}>{error}</p>
+              <div
+                style={{
+                  padding: "0.75rem",
+                  backgroundColor: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: "0.5rem",
+                }}
+              >
+                <p style={{ fontSize: "0.875rem", color: "#991b1b" }}>
+                  {error}
+                </p>
               </div>
             )}
 
             {/* Индикатор загрузки */}
-            {status === 'running' && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.5rem 0' }}>
-                <div className="spinner" style={{
-                  width: '1.5rem',
-                  height: '1.5rem',
-                  border: '2px solid #e5e7eb',
-                  borderTopColor: '#3b82f6',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }}></div>
-                <span style={{ marginLeft: '0.75rem', fontSize: '0.875rem', color: '#6b7280' }}>Обработка...</span>
+            {status === "running" && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0.5rem 0",
+                }}
+              >
+                <div
+                  className="spinner"
+                  style={{
+                    width: "1.5rem",
+                    height: "1.5rem",
+                    border: "2px solid #e5e7eb",
+                    borderTopColor: "#3b82f6",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                ></div>
+                <span
+                  style={{
+                    marginLeft: "0.75rem",
+                    fontSize: "0.875rem",
+                    color: "#6b7280",
+                  }}
+                >
+                  Обработка...
+                </span>
               </div>
             )}
 
             {/* Сообщение об успехе */}
-            {status === 'complete' && (
-              <div style={{ 
-                padding: '0.75rem', 
-                backgroundColor: '#f0fdf4', 
-                border: '1px solid #bbf7d0', 
-                borderRadius: '0.5rem' 
-              }}>
-                <p style={{ fontSize: '0.875rem', color: '#166534' }}>✓ {message}</p>
+            {status === "complete" && (
+              <div
+                style={{
+                  padding: "0.75rem",
+                  backgroundColor: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: "0.5rem",
+                }}
+              >
+                <p style={{ fontSize: "0.875rem", color: "#166534" }}>
+                  ✓ {message}
+                </p>
               </div>
             )}
           </div>
@@ -322,11 +384,8 @@ export function ProgressModal({
 
         {/* Footer */}
         <div className="modal-footer">
-          <button
-            onClick={handleClose}
-            className="btn btn-secondary"
-          >
-            {status === 'running' ? 'Отменить' : 'Закрыть'}
+          <button onClick={handleClose} className="btn btn-secondary">
+            {status === "running" ? "Отменить" : "Закрыть"}
           </button>
         </div>
       </div>
@@ -339,4 +398,3 @@ export function ProgressModal({
     </div>
   );
 }
-

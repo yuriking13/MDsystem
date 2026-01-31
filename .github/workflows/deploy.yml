@@ -77,6 +77,10 @@ jobs:
             echo "Applying embedding jobs migration..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_embedding_jobs.sql 2>/dev/null || echo "Embedding jobs table may already exist"
 
+            # Apply refresh tokens migration
+            echo "Applying refresh tokens migration..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_refresh_tokens.sql 2>/dev/null || echo "Refresh tokens table may already exist"
+
             # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'

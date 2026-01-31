@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetActiveSessions,
   apiAdminTerminateSession,
@@ -51,8 +52,8 @@ export default function AdminSessionsPage() {
     try {
       const data = await apiAdminGetActiveSessions();
       setSessions(data.sessions);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -70,8 +71,8 @@ export default function AdminSessionsPage() {
     try {
       await apiAdminTerminateSession(sessionId);
       loadSessions();
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     }
   }
 
@@ -83,11 +84,13 @@ export default function AdminSessionsPage() {
             <IconGlobe size="lg" />
             Активные сессии
           </h1>
-          <p className="admin-page-subtitle">
-            Всего: {sessions.length}
-          </p>
+          <p className="admin-page-subtitle">Всего: {sessions.length}</p>
         </div>
-        <button className="btn secondary" onClick={loadSessions} disabled={loading}>
+        <button
+          className="btn secondary"
+          onClick={loadSessions}
+          disabled={loading}
+        >
           <IconRefresh className={loading ? "spin" : ""} />
           Обновить
         </button>
@@ -129,7 +132,9 @@ export default function AdminSessionsPage() {
                 </tr>
               ) : (
                 sessions.map((session) => {
-                  const { browser, os } = parseUserAgent(session.user_agent || "");
+                  const { browser, os } = parseUserAgent(
+                    session.user_agent || "",
+                  );
                   return (
                     <tr key={session.id}>
                       <td className="admin-table-email">
@@ -147,7 +152,9 @@ export default function AdminSessionsPage() {
                       <td className="mono">{session.ip_address || "—"}</td>
                       <td>
                         <span className="admin-badge">{browser}</span>
-                        <span className="admin-badge admin-badge-secondary">{os}</span>
+                        <span className="admin-badge admin-badge-secondary">
+                          {os}
+                        </span>
                       </td>
                       <td className="admin-table-actions">
                         <button

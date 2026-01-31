@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getErrorMessage } from "../lib/errorUtils";
 import { useNavigate } from "react-router-dom";
 import {
   apiGetProjects,
@@ -34,8 +35,8 @@ export default function ProjectsPage() {
     try {
       const res = await apiGetProjects();
       setProjects(res.projects);
-    } catch (err: any) {
-      setError(err?.message || "Failed to load projects");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -58,8 +59,8 @@ export default function ProjectsPage() {
       setShowCreate(false);
       setOk("Project created!");
       await load();
-    } catch (err: any) {
-      setError(err?.message || "Failed to create project");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setCreating(false);
     }
@@ -90,8 +91,8 @@ export default function ProjectsPage() {
       setOk("Проект удалён");
       closeDeleteConfirm();
       await load();
-    } catch (err: any) {
-      setError(err?.message || "Failed to delete project");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setDeleting(false);
     }
@@ -106,7 +107,11 @@ export default function ProjectsPage() {
             <p className="muted">Scientific research projects</p>
           </div>
           <div className="row gap">
-            <button className="btn secondary" onClick={() => nav("/settings")} type="button">
+            <button
+              className="btn secondary"
+              onClick={() => nav("/settings")}
+              type="button"
+            >
               Settings
             </button>
             <button className="btn secondary" onClick={logout} type="button">
@@ -121,7 +126,11 @@ export default function ProjectsPage() {
         {/* Create button */}
         {!showCreate && (
           <div style={{ marginBottom: 16 }}>
-            <button className="btn" onClick={() => setShowCreate(true)} type="button">
+            <button
+              className="btn"
+              onClick={() => setShowCreate(true)}
+              type="button"
+            >
               + New Project
             </button>
           </div>
@@ -129,7 +138,11 @@ export default function ProjectsPage() {
 
         {/* Create form */}
         {showCreate && (
-          <form onSubmit={handleCreate} className="card" style={{ marginBottom: 16 }}>
+          <form
+            onSubmit={handleCreate}
+            className="card"
+            style={{ marginBottom: 16 }}
+          >
             <h3>Create Project</h3>
             <div className="stack">
               <label className="stack">
@@ -182,8 +195,12 @@ export default function ProjectsPage() {
                         {p.description}
                       </div>
                     )}
-                    <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
-                      Role: {p.role} • Updated: {new Date(p.updated_at).toLocaleDateString()}
+                    <div
+                      className="muted"
+                      style={{ fontSize: 12, marginTop: 4 }}
+                    >
+                      Role: {p.role} • Updated:{" "}
+                      {new Date(p.updated_at).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="row gap">
@@ -216,7 +233,8 @@ export default function ProjectsPage() {
             <div className="modal">
               <h3>Удаление проекта</h3>
               <p>
-                Вы уверены что хотите удалить проект <strong>"{deleteTarget.name}"</strong>?
+                Вы уверены что хотите удалить проект{" "}
+                <strong>"{deleteTarget.name}"</strong>?
               </p>
               <p className="muted" style={{ fontSize: 13 }}>
                 Это действие необратимо. Все данные проекта будут потеряны.
@@ -230,7 +248,11 @@ export default function ProjectsPage() {
                 placeholder={deleteTarget.name}
                 style={{ marginBottom: 12 }}
               />
-              {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
+              {error && (
+                <div className="alert" style={{ marginBottom: 12 }}>
+                  {error}
+                </div>
+              )}
               <div className="row gap">
                 <button
                   className="btn danger"

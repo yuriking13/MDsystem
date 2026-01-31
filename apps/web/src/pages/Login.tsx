@@ -1,13 +1,24 @@
 // apps/web/src/pages/Login.tsx
 import React, { useState } from "react";
-import { api, setToken } from "../api/client";
+import { api, setTokens } from "../api/client";
 import { useLocation, useNavigate } from "react-router-dom";
+import { getErrorMessage } from "../lib/errorUtils";
 
-type AuthResponse = { user: { id: string; email: string }; token: string };
+type AuthResponse = {
+  user: { id: string; email: string };
+  token: string;
+  accessToken?: string;
+  refreshToken?: string;
+};
+
+interface LocationState {
+  from?: string;
+}
 
 export default function Login() {
   const nav = useNavigate();
-  const loc = useLocation() as any;
+  const loc = useLocation();
+  const state = loc.state as LocationState | null;
 
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -27,12 +38,13 @@ export default function Login() {
         body: JSON.stringify({ email, password }),
       });
 
-      setToken(res.token);
+      // Сохраняем оба токена (с fallback на старый формат)
+      setTokens(res.accessToken ?? res.token, res.refreshToken ?? "");
 
-      const to = loc?.state?.from ?? "/settings";
+      const to = state?.from ?? "/settings";
       nav(to);
-    } catch (err: any) {
-      setMsg(err?.message || String(err));
+    } catch (err) {
+      setMsg(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -43,8 +55,15 @@ export default function Login() {
       <h2>{mode === "login" ? "Вход" : "Регистрация"}</h2>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        <button disabled={mode === "login"} onClick={() => setMode("login")}>Вход</button>
-        <button disabled={mode === "register"} onClick={() => setMode("register")}>Регистрация</button>
+        <button disabled={mode === "login"} onClick={() => setMode("login")}>
+          Вход
+        </button>
+        <button
+          disabled={mode === "register"}
+          onClick={() => setMode("register")}
+        >
+          Регистрация
+        </button>
       </div>
 
       <form onSubmit={submit} style={{ display: "grid", gap: 10 }}>
@@ -61,11 +80,12 @@ export default function Login() {
           onChange={(e) => setPassword(e.target.value)}
           autoComplete={mode === "login" ? "current-password" : "new-password"}
         />
-        <button disabled={loading} type="submit">{loading ? "..." : "OK"}</button>
+        <button disabled={loading} type="submit">
+          {loading ? "..." : "OK"}
+        </button>
       </form>
 
       {msg ? <div style={{ marginTop: 12 }}>{msg}</div> : null}
     </div>
   );
 }
-

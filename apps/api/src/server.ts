@@ -30,12 +30,9 @@ import { registerWebSocket, getConnectionStats } from "./websocket.js";
 import { initCache, getCacheBackend, closeCache } from "./lib/redis.js";
 import { getRateLimitStats } from "./plugins/rate-limit.js";
 
-// Request timeout (30 секунд по умолчанию)
-const REQUEST_TIMEOUT_MS = 30_000;
-
 const app = Fastify({
   logger: {
-    level: env.NODE_ENV === "production" ? "info" : "debug",
+    level: env.LOG_LEVEL || (env.NODE_ENV === "production" ? "info" : "debug"),
     // Добавляем request ID в логи
     serializers: {
       req(request) {
@@ -52,8 +49,8 @@ const app = Fastify({
   // Генерация request ID для трассировки
   genReqId: () =>
     `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
-  // Request timeout
-  requestTimeout: REQUEST_TIMEOUT_MS,
+  // Request timeout из env
+  requestTimeout: env.REQUEST_TIMEOUT_MS,
 });
 
 // Централизованная обработка ошибок
@@ -88,7 +85,7 @@ await app.register(cors, {
 await app.register(sensible);
 await app.register(multipart, {
   limits: {
-    fileSize: 500 * 1024 * 1024, // 500MB
+    fileSize: env.MAX_FILE_SIZE_MB * 1024 * 1024, // MB to bytes
   },
 });
 await app.register(authPlugin);
@@ -127,7 +124,7 @@ app.get("/api/perf-stats", async () => {
     pool: getPoolStats(),
     accessCache: getAccessCacheStats(),
     cache: getCacheBackend(),
-    rateLimit: getRateLimitStats(),
+    rateLimit: await getRateLimitStats(),
     httpClient: getHttpClientStats(),
     memory: {
       heapUsed:

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetJobs,
   apiAdminCancelJob,
@@ -28,10 +29,22 @@ function formatDate(date: string | null): string {
 function getStatusBadge(status: string) {
   const statusMap: Record<string, { class: string; icon: React.ReactNode }> = {
     pending: { class: "admin-badge-warning", icon: <IconClock size="sm" /> },
-    running: { class: "admin-badge-info", icon: <IconRefresh size="sm" className="spin" /> },
-    completed: { class: "admin-badge-success", icon: <IconCheckCircle size="sm" /> },
-    failed: { class: "admin-badge-danger", icon: <IconExclamation size="sm" /> },
-    cancelled: { class: "admin-badge-secondary", icon: <IconXCircle size="sm" /> },
+    running: {
+      class: "admin-badge-info",
+      icon: <IconRefresh size="sm" className="spin" />,
+    },
+    completed: {
+      class: "admin-badge-success",
+      icon: <IconCheckCircle size="sm" />,
+    },
+    failed: {
+      class: "admin-badge-danger",
+      icon: <IconExclamation size="sm" />,
+    },
+    cancelled: {
+      class: "admin-badge-secondary",
+      icon: <IconXCircle size="sm" />,
+    },
   };
   const s = statusMap[status] || { class: "", icon: null };
   return (
@@ -47,7 +60,9 @@ export default function AdminJobsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [summary, setSummary] = useState<{ status: string; count: number }[]>([]);
+  const [summary, setSummary] = useState<{ status: string; count: number }[]>(
+    [],
+  );
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -65,8 +80,8 @@ export default function AdminJobsPage() {
       setTotal(data.total);
       setTotalPages(data.totalPages);
       setSummary(data.summary);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -84,8 +99,8 @@ export default function AdminJobsPage() {
     try {
       await apiAdminCancelJob(jobId);
       loadJobs();
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     }
   }
 
@@ -94,8 +109,8 @@ export default function AdminJobsPage() {
     try {
       await apiAdminRetryJob(jobId);
       loadJobs();
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     }
   }
 
@@ -119,22 +134,24 @@ export default function AdminJobsPage() {
       {summary.length > 0 && (
         <div className="admin-jobs-summary">
           {summary.map((s) => (
-            <div 
-              key={s.status} 
+            <div
+              key={s.status}
               className={`admin-job-summary-item admin-job-${s.status}`}
               onClick={() => setStatusFilter(s.status)}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: "pointer" }}
             >
               <span className="admin-job-summary-count">{s.count}</span>
               <span className="admin-job-summary-status">{s.status}</span>
             </div>
           ))}
-          <div 
+          <div
             className="admin-job-summary-item"
-            onClick={() => setStatusFilter('all')}
-            style={{ cursor: 'pointer' }}
+            onClick={() => setStatusFilter("all")}
+            style={{ cursor: "pointer" }}
           >
-            <span className="admin-job-summary-count">{summary.reduce((sum, s) => sum + s.count, 0)}</span>
+            <span className="admin-job-summary-count">
+              {summary.reduce((sum, s) => sum + s.count, 0)}
+            </span>
             <span className="admin-job-summary-status">всего (7 дней)</span>
           </div>
         </div>
@@ -144,7 +161,10 @@ export default function AdminJobsPage() {
       <div className="admin-filters">
         <select
           value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
           className="admin-select"
         >
           <option value="all">Все статусы</option>
@@ -194,22 +214,27 @@ export default function AdminJobsPage() {
                 </tr>
               ) : (
                 jobs.map((job) => {
-                  const progress = job.total_pmids_to_fetch > 0 
-                    ? Math.round((job.fetched_pmids / job.total_pmids_to_fetch) * 100)
-                    : 0;
+                  const progress =
+                    job.total_pmids_to_fetch > 0
+                      ? Math.round(
+                          (job.fetched_pmids / job.total_pmids_to_fetch) * 100,
+                        )
+                      : 0;
                   return (
                     <tr key={job.id}>
                       <td className="admin-table-name">
                         {job.project_name || "—"}
                         {job.owner_email && (
-                          <span className="admin-table-subtitle">{job.owner_email}</span>
+                          <span className="admin-table-subtitle">
+                            {job.owner_email}
+                          </span>
                         )}
                       </td>
                       <td>{getStatusBadge(job.status)}</td>
                       <td>
                         <div className="admin-progress-cell">
                           <div className="admin-progress-bar">
-                            <div 
+                            <div
                               className="admin-progress-fill"
                               style={{ width: `${progress}%` }}
                             />
@@ -219,12 +244,21 @@ export default function AdminJobsPage() {
                           </span>
                         </div>
                       </td>
-                      <td className="admin-table-date">{formatDate(job.created_at)}</td>
-                      <td className="admin-table-date">{formatDate(job.started_at)}</td>
-                      <td className="admin-table-date">{formatDate(job.completed_at)}</td>
+                      <td className="admin-table-date">
+                        {formatDate(job.created_at)}
+                      </td>
+                      <td className="admin-table-date">
+                        {formatDate(job.started_at)}
+                      </td>
+                      <td className="admin-table-date">
+                        {formatDate(job.completed_at)}
+                      </td>
                       <td className="admin-table-error">
                         {job.error_message && (
-                          <span className="admin-error-preview" title={job.error_message}>
+                          <span
+                            className="admin-error-preview"
+                            title={job.error_message}
+                          >
                             {job.error_message.substring(0, 50)}...
                           </span>
                         )}
@@ -236,7 +270,8 @@ export default function AdminJobsPage() {
                       </td>
                       <td>
                         <div className="admin-table-actions">
-                          {(job.status === 'pending' || job.status === 'running') && (
+                          {(job.status === "pending" ||
+                            job.status === "running") && (
                             <button
                               className="admin-action-btn danger"
                               onClick={() => handleCancel(job.id)}
@@ -245,7 +280,8 @@ export default function AdminJobsPage() {
                               <IconXCircle size="sm" />
                             </button>
                           )}
-                          {(job.status === 'failed' || job.status === 'cancelled') && (
+                          {(job.status === "failed" ||
+                            job.status === "cancelled") && (
                             <button
                               className="admin-action-btn"
                               onClick={() => handleRetry(job.id)}
@@ -270,7 +306,7 @@ export default function AdminJobsPage() {
             <button
               className="btn secondary"
               disabled={page <= 1}
-              onClick={() => setPage(p => p - 1)}
+              onClick={() => setPage((p) => p - 1)}
             >
               Назад
             </button>
@@ -280,7 +316,7 @@ export default function AdminJobsPage() {
             <button
               className="btn secondary"
               disabled={page >= totalPages}
-              onClick={() => setPage(p => p + 1)}
+              onClick={() => setPage((p) => p + 1)}
             >
               Вперёд
             </button>

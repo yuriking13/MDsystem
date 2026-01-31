@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
+import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetUsers,
   apiAdminGetUser,
@@ -66,8 +67,8 @@ function UsersList() {
       setUsers(data.users);
       setTotal(data.total);
       setTotalPages(data.totalPages);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -87,8 +88,8 @@ function UsersList() {
     try {
       await apiAdminUpdateUserAdmin(userId, !currentIsAdmin);
       loadUsers();
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     }
   }
 
@@ -111,14 +112,14 @@ function UsersList() {
               e.preventDefault();
               // Manually fetch with auth header
               fetch(getExportUsersUrl(), {
-                headers: { Authorization: `Bearer ${getAdminToken()}` }
+                headers: { Authorization: `Bearer ${getAdminToken()}` },
               })
-                .then(res => res.blob())
-                .then(blob => {
+                .then((res) => res.blob())
+                .then((blob) => {
                   const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
+                  const a = document.createElement("a");
                   a.href = url;
-                  a.download = 'users.csv';
+                  a.download = "users.csv";
                   a.click();
                 });
             }}
@@ -126,7 +127,11 @@ function UsersList() {
             <IconDownload size="sm" />
             Экспорт CSV
           </a>
-          <button className="btn secondary" onClick={loadUsers} disabled={loading}>
+          <button
+            className="btn secondary"
+            onClick={loadUsers}
+            disabled={loading}
+          >
             <IconRefresh className={loading ? "spin" : ""} />
             Обновить
           </button>
@@ -145,7 +150,9 @@ function UsersList() {
             className="admin-search-input"
           />
         </div>
-        <button type="submit" className="btn">Найти</button>
+        <button type="submit" className="btn">
+          Найти
+        </button>
       </form>
 
       {error && (
@@ -189,11 +196,17 @@ function UsersList() {
                     <td className="admin-table-email">
                       <Link to={`/admin/users/${user.id}`}>{user.email}</Link>
                     </td>
-                    <td className="admin-table-date">{formatDate(user.created_at)}</td>
-                    <td className="admin-table-date">{formatDate(user.last_login_at)}</td>
+                    <td className="admin-table-date">
+                      {formatDate(user.created_at)}
+                    </td>
+                    <td className="admin-table-date">
+                      {formatDate(user.last_login_at)}
+                    </td>
                     <td>{user.projects_count}</td>
                     <td>
-                      <span className={`admin-badge admin-badge-${user.subscription_status}`}>
+                      <span
+                        className={`admin-badge admin-badge-${user.subscription_status}`}
+                      >
                         {user.subscription_status}
                       </span>
                     </td>
@@ -205,7 +218,7 @@ function UsersList() {
                       )}
                     </td>
                     <td className="admin-table-actions">
-                      <Link 
+                      <Link
                         to={`/admin/users/${user.id}`}
                         className="admin-action-btn"
                         title="Просмотр"
@@ -215,9 +228,16 @@ function UsersList() {
                       <button
                         className="admin-action-btn"
                         onClick={() => toggleAdmin(user.id, user.is_admin)}
-                        title={user.is_admin ? "Убрать права админа" : "Дать права админа"}
+                        title={
+                          user.is_admin
+                            ? "Убрать права админа"
+                            : "Дать права админа"
+                        }
                       >
-                        <IconShield size="sm" className={user.is_admin ? "text-accent" : ""} />
+                        <IconShield
+                          size="sm"
+                          className={user.is_admin ? "text-accent" : ""}
+                        />
                       </button>
                     </td>
                   </tr>
@@ -270,8 +290,8 @@ function UserDetail() {
     try {
       const result = await apiAdminGetUser(userId);
       setData(result);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -288,8 +308,8 @@ function UserDetail() {
     try {
       await apiAdminBlockUser(userId, true, reason || undefined);
       await load();
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -301,8 +321,8 @@ function UserDetail() {
     try {
       await apiAdminBlockUser(userId, false);
       await load();
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -315,8 +335,8 @@ function UserDetail() {
     try {
       const result = await apiAdminResetPassword(userId);
       setTempPassword(result.tempPassword);
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -324,14 +344,19 @@ function UserDetail() {
 
   async function handleDelete() {
     if (!userId || !data) return;
-    if (!confirm(`Удалить пользователя ${data.user.email}? Это действие необратимо!`)) return;
+    if (
+      !confirm(
+        `Удалить пользователя ${data.user.email}? Это действие необратимо!`,
+      )
+    )
+      return;
     if (!confirm("Вы уверены? Все данные пользователя будут удалены!")) return;
     setActionLoading(true);
     try {
       await apiAdminDeleteUser(userId);
       navigate("/admin/users");
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -351,7 +376,9 @@ function UserDetail() {
   if (error || !data) {
     return (
       <div className="admin-page">
-        <div className="alert admin-alert">{error || "Пользователь не найден"}</div>
+        <div className="alert admin-alert">
+          {error || "Пользователь не найден"}
+        </div>
         <Link to="/admin/users" className="btn secondary">
           <IconArrowLeft /> Назад
         </Link>
@@ -363,7 +390,10 @@ function UserDetail() {
   const isBlocked = (user as any).is_blocked;
 
   // Group activity by date
-  const activityByDate: Record<string, { total: number; duration: number; types: string[] }> = {};
+  const activityByDate: Record<
+    string,
+    { total: number; duration: number; types: string[] }
+  > = {};
   recentActivity.forEach((a) => {
     if (!activityByDate[a.date]) {
       activityByDate[a.date] = { total: 0, duration: 0, types: [] };
@@ -395,7 +425,9 @@ function UserDetail() {
                 <IconLock size="sm" /> Заблокирован
               </span>
             )}
-            <span className={`admin-badge admin-badge-${user.subscription_status}`}>
+            <span
+              className={`admin-badge admin-badge-${user.subscription_status}`}
+            >
               {user.subscription_status}
             </span>
           </div>
@@ -478,11 +510,15 @@ function UserDetail() {
               </div>
               <div className="admin-info-item">
                 <span className="admin-info-label">Зарегистрирован</span>
-                <span className="admin-info-value">{formatDate(user.created_at)}</span>
+                <span className="admin-info-value">
+                  {formatDate(user.created_at)}
+                </span>
               </div>
               <div className="admin-info-item">
                 <span className="admin-info-label">Последний вход</span>
-                <span className="admin-info-value">{formatDate(user.last_login_at)}</span>
+                <span className="admin-info-value">
+                  {formatDate(user.last_login_at)}
+                </span>
               </div>
               <div className="admin-info-item">
                 <span className="admin-info-label">Проектов создано</span>
@@ -503,7 +539,10 @@ function UserDetail() {
               <IconChartBar size="sm" />
               Активность (30 дней)
             </h3>
-            <Link to={`/admin/activity?userId=${user.id}`} className="admin-card-link">
+            <Link
+              to={`/admin/activity?userId=${user.id}`}
+              className="admin-card-link"
+            >
               Подробнее
             </Link>
           </div>
@@ -514,7 +553,9 @@ function UserDetail() {
                   .slice(0, 7)
                   .map(([date, info]) => (
                     <div key={date} className="admin-activity-day">
-                      <span className="admin-activity-date">{formatShortDate(date)}</span>
+                      <span className="admin-activity-date">
+                        {formatShortDate(date)}
+                      </span>
                       <div className="admin-activity-bar-wrapper">
                         <div
                           className="admin-activity-bar"
@@ -522,7 +563,8 @@ function UserDetail() {
                         />
                       </div>
                       <span className="admin-activity-count">
-                        {info.total} действий · {Math.round(info.duration / 60)} мин
+                        {info.total} действий · {Math.round(info.duration / 60)}{" "}
+                        мин
                       </span>
                     </div>
                   ))}
@@ -549,7 +591,8 @@ function UserDetail() {
                     <div className="admin-project-info">
                       <span className="admin-project-name">{project.name}</span>
                       <span className="admin-project-meta">
-                        {project.documents_count} док. · {project.articles_count} статей
+                        {project.documents_count} док. ·{" "}
+                        {project.articles_count} статей
                       </span>
                     </div>
                     <span className="admin-project-date">
@@ -579,7 +622,10 @@ function UserDetail() {
                   <div key={session.id} className="admin-session-item">
                     <div className="admin-session-status">
                       {session.is_active ? (
-                        <span className="admin-status-dot active" title="Активна" />
+                        <span
+                          className="admin-status-dot active"
+                          title="Активна"
+                        />
                       ) : (
                         <span className="admin-status-dot" title="Завершена" />
                       )}
@@ -587,10 +633,12 @@ function UserDetail() {
                     <div className="admin-session-info">
                       <span className="admin-session-time">
                         {formatDate(session.started_at)}
-                        {session.ended_at && ` — ${formatDate(session.ended_at)}`}
+                        {session.ended_at &&
+                          ` — ${formatDate(session.ended_at)}`}
                       </span>
                       <span className="admin-session-meta">
-                        {session.ip_address} · {session.user_agent?.slice(0, 50)}...
+                        {session.ip_address} ·{" "}
+                        {session.user_agent?.slice(0, 50)}...
                       </span>
                     </div>
                   </div>

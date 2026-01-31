@@ -134,7 +134,12 @@ export type ResearchType =
   | "other";
 
 // Протоколы исследований
-export type ResearchProtocol = "CARE" | "STROBE" | "CONSORT" | "PRISMA" | "OTHER";
+export type ResearchProtocol =
+  | "CARE"
+  | "STROBE"
+  | "CONSORT"
+  | "PRISMA"
+  | "OTHER";
 
 // Пагинация
 export interface PaginationParams {
@@ -168,4 +173,58 @@ export interface OperationProgress {
   total: number;
   phase?: string;
   message?: string;
+}
+
+// === Типы для графа цитирований ===
+
+// Узел графа с координатами (после рендеринга)
+export interface GraphNodeWithCoords {
+  id: string;
+  label: string;
+  title?: string;
+  title_ru?: string;
+  abstract?: string;
+  abstract_ru?: string;
+  authors?: string | string[];
+  journal?: string;
+  year: number | null;
+  status: string;
+  doi: string | null;
+  pmid?: string | null;
+  citedByCount?: number;
+  graphLevel?: number;
+  statsQuality?: number;
+  source?: string;
+  // Координаты после рендеринга D3
+  x?: number;
+  y?: number;
+  vx?: number;
+  vy?: number;
+  fx?: number | null;
+  fy?: number | null;
+}
+
+// Статья в деталях кластера
+export interface ClusterArticleDetail {
+  id: string;
+  title: string;
+  year: number | null;
+  authors: string | null;
+  status: string;
+  pmid: string | null;
+  doi: string | null;
+}
+
+// Ошибка API
+export interface ApiError extends Error {
+  status?: number;
+  code?: string;
+}
+
+// Хелпер для извлечения сообщения ошибки
+export function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
 }

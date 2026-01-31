@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminStats,
   apiAdminSystemOverview,
@@ -150,8 +151,8 @@ export default function AdminDashboard() {
       setOverview(overviewData);
       setExtended(extendedData);
       setRealtime(realtimeData);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки данных");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

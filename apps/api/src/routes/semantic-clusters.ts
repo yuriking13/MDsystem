@@ -387,24 +387,75 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         const clusteredIds = new Set(clusters.flatMap((c) => c.articleIds));
         const totalArticles = parseInt(totalResult.rows[0]?.total || "0");
 
+        // Получаем некластеризованные статьи (статьи с embeddings, но не в кластерах)
+        const unclusteredResult = await pool.query(
+          `WITH project_article_ids AS (
+            SELECT a.id FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            WHERE pa.project_id = $1 AND pa.status != 'deleted'
+          ),
+          reference_article_ids AS (
+            SELECT DISTINCT ref_article.id
+            FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
+            JOIN articles ref_article ON ref_article.pmid = ref_pmid
+            WHERE pa.project_id = $1 AND pa.status != 'deleted'
+          ),
+          cited_by_article_ids AS (
+            SELECT DISTINCT cited_article.id
+            FROM articles a
+            JOIN project_articles pa ON pa.article_id = a.id
+            CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+            JOIN articles cited_article ON cited_article.pmid = cited_pmid
+            WHERE pa.project_id = $1 AND pa.status != 'deleted'
+          ),
+          all_graph_article_ids AS (
+            SELECT id FROM project_article_ids
+            UNION SELECT id FROM reference_article_ids
+            UNION SELECT id FROM cited_by_article_ids
+          ),
+          clustered_article_ids AS (
+            SELECT article_id FROM semantic_cluster_articles sca
+            JOIN semantic_clusters sc ON sc.id = sca.cluster_id
+            WHERE sc.project_id = $1
+          )
+          SELECT a.id, a.title_en, a.title_ru, a.year
+          FROM all_graph_article_ids ag
+          JOIN article_embeddings ae ON ae.article_id = ag.id
+          JOIN articles a ON a.id = ag.id
+          WHERE ag.id NOT IN (SELECT article_id FROM clustered_article_ids)
+          ORDER BY a.year DESC NULLS LAST
+          LIMIT 100`,
+          [projectId],
+        );
+
+        const unclustered = unclusteredResult.rows.map((row) => ({
+          id: row.id,
+          title: row.title_ru || row.title_en,
+          year: row.year,
+        }));
+
         return {
           clusters,
-          unclustered: [], // TODO: получить некластеризованные статьи
+          unclustered,
           stats: {
             totalClusters: clusters.length,
             totalArticles,
             clusteredArticles: clusteredIds.size,
+            unclusteredArticles: totalArticles - clusteredIds.size,
             avgClusterSize:
               clusters.length > 0
                 ? Math.round(clusteredIds.size / clusters.length)
                 : 0,
           },
         };
-      } catch (error: any) {
-        fastify.log.error("Get semantic clusters error:", error);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        fastify.log.error({ error: message }, "Get semantic clusters error");
         return reply.code(500).send({
           error: "Failed to get semantic clusters",
-          details: error.message,
+          details: message,
         });
       }
     },

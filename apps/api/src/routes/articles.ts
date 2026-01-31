@@ -1093,7 +1093,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 }
               }
             } catch (err) {
-              console.error("Translation batch error:", err);
+              log.error("Translation batch error:", err);
             }
           }
         }
@@ -1162,11 +1162,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                     );
                   }
                 } catch (err) {
-                  console.error("Stats update error:", err);
+                  log.error("Stats update error:", err);
                 }
               }
             } catch (err) {
-              console.error("AI stats detection error:", err);
+              log.error("AI stats detection error:", err);
             }
           }
         }
@@ -1570,7 +1570,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         try {
           reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
         } catch (err) {
-          console.error("SSE write error:", err);
+          log.error("SSE write error:", err);
         }
       };
 
@@ -1624,7 +1624,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 [tr.title_ru || null, tr.abstract_ru || null, articleId],
               );
             } catch (err) {
-              console.error("DB update error:", err);
+              log.error("DB update error:", err);
             }
           }
         } else {
@@ -1654,7 +1654,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 }
               }
             } catch (err) {
-              console.error("Translation batch error:", err);
+              log.error("Translation batch error:", err);
               failed += batch.length;
             }
 
@@ -1689,7 +1689,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           message: `Переведено ${translated} из ${toTranslate.rows.length} статей за ${Math.round(elapsedSeconds)}с`,
         });
       } catch (err) {
-        console.error("Translation error:", err);
+        log.error("Translation error:", err);
         sendEvent("error", {
           error: err instanceof Error ? err.message : "Unknown error",
         });
@@ -1768,7 +1768,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         try {
           reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
         } catch (err) {
-          console.error("SSE write error:", err);
+          log.error("SSE write error:", err);
         }
       };
 
@@ -1815,7 +1815,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               [JSON.stringify({ crossref: data }), articleId],
             );
           } catch (err) {
-            console.error("DB update error:", err);
+            log.error("DB update error:", err);
           }
         }
 
@@ -1832,7 +1832,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           message: `Обогащено ${enriched} из ${toEnrich.rows.length} статей за ${Math.round(elapsedSeconds)}с`,
         });
       } catch (err) {
-        console.error("Enrichment error:", err);
+        log.error("Enrichment error:", err);
         sendEvent("error", {
           error: err instanceof Error ? err.message : "Unknown error",
         });
@@ -2319,7 +2319,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             await handleArticle(article);
           }
         } catch (err) {
-          console.error("Import from graph (PubMed) error:", err);
+          log.error("Import from graph (PubMed) error:", err);
         }
       }
 
@@ -2371,7 +2371,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
           await handleArticle(article);
         } catch (err) {
-          console.error("Import from graph (Crossref) error for", doi, err);
+          log.error("Import from graph (Crossref) error for", doi, {
+            error: err instanceof Error ? err.message : String(err),
+          });
           skipped++;
         }
       }
@@ -2632,7 +2634,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         try {
           reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
         } catch (err) {
-          console.error("SSE write error:", err);
+          log.error("SSE write error:", err);
         }
       };
 
@@ -2712,7 +2714,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               );
             }
           } catch (err) {
-            console.error("DB update error:", err);
+            log.error("DB update error:", err);
           }
         }
 
@@ -2729,7 +2731,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           message: `Проанализировано ${analyzed} статей, найдено статистики в ${found} за ${Math.round(elapsedSeconds)}с`,
         });
       } catch (err) {
-        console.error("AI stats detection error:", err);
+        log.error("AI stats detection error:", err);
         sendEvent("error", {
           error: err instanceof Error ? err.message : "Unknown error",
         });
@@ -2818,7 +2820,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
         return reply.code(404).send({ ok: false, error: "Article not found" });
       } catch (err) {
-        console.error(`Error fetching PMID ${pmid} from PubMed:`, err);
+        log.error(`Error fetching PMID ${pmid} from PubMed:`, err);
         return reply
           .code(500)
           .send({ ok: false, error: "Failed to fetch from PubMed" });
@@ -2878,10 +2880,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               [result.title_ru || null, result.abstract_ru || null, pmid],
             );
           } catch (saveErr) {
-            console.error(
-              `Failed to save translation for PMID ${pmid}:`,
-              saveErr,
-            );
+            log.error(`Failed to save translation for PMID ${pmid}:`, saveErr);
             // Не возвращаем ошибку - перевод всё равно получен
           }
         }
@@ -2892,7 +2891,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           abstract_ru: result.abstract_ru || null,
         };
       } catch (err: any) {
-        console.error("Translation error:", err);
+        log.error("Translation error:", err);
         return reply.code(500).send({
           ok: false,
           error: err?.message || "Translation failed",
@@ -3361,7 +3360,7 @@ ${articlesForAI || "Нет статей с полными данными для 
           },
         };
       } catch (err: any) {
-        console.error("Graph AI Assistant error:", err);
+        log.error("Graph AI Assistant error:", err);
         return reply.code(500).send({
           ok: false,
           error: err?.message || "AI Assistant error",
@@ -3543,7 +3542,7 @@ ${articlesForAI || "Нет статей с полными данными для 
 
               bibliographyAdded++;
             } catch (err) {
-              console.error("Error importing bibliography reference:", err);
+              log.error("Error importing bibliography reference:", err);
             }
           }
         }

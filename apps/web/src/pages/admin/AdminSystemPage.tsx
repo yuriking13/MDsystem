@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetHealth,
   apiAdminGetConfig,
@@ -48,8 +49,8 @@ export default function AdminSystemPage() {
       ]);
       setHealth(healthData);
       setConfig(configData);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки");
+    } catch (err) {
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -62,21 +63,21 @@ export default function AdminSystemPage() {
     return () => clearInterval(interval);
   }, []);
 
-  async function handleCleanup(type: 'cache' | 'sessions' | 'activity') {
+  async function handleCleanup(type: "cache" | "sessions" | "activity") {
     setCleanupLoading(type);
     try {
       let result;
-      if (type === 'cache') {
+      if (type === "cache") {
         result = await apiAdminCleanupExpiredCache();
-      } else if (type === 'sessions') {
+      } else if (type === "sessions") {
         result = await apiAdminCleanupOldSessions(30);
       } else {
         result = await apiAdminCleanupOldActivity(90);
       }
       alert(`Удалено записей: ${result.deletedCount}`);
       loadData();
-    } catch (err: any) {
-      alert(err?.message || "Ошибка");
+    } catch (err) {
+      alert(getErrorMessage(err));
     } finally {
       setCleanupLoading(null);
     }
@@ -121,7 +122,9 @@ export default function AdminSystemPage() {
         <div className="admin-card">
           <div className="admin-card-header">
             <h3>База данных</h3>
-            <span className={`admin-badge ${health?.database.active_connections && health.database.active_connections < health.database.max_connections * 0.8 ? 'admin-badge-success' : 'admin-badge-warning'}`}>
+            <span
+              className={`admin-badge ${health?.database.active_connections && health.database.active_connections < health.database.max_connections * 0.8 ? "admin-badge-success" : "admin-badge-warning"}`}
+            >
               {health?.database.active_connections || 0} активных
             </span>
           </div>
@@ -136,15 +139,16 @@ export default function AdminSystemPage() {
               <div className="admin-info-item">
                 <span className="admin-info-label">Соединения</span>
                 <span className="admin-info-value">
-                  {health?.database.total_connections || 0} / {health?.database.max_connections || 0}
+                  {health?.database.total_connections || 0} /{" "}
+                  {health?.database.max_connections || 0}
                 </span>
               </div>
               <div className="admin-info-item">
                 <span className="admin-info-label">Пул соединений</span>
                 <span className="admin-info-value">
-                  Всего: {health?.pool.totalCount || 0}, 
-                  Свободно: {health?.pool.idleCount || 0}, 
-                  Ожидают: {health?.pool.waitingCount || 0}
+                  Всего: {health?.pool.totalCount || 0}, Свободно:{" "}
+                  {health?.pool.idleCount || 0}, Ожидают:{" "}
+                  {health?.pool.waitingCount || 0}
                 </span>
               </div>
             </div>
@@ -177,7 +181,8 @@ export default function AdminSystemPage() {
               <div className="admin-info-item">
                 <span className="admin-info-label">Память (Heap)</span>
                 <span className="admin-info-value mono">
-                  {formatBytes(health?.memory.heapUsed || 0)} / {formatBytes(health?.memory.heapTotal || 0)}
+                  {formatBytes(health?.memory.heapUsed || 0)} /{" "}
+                  {formatBytes(health?.memory.heapTotal || 0)}
                 </span>
               </div>
               <div className="admin-info-item">
@@ -205,18 +210,22 @@ export default function AdminSystemPage() {
               </div>
               <div className="admin-info-item">
                 <span className="admin-info-label">Истёкших</span>
-                <span className={`admin-info-value ${(health?.cache.expired_entries || 0) > 0 ? 'text-warning' : ''}`}>
+                <span
+                  className={`admin-info-value ${(health?.cache.expired_entries || 0) > 0 ? "text-warning" : ""}`}
+                >
                   {health?.cache.expired_entries || 0}
                 </span>
               </div>
             </div>
             <button
               className="btn secondary mt-3"
-              onClick={() => handleCleanup('cache')}
-              disabled={cleanupLoading === 'cache'}
+              onClick={() => handleCleanup("cache")}
+              disabled={cleanupLoading === "cache"}
             >
               <IconTrash size="sm" />
-              {cleanupLoading === 'cache' ? 'Очистка...' : 'Очистить истёкший кэш'}
+              {cleanupLoading === "cache"
+                ? "Очистка..."
+                : "Очистить истёкший кэш"}
             </button>
           </div>
         </div>
@@ -229,7 +238,9 @@ export default function AdminSystemPage() {
           <div className="admin-card-content">
             <div className="admin-info-list">
               <div className="admin-info-item">
-                <span className="admin-info-label">Проектов на пользователя</span>
+                <span className="admin-info-label">
+                  Проектов на пользователя
+                </span>
                 <span className="admin-info-value">
                   {config?.config.maxProjectsPerUser || "—"}
                 </span>
@@ -247,7 +258,9 @@ export default function AdminSystemPage() {
                 </span>
               </div>
               <div className="admin-info-item">
-                <span className="admin-info-label">Хранилище на пользователя</span>
+                <span className="admin-info-label">
+                  Хранилище на пользователя
+                </span>
                 <span className="admin-info-value">
                   {config?.config.maxStoragePerUserMb || "—"} MB
                 </span>
@@ -264,15 +277,21 @@ export default function AdminSystemPage() {
           <div className="admin-card-content">
             <div className="admin-features-list">
               <div className="admin-feature-item">
-                <span className={`admin-feature-status ${config?.config.features.aiErrorAnalysis ? 'active' : ''}`}></span>
+                <span
+                  className={`admin-feature-status ${config?.config.features.aiErrorAnalysis ? "active" : ""}`}
+                ></span>
                 <span>AI анализ ошибок</span>
               </div>
               <div className="admin-feature-item">
-                <span className={`admin-feature-status ${config?.config.features.aiProtocolCheck ? 'active' : ''}`}></span>
+                <span
+                  className={`admin-feature-status ${config?.config.features.aiProtocolCheck ? "active" : ""}`}
+                ></span>
                 <span>AI проверка протокола</span>
               </div>
               <div className="admin-feature-item">
-                <span className={`admin-feature-status ${config?.config.features.fileExtraction ? 'active' : ''}`}></span>
+                <span
+                  className={`admin-feature-status ${config?.config.features.fileExtraction ? "active" : ""}`}
+                ></span>
                 <span>Извлечение из файлов</span>
               </div>
             </div>
@@ -322,11 +341,11 @@ export default function AdminSystemPage() {
                 </div>
                 <button
                   className="btn secondary"
-                  onClick={() => handleCleanup('sessions')}
-                  disabled={cleanupLoading === 'sessions'}
+                  onClick={() => handleCleanup("sessions")}
+                  disabled={cleanupLoading === "sessions"}
                 >
                   <IconTrash size="sm" />
-                  {cleanupLoading === 'sessions' ? 'Очистка...' : 'Очистить'}
+                  {cleanupLoading === "sessions" ? "Очистка..." : "Очистить"}
                 </button>
               </div>
               <div className="admin-cleanup-item">
@@ -336,11 +355,11 @@ export default function AdminSystemPage() {
                 </div>
                 <button
                   className="btn secondary"
-                  onClick={() => handleCleanup('activity')}
-                  disabled={cleanupLoading === 'activity'}
+                  onClick={() => handleCleanup("activity")}
+                  disabled={cleanupLoading === "activity"}
                 >
                   <IconTrash size="sm" />
-                  {cleanupLoading === 'activity' ? 'Очистка...' : 'Очистить'}
+                  {cleanupLoading === "activity" ? "Очистка..." : "Очистить"}
                 </button>
               </div>
             </div>

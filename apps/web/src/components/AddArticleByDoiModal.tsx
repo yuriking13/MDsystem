@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { getErrorMessage } from "../lib/errorUtils";
 import { apiAddArticleByDoi } from "../lib/api";
 
 type Props = {
@@ -7,7 +8,11 @@ type Props = {
   onSuccess: () => void;
 };
 
-export default function AddArticleByDoiModal({ projectId, onClose, onSuccess }: Props) {
+export default function AddArticleByDoiModal({
+  projectId,
+  onClose,
+  onSuccess,
+}: Props) {
   const [doi, setDoi] = useState("");
   const [status, setStatus] = useState<"candidate" | "selected">("candidate");
   const [loading, setLoading] = useState(false);
@@ -15,27 +20,29 @@ export default function AddArticleByDoiModal({ projectId, onClose, onSuccess }: 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
+
     if (!doi.trim()) {
       setError("Введите DOI");
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     try {
       const result = await apiAddArticleByDoi(projectId, doi.trim(), status);
-      
+
       // Успешно добавлено
       alert(result.message);
       onSuccess();
       onClose();
     } catch (err: any) {
-      const errMsg = err?.message || "Ошибка добавления статьи";
-      
+      const errMsg = getErrorMessage(err);
+
       if (errMsg.includes("404")) {
-        setError("Статья с таким DOI не найдена в базе Crossref. Проверьте правильность DOI.");
+        setError(
+          "Статья с таким DOI не найдена в базе Crossref. Проверьте правильность DOI.",
+        );
       } else if (errMsg.includes("409")) {
         setError("Эта статья уже добавлена в проект.");
       } else if (errMsg.includes("403")) {
@@ -50,7 +57,11 @@ export default function AddArticleByDoiModal({ projectId, onClose, onSuccess }: 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "500px" }}>
+      <div
+        className="modal"
+        onClick={(e) => e.stopPropagation()}
+        style={{ maxWidth: "500px" }}
+      >
         <div className="modal-header">
           <h2>Добавить статью по DOI</h2>
           <button className="close-btn" onClick={onClose} disabled={loading}>
@@ -60,7 +71,9 @@ export default function AddArticleByDoiModal({ projectId, onClose, onSuccess }: 
 
         <form onSubmit={handleSubmit} className="modal-body">
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500 }}>
+            <label
+              style={{ display: "block", marginBottom: "8px", fontWeight: 500 }}
+            >
               DOI статьи
             </label>
             <input
@@ -78,17 +91,24 @@ export default function AddArticleByDoiModal({ projectId, onClose, onSuccess }: 
               }}
               autoFocus
             />
-            <small style={{ color: "#666", marginTop: "4px", display: "block" }}>
-              Введите полный DOI статьи. Данные будут загружены из базы Crossref.
+            <small
+              style={{ color: "#666", marginTop: "4px", display: "block" }}
+            >
+              Введите полный DOI статьи. Данные будут загружены из базы
+              Crossref.
             </small>
           </div>
 
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "8px", fontWeight: 500 }}>
+            <label
+              style={{ display: "block", marginBottom: "8px", fontWeight: 500 }}
+            >
               Статус в проекте
             </label>
             <div style={{ display: "flex", gap: "12px" }}>
-              <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <label
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              >
                 <input
                   type="radio"
                   value="candidate"
@@ -98,7 +118,9 @@ export default function AddArticleByDoiModal({ projectId, onClose, onSuccess }: 
                 />
                 Кандидат
               </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <label
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              >
                 <input
                   type="radio"
                   value="selected"

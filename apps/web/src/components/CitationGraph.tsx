@@ -53,6 +53,7 @@ import {
   type GapAnalysisItem,
   type SmartSemanticSearchResult,
 } from "../lib/api";
+import { getErrorMessage } from "../lib/errorUtils";
 import {
   IconInfoCircle,
   IconLinkChain,
@@ -89,6 +90,7 @@ import {
   IconStar,
   IconCheckCircle,
 } from "./FlowbiteIcons";
+import type { GraphNodeWithCoords, ClusterArticleDetail } from "../types";
 
 type Props = {
   projectId: string;
@@ -398,7 +400,21 @@ export default function CitationGraph({ projectId }: Props) {
   const [globalLang, setGlobalLang] = useState<"en" | "ru">("en");
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<any>(null);
+  // ForceGraph2D ref - тип any необходим из-за отсутствия типов в библиотеке
+  const graphRef = useRef<{
+    centerAt: (x: number, y: number, duration?: number) => void;
+    zoom: (zoom: number, duration?: number) => void;
+    d3Force: (
+      name: string,
+    ) =>
+      | {
+          strength?: (val: number) => void;
+          distanceMax?: (val: number) => void;
+          distance?: (val: number) => void;
+        }
+      | undefined;
+    d3ReheatSimulation: () => void;
+  } | null>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   // === ФИЛЬТРАЦИЯ ДАННЫХ ГРАФА ПО МЕТОДОЛОГИИ ===
@@ -551,9 +567,9 @@ export default function CitationGraph({ projectId }: Props) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Export failed:", err);
-      alert(`Ошибка экспорта: ${err.message}`);
+      alert(`Ошибка экспорта: ${getErrorMessage(err)}`);
     }
   };
 
@@ -564,9 +580,9 @@ export default function CitationGraph({ projectId }: Props) {
       const result = await apiGetGraphRecommendations(projectId);
       setRecommendations(result.recommendations);
       setShowRecommendations(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load recommendations:", err);
-      alert(`Ошибка загрузки рекомендаций: ${err.message}`);
+      alert(`Ошибка загрузки рекомендаций: ${getErrorMessage(err)}`);
     } finally {
       setLoadingRecommendations(false);
     }
@@ -579,7 +595,7 @@ export default function CitationGraph({ projectId }: Props) {
     try {
       const stats = await apiGetEmbeddingStats(projectId);
       setEmbeddingStats(stats);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load embedding stats:", err);
     }
   };
@@ -589,7 +605,7 @@ export default function CitationGraph({ projectId }: Props) {
     try {
       const stats = await apiGetMissingArticlesStats(projectId);
       setMissingArticlesStats(stats);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load missing articles stats:", err);
     }
   };
@@ -621,9 +637,9 @@ export default function CitationGraph({ projectId }: Props) {
       if (result.jobId && result.status !== "completed") {
         pollEmbeddingJob(result.jobId);
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to start embeddings generation:", err);
-      setEmbeddingMessage(`Ошибка: ${err.message}`);
+      setEmbeddingMessage(`Ошибка: ${getErrorMessage(err)}`);
       setGeneratingEmbeddings(false);
     }
   };
@@ -678,9 +694,9 @@ export default function CitationGraph({ projectId }: Props) {
         await loadEmbeddingStats();
         await loadMissingArticlesStats();
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to poll embedding job:", err);
-      setEmbeddingMessage(`Ошибка получения статуса: ${err.message}`);
+      setEmbeddingMessage(`Ошибка получения статуса: ${getErrorMessage(err)}`);
       setGeneratingEmbeddings(false);
     }
   };
@@ -692,9 +708,9 @@ export default function CitationGraph({ projectId }: Props) {
     try {
       await apiCancelEmbeddingJob(projectId, embeddingJob.jobId);
       setEmbeddingMessage("Отмена...");
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to cancel embedding job:", err);
-      setEmbeddingMessage(`Ошибка отмены: ${err.message}`);
+      setEmbeddingMessage(`Ошибка отмены: ${getErrorMessage(err)}`);
     }
   };
 
@@ -711,9 +727,9 @@ export default function CitationGraph({ projectId }: Props) {
         semanticThreshold,
       );
       setSemanticResults(result.results);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Semantic search failed:", err);
-      alert(`Ошибка поиска: ${err.message}`);
+      alert(`Ошибка поиска: ${getErrorMessage(err)}`);
     } finally {
       setSemanticSearching(false);
     }
@@ -728,9 +744,9 @@ export default function CitationGraph({ projectId }: Props) {
         semanticEdgeThreshold,
       );
       setSemanticEdges(result.edges);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load semantic edges:", err);
-      alert(`Ошибка загрузки семантических связей: ${err.message}`);
+      alert(`Ошибка загрузки семантических связей: ${getErrorMessage(err)}`);
     } finally {
       setLoadingSemanticEdges(false);
     }
@@ -763,7 +779,7 @@ export default function CitationGraph({ projectId }: Props) {
     try {
       const result = await apiGetSemanticClusters(projectId);
       setSemanticClusters(result.clusters);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load semantic clusters:", err);
     } finally {
       setLoadingSemanticClusters(false);
@@ -793,9 +809,11 @@ export default function CitationGraph({ projectId }: Props) {
       );
       setSemanticClusters(result.clusters);
       setShowSemanticClustersPanel(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to create semantic clusters:", err);
-      if (err.message?.includes("Not enough articles with embeddings")) {
+      if (
+        getErrorMessage(err)?.includes("Not enough articles with embeddings")
+      ) {
         alert(
           `Недостаточно статей с embeddings.\n\n` +
             `Пожалуйста, сначала создайте embeddings:\n` +
@@ -803,7 +821,7 @@ export default function CitationGraph({ projectId }: Props) {
             `2. Нажмите "Создать embeddings" и дождитесь завершения`,
         );
       } else {
-        alert(`Ошибка создания кластеров: ${err.message}`);
+        alert(`Ошибка создания кластеров: ${getErrorMessage(err)}`);
       }
     } finally {
       setCreatingSemanticClusters(false);
@@ -853,9 +871,9 @@ export default function CitationGraph({ projectId }: Props) {
       });
 
       setClusterDetailModal({ cluster, articles });
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to load cluster details:", err);
-      alert(`Ошибка загрузки деталей кластера: ${err.message}`);
+      alert(`Ошибка загрузки деталей кластера: ${getErrorMessage(err)}`);
     } finally {
       setLoadingClusterDetails(false);
     }
@@ -922,9 +940,9 @@ export default function CitationGraph({ projectId }: Props) {
       setTimeout(() => {
         loadGraph(getGraphOptions());
       }, 500);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to add cluster articles:", err);
-      alert(`Ошибка добавления статей: ${err.message}`);
+      alert(`Ошибка добавления статей: ${getErrorMessage(err)}`);
     } finally {
       setAddingFromCluster(false);
     }
@@ -937,9 +955,9 @@ export default function CitationGraph({ projectId }: Props) {
       await apiDeleteSemanticClusters(projectId);
       setSemanticClusters([]);
       setSelectedSemanticCluster(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to delete semantic clusters:", err);
-      alert(`Ошибка удаления кластеров: ${err.message}`);
+      alert(`Ошибка удаления кластеров: ${getErrorMessage(err)}`);
     }
   };
 
@@ -975,9 +993,9 @@ export default function CitationGraph({ projectId }: Props) {
       );
       setGapAnalysisResults(result.gaps);
       setShowGapAnalysis(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Gap analysis failed:", err);
-      alert(`Ошибка анализа пробелов: ${err.message}`);
+      alert(`Ошибка анализа пробелов: ${getErrorMessage(err)}`);
     } finally {
       setLoadingGapAnalysis(false);
     }
@@ -991,9 +1009,9 @@ export default function CitationGraph({ projectId }: Props) {
       const result = await apiAnalyzeMethodologies(projectId);
       setMethodologyClusters(result.clusters);
       setShowMethodologyClusters(true);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Failed to analyze methodologies:", err);
-      alert(`Ошибка анализа: ${err.message}`);
+      alert(`Ошибка анализа: ${getErrorMessage(err)}`);
     } finally {
       setAnalyzingMethodologies(false);
     }
@@ -1089,8 +1107,8 @@ export default function CitationGraph({ projectId }: Props) {
             (n.statsQuality || 0) > 0, // Есть P-value
         ).length;
         setPValueArticlesCount(externalWithPValue);
-      } catch (err: any) {
-        setError(err?.message || "Ошибка загрузки графа");
+      } catch (err) {
+        setError(getErrorMessage(err));
       } finally {
         setLoading(false);
       }
@@ -1272,9 +1290,9 @@ export default function CitationGraph({ projectId }: Props) {
         setTimeout(() => setRefsMessage(null), 5000);
         setFetchingRefs(false);
       }
-    } catch (err: any) {
+    } catch (err) {
       setFetchJobStatus(null);
-      setRefsMessage(err?.message || "Ошибка запуска загрузки");
+      setRefsMessage(getErrorMessage(err));
       setTimeout(() => setRefsMessage(null), 7000);
       setFetchingRefs(false);
     }
@@ -1349,7 +1367,7 @@ export default function CitationGraph({ projectId }: Props) {
   }, [data]);
 
   const nodeColor = useCallback(
-    (node: any) => {
+    (node: GraphNodeWithCoords) => {
       const status = node.status;
       const level = node.graphLevel ?? 1;
       const statsQ = node.statsQuality || 0;
@@ -1396,7 +1414,7 @@ export default function CitationGraph({ projectId }: Props) {
   );
 
   const nodeLabel = useCallback(
-    (node: any) => {
+    (node: GraphNodeWithCoords) => {
       const citedByCount = node.citedByCount || 0;
       const level = node.graphLevel ?? 1;
       const statsQ = node.statsQuality || 0;
@@ -1452,7 +1470,7 @@ export default function CitationGraph({ projectId }: Props) {
 
   // Размер узла зависит от количества цитирований - как в ResearchRabbit
   const nodeVal = useCallback(
-    (node: any) => {
+    (node: GraphNodeWithCoords) => {
       const citedByCount = node.citedByCount || 0;
       const level = node.graphLevel ?? 1;
       const statsQ = node.statsQuality || 0;
@@ -1737,11 +1755,11 @@ export default function CitationGraph({ projectId }: Props) {
           { role: "assistant", content: `❌ ${res.error || "Ошибка"}` },
         ]);
       }
-    } catch (err: any) {
-      setAiError(err?.message || "Ошибка отправки");
+    } catch (err) {
+      setAiError(getErrorMessage(err));
       setAiHistory((prev) => [
         ...prev,
-        { role: "assistant", content: `❌ ${err?.message || "Ошибка"}` },
+        { role: "assistant", content: `❌ ${getErrorMessage(err)}` },
       ]);
     } finally {
       setAiLoading(false);
@@ -1783,8 +1801,8 @@ export default function CitationGraph({ projectId }: Props) {
       setTimeout(() => {
         loadGraph(getGraphOptions());
       }, 500);
-    } catch (err: any) {
-      setImportMessage(`❌ Ошибка: ${err?.message || "Неизвестная ошибка"}`);
+    } catch (err) {
+      setImportMessage(`❌ Ошибка: ${getErrorMessage(err)}`);
       // Автоматически скрываем уведомление об ошибке через 7 секунд
       setTimeout(() => setImportMessage(null), 7000);
     } finally {
@@ -1861,8 +1879,8 @@ export default function CitationGraph({ projectId }: Props) {
       setTimeout(() => {
         loadGraph(getGraphOptions());
       }, 500);
-    } catch (err: any) {
-      setImportMessage(`❌ Ошибка: ${err?.message || "Неизвестная ошибка"}`);
+    } catch (err) {
+      setImportMessage(`❌ Ошибка: ${getErrorMessage(err)}`);
       setTimeout(() => setImportMessage(null), 7000);
     } finally {
       setAiAddingArticles(false);
@@ -1913,8 +1931,8 @@ export default function CitationGraph({ projectId }: Props) {
       setTimeout(() => {
         loadGraph(getGraphOptions());
       }, 500);
-    } catch (err: any) {
-      setImportMessage(`❌ Ошибка: ${err?.message || "Неизвестная ошибка"}`);
+    } catch (err) {
+      setImportMessage(`❌ Ошибка: ${getErrorMessage(err)}`);
       // Автоматически скрываем уведомление об ошибке через 7 секунд
       setTimeout(() => setImportMessage(null), 7000);
     } finally {
@@ -5936,8 +5954,8 @@ function NodeInfoPanel({
       } else {
         setTranslationError(result.error || "Ошибка перевода");
       }
-    } catch (err: any) {
-      setTranslationError(err?.message || "Ошибка перевода");
+    } catch (err) {
+      setTranslationError(getErrorMessage(err));
     } finally {
       setTranslating(false);
     }
@@ -5993,8 +6011,8 @@ function NodeInfoPanel({
       if (onRefresh) {
         setTimeout(() => onRefresh(), 500);
       }
-    } catch (err: any) {
-      setAddMessage(err?.message || "Ошибка добавления");
+    } catch (err) {
+      setAddMessage(getErrorMessage(err));
     } finally {
       setAdding(false);
       setAddingToSelected(false);

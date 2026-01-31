@@ -1,11 +1,11 @@
 /**
  * Caching module for API data
  * Provides caching with automatic invalidation for articles, documents, files, statistics, and citation graphs
- * 
+ *
  * Supports two backends:
  * 1. Redis (recommended for production) - if REDIS_URL is configured
  * 2. In-memory LRU cache (fallback) - if Redis is not available
- * 
+ *
  * The fallback is automatic - no code changes needed in routes.
  */
 
@@ -47,14 +47,14 @@ function memoryGet(key: string): string | null {
     memoryCacheMisses++;
     return null;
   }
-  
+
   // Check if expired
   if (entry.expiresAt > 0 && Date.now() > entry.expiresAt) {
     memoryCache.delete(key);
     memoryCacheMisses++;
     return null;
   }
-  
+
   memoryCacheHits++;
   return entry.value;
 }
@@ -80,15 +80,15 @@ function memoryDel(key: string): void {
  */
 function memoryDelPattern(pattern: string): number {
   let deleted = 0;
-  const prefix = pattern.replace(/\*$/, '');
-  
+  const prefix = pattern.replace(/\*$/, "");
+
   for (const key of memoryCache.keys()) {
     if (key.startsWith(prefix)) {
       memoryCache.delete(key);
       deleted++;
     }
   }
-  
+
   return deleted;
 }
 
@@ -101,9 +101,13 @@ export function getMemoryCacheStats() {
     calculatedSize: memoryCache.calculatedSize,
     hits: memoryCacheHits,
     misses: memoryCacheMisses,
-    hitRate: memoryCacheHits + memoryCacheMisses > 0 
-      ? (memoryCacheHits / (memoryCacheHits + memoryCacheMisses) * 100).toFixed(1) + '%'
-      : 'N/A',
+    hitRate:
+      memoryCacheHits + memoryCacheMisses > 0
+        ? (
+            (memoryCacheHits / (memoryCacheHits + memoryCacheMisses)) *
+            100
+          ).toFixed(1) + "%"
+        : "N/A",
   };
 }
 
@@ -131,24 +135,47 @@ export function isRedisConnected(): boolean {
 }
 
 /**
+ * Check if Redis is available (configured and connected)
+ * Alias for isRedisConnected for rate-limit plugin
+ */
+export function isRedisAvailable(): boolean {
+  return useRedis && redisClient !== null;
+}
+
+/**
+ * Get Redis client synchronously (returns cached client or null)
+ * Use this when you need the client without initialization
+ */
+export function getRedisClient(): Redis | null {
+  if (!useRedis || !redisClient) {
+    return null;
+  }
+  return redisClient;
+}
+
+/**
  * Get cache backend info
  */
-export function getCacheBackend(): { type: 'redis' | 'memory'; connected: boolean; stats?: any } {
+export function getCacheBackend(): {
+  type: "redis" | "memory";
+  connected: boolean;
+  stats?: Record<string, unknown>;
+} {
   if (useRedis && redisClient) {
-    return { type: 'redis', connected: true };
+    return { type: "redis", connected: true };
   }
-  return { 
-    type: 'memory', 
-    connected: true, 
-    stats: getMemoryCacheStats() 
+  return {
+    type: "memory",
+    connected: true,
+    stats: getMemoryCacheStats() as Record<string, unknown>,
   };
 }
 
 /**
- * Get or create Redis client
+ * Get or create Redis client asynchronously
  * Returns null if Redis is not configured or connection fails
  */
-export async function getRedisClient(): Promise<Redis | null> {
+export async function initRedisClient(): Promise<Redis | null> {
   if (!isRedisConfigured()) {
     return null;
   }
@@ -169,7 +196,9 @@ export async function getRedisClient(): Promise<Redis | null> {
       maxRetriesPerRequest: 3,
       retryStrategy: (times: number) => {
         if (times > 3) {
-          console.warn("[Redis] Max retry attempts reached, falling back to memory cache");
+          console.warn(
+            "[Redis] Max retry attempts reached, falling back to memory cache",
+          );
           return null;
         }
         return Math.min(times * 200, 2000);
@@ -194,7 +223,10 @@ export async function getRedisClient(): Promise<Redis | null> {
     console.log("[Cache] Using Redis backend");
     return client;
   } catch (err) {
-    console.warn("[Cache] Redis connection failed, using in-memory LRU cache:", (err as Error).message);
+    console.warn(
+      "[Cache] Redis connection failed, using in-memory LRU cache:",
+      (err as Error).message,
+    );
     useRedis = false;
     return null;
   }
@@ -206,24 +238,30 @@ export async function getRedisClient(): Promise<Redis | null> {
 export const CACHE_KEYS = {
   // Project-specific caches
   articles: (projectId: string) => `proj:${projectId}:articles`,
-  articlesStatus: (projectId: string, status: string) => `proj:${projectId}:articles:${status}`,
-  article: (projectId: string, articleId: string) => `proj:${projectId}:article:${articleId}`,
-  
+  articlesStatus: (projectId: string, status: string) =>
+    `proj:${projectId}:articles:${status}`,
+  article: (projectId: string, articleId: string) =>
+    `proj:${projectId}:article:${articleId}`,
+
   documents: (projectId: string) => `proj:${projectId}:docs`,
-  document: (projectId: string, docId: string) => `proj:${projectId}:doc:${docId}`,
-  
+  document: (projectId: string, docId: string) =>
+    `proj:${projectId}:doc:${docId}`,
+
   files: (projectId: string) => `proj:${projectId}:files`,
-  file: (projectId: string, fileId: string) => `proj:${projectId}:file:${fileId}`,
-  
+  file: (projectId: string, fileId: string) =>
+    `proj:${projectId}:file:${fileId}`,
+
   statistics: (projectId: string) => `proj:${projectId}:stats`,
-  statistic: (projectId: string, statId: string) => `proj:${projectId}:stat:${statId}`,
-  
-  citationGraph: (projectId: string, options: string) => `proj:${projectId}:graph:${options}`,
-  
+  statistic: (projectId: string, statId: string) =>
+    `proj:${projectId}:stat:${statId}`,
+
+  citationGraph: (projectId: string, options: string) =>
+    `proj:${projectId}:graph:${options}`,
+
   // Project metadata
   project: (projectId: string) => `proj:${projectId}:meta`,
   bibliography: (projectId: string) => `proj:${projectId}:bib`,
-  
+
   // External API caches (longer TTL since data rarely changes)
   crossref: (doi: string) => `ext:crossref:${encodeURIComponent(doi)}`,
   pubmed: (pmid: string) => `ext:pubmed:${pmid}`,
@@ -246,18 +284,21 @@ const EXTERNAL_API_TTL = 86400; // 24 hours for external API data (DOIs don't ch
  */
 export async function cacheGet<T>(key: string): Promise<T | null> {
   // Try Redis first
-  const client = await getRedisClient();
-  
+  const client = await initRedisClient();
+
   if (client && useRedis) {
     try {
       const data = await client.get(key);
       if (!data) return null;
       return JSON.parse(data) as T;
     } catch (err) {
-      console.warn("[Cache] Redis get error, trying memory:", (err as Error).message);
+      console.warn(
+        "[Cache] Redis get error, trying memory:",
+        (err as Error).message,
+      );
     }
   }
-  
+
   // Fallback to memory cache
   try {
     const data = memoryGet(key);
@@ -273,21 +314,28 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
  * Set cached data with TTL
  * Uses Redis if available, otherwise falls back to memory cache
  */
-export async function cacheSet(key: string, data: unknown, ttl = DEFAULT_TTL): Promise<boolean> {
+export async function cacheSet(
+  key: string,
+  data: unknown,
+  ttl = DEFAULT_TTL,
+): Promise<boolean> {
   const jsonData = JSON.stringify(data);
-  
+
   // Try Redis first
-  const client = await getRedisClient();
-  
+  const client = await initRedisClient();
+
   if (client && useRedis) {
     try {
       await client.setex(key, ttl, jsonData);
       return true;
     } catch (err) {
-      console.warn("[Cache] Redis set error, using memory:", (err as Error).message);
+      console.warn(
+        "[Cache] Redis set error, using memory:",
+        (err as Error).message,
+      );
     }
   }
-  
+
   // Fallback to memory cache
   try {
     memorySet(key, jsonData, ttl);
@@ -304,9 +352,9 @@ export async function cacheSet(key: string, data: unknown, ttl = DEFAULT_TTL): P
  */
 export async function cacheDel(key: string): Promise<boolean> {
   let success = true;
-  
+
   // Delete from Redis if available
-  const client = await getRedisClient();
+  const client = await initRedisClient();
   if (client && useRedis) {
     try {
       await client.del(key);
@@ -315,7 +363,7 @@ export async function cacheDel(key: string): Promise<boolean> {
       success = false;
     }
   }
-  
+
   // Always delete from memory cache too
   try {
     memoryDel(key);
@@ -323,7 +371,7 @@ export async function cacheDel(key: string): Promise<boolean> {
     console.warn("[Cache] Memory delete error:", (err as Error).message);
     success = false;
   }
-  
+
   return success;
 }
 
@@ -333,41 +381,57 @@ export async function cacheDel(key: string): Promise<boolean> {
  */
 export async function cacheDelPattern(pattern: string): Promise<boolean> {
   let success = true;
-  
+
   // Delete from Redis if available
-  const client = await getRedisClient();
+  const client = await initRedisClient();
   if (client && useRedis) {
     try {
       let cursor = "0";
       const keysToDelete: string[] = [];
 
       do {
-        const [newCursor, keys] = await client.scan(cursor, "MATCH", pattern, "COUNT", 100);
+        const [newCursor, keys] = await client.scan(
+          cursor,
+          "MATCH",
+          pattern,
+          "COUNT",
+          100,
+        );
         cursor = newCursor;
         keysToDelete.push(...keys);
       } while (cursor !== "0");
 
       if (keysToDelete.length > 0) {
         await client.del(...keysToDelete);
-        console.log(`[Cache] Redis: deleted ${keysToDelete.length} keys matching: ${pattern}`);
+        console.log(
+          `[Cache] Redis: deleted ${keysToDelete.length} keys matching: ${pattern}`,
+        );
       }
     } catch (err) {
-      console.warn("[Cache] Redis delete pattern error:", (err as Error).message);
+      console.warn(
+        "[Cache] Redis delete pattern error:",
+        (err as Error).message,
+      );
       success = false;
     }
   }
-  
+
   // Always delete from memory cache too
   try {
     const deleted = memoryDelPattern(pattern);
     if (deleted > 0) {
-      console.log(`[Cache] Memory: deleted ${deleted} keys matching: ${pattern}`);
+      console.log(
+        `[Cache] Memory: deleted ${deleted} keys matching: ${pattern}`,
+      );
     }
   } catch (err) {
-    console.warn("[Cache] Memory delete pattern error:", (err as Error).message);
+    console.warn(
+      "[Cache] Memory delete pattern error:",
+      (err as Error).message,
+    );
     success = false;
   }
-  
+
   return success;
 }
 
@@ -388,7 +452,10 @@ export async function invalidateArticles(projectId: string): Promise<void> {
 /**
  * Invalidate a specific article and related caches
  */
-export async function invalidateArticle(projectId: string, articleId: string): Promise<void> {
+export async function invalidateArticle(
+  projectId: string,
+  articleId: string,
+): Promise<void> {
   await cacheDel(CACHE_KEYS.article(projectId, articleId));
   await cacheDel(CACHE_KEYS.articles(projectId));
   await cacheDelPattern(`proj:${projectId}:articles:*`);
@@ -407,7 +474,10 @@ export async function invalidateDocuments(projectId: string): Promise<void> {
 /**
  * Invalidate a specific document
  */
-export async function invalidateDocument(projectId: string, docId: string): Promise<void> {
+export async function invalidateDocument(
+  projectId: string,
+  docId: string,
+): Promise<void> {
   await cacheDel(CACHE_KEYS.document(projectId, docId));
   await cacheDel(CACHE_KEYS.documents(projectId));
   await cacheDel(CACHE_KEYS.bibliography(projectId));
@@ -423,7 +493,10 @@ export async function invalidateFiles(projectId: string): Promise<void> {
 /**
  * Invalidate a specific file
  */
-export async function invalidateFile(projectId: string, fileId: string): Promise<void> {
+export async function invalidateFile(
+  projectId: string,
+  fileId: string,
+): Promise<void> {
   await cacheDel(CACHE_KEYS.file(projectId, fileId));
   await cacheDel(CACHE_KEYS.files(projectId));
 }
@@ -438,7 +511,10 @@ export async function invalidateStatistics(projectId: string): Promise<void> {
 /**
  * Invalidate a specific statistic
  */
-export async function invalidateStatistic(projectId: string, statId: string): Promise<void> {
+export async function invalidateStatistic(
+  projectId: string,
+  statId: string,
+): Promise<void> {
   await cacheDel(CACHE_KEYS.statistic(projectId, statId));
   await cacheDel(CACHE_KEYS.statistics(projectId));
 }
@@ -446,7 +522,9 @@ export async function invalidateStatistic(projectId: string, statId: string): Pr
 /**
  * Invalidate citation graph cache
  */
-export async function invalidateCitationGraph(projectId: string): Promise<void> {
+export async function invalidateCitationGraph(
+  projectId: string,
+): Promise<void> {
   await cacheDelPattern(`proj:${projectId}:graph:*`);
 }
 
@@ -469,7 +547,7 @@ export async function invalidateProject(projectId: string): Promise<void> {
 export async function cacheThrough<T>(
   key: string,
   fetcher: () => Promise<T>,
-  ttl = DEFAULT_TTL
+  ttl = DEFAULT_TTL,
 ): Promise<T> {
   // Try cache first
   const cached = await cacheGet<T>(key);
@@ -507,7 +585,7 @@ export async function closeCache(): Promise<void> {
     useRedis = false;
     console.log("[Cache] Redis connection closed");
   }
-  
+
   // Clear memory cache
   memoryCache.clear();
   memoryCacheHits = 0;
@@ -523,11 +601,13 @@ export const closeRedis = closeCache;
  * Call this on server startup to eagerly connect to Redis
  */
 export async function initCache(): Promise<void> {
-  const client = await getRedisClient();
+  const client = await initRedisClient();
   if (client) {
     console.log("[Cache] Initialized with Redis backend");
   } else {
-    console.log("[Cache] Initialized with in-memory LRU backend (Redis not available)");
+    console.log(
+      "[Cache] Initialized with in-memory LRU backend (Redis not available)",
+    );
   }
 }
 
@@ -544,7 +624,7 @@ export async function initCache(): Promise<void> {
 const DOI_REGEX = /^10\.\d{4,}(?:\.\d+)*\/[^\s]+$/;
 
 export function isValidDOI(doi: string | null | undefined): boolean {
-  if (!doi || typeof doi !== 'string') return false;
+  if (!doi || typeof doi !== "string") return false;
   const cleaned = doi.trim().toLowerCase();
   return DOI_REGEX.test(cleaned);
 }
@@ -553,26 +633,26 @@ export function isValidDOI(doi: string | null | undefined): boolean {
  * Normalize DOI to standard format
  * Handles various input formats:
  * - https://doi.org/10.1234/example
- * - doi:10.1234/example  
+ * - doi:10.1234/example
  * - 10.1234/example
  */
 export function normalizeDOI(doi: string): string | null {
-  if (!doi || typeof doi !== 'string') return null;
-  
+  if (!doi || typeof doi !== "string") return null;
+
   let cleaned = doi.trim();
-  
+
   // Remove URL prefixes
   cleaned = cleaned
-    .replace(/^https?:\/\/doi\.org\//i, '')
-    .replace(/^https?:\/\/dx\.doi\.org\//i, '')
-    .replace(/^doi:/i, '')
+    .replace(/^https?:\/\/doi\.org\//i, "")
+    .replace(/^https?:\/\/dx\.doi\.org\//i, "")
+    .replace(/^doi:/i, "")
     .trim();
-  
+
   // Validate
   if (!DOI_REGEX.test(cleaned)) {
     return null;
   }
-  
+
   return cleaned;
 }
 
@@ -585,26 +665,26 @@ export function normalizeDOI(doi: string): string | null {
  */
 export async function getCachedCrossref<T>(
   doi: string,
-  fetcher: () => Promise<T | null>
+  fetcher: () => Promise<T | null>,
 ): Promise<T | null> {
   const normalizedDoi = normalizeDOI(doi);
   if (!normalizedDoi) return null;
-  
+
   const key = CACHE_KEYS.crossref(normalizedDoi);
-  
+
   // Check cache first
   const cached = await cacheGet<T>(key);
   if (cached !== null) {
     return cached;
   }
-  
+
   // Fetch fresh
   const data = await fetcher();
   if (data !== null) {
     // Cache for 24 hours (DOI metadata rarely changes)
     await cacheSet(key, data, EXTERNAL_API_TTL);
   }
-  
+
   return data;
 }
 
@@ -613,22 +693,22 @@ export async function getCachedCrossref<T>(
  */
 export async function getCachedPubMed<T>(
   pmid: string,
-  fetcher: () => Promise<T | null>
+  fetcher: () => Promise<T | null>,
 ): Promise<T | null> {
   const key = CACHE_KEYS.pubmed(pmid);
-  
+
   // Check cache first
   const cached = await cacheGet<T>(key);
   if (cached !== null) {
     return cached;
   }
-  
+
   // Fetch fresh
   const data = await fetcher();
   if (data !== null) {
     await cacheSet(key, data, EXTERNAL_API_TTL);
   }
-  
+
   return data;
 }
 
@@ -639,18 +719,18 @@ export async function getCachedPubMed<T>(
 export async function getCachedPubMedSearch<T>(
   queryHash: string,
   fetcher: () => Promise<T>,
-  ttl = 3600 // 1 hour for search results (may change more often)
+  ttl = 3600, // 1 hour for search results (may change more often)
 ): Promise<T> {
   const key = CACHE_KEYS.pubmedSearch(queryHash);
-  
+
   const cached = await cacheGet<T>(key);
   if (cached !== null) {
     return cached;
   }
-  
+
   const data = await fetcher();
   await cacheSet(key, data, ttl);
-  
+
   return data;
 }
 
@@ -661,7 +741,7 @@ export function hashQuery(query: string): string {
   let hash = 0;
   for (let i = 0; i < query.length; i++) {
     const char = query.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32bit integer
   }
   return Math.abs(hash).toString(36);
