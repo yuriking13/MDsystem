@@ -2822,7 +2822,7 @@ export default function CitationGraph({ projectId }: Props) {
                         border: `1px solid ${importMissingArticles ? "rgba(16, 185, 129, 0.3)" : "var(--border-color)"}`,
                         transition: "all 0.2s",
                       }}
-                      title="Импортировать цитирующие статьи из PubMed перед генерацией embeddings. Ретракции исключаются автоматически."
+                      title={`Импортировать топ-${missingArticlesStats.importLimit || 1000} цитирующих статей из PubMed (всего доступно: ${(missingArticlesStats.totalAvailable || missingArticlesStats.totalMissing).toLocaleString()}). Ранжируются по частоте цитирования ваших статей. Ретракции исключаются.`}
                     >
                       <input
                         type="checkbox"
@@ -2836,6 +2836,20 @@ export default function CitationGraph({ projectId }: Props) {
                       <span>
                         +{missingArticlesStats.totalMissing.toLocaleString()}{" "}
                         цитирующих
+                        {missingArticlesStats.totalAvailable &&
+                          missingArticlesStats.totalAvailable >
+                            missingArticlesStats.totalMissing && (
+                            <span
+                              style={{
+                                fontSize: 9,
+                                color: "var(--text-muted)",
+                                marginLeft: 3,
+                              }}
+                            >
+                              из{" "}
+                              {missingArticlesStats.totalAvailable.toLocaleString()}
+                            </span>
+                          )}
                       </span>
                     </label>
                   )}

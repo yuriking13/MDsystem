@@ -1127,6 +1127,8 @@ export type MissingArticlesStatsResponse = {
   missingPmidsFromCitedBy: number;
   missingDois: number;
   totalMissing: number;
+  totalAvailable?: number; // Всего доступно цитирующих
+  importLimit?: number; // Лимит на импорт
 };
 
 export async function apiGetMissingArticlesStats(

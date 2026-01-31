@@ -53,17 +53,53 @@ interface MissingArticleInfo {
   source: "reference" | "cited_by";
 }
 
+// Лимит на количество импортируемых статей
+const IMPORT_LIMIT = 1000;
+
 /**
  * Получить список недостающих статей из графа
  * Ищет PMIDs только из cited_by_pmids (цитирующие статьи)
- * References не импортируем - их слишком много (60-80k)
+ * Ранжирует по частоте цитирования (сколько наших статей они цитируют)
+ * Ограничивает до топ-1000
  */
 async function getMissingArticles(projectId: string): Promise<{
   missingPmids: MissingArticleInfo[];
   missingDois: MissingArticleInfo[];
+  totalAvailable: number;
 }> {
-  // PMIDs только из cited_by (цитирующие статьи)
+  // PMIDs из cited_by с подсчётом частоты (сколько наших статей они цитируют)
+  // Ранжируем по частоте DESC - статьи которые цитируют много наших важнее
   const citedByPmidsQuery = `
+    WITH project_articles AS (
+      SELECT a.id, a.cited_by_pmids
+      FROM articles a
+      JOIN project_articles pa ON pa.article_id = a.id
+      WHERE pa.project_id = $1 AND pa.status != 'deleted'
+    ),
+    cited_pmids_with_freq AS (
+      SELECT 
+        cited_pmid,
+        COUNT(*) as citation_frequency
+      FROM project_articles
+      CROSS JOIN LATERAL unnest(COALESCE(cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+      WHERE cited_pmid IS NOT NULL AND cited_pmid != ''
+      GROUP BY cited_pmid
+    ),
+    missing_pmids AS (
+      SELECT cited_pmid, citation_frequency
+      FROM cited_pmids_with_freq
+      WHERE NOT EXISTS (
+        SELECT 1 FROM articles WHERE pmid = cited_pmid
+      )
+    )
+    SELECT cited_pmid as pmid, citation_frequency
+    FROM missing_pmids
+    ORDER BY citation_frequency DESC
+    LIMIT $2
+  `;
+
+  // Также получаем общее количество для статистики
+  const totalCountQuery = `
     WITH project_articles AS (
       SELECT a.id, a.cited_by_pmids
       FROM articles a
@@ -76,16 +112,19 @@ async function getMissingArticles(projectId: string): Promise<{
       CROSS JOIN LATERAL unnest(COALESCE(cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
       WHERE cited_pmid IS NOT NULL AND cited_pmid != ''
     )
-    SELECT cited_pmid as pmid
+    SELECT COUNT(*) as total
     FROM all_cited_pmids
-    WHERE NOT EXISTS (
-      SELECT 1 FROM articles WHERE pmid = cited_pmid
-    )
+    WHERE NOT EXISTS (SELECT 1 FROM articles WHERE pmid = all_cited_pmids.cited_pmid)
   `;
 
-  const citedByPmids = await pool.query(citedByPmidsQuery, [projectId]);
+  const [citedByPmids, totalResult] = await Promise.all([
+    pool.query(citedByPmidsQuery, [projectId, IMPORT_LIMIT]),
+    pool.query(totalCountQuery, [projectId]),
+  ]);
 
-  // Собираем PMIDs цитирующих статей
+  const totalAvailable = parseInt(totalResult.rows[0].total, 10);
+
+  // Собираем PMIDs цитирующих статей (уже отсортированы по частоте)
   const missingPmids: MissingArticleInfo[] = citedByPmids.rows.map(
     (row: any) => ({
       pmid: row.pmid,
@@ -97,6 +136,7 @@ async function getMissingArticles(projectId: string): Promise<{
   return {
     missingPmids,
     missingDois: [], // Пусто - DOIs из references не импортируем
+    totalAvailable, // Общее количество доступных для импорта
   };
 }
 

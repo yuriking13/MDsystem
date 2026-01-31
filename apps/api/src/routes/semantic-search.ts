@@ -516,7 +516,9 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
       try {
         // PMIDs только из cited_by (цитирующие статьи), которых нет в articles
-        // References не импортируем - их слишком много (~60-80k)
+        // Лимит на импорт - 1000 самых релевантных (по частоте цитирования)
+        const IMPORT_LIMIT = 1000;
+
         const missingCitedByQuery = `
           WITH project_articles AS (
             SELECT a.id, a.cited_by_pmids
@@ -530,7 +532,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
             CROSS JOIN LATERAL unnest(COALESCE(cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
             WHERE cited_pmid IS NOT NULL AND cited_pmid != ''
           )
-          SELECT COUNT(*) as missing_cited_pmids
+          SELECT COUNT(*) as total_missing
           FROM all_cited_pmids
           WHERE NOT EXISTS (SELECT 1 FROM articles WHERE pmid = all_cited_pmids.cited_pmid)
         `;
@@ -538,17 +540,22 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         const citedByResult = await pool.query(missingCitedByQuery, [
           projectId,
         ]);
-        const missingCitedPmids = parseInt(
-          citedByResult.rows[0].missing_cited_pmids,
+        const totalMissingCited = parseInt(
+          citedByResult.rows[0].total_missing,
           10,
         );
 
+        // Реально импортируем только топ-1000
+        const willImport = Math.min(totalMissingCited, IMPORT_LIMIT);
+
         return {
-          missingPmids: missingCitedPmids,
-          missingPmidsFromReferences: 0, // Не импортируем references - слишком много
-          missingPmidsFromCitedBy: missingCitedPmids,
-          missingDois: 0, // DOIs тоже не импортируем (из references)
-          totalMissing: missingCitedPmids,
+          missingPmids: willImport,
+          missingPmidsFromReferences: 0,
+          missingPmidsFromCitedBy: willImport,
+          missingDois: 0,
+          totalMissing: willImport,
+          totalAvailable: totalMissingCited, // Всего доступно
+          importLimit: IMPORT_LIMIT,
         };
       } catch (error: any) {
         fastify.log.error("Missing articles stats error:", error);
