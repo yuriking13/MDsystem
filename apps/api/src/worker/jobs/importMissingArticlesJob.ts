@@ -55,35 +55,14 @@ interface MissingArticleInfo {
 
 /**
  * Получить список недостающих статей из графа
- * Ищет PMIDs и DOIs из reference_pmids, cited_by_pmids, reference_dois
- * которых ещё нет в таблице articles
+ * Ищет PMIDs только из cited_by_pmids (цитирующие статьи)
+ * References не импортируем - их слишком много (60-80k)
  */
 async function getMissingArticles(projectId: string): Promise<{
   missingPmids: MissingArticleInfo[];
   missingDois: MissingArticleInfo[];
 }> {
-  // PMIDs из references
-  const refPmidsQuery = `
-    WITH project_articles AS (
-      SELECT a.id, a.reference_pmids
-      FROM articles a
-      JOIN project_articles pa ON pa.article_id = a.id
-      WHERE pa.project_id = $1 AND pa.status != 'deleted'
-    ),
-    all_ref_pmids AS (
-      SELECT DISTINCT ref_pmid
-      FROM project_articles
-      CROSS JOIN LATERAL unnest(COALESCE(reference_pmids, ARRAY[]::text[])) AS ref_pmid
-      WHERE ref_pmid IS NOT NULL AND ref_pmid != ''
-    )
-    SELECT ref_pmid as pmid
-    FROM all_ref_pmids
-    WHERE NOT EXISTS (
-      SELECT 1 FROM articles WHERE pmid = ref_pmid
-    )
-  `;
-
-  // PMIDs из cited_by
+  // PMIDs только из cited_by (цитирующие статьи)
   const citedByPmidsQuery = `
     WITH project_articles AS (
       SELECT a.id, a.cited_by_pmids
@@ -104,57 +83,20 @@ async function getMissingArticles(projectId: string): Promise<{
     )
   `;
 
-  // DOIs из reference_dois (для статей без PMID)
-  const refDoisQuery = `
-    WITH project_articles AS (
-      SELECT a.id, a.reference_dois
-      FROM articles a
-      JOIN project_articles pa ON pa.article_id = a.id
-      WHERE pa.project_id = $1 AND pa.status != 'deleted'
-    ),
-    all_ref_dois AS (
-      SELECT DISTINCT lower(trim(ref_doi)) as ref_doi
-      FROM project_articles
-      CROSS JOIN LATERAL unnest(COALESCE(reference_dois, ARRAY[]::text[])) AS ref_doi
-      WHERE ref_doi IS NOT NULL AND ref_doi != ''
-    )
-    SELECT ref_doi as doi
-    FROM all_ref_dois
-    WHERE NOT EXISTS (
-      SELECT 1 FROM articles WHERE lower(doi) = ref_doi
-    )
-  `;
+  const citedByPmids = await pool.query(citedByPmidsQuery, [projectId]);
 
-  const [refPmids, citedByPmids, refDois] = await Promise.all([
-    pool.query(refPmidsQuery, [projectId]),
-    pool.query(citedByPmidsQuery, [projectId]),
-    pool.query(refDoisQuery, [projectId]),
-  ]);
+  // Собираем PMIDs цитирующих статей
+  const missingPmids: MissingArticleInfo[] = citedByPmids.rows.map(
+    (row: any) => ({
+      pmid: row.pmid,
+      source: "cited_by" as const,
+    }),
+  );
 
-  // Объединяем PMIDs с указанием источника
-  const missingPmidsMap = new Map<string, MissingArticleInfo>();
-
-  for (const row of refPmids.rows) {
-    if (!missingPmidsMap.has(row.pmid)) {
-      missingPmidsMap.set(row.pmid, { pmid: row.pmid, source: "reference" });
-    }
-  }
-
-  for (const row of citedByPmids.rows) {
-    if (!missingPmidsMap.has(row.pmid)) {
-      missingPmidsMap.set(row.pmid, { pmid: row.pmid, source: "cited_by" });
-    }
-  }
-
-  // DOIs (уже нормализованы в запросе)
-  const missingDois: MissingArticleInfo[] = refDois.rows.map((row: any) => ({
-    doi: row.doi,
-    source: "reference" as const,
-  }));
-
+  // DOIs не импортируем - они из references
   return {
-    missingPmids: Array.from(missingPmidsMap.values()),
-    missingDois,
+    missingPmids,
+    missingDois: [], // Пусто - DOIs из references не импортируем
   };
 }
 

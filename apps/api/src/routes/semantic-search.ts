@@ -515,111 +515,40 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
       }
 
       try {
-        // PMIDs из references и cited_by, которых нет в articles
-        const missingPmidsQuery = `
+        // PMIDs только из cited_by (цитирующие статьи), которых нет в articles
+        // References не импортируем - их слишком много (~60-80k)
+        const missingCitedByQuery = `
           WITH project_articles AS (
-            SELECT a.id, a.reference_pmids, a.cited_by_pmids
+            SELECT a.id, a.cited_by_pmids
             FROM articles a
             JOIN project_articles pa ON pa.article_id = a.id
             WHERE pa.project_id = $1 AND pa.status != 'deleted'
-          ),
-          all_ref_pmids AS (
-            SELECT DISTINCT ref_pmid
-            FROM project_articles
-            CROSS JOIN LATERAL unnest(COALESCE(reference_pmids, ARRAY[]::text[])) AS ref_pmid
-            WHERE ref_pmid IS NOT NULL AND ref_pmid != ''
           ),
           all_cited_pmids AS (
             SELECT DISTINCT cited_pmid
             FROM project_articles
             CROSS JOIN LATERAL unnest(COALESCE(cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
             WHERE cited_pmid IS NOT NULL AND cited_pmid != ''
-          ),
-          missing_ref_pmids AS (
-            SELECT ref_pmid
-            FROM all_ref_pmids
-            WHERE NOT EXISTS (SELECT 1 FROM articles WHERE pmid = ref_pmid)
-          ),
-          missing_cited_pmids AS (
-            SELECT cited_pmid
-            FROM all_cited_pmids
-            WHERE NOT EXISTS (SELECT 1 FROM articles WHERE pmid = cited_pmid)
           )
-          SELECT 
-            (SELECT COUNT(*) FROM missing_ref_pmids) as missing_ref_pmids,
-            (SELECT COUNT(*) FROM missing_cited_pmids) as missing_cited_pmids
+          SELECT COUNT(*) as missing_cited_pmids
+          FROM all_cited_pmids
+          WHERE NOT EXISTS (SELECT 1 FROM articles WHERE pmid = all_cited_pmids.cited_pmid)
         `;
 
-        // DOIs из reference_dois, которых нет в articles
-        const missingDoisQuery = `
-          WITH project_articles AS (
-            SELECT a.id, a.reference_dois
-            FROM articles a
-            JOIN project_articles pa ON pa.article_id = a.id
-            WHERE pa.project_id = $1 AND pa.status != 'deleted'
-          ),
-          all_ref_dois AS (
-            SELECT DISTINCT lower(trim(ref_doi)) as ref_doi
-            FROM project_articles
-            CROSS JOIN LATERAL unnest(COALESCE(reference_dois, ARRAY[]::text[])) AS ref_doi
-            WHERE ref_doi IS NOT NULL AND ref_doi != ''
-          )
-          SELECT COUNT(*) as missing_dois
-          FROM all_ref_dois
-          WHERE NOT EXISTS (SELECT 1 FROM articles WHERE lower(doi) = ref_doi)
-        `;
-
-        const [pmidsResult, doisResult] = await Promise.all([
-          pool.query(missingPmidsQuery, [projectId]),
-          pool.query(missingDoisQuery, [projectId]),
+        const citedByResult = await pool.query(missingCitedByQuery, [
+          projectId,
         ]);
-
-        const missingRefPmids = parseInt(
-          pmidsResult.rows[0].missing_ref_pmids,
-          10,
-        );
         const missingCitedPmids = parseInt(
-          pmidsResult.rows[0].missing_cited_pmids,
+          citedByResult.rows[0].missing_cited_pmids,
           10,
         );
-        const missingDois = parseInt(doisResult.rows[0].missing_dois, 10);
-
-        // Убираем дубликаты (PMID который и в ref и в cited_by считается один раз)
-        // Для точного подсчёта уникальных делаем отдельный запрос
-        const uniquePmidsQuery = `
-          WITH project_articles AS (
-            SELECT a.id, a.reference_pmids, a.cited_by_pmids
-            FROM articles a
-            JOIN project_articles pa ON pa.article_id = a.id
-            WHERE pa.project_id = $1 AND pa.status != 'deleted'
-          ),
-          all_pmids AS (
-            SELECT DISTINCT pmid FROM (
-              SELECT ref_pmid as pmid
-              FROM project_articles
-              CROSS JOIN LATERAL unnest(COALESCE(reference_pmids, ARRAY[]::text[])) AS ref_pmid
-              WHERE ref_pmid IS NOT NULL AND ref_pmid != ''
-              UNION
-              SELECT cited_pmid as pmid
-              FROM project_articles
-              CROSS JOIN LATERAL unnest(COALESCE(cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
-              WHERE cited_pmid IS NOT NULL AND cited_pmid != ''
-            ) t
-          )
-          SELECT COUNT(*) as total
-          FROM all_pmids
-          WHERE NOT EXISTS (SELECT 1 FROM articles WHERE pmid = all_pmids.pmid)
-        `;
-
-        const uniqueResult = await pool.query(uniquePmidsQuery, [projectId]);
-        const totalMissingPmids = parseInt(uniqueResult.rows[0].total, 10);
 
         return {
-          missingPmids: totalMissingPmids,
-          missingPmidsFromReferences: missingRefPmids,
+          missingPmids: missingCitedPmids,
+          missingPmidsFromReferences: 0, // Не импортируем references - слишком много
           missingPmidsFromCitedBy: missingCitedPmids,
-          missingDois,
-          totalMissing: totalMissingPmids + missingDois,
+          missingDois: 0, // DOIs тоже не импортируем (из references)
+          totalMissing: missingCitedPmids,
         };
       } catch (error: any) {
         fastify.log.error("Missing articles stats error:", error);

@@ -2807,13 +2807,8 @@ export default function CitationGraph({ projectId }: Props) {
                         style={{ cursor: "pointer" }}
                       />
                       <span>
-                        Импортировать недостающие статьи (+
-                        {missingArticlesStats.totalMissing}:
-                        {missingArticlesStats.missingPmids > 0 &&
-                          ` ${missingArticlesStats.missingPmids} PubMed`}
-                        {missingArticlesStats.missingDois > 0 &&
-                          `, ${missingArticlesStats.missingDois} Crossref`}
-                        )
+                        Импортировать цитирующие статьи (+
+                        {missingArticlesStats.totalMissing} из PubMed)
                       </span>
                       <span
                         style={{
