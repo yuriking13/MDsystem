@@ -1065,6 +1065,7 @@ export async function apiGenerateEmbeddings(
     articleIds?: string[];
     includeReferences?: boolean;
     includeCitedBy?: boolean;
+    importMissingArticles?: boolean;
   },
 ): Promise<EmbeddingJobResponse> {
   return apiFetch<EmbeddingJobResponse>(
@@ -1115,6 +1116,24 @@ export async function apiGetEmbeddingStats(
 ): Promise<EmbeddingStatsResponse> {
   return apiFetch<EmbeddingStatsResponse>(
     `/api/projects/${projectId}/citation-graph/embedding-stats`,
+  );
+}
+
+// === Missing Articles Stats (для импорта недостающих статей) ===
+
+export type MissingArticlesStatsResponse = {
+  missingPmids: number;
+  missingPmidsFromReferences: number;
+  missingPmidsFromCitedBy: number;
+  missingDois: number;
+  totalMissing: number;
+};
+
+export async function apiGetMissingArticlesStats(
+  projectId: string,
+): Promise<MissingArticlesStatsResponse> {
+  return apiFetch<MissingArticlesStatsResponse>(
+    `/api/projects/${projectId}/citation-graph/missing-articles-stats`,
   );
 }
 

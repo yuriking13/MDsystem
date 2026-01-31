@@ -22,6 +22,7 @@ import {
   apiGetEmbeddingJob,
   apiCancelEmbeddingJob,
   apiGetEmbeddingStats,
+  apiGetMissingArticlesStats,
   apiGetSemanticNeighbors,
   apiAnalyzeMethodologies,
   apiGetSemanticClusters,
@@ -45,6 +46,7 @@ import {
   type GraphRecommendation,
   type SemanticSearchResult,
   type EmbeddingStatsResponse,
+  type MissingArticlesStatsResponse,
   type MethodologyCluster,
   type SemanticNeighborsResponse,
   type SemanticCluster,
@@ -318,6 +320,9 @@ export default function CitationGraph({ projectId }: Props) {
   const [semanticThreshold, setSemanticThreshold] = useState(0.7);
   const [embeddingStats, setEmbeddingStats] =
     useState<EmbeddingStatsResponse | null>(null);
+  const [missingArticlesStats, setMissingArticlesStats] =
+    useState<MissingArticlesStatsResponse | null>(null);
+  const [importMissingArticles, setImportMissingArticles] = useState(false);
   const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false);
   const [embeddingMessage, setEmbeddingMessage] = useState<string | null>(null);
   const [embeddingJob, setEmbeddingJob] = useState<EmbeddingJobResponse | null>(
@@ -576,13 +581,25 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
+  // Загрузка статистики недостающих статей
+  const loadMissingArticlesStats = async () => {
+    try {
+      const stats = await apiGetMissingArticlesStats(projectId);
+      setMissingArticlesStats(stats);
+    } catch (err: any) {
+      console.error("Failed to load missing articles stats:", err);
+    }
+  };
+
   // Генерация embeddings для статей - асинхронная обработка
   const handleGenerateEmbeddings = async () => {
     setGeneratingEmbeddings(true);
     setEmbeddingMessage(null);
 
     try {
-      const result = await apiGenerateEmbeddings(projectId);
+      const result = await apiGenerateEmbeddings(projectId, {
+        importMissingArticles,
+      });
 
       if (result.status === "completed" && result.total === 0) {
         setEmbeddingMessage("✓ Все статьи уже имеют embeddings!");
@@ -592,7 +609,9 @@ export default function CitationGraph({ projectId }: Props) {
 
       setEmbeddingJob(result);
       setEmbeddingMessage(
-        `Запущена генерация embeddings для ${result.total} статей...`,
+        importMissingArticles
+          ? `Импорт недостающих статей и генерация embeddings для ${result.total} статей...`
+          : `Запущена генерация embeddings для ${result.total} статей...`,
       );
 
       // Если job уже был, показываем прогресс
@@ -626,19 +645,23 @@ export default function CitationGraph({ projectId }: Props) {
           `✓ Готово! Обработано ${job.processed} статей${job.errors > 0 ? `, ошибок: ${job.errors}` : ""}`,
         );
         setGeneratingEmbeddings(false);
+        setImportMissingArticles(false); // Сбрасываем чекбокс
         await loadEmbeddingStats();
+        await loadMissingArticlesStats();
       } else if (job.status === "failed" || job.status === "timeout") {
         setEmbeddingMessage(
           `Ошибка: ${job.errorMessage || "Неизвестная ошибка"}. Обработано: ${job.processed}`,
         );
         setGeneratingEmbeddings(false);
         await loadEmbeddingStats();
+        await loadMissingArticlesStats();
       } else if (job.status === "cancelled") {
         setEmbeddingMessage(
           `Отменено. Обработано: ${job.processed} из ${job.total}`,
         );
         setGeneratingEmbeddings(false);
         await loadEmbeddingStats();
+        await loadMissingArticlesStats();
       }
     } catch (err: any) {
       console.error("Failed to poll embedding job:", err);
@@ -2117,6 +2140,7 @@ export default function CitationGraph({ projectId }: Props) {
             setShowSemanticSearch(!showSemanticSearch);
             if (!showSemanticSearch) {
               loadEmbeddingStats();
+              loadMissingArticlesStats();
             }
           }}
           title="Семантический поиск по статьям"
@@ -2756,68 +2780,120 @@ export default function CitationGraph({ projectId }: Props) {
                 style={{
                   marginBottom: 8,
                   display: "flex",
-                  alignItems: "center",
-                  gap: 8,
+                  flexDirection: "column",
+                  gap: 6,
                 }}
               >
-                <button
-                  className="btn secondary"
-                  style={{ fontSize: 11, padding: "4px 8px" }}
-                  onClick={handleGenerateEmbeddings}
-                  disabled={generatingEmbeddings}
-                >
-                  {generatingEmbeddings
-                    ? "Генерация..."
-                    : `Создать embeddings (${embeddingStats.withoutEmbeddings})`}
-                </button>
-                {generatingEmbeddings && embeddingJob?.jobId && (
+                {/* Чекбокс для импорта недостающих статей */}
+                {missingArticlesStats &&
+                  missingArticlesStats.totalMissing > 0 && (
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: 11,
+                        color: "var(--text-secondary)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={importMissingArticles}
+                        onChange={(e) =>
+                          setImportMissingArticles(e.target.checked)
+                        }
+                        disabled={generatingEmbeddings}
+                        style={{ cursor: "pointer" }}
+                      />
+                      <span>
+                        Импортировать недостающие статьи (+
+                        {missingArticlesStats.totalMissing}:
+                        {missingArticlesStats.missingPmids > 0 &&
+                          ` ${missingArticlesStats.missingPmids} PubMed`}
+                        {missingArticlesStats.missingDois > 0 &&
+                          `, ${missingArticlesStats.missingDois} Crossref`}
+                        )
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: "var(--text-muted)",
+                          fontStyle: "italic",
+                        }}
+                        title="Статьи-ретракции и ошибки автоматически исключаются"
+                      >
+                        (без ретракций)
+                      </span>
+                    </label>
+                  )}
+
+                {/* Кнопка и прогресс */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <button
-                    className="btn"
-                    style={{
-                      fontSize: 11,
-                      padding: "4px 8px",
-                      background: "var(--bg-error)",
-                      color: "white",
-                    }}
-                    onClick={handleCancelEmbeddings}
+                    className="btn secondary"
+                    style={{ fontSize: 11, padding: "4px 8px" }}
+                    onClick={handleGenerateEmbeddings}
+                    disabled={generatingEmbeddings}
                   >
-                    Отменить
+                    {generatingEmbeddings
+                      ? importMissingArticles
+                        ? "Импорт и генерация..."
+                        : "Генерация..."
+                      : importMissingArticles
+                        ? `Импорт + Embeddings (${embeddingStats.withoutEmbeddings}+)`
+                        : `Создать embeddings (${embeddingStats.withoutEmbeddings})`}
                   </button>
-                )}
-                {embeddingMessage && (
-                  <span
-                    style={{
-                      fontSize: 11,
-                      color: embeddingMessage.startsWith("✓")
-                        ? "#10b981"
-                        : embeddingMessage.startsWith("Ошибка")
-                          ? "#ef4444"
-                          : "var(--text-muted)",
-                    }}
-                  >
-                    {embeddingMessage}
-                  </span>
-                )}
-                {generatingEmbeddings && embeddingJob && (
-                  <div
-                    style={{
-                      flex: 1,
-                      height: 6,
-                      background: "var(--bg-tertiary)",
-                      borderRadius: 3,
-                      overflow: "hidden",
-                    }}
-                  >
+                  {generatingEmbeddings && embeddingJob?.jobId && (
+                    <button
+                      className="btn"
+                      style={{
+                        fontSize: 11,
+                        padding: "4px 8px",
+                        background: "var(--bg-error)",
+                        color: "white",
+                      }}
+                      onClick={handleCancelEmbeddings}
+                    >
+                      Отменить
+                    </button>
+                  )}
+                  {embeddingMessage && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: embeddingMessage.startsWith("✓")
+                          ? "#10b981"
+                          : embeddingMessage.startsWith("Ошибка")
+                            ? "#ef4444"
+                            : "var(--text-muted)",
+                      }}
+                    >
+                      {embeddingMessage}
+                    </span>
+                  )}
+                  {generatingEmbeddings && embeddingJob && (
                     <div
                       style={{
-                        height: "100%",
-                        width: `${embeddingJob.total > 0 ? Math.round((embeddingJob.processed / embeddingJob.total) * 100) : 0}%`,
-                        background: "linear-gradient(90deg, #10b981, #3b82f6)",
-                        transition: "width 0.3s ease",
+                        flex: 1,
+                        height: 6,
+                        background: "var(--bg-tertiary)",
+                        borderRadius: 3,
+                        overflow: "hidden",
                       }}
-                    />
-                  </div>
-                )}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${embeddingJob.total > 0 ? Math.round((embeddingJob.processed / embeddingJob.total) * 100) : 0}%`,
+                          background:
+                            "linear-gradient(90deg, #10b981, #3b82f6)",
+                          transition: "width 0.3s ease",
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

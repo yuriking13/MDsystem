@@ -33,6 +33,8 @@ export interface EmbeddingsJobPayload {
   includeReferences?: boolean;
   includeCitedBy?: boolean;
   batchSize?: number;
+  /** Импортировать недостающие статьи из PubMed/Crossref перед генерацией */
+  importMissingArticles?: boolean;
 }
 
 /**

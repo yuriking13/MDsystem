@@ -183,10 +183,16 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
     articleIds,
     includeReferences = true,
     includeCitedBy = true,
+    importMissingArticles = false,
   } = payload;
   const startTime = Date.now();
 
-  log.info("Starting embeddings job", { jobId, projectId, userId });
+  log.info("Starting embeddings job", {
+    jobId,
+    projectId,
+    userId,
+    importMissingArticles,
+  });
 
   try {
     // Обновляем статус на running
@@ -194,6 +200,36 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
       `UPDATE embedding_jobs SET status = 'running', started_at = now() WHERE id = $1`,
       [jobId],
     );
+
+    // === ФАЗА 0: Импорт недостающих статей (опционально) ===
+    if (importMissingArticles) {
+      log.info("Starting import of missing articles", { jobId, projectId });
+
+      // Динамический импорт для избежания циклических зависимостей
+      const { runImportMissingArticles } =
+        await import("./importMissingArticlesJob.js");
+
+      try {
+        const importResult = await runImportMissingArticles({
+          projectId,
+          userId,
+          jobId,
+        });
+
+        log.info("Import completed", {
+          jobId,
+          imported: importResult.imported,
+          skipped: importResult.skipped,
+          errors: importResult.errors,
+        });
+      } catch (importErr) {
+        log.warn("Import failed, continuing with existing articles", {
+          jobId,
+          error: importErr,
+        });
+        // Не прерываем job - продолжаем с теми статьями, которые есть
+      }
+    }
 
     // Получаем API ключ OpenRouter пользователя
     const apiKey = await getUserApiKey(userId, "openrouter");
