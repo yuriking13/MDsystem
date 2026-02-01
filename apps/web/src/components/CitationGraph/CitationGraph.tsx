@@ -96,7 +96,6 @@ import {
   adjustBrightness,
   useDebounce,
   getGraphNodeColors,
-  getGraphBackgroundColors,
 } from "./utils";
 import type { GraphNodeWithCoords, ClusterArticleDetail } from "../../types";
 
@@ -357,18 +356,38 @@ export default function CitationGraph({ projectId }: Props) {
     document.body.classList.contains("light-theme"),
   );
 
-  // Отслеживаем изменения темы
+  // Отслеживаем изменения темы через интервал (более стабильно чем MutationObserver)
   useEffect(() => {
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === "class") {
-          setIsLightTheme(document.body.classList.contains("light-theme"));
-        }
-      });
-    });
-    observer.observe(document.body, { attributes: true });
-    return () => observer.disconnect();
-  }, []);
+    const checkTheme = () => {
+      const newIsLight = document.body.classList.contains("light-theme");
+      if (newIsLight !== isLightTheme) {
+        setIsLightTheme(newIsLight);
+      }
+    };
+    const interval = setInterval(checkTheme, 200);
+    return () => clearInterval(interval);
+  }, [isLightTheme]);
+
+  // Предвычисленные цвета для текущей темы
+  const graphColors = useMemo(() => {
+    return {
+      bg: isLightTheme ? "#f8fafc" : "#0b0f19",
+      bgFullscreen: isLightTheme ? "#f1f5f9" : "#050810",
+      linkColor: isLightTheme
+        ? "rgba(148, 163, 184, 0.35)"
+        : "rgba(100, 130, 180, 0.25)",
+      strokeColor: isLightTheme
+        ? "rgba(0, 0, 0, 0.15)"
+        : "rgba(255, 255, 255, 0.15)",
+      clusterStrokeColor: isLightTheme
+        ? "rgba(0, 0, 0, 0.25)"
+        : "rgba(255, 255, 255, 0.3)",
+      textColor: isLightTheme
+        ? "rgba(0, 0, 0, 0.7)"
+        : "rgba(255, 255, 255, 0.7)",
+      shadowAlpha: isLightTheme ? "40" : "60",
+    };
+  }, [isLightTheme]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   // ForceGraph2D ref - тип any необходим из-за отсутствия типов в библиотеке
@@ -4092,8 +4111,7 @@ export default function CitationGraph({ projectId }: Props) {
                     ctx.shadowBlur = 12;
                   } else if (clusterColor) {
                     // Легкое свечение для кластеризованных узлов
-                    ctx.shadowColor =
-                      clusterColor + (isLightTheme ? "40" : "60");
+                    ctx.shadowColor = clusterColor + graphColors.shadowAlpha;
                     ctx.shadowBlur = isLightTheme ? 4 : 6;
                   } else if (citedByCount > 200) {
                     // Очень тонкое свечение для самых цитируемых
@@ -4115,16 +4133,9 @@ export default function CitationGraph({ projectId }: Props) {
                   ctx.shadowBlur = 0;
 
                   // Одна тонкая обводка для всех узлов (академичный вид)
-                  // Используем разные цвета обводки для светлой/тёмной темы
-                  const strokeAlpha = isLightTheme ? 0.25 : 0.15;
-                  const clusterStrokeAlpha = isLightTheme ? 0.4 : 0.3;
                   ctx.strokeStyle = clusterColor
-                    ? isLightTheme
-                      ? "rgba(0, 0, 0, " + clusterStrokeAlpha + ")"
-                      : "rgba(255, 255, 255, " + clusterStrokeAlpha + ")"
-                    : isLightTheme
-                      ? "rgba(0, 0, 0, " + strokeAlpha + ")"
-                      : "rgba(255, 255, 255, " + strokeAlpha + ")";
+                    ? graphColors.clusterStrokeColor
+                    : graphColors.strokeColor;
                   ctx.lineWidth = clusterColor ? 1.2 : 0.8;
                   ctx.beginPath();
                   ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
@@ -4160,20 +4171,16 @@ export default function CitationGraph({ projectId }: Props) {
                     const label = node.label || "";
                     const fontSize = Math.max(9, 11 / globalScale);
                     ctx.font = `${fontSize}px Inter, sans-serif`;
-                    // Цвет текста зависит от темы
-                    ctx.fillStyle = isLightTheme
-                      ? "rgba(0, 0, 0, 0.7)"
-                      : "rgba(255, 255, 255, 0.7)";
+                    ctx.fillStyle = graphColors.textColor;
                     ctx.textAlign = "center";
                     ctx.textBaseline = "top";
                     ctx.fillText(label, node.x, node.y + size + 4);
                   }
                 }}
                 linkColor={(link: any) => {
-                  const bgColors = getGraphBackgroundColors();
                   return link.isSemantic
                     ? `rgba(236, 72, 153, ${0.3 + (link.similarity - semanticEdgeThreshold) * 2})` // Розовый для семантических
-                    : bgColors.linkColor; // Из CSS переменной
+                    : graphColors.linkColor; // Из предвычисленных цветов
                 }}
                 linkWidth={(link: any) =>
                   link.isSemantic
@@ -4187,10 +4194,9 @@ export default function CitationGraph({ projectId }: Props) {
                 linkLineDash={(link: any) => (link.isSemantic ? [4, 4] : null)} // Пунктир для семантических
                 linkDirectionalArrowLength={3}
                 linkDirectionalArrowRelPos={0.95}
-                backgroundColor={(() => {
-                  const bgColors = getGraphBackgroundColors();
-                  return isFullscreen ? bgColors.fullscreen : bgColors.normal;
-                })()}
+                backgroundColor={
+                  isFullscreen ? graphColors.bgFullscreen : graphColors.bg
+                }
                 d3AlphaDecay={animationPaused ? 1 : 0.02}
                 d3VelocityDecay={0.35}
                 cooldownTicks={animationPaused ? 0 : 150}
