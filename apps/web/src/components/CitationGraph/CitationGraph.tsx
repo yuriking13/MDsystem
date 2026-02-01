@@ -365,19 +365,19 @@ export default function CitationGraph({ projectId }: Props) {
 
   // Предвычисленные цвета для текущей темы (включая цвета узлов)
   const graphColors = useMemo(() => {
-    // Пастельные цвета для светлой темы
+    // Пастельные цвета для светлой темы (новая палитра)
     const pastelColors = {
-      citing: "#f9a8d4", // soft pink
-      selected: "#86efac", // soft mint green
-      excluded: "#fda4af", // soft coral
-      candidatePubmed: "#93c5fd", // soft sky blue
-      candidateDoaj: "#fde047", // soft yellow
-      candidateWiley: "#c4b5fd", // soft violet
-      reference: "#fdba74", // soft peach
-      related: "#5eead4", // soft teal
-      aiFound: "#67e8f9", // soft cyan
-      pvalue: "#fcd34d", // soft amber
-      default: "#cbd5e1", // soft gray
+      citing: "#FC9DBF", // розовый
+      selected: "#C6DDCD", // мятный
+      excluded: "#FABAAE", // коралловый
+      candidatePubmed: "#ACDBEB", // голубой
+      candidateDoaj: "#FFEDC7", // кремовый
+      candidateWiley: "#E2D3E8", // лавандовый
+      reference: "#F9D7B2", // персиковый
+      related: "#C7DBDA", // серо-мятный
+      aiFound: "#D086C5", // фиолетово-розовый
+      pvalue: "#FBD6E6", // светло-розовый
+      default: "#E2D3E8", // лавандовый (нейтральный)
     };
 
     // Яркие цвета для тёмной темы
