@@ -91,7 +91,12 @@ import {
   IconCheckCircle,
 } from "../FlowbiteIcons";
 import NodeInfoPanel from "./NodeInfoPanel";
-import { formatTime, adjustBrightness, useDebounce } from "./utils";
+import {
+  formatTime,
+  adjustBrightness,
+  useDebounce,
+  getGraphNodeColors,
+} from "./utils";
 import type { GraphNodeWithCoords, ClusterArticleDetail } from "../../types";
 
 type Props = {
@@ -1308,42 +1313,45 @@ export default function CitationGraph({ projectId }: Props) {
       const statsQ = node.statsQuality || 0;
       const source = node.source || "pubmed";
 
+      // Получаем цвета из CSS-переменных (поддержка темы)
+      const colors = getGraphNodeColors();
+
       // Подсветка найденных AI статей - яркий циановый/бирюзовый с пульсацией
       if (aiFoundArticleIds.has(node.id)) {
-        return "#00ffff"; // Яркий циан для AI-найденных
+        return colors.aiFound;
       }
 
       // Если включена подсветка P-value и статья имеет P-value - золотой
       if (highlightPValue && statsQ > 0) {
-        return "#fbbf24"; // Золотой/янтарный для P-value
+        return colors.pvalue;
       }
 
       // Уровень 0 (citing - статьи, которые цитируют наши) - розовый/пинк
       if (level === 0) {
-        return "#ec4899"; // Розовый (pink) - отличается от фиолетового Wiley
+        return colors.citing;
       }
 
       // Уровень 1 (найденные статьи) - стандартные цвета по статусу
       if (level === 1) {
-        if (status === "selected") return "#22c55e"; // Яркий зелёный
-        if (status === "excluded") return "#ef4444"; // Красный
+        if (status === "selected") return colors.selected;
+        if (status === "excluded") return colors.excluded;
         // Кандидаты - разные цвета по источнику
-        if (source === "doaj") return "#eab308"; // Жёлтый для DOAJ - отличается от зелёного
-        if (source === "wiley") return "#8b5cf6"; // Фиолетовый для Wiley
-        return "#3b82f6"; // Синий для PubMed (кандидаты)
+        if (source === "doaj") return colors.candidateDoaj;
+        if (source === "wiley") return colors.candidateWiley;
+        return colors.candidatePubmed;
       }
 
       // Уровень 2 (references - статьи, на которые ссылаются)
       if (level === 2) {
-        return "#f97316"; // Оранжевый
+        return colors.reference;
       }
 
       // Уровень 3 (статьи, которые тоже ссылаются на level 2)
       if (level === 3) {
-        return "#06b6d4"; // Голубой/циан
+        return colors.related;
       }
 
-      return "#6b7280"; // Серый по умолчанию
+      return colors.default;
     },
     [highlightPValue, aiFoundArticleIds],
   );

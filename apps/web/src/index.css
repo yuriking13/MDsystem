@@ -52,6 +52,32 @@
   --metal-highlight: rgba(255, 255, 255, 0.08);
   --metal-shadow: rgba(0, 0, 0, 0.4);
   
+  /* ===== Graph Node Colors - Dark Theme (Vibrant) ===== */
+  /* Level 0 - Citing articles (pink) */
+  --graph-node-citing: #ec4899;
+  /* Level 1 - Selected (bright green) */
+  --graph-node-selected: #22c55e;
+  /* Level 1 - Excluded (red) */
+  --graph-node-excluded: #ef4444;
+  /* Level 1 - Candidates PubMed (blue) */
+  --graph-node-candidate-pubmed: #3b82f6;
+  /* Level 1 - Candidates DOAJ (yellow) */
+  --graph-node-candidate-doaj: #eab308;
+  /* Level 1 - Candidates Wiley (violet) */
+  --graph-node-candidate-wiley: #8b5cf6;
+  /* Level 2 - References (orange) */
+  --graph-node-reference: #f97316;
+  /* Level 3 - Related articles (cyan) */
+  --graph-node-related: #06b6d4;
+  /* AI Found articles (bright cyan) */
+  --graph-node-ai-found: #00ffff;
+  /* P-value highlighted (golden/amber) */
+  --graph-node-pvalue: #fbbf24;
+  /* Default node color (gray) */
+  --graph-node-default: #6b7280;
+  /* Semantic Cluster default color (indigo) */
+  --graph-cluster-default: #6366f1;
+  
   /* Editor specifics */
   --editor-bg: #ffffff;
   --editor-text: #1a1a1a;
@@ -62,26 +88,196 @@
   --transition-slow: 0.4s;
 }
 
-/* Light Theme */
+/* Light Theme - Pastel Palette */
 .light-theme {
-  --bg-primary: #f0f4f8;
-  --bg-secondary: rgba(255, 255, 255, 0.7);
-  --bg-glass: rgba(255, 255, 255, 0.6);
-  --bg-glass-light: rgba(255, 255, 255, 0.8);
-  --border-glass: rgba(0, 0, 0, 0.08);
-  --border-glass-light: rgba(0, 0, 0, 0.12);
-  --text-primary: #1a202c;
-  --text-secondary: #4a5568;
-  --text-muted: #718096;
-  --accent: #3182ce;
-  --accent-glow: rgba(49, 130, 206, 0.2);
-  --success: #38a169;
-  --success-glow: rgba(56, 161, 105, 0.2);
-  --danger: #e53e3e;
-  --danger-glow: rgba(229, 62, 62, 0.2);
-  --warning: #d69e2e;
-  --bg-gradient-1: rgba(49, 130, 206, 0.05);
-  --bg-gradient-2: rgba(56, 161, 105, 0.05);
+  /* Base backgrounds - soft and airy */
+  --bg-primary: #fafbfd;
+  --bg-secondary: rgba(255, 255, 255, 0.9);
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --bg-glass-light: rgba(255, 255, 255, 0.95);
+  --bg-metal: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.98));
+  --bg-metal-shine: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.95));
+  
+  /* Borders - soft and subtle */
+  --border-glass: rgba(148, 163, 184, 0.15);
+  --border-glass-light: rgba(148, 163, 184, 0.25);
+  --border-glow: rgba(147, 197, 253, 0.4);
+  
+  /* Text - softer contrasts */
+  --text-primary: #334155;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  
+  /* Pastel Accent - soft blue */
+  --accent: #93c5fd;
+  --accent-secondary: #c4b5fd;
+  --accent-gradient: linear-gradient(135deg, #93c5fd, #c4b5fd);
+  --accent-gradient-hover: linear-gradient(135deg, #a5d0fe, #d4c7fe);
+  --accent-glow: rgba(147, 197, 253, 0.3);
+  --accent-glow-strong: rgba(147, 197, 253, 0.5);
+  
+  /* Pastel Success - soft green/mint */
+  --success: #86efac;
+  --success-secondary: #6ee7b7;
+  --success-gradient: linear-gradient(135deg, #86efac, #6ee7b7);
+  --success-glow: rgba(134, 239, 172, 0.3);
+  
+  /* Pastel Danger - soft coral/rose */
+  --danger: #fda4af;
+  --danger-secondary: #fdba74;
+  --danger-gradient: linear-gradient(135deg, #fda4af, #fdba74);
+  --danger-glow: rgba(253, 164, 175, 0.3);
+  
+  /* Pastel Warning - soft peach/amber */
+  --warning: #fcd34d;
+  --warning-gradient: linear-gradient(135deg, #fcd34d, #fdba74);
+  
+  /* Background Gradients - very subtle */
+  --bg-gradient-1: rgba(147, 197, 253, 0.08);
+  --bg-gradient-2: rgba(196, 181, 253, 0.06);
+  --bg-gradient-3: rgba(134, 239, 172, 0.05);
+  
+  /* Metal Effects for light theme */
+  --metal-highlight: rgba(255, 255, 255, 0.6);
+  --metal-shadow: rgba(148, 163, 184, 0.15);
+  
+  /* ===== Graph Node Colors - Pastel Palette ===== */
+  /* Level 0 - Citing articles (soft pink) */
+  --graph-node-citing: #f9a8d4;
+  /* Level 1 - Selected (soft mint green) */
+  --graph-node-selected: #86efac;
+  /* Level 1 - Excluded (soft coral) */
+  --graph-node-excluded: #fda4af;
+  /* Level 1 - Candidates PubMed (soft sky blue) */
+  --graph-node-candidate-pubmed: #93c5fd;
+  /* Level 1 - Candidates DOAJ (soft yellow) */
+  --graph-node-candidate-doaj: #fde047;
+  /* Level 1 - Candidates Wiley (soft violet) */
+  --graph-node-candidate-wiley: #c4b5fd;
+  /* Level 2 - References (soft peach) */
+  --graph-node-reference: #fdba74;
+  /* Level 3 - Related articles (soft teal) */
+  --graph-node-related: #5eead4;
+  /* AI Found articles (soft cyan) */
+  --graph-node-ai-found: #67e8f9;
+  /* P-value highlighted (soft amber) */
+  --graph-node-pvalue: #fcd34d;
+  /* Default node color (soft gray) */
+  --graph-node-default: #cbd5e1;
+  
+  /* Semantic Cluster default color (soft indigo) */
+  --graph-cluster-default: #a5b4fc;
+}
+
+/* Light theme specific overrides */
+.light-theme body::before {
+  background-image: 
+    linear-gradient(rgba(147, 197, 253, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(147, 197, 253, 0.06) 1px, transparent 1px);
+}
+
+.light-theme .card,
+.light-theme .glass {
+  background: var(--bg-metal);
+  border-color: var(--border-glass);
+  box-shadow: 
+    0 4px 20px rgba(148, 163, 184, 0.1),
+    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+}
+
+.light-theme .card:hover,
+.light-theme .glass:hover {
+  box-shadow: 
+    0 8px 30px rgba(148, 163, 184, 0.15),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset,
+    0 0 20px var(--accent-glow);
+}
+
+.light-theme .btn {
+  box-shadow: 
+    0 2px 10px var(--accent-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.light-theme .btn:hover {
+  box-shadow: 
+    0 4px 20px var(--accent-glow-strong),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.light-theme .btn.secondary {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--border-glass-light);
+  color: var(--text-primary);
+  box-shadow: 
+    0 2px 8px rgba(148, 163, 184, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.light-theme .btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--accent);
+  box-shadow: 
+    0 4px 12px rgba(148, 163, 184, 0.15),
+    0 0 15px var(--accent-glow);
+}
+
+.light-theme .tabs {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--border-glass);
+  box-shadow: 
+    0 2px 10px rgba(148, 163, 184, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.light-theme .tab.active {
+  background: var(--accent-gradient);
+  color: white;
+}
+
+.light-theme input,
+.light-theme select,
+.light-theme textarea {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--border-glass-light);
+  box-shadow: inset 0 1px 3px rgba(148, 163, 184, 0.1);
+}
+
+.light-theme input:focus,
+.light-theme select:focus,
+.light-theme textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 
+    0 0 0 3px var(--accent-glow),
+    inset 0 1px 3px rgba(148, 163, 184, 0.1);
+}
+
+.light-theme .alert {
+  background: linear-gradient(135deg, rgba(253, 164, 175, 0.2), rgba(253, 186, 116, 0.15));
+  border-color: rgba(253, 164, 175, 0.4);
+  color: #b91c1c;
+}
+
+.light-theme .ok {
+  background: linear-gradient(135deg, rgba(134, 239, 172, 0.2), rgba(110, 231, 183, 0.15));
+  border-color: rgba(134, 239, 172, 0.4);
+  color: #15803d;
+}
+
+.light-theme h1 {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Light theme scrollbar */
+.light-theme ::-webkit-scrollbar-track {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.light-theme ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--accent), var(--accent-secondary));
 }
 
 * {

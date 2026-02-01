@@ -14,7 +14,7 @@ import {
   IconStar,
   IconCheckCircle,
 } from "../FlowbiteIcons";
-import { getLevelColor, getLevelName } from "./utils";
+import { getLevelColor, getLevelName, getGraphNodeColors } from "./utils";
 import type { EnrichedNodeData } from "./types";
 
 type Props = {
@@ -417,7 +417,7 @@ export default function NodeInfoPanel({
             <IconTrendingUp size="sm" />
             Цитирований
           </div>
-          <div className="node-info-value" style={{ color: "#10b981" }}>
+          <div className="node-info-value" style={{ color: "var(--success)" }}>
             {displayData.citedByCount}
           </div>
         </div>
@@ -429,7 +429,7 @@ export default function NodeInfoPanel({
             <IconStar size="sm" />
             P-value
           </div>
-          <div className="node-info-value" style={{ color: "#fbbf24" }}>
+          <div className="node-info-value" style={{ color: "var(--warning)" }}>
             {"★".repeat(node.statsQuality)}
           </div>
         </div>

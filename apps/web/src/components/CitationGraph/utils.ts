@@ -59,20 +59,21 @@ export function useDebounce<T>(value: T, delay: number): T {
 }
 
 /**
- * Цвет уровня графа
+ * Цвет уровня графа (использует CSS-переменные)
  */
 export function getLevelColor(level: number): string {
+  const colors = getGraphNodeColors();
   switch (level) {
     case 0:
-      return "#ec4899"; // Розовый для цитирующих
+      return colors.citing; // Розовый для цитирующих
     case 1:
-      return "#3b82f6"; // Синий для статей в проекте
+      return colors.candidatePubmed; // Синий для статей в проекте
     case 2:
-      return "#f97316"; // Оранжевый для references
+      return colors.reference; // Оранжевый для references
     case 3:
-      return "#06b6d4"; // Голубой для связанных работ
+      return colors.related; // Голубой для связанных работ
     default:
-      return "#6b7280";
+      return colors.default;
   }
 }
 
@@ -95,7 +96,37 @@ export function getLevelName(level: number): string {
 }
 
 /**
- * Цвета для кластеров
+ * Получить значение CSS-переменной
+ */
+export function getCSSVariable(name: string): string {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(name)
+    .trim();
+}
+
+/**
+ * Получить цвета узлов графа из CSS-переменных
+ */
+export function getGraphNodeColors() {
+  return {
+    citing: getCSSVariable("--graph-node-citing") || "#ec4899",
+    selected: getCSSVariable("--graph-node-selected") || "#22c55e",
+    excluded: getCSSVariable("--graph-node-excluded") || "#ef4444",
+    candidatePubmed:
+      getCSSVariable("--graph-node-candidate-pubmed") || "#3b82f6",
+    candidateDoaj: getCSSVariable("--graph-node-candidate-doaj") || "#eab308",
+    candidateWiley: getCSSVariable("--graph-node-candidate-wiley") || "#8b5cf6",
+    reference: getCSSVariable("--graph-node-reference") || "#f97316",
+    related: getCSSVariable("--graph-node-related") || "#06b6d4",
+    aiFound: getCSSVariable("--graph-node-ai-found") || "#00ffff",
+    pvalue: getCSSVariable("--graph-node-pvalue") || "#fbbf24",
+    default: getCSSVariable("--graph-node-default") || "#6b7280",
+    clusterDefault: getCSSVariable("--graph-cluster-default") || "#6366f1",
+  };
+}
+
+/**
+ * Цвета для кластеров - пастельные версии для светлой темы
  */
 export const CLUSTER_COLORS = [
   "#3b82f6", // Blue
@@ -111,10 +142,35 @@ export const CLUSTER_COLORS = [
 ];
 
 /**
- * Получить цвет кластера по индексу
+ * Пастельные цвета для кластеров (светлая тема)
+ */
+export const CLUSTER_COLORS_PASTEL = [
+  "#93c5fd", // Pastel Blue
+  "#86efac", // Pastel Green
+  "#fcd34d", // Pastel Amber
+  "#fda4af", // Pastel Rose
+  "#c4b5fd", // Pastel Violet
+  "#f9a8d4", // Pastel Pink
+  "#5eead4", // Pastel Teal
+  "#bef264", // Pastel Lime
+  "#fdba74", // Pastel Orange
+  "#a5b4fc", // Pastel Indigo
+];
+
+/**
+ * Получить цвета кластеров в зависимости от темы
+ */
+export function getClusterColors(): string[] {
+  const isLightTheme = document.body.classList.contains("light-theme");
+  return isLightTheme ? CLUSTER_COLORS_PASTEL : CLUSTER_COLORS;
+}
+
+/**
+ * Получить цвет кластера по индексу (с учётом темы)
  */
 export function getClusterColor(index: number): string {
-  return CLUSTER_COLORS[index % CLUSTER_COLORS.length];
+  const colors = getClusterColors();
+  return colors[index % colors.length];
 }
 
 /**
