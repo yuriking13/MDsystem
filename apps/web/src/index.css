@@ -93,97 +93,97 @@
   --transition-slow: 0.4s;
 }
 
-/* Light Theme - Pastel Palette */
+/* Light Theme - Black White Gray Coral */
 .light-theme {
-  /* Base backgrounds - soft and airy */
-  --bg-primary: #fafbfd;
-  --bg-secondary: rgba(255, 255, 255, 0.9);
-  --bg-glass: rgba(255, 255, 255, 0.85);
-  --bg-glass-light: rgba(255, 255, 255, 0.95);
-  --bg-metal: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(248, 250, 252, 0.98));
+  /* Base backgrounds - clean white and gray */
+  --bg-primary: #f5f5f5;
+  --bg-secondary: rgba(255, 255, 255, 0.95);
+  --bg-glass: rgba(255, 255, 255, 0.9);
+  --bg-glass-light: rgba(255, 255, 255, 0.97);
+  --bg-metal: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(247, 248, 250, 0.98));
   --bg-metal-shine: linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.95));
   
-  /* Borders - soft and subtle */
-  --border-glass: rgba(148, 163, 184, 0.15);
-  --border-glass-light: rgba(148, 163, 184, 0.25);
-  --border-glow: rgba(147, 197, 253, 0.4);
+  /* Borders - gray tones */
+  --border-glass: rgba(148, 163, 184, 0.25);
+  --border-glass-light: rgba(148, 163, 184, 0.35);
+  --border-glow: rgba(250, 186, 174, 0.5);
   
-  /* Text - softer contrasts */
-  --text-primary: #334155;
-  --text-secondary: #64748b;
+  /* Text - black and gray */
+  --text-primary: #1f2937;
+  --text-secondary: #475467;
   --text-muted: #94a3b8;
   
-  /* Pastel Accent - soft blue */
-  --accent: #93c5fd;
-  --accent-secondary: #c4b5fd;
-  --accent-gradient: linear-gradient(135deg, #93c5fd, #c4b5fd);
-  --accent-gradient-hover: linear-gradient(135deg, #a5d0fe, #d4c7fe);
-  --accent-glow: rgba(147, 197, 253, 0.3);
-  --accent-glow-strong: rgba(147, 197, 253, 0.5);
+  /* Coral Accent */
+  --accent: #fabaae;
+  --accent-secondary: #fc9dbf;
+  --accent-gradient: linear-gradient(135deg, #fabaae, #fc9dbf);
+  --accent-gradient-hover: linear-gradient(135deg, #fcc8bf, #fdb0d0);
+  --accent-glow: rgba(250, 186, 174, 0.35);
+  --accent-glow-strong: rgba(250, 186, 174, 0.5);
   
-  /* Pastel Success - soft green/mint */
+  /* Success - keeping green for contrast */
   --success: #86efac;
   --success-secondary: #6ee7b7;
   --success-gradient: linear-gradient(135deg, #86efac, #6ee7b7);
   --success-glow: rgba(134, 239, 172, 0.3);
   
-  /* Pastel Danger - soft coral/rose */
-  --danger: #fda4af;
-  --danger-secondary: #fdba74;
-  --danger-gradient: linear-gradient(135deg, #fda4af, #fdba74);
-  --danger-glow: rgba(253, 164, 175, 0.3);
+  /* Danger - coral tone */
+  --danger: #fc9dbf;
+  --danger-secondary: #fabaae;
+  --danger-gradient: linear-gradient(135deg, #fc9dbf, #fabaae);
+  --danger-glow: rgba(252, 157, 191, 0.35);
   
-  /* Pastel Warning - soft peach/amber */
-  --warning: #fcd34d;
-  --warning-gradient: linear-gradient(135deg, #fcd34d, #fdba74);
+  /* Warning - soft coral-peach */
+  --warning: #fabaae;
+  --warning-gradient: linear-gradient(135deg, #fabaae, #fcc8bf);
   
-  /* Background Gradients - very subtle */
-  --bg-gradient-1: rgba(147, 197, 253, 0.08);
-  --bg-gradient-2: rgba(196, 181, 253, 0.06);
-  --bg-gradient-3: rgba(134, 239, 172, 0.05);
+  /* Background Gradients - subtle gray and coral */
+  --bg-gradient-1: rgba(250, 186, 174, 0.08);
+  --bg-gradient-2: rgba(148, 163, 184, 0.05);
+  --bg-gradient-3: rgba(252, 157, 191, 0.06);
   
   /* Metal Effects for light theme */
   --metal-highlight: rgba(255, 255, 255, 0.6);
   --metal-shadow: rgba(148, 163, 184, 0.15);
   
-  /* ===== Graph Node Colors - Pastel Palette ===== */
-  /* Level 0 - Citing articles (soft pink) */
-  --graph-node-citing: #f9a8d4;
-  /* Level 1 - Selected (soft mint green) */
-  --graph-node-selected: #86efac;
-  /* Level 1 - Excluded (soft coral) */
-  --graph-node-excluded: #fda4af;
-  /* Level 1 - Candidates PubMed (soft sky blue) */
-  --graph-node-candidate-pubmed: #93c5fd;
-  /* Level 1 - Candidates DOAJ (soft yellow) */
-  --graph-node-candidate-doaj: #fde047;
-  /* Level 1 - Candidates Wiley (soft violet) */
-  --graph-node-candidate-wiley: #c4b5fd;
-  /* Level 2 - References (soft peach) */
-  --graph-node-reference: #fdba74;
-  /* Level 3 - Related articles (soft teal) */
-  --graph-node-related: #5eead4;
-  /* AI Found articles (soft cyan) */
-  --graph-node-ai-found: #67e8f9;
-  /* P-value highlighted (soft amber) */
-  --graph-node-pvalue: #fcd34d;
-  /* Default node color (soft gray) */
-  --graph-node-default: #cbd5e1;
+  /* ===== Graph Node Colors - Gray & Coral Palette ===== */
+  /* Level 0 - Citing articles (coral pink) */
+  --graph-node-citing: #fc9dbf;
+  /* Level 1 - Selected (coral) */
+  --graph-node-selected: #fabaae;
+  /* Level 1 - Excluded (darker coral) */
+  --graph-node-excluded: #f87a9a;
+  /* Level 1 - Candidates PubMed (gray-blue) */
+  --graph-node-candidate-pubmed: #94a3b8;
+  /* Level 1 - Candidates DOAJ (light gray) */
+  --graph-node-candidate-doaj: #cbd5e1;
+  /* Level 1 - Candidates Wiley (medium gray) */
+  --graph-node-candidate-wiley: #9ca3af;
+  /* Level 2 - References (light coral) */
+  --graph-node-reference: #fcc8bf;
+  /* Level 3 - Related articles (pale coral) */
+  --graph-node-related: #fde0db;
+  /* AI Found articles (bright coral) */
+  --graph-node-ai-found: #fabaae;
+  /* P-value highlighted (coral accent) */
+  --graph-node-pvalue: #fc9dbf;
+  /* Default node color (gray) */
+  --graph-node-default: #d1d5db;
   
-  /* Semantic Cluster default color (soft indigo) */
-  --graph-cluster-default: #a5b4fc;
-  /* Graph background - light and airy */
-  --graph-bg: #f8fafc;
-  --graph-bg-fullscreen: #f1f5f9;
-  /* Graph link color - soft */
-  --graph-link-color: rgba(148, 163, 184, 0.35);
+  /* Semantic Cluster default color (coral) */
+  --graph-cluster-default: #fabaae;
+  /* Graph background - light gray */
+  --graph-bg: #fafafa;
+  --graph-bg-fullscreen: #f5f5f5;
+  /* Graph link color - soft gray */
+  --graph-link-color: rgba(148, 163, 184, 0.3);
 }
 
 /* Light theme specific overrides */
 .light-theme body::before {
   background-image: 
-    linear-gradient(rgba(147, 197, 253, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(147, 197, 253, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
 }
 
 .light-theme .card,
@@ -191,53 +191,54 @@
   background: var(--bg-metal);
   border-color: var(--border-glass);
   box-shadow: 
-    0 4px 20px rgba(148, 163, 184, 0.1),
-    0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+    0 4px 20px rgba(148, 163, 184, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.6) inset;
 }
 
 .light-theme .card:hover,
 .light-theme .glass:hover {
   box-shadow: 
-    0 8px 30px rgba(148, 163, 184, 0.15),
-    0 0 0 1px rgba(255, 255, 255, 0.6) inset,
+    0 8px 30px rgba(250, 186, 174, 0.25),
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset,
     0 0 20px var(--accent-glow);
+  border-color: var(--border-glow);
 }
 
 .light-theme .btn {
   box-shadow: 
     0 2px 10px var(--accent-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .light-theme .btn:hover {
   box-shadow: 
     0 4px 20px var(--accent-glow-strong),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 .light-theme .btn.secondary {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.9);
   border: 1px solid var(--border-glass-light);
   color: var(--text-primary);
   box-shadow: 
-    0 2px 8px rgba(148, 163, 184, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 2px 8px rgba(148, 163, 184, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .light-theme .btn.secondary:hover {
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.98);
   border-color: var(--accent);
   box-shadow: 
-    0 4px 12px rgba(148, 163, 184, 0.15),
+    0 4px 12px var(--accent-glow),
     0 0 15px var(--accent-glow);
 }
 
 .light-theme .tabs {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border-color: var(--border-glass);
   box-shadow: 
-    0 2px 10px rgba(148, 163, 184, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 2px 10px rgba(148, 163, 184, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .light-theme .tab.active {
@@ -248,9 +249,9 @@
 .light-theme input,
 .light-theme select,
 .light-theme textarea {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.95);
   border-color: var(--border-glass-light);
-  box-shadow: inset 0 1px 3px rgba(148, 163, 184, 0.1);
+  box-shadow: inset 0 1px 3px rgba(148, 163, 184, 0.12);
 }
 
 .light-theme input:focus,
@@ -259,23 +260,23 @@
   border-color: var(--accent);
   box-shadow: 
     0 0 0 3px var(--accent-glow),
-    inset 0 1px 3px rgba(148, 163, 184, 0.1);
+    inset 0 1px 3px rgba(148, 163, 184, 0.12);
 }
 
 .light-theme .alert {
-  background: linear-gradient(135deg, rgba(253, 164, 175, 0.2), rgba(253, 186, 116, 0.15));
-  border-color: rgba(253, 164, 175, 0.4);
+  background: linear-gradient(135deg, rgba(252, 157, 191, 0.25), rgba(250, 186, 174, 0.2));
+  border-color: rgba(252, 157, 191, 0.5);
   color: #b91c1c;
 }
 
 .light-theme .ok {
-  background: linear-gradient(135deg, rgba(134, 239, 172, 0.2), rgba(110, 231, 183, 0.15));
-  border-color: rgba(134, 239, 172, 0.4);
+  background: linear-gradient(135deg, rgba(134, 239, 172, 0.25), rgba(110, 231, 183, 0.2));
+  border-color: rgba(134, 239, 172, 0.5);
   color: #15803d;
 }
 
 .light-theme h1 {
-  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  background: linear-gradient(135deg, #fabaae, #fc9dbf);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -283,7 +284,7 @@
 
 /* Light theme scrollbar */
 .light-theme ::-webkit-scrollbar-track {
-  background: rgba(241, 245, 249, 0.8);
+  background: rgba(245, 245, 245, 0.9);
 }
 
 .light-theme ::-webkit-scrollbar-thumb {
@@ -2541,7 +2542,7 @@ input:focus::placeholder {
 .ai-badge {
   font-size: 10px;
   padding: 3px 8px;
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  background: linear-gradient(135deg, #fabaae, #fc9dbf);
   color: white;
   border-radius: 6px;
   font-weight: 600;
@@ -3463,11 +3464,11 @@ input:focus::placeholder {
   padding: 12px 24px !important;
   font-size: 14px !important;
   font-weight: 600 !important;
-  background: linear-gradient(135deg, var(--accent), #3b5ed8) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-secondary)) !important;
 }
 
 .search-submit-btn:hover {
-  background: linear-gradient(135deg, #5b8eff, var(--accent)) !important;
+  background: var(--accent-gradient-hover) !important;
 }
 
 /* ===== FLOWBITE-STYLE GRAPH CONTROLS ===== */
@@ -3684,7 +3685,7 @@ input:focus::placeholder {
   font-size: 11px;
   font-weight: 500;
   border: none;
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  background: linear-gradient(135deg, #fabaae, #fc9dbf);
   color: white;
   border-radius: 6px;
   cursor: pointer;
