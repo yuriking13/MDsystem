@@ -126,6 +126,25 @@ export function getGraphNodeColors() {
 }
 
 /**
+ * Получить цвета фона графа из CSS-переменных
+ */
+export function getGraphBackgroundColors() {
+  return {
+    normal: getCSSVariable("--graph-bg") || "#0b0f19",
+    fullscreen: getCSSVariable("--graph-bg-fullscreen") || "#050810",
+    linkColor:
+      getCSSVariable("--graph-link-color") || "rgba(100, 130, 180, 0.25)",
+  };
+}
+
+/**
+ * Проверить, активна ли светлая тема
+ */
+export function isLightTheme(): boolean {
+  return document.body.classList.contains("light-theme");
+}
+
+/**
  * Цвета для кластеров - пастельные версии для светлой темы
  */
 export const CLUSTER_COLORS = [

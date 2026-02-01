@@ -77,6 +77,11 @@
   --graph-node-default: #6b7280;
   /* Semantic Cluster default color (indigo) */
   --graph-cluster-default: #6366f1;
+  /* Graph background */
+  --graph-bg: #0b0f19;
+  --graph-bg-fullscreen: #050810;
+  /* Graph link color */
+  --graph-link-color: rgba(100, 130, 180, 0.25);
   
   /* Editor specifics */
   --editor-bg: #ffffff;
@@ -167,6 +172,11 @@
   
   /* Semantic Cluster default color (soft indigo) */
   --graph-cluster-default: #a5b4fc;
+  /* Graph background - light and airy */
+  --graph-bg: #f8fafc;
+  --graph-bg-fullscreen: #f1f5f9;
+  /* Graph link color - soft */
+  --graph-link-color: rgba(148, 163, 184, 0.35);
 }
 
 /* Light theme specific overrides */
