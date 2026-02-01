@@ -91,12 +91,7 @@ import {
   IconCheckCircle,
 } from "../FlowbiteIcons";
 import NodeInfoPanel from "./NodeInfoPanel";
-import {
-  formatTime,
-  adjustBrightness,
-  useDebounce,
-  getGraphNodeColors,
-} from "./utils";
+import { formatTime, adjustBrightness, useDebounce } from "./utils";
 import type { GraphNodeWithCoords, ClusterArticleDetail } from "../../types";
 
 type Props = {
@@ -368,24 +363,58 @@ export default function CitationGraph({ projectId }: Props) {
     return () => clearInterval(interval);
   }, [isLightTheme]);
 
-  // Предвычисленные цвета для текущей темы
+  // Предвычисленные цвета для текущей темы (включая цвета узлов)
   const graphColors = useMemo(() => {
+    // Пастельные цвета для светлой темы
+    const pastelColors = {
+      citing: "#f9a8d4", // soft pink
+      selected: "#86efac", // soft mint green
+      excluded: "#fda4af", // soft coral
+      candidatePubmed: "#93c5fd", // soft sky blue
+      candidateDoaj: "#fde047", // soft yellow
+      candidateWiley: "#c4b5fd", // soft violet
+      reference: "#fdba74", // soft peach
+      related: "#5eead4", // soft teal
+      aiFound: "#67e8f9", // soft cyan
+      pvalue: "#fcd34d", // soft amber
+      default: "#cbd5e1", // soft gray
+    };
+
+    // Яркие цвета для тёмной темы
+    const vibrantColors = {
+      citing: "#ec4899", // pink
+      selected: "#22c55e", // bright green
+      excluded: "#ef4444", // red
+      candidatePubmed: "#3b82f6", // blue
+      candidateDoaj: "#eab308", // yellow
+      candidateWiley: "#8b5cf6", // violet
+      reference: "#f97316", // orange
+      related: "#06b6d4", // cyan
+      aiFound: "#00ffff", // bright cyan
+      pvalue: "#fbbf24", // golden
+      default: "#6b7280", // gray
+    };
+
+    const nodeColors = isLightTheme ? pastelColors : vibrantColors;
+
     return {
       bg: isLightTheme ? "#f8fafc" : "#0b0f19",
       bgFullscreen: isLightTheme ? "#f1f5f9" : "#050810",
       linkColor: isLightTheme
-        ? "rgba(148, 163, 184, 0.35)"
+        ? "rgba(148, 163, 184, 0.4)"
         : "rgba(100, 130, 180, 0.25)",
       strokeColor: isLightTheme
-        ? "rgba(0, 0, 0, 0.15)"
+        ? "rgba(100, 116, 139, 0.2)"
         : "rgba(255, 255, 255, 0.15)",
       clusterStrokeColor: isLightTheme
-        ? "rgba(0, 0, 0, 0.25)"
+        ? "rgba(100, 116, 139, 0.35)"
         : "rgba(255, 255, 255, 0.3)",
       textColor: isLightTheme
-        ? "rgba(0, 0, 0, 0.7)"
+        ? "rgba(30, 41, 59, 0.8)"
         : "rgba(255, 255, 255, 0.7)",
       shadowAlpha: isLightTheme ? "40" : "60",
+      // Цвета узлов
+      ...nodeColors,
     };
   }, [isLightTheme]);
 
@@ -1351,20 +1380,20 @@ export default function CitationGraph({ projectId }: Props) {
       const statsQ = node.statsQuality || 0;
       const source = node.source || "pubmed";
 
-      // Получаем цвета из CSS-переменных (поддержка темы)
-      const colors = getGraphNodeColors();
+      // Используем предвычисленные цвета из graphColors (пастельные для светлой темы)
+      const colors = graphColors;
 
-      // Подсветка найденных AI статей - яркий циановый/бирюзовый с пульсацией
+      // Подсветка найденных AI статей
       if (aiFoundArticleIds.has(node.id)) {
         return colors.aiFound;
       }
 
-      // Если включена подсветка P-value и статья имеет P-value - золотой
+      // Если включена подсветка P-value и статья имеет P-value
       if (highlightPValue && statsQ > 0) {
         return colors.pvalue;
       }
 
-      // Уровень 0 (citing - статьи, которые цитируют наши) - розовый/пинк
+      // Уровень 0 (citing - статьи, которые цитируют наши)
       if (level === 0) {
         return colors.citing;
       }
@@ -1391,7 +1420,7 @@ export default function CitationGraph({ projectId }: Props) {
 
       return colors.default;
     },
-    [highlightPValue, aiFoundArticleIds],
+    [highlightPValue, aiFoundArticleIds, graphColors],
   );
 
   const nodeLabel = useCallback(
