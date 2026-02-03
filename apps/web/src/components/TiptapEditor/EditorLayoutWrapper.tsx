@@ -138,86 +138,76 @@ export default function EditorLayoutWrapper({
         <main
           className={cn(
             "flex-1 flex flex-col min-w-0 overflow-hidden",
-            "bg-neutral-950",
+            "bg-neutral-900",
           )}
         >
           {/* Toggle buttons when sidebars are hidden */}
-          <div className="flex items-center justify-between px-2 py-1 border-b border-neutral-800 bg-neutral-900/80">
-            {/* Left toggle (outline) */}
-            {!showOutline && (
-              <button
-                onClick={handleToggleOutline}
-                className={cn(
-                  "flex items-center gap-1.5 px-2 py-1 text-xs",
-                  "text-neutral-500 hover:text-neutral-300",
-                  "hover:bg-neutral-800 rounded-lg transition-colors",
-                )}
-                title="Оглавление (Ctrl+\\)"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+          {(!showOutline || !showBibliography) && (
+            <div className="flex items-center justify-between px-3 py-1.5 border-b border-neutral-800">
+              {/* Left toggle (outline) */}
+              {!showOutline ? (
+                <button
+                  onClick={handleToggleOutline}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 text-xs",
+                    "text-neutral-400 hover:text-neutral-200",
+                    "hover:bg-neutral-800 rounded transition-colors",
+                  )}
+                  title="Оглавление (Ctrl+\\)"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-                  />
-                </svg>
-                Оглавление
-              </button>
-            )}
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
+                    />
+                  </svg>
+                  Оглавление
+                </button>
+              ) : (
+                <div />
+              )}
 
-            {showOutline && <div />}
-
-            {/* Right toggle (bibliography) */}
-            {!showBibliography && (
-              <button
-                onClick={handleToggleBibliography}
-                className={cn(
-                  "flex items-center gap-1.5 px-2 py-1 text-xs",
-                  "text-neutral-500 hover:text-neutral-300",
-                  "hover:bg-neutral-800 rounded-lg transition-colors",
-                )}
-                title="Библиография (Ctrl+])"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {/* Right toggle (bibliography) */}
+              {!showBibliography ? (
+                <button
+                  onClick={handleToggleBibliography}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 text-xs",
+                    "text-neutral-400 hover:text-neutral-200",
+                    "hover:bg-neutral-800 rounded transition-colors",
+                  )}
+                  title="Библиография (Ctrl+])"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-                  />
-                </svg>
-                Библиография ({citations.length})
-              </button>
-            )}
-
-            {showBibliography && <div />}
-          </div>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                    />
+                  </svg>
+                  Библиография ({citations.length})
+                </button>
+              ) : (
+                <div />
+              )}
+            </div>
+          )}
 
           {/* Editor content - scrollable area */}
-          <div className="flex-1 overflow-y-auto">
-            <div
-              className={cn(
-                "max-w-4xl mx-auto my-8",
-                "bg-neutral-900",
-                "shadow-xl shadow-black/30",
-                "rounded-xl",
-                "min-h-[calc(100vh-200px)]",
-              )}
-            >
-              {children}
-            </div>
-          </div>
+          <div className="flex-1 overflow-y-auto">{children}</div>
         </main>
 
         {/* Right sidebar: Bibliography */}
