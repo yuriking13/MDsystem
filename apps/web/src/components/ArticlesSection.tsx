@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   apiSearchArticles,
   apiGetArticles,
@@ -17,6 +17,8 @@ import {
 } from "../lib/api";
 import AddArticleByDoiModal from "./AddArticleByDoiModal";
 import { useToast } from "./Toast";
+import ArticleCard from "./ArticleCard";
+import { toArticleData } from "../lib/articleAdapter";
 
 type Props = {
   projectId: string;
@@ -2164,229 +2166,23 @@ export default function ArticlesSection({
             : "Нет статей соответствующих фильтру."}
         </div>
       ) : (
-        <div className="articles-table">
+        <div className="articles-grid">
           {filteredArticles.map((a) => (
-            <div
+            <ArticleCard
               key={a.id}
-              className={`article-row ${a.has_stats ? "has-stats" : ""} ${selectedIds.has(a.id) ? "selected" : ""}`}
-            >
-              {/* Чекбокс для выбора */}
-              {canEdit && (
-                <div
-                  className="article-checkbox"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(a.id)}
-                    onChange={() => toggleSelect(a.id)}
-                    style={{ width: 18, height: 18 }}
-                  />
-                </div>
-              )}
-
-              <div
-                className="article-main"
-                onClick={() => setSelectedArticle(a)}
-              >
-                <div className="article-title">
-                  {getTitle(a)}
-                  {a.title_ru && (
-                    <span className="translate-badge" title="Есть перевод">
-                      <svg
-                        className="icon-sm"
-                        style={{
-                          display: "inline",
-                          verticalAlign: "middle",
-                          color: "#38bdf8",
-                        }}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                        />
-                      </svg>
-                    </span>
-                  )}
-                  {!a.title_ru && (
-                    <span className="no-translate-badge" title="Нет перевода">
-                      EN
-                    </span>
-                  )}
-                  {a.has_stats && (
-                    <span className="stats-badge" title="Содержит статистику">
-                      <svg
-                        className="icon-sm"
-                        style={{
-                          display: "inline",
-                          verticalAlign: "middle",
-                          color: "#4ade80",
-                        }}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                        />
-                      </svg>
-                    </span>
-                  )}
-                </div>
-                <div className="article-meta">
-                  {a.authors?.slice(0, 3).join(", ")}
-                  {a.authors && a.authors.length > 3 && " et al."}
-                  {a.year && ` • ${a.year}`}
-                  {a.journal && ` • ${a.journal}`}
-                </div>
-                <div className="article-ids">
-                  {a.pmid && <span className="id-badge">PMID: {a.pmid}</span>}
-                  {a.doi && <span className="id-badge">DOI: {a.doi}</span>}
-                  {a.publication_types?.map((pt) => (
-                    <span key={pt} className="id-badge pub-type">
-                      {pt}
-                    </span>
-                  ))}
-                  {(a.stats_quality ?? 0) > 0 && (
-                    <span className={`id-badge stats-q${a.stats_quality}`}>
-                      p&lt;
-                      {a.stats_quality === 3
-                        ? "0.001"
-                        : a.stats_quality === 2
-                          ? "0.01"
-                          : "0.05"}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Кнопки действий */}
-              {canEdit && (
-                <div
-                  className="article-actions"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {a.status !== "selected" && a.status !== "deleted" && (
-                    <button
-                      className="action-btn select"
-                      onClick={() => handleStatusChange(a, "selected")}
-                      title="Добавить в отобранные"
-                      type="button"
-                    >
-                      <svg
-                        className="icon-md"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                  {a.status !== "excluded" && a.status !== "deleted" && (
-                    <button
-                      className="action-btn exclude"
-                      onClick={() => handleStatusChange(a, "excluded")}
-                      title="Исключить из выборки"
-                      type="button"
-                    >
-                      <svg
-                        className="icon-md"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                  {a.status !== "candidate" && a.status !== "deleted" && (
-                    <button
-                      className="action-btn candidate"
-                      onClick={() => handleStatusChange(a, "candidate")}
-                      title="Вернуть в кандидаты"
-                      type="button"
-                    >
-                      <svg
-                        className="icon-md"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                  {a.status !== "deleted" && (
-                    <button
-                      className="action-btn delete"
-                      onClick={() => handleStatusChange(a, "deleted")}
-                      title="Удалить в корзину"
-                      type="button"
-                    >
-                      <svg
-                        className="icon-md"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                  {a.status === "deleted" && (
-                    <button
-                      className="action-btn restore"
-                      onClick={() => handleStatusChange(a, "candidate")}
-                      title="Восстановить из корзины"
-                      type="button"
-                    >
-                      <svg
-                        className="icon-md"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
+              article={toArticleData(a)}
+              isSelected={selectedIds.has(a.id)}
+              onSelect={toggleSelect}
+              onStatusChange={(id, newStatus) => {
+                const article = articles.find((art) => art.id === id);
+                if (article) {
+                  handleStatusChange(article, newStatus);
+                }
+              }}
+              onOpenDetails={() => setSelectedArticle(a)}
+              language={listLang}
+              compact={false}
+            />
           ))}
         </div>
       )}

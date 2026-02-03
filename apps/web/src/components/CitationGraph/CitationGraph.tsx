@@ -91,6 +91,7 @@ import {
   IconCheckCircle,
 } from "../FlowbiteIcons";
 import NodeInfoPanel from "./NodeInfoPanel";
+import GraphLegend from "./GraphLegend";
 import { formatTime, adjustBrightness, useDebounce } from "./utils";
 import type { GraphNodeWithCoords, ClusterArticleDetail } from "../../types";
 
@@ -3997,74 +3998,95 @@ export default function CitationGraph({ projectId }: Props) {
           </div>
         )}
 
-      {/* Legend */}
-      <div className="graph-legend-bar">
-        {aiFoundArticleIds.size > 0 && (
-          <span style={{ fontWeight: 600 }}>
-            <span
-              className="legend-dot"
-              style={{ background: "#00ffff", boxShadow: "0 0 6px #00ffff" }}
-            ></span>{" "}
-            AI найдено: {aiFoundArticleIds.size}
-          </span>
-        )}
-        {highlightPValue && (
-          <span>
-            <span
-              className="legend-dot"
-              style={{ background: "#fbbf24" }}
-            ></span>{" "}
-            P-value
-          </span>
-        )}
-        {depth >= 3 && (
-          <span>
-            <span
-              className="legend-dot"
-              style={{ background: "#ec4899" }}
-            ></span>{" "}
-            Цитируют статью из базы
-          </span>
-        )}
-        <span>
-          <span className="legend-dot" style={{ background: "#22c55e" }}></span>{" "}
-          Отобранные
-        </span>
-        <span>
-          <span className="legend-dot" style={{ background: "#3b82f6" }}></span>{" "}
-          PubMed
-        </span>
-        <span>
-          <span className="legend-dot" style={{ background: "#eab308" }}></span>{" "}
-          DOAJ
-        </span>
-        <span>
-          <span className="legend-dot" style={{ background: "#8b5cf6" }}></span>{" "}
-          Wiley
-        </span>
-        <span>
-          <span className="legend-dot" style={{ background: "#ef4444" }}></span>{" "}
-          Исключённые
-        </span>
-        {depth >= 2 && (
-          <span>
-            <span
-              className="legend-dot"
-              style={{ background: "#f97316" }}
-            ></span>{" "}
-            Ссылки
-          </span>
-        )}
-        {depth >= 3 && (
-          <span>
-            <span
-              className="legend-dot"
-              style={{ background: "#06b6d4" }}
-            ></span>{" "}
-            Связанные
-          </span>
-        )}
-      </div>
+      {/* Legend - New Component */}
+      <GraphLegend
+        nodeTypes={[
+          ...(aiFoundArticleIds.size > 0
+            ? [
+                {
+                  id: "ai-found",
+                  label: `AI найдено: ${aiFoundArticleIds.size}`,
+                  color: "#00ffff",
+                  description: "Статьи найденные AI-ассистентом",
+                },
+              ]
+            : []),
+          ...(highlightPValue
+            ? [
+                {
+                  id: "pvalue",
+                  label: "P-value",
+                  color: "#fbbf24",
+                  description: "Статьи со значимым P-value",
+                },
+              ]
+            : []),
+          ...(depth >= 3
+            ? [
+                {
+                  id: "citing",
+                  label: "Цитирующие",
+                  color: "#ec4899",
+                  description: "Статьи цитирующие статьи из базы",
+                },
+              ]
+            : []),
+          {
+            id: "selected",
+            label: "Отобранные",
+            color: "#22c55e",
+            description: "Включённые в обзор статьи",
+          },
+          {
+            id: "pubmed",
+            label: "PubMed",
+            color: "#3b82f6",
+            description: "Кандидаты из PubMed",
+          },
+          {
+            id: "doaj",
+            label: "DOAJ",
+            color: "#eab308",
+            description: "Кандидаты из DOAJ",
+          },
+          {
+            id: "wiley",
+            label: "Wiley",
+            color: "#8b5cf6",
+            description: "Кандидаты из Wiley",
+          },
+          {
+            id: "excluded",
+            label: "Исключённые",
+            color: "#ef4444",
+            description: "Исключённые из обзора",
+          },
+          ...(depth >= 2
+            ? [
+                {
+                  id: "references",
+                  label: "Ссылки",
+                  color: "#f97316",
+                  description: "Ссылки из статей проекта",
+                },
+              ]
+            : []),
+          ...(depth >= 3
+            ? [
+                {
+                  id: "related",
+                  label: "Связанные",
+                  color: "#06b6d4",
+                  description: "Связанные по цитированиям",
+                },
+              ]
+            : []),
+        ]}
+        orientation="horizontal"
+        showCounts={false}
+        compact={true}
+        className="mx-4 my-2"
+      />
 
       {/* Main Area: Graph + AI Panel side by side */}
       <div
