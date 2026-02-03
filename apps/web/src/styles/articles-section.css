@@ -1,0 +1,729 @@
+/* =============================================================================
+   Articles Section Styles
+   Modern styles for article search, filtering, and management
+   ============================================================================= */
+
+/* Filter Sidebar */
+.article-filter-sidebar {
+  @apply w-64 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-700/50 flex flex-col;
+}
+
+.article-filter-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.article-filter-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.article-filter-sidebar::-webkit-scrollbar-thumb {
+  background-color: rgb(163 163 163 / 0.3);
+  border-radius: 3px;
+}
+
+.article-filter-sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(163 163 163 / 0.5);
+}
+
+/* Filter Section */
+.filter-section {
+  @apply border-b border-neutral-200 dark:border-neutral-700/50;
+}
+
+.filter-section:last-child {
+  border-bottom: none;
+}
+
+.filter-section-header {
+  @apply flex items-center justify-between w-full px-4 py-3 text-left;
+  @apply hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-colors;
+}
+
+.filter-section-title {
+  @apply flex items-center gap-2 text-neutral-700 dark:text-neutral-200 text-sm font-medium;
+}
+
+.filter-section-content {
+  @apply px-4 pb-4 space-y-2;
+}
+
+/* Checkbox Items */
+.filter-checkbox-item {
+  @apply flex items-center justify-between py-1.5 cursor-pointer;
+}
+
+.filter-checkbox-item:hover .filter-checkbox-label {
+  @apply text-neutral-900 dark:text-neutral-100;
+}
+
+.filter-checkbox-input {
+  @apply w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-blue-500;
+  @apply focus:ring-blue-500/50;
+}
+
+.filter-checkbox-label {
+  @apply text-sm text-neutral-700 dark:text-neutral-300 transition-colors;
+}
+
+.filter-checkbox-count {
+  @apply text-xs text-neutral-400;
+}
+
+/* Status Buttons */
+.filter-status-btn {
+  @apply w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-colors;
+}
+
+.filter-status-btn--active {
+  @apply bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300;
+}
+
+.filter-status-btn--inactive {
+  @apply text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800;
+}
+
+.filter-status-count {
+  @apply text-xs px-1.5 py-0.5 rounded-full;
+}
+
+.filter-status-count--active {
+  @apply bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200;
+}
+
+.filter-status-count--inactive {
+  @apply bg-neutral-100 dark:bg-neutral-700 text-neutral-500 dark:text-neutral-400;
+}
+
+/* Article Card */
+.article-card {
+  @apply relative bg-white dark:bg-neutral-900;
+  @apply border border-neutral-200 dark:border-neutral-700/50 rounded-xl;
+  @apply overflow-hidden transition-all duration-200;
+}
+
+.article-card:hover {
+  @apply shadow-lg border-neutral-300 dark:border-neutral-600;
+}
+
+.article-card--selected {
+  @apply ring-2 ring-blue-500 border-blue-500;
+}
+
+.article-card-content {
+  @apply p-4;
+}
+
+.article-card-content--compact {
+  @apply p-3;
+}
+
+/* Article Card Badges */
+.article-badge {
+  @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full;
+}
+
+.article-badge--candidate {
+  @apply bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300;
+}
+
+.article-badge--selected {
+  @apply bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300;
+}
+
+.article-badge--excluded {
+  @apply bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300;
+}
+
+.article-badge--deleted {
+  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400;
+}
+
+.article-badge--pubmed {
+  @apply bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300;
+}
+
+.article-badge--doaj {
+  @apply bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300;
+}
+
+.article-badge--wiley {
+  @apply bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300;
+}
+
+.article-badge--stats {
+  @apply bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300;
+}
+
+.article-badge--fulltext {
+  @apply bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300;
+}
+
+/* Article Title */
+.article-title {
+  @apply text-base font-semibold text-neutral-900 dark:text-neutral-100 leading-snug;
+  @apply cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors;
+}
+
+.article-title--compact {
+  @apply text-sm;
+}
+
+/* Article Meta */
+.article-meta {
+  @apply mt-2 flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400;
+}
+
+.article-meta--compact {
+  @apply text-xs;
+}
+
+.article-meta-separator {
+  @apply text-neutral-300 dark:text-neutral-600;
+}
+
+.article-journal {
+  @apply truncate italic;
+}
+
+/* Article IDs */
+.article-ids {
+  @apply mt-2 flex items-center gap-3 text-xs text-neutral-500;
+}
+
+.article-id-link {
+  @apply inline-flex items-center gap-1 hover:text-blue-500 transition-colors;
+}
+
+/* Article Abstract */
+.article-abstract {
+  @apply text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed;
+}
+
+.article-abstract--collapsed {
+  @apply line-clamp-2;
+}
+
+.article-abstract-toggle {
+  @apply mt-1 text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1;
+}
+
+/* Article Tags */
+.article-tags {
+  @apply mt-2 flex flex-wrap gap-1;
+}
+
+.article-tag {
+  @apply inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded;
+  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400;
+}
+
+/* Article Actions Bar */
+.article-actions-bar {
+  @apply flex items-center justify-between px-4 py-2;
+  @apply bg-neutral-50 dark:bg-neutral-800/50;
+  @apply border-t border-neutral-200 dark:border-neutral-700/50;
+  @apply opacity-0 transition-opacity;
+}
+
+.article-card:hover .article-actions-bar {
+  @apply opacity-100;
+}
+
+.article-actions-bar--visible {
+  @apply opacity-100;
+}
+
+/* Status Action Buttons */
+.article-action-btn {
+  @apply p-1.5 rounded-lg transition-colors text-xs flex items-center gap-1;
+}
+
+.article-action-btn--select {
+  @apply hover:bg-green-100 dark:hover:bg-green-900/30 text-neutral-500 hover:text-green-600;
+}
+
+.article-action-btn--select-active {
+  @apply bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400;
+}
+
+.article-action-btn--candidate {
+  @apply hover:bg-yellow-100 dark:hover:bg-yellow-900/30 text-neutral-500 hover:text-yellow-600;
+}
+
+.article-action-btn--candidate-active {
+  @apply bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400;
+}
+
+.article-action-btn--exclude {
+  @apply hover:bg-red-100 dark:hover:bg-red-900/30 text-neutral-500 hover:text-red-600;
+}
+
+.article-action-btn--exclude-active {
+  @apply bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400;
+}
+
+/* Utility Action Buttons */
+.article-util-btn {
+  @apply p-1.5 rounded-lg transition-colors;
+  @apply hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500;
+}
+
+.article-util-btn:hover {
+  @apply text-neutral-700 dark:text-neutral-300;
+}
+
+.article-util-btn--translate:hover {
+  @apply text-blue-500;
+}
+
+.article-util-btn--stats:hover {
+  @apply text-emerald-500;
+}
+
+/* AI Sidebar */
+.ai-sidebar {
+  @apply w-80 lg:w-96 bg-white dark:bg-neutral-900;
+  @apply border-l border-neutral-200 dark:border-neutral-700/50;
+  @apply flex flex-col h-full;
+}
+
+.ai-sidebar-header {
+  @apply flex items-center justify-between px-4 py-3;
+  @apply border-b border-neutral-200 dark:border-neutral-700/50;
+  @apply bg-gradient-to-r from-blue-500/10 to-purple-500/10;
+}
+
+.ai-sidebar-icon {
+  @apply p-1.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg;
+}
+
+.ai-sidebar-title {
+  @apply text-sm font-semibold text-neutral-900 dark:text-neutral-100;
+}
+
+.ai-sidebar-subtitle {
+  @apply text-xs text-neutral-500;
+}
+
+/* AI Context Banner */
+.ai-context-banner {
+  @apply px-4 py-2 bg-blue-50 dark:bg-blue-900/20;
+  @apply border-b border-blue-100 dark:border-blue-800/30;
+}
+
+.ai-context-text {
+  @apply text-xs text-blue-700 dark:text-blue-300;
+}
+
+/* AI Messages */
+.ai-messages {
+  @apply flex-1 overflow-y-auto p-4 space-y-4;
+}
+
+.ai-message {
+  @apply flex;
+}
+
+.ai-message--user {
+  @apply justify-end;
+}
+
+.ai-message--assistant {
+  @apply justify-start;
+}
+
+.ai-message-bubble {
+  @apply max-w-[85%] rounded-2xl px-4 py-2.5;
+}
+
+.ai-message-bubble--user {
+  @apply bg-blue-500 text-white rounded-br-md;
+}
+
+.ai-message-bubble--assistant {
+  @apply bg-neutral-100 dark:bg-neutral-800;
+  @apply text-neutral-900 dark:text-neutral-100 rounded-bl-md;
+}
+
+.ai-message-content {
+  @apply text-sm whitespace-pre-wrap;
+}
+
+.ai-message-time {
+  @apply text-xs mt-1;
+}
+
+.ai-message-time--user {
+  @apply text-blue-200;
+}
+
+.ai-message-time--assistant {
+  @apply text-neutral-400;
+}
+
+/* AI Loading */
+.ai-loading {
+  @apply flex justify-start;
+}
+
+.ai-loading-bubble {
+  @apply bg-neutral-100 dark:bg-neutral-800 rounded-2xl rounded-bl-md px-4 py-3;
+}
+
+.ai-loading-dots {
+  @apply flex items-center gap-1;
+}
+
+.ai-loading-dot {
+  @apply w-2 h-2 bg-neutral-400 rounded-full animate-bounce;
+}
+
+/* AI Input */
+.ai-input-area {
+  @apply p-4 border-t border-neutral-200 dark:border-neutral-700/50;
+}
+
+.ai-input-textarea {
+  @apply w-full px-4 py-3 pr-12;
+  @apply bg-neutral-100 dark:bg-neutral-800 border-0 rounded-xl;
+  @apply text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400;
+  @apply resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50;
+  min-height: 44px;
+  max-height: 120px;
+}
+
+.ai-send-btn {
+  @apply absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-colors;
+}
+
+.ai-send-btn--active {
+  @apply bg-blue-500 text-white hover:bg-blue-600;
+}
+
+.ai-send-btn--inactive {
+  @apply bg-neutral-200 dark:bg-neutral-700 text-neutral-400;
+}
+
+/* Quick Actions */
+.ai-quick-actions {
+  @apply grid grid-cols-2 gap-2;
+}
+
+.ai-quick-action {
+  @apply flex flex-col items-center gap-1.5 p-3 rounded-xl;
+  @apply border border-neutral-200 dark:border-neutral-700;
+  @apply bg-white dark:bg-neutral-800;
+  @apply hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors text-center;
+}
+
+.ai-quick-action:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.ai-quick-action-icon {
+  @apply text-blue-500;
+}
+
+.ai-quick-action-label {
+  @apply text-xs text-neutral-700 dark:text-neutral-300;
+}
+
+/* Suggested Actions */
+.ai-suggestion {
+  @apply w-full flex items-start gap-3 p-3 rounded-lg;
+  @apply border border-neutral-200 dark:border-neutral-700;
+  @apply hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left transition-colors;
+}
+
+.ai-suggestion-icon {
+  @apply text-blue-500 mt-0.5;
+}
+
+.ai-suggestion-title {
+  @apply text-sm font-medium text-neutral-900 dark:text-neutral-100;
+}
+
+.ai-suggestion-desc {
+  @apply text-xs text-neutral-500 mt-0.5;
+}
+
+/* Floating AI Button */
+.ai-floating-btn {
+  @apply fixed right-4 bottom-4 z-50;
+  @apply flex items-center gap-2 px-4 py-3;
+  @apply bg-gradient-to-r from-blue-500 to-purple-500 text-white;
+  @apply rounded-full shadow-lg hover:shadow-xl transition-all;
+}
+
+.ai-floating-btn-badge {
+  @apply ml-1 px-2 py-0.5 bg-white/20 rounded-full text-xs;
+}
+
+/* Bulk Actions Bar */
+.bulk-actions-bar {
+  @apply flex items-center justify-between px-4 py-2;
+  @apply bg-white dark:bg-neutral-900;
+  @apply border-b border-neutral-200 dark:border-neutral-700/50;
+}
+
+.bulk-selection {
+  @apply flex items-center gap-4;
+}
+
+.bulk-selection-checkbox {
+  @apply flex items-center gap-2 cursor-pointer;
+}
+
+.bulk-selection-text {
+  @apply text-sm text-neutral-700 dark:text-neutral-300;
+}
+
+.bulk-clear-btn {
+  @apply text-xs text-blue-500 hover:text-blue-600 transition-colors;
+}
+
+.bulk-actions {
+  @apply flex items-center gap-1;
+}
+
+.bulk-action-btn {
+  @apply flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors;
+}
+
+.bulk-action-btn--default {
+  @apply text-neutral-700 dark:text-neutral-300;
+  @apply hover:bg-neutral-200 dark:hover:bg-neutral-700;
+}
+
+.bulk-action-btn--success {
+  @apply text-green-700 dark:text-green-400;
+  @apply hover:bg-green-100 dark:hover:bg-green-900/30;
+}
+
+.bulk-action-btn--warning {
+  @apply text-yellow-700 dark:text-yellow-400;
+  @apply hover:bg-yellow-100 dark:hover:bg-yellow-900/30;
+}
+
+.bulk-action-btn--danger {
+  @apply text-red-700 dark:text-red-400;
+  @apply hover:bg-red-100 dark:hover:bg-red-900/30;
+}
+
+.bulk-action-btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Search Bar */
+.article-search-bar {
+  @apply flex items-center gap-3 px-4 py-3;
+  @apply bg-white dark:bg-neutral-900;
+  @apply border-b border-neutral-200 dark:border-neutral-700/50;
+}
+
+.search-input-wrapper {
+  @apply flex-1 relative;
+}
+
+.search-input-icon {
+  @apply absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400;
+}
+
+.search-input {
+  @apply w-full pl-10 pr-4 py-2.5;
+  @apply bg-neutral-100 dark:bg-neutral-800 border-0 rounded-xl;
+  @apply text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500/50;
+}
+
+.search-advanced-btn {
+  @apply p-2.5 rounded-xl;
+  @apply bg-neutral-100 dark:bg-neutral-800;
+  @apply text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300;
+  @apply hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors;
+}
+
+/* Sort Dropdown */
+.sort-dropdown {
+  @apply relative;
+}
+
+.sort-dropdown-btn {
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg;
+  @apply text-sm text-neutral-700 dark:text-neutral-300;
+  @apply hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors;
+}
+
+.sort-dropdown-menu {
+  @apply absolute right-0 mt-1 w-48;
+  @apply bg-white dark:bg-neutral-800;
+  @apply border border-neutral-200 dark:border-neutral-700;
+  @apply rounded-xl shadow-lg z-20 py-1 overflow-hidden;
+}
+
+.sort-dropdown-item {
+  @apply w-full flex items-center justify-between px-4 py-2 text-sm text-left transition-colors;
+}
+
+.sort-dropdown-item--active {
+  @apply bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300;
+}
+
+.sort-dropdown-item--inactive {
+  @apply text-neutral-700 dark:text-neutral-300;
+  @apply hover:bg-neutral-100 dark:hover:bg-neutral-700;
+}
+
+/* View Toggle */
+.view-toggle {
+  @apply flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-lg p-1;
+}
+
+.view-toggle-btn {
+  @apply p-1.5 rounded-md transition-colors;
+}
+
+.view-toggle-btn--active {
+  @apply bg-white dark:bg-neutral-700;
+  @apply text-neutral-900 dark:text-neutral-100 shadow-sm;
+}
+
+.view-toggle-btn--inactive {
+  @apply text-neutral-500;
+  @apply hover:text-neutral-700 dark:hover:text-neutral-300;
+}
+
+/* Add Article Button */
+.add-article-btn {
+  @apply flex items-center gap-2 px-4 py-2;
+  @apply bg-blue-500 hover:bg-blue-600 text-white;
+  @apply text-sm font-medium rounded-lg transition-colors;
+}
+
+/* Articles List */
+.articles-list {
+  @apply flex flex-col gap-3 p-4;
+}
+
+.articles-grid {
+  @apply grid grid-cols-1 lg:grid-cols-2 gap-3 p-4;
+}
+
+/* Empty State */
+.articles-empty {
+  @apply flex flex-col items-center justify-center py-16 text-center;
+}
+
+.articles-empty-icon {
+  @apply w-16 h-16 text-neutral-300 dark:text-neutral-600 mb-4;
+}
+
+.articles-empty-title {
+  @apply text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2;
+}
+
+.articles-empty-desc {
+  @apply text-sm text-neutral-500 max-w-md;
+}
+
+/* Loading State */
+.articles-loading {
+  @apply flex flex-col gap-3 p-4;
+}
+
+.article-skeleton {
+  @apply bg-neutral-100 dark:bg-neutral-800 rounded-xl p-4 animate-pulse;
+}
+
+.article-skeleton-badge {
+  @apply h-5 w-20 bg-neutral-200 dark:bg-neutral-700 rounded-full;
+}
+
+.article-skeleton-title {
+  @apply h-5 w-3/4 bg-neutral-200 dark:bg-neutral-700 rounded mt-3;
+}
+
+.article-skeleton-meta {
+  @apply h-4 w-1/2 bg-neutral-200 dark:bg-neutral-700 rounded mt-2;
+}
+
+.article-skeleton-abstract {
+  @apply h-12 w-full bg-neutral-200 dark:bg-neutral-700 rounded mt-3;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .article-filter-sidebar {
+    @apply w-full max-w-xs absolute left-0 top-0 bottom-0 z-30;
+    @apply shadow-xl;
+  }
+  
+  .ai-sidebar {
+    @apply w-full max-w-md absolute right-0 top-0 bottom-0 z-30;
+    @apply shadow-xl;
+  }
+}
+
+@media (max-width: 640px) {
+  .bulk-actions-bar {
+    @apply flex-col gap-2 items-start;
+  }
+  
+  .bulk-actions {
+    @apply w-full justify-between;
+  }
+  
+  .article-search-bar {
+    @apply flex-wrap;
+  }
+  
+  .search-input-wrapper {
+    @apply w-full;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.article-card {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ai-sidebar {
+  animation: slideInRight 0.2s ease-out;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.article-filter-sidebar {
+  animation: slideInLeft 0.2s ease-out;
+}

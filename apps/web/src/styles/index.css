@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "./legacy.css";
+@import "./citation-graph.css";
+@import "./articles-section.css";
 
 /* ===== DESIGN TOKENS & CSS VARIABLES ===== */
 @layer base {
