@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./legacy.css";
 
 /* ===== DESIGN TOKENS & CSS VARIABLES ===== */
 @layer base {
