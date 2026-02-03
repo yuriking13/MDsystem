@@ -463,7 +463,7 @@ function CitationItem({
         {/* Number badge */}
         <button
           onClick={onNavigate}
-          className="flex-shrink-0 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
+          className="shrink-0 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
           title="Go to citation in text"
         >
           [{displayNumber}]
@@ -487,12 +487,12 @@ function CitationItem({
           {/* Journal & Year */}
           <div className="flex items-center gap-2 mt-1 text-xs text-neutral-400">
             {citation.article?.journal && (
-              <span className="truncate max-w-[150px]">
+              <span className="truncate max-w-37.5">
                 {citation.article.journal}
               </span>
             )}
             {citation.article?.year && (
-              <span className="flex-shrink-0">{citation.article.year}</span>
+              <span className="shrink-0">{citation.article.year}</span>
             )}
           </div>
 
@@ -622,7 +622,7 @@ function SourceGroup({
         className="w-full p-3 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
       >
         <div className="flex items-start gap-2">
-          <span className="flex-shrink-0 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+          <span className="shrink-0 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
             [{inlineNumber}]
           </span>
 

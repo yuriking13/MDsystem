@@ -311,7 +311,7 @@ export default function DocumentOutline({
               {/* Number */}
               <span
                 className={cn(
-                  "flex-shrink-0 font-mono text-xs",
+                  "shrink-0 font-mono text-xs",
                   activeHeadingId === heading.id
                     ? "text-blue-600 dark:text-blue-400"
                     : "text-neutral-400 dark:text-neutral-500",

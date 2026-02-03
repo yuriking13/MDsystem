@@ -116,7 +116,7 @@ export default function EditorHeader({
       </div>
 
       {/* Right section: Status + Actions */}
-      <div className="flex items-center gap-4 flex-shrink-0">
+      <div className="flex items-center gap-4 shrink-0">
         {/* Status indicators */}
         <div className="flex items-center gap-3 text-sm">
           {/* Bibliography updating */}
