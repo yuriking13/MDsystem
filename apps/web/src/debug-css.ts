@@ -84,7 +84,6 @@ setTimeout(() => {
   document.body.removeChild(testDiv);
 
   // ВАЖНО: Проверка почему Root пустой
-  const root = document.getElementById("root");
   if (root) {
     console.log("CRITICAL: Root element check:");
     console.log(`  innerHTML length: ${root.innerHTML.length}`);
