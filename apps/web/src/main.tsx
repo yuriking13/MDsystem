@@ -9,24 +9,24 @@ import "./styles/admin.css";
 import "flowbite";
 import "./debug-css"; // Диагностика CSS
 
-console.log("🚀 MDsystem загружается...");
-console.log("📦 React версия:", React.version);
-console.log("🎨 CSS импортирован из:", "./styles/index.css");
+console.log("MDsystem is loading...");
+console.log("React version:", React.version);
+console.log("CSS imported from: ./styles/index.css");
 
 const rootElement = document.getElementById("root");
-console.log("📍 Root элемент найден:", !!rootElement);
+console.log("Root element found:", !!rootElement);
 
 if (!rootElement) {
-  console.error("❌ ОШИБКА: Root элемент не найден!");
+  console.error("ERROR: Root element not found!");
   throw new Error("Root element not found");
 }
 
 try {
-  console.log("🔄 Создание React root...");
+  console.log("Creating React root...");
   const root = ReactDOM.createRoot(rootElement);
 
-  console.log("✅ React root создан успешно");
-  console.log("🎬 Рендеринг приложения...");
+  console.log("React root created successfully");
+  console.log("Rendering app...");
 
   root.render(
     <React.StrictMode>
@@ -40,8 +40,18 @@ try {
     </React.StrictMode>,
   );
 
-  console.log("✅ Приложение отрендерено успешно");
+  console.log("App rendered successfully");
+
+  // Дополнительная проверка
+  setTimeout(() => {
+    console.log("Post-render check:");
+    console.log(`  Root children: ${rootElement.children.length}`);
+    console.log(`  Root innerHTML length: ${rootElement.innerHTML.length}`);
+    if (rootElement.children.length === 0) {
+      console.error("  ERROR: Root is still empty after render!");
+    }
+  }, 100);
 } catch (error) {
-  console.error("❌ КРИТИЧЕСКАЯ ОШИБКА при рендеринге:", error);
+  console.error("CRITICAL ERROR during rendering:", error);
   throw error;
 }

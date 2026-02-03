@@ -34,11 +34,11 @@ const AdminArticlesPage = lazy(() => import("./pages/admin/AdminArticlesPage"));
 
 // Loading fallback component
 function PageLoader() {
-  console.log("⏳ PageLoader отображается");
+  console.log("PageLoader is displaying");
   return (
     <div className="page-loader">
       <div className="page-loader-spinner"></div>
-      <p>Загрузка...</p>
+      <p>Loading...</p>
     </div>
   );
 }
@@ -46,12 +46,12 @@ function PageLoader() {
 function ThemeToggle() {
   const [isLight, setIsLight] = useState(() => {
     const theme = localStorage.getItem("theme");
-    console.log("🎨 Текущая тема из localStorage:", theme);
+    console.log("Current theme from localStorage:", theme);
     return theme === "light";
   });
 
   useEffect(() => {
-    console.log("🎨 Применение темы:", isLight ? "light" : "dark");
+    console.log("Applying theme:", isLight ? "light" : "dark");
     if (isLight) {
       document.body.classList.add("light-theme");
       localStorage.setItem("theme", "light");
@@ -67,22 +67,26 @@ function ThemeToggle() {
       onClick={() => setIsLight(!isLight)}
       title={isLight ? "Switch to Dark Mode" : "Switch to Light Mode"}
     >
-      {isLight ? "🌙" : "☀️"}
+      {isLight ? "Moon" : "Sun"}
     </button>
   );
 }
 
 export default function App() {
-  console.log("🎯 App компонент загружается");
+  console.log("App component is loading");
   const { token } = useAuth();
-  console.log("🔐 Токен авторизации:", token ? "Присутствует" : "Отсутствует");
+  console.log("Auth token:", token ? "Present" : "Absent");
 
   useEffect(() => {
-    console.log("✅ App компонент смонтирован");
+    console.log("App component mounted");
+    console.log("App component details:");
+    console.log(`  Token: ${token}`);
+    console.log(`  Window location: ${window.location.pathname}`);
+
     return () => {
-      console.log("🔄 App компонент размонтируется");
+      console.log("App component unmounting");
     };
-  }, []);
+  }, [token]);
 
   return (
     <ErrorBoundary>
@@ -94,9 +98,22 @@ export default function App() {
           <Routes>
             <Route
               path="/"
-              element={<Navigate to={token ? "/projects" : "/login"} replace />}
+              element={
+                <>
+                  {console.log("Rendering root redirect, token:", !!token)}
+                  <Navigate to={token ? "/projects" : "/login"} replace />
+                </>
+              }
             />
-            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/login"
+              element={
+                <>
+                  {console.log("Rendering LoginPage route")}
+                  <LoginPage />
+                </>
+              }
+            />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />

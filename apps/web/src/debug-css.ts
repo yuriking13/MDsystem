@@ -61,26 +61,46 @@ setTimeout(() => {
   testDiv.className = "bg-blue-500 text-white p-4";
   document.body.appendChild(testDiv);
   const testStyles = window.getComputedStyle(testDiv);
-  console.log("🧪 Тест Tailwind классов (bg-blue-500 text-white p-4):");
+  console.log("Test Tailwind classes (bg-blue-500 text-white p-4):");
   console.log(`  background-color: ${testStyles.backgroundColor}`);
   console.log(`  color: ${testStyles.color}`);
   console.log(`  padding: ${testStyles.padding}`);
 
-  if (
-    testStyles.backgroundColor === "rgb(59, 130, 246)" ||
-    testStyles.backgroundColor === "rgba(59, 130, 246, 1)"
-  ) {
-    console.log("  ✅ Tailwind CSS работает!");
+  // Проверка что цвет не прозрачный и padding есть (oklch это нормально для Tailwind v4)
+  const hasBgColor =
+    testStyles.backgroundColor !== "rgba(0, 0, 0, 0)" &&
+    testStyles.backgroundColor !== "transparent";
+  const hasPadding = testStyles.padding !== "0px";
+
+  if (hasBgColor && hasPadding) {
+    console.log("  OK: Tailwind CSS works correctly!");
   } else {
-    console.error("  ❌ Tailwind CSS НЕ РАБОТАЕТ!");
+    console.error("  ERROR: Tailwind CSS NOT WORKING!");
     console.error(
-      `  Ожидалось: rgb(59, 130, 246), получено: ${testStyles.backgroundColor}`,
+      `  Has background: ${hasBgColor}, Has padding: ${hasPadding}`,
     );
   }
 
   document.body.removeChild(testDiv);
 
-  console.log("🔍 === КОНЕЦ ДИАГНОСТИКИ ===");
+  // ВАЖНО: Проверка почему Root пустой
+  const root = document.getElementById("root");
+  if (root) {
+    console.log("CRITICAL: Root element check:");
+    console.log(`  innerHTML length: ${root.innerHTML.length}`);
+    console.log(
+      `  innerHTML preview: ${root.innerHTML.substring(0, 200) || "(empty)"}`,
+    );
+    console.log(`  children count: ${root.children.length}`);
+    if (root.children.length > 0) {
+      console.log(`  First child: ${root.children[0].tagName}`);
+      console.log(`  First child classes: ${root.children[0].className}`);
+    } else {
+      console.error("  ERROR: Root has no children! React failed to render!");
+    }
+  }
+
+  console.log("=== END DIAGNOSTICS ===");
 }, 1000);
 
 export {};
