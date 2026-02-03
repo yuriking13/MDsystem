@@ -167,16 +167,16 @@ export default function BibliographySidebarNew({
       <div
         className={cn(
           "flex flex-col items-center py-4",
-          "bg-white dark:bg-neutral-900",
-          "border-l border-neutral-200 dark:border-neutral-700",
+          "bg-neutral-900/95 backdrop-blur-sm",
+          "border-l border-neutral-700/50",
           "w-12",
           className,
         )}
       >
         <button
           onClick={onToggleCollapse}
-          className="p-2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-          title="Show bibliography"
+          className="p-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50 rounded-lg transition-colors"
+          title="Показать библиографию"
         >
           <svg
             className="w-5 h-5"
@@ -196,10 +196,10 @@ export default function BibliographySidebarNew({
         {/* Citation count indicator */}
         {safeCitations.length > 0 && (
           <div className="mt-4 flex flex-col items-center gap-1">
-            <span className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
+            <span className="text-xs font-medium text-neutral-400">
               {uniqueSourcesCount}
             </span>
-            <span className="text-[10px] text-neutral-400">refs</span>
+            <span className="text-[10px] text-neutral-500">ист.</span>
           </div>
         )}
       </div>
@@ -210,17 +210,17 @@ export default function BibliographySidebarNew({
     <div
       className={cn(
         "flex flex-col h-full",
-        "bg-white dark:bg-neutral-900",
-        "border-l border-neutral-200 dark:border-neutral-700",
+        "bg-neutral-900/95 backdrop-blur-sm",
+        "border-l border-neutral-700/50",
         "w-80",
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
-        <div className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-700/50 bg-neutral-800/50">
+        <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
           <svg
-            className="w-4 h-4"
+            className="w-4 h-4 text-blue-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -232,8 +232,8 @@ export default function BibliographySidebarNew({
               d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
             />
           </svg>
-          Bibliography
-          <span className="px-1.5 py-0.5 text-xs bg-neutral-100 dark:bg-neutral-800 rounded text-neutral-500">
+          Библиография
+          <span className="px-1.5 py-0.5 text-xs bg-neutral-800 rounded text-neutral-400">
             {uniqueSourcesCount}/{safeCitations.length}
           </span>
         </div>
@@ -241,8 +241,8 @@ export default function BibliographySidebarNew({
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 rounded transition-colors"
-              title="Collapse panel"
+              className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50 rounded-lg transition-colors"
+              title="Свернуть панель"
             >
               <svg
                 className="w-4 h-4"
@@ -261,8 +261,8 @@ export default function BibliographySidebarNew({
           )}
           <button
             onClick={onClose}
-            className="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 rounded transition-colors"
-            title="Hide bibliography"
+            className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50 rounded-lg transition-colors"
+            title="Скрыть библиографию"
           >
             <svg
               className="w-4 h-4"
@@ -282,11 +282,11 @@ export default function BibliographySidebarNew({
       </div>
 
       {/* Search & View Toggle */}
-      <div className="px-4 py-2 border-b border-neutral-200 dark:border-neutral-700 space-y-2">
+      <div className="px-4 py-2 border-b border-neutral-700/50 space-y-2">
         {/* Search */}
         <div className="relative">
           <svg
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -302,41 +302,41 @@ export default function BibliographySidebarNew({
             type="text"
             value={localSearchQuery}
             onChange={(e) => setLocalSearchQuery(e.target.value)}
-            placeholder="Search citations..."
+            placeholder="Поиск цитат..."
             className={cn(
-              "w-full pl-8 pr-3 py-1.5 text-sm",
-              "bg-neutral-50 dark:bg-neutral-800",
-              "border border-neutral-200 dark:border-neutral-700 rounded-md",
-              "focus:outline-none focus:ring-1 focus:ring-blue-500",
-              "placeholder:text-neutral-400",
+              "w-full pl-8 pr-3 py-1.5 text-sm text-neutral-200",
+              "bg-neutral-800/50",
+              "border border-neutral-700/50 rounded-lg",
+              "focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50",
+              "placeholder:text-neutral-500",
             )}
           />
         </div>
 
         {/* View toggle */}
         <div className="flex items-center justify-between">
-          <div className="flex rounded-md border border-neutral-200 dark:border-neutral-700 overflow-hidden">
+          <div className="flex rounded-lg border border-neutral-700/50 overflow-hidden">
             <button
               onClick={() => setViewMode("all")}
               className={cn(
                 "px-3 py-1 text-xs transition-colors",
                 viewMode === "all"
                   ? "bg-blue-500 text-white"
-                  : "bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700",
+                  : "bg-neutral-800/50 text-neutral-400 hover:bg-neutral-700/50",
               )}
             >
-              All
+              Все
             </button>
             <button
               onClick={() => setViewMode("bySource")}
               className={cn(
-                "px-3 py-1 text-xs transition-colors border-l border-neutral-200 dark:border-neutral-700",
+                "px-3 py-1 text-xs transition-colors border-l border-neutral-700/50",
                 viewMode === "bySource"
                   ? "bg-blue-500 text-white"
-                  : "bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700",
+                  : "bg-neutral-800/50 text-neutral-400 hover:bg-neutral-700/50",
               )}
             >
-              By Source
+              По источнику
             </button>
           </div>
         </div>
@@ -347,7 +347,7 @@ export default function BibliographySidebarNew({
         {sortedCitations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
             <svg
-              className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mb-3"
+              className="w-12 h-12 text-neutral-600 mb-3"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -359,16 +359,16 @@ export default function BibliographySidebarNew({
                 d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
               />
             </svg>
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              {localSearchQuery ? "No matching citations" : "No citations yet"}
+            <p className="text-sm text-neutral-400">
+              {localSearchQuery ? "Цитаты не найдены" : "Нет цитат"}
             </p>
-            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-              Use the "Cite" button to add references
+            <p className="text-xs text-neutral-500 mt-1">
+              Используйте кнопку "Цитировать" для добавления
             </p>
           </div>
         ) : viewMode === "all" ? (
           // All citations view
-          <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+          <div className="divide-y divide-neutral-800">
             {sortedCitations.map((citation) => (
               <CitationItem
                 key={citation.id}
@@ -392,7 +392,7 @@ export default function BibliographySidebarNew({
           </div>
         ) : (
           // Grouped by source view
-          <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+          <div className="divide-y divide-neutral-800">
             {Array.from(groupedCitations.entries())
               .sort((a, b) => (a[1][0]?.number || 0) - (b[1][0]?.number || 0))
               .map(([dedupeKey, citationInfos]) => {

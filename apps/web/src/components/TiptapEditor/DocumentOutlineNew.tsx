@@ -87,16 +87,17 @@ export default function DocumentOutline({
       <div
         className={cn(
           "flex flex-col h-full",
-          "bg-white dark:bg-neutral-900",
-          "border-r border-neutral-200 dark:border-neutral-700",
+          "bg-neutral-900/95 backdrop-blur-sm",
+          "border-r border-neutral-700/50",
+          "w-64",
           className,
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
-          <div className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-700/50 bg-neutral-800/50">
+          <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
             <svg
-              className="w-4 h-4"
+              className="w-4 h-4 text-blue-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -108,12 +109,12 @@ export default function DocumentOutline({
                 d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
               />
             </svg>
-            Outline
+            Оглавление
           </div>
           <button
             onClick={onClose}
-            className="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 rounded transition-colors"
-            title="Hide outline"
+            className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50 rounded-lg transition-colors"
+            title="Скрыть оглавление"
           >
             <svg
               className="w-4 h-4"
@@ -134,7 +135,7 @@ export default function DocumentOutline({
         {/* Empty state */}
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <svg
-            className="w-12 h-12 text-neutral-300 dark:text-neutral-600 mb-3"
+            className="w-12 h-12 text-neutral-600 mb-3"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -146,11 +147,9 @@ export default function DocumentOutline({
               d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            No headings yet
-          </p>
-          <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-            Add headings to see document structure
+          <p className="text-sm text-neutral-400">Нет заголовков</p>
+          <p className="text-xs text-neutral-500 mt-1">
+            Добавьте заголовки H1, H2, H3 для структуры
           </p>
         </div>
       </div>
@@ -162,16 +161,16 @@ export default function DocumentOutline({
       <div
         className={cn(
           "flex flex-col items-center py-4",
-          "bg-white dark:bg-neutral-900",
-          "border-r border-neutral-200 dark:border-neutral-700",
+          "bg-neutral-900/95 backdrop-blur-sm",
+          "border-r border-neutral-700/50",
           "w-12",
           className,
         )}
       >
         <button
           onClick={onToggleCollapse}
-          className="p-2 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
-          title="Show outline"
+          className="p-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50 rounded-lg transition-colors"
+          title="Показать оглавление"
         >
           <svg
             className="w-5 h-5"
@@ -217,17 +216,17 @@ export default function DocumentOutline({
     <div
       className={cn(
         "flex flex-col h-full",
-        "bg-white dark:bg-neutral-900",
-        "border-r border-neutral-200 dark:border-neutral-700",
+        "bg-neutral-900/95 backdrop-blur-sm",
+        "border-r border-neutral-700/50",
         "w-64",
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
-        <div className="flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-700/50 bg-neutral-800/50">
+        <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
           <svg
-            className="w-4 h-4"
+            className="w-4 h-4 text-blue-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -239,17 +238,17 @@ export default function DocumentOutline({
               d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
             />
           </svg>
-          Outline
-          <span className="text-xs text-neutral-400 dark:text-neutral-500">
-            ({headings.length})
+          Оглавление
+          <span className="text-xs text-neutral-500 bg-neutral-700/50 px-1.5 py-0.5 rounded-full">
+            {headings.length}
           </span>
         </div>
         <div className="flex items-center gap-1">
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 rounded transition-colors"
-              title="Collapse panel"
+              className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50 rounded-lg transition-colors"
+              title="Свернуть панель"
             >
               <svg
                 className="w-4 h-4"
@@ -268,8 +267,8 @@ export default function DocumentOutline({
           )}
           <button
             onClick={onClose}
-            className="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 rounded transition-colors"
-            title="Hide outline"
+            className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700/50 rounded-lg transition-colors"
+            title="Скрыть оглавление"
           >
             <svg
               className="w-4 h-4"
@@ -295,12 +294,12 @@ export default function DocumentOutline({
             key={heading.id}
             onClick={() => handleNavigate(heading.id)}
             className={cn(
-              "w-full text-left px-4 py-2 text-sm transition-colors",
-              "hover:bg-neutral-100 dark:hover:bg-neutral-800",
-              "focus:outline-none focus:bg-neutral-100 dark:focus:bg-neutral-800",
+              "w-full text-left px-4 py-2 text-sm transition-all",
+              "hover:bg-neutral-800/50",
+              "focus:outline-none focus:bg-neutral-800/50",
               // Active state
               activeHeadingId === heading.id &&
-                "bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500",
+                "bg-blue-500/10 border-l-2 border-blue-500",
               // Indentation based on level
               heading.level === 2 && "pl-6",
               heading.level === 3 && "pl-8",
@@ -313,8 +312,8 @@ export default function DocumentOutline({
                 className={cn(
                   "shrink-0 font-mono text-xs",
                   activeHeadingId === heading.id
-                    ? "text-blue-600 dark:text-blue-400"
-                    : "text-neutral-400 dark:text-neutral-500",
+                    ? "text-blue-400"
+                    : "text-neutral-500",
                   heading.level === 1 && "font-semibold",
                 )}
               >
@@ -326,14 +325,13 @@ export default function DocumentOutline({
                 className={cn(
                   "flex-1 truncate",
                   activeHeadingId === heading.id
-                    ? "text-blue-700 dark:text-blue-300 font-medium"
-                    : "text-neutral-700 dark:text-neutral-300",
+                    ? "text-blue-300 font-medium"
+                    : "text-neutral-300",
                   heading.level === 1 && "font-medium",
-                  heading.level === 3 &&
-                    "text-neutral-500 dark:text-neutral-400",
+                  heading.level === 3 && "text-neutral-400",
                 )}
               >
-                {heading.text || "(Untitled)"}
+                {heading.text || "(Без названия)"}
               </span>
             </div>
           </button>

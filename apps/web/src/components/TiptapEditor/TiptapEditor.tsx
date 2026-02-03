@@ -472,6 +472,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       return result;
     }, [extensions]);
 
+    // Track content changes for headings update
+    const [editorUpdateCount, setEditorUpdateCount] = useState(0);
+
     const editor = useEditor({
       extensions: uniqueExtensions,
       content,
@@ -479,7 +482,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onUpdate: ({ editor }) => {
         const html = editor.getHTML();
         onChange?.(html);
-        // updateHeadings called later after it's defined
+        // Trigger headings update via state change
+        setEditorUpdateCount((c) => c + 1);
       },
     });
 
@@ -921,6 +925,13 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         updateHeadings(editor);
       }
     }, [content, editor, updateHeadings]);
+
+    // Update headings whenever editor content changes
+    useEffect(() => {
+      if (editor && editorUpdateCount > 0) {
+        updateHeadings(editor);
+      }
+    }, [editor, editorUpdateCount, updateHeadings]);
 
     // Update pagination settings when citation style changes
     useEffect(() => {
