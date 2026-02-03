@@ -176,6 +176,12 @@ export type ChartData = {
   table_data: any;
 };
 
+type EditorHeading = {
+  level: number;
+  text: string;
+  id: string;
+};
+
 interface TiptapEditorProps {
   content?: string;
   onChange?: (html: string) => void;
@@ -206,6 +212,8 @@ interface TiptapEditorProps {
   citationStyle?: CitationStyle;
   editable?: boolean;
   projectId?: string;
+  onHeadingsChange?: (headings: EditorHeading[]) => void;
+  showLegacySidebars?: boolean;
 }
 
 type StatEditorState = {
@@ -224,6 +232,8 @@ export interface TiptapEditorHandle {
   insertFile: (attrs: ProjectFileNodeAttrs) => boolean;
   /** Get all file IDs used in the document */
   getFileIds: () => string[];
+  /** Scroll to a heading in the editor */
+  scrollToHeading: (headingId: string) => void;
 }
 
 const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
@@ -244,6 +254,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       citationStyle = "gost",
       editable = true,
       projectId,
+      onHeadingsChange,
+      showLegacySidebars = true,
     }: TiptapEditorProps,
     ref,
   ) {
@@ -255,9 +267,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const [commentText, setCommentText] = useState("");
     const [statEditorState, setStatEditorState] =
       useState<StatEditorState | null>(null);
-    const [headings, setHeadings] = useState<
-      Array<{ level: number; text: string; id: string }>
-    >([]);
+    const [headings, setHeadings] = useState<EditorHeading[]>([]);
     const [currentStyle, setCurrentStyle] =
       useState<CitationStyle>(citationStyle);
     const [editorError, setEditorError] = useState<string | null>(null);
@@ -700,26 +710,55 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     );
 
     // Extract headings from document for outline
-    const updateHeadings = useCallback((editorInstance: any) => {
-      if (!editorInstance) return;
+    const updateHeadings = useCallback(
+      (editorInstance: any) => {
+        if (!editorInstance) return;
 
-      const doc = editorInstance.state.doc;
-      const newHeadings: Array<{ level: number; text: string; id: string }> =
-        [];
+        const doc = editorInstance.state.doc;
+        const newHeadings: EditorHeading[] = [];
 
-      doc.descendants((node: any, pos: number) => {
-        if (node?.type?.name === "heading") {
-          const id = `heading-${pos}`;
-          newHeadings.push({
-            level: node.attrs?.level || 1,
-            text: node.textContent || "",
-            id,
-          });
-        }
-      });
+        doc.descendants((node: any, pos: number) => {
+          if (node?.type?.name === "heading") {
+            const id = `heading-${pos}`;
+            newHeadings.push({
+              level: node.attrs?.level || 1,
+              text: node.textContent || "",
+              id,
+            });
+          }
+        });
+        setHeadings(newHeadings);
+        onHeadingsChange?.(newHeadings);
+      },
+      [onHeadingsChange],
+    );
 
-      setHeadings(newHeadings);
-    }, []);
+    const scrollToHeading = useCallback(
+      (headingId: string) => {
+        if (!editor) return;
+
+        const pos = parseInt(headingId.replace("heading-", ""));
+        editor.chain().focus().setTextSelection(pos).run();
+
+        // Scroll the heading into view
+        setTimeout(() => {
+          const view = editor.view;
+          const coords = view.coordsAtPos(pos);
+          const editorWrapper = document.querySelector(
+            ".tiptap-content-wrapper",
+          );
+          if (editorWrapper && coords) {
+            const wrapperRect = editorWrapper.getBoundingClientRect();
+            editorWrapper.scrollTo({
+              top:
+                editorWrapper.scrollTop + (coords.top - wrapperRect.top) - 100,
+              behavior: "smooth",
+            });
+          }
+        }, 10);
+      },
+      [editor],
+    );
 
     // Expose imperative methods to parent via ref
     useImperativeHandle(
@@ -744,8 +783,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           }
           return [];
         },
+        scrollToHeading: (headingId: string) => {
+          scrollToHeading(headingId);
+        },
       }),
-      [editor, updateHeadings],
+      [editor, updateHeadings, scrollToHeading],
     );
 
     // Register global insert functions
@@ -1007,34 +1049,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       };
     }, [editor, onTableCreated]);
 
-    // Navigate to heading
-    const scrollToHeading = useCallback(
-      (headingId: string) => {
-        if (!editor) return;
-
-        const pos = parseInt(headingId.replace("heading-", ""));
-        editor.chain().focus().setTextSelection(pos).run();
-
-        // Scroll the heading into view
-        setTimeout(() => {
-          const view = editor.view;
-          const coords = view.coordsAtPos(pos);
-          const editorWrapper = document.querySelector(
-            ".tiptap-content-wrapper",
-          );
-          if (editorWrapper && coords) {
-            const wrapperRect = editorWrapper.getBoundingClientRect();
-            editorWrapper.scrollTo({
-              top:
-                editorWrapper.scrollTop + (coords.top - wrapperRect.top) - 100,
-              behavior: "smooth",
-            });
-          }
-        }, 10);
-      },
-      [editor],
-    );
-
     // Cleanup
     useEffect(() => {
       return () => {
@@ -1175,11 +1189,19 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             onImportFile={onImportFile}
             onCreateChartFromTable={onCreateChartFromTable}
             onOpenTableEditor={handleOpenTableEditor}
-            onToggleOutline={() => setShowOutline(!showOutline)}
-            onToggleBibliography={() => setShowBibliography(!showBibliography)}
+            onToggleOutline={
+              showLegacySidebars
+                ? () => setShowOutline((prev) => !prev)
+                : undefined
+            }
+            onToggleBibliography={
+              showLegacySidebars
+                ? () => setShowBibliography((prev) => !prev)
+                : undefined
+            }
             onOpenPageSettings={() => setShowPageSettings(true)}
-            showOutline={showOutline}
-            showBibliography={showBibliography}
+            showOutline={showLegacySidebars ? showOutline : undefined}
+            showBibliography={showLegacySidebars ? showBibliography : undefined}
             citationStyle={currentStyle}
             reviewMode={reviewMode}
             onToggleReviewMode={() => setReviewMode(!reviewMode)}
@@ -1196,7 +1218,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         )}
         <div className="tiptap-main-area">
           {/* Левый сайдбар - Содержание */}
-          {showOutline && (
+          {showLegacySidebars && showOutline && (
             <DocumentOutline
               headings={headings}
               onNavigate={scrollToHeading}
@@ -1210,14 +1232,17 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           </div>
 
           {/* Правый сайдбар - Список литературы */}
-          {showBibliography && citations && citations.length > 0 && (
-            <BibliographySidebar
-              citations={citations}
-              onClose={() => setShowBibliography(false)}
-              onRemoveCitation={onRemoveCitation}
-              onUpdateCitationNote={onUpdateCitationNote}
-            />
-          )}
+          {showLegacySidebars &&
+            showBibliography &&
+            citations &&
+            citations.length > 0 && (
+              <BibliographySidebar
+                citations={citations}
+                onClose={() => setShowBibliography(false)}
+                onRemoveCitation={onRemoveCitation}
+                onUpdateCitationNote={onUpdateCitationNote}
+              />
+            )}
         </div>
 
         {/* Page Settings Modal */}

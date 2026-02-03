@@ -10,6 +10,11 @@ import { useParams, useNavigate } from "react-router-dom";
 import TiptapEditor, {
   TiptapEditorHandle,
 } from "../components/TiptapEditor/TiptapEditor";
+import {
+  EditorHeader,
+  EditorLayoutWrapper,
+  type Heading,
+} from "../components/TiptapEditor";
 import CitationPicker from "../components/TiptapEditor/CitationPicker";
 import {
   apiGetDocument,
@@ -40,6 +45,7 @@ import {
   type Article,
   type Citation,
   type CitationStyle,
+  type Project,
   type ProjectStatistic,
   type DataClassification,
   type ProjectFile,
@@ -355,6 +361,49 @@ function formatCitationSimple(
   }
 }
 
+type DocumentStats = {
+  wordCount: number;
+  characterCount: number;
+  pageCount: number;
+};
+
+const EMPTY_STATS: DocumentStats = {
+  wordCount: 0,
+  characterCount: 0,
+  pageCount: 0,
+};
+
+const WORDS_PER_PAGE = 400;
+
+function calculateDocumentStats(html: string): DocumentStats {
+  if (!html) {
+    return EMPTY_STATS;
+  }
+
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return EMPTY_STATS;
+  }
+
+  try {
+    const parser = new DOMParser();
+    const parsed = parser.parseFromString(html, "text/html");
+    const text = parsed.body.textContent || "";
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    const wordCount = words.length;
+    const characterCount = text.length;
+    const pageCount =
+      wordCount === 0 ? 0 : Math.max(1, Math.ceil(wordCount / WORDS_PER_PAGE));
+
+    return {
+      wordCount,
+      characterCount,
+      pageCount,
+    };
+  } catch {
+    return EMPTY_STATS;
+  }
+}
+
 export default function DocumentPage() {
   const { projectId, docId } = useParams<{
     projectId: string;
@@ -362,14 +411,19 @@ export default function DocumentPage() {
   }>();
   const nav = useNavigate();
 
+  const [project, setProject] = useState<Project | null>(null);
   const [doc, setDoc] = useState<Document | null>(null);
   const [content, setContent] = useState("");
   const [title, setTitle] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [citationStyle, setCitationStyle] =
     useState<CitationStyle>("gost-r-7-0-5-2008");
+  const [headings, setHeadings] = useState<Heading[]>([]);
+  const [documentStats, setDocumentStats] =
+    useState<DocumentStats>(EMPTY_STATS);
   const hasSyncedStatistics = useRef(false);
   const isSyncingStatistics = useRef(false);
   const lastUserEditRef = useRef(0);
@@ -421,9 +475,16 @@ export default function DocumentPage() {
           apiGetProject(projectId!),
         ]);
         setDoc(docRes.document);
+        setProject(projRes.project);
         setTitle(docRes.document.title);
         setContent(docRes.document.content || "");
         setCitationStyle(projRes.project.citation_style || "gost-r-7-0-5-2008");
+        setLastSavedAt(
+          docRes.document.updated_at
+            ? new Date(docRes.document.updated_at)
+            : null,
+        );
+        setDocumentStats(calculateDocumentStats(docRes.document.content || ""));
       } catch (err) {
         setError(getErrorMessage(err));
       } finally {
@@ -651,6 +712,9 @@ export default function DocumentPage() {
                   );
                 }
                 setContent(syncResult.document.content);
+                setDocumentStats(
+                  calculateDocumentStats(syncResult.document.content),
+                );
               }
             }
           } catch (syncErr) {
@@ -745,6 +809,8 @@ export default function DocumentPage() {
           console.warn("File sync warning:", syncErr);
           // Don't fail the save if file sync fails
         }
+
+        setLastSavedAt(new Date());
       } catch (err) {
         console.error("Save error:", err);
       } finally {
@@ -825,6 +891,7 @@ export default function DocumentPage() {
             editorRef.current.forceSetContent(res.restoredContent);
           }
           setContent(res.restoredContent);
+          setDocumentStats(calculateDocumentStats(res.restoredContent));
           setTitle(res.restoredTitle);
           setDoc((prev) =>
             prev
@@ -1144,6 +1211,7 @@ export default function DocumentPage() {
           editorRef.current.forceSetContent(updatedContent);
         }
         setContent(updatedContent);
+        setDocumentStats(calculateDocumentStats(updatedContent));
         setDoc((prev) => (prev ? { ...prev, content: updatedContent } : prev));
         await saveDocument(updatedContent);
       }
@@ -1198,6 +1266,8 @@ export default function DocumentPage() {
     if (!projectId || !docId || title === doc?.title) return;
     try {
       await apiUpdateDocument(projectId, docId, { title });
+      setDoc((prev) => (prev ? { ...prev, title } : prev));
+      setLastSavedAt(new Date());
     } catch (err) {
       console.error("Title save error:", err);
     }
@@ -1374,6 +1444,7 @@ export default function DocumentPage() {
     (html: string) => {
       lastUserEditRef.current = Date.now();
       setContent(html);
+      setDocumentStats(calculateDocumentStats(html));
 
       // Проверяем, изменились ли цитаты в контенте
       const newCitationIds = parseCitationsFromContent(html);
@@ -1392,6 +1463,14 @@ export default function DocumentPage() {
     },
     [content, parseCitationsFromContent],
   );
+
+  const handleHeadingsChange = useCallback((newHeadings: Heading[]) => {
+    setHeadings(newHeadings);
+  }, []);
+
+  const handleNavigateHeading = useCallback((headingId: string) => {
+    editorRef.current?.scrollToHeading(headingId);
+  }, []);
 
   // Вставить таблицу из статистики
   async function handleInsertTable(stat: ProjectStatistic) {
@@ -1692,335 +1771,308 @@ export default function DocumentPage() {
   }
 
   return (
-    <div className="document-page-container">
-      {/* Header */}
-      <div className="document-header">
-        <div className="row gap">
-          <button
-            className="btn secondary"
-            onClick={() => nav(`/projects/${projectId}`)}
-          >
-            ← К проекту
-          </button>
-          <input
-            className="doc-title-input"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleTitleBlur}
-            placeholder="Название документа"
-          />
-        </div>
-        <div className="row gap" style={{ alignItems: "center" }}>
-          {updatingBibliography && (
-            <span
-              className="muted"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                fontSize: 11,
-                color: "#3b82f6",
-              }}
-            >
-              <svg
-                className="icon-sm loading-spinner"
-                style={{ width: 12, height: 12 }}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              обновление библиографии...
-            </span>
-          )}
-          {saving && <span className="muted">Сохранение...</span>}
-          {!saving && !updatingBibliography && (
-            <span className="muted" style={{ color: "#4ade80" }}>
-              ✓ Сохранено
-            </span>
-          )}
+    <div
+      className="document-page-container"
+      style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+    >
+      <EditorHeader
+        title={title}
+        onTitleChange={setTitle}
+        onTitleBlur={handleTitleBlur}
+        projectName={project?.name || undefined}
+        onBackToProject={() => nav(`/projects/${projectId}`)}
+        isSaving={saving}
+        isUpdatingBibliography={updatingBibliography}
+        showVersionHistoryButton
+        onToggleVersionHistory={() => setShowVersionHistory((prev) => !prev)}
+        isVersionHistoryOpen={showVersionHistory}
+      />
 
-          {/* Version History Button */}
-          <button
-            className="btn secondary"
-            onClick={() => setShowVersionHistory(!showVersionHistory)}
-            title="История версий"
-            style={{ marginLeft: 8, padding: "6px 10px" }}
-          >
-            <svg
-              className="icon-sm"
-              style={{ marginRight: 4 }}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            Версии
-          </button>
-        </div>
-      </div>
-
-      {/* Version History Panel */}
-      {showVersionHistory && (
-        <div
-          className="version-history-panel"
-          style={{
-            marginBottom: 16,
-            padding: 16,
-            background: "var(--bg-secondary)",
-            borderRadius: 8,
-            border: "1px solid var(--border-color)",
-          }}
-        >
+      <div
+        style={{
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          padding: "0 16px 16px",
+        }}
+      >
+        {showVersionHistory && (
           <div
+            className="version-history-panel"
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 12,
+              padding: 16,
+              background: "var(--bg-secondary)",
+              borderRadius: 8,
+              border: "1px solid var(--border-color)",
+              flexShrink: 0,
             }}
           >
-            <h3
+            <div
               style={{
-                margin: 0,
-                fontSize: 14,
                 display: "flex",
+                justifyContent: "space-between",
                 alignItems: "center",
-                gap: 8,
+                marginBottom: 12,
               }}
             >
-              <svg
-                className="icon-md"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.5}
-                viewBox="0 0 24 24"
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              История версий документа
-            </h3>
-            <button
-              className="btn secondary"
-              onClick={() => setShowVersionHistory(false)}
-              style={{ padding: "4px 8px" }}
-            >
-              <svg
-                className="icon-sm"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.5}
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
-          </div>
-
-          {/* Create manual version */}
-          <div
-            style={{
-              display: "flex",
-              gap: 8,
-              marginBottom: 16,
-              alignItems: "flex-end",
-            }}
-          >
-            <div style={{ flex: 1 }}>
-              <label
-                className="muted"
-                style={{ fontSize: 11, display: "block", marginBottom: 4 }}
-              >
-                Комментарий к версии (необязательно)
-              </label>
-              <input
-                type="text"
-                value={versionNote}
-                onChange={(e) => setVersionNote(e.target.value)}
-                placeholder="Например: Добавлены графики исследования"
-                style={{ width: "100%", padding: "8px 12px", borderRadius: 6 }}
-              />
-            </div>
-            <button
-              className="btn"
-              onClick={createManualVersion}
-              disabled={creatingVersion}
-              style={{ whiteSpace: "nowrap" }}
-            >
-              <svg
-                className="icon-sm"
-                style={{ marginRight: 4 }}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.5}
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 4.5v15m7.5-7.5h-15"
-                />
-              </svg>
-              {creatingVersion ? "Сохранение..." : "Сохранить версию"}
-            </button>
-          </div>
-
-          {/* Versions list */}
-          {loadingVersions ? (
-            <div className="muted" style={{ textAlign: "center", padding: 20 }}>
-              Загрузка истории версий...
-            </div>
-          ) : versions.length === 0 ? (
-            <div className="muted" style={{ textAlign: "center", padding: 20 }}>
-              Нет сохранённых версий. Версии создаются автоматически при
-              значительных изменениях или вручную.
-            </div>
-          ) : (
-            <div style={{ maxHeight: 300, overflowY: "auto" }}>
-              {versions.map((v) => (
-                <div
-                  key={v.id}
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    padding: "10px 12px",
-                    borderBottom: "1px solid var(--border-color)",
-                  }}
+                <svg
+                  className="icon-md"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  viewBox="0 0 24 24"
                 >
-                  <div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span style={{ fontWeight: 500 }}>
-                        Версия {v.version_number}
-                      </span>
-                      <span
-                        className="id-badge"
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                История версий документа
+              </h3>
+              <button
+                className="btn secondary"
+                onClick={() => setShowVersionHistory(false)}
+                style={{ padding: "4px 8px" }}
+              >
+                <svg
+                  className="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            {/* Create manual version */}
+            <div
+              style={{
+                display: "flex",
+                gap: 8,
+                marginBottom: 16,
+                alignItems: "flex-end",
+              }}
+            >
+              <div style={{ flex: 1 }}>
+                <label
+                  className="muted"
+                  style={{ fontSize: 11, display: "block", marginBottom: 4 }}
+                >
+                  Комментарий к версии (необязательно)
+                </label>
+                <input
+                  type="text"
+                  value={versionNote}
+                  onChange={(e) => setVersionNote(e.target.value)}
+                  placeholder="Например: Добавлены графики исследования"
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    borderRadius: 6,
+                  }}
+                />
+              </div>
+              <button
+                className="btn"
+                onClick={createManualVersion}
+                disabled={creatingVersion}
+                style={{ whiteSpace: "nowrap" }}
+              >
+                <svg
+                  className="icon-sm"
+                  style={{ marginRight: 4 }}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
+                </svg>
+                {creatingVersion ? "Сохранение..." : "Сохранить версию"}
+              </button>
+            </div>
+
+            {/* Versions list */}
+            {loadingVersions ? (
+              <div
+                className="muted"
+                style={{ textAlign: "center", padding: 20 }}
+              >
+                Загрузка истории версий...
+              </div>
+            ) : versions.length === 0 ? (
+              <div
+                className="muted"
+                style={{ textAlign: "center", padding: 20 }}
+              >
+                Нет сохранённых версий. Версии создаются автоматически при
+                значительных изменениях или вручную.
+              </div>
+            ) : (
+              <div style={{ maxHeight: 300, overflowY: "auto" }}>
+                {versions.map((v) => (
+                  <div
+                    key={v.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "10px 12px",
+                      borderBottom: "1px solid var(--border-color)",
+                    }}
+                  >
+                    <div>
+                      <div
                         style={{
-                          fontSize: 10,
-                          padding: "2px 6px",
-                          background:
-                            v.version_type === "manual"
-                              ? "rgba(75, 116, 255, 0.2)"
-                              : v.version_type === "exit"
-                                ? "rgba(251, 191, 36, 0.2)"
-                                : "rgba(100, 116, 139, 0.2)",
-                          color:
-                            v.version_type === "manual"
-                              ? "#4b74ff"
-                              : v.version_type === "exit"
-                                ? "#fbbf24"
-                                : "#64748b",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
                         }}
                       >
-                        {v.version_type === "manual"
-                          ? "Ручная"
-                          : v.version_type === "exit"
-                            ? "При выходе"
-                            : "Авто"}
-                      </span>
-                    </div>
-                    <div
-                      className="muted"
-                      style={{ fontSize: 11, marginTop: 4 }}
-                    >
-                      {new Date(v.created_at).toLocaleString("ru-RU")}
-                      {v.version_note && <span> — {v.version_note}</span>}
-                    </div>
-                    <div
-                      className="muted"
-                      style={{ fontSize: 10, marginTop: 2 }}
-                    >
-                      {v.content_length
-                        ? `${Math.round(v.content_length / 1000)}K символов`
-                        : ""}
-                      {v.created_by_email && ` • ${v.created_by_email}`}
-                    </div>
-                  </div>
-                  <button
-                    className="btn secondary"
-                    onClick={() => restoreVersion(v.id)}
-                    disabled={!!restoringVersion}
-                    style={{ padding: "6px 12px", fontSize: 12 }}
-                    title="Восстановить эту версию"
-                  >
-                    {restoringVersion === v.id ? (
-                      "Восстановление..."
-                    ) : (
-                      <>
-                        <svg
-                          className="icon-sm"
-                          style={{ marginRight: 4 }}
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                          viewBox="0 0 24 24"
+                        <span style={{ fontWeight: 500 }}>
+                          Версия {v.version_number}
+                        </span>
+                        <span
+                          className="id-badge"
+                          style={{
+                            fontSize: 10,
+                            padding: "2px 6px",
+                            background:
+                              v.version_type === "manual"
+                                ? "rgba(75, 116, 255, 0.2)"
+                                : v.version_type === "exit"
+                                  ? "rgba(251, 191, 36, 0.2)"
+                                  : "rgba(100, 116, 139, 0.2)",
+                            color:
+                              v.version_type === "manual"
+                                ? "#4b74ff"
+                                : v.version_type === "exit"
+                                  ? "#fbbf24"
+                                  : "#64748b",
+                          }}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"
-                          />
-                        </svg>
-                        Восстановить
-                      </>
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                          {v.version_type === "manual"
+                            ? "Ручная"
+                            : v.version_type === "exit"
+                              ? "При выходе"
+                              : "Авто"}
+                        </span>
+                      </div>
+                      <div
+                        className="muted"
+                        style={{ fontSize: 11, marginTop: 4 }}
+                      >
+                        {new Date(v.created_at).toLocaleString("ru-RU")}
+                        {v.version_note && <span> — {v.version_note}</span>}
+                      </div>
+                      <div
+                        className="muted"
+                        style={{ fontSize: 10, marginTop: 2 }}
+                      >
+                        {v.content_length
+                          ? `${Math.round(v.content_length / 1000)}K символов`
+                          : ""}
+                        {v.created_by_email && ` • ${v.created_by_email}`}
+                      </div>
+                    </div>
+                    <button
+                      className="btn secondary"
+                      onClick={() => restoreVersion(v.id)}
+                      disabled={!!restoringVersion}
+                      style={{ padding: "6px 12px", fontSize: 12 }}
+                      title="Восстановить эту версию"
+                    >
+                      {restoringVersion === v.id ? (
+                        "Восстановление..."
+                      ) : (
+                        <>
+                          <svg
+                            className="icon-sm"
+                            style={{ marginRight: 4 }}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={1.5}
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"
+                            />
+                          </svg>
+                          Восстановить
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-      {error && (
-        <div className="alert" style={{ marginBottom: 12 }}>
-          {error}
-        </div>
-      )}
+        {error && (
+          <div className="alert" style={{ marginBottom: 12, flexShrink: 0 }}>
+            {error}
+          </div>
+        )}
 
-      {/* Основной контент */}
-      <div className="document-content">
-        {/* Редактор с встроенными сайдбарами */}
-        <div className="document-editor-wrapper">
-          <TiptapEditor
-            ref={editorRef}
-            content={content}
-            onChange={handleContentChange}
-            onInsertCitation={openCitationPicker}
-            onImportStatistic={openImportModal}
-            onImportFile={openFileModal}
-            onCreateChartFromTable={openChartModal}
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <EditorLayoutWrapper
+            headings={headings}
+            onNavigateToHeading={handleNavigateHeading}
+            citations={visibleCitations}
             onRemoveCitation={handleRemoveCitation}
             onUpdateCitationNote={handleUpdateCitationNote}
-            onTableCreated={handleTableCreated}
-            onLoadStatistic={handleLoadStatistic}
-            onSaveStatistic={handleSaveStatistic}
-            citations={visibleCitations}
-            citationStyle={citationStyle}
-            projectId={projectId}
-          />
+            wordCount={documentStats.wordCount}
+            characterCount={documentStats.characterCount}
+            pageCount={documentStats.pageCount}
+            isSaving={saving}
+            lastSaved={lastSavedAt}
+            isUpdatingBibliography={updatingBibliography}
+          >
+            <TiptapEditor
+              ref={editorRef}
+              content={content}
+              onChange={handleContentChange}
+              onInsertCitation={openCitationPicker}
+              onImportStatistic={openImportModal}
+              onImportFile={openFileModal}
+              onCreateChartFromTable={openChartModal}
+              onRemoveCitation={handleRemoveCitation}
+              onUpdateCitationNote={handleUpdateCitationNote}
+              onTableCreated={handleTableCreated}
+              onLoadStatistic={handleLoadStatistic}
+              onSaveStatistic={handleSaveStatistic}
+              citations={visibleCitations}
+              citationStyle={citationStyle}
+              projectId={projectId}
+              onHeadingsChange={handleHeadingsChange}
+              showLegacySidebars={false}
+            />
+          </EditorLayoutWrapper>
         </div>
       </div>
 
