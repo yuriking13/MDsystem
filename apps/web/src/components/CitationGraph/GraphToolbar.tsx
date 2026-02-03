@@ -100,7 +100,7 @@ export default function GraphToolbar({
         </button>
 
         {zoomLevel !== undefined && (
-          <span className="text-xs text-slate-400 font-mono min-w-[40px] text-center">
+          <span className="text-xs text-slate-400 font-mono min-w-10 text-center">
             {Math.round(zoomLevel * 100)}%
           </span>
         )}
