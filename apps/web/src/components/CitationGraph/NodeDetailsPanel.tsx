@@ -411,13 +411,13 @@ export default function NodeDetailsPanel({
                 href={`https://doi.org/${displayData.doi}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 transition-colors truncate max-w-[180px]"
+                className="flex items-center gap-1 text-sm text-blue-400 hover:text-blue-300 transition-colors truncate max-w-45"
                 title={displayData.doi}
               >
                 {displayData.doi.length > 25
                   ? `${displayData.doi.substring(0, 25)}...`
                   : displayData.doi}
-                <ArrowTopRightOnSquareIcon className="w-3 h-3 flex-shrink-0" />
+                <ArrowTopRightOnSquareIcon className="w-3 h-3 shrink-0" />
               </a>
             </div>
           )}

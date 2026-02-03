@@ -159,7 +159,7 @@ export default function ArticleCard({
         {/* Top Row: Checkbox + Title + Status */}
         <div className="flex items-start gap-3">
           {/* Selection Checkbox */}
-          <label className="flex-shrink-0 mt-1 cursor-pointer">
+          <label className="shrink-0 mt-1 cursor-pointer">
             <input
               type="checkbox"
               checked={isSelected}

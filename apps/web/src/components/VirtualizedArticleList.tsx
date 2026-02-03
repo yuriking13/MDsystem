@@ -194,7 +194,7 @@ export default function VirtualizedArticleList<T>({
       </div>
 
       {isLoading && (
-        <div className="sticky bottom-0 left-0 right-0 py-4 text-center bg-gradient-to-t from-white dark:from-neutral-900 to-transparent">
+        <div className="sticky bottom-0 left-0 right-0 py-4 text-center bg-linear-to-t from-white dark:from-neutral-900 to-transparent">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-800 rounded-full shadow-lg border border-neutral-200 dark:border-neutral-700">
             <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             <span className="text-sm text-neutral-600 dark:text-neutral-400">

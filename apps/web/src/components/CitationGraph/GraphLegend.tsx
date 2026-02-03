@@ -63,7 +63,7 @@ export default function GraphLegend({
               {/* Color Dot */}
               <span
                 className={cn(
-                  "rounded-full flex-shrink-0",
+                  "rounded-full shrink-0",
                   compact ? "w-2 h-2" : "w-3 h-3",
                 )}
                 style={{ backgroundColor: type.color }}

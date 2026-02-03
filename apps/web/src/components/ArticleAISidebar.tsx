@@ -166,7 +166,7 @@ export default function ArticleAISidebar({
       <button
         onClick={onToggle}
         className={cn(
-          "fixed right-4 bottom-4 z-50 flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all",
+          "fixed right-4 bottom-4 z-50 flex items-center gap-2 px-4 py-3 bg-linear-to-r from-blue-500 to-purple-500 text-white rounded-full shadow-lg hover:shadow-xl transition-all",
           className,
         )}
       >
@@ -189,9 +189,9 @@ export default function ArticleAISidebar({
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700/50 bg-gradient-to-r from-blue-500/10 to-purple-500/10">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700/50 bg-linear-to-r from-blue-500/10 to-purple-500/10">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg">
+          <div className="p-1.5 bg-linear-to-r from-blue-500 to-purple-500 rounded-lg">
             <SparklesIcon className="w-4 h-4 text-white" />
           </div>
           <div>
@@ -230,7 +230,7 @@ export default function ArticleAISidebar({
           <div className="space-y-4">
             {/* Welcome Message */}
             <div className="text-center py-6">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-linear-to-r from-blue-500 to-purple-500 flex items-center justify-center">
                 <SparklesIcon className="w-6 h-6 text-white" />
               </div>
               <h4 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-1">

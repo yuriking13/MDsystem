@@ -827,7 +827,7 @@ export default function ChartBuilderModal({
             </div>
 
             <div className="flex-1 p-4 flex items-center justify-center bg-slate-800/30">
-              <div className="w-full h-full max-h-[400px]">
+              <div className="w-full h-full max-h-100">
                 <ChartComponent data={chartData} options={chartOptions} />
               </div>
             </div>

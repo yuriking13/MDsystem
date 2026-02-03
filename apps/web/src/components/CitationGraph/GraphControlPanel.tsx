@@ -184,7 +184,7 @@ function ToggleSwitch({
         aria-checked={checked}
         onClick={() => onChange(!checked)}
         className={cn(
-          "relative inline-flex h-5 w-9 items-center rounded-full transition-colors ml-3 flex-shrink-0",
+          "relative inline-flex h-5 w-9 items-center rounded-full transition-colors ml-3 shrink-0",
           checked ? "bg-blue-500" : "bg-slate-600",
         )}
       >
@@ -919,7 +919,7 @@ export default function GraphControlPanel({
               <ArrowDownTrayIcon className="w-4 h-4" />
             </button>
             <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block">
-              <div className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-[100px]">
+              <div className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-25">
                 <button
                   onClick={() => onExport("png")}
                   className="w-full px-3 py-1.5 text-sm text-left text-slate-300 hover:bg-slate-700"
