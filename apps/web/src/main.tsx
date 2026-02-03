@@ -4,9 +4,9 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./lib/AuthContext";
 import { AdminAuthProvider } from "./lib/AdminContext";
-import "./index.css";
+import "./styles/index.css";
 import "./styles/admin.css";
-import 'flowbite';
+import "flowbite";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
