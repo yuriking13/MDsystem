@@ -45,7 +45,7 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "flex-shrink-0 overflow-y-auto border-neutral-200 dark:border-neutral-800",
+        "shrink-0 overflow-y-auto border-neutral-200 dark:border-neutral-800",
         position === "left" ? "border-r" : "border-l",
         sticky && "sticky top-0 h-screen",
         className,

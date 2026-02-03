@@ -35,7 +35,7 @@ export function DashboardLayout({
     <div className={cn("flex h-screen flex-col", className)}>
       {/* Navbar */}
       {navbar && (
-        <header className="flex-shrink-0 border-b border-neutral-200 dark:border-neutral-800">
+        <header className="shrink-0 border-b border-neutral-200 dark:border-neutral-800">
           {navbar}
         </header>
       )}

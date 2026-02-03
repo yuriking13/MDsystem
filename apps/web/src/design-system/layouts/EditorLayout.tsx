@@ -44,7 +44,7 @@ export function EditorLayout({
     <div className={cn("flex h-screen flex-col", className)}>
       {/* Header */}
       {header && (
-        <header className="flex-shrink-0 border-b border-neutral-200 dark:border-neutral-800">
+        <header className="shrink-0 border-b border-neutral-200 dark:border-neutral-800">
           {header}
         </header>
       )}
@@ -65,7 +65,7 @@ export function EditorLayout({
 
       {/* Footer/Status bar */}
       {footer && (
-        <footer className="flex-shrink-0 border-t border-neutral-200 dark:border-neutral-800">
+        <footer className="shrink-0 border-t border-neutral-200 dark:border-neutral-800">
           {footer}
         </footer>
       )}
