@@ -104,7 +104,7 @@ export default function EditorHeader({
           onBlur={onTitleBlur}
           placeholder="Название документа"
           className={cn(
-            "flex-1 min-w-0 px-1.5 py-0",
+            "max-w-xs px-1.5 py-0",
             "text-sm font-medium",
             "bg-transparent",
             "border-0",
