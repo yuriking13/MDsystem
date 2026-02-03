@@ -1794,8 +1794,6 @@ export default function DocumentPage() {
           minHeight: 0,
           display: "flex",
           flexDirection: "column",
-          gap: 16,
-          padding: "0 16px 16px",
         }}
       >
         {showVersionHistory && (

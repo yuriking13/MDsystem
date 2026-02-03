@@ -55,24 +55,24 @@ export default function EditorHeader({
   return (
     <header
       className={cn(
-        "flex items-center justify-between px-4 py-3",
-        "bg-neutral-900/95 backdrop-blur-sm",
-        "border-b border-neutral-700/50",
+        "flex items-center justify-between px-3 py-2",
+        "bg-slate-900",
+        "border-b border-slate-700/50",
         "sticky top-0 z-20",
         className,
       )}
     >
       {/* Left section: Back button + Title */}
-      <div className="flex items-center gap-4 min-w-0 flex-1">
+      <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Back button */}
         <button
           onClick={onBackToProject}
           className={cn(
-            "flex items-center gap-2 px-3 py-1.5",
-            "text-sm text-neutral-400",
-            "hover:text-neutral-200",
-            "hover:bg-neutral-800/50",
-            "rounded-lg transition-colors",
+            "flex items-center gap-1.5 px-2 py-1",
+            "text-sm text-slate-400",
+            "hover:text-slate-200",
+            "hover:bg-slate-800/50",
+            "rounded transition-colors",
           )}
         >
           <svg
@@ -88,13 +88,13 @@ export default function EditorHeader({
               d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
             />
           </svg>
-          <span className="hidden sm:inline">
-            {projectName ? `Назад к ${projectName}` : "Назад"}
+          <span className="hidden sm:inline text-xs">
+            {projectName ? `Назад` : "Назад"}
           </span>
         </button>
 
         {/* Divider */}
-        <div className="h-6 w-px bg-neutral-700/50 hidden sm:block" />
+        <div className="h-5 w-px bg-slate-700/50 hidden sm:block" />
 
         {/* Title input */}
         <input
@@ -104,21 +104,21 @@ export default function EditorHeader({
           onBlur={onTitleBlur}
           placeholder="Название документа"
           className={cn(
-            "flex-1 min-w-0 px-2 py-1",
-            "text-lg font-medium",
+            "flex-1 min-w-0 px-2 py-0.5",
+            "text-base font-medium",
             "bg-transparent",
-            "border-0 border-b-2 border-transparent",
-            "focus:border-blue-500 focus:outline-none",
-            "text-neutral-200",
-            "placeholder:text-neutral-500",
+            "border-0",
+            "focus:outline-none",
+            "text-slate-200",
+            "placeholder:text-slate-500",
           )}
         />
       </div>
 
       {/* Right section: Status + Actions */}
-      <div className="flex items-center gap-4 shrink-0">
+      <div className="flex items-center gap-3 shrink-0">
         {/* Status indicators */}
-        <div className="flex items-center gap-3 text-sm">
+        <div className="flex items-center gap-2 text-xs">
           {/* Bibliography updating */}
           {isUpdatingBibliography && (
             <span className="flex items-center gap-1.5 text-blue-400">
@@ -141,9 +141,9 @@ export default function EditorHeader({
 
           {/* Save status */}
           {isSaving ? (
-            <span className="flex items-center gap-1.5 text-neutral-400">
+            <span className="flex items-center gap-1 text-slate-400">
               <svg
-                className="w-4 h-4 animate-spin"
+                className="w-3.5 h-3.5 animate-spin"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -184,11 +184,11 @@ export default function EditorHeader({
           <button
             onClick={onToggleVersionHistory}
             className={cn(
-              "flex items-center gap-2 px-3 py-1.5",
-              "text-sm rounded-lg transition-colors",
+              "flex items-center gap-1.5 px-2 py-1",
+              "text-xs rounded transition-colors",
               isVersionHistoryOpen
                 ? "bg-blue-500/20 text-blue-400"
-                : "text-neutral-400 hover:bg-neutral-800/50",
+                : "text-slate-400 hover:bg-slate-800/50",
             )}
             title="История версий"
           >

@@ -73,9 +73,9 @@ export default function EditorStatusBar({
     <div
       className={cn(
         "flex items-center justify-between px-4 py-2",
-        "border-t border-neutral-700/50",
-        "bg-neutral-800/80 backdrop-blur-sm",
-        "text-xs text-neutral-400",
+        "border-t border-slate-700/50",
+        "bg-slate-800/80 backdrop-blur-sm",
+        "text-xs text-slate-400",
         "select-none",
         className,
       )}
@@ -84,13 +84,13 @@ export default function EditorStatusBar({
       <div className="flex items-center gap-4">
         {/* Word count with optional goal */}
         <div className="flex items-center gap-2">
-          <span className="font-medium text-neutral-300">
+          <span className="font-medium text-slate-300">
             {wordCount.toLocaleString()} слов
           </span>
 
           {wordCountGoal && wordCountProgress !== null && (
             <div className="flex items-center gap-1.5">
-              <div className="w-20 h-1.5 bg-neutral-700 rounded-full overflow-hidden">
+              <div className="w-20 h-1.5 bg-slate-700 rounded-full overflow-hidden">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all duration-300",
@@ -100,12 +100,12 @@ export default function EditorStatusBar({
                         ? "bg-blue-500"
                         : wordCountProgress >= 50
                           ? "bg-amber-500"
-                          : "bg-neutral-400",
+                          : "bg-slate-400",
                   )}
                   style={{ width: `${wordCountProgress}%` }}
                 />
               </div>
-              <span className="text-neutral-500">
+              <span className="text-slate-500">
                 {wordCountProgress}% из {wordCountGoal.toLocaleString()}
               </span>
             </div>
@@ -113,17 +113,17 @@ export default function EditorStatusBar({
         </div>
 
         {/* Character count */}
-        <span className="text-neutral-500">
+        <span className="text-slate-500">
           {characterCount.toLocaleString()} симв.
         </span>
 
         {/* Page count */}
         {pageCount !== undefined && pageCount > 0 && (
-          <span className="text-neutral-500">{pageCount} стр.</span>
+          <span className="text-slate-500">{pageCount} стр.</span>
         )}
 
         {/* Reading time */}
-        <span className="text-neutral-500 flex items-center gap-1">
+        <span className="text-slate-500 flex items-center gap-1">
           <svg
             className="w-3.5 h-3.5"
             fill="none"
@@ -145,7 +145,7 @@ export default function EditorStatusBar({
       <div className="flex items-center gap-4">
         {/* Citation count */}
         {citationCount !== undefined && citationCount > 0 && (
-          <span className="text-neutral-500 flex items-center gap-1">
+          <span className="text-slate-500 flex items-center gap-1">
             <svg
               className="w-3.5 h-3.5"
               fill="none"
@@ -185,7 +185,7 @@ export default function EditorStatusBar({
 
         {/* Save status */}
         {isSaving ? (
-          <span className="flex items-center gap-1.5 text-neutral-400">
+          <span className="flex items-center gap-1.5 text-slate-400">
             <svg
               className="w-3.5 h-3.5 animate-spin"
               fill="none"
