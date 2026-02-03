@@ -117,10 +117,10 @@ export default function EditorStatusBar({
           {characterCount.toLocaleString()} симв.
         </span>
 
-        {/* Page count */}
-        {pageCount !== undefined && pageCount > 0 && (
-          <span className="text-slate-500">{pageCount} стр.</span>
-        )}
+        {/* Page count - always show */}
+        <span className="text-slate-500">
+          {pageCount !== undefined && pageCount > 0 ? pageCount : 1} стр.
+        </span>
 
         {/* Reading time */}
         <span className="text-slate-500 flex items-center gap-1">

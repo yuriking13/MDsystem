@@ -187,24 +187,24 @@ export default function DocumentOutline({
           </svg>
         </button>
 
-        {/* Mini indicators for headings */}
-        <div className="mt-4 space-y-1">
-          {numberedHeadings.slice(0, 8).map((heading, idx) => (
+        {/* Mini indicators for headings - vertical dots */}
+        <div className="mt-3 flex flex-col items-center gap-1.5">
+          {numberedHeadings.slice(0, 12).map((heading) => (
             <button
               key={heading.id}
               onClick={() => handleNavigate(heading.id)}
               className={cn(
-                "w-2 h-2 rounded-full transition-colors",
+                "w-1.5 h-1.5 rounded-full transition-colors",
                 activeHeadingId === heading.id
-                  ? "bg-blue-500"
-                  : "bg-slate-300 dark:bg-slate-600 hover:bg-blue-400",
+                  ? "bg-blue-400 ring-2 ring-blue-400/30"
+                  : "bg-slate-500 hover:bg-blue-400",
               )}
               title={heading.text}
             />
           ))}
-          {numberedHeadings.length > 8 && (
-            <div className="text-[10px] text-slate-400 text-center">
-              +{numberedHeadings.length - 8}
+          {numberedHeadings.length > 12 && (
+            <div className="text-[9px] text-slate-500 mt-0.5">
+              +{numberedHeadings.length - 12}
             </div>
           )}
         </div>
