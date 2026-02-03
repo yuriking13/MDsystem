@@ -34,6 +34,7 @@ const AdminArticlesPage = lazy(() => import("./pages/admin/AdminArticlesPage"));
 
 // Loading fallback component
 function PageLoader() {
+  console.log("⏳ PageLoader отображается");
   return (
     <div className="page-loader">
       <div className="page-loader-spinner"></div>
@@ -44,10 +45,13 @@ function PageLoader() {
 
 function ThemeToggle() {
   const [isLight, setIsLight] = useState(() => {
-    return localStorage.getItem("theme") === "light";
+    const theme = localStorage.getItem("theme");
+    console.log("🎨 Текущая тема из localStorage:", theme);
+    return theme === "light";
   });
 
   useEffect(() => {
+    console.log("🎨 Применение темы:", isLight ? "light" : "dark");
     if (isLight) {
       document.body.classList.add("light-theme");
       localStorage.setItem("theme", "light");
@@ -58,7 +62,7 @@ function ThemeToggle() {
   }, [isLight]);
 
   return (
-    <button 
+    <button
       className="theme-toggle-btn"
       onClick={() => setIsLight(!isLight)}
       title={isLight ? "Switch to Dark Mode" : "Switch to Light Mode"}
@@ -69,7 +73,16 @@ function ThemeToggle() {
 }
 
 export default function App() {
+  console.log("🎯 App компонент загружается");
   const { token } = useAuth();
+  console.log("🔐 Токен авторизации:", token ? "Присутствует" : "Отсутствует");
+
+  useEffect(() => {
+    console.log("✅ App компонент смонтирован");
+    return () => {
+      console.log("🔄 App компонент размонтируется");
+    };
+  }, []);
 
   return (
     <ErrorBoundary>
@@ -79,7 +92,10 @@ export default function App() {
         {token && <OnboardingTour />}
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            <Route path="/" element={<Navigate to={token ? "/projects" : "/login"} replace />} />
+            <Route
+              path="/"
+              element={<Navigate to={token ? "/projects" : "/login"} replace />}
+            />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -124,7 +140,7 @@ export default function App() {
                 </RequireAuth>
               }
             />
-            
+
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route
@@ -139,7 +155,10 @@ export default function App() {
               <Route path="users" element={<AdminUsersPage />} />
               <Route path="users/:userId" element={<AdminUsersPage />} />
               <Route path="projects" element={<AdminProjectsPage />} />
-              <Route path="projects/:projectId" element={<AdminProjectsPage />} />
+              <Route
+                path="projects/:projectId"
+                element={<AdminProjectsPage />}
+              />
               <Route path="articles" element={<AdminArticlesPage />} />
               <Route path="activity" element={<AdminActivityPage />} />
               <Route path="sessions" element={<AdminSessionsPage />} />
@@ -149,7 +168,7 @@ export default function App() {
               <Route path="system" element={<AdminSystemPage />} />
               <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
-            
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
