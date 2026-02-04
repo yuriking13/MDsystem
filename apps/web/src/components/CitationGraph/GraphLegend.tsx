@@ -1,5 +1,4 @@
 import React from "react";
-import { cn } from "../../design-system/utils/cn";
 
 interface NodeType {
   id: string;
@@ -26,23 +25,30 @@ export default function GraphLegend({
   orientation = "horizontal",
   showCounts = true,
   compact = false,
-  className,
 }: GraphLegendProps) {
   const isHorizontal = orientation === "horizontal";
 
   return (
     <div
-      className={cn(
-        "bg-slate-900/90 backdrop-blur-sm border border-slate-700/50 rounded-lg",
-        isHorizontal ? "px-4 py-2" : "p-3",
-        className,
-      )}
+      style={{
+        background:
+          "linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(99, 102, 241, 0.3)",
+        borderRadius: 12,
+        padding: isHorizontal ? "10px 16px" : "12px",
+        boxShadow:
+          "0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
+      }}
     >
       <div
-        className={cn(
-          "flex gap-4",
-          isHorizontal ? "flex-row flex-wrap items-center" : "flex-col",
-        )}
+        style={{
+          display: "flex",
+          gap: compact ? 12 : 16,
+          flexDirection: isHorizontal ? "row" : "column",
+          flexWrap: isHorizontal ? "wrap" : "nowrap",
+          alignItems: isHorizontal ? "center" : "flex-start",
+        }}
       >
         {nodeTypes.map((type) => {
           const isHidden = hiddenTypes.includes(type.id);
@@ -52,30 +58,49 @@ export default function GraphLegend({
               key={type.id}
               onClick={() => onToggle?.(type.id)}
               disabled={!onToggle}
-              className={cn(
-                "flex items-center gap-2 transition-opacity",
-                onToggle && "cursor-pointer hover:opacity-80",
-                !onToggle && "cursor-default",
-                isHidden && "opacity-40",
-              )}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "transparent",
+                border: "none",
+                padding: "4px 8px",
+                borderRadius: 6,
+                cursor: onToggle ? "pointer" : "default",
+                opacity: isHidden ? 0.4 : 1,
+                transition: "all 0.2s ease",
+              }}
               title={type.description}
+              onMouseEnter={(e) => {
+                if (onToggle) {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "transparent";
+              }}
             >
-              {/* Color Dot */}
+              {/* Color Dot with glow */}
               <span
-                className={cn(
-                  "rounded-full shrink-0",
-                  compact ? "w-2 h-2" : "w-3 h-3",
-                )}
-                style={{ backgroundColor: type.color }}
+                style={{
+                  width: compact ? 10 : 12,
+                  height: compact ? 10 : 12,
+                  borderRadius: "50%",
+                  backgroundColor: type.color,
+                  boxShadow: `0 0 8px ${type.color}60`,
+                  flexShrink: 0,
+                }}
               />
 
               {/* Label */}
               <span
-                className={cn(
-                  "text-slate-300",
-                  compact ? "text-xs" : "text-sm",
-                  isHidden && "line-through",
-                )}
+                style={{
+                  color: "rgba(226, 232, 240, 0.9)",
+                  fontSize: compact ? 12 : 13,
+                  fontWeight: 500,
+                  textDecoration: isHidden ? "line-through" : "none",
+                  whiteSpace: "nowrap",
+                }}
               >
                 {type.label}
               </span>
@@ -83,10 +108,10 @@ export default function GraphLegend({
               {/* Count */}
               {showCounts && type.count !== undefined && (
                 <span
-                  className={cn(
-                    "text-slate-500",
-                    compact ? "text-xs" : "text-sm",
-                  )}
+                  style={{
+                    color: "rgba(148, 163, 184, 0.8)",
+                    fontSize: compact ? 11 : 12,
+                  }}
                 >
                   ({type.count})
                 </span>
@@ -113,7 +138,6 @@ interface CitationGraphLegendProps {
   hiddenTypes?: string[];
   onToggle?: (typeId: string) => void;
   theme?: "light" | "dark";
-  className?: string;
 }
 
 export function CitationGraphLegend({
@@ -121,7 +145,6 @@ export function CitationGraphLegend({
   hiddenTypes,
   onToggle,
   theme = "dark",
-  className,
 }: CitationGraphLegendProps) {
   const colors =
     theme === "dark"
@@ -201,14 +224,17 @@ export function CitationGraphLegend({
   }
 
   return (
-    <GraphLegend
-      nodeTypes={nodeTypes.filter((t) => t.count !== undefined && t.count > 0)}
-      hiddenTypes={hiddenTypes}
-      onToggle={onToggle}
-      orientation="horizontal"
-      showCounts={true}
-      compact={false}
-      className={cn("absolute bottom-4 left-4 z-10", className)}
-    />
+    <div style={{ position: "absolute", bottom: 16, left: 16, zIndex: 10 }}>
+      <GraphLegend
+        nodeTypes={nodeTypes.filter(
+          (t) => t.count !== undefined && t.count > 0,
+        )}
+        hiddenTypes={hiddenTypes}
+        onToggle={onToggle}
+        orientation="horizontal"
+        showCounts={true}
+        compact={false}
+      />
+    </div>
   );
 }
