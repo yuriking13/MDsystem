@@ -1,6 +1,7 @@
 /* =============================================================================
    Page Layout Styles
    Consistent styling for all pages with sidebar layout
+   Border radius reduced by 25%
    ============================================================================= */
 
 /* Page Container */
@@ -14,125 +15,214 @@
 }
 
 .page-title {
-  @apply text-2xl lg:text-3xl font-bold text-neutral-900 dark:text-white;
+  @apply text-2xl lg:text-3xl font-bold;
+  @apply text-white dark:text-white;
+}
+
+.light-theme .page-title,
+[data-theme="light"] .page-title {
+  @apply text-neutral-900;
 }
 
 .page-subtitle {
-  @apply text-sm text-neutral-500 dark:text-neutral-400 mt-1;
+  @apply text-sm mt-1;
+  @apply text-neutral-400 dark:text-neutral-400;
+}
+
+.light-theme .page-subtitle,
+[data-theme="light"] .page-subtitle {
+  @apply text-neutral-500;
 }
 
 /* =============================================================================
-   Buttons
+   Buttons - border-radius: 0.75rem -> 0.5625rem
    ============================================================================= */
 
 .btn-primary {
-  @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl;
+  @apply inline-flex items-center gap-2 px-4 py-2;
   @apply bg-blue-600 hover:bg-blue-700 active:bg-blue-800;
   @apply text-white font-medium text-sm;
   @apply transition-colors shadow-sm;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply cursor-pointer border-0;
+  border-radius: 0.5625rem;
 }
 
 .btn-secondary {
-  @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl;
-  @apply bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700;
-  @apply text-neutral-700 dark:text-neutral-200 font-medium text-sm;
+  @apply inline-flex items-center gap-2 px-4 py-2;
+  @apply bg-neutral-800 hover:bg-neutral-700;
+  @apply text-neutral-200 font-medium text-sm;
   @apply transition-colors;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply cursor-pointer border-0;
+  border-radius: 0.5625rem;
+}
+
+.light-theme .btn-secondary,
+[data-theme="light"] .btn-secondary {
+  @apply bg-neutral-100 hover:bg-neutral-200;
+  @apply text-neutral-700;
 }
 
 .btn-danger {
-  @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-xl;
+  @apply inline-flex items-center gap-2 px-4 py-2;
   @apply bg-red-600 hover:bg-red-700 active:bg-red-800;
   @apply text-white font-medium text-sm;
   @apply transition-colors;
   @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply cursor-pointer border-0;
+  border-radius: 0.5625rem;
 }
 
 /* =============================================================================
-   Alerts
+   Alerts - border-radius: 0.75rem -> 0.5625rem
    ============================================================================= */
 
 .alert-error {
-  @apply flex items-center justify-between gap-4 px-4 py-3 mb-6 rounded-xl;
-  @apply bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400;
-  @apply border border-red-200 dark:border-red-800/50;
+  @apply flex items-center justify-between gap-4 px-4 py-3 mb-6;
+  @apply bg-red-500/10 text-red-400;
+  @apply border border-red-500/20;
+  border-radius: 0.5625rem;
+}
+
+.light-theme .alert-error,
+[data-theme="light"] .alert-error {
+  @apply bg-red-50 text-red-700 border-red-200;
 }
 
 .alert-success {
-  @apply flex items-center justify-between gap-4 px-4 py-3 mb-6 rounded-xl;
-  @apply bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400;
-  @apply border border-emerald-200 dark:border-emerald-800/50;
+  @apply flex items-center justify-between gap-4 px-4 py-3 mb-6;
+  @apply bg-emerald-500/10 text-emerald-400;
+  @apply border border-emerald-500/20;
+  border-radius: 0.5625rem;
+}
+
+.light-theme .alert-success,
+[data-theme="light"] .alert-success {
+  @apply bg-emerald-50 text-emerald-700 border-emerald-200;
 }
 
 .alert-close {
-  @apply p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors;
+  @apply p-1 cursor-pointer bg-transparent border-0;
+  @apply hover:bg-white/10 transition-colors;
+  border-radius: 0.375rem;
+}
+
+.light-theme .alert-close,
+[data-theme="light"] .alert-close {
+  @apply hover:bg-black/5;
 }
 
 /* =============================================================================
-   Modal
+   Modal - border-radius: 1rem -> 0.75rem
    ============================================================================= */
 
 .modal-backdrop {
   @apply fixed inset-0 z-50 flex items-center justify-center p-4;
-  @apply bg-black/50 dark:bg-black/70 backdrop-blur-sm;
+  @apply bg-black/60 backdrop-blur-sm;
   animation: fadeIn 150ms ease-out;
 }
 
 .modal-content {
-  @apply w-full max-w-lg bg-white dark:bg-neutral-900 rounded-2xl shadow-xl;
-  @apply border border-neutral-200 dark:border-neutral-800;
+  @apply w-full max-w-lg;
+  @apply bg-neutral-900 border border-neutral-800;
+  @apply shadow-xl;
+  border-radius: 0.75rem;
   animation: scaleIn 150ms ease-out;
 }
 
+.light-theme .modal-content,
+[data-theme="light"] .modal-content {
+  @apply bg-white border-neutral-200;
+}
+
 .modal-content--danger {
-  @apply border-red-200 dark:border-red-800/50;
+  @apply border-red-500/30;
 }
 
 .modal-header {
-  @apply flex items-center justify-between px-6 py-4;
-  @apply border-b border-neutral-200 dark:border-neutral-800;
+  @apply flex items-center justify-between px-5 py-4;
+  @apply border-b border-neutral-800;
+}
+
+.light-theme .modal-header,
+[data-theme="light"] .modal-header {
+  @apply border-neutral-200;
 }
 
 .modal-title {
-  @apply text-lg font-semibold text-neutral-900 dark:text-white;
+  @apply text-lg font-semibold text-white;
+}
+
+.light-theme .modal-title,
+[data-theme="light"] .modal-title {
+  @apply text-neutral-900;
 }
 
 .modal-close {
-  @apply p-2 rounded-xl text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200;
-  @apply hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors;
+  @apply p-2 text-neutral-400 hover:text-white;
+  @apply hover:bg-neutral-800 transition-colors;
+  @apply cursor-pointer bg-transparent border-0;
+  border-radius: 0.5625rem;
+}
+
+.light-theme .modal-close,
+[data-theme="light"] .modal-close {
+  @apply text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100;
 }
 
 .modal-body {
-  @apply px-6 py-5 space-y-4;
+  @apply px-5 py-4 space-y-4;
+  @apply text-neutral-300;
+}
+
+.light-theme .modal-body,
+[data-theme="light"] .modal-body {
+  @apply text-neutral-700;
 }
 
 .modal-footer {
-  @apply flex items-center justify-end gap-3 px-6 py-4;
-  @apply border-t border-neutral-200 dark:border-neutral-800;
-  @apply bg-neutral-50 dark:bg-neutral-800/50 rounded-b-2xl;
+  @apply flex items-center justify-end gap-3 px-5 py-4;
+  @apply border-t border-neutral-800;
+  @apply bg-neutral-800/50;
+  border-radius: 0 0 0.75rem 0.75rem;
+}
+
+.light-theme .modal-footer,
+[data-theme="light"] .modal-footer {
+  @apply border-neutral-200 bg-neutral-50;
 }
 
 /* =============================================================================
-   Form Elements
+   Form Elements - border-radius: 0.75rem -> 0.5625rem
    ============================================================================= */
 
 .form-label {
-  @apply block space-y-2;
+  @apply block space-y-1.5;
 }
 
 .form-label-text {
-  @apply text-sm font-medium text-neutral-700 dark:text-neutral-300;
+  @apply text-sm font-medium text-neutral-300;
+}
+
+.light-theme .form-label-text,
+[data-theme="light"] .form-label-text {
+  @apply text-neutral-700;
 }
 
 .form-input {
-  @apply w-full px-4 py-2.5 rounded-xl;
-  @apply bg-white dark:bg-neutral-800;
-  @apply border border-neutral-300 dark:border-neutral-700;
-  @apply text-neutral-900 dark:text-white;
-  @apply placeholder-neutral-400 dark:placeholder-neutral-500;
+  @apply w-full px-3 py-2;
+  @apply bg-neutral-800 border border-neutral-700;
+  @apply text-white placeholder-neutral-500;
   @apply focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500;
   @apply transition-colors;
+  border-radius: 0.5625rem;
+}
+
+.light-theme .form-input,
+[data-theme="light"] .form-input {
+  @apply bg-white border-neutral-300;
+  @apply text-neutral-900 placeholder-neutral-400;
 }
 
 .form-textarea {
@@ -145,12 +235,13 @@
 
 .loading-state {
   @apply flex flex-col items-center justify-center py-16 gap-4;
-  @apply text-neutral-500 dark:text-neutral-400;
+  @apply text-neutral-400;
 }
 
 .loading-spinner {
-  @apply w-8 h-8 border-2 border-neutral-300 dark:border-neutral-600;
-  @apply border-t-blue-500 rounded-full animate-spin;
+  @apply w-8 h-8 border-2 border-neutral-700;
+  @apply border-t-blue-500 animate-spin;
+  border-radius: 9999px;
 }
 
 .empty-state {
@@ -158,33 +249,44 @@
 }
 
 .empty-state-icon {
-  @apply w-16 h-16 text-neutral-300 dark:text-neutral-600 mb-4;
+  @apply w-14 h-14 text-neutral-600 mb-4;
 }
 
 .empty-state-title {
-  @apply text-lg font-semibold text-neutral-900 dark:text-white mb-2;
+  @apply text-lg font-semibold text-white mb-2;
+}
+
+.light-theme .empty-state-title,
+[data-theme="light"] .empty-state-title {
+  @apply text-neutral-900;
 }
 
 .empty-state-desc {
-  @apply text-sm text-neutral-500 dark:text-neutral-400 mb-6 max-w-md;
+  @apply text-sm text-neutral-500 mb-6 max-w-md;
 }
 
 /* =============================================================================
-   Projects Grid
+   Projects Grid - border-radius: 1rem -> 0.75rem
    ============================================================================= */
 
 .projects-grid {
   @apply grid gap-4;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 }
 
 .project-card {
-  @apply relative flex flex-col p-5 rounded-2xl cursor-pointer;
-  @apply bg-white dark:bg-neutral-900;
-  @apply border border-neutral-200 dark:border-neutral-800;
-  @apply hover:border-neutral-300 dark:hover:border-neutral-700;
-  @apply hover:shadow-lg hover:shadow-neutral-200/50 dark:hover:shadow-neutral-900/50;
+  @apply relative flex flex-col p-4 cursor-pointer;
+  @apply bg-neutral-900 border border-neutral-800;
+  @apply hover:border-neutral-700;
+  @apply hover:shadow-lg hover:shadow-black/20;
   @apply transition-all duration-200;
+  border-radius: 0.75rem;
+}
+
+.light-theme .project-card,
+[data-theme="light"] .project-card {
+  @apply bg-white border-neutral-200;
+  @apply hover:border-neutral-300 hover:shadow-lg hover:shadow-neutral-200/50;
 }
 
 .project-card:hover {
@@ -197,43 +299,80 @@
 }
 
 .project-card-icon {
-  @apply flex items-center justify-center w-10 h-10 rounded-xl;
-  @apply bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400;
+  @apply flex items-center justify-center w-9 h-9;
+  @apply bg-blue-500/20 text-blue-400;
+  border-radius: 0.5625rem;
+}
+
+.light-theme .project-card-icon,
+[data-theme="light"] .project-card-icon {
+  @apply bg-blue-100 text-blue-600;
 }
 
 .project-role-badge {
-  @apply px-2.5 py-0.5 rounded-full text-xs font-medium;
+  @apply px-2 py-0.5 text-xs font-medium;
+  border-radius: 0.375rem;
 }
 
 .project-role-badge--owner {
-  @apply bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400;
+  @apply bg-purple-500/20 text-purple-400;
 }
 
 .project-role-badge--editor {
-  @apply bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400;
+  @apply bg-blue-500/20 text-blue-400;
 }
 
 .project-role-badge--viewer {
-  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400;
+  @apply bg-neutral-700 text-neutral-400;
+}
+
+.light-theme .project-role-badge--owner,
+[data-theme="light"] .project-role-badge--owner {
+  @apply bg-purple-100 text-purple-700;
+}
+
+.light-theme .project-role-badge--editor,
+[data-theme="light"] .project-role-badge--editor {
+  @apply bg-blue-100 text-blue-700;
+}
+
+.light-theme .project-role-badge--viewer,
+[data-theme="light"] .project-role-badge--viewer {
+  @apply bg-neutral-100 text-neutral-600;
 }
 
 .project-card-title {
-  @apply text-base font-semibold text-neutral-900 dark:text-white mb-1;
+  @apply text-base font-semibold text-white mb-1;
   @apply line-clamp-2;
 }
 
+.light-theme .project-card-title,
+[data-theme="light"] .project-card-title {
+  @apply text-neutral-900;
+}
+
 .project-card-desc {
-  @apply text-sm text-neutral-500 dark:text-neutral-400 mb-3;
+  @apply text-sm text-neutral-400 mb-3;
   @apply line-clamp-2;
+}
+
+.light-theme .project-card-desc,
+[data-theme="light"] .project-card-desc {
+  @apply text-neutral-600;
 }
 
 .project-card-meta {
   @apply flex items-center gap-4 mt-auto pt-3;
-  @apply border-t border-neutral-100 dark:border-neutral-800;
+  @apply border-t border-neutral-800;
+}
+
+.light-theme .project-card-meta,
+[data-theme="light"] .project-card-meta {
+  @apply border-neutral-200;
 }
 
 .project-meta-item {
-  @apply inline-flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400;
+  @apply inline-flex items-center gap-1.5 text-xs text-neutral-500;
 }
 
 .project-card-actions {
@@ -241,15 +380,29 @@
 }
 
 .project-action-open {
-  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-lg;
-  @apply text-sm font-medium text-blue-600 dark:text-blue-400;
-  @apply hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors;
+  @apply inline-flex items-center gap-2 px-3 py-1.5;
+  @apply text-sm font-medium text-blue-400;
+  @apply hover:bg-blue-500/10 transition-colors;
+  @apply cursor-pointer bg-transparent border-0;
+  border-radius: 0.375rem;
+}
+
+.light-theme .project-action-open,
+[data-theme="light"] .project-action-open {
+  @apply text-blue-600 hover:bg-blue-50;
 }
 
 .project-action-delete {
-  @apply p-2 rounded-lg;
-  @apply text-neutral-400 hover:text-red-600 dark:hover:text-red-400;
-  @apply hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors;
+  @apply p-2;
+  @apply text-neutral-500 hover:text-red-400;
+  @apply hover:bg-red-500/10 transition-colors;
+  @apply cursor-pointer bg-transparent border-0;
+  border-radius: 0.375rem;
+}
+
+.light-theme .project-action-delete,
+[data-theme="light"] .project-action-delete {
+  @apply text-neutral-400 hover:text-red-600 hover:bg-red-50;
 }
 
 /* =============================================================================

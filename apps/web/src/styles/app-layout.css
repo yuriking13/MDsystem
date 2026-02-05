@@ -6,12 +6,16 @@
 /* App Layout Container */
 .app-layout {
   @apply flex min-h-screen;
-  @apply bg-neutral-50 dark:bg-neutral-950;
+  @apply bg-neutral-100 dark:bg-neutral-950;
+}
+
+.light-theme .app-layout,
+[data-theme="light"] .app-layout {
+  @apply bg-neutral-100;
 }
 
 .app-main {
   @apply flex-1 overflow-auto;
-  @apply bg-neutral-50 dark:bg-neutral-950;
   min-height: 100vh;
 }
 
@@ -20,20 +24,32 @@
    ============================================================================= */
 
 .app-sidebar {
-  @apply flex flex-col h-screen sticky top-0;
-  @apply bg-neutral-900 dark:bg-neutral-950;
-  @apply border-r border-neutral-800 dark:border-neutral-800;
-  width: 260px;
+  @apply relative flex flex-col h-screen sticky top-0;
+  @apply bg-neutral-900;
+  @apply border-r border-neutral-800;
+  width: 240px;
   transition: width 200ms ease-in-out;
 }
 
 .app-sidebar--collapsed {
-  width: 72px;
+  width: 64px;
+}
+
+/* Collapse Toggle - Middle of right edge */
+.sidebar-collapse-toggle {
+  @apply absolute z-10 flex items-center justify-center;
+  @apply w-6 h-6 rounded-md;
+  @apply bg-neutral-800 border border-neutral-700;
+  @apply text-neutral-400 hover:text-white hover:bg-neutral-700;
+  @apply transition-colors cursor-pointer;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
 }
 
 /* Sidebar Header */
 .sidebar-header {
-  @apply flex items-center justify-between px-4 py-4;
+  @apply flex items-center px-4 py-4;
   @apply border-b border-neutral-800;
 }
 
@@ -42,42 +58,46 @@
 }
 
 .sidebar-logo-icon {
-  @apply flex items-center justify-center w-10 h-10 rounded-xl;
+  @apply flex items-center justify-center w-8 h-8 rounded-lg;
   @apply bg-gradient-to-br from-blue-500 to-blue-600;
   @apply text-white;
 }
 
 .sidebar-logo-text {
-  @apply text-lg font-bold text-white;
+  @apply text-base font-bold text-white;
   @apply tracking-tight;
 }
 
-.sidebar-collapse-btn {
-  @apply p-2 rounded-lg;
-  @apply text-neutral-400 hover:text-white;
-  @apply hover:bg-neutral-800;
-  @apply transition-colors;
+/* Back Button */
+.sidebar-back {
+  @apply px-3 py-2 border-b border-neutral-800;
 }
 
-.app-sidebar--collapsed .sidebar-collapse-btn {
-  @apply absolute right-2 top-4;
+.sidebar-back-btn {
+  @apply flex items-center gap-2 w-full px-2 py-1.5 rounded-lg;
+  @apply text-xs text-neutral-400 hover:text-white;
+  @apply hover:bg-neutral-800 transition-colors cursor-pointer;
+}
+
+.app-sidebar--collapsed .sidebar-back-btn {
+  @apply justify-center px-0;
 }
 
 /* Sidebar Navigation */
 .sidebar-nav {
-  @apply flex-1 py-4 px-3 overflow-y-auto;
+  @apply flex-1 py-3 px-2 overflow-y-auto;
 }
 
 .sidebar-nav-list {
-  @apply flex flex-col gap-1;
+  @apply flex flex-col gap-0.5;
 }
 
 .sidebar-nav-item {
-  @apply flex items-center gap-3 px-3 py-2.5 rounded-xl;
+  @apply flex items-center gap-2.5 w-full px-3 py-2 rounded-lg;
   @apply text-neutral-400 hover:text-white;
   @apply hover:bg-neutral-800;
   @apply transition-all duration-150;
-  @apply cursor-pointer no-underline;
+  @apply cursor-pointer border-0 bg-transparent text-left;
 }
 
 .sidebar-nav-item--active {
@@ -95,7 +115,7 @@
 }
 
 .sidebar-nav-badge {
-  @apply ml-auto px-2 py-0.5 rounded-full text-xs font-medium;
+  @apply ml-auto px-1.5 py-0.5 rounded-md text-xs font-medium;
   @apply bg-blue-500/20 text-blue-400;
 }
 
@@ -110,16 +130,16 @@
 
 /* Sidebar Footer */
 .sidebar-footer {
-  @apply px-3 py-4 space-y-2;
+  @apply px-2 py-3 space-y-1;
   @apply border-t border-neutral-800;
 }
 
 .sidebar-footer-btn {
-  @apply flex items-center gap-3 w-full px-3 py-2.5 rounded-xl;
+  @apply flex items-center gap-2.5 w-full px-3 py-2 rounded-lg;
   @apply text-neutral-400 hover:text-white;
   @apply hover:bg-neutral-800;
   @apply transition-colors;
-  @apply cursor-pointer;
+  @apply cursor-pointer border-0 bg-transparent text-left;
 }
 
 .sidebar-footer-icon {
@@ -137,7 +157,7 @@
 
 /* User Profile */
 .sidebar-user {
-  @apply flex items-center gap-3 px-3 py-2.5;
+  @apply flex items-center gap-2.5 px-3 py-2;
 }
 
 .sidebar-user-avatar {
@@ -149,7 +169,7 @@
 }
 
 .sidebar-user-email {
-  @apply text-sm text-neutral-400 truncate block;
+  @apply text-xs text-neutral-400 truncate block;
 }
 
 /* Collapsed state - center icons */
@@ -162,12 +182,18 @@
 }
 
 /* =============================================================================
-   Light Theme Overrides
+   Light Theme
    ============================================================================= */
 
 .light-theme .app-sidebar,
 [data-theme="light"] .app-sidebar {
   @apply bg-white border-r border-neutral-200;
+}
+
+.light-theme .sidebar-collapse-toggle,
+[data-theme="light"] .sidebar-collapse-toggle {
+  @apply bg-white border-neutral-300 text-neutral-500;
+  @apply hover:bg-neutral-100 hover:text-neutral-700;
 }
 
 .light-theme .sidebar-header,
@@ -180,8 +206,13 @@
   @apply text-neutral-900;
 }
 
-.light-theme .sidebar-collapse-btn,
-[data-theme="light"] .sidebar-collapse-btn {
+.light-theme .sidebar-back,
+[data-theme="light"] .sidebar-back {
+  @apply border-b border-neutral-200;
+}
+
+.light-theme .sidebar-back-btn,
+[data-theme="light"] .sidebar-back-btn {
   @apply text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100;
 }
 
@@ -236,6 +267,10 @@
   }
 
   .app-sidebar--collapsed {
-    width: 260px;
+    width: 240px;
+  }
+
+  .sidebar-collapse-toggle {
+    @apply hidden;
   }
 }

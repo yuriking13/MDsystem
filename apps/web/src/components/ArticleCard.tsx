@@ -6,7 +6,6 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
   ArrowTopRightOnSquareIcon,
-  BookOpenIcon,
   BeakerIcon,
   ClipboardDocumentIcon,
   LanguageIcon,
@@ -62,51 +61,37 @@ interface ArticleCardProps {
   className?: string;
 }
 
-const STATUS_CONFIG: Record<
-  ArticleData["status"],
-  {
-    bg: string;
-    border: string;
-    text: string;
-    label: string;
-    icon: React.ReactNode;
-  }
-> = {
+const STATUS_CONFIG = {
   candidate: {
-    bg: "bg-amber-500/10 dark:bg-amber-500/20",
     border: "border-l-amber-500",
-    text: "text-amber-600 dark:text-amber-400",
+    badge: "bg-amber-500/20 text-amber-400",
     label: "Candidate",
-    icon: <BeakerIcon className="w-3.5 h-3.5" />,
+    icon: BeakerIcon,
   },
   selected: {
-    bg: "bg-emerald-500/10 dark:bg-emerald-500/20",
     border: "border-l-emerald-500",
-    text: "text-emerald-600 dark:text-emerald-400",
+    badge: "bg-emerald-500/20 text-emerald-400",
     label: "Selected",
-    icon: <CheckIcon className="w-3.5 h-3.5" />,
+    icon: CheckIcon,
   },
   excluded: {
-    bg: "bg-rose-500/10 dark:bg-rose-500/20",
     border: "border-l-rose-500",
-    text: "text-rose-600 dark:text-rose-400",
+    badge: "bg-rose-500/20 text-rose-400",
     label: "Excluded",
-    icon: <XMarkIcon className="w-3.5 h-3.5" />,
+    icon: XMarkIcon,
   },
   deleted: {
-    bg: "bg-neutral-500/10 dark:bg-neutral-500/20",
-    border: "border-l-neutral-400",
-    text: "text-neutral-500 dark:text-neutral-400",
+    border: "border-l-neutral-500",
+    badge: "bg-neutral-500/20 text-neutral-400",
     label: "Deleted",
-    icon: <XMarkIcon className="w-3.5 h-3.5" />,
+    icon: XMarkIcon,
   },
 };
 
-const SOURCE_STYLES: Record<ArticleData["source"], string> = {
-  pubmed: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
-  doaj: "bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400",
-  wiley:
-    "bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400",
+const SOURCE_STYLES = {
+  pubmed: "bg-blue-500/20 text-blue-400",
+  doaj: "bg-purple-500/20 text-purple-400",
+  wiley: "bg-orange-500/20 text-orange-400",
 };
 
 const PUB_TYPE_LABELS: Record<string, string> = {
@@ -134,7 +119,8 @@ export default function ArticleCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showActions, setShowActions] = useState(false);
 
-  const statusConfig = STATUS_CONFIG[article.status];
+  const status = STATUS_CONFIG[article.status];
+  const StatusIcon = status.icon;
   const sourceStyle = SOURCE_STYLES[article.source];
 
   const displayTitle =
@@ -153,229 +139,164 @@ export default function ArticleCard({
   return (
     <article
       className={cn(
-        "article-mosaic-card group",
-        "relative overflow-hidden rounded-2xl border-l-4 transition-all duration-200",
-        "bg-white dark:bg-neutral-900",
-        "border border-neutral-200 dark:border-neutral-800",
-        statusConfig.border,
-        isSelected &&
-          "ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-neutral-950",
-        "hover:shadow-lg hover:shadow-neutral-200/50 dark:hover:shadow-neutral-900/50",
+        "article-card group",
+        status.border,
+        isSelected && "article-card--selected",
         className,
       )}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
       {/* Main Content */}
-      <div className={cn("p-4", compact && "p-3")}>
+      <div
+        className={cn(
+          "article-card-body",
+          compact && "article-card-body--compact",
+        )}
+      >
         {/* Top Row: Checkbox + Badges */}
-        <div className="flex items-start gap-3">
+        <div className="article-card-top">
           {/* Selection Checkbox */}
-          <label className="shrink-0 mt-0.5 cursor-pointer">
+          <label className="article-checkbox">
             <input
               type="checkbox"
               checked={isSelected}
               onChange={() => onSelect(article.id)}
-              className="w-4 h-4 rounded-md border-neutral-300 dark:border-neutral-600 text-blue-500 focus:ring-blue-500/30 focus:ring-offset-0"
             />
           </label>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            {/* Badges Row */}
-            <div className="flex flex-wrap items-center gap-1.5 mb-2">
-              {/* Status Badge */}
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full",
-                  statusConfig.bg,
-                  statusConfig.text,
-                )}
-              >
-                {statusConfig.icon}
-                {statusConfig.label}
+          {/* Badges */}
+          <div className="article-badges">
+            {/* Status Badge */}
+            <span className={cn("article-badge", status.badge)}>
+              <StatusIcon className="w-3 h-3" />
+              {status.label}
+            </span>
+
+            {/* Source Badge */}
+            <span className={cn("article-badge", sourceStyle)}>
+              {article.source.toUpperCase()}
+            </span>
+
+            {/* Publication Type */}
+            {article.publicationType && (
+              <span className="article-badge bg-neutral-700/50 text-neutral-300">
+                {PUB_TYPE_LABELS[article.publicationType] ||
+                  article.publicationType}
               </span>
-
-              {/* Source Badge */}
-              <span
-                className={cn(
-                  "px-2 py-0.5 text-xs font-semibold rounded-full uppercase tracking-wider",
-                  sourceStyle,
-                )}
-              >
-                {article.source}
-              </span>
-
-              {/* Publication Type */}
-              {article.publicationType && (
-                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
-                  {PUB_TYPE_LABELS[article.publicationType] ||
-                    article.publicationType}
-                </span>
-              )}
-
-              {/* Statistics Badge */}
-              {article.stats?.hasStatistics && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-teal-500/10 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400">
-                  <ChartBarIcon className="w-3 h-3" />
-                  Stats
-                </span>
-              )}
-
-              {/* Year - Right aligned */}
-              <span className="ml-auto text-xs font-medium text-neutral-400 dark:text-neutral-500">
-                {article.year}
-              </span>
-            </div>
-
-            {/* Title */}
-            <h3
-              className={cn(
-                "text-base font-semibold leading-snug cursor-pointer transition-colors",
-                "text-neutral-900 dark:text-neutral-100",
-                "hover:text-blue-600 dark:hover:text-blue-400",
-                compact && "text-sm",
-              )}
-              onClick={() => onOpenDetails?.(article.id)}
-            >
-              {displayTitle}
-            </h3>
-
-            {/* Authors & Journal */}
-            <div
-              className={cn(
-                "mt-2 flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400",
-                compact && "text-xs",
-              )}
-            >
-              <span className="truncate">
-                {authorsDisplay}
-                {hasMoreAuthors && (
-                  <span className="text-neutral-400 dark:text-neutral-500">
-                    {" "}
-                    +{article.authors.length - 3}
-                  </span>
-                )}
-              </span>
-              {article.journal && (
-                <>
-                  <span className="text-neutral-300 dark:text-neutral-600">
-                    •
-                  </span>
-                  <span className="truncate italic text-neutral-500 dark:text-neutral-400">
-                    {article.journal}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {/* IDs Row */}
-            <div className="mt-2 flex items-center gap-4 text-xs">
-              {article.pmid && (
-                <a
-                  href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-neutral-500 hover:text-blue-500 transition-colors"
-                >
-                  PMID: {article.pmid}
-                  <ArrowTopRightOnSquareIcon className="w-3 h-3" />
-                </a>
-              )}
-              {article.doi && (
-                <a
-                  href={`https://doi.org/${article.doi}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-neutral-500 hover:text-blue-500 transition-colors"
-                >
-                  DOI
-                  <ArrowTopRightOnSquareIcon className="w-3 h-3" />
-                </a>
-              )}
-              {article.citationCount !== undefined &&
-                article.citationCount > 0 && (
-                  <span className="inline-flex items-center gap-1 text-neutral-500">
-                    <BookOpenIcon className="w-3 h-3" />
-                    {article.citationCount}
-                  </span>
-                )}
-            </div>
-
-            {/* Abstract (Expandable) */}
-            {displayAbstract && !compact && (
-              <div className="mt-3">
-                <p
-                  className={cn(
-                    "text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed",
-                    !isExpanded && "line-clamp-2",
-                  )}
-                >
-                  {displayAbstract}
-                </p>
-                {displayAbstract.length > 200 && (
-                  <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="mt-1 text-xs font-medium text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition-colors"
-                  >
-                    {isExpanded ? (
-                      <>
-                        <ChevronUpIcon className="w-3 h-3" />
-                        Show less
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDownIcon className="w-3 h-3" />
-                        Show more
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
             )}
 
-            {/* Statistics Preview */}
-            {article.stats?.hasStatistics && isExpanded && (
-              <div className="mt-3 p-3 rounded-xl bg-teal-50 dark:bg-teal-900/20">
-                <h4 className="text-xs font-semibold text-teal-700 dark:text-teal-300 mb-1">
-                  Statistical Methods
-                </h4>
-                {article.stats.statisticalMethods && (
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400">
-                    {article.stats.statisticalMethods.join(", ")}
-                  </p>
-                )}
-                {article.stats.sampleSize && (
-                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
-                    Sample size: n={article.stats.sampleSize}
-                  </p>
-                )}
-              </div>
+            {/* Statistics Badge */}
+            {article.stats?.hasStatistics && (
+              <span className="article-badge bg-violet-500/20 text-violet-400">
+                <ChartBarIcon className="w-3 h-3" />
+                Stats
+              </span>
             )}
           </div>
+
+          {/* Year */}
+          <span className="article-year">{article.year}</span>
         </div>
+
+        {/* Title */}
+        <h3
+          className={cn("article-title", compact && "article-title--compact")}
+          onClick={() => onOpenDetails?.(article.id)}
+        >
+          {displayTitle}
+        </h3>
+
+        {/* Authors & Journal */}
+        <div className={cn("article-meta", compact && "article-meta--compact")}>
+          <span className="article-authors">
+            {authorsDisplay}
+            {hasMoreAuthors && ` +${article.authors.length - 3} more`}
+          </span>
+          {article.journal && (
+            <>
+              <span className="article-meta-dot">•</span>
+              <span className="article-journal">{article.journal}</span>
+            </>
+          )}
+        </div>
+
+        {/* IDs Row */}
+        <div className="article-ids">
+          {article.pmid && (
+            <a
+              href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="article-id-link"
+            >
+              PMID: {article.pmid}
+              <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+            </a>
+          )}
+          {article.doi && (
+            <a
+              href={`https://doi.org/${article.doi}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="article-id-link"
+            >
+              DOI
+              <ArrowTopRightOnSquareIcon className="w-3 h-3" />
+            </a>
+          )}
+        </div>
+
+        {/* Abstract */}
+        {displayAbstract && !compact && (
+          <div className="article-abstract-wrapper">
+            <p
+              className={cn(
+                "article-abstract",
+                !isExpanded && "article-abstract--collapsed",
+              )}
+            >
+              {displayAbstract}
+            </p>
+            {displayAbstract.length > 150 && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="article-abstract-toggle"
+              >
+                {isExpanded ? (
+                  <>
+                    <ChevronUpIcon className="w-3 h-3" />
+                    Hide
+                  </>
+                ) : (
+                  <>
+                    <ChevronDownIcon className="w-3 h-3" />
+                    Show more
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Actions Bar - Appears on hover */}
+      {/* Actions Bar */}
       <div
         className={cn(
-          "flex items-center justify-between px-4 py-2.5",
-          "bg-neutral-50 dark:bg-neutral-800/50",
-          "border-t border-neutral-100 dark:border-neutral-800",
-          "transition-all duration-200",
-          showActions || isSelected ? "opacity-100" : "opacity-0",
+          "article-actions",
+          (showActions || isSelected) && "article-actions--visible",
         )}
       >
         {/* Status Actions */}
-        <div className="flex items-center gap-1">
+        <div className="article-status-actions">
           <button
             onClick={() => onStatusChange(article.id, "selected")}
             disabled={article.status === "selected"}
             className={cn(
-              "p-1.5 rounded-lg transition-all text-xs",
+              "article-action-btn",
               article.status === "selected"
-                ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
-                : "text-neutral-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400",
+                ? "article-action-btn--active-green"
+                : "article-action-btn--green",
             )}
             title="Select"
           >
@@ -385,12 +306,12 @@ export default function ArticleCard({
             onClick={() => onStatusChange(article.id, "candidate")}
             disabled={article.status === "candidate"}
             className={cn(
-              "p-1.5 rounded-lg transition-all text-xs",
+              "article-action-btn",
               article.status === "candidate"
-                ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
-                : "text-neutral-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 dark:hover:text-amber-400",
+                ? "article-action-btn--active-amber"
+                : "article-action-btn--amber",
             )}
-            title="Mark as Candidate"
+            title="Candidate"
           >
             <BeakerIcon className="w-4 h-4" />
           </button>
@@ -398,10 +319,10 @@ export default function ArticleCard({
             onClick={() => onStatusChange(article.id, "excluded")}
             disabled={article.status === "excluded"}
             className={cn(
-              "p-1.5 rounded-lg transition-all text-xs",
+              "article-action-btn",
               article.status === "excluded"
-                ? "bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400"
-                : "text-neutral-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 dark:hover:text-rose-400",
+                ? "article-action-btn--active-rose"
+                : "article-action-btn--rose",
             )}
             title="Exclude"
           >
@@ -410,11 +331,11 @@ export default function ArticleCard({
         </div>
 
         {/* Utility Actions */}
-        <div className="flex items-center gap-1">
+        <div className="article-util-actions">
           {onTranslate && !article.titleRu && (
             <button
               onClick={() => onTranslate(article.id)}
-              className="p-1.5 rounded-lg text-neutral-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+              className="article-action-btn article-action-btn--default"
               title="Translate"
             >
               <LanguageIcon className="w-4 h-4" />
@@ -423,7 +344,7 @@ export default function ArticleCard({
           {onDetectStats && !article.stats && (
             <button
               onClick={() => onDetectStats(article.id)}
-              className="p-1.5 rounded-lg text-neutral-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors"
+              className="article-action-btn article-action-btn--default"
               title="Detect Statistics"
             >
               <ChartBarIcon className="w-4 h-4" />
@@ -432,7 +353,7 @@ export default function ArticleCard({
           {onCopyToClipboard && (
             <button
               onClick={() => onCopyToClipboard(article.id)}
-              className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
+              className="article-action-btn article-action-btn--default"
               title="Copy Citation"
             >
               <ClipboardDocumentIcon className="w-4 h-4" />
