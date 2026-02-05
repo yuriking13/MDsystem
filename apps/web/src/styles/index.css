@@ -2,6 +2,8 @@
 @import "./legacy.css";
 @import "./citation-graph.css";
 @import "./articles-section.css";
+@import "./app-layout.css";
+@import "./pages.css";
 
 /* ===== DESIGN TOKENS & CSS VARIABLES ===== */
 @layer base {
