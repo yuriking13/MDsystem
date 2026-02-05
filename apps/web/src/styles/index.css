@@ -4,6 +4,7 @@
 @import "./articles-section.css";
 @import "./app-layout.css";
 @import "./pages.css";
+@import "./animated-background.css";
 
 /* ===== DESIGN TOKENS & CSS VARIABLES ===== */
 @layer base {
