@@ -3,6 +3,10 @@
  * Provides robust HTTP calls for external APIs
  */
 
+import { createLogger } from "../utils/logger.js";
+
+const log = createLogger("http-client");
+
 // ============================================================
 // Rate Limiter - Token Bucket Algorithm
 // ============================================================
@@ -28,13 +32,16 @@ class TokenBucketRateLimiter {
   private refill(): void {
     const now = Date.now();
     const elapsed = (now - this.lastRefill) / 1000;
-    this.tokens = Math.min(this.maxTokens, this.tokens + elapsed * this.tokensPerSecond);
+    this.tokens = Math.min(
+      this.maxTokens,
+      this.tokens + elapsed * this.tokensPerSecond,
+    );
     this.lastRefill = now;
   }
 
   async acquire(): Promise<void> {
     this.refill();
-    
+
     if (this.tokens >= 1) {
       this.tokens -= 1;
       return;
@@ -42,7 +49,7 @@ class TokenBucketRateLimiter {
 
     // Wait until we have a token
     const waitTime = ((1 - this.tokens) / this.tokensPerSecond) * 1000;
-    await new Promise(resolve => setTimeout(resolve, waitTime));
+    await new Promise((resolve) => setTimeout(resolve, waitTime));
     this.tokens = 0;
     this.lastRefill = Date.now();
   }
@@ -69,7 +76,10 @@ const API_RATE_LIMITS: Record<string, RateLimiterConfig> = {
 
 function getRateLimiter(apiName: string): TokenBucketRateLimiter {
   if (!rateLimiters.has(apiName)) {
-    const config = API_RATE_LIMITS[apiName] || { tokensPerSecond: 5, maxTokens: 10 };
+    const config = API_RATE_LIMITS[apiName] || {
+      tokensPerSecond: 5,
+      maxTokens: 10,
+    };
     rateLimiters.set(apiName, new TokenBucketRateLimiter(config));
   }
   return rateLimiters.get(apiName)!;
@@ -82,7 +92,7 @@ function getRateLimiter(apiName: string): TokenBucketRateLimiter {
 interface CircuitBreakerState {
   failures: number;
   lastFailure: number;
-  state: 'closed' | 'open' | 'half-open';
+  state: "closed" | "open" | "half-open";
 }
 
 const circuitBreakers = new Map<string, CircuitBreakerState>();
@@ -95,7 +105,11 @@ const CIRCUIT_BREAKER_CONFIG = {
 
 function getCircuitBreaker(apiName: string): CircuitBreakerState {
   if (!circuitBreakers.has(apiName)) {
-    circuitBreakers.set(apiName, { failures: 0, lastFailure: 0, state: 'closed' });
+    circuitBreakers.set(apiName, {
+      failures: 0,
+      lastFailure: 0,
+      state: "closed",
+    });
   }
   return circuitBreakers.get(apiName)!;
 }
@@ -103,35 +117,37 @@ function getCircuitBreaker(apiName: string): CircuitBreakerState {
 function recordSuccess(apiName: string): void {
   const cb = getCircuitBreaker(apiName);
   cb.failures = 0;
-  cb.state = 'closed';
+  cb.state = "closed";
 }
 
 function recordFailure(apiName: string): void {
   const cb = getCircuitBreaker(apiName);
   cb.failures++;
   cb.lastFailure = Date.now();
-  
+
   if (cb.failures >= CIRCUIT_BREAKER_CONFIG.failureThreshold) {
-    cb.state = 'open';
-    console.warn(`[CircuitBreaker] ${apiName} circuit opened after ${cb.failures} failures`);
+    cb.state = "open";
+    log.warn(
+      `CircuitBreaker: ${apiName} circuit opened after ${cb.failures} failures`,
+    );
   }
 }
 
 function canRequest(apiName: string): boolean {
   const cb = getCircuitBreaker(apiName);
-  
-  if (cb.state === 'closed') return true;
-  
-  if (cb.state === 'open') {
+
+  if (cb.state === "closed") return true;
+
+  if (cb.state === "open") {
     const elapsed = Date.now() - cb.lastFailure;
     if (elapsed > CIRCUIT_BREAKER_CONFIG.resetTimeout) {
-      cb.state = 'half-open';
-      console.log(`[CircuitBreaker] ${apiName} circuit half-open, testing...`);
+      cb.state = "half-open";
+      log.info(`CircuitBreaker: ${apiName} circuit half-open, testing...`);
       return true;
     }
     return false;
   }
-  
+
   // half-open - allow limited requests
   return true;
 }
@@ -154,27 +170,33 @@ const DEFAULT_RETRY_CONFIG: Required<RetryConfig> = {
   retryableStatuses: [408, 429, 500, 502, 503, 504],
 };
 
-function isRetryableError(error: Error | Response, config: Required<RetryConfig>): boolean {
+function isRetryableError(
+  error: Error | Response,
+  config: Required<RetryConfig>,
+): boolean {
   if (error instanceof Response) {
     return config.retryableStatuses.includes(error.status);
   }
-  
+
   // Network errors are retryable
   const message = error.message.toLowerCase();
   return (
-    message.includes('network') ||
-    message.includes('timeout') ||
-    message.includes('econnreset') ||
-    message.includes('econnrefused') ||
-    message.includes('socket hang up')
+    message.includes("network") ||
+    message.includes("timeout") ||
+    message.includes("econnreset") ||
+    message.includes("econnrefused") ||
+    message.includes("socket hang up")
   );
 }
 
 async function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function calculateBackoff(attempt: number, config: Required<RetryConfig>): number {
+function calculateBackoff(
+  attempt: number,
+  config: Required<RetryConfig>,
+): number {
   // Exponential backoff with jitter
   const exponentialDelay = config.baseDelayMs * Math.pow(2, attempt);
   const jitter = Math.random() * 0.3 * exponentialDelay; // 0-30% jitter
@@ -196,7 +218,7 @@ export interface ResilientFetchOptions extends RequestInit {
 export class CircuitBreakerOpenError extends Error {
   constructor(apiName: string) {
     super(`Circuit breaker open for ${apiName}`);
-    this.name = 'CircuitBreakerOpenError';
+    this.name = "CircuitBreakerOpenError";
   }
 }
 
@@ -205,10 +227,10 @@ export class CircuitBreakerOpenError extends Error {
  */
 export async function resilientFetch(
   url: string,
-  options: ResilientFetchOptions = {}
+  options: ResilientFetchOptions = {},
 ): Promise<Response> {
   const {
-    apiName = 'default',
+    apiName = "default",
     retry = {},
     skipRateLimit = false,
     skipCircuitBreaker = false,
@@ -216,7 +238,10 @@ export async function resilientFetch(
     ...fetchOptions
   } = options;
 
-  const retryConfig: Required<RetryConfig> = { ...DEFAULT_RETRY_CONFIG, ...retry };
+  const retryConfig: Required<RetryConfig> = {
+    ...DEFAULT_RETRY_CONFIG,
+    ...retry,
+  };
 
   // Check circuit breaker
   if (!skipCircuitBreaker && !canRequest(apiName)) {
@@ -229,7 +254,7 @@ export async function resilientFetch(
   }
 
   let lastError: Error | null = null;
-  
+
   for (let attempt = 0; attempt <= retryConfig.maxRetries; attempt++) {
     try {
       // Create abort controller for timeout
@@ -247,7 +272,9 @@ export async function resilientFetch(
       if (!response.ok && isRetryableError(response, retryConfig)) {
         if (attempt < retryConfig.maxRetries) {
           const delay = calculateBackoff(attempt, retryConfig);
-          console.log(`[HTTP] ${apiName} ${response.status} - retry ${attempt + 1}/${retryConfig.maxRetries} in ${Math.round(delay)}ms`);
+          log.info(
+            `${apiName} ${response.status} - retry ${attempt + 1}/${retryConfig.maxRetries} in ${Math.round(delay)}ms`,
+          );
           await sleep(delay);
           continue;
         }
@@ -263,9 +290,14 @@ export async function resilientFetch(
       lastError = error as Error;
 
       // Check if error is retryable
-      if (isRetryableError(error as Error, retryConfig) && attempt < retryConfig.maxRetries) {
+      if (
+        isRetryableError(error as Error, retryConfig) &&
+        attempt < retryConfig.maxRetries
+      ) {
         const delay = calculateBackoff(attempt, retryConfig);
-        console.log(`[HTTP] ${apiName} error - retry ${attempt + 1}/${retryConfig.maxRetries} in ${Math.round(delay)}ms: ${(error as Error).message}`);
+        log.info(
+          `${apiName} error - retry ${attempt + 1}/${retryConfig.maxRetries} in ${Math.round(delay)}ms: ${(error as Error).message}`,
+        );
         await sleep(delay);
         continue;
       }
@@ -291,15 +323,17 @@ export async function resilientFetch(
  */
 export async function resilientFetchJson<T>(
   url: string,
-  options: ResilientFetchOptions = {}
+  options: ResilientFetchOptions = {},
 ): Promise<T> {
   const response = await resilientFetch(url, options);
-  
+
   if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`HTTP ${response.status} for ${url}: ${text.slice(0, 300)}`);
+    const text = await response.text().catch(() => "");
+    throw new Error(
+      `HTTP ${response.status} for ${url}: ${text.slice(0, 300)}`,
+    );
   }
-  
+
   return response.json() as Promise<T>;
 }
 
@@ -313,7 +347,10 @@ export function getHttpClientStats() {
     rateLimiterStats[name] = Math.floor(limiter.getAvailableTokens());
   }
 
-  const circuitBreakerStats: Record<string, { state: string; failures: number }> = {};
+  const circuitBreakerStats: Record<
+    string,
+    { state: string; failures: number }
+  > = {};
   for (const [name, cb] of circuitBreakers) {
     circuitBreakerStats[name] = { state: cb.state, failures: cb.failures };
   }
@@ -330,6 +367,6 @@ export function getHttpClientStats() {
 export function resetCircuitBreaker(apiName: string): void {
   const cb = getCircuitBreaker(apiName);
   cb.failures = 0;
-  cb.state = 'closed';
-  console.log(`[CircuitBreaker] ${apiName} circuit manually reset`);
+  cb.state = "closed";
+  log.info(`CircuitBreaker: ${apiName} circuit manually reset`);
 }

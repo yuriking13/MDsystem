@@ -2985,22 +2985,21 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Отладка: что пришло в body
       const rawBody = request.body as any;
-      console.log(`[AI Assistant] Raw body keys:`, Object.keys(rawBody || {}));
-      console.log(
-        `[AI Assistant] Raw graphArticles length:`,
+      log.debug(
+        `AI Assistant raw body keys: ${Object.keys(rawBody || {}).join(", ")}`,
+      );
+      log.debug(
+        `AI Assistant raw graphArticles length:`,
         rawBody?.graphArticles?.length,
       );
-      console.log(
-        `[AI Assistant] Raw message:`,
+      log.debug(
+        `AI Assistant raw message:`,
         rawBody?.message?.substring(0, 50),
       );
 
       const bodyP = GraphAIAssistantSchema.safeParse(request.body);
       if (!bodyP.success) {
-        console.log(
-          `[AI Assistant] Zod validation failed:`,
-          bodyP.error.issues,
-        );
+        log.debug(`AI Assistant Zod validation failed:`, bodyP.error.issues);
         return reply
           .code(400)
           .send({ error: "Invalid request body", details: bodyP.error.issues });
@@ -3010,12 +3009,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const { message, graphArticles, context, filters, clusters, gaps } =
         bodyP.data;
 
-      console.log(
-        `[AI Assistant] After Zod: graphArticles length:`,
+      log.debug(
+        `AI Assistant after Zod: graphArticles length:`,
         graphArticles?.length,
       );
-      console.log(
-        `[AI Assistant] Clusters:`,
+      log.debug(
+        `AI Assistant clusters:`,
         clusters?.length || 0,
         `Gaps:`,
         gaps?.length || 0,
@@ -3041,12 +3040,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         const project = projectRes.rows[0];
 
         // Логируем что получили
-        console.log(
-          `[AI Assistant] Received graphArticles: ${graphArticles?.length || 0} items`,
+        log.debug(
+          `AI Assistant received graphArticles: ${graphArticles?.length || 0} items`,
         );
         if (graphArticles && graphArticles.length > 0) {
-          console.log(
-            `[AI Assistant] Sample article:`,
+          log.debug(
+            `AI Assistant sample article:`,
             JSON.stringify(graphArticles[0]).slice(0, 300),
           );
           // Подсчёт по уровням
@@ -3055,7 +3054,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             const level = String(a.graphLevel ?? "undefined");
             levelCounts[level] = (levelCounts[level] || 0) + 1;
           }
-          console.log(`[AI Assistant] Articles by level:`, levelCounts);
+          log.debug(`AI Assistant articles by level`, levelCounts);
         }
 
         // Фильтруем только внешние статьи (level 0, 2, 3) для поиска
@@ -3065,8 +3064,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           return level !== 1;
         });
 
-        console.log(
-          `[AI Assistant] External articles for search: ${externalArticles.length}`,
+        log.debug(
+          `AI Assistant external articles for search: ${externalArticles.length}`,
         );
 
         // Фильтруем статьи с реальными данными (не placeholder)
@@ -3081,8 +3080,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           return hasRealTitle || hasYear || hasAbstract;
         });
 
-        console.log(
-          `[AI Assistant] Articles with real data: ${articlesWithData.length}`,
+        log.debug(
+          `AI Assistant articles with real data: ${articlesWithData.length}`,
         );
 
         // Преобразуем graphLevel в читаемый тип

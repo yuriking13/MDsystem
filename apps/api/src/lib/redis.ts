@@ -12,6 +12,9 @@
 import { Redis } from "ioredis";
 import { LRUCache } from "lru-cache";
 import { env } from "../env.js";
+import { createLogger } from "../utils/logger.js";
+
+const log = createLogger("cache");
 
 // ============================================================
 // In-memory LRU Cache (fallback when Redis is not available)
@@ -196,9 +199,7 @@ export async function initRedisClient(): Promise<Redis | null> {
       maxRetriesPerRequest: 3,
       retryStrategy: (times: number) => {
         if (times > 3) {
-          console.warn(
-            "[Redis] Max retry attempts reached, falling back to memory cache",
-          );
+          log.warn("Max retry attempts reached, falling back to memory cache");
           return null;
         }
         return Math.min(times * 200, 2000);
@@ -211,21 +212,21 @@ export async function initRedisClient(): Promise<Redis | null> {
     await client.ping();
 
     client.on("error", (err: Error) => {
-      console.error("[Redis] Connection error:", err.message);
+      log.error("Redis connection error", err);
     });
 
     client.on("reconnecting", () => {
-      console.log("[Redis] Reconnecting...");
+      log.info("Redis reconnecting...");
     });
 
     redisClient = client;
     useRedis = true;
-    console.log("[Cache] Using Redis backend");
+    log.info("Using Redis backend");
     return client;
   } catch (err) {
-    console.warn(
-      "[Cache] Redis connection failed, using in-memory LRU cache:",
-      (err as Error).message,
+    log.warn(
+      "Redis connection failed, using in-memory LRU cache"(err as Error)
+        .message,
     );
     useRedis = false;
     return null;
@@ -292,10 +293,7 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
       if (!data) return null;
       return JSON.parse(data) as T;
     } catch (err) {
-      console.warn(
-        "[Cache] Redis get error, trying memory:",
-        (err as Error).message,
-      );
+      log.warn("Redis get error, trying memory"(err as Error).message);
     }
   }
 
@@ -305,7 +303,7 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
     if (!data) return null;
     return JSON.parse(data) as T;
   } catch (err) {
-    console.warn("[Cache] Memory get error:", (err as Error).message);
+    log.warn("Memory get error", { error: (err as Error).message });
     return null;
   }
 }
@@ -329,10 +327,7 @@ export async function cacheSet(
       await client.setex(key, ttl, jsonData);
       return true;
     } catch (err) {
-      console.warn(
-        "[Cache] Redis set error, using memory:",
-        (err as Error).message,
-      );
+      log.warn("Redis set error, using memory"(err as Error).message);
     }
   }
 
@@ -341,7 +336,7 @@ export async function cacheSet(
     memorySet(key, jsonData, ttl);
     return true;
   } catch (err) {
-    console.warn("[Cache] Memory set error:", (err as Error).message);
+    log.warn("Memory set error", { error: (err as Error).message });
     return false;
   }
 }
@@ -359,7 +354,7 @@ export async function cacheDel(key: string): Promise<boolean> {
     try {
       await client.del(key);
     } catch (err) {
-      console.warn("[Cache] Redis delete error:", (err as Error).message);
+      log.warn("Redis delete error", { error: (err as Error).message });
       success = false;
     }
   }
@@ -368,7 +363,7 @@ export async function cacheDel(key: string): Promise<boolean> {
   try {
     memoryDel(key);
   } catch (err) {
-    console.warn("[Cache] Memory delete error:", (err as Error).message);
+    log.warn("Memory delete error", { error: (err as Error).message });
     success = false;
   }
 
@@ -403,15 +398,12 @@ export async function cacheDelPattern(pattern: string): Promise<boolean> {
 
       if (keysToDelete.length > 0) {
         await client.del(...keysToDelete);
-        console.log(
-          `[Cache] Redis: deleted ${keysToDelete.length} keys matching: ${pattern}`,
+        log.debug(
+          `Redis: deleted ${keysToDelete.length} keys matching: ${pattern}`,
         );
       }
     } catch (err) {
-      console.warn(
-        "[Cache] Redis delete pattern error:",
-        (err as Error).message,
-      );
+      log.warn("Redis delete pattern error"(err as Error).message);
       success = false;
     }
   }
@@ -420,15 +412,10 @@ export async function cacheDelPattern(pattern: string): Promise<boolean> {
   try {
     const deleted = memoryDelPattern(pattern);
     if (deleted > 0) {
-      console.log(
-        `[Cache] Memory: deleted ${deleted} keys matching: ${pattern}`,
-      );
+      log.debug(`Memory: deleted ${deleted} keys matching: ${pattern}`);
     }
   } catch (err) {
-    console.warn(
-      "[Cache] Memory delete pattern error:",
-      (err as Error).message,
-    );
+    log.warn("Memory delete pattern error"(err as Error).message);
     success = false;
   }
 
@@ -583,14 +570,14 @@ export async function closeCache(): Promise<void> {
     redisClient = null;
     connectionAttempted = false;
     useRedis = false;
-    console.log("[Cache] Redis connection closed");
+    log.info("Redis connection closed");
   }
 
   // Clear memory cache
   memoryCache.clear();
   memoryCacheHits = 0;
   memoryCacheMisses = 0;
-  console.log("[Cache] Memory cache cleared");
+  log.info("Memory cache cleared");
 }
 
 // Alias for backwards compatibility
@@ -603,11 +590,9 @@ export const closeRedis = closeCache;
 export async function initCache(): Promise<void> {
   const client = await initRedisClient();
   if (client) {
-    console.log("[Cache] Initialized with Redis backend");
+    log.info("Initialized with Redis backend");
   } else {
-    console.log(
-      "[Cache] Initialized with in-memory LRU backend (Redis not available)",
-    );
+    log.info("Initialized with in-memory LRU backend (Redis not available)");
   }
 }
 

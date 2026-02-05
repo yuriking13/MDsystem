@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import ArticleFilterSidebar from "../ArticleFilterSidebar";
+import ArticleFilterSidebar from "../../src/components/ArticleFilterSidebar";
 
 const defaultProps = {
   selectedSources: ["pubmed" as const],

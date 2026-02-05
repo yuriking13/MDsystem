@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import ArticleCard, { ArticleData } from "../ArticleCard";
+import ArticleCard, { ArticleData } from "../../src/components/ArticleCard";
 
 const mockArticle: ArticleData = {
   id: "1",

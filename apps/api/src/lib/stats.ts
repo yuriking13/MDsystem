@@ -1,22 +1,27 @@
 export type ExtractedStats = {
   pValues: Array<{ raw: string; operator?: string; value?: number }>;
   tTests: Array<{ raw: string; df?: number; value?: number }>;
-  confidenceIntervals: Array<{ raw: string; level?: number; low?: number; high?: number }>;
+  confidenceIntervals: Array<{
+    raw: string;
+    level?: number;
+    low?: number;
+    high?: number;
+  }>;
   effects: Array<{ raw: string; type?: string; value?: number }>;
 };
 
 function toNumberSafe(x: string | undefined): number | undefined {
   if (!x) return undefined;
-  const v = Number(x.replace(',', '.'));
+  const v = Number(x.replace(",", "."));
   return Number.isFinite(v) ? v : undefined;
 }
 
 export function extractStats(text: string | undefined | null): ExtractedStats {
-  const s = (text ?? '').replace(/\s+/g, ' ');
-  const pValues: ExtractedStats['pValues'] = [];
-  const tTests: ExtractedStats['tTests'] = [];
-  const confidenceIntervals: ExtractedStats['confidenceIntervals'] = [];
-  const effects: ExtractedStats['effects'] = [];
+  const s = (text ?? "").replace(/\s+/g, " ");
+  const pValues: ExtractedStats["pValues"] = [];
+  const tTests: ExtractedStats["tTests"] = [];
+  const confidenceIntervals: ExtractedStats["confidenceIntervals"] = [];
+  const effects: ExtractedStats["effects"] = [];
 
   // p < 0.05, p=0.001, P ≤ 0.01 etc.
   const pRe = /\b[pP]\s*([<=>≤≥])\s*(0\.\d+|\d+\.\d+|\d+e-\d+)\b/g;
@@ -31,9 +36,15 @@ export function extractStats(text: string | undefined | null): ExtractedStats {
   }
 
   // 95% CI 1.2-2.3 or (95% CI, 1.2 to 2.3)
-  const ciRe = /(\b(?:95%\s*CI|CI\s*95%)\b[^0-9]{0,10})(-?\d+(?:\.\d+)?)[\s–-]+(-?\d+(?:\.\d+)?)/gi;
+  const ciRe =
+    /(\b(?:95%\s*CI|CI\s*95%)\b[^0-9]{0,10})(-?\d+(?:\.\d+)?)[\s–-]+(-?\d+(?:\.\d+)?)/gi;
   for (const m of s.matchAll(ciRe)) {
-    confidenceIntervals.push({ raw: m[0], level: 95, low: toNumberSafe(m[2]), high: toNumberSafe(m[3]) });
+    confidenceIntervals.push({
+      raw: m[0],
+      level: 95,
+      low: toNumberSafe(m[2]),
+      high: toNumberSafe(m[3]),
+    });
   }
 
   // OR/RR/HR = value
@@ -46,7 +57,13 @@ export function extractStats(text: string | undefined | null): ExtractedStats {
 }
 
 export function hasAnyStats(stats: ExtractedStats): boolean {
-  return stats.pValues.length + stats.tTests.length + stats.confidenceIntervals.length + stats.effects.length > 0;
+  return (
+    stats.pValues.length +
+      stats.tTests.length +
+      stats.confidenceIntervals.length +
+      stats.effects.length >
+    0
+  );
 }
 
 /**
@@ -58,7 +75,7 @@ export function hasAnyStats(stats: ExtractedStats): boolean {
  */
 export function calculateStatsQuality(stats: ExtractedStats): number {
   let quality = 0;
-  
+
   for (const p of stats.pValues) {
     if (p.value !== undefined) {
       if (p.value < 0.001) {
@@ -71,21 +88,21 @@ export function calculateStatsQuality(stats: ExtractedStats): number {
     } else if (p.operator && p.raw) {
       // Парсим из raw строки
       const raw = p.raw.toLowerCase();
-      if (raw.includes('0.001') || raw.includes('0.0001')) {
+      if (raw.includes("0.001") || raw.includes("0.0001")) {
         quality = Math.max(quality, 3);
-      } else if (raw.includes('0.01')) {
+      } else if (raw.includes("0.01")) {
         quality = Math.max(quality, 2);
-      } else if (raw.includes('0.05')) {
+      } else if (raw.includes("0.05")) {
         quality = Math.max(quality, 1);
       }
     }
   }
-  
+
   // Бонус за наличие CI и эффектов
   if (stats.confidenceIntervals.length > 0 && quality > 0) {
     quality = Math.min(quality + 0.5, 3);
   }
-  
+
   return Math.floor(quality);
 }
 
@@ -97,8 +114,14 @@ export type AIStatsResult = {
   hasStats: boolean;
   stats: Array<{
     text: string;
-    type: 'p-value' | 'confidence-interval' | 'effect-size' | 'sample-size' | 'test-statistic' | 'other';
-    significance?: 'high' | 'medium' | 'low' | 'not-significant';
+    type:
+      | "p-value"
+      | "confidence-interval"
+      | "effect-size"
+      | "sample-size"
+      | "test-statistic"
+      | "other";
+    significance?: "high" | "medium" | "low" | "not-significant";
   }>;
   summary?: string;
 };
@@ -167,7 +190,7 @@ Return ONLY valid JSON.`;
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${openrouterKey}`,
+        Authorization: `Bearer ${openrouterKey}`,
         "HTTP-Referer": "https://mdsystem.app",
       },
       body: JSON.stringify({
@@ -188,50 +211,54 @@ Return ONLY valid JSON.`;
     };
     const data = (await res.json()) as OpenRouterResponse;
     const content = data.choices?.[0]?.message?.content || "";
-    
+
     // Parse JSON from response
     const jsonMatch = content.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return { hasStats: false, stats: [] };
     }
-    
+
     const rawResult = JSON.parse(jsonMatch[0]) as AIStatsResult;
-    
+
     // Post-process: validate significance levels
     // Only allow high/medium/low if the text actually contains a p-value pattern
     const pValuePattern = /[pP]\s*[<>=≤≥]\s*0[.,]\d+/;
-    
+
     if (rawResult.stats) {
-      rawResult.stats = rawResult.stats.map(stat => {
+      rawResult.stats = rawResult.stats.map((stat) => {
         // If marked as significant but no actual p-value in text, downgrade to not-significant
-        if (stat.significance && stat.significance !== 'not-significant') {
+        if (stat.significance && stat.significance !== "not-significant") {
           if (!pValuePattern.test(stat.text)) {
             // Check if it's a CI that excludes null (e.g., OR > 1 with CI not crossing 1)
-            const ciExcludesNull = /(?:OR|RR|HR)\s*[=:]\s*(\d+[.,]\d*)[^0-9]*(?:95%?\s*CI|CI\s*95%?)[:\s]*\(?(\d+[.,]\d*)[\s–\-−—]+(\d+[.,]\d*)\)?/i;
+            const ciExcludesNull =
+              /(?:OR|RR|HR)\s*[=:]\s*(\d+[.,]\d*)[^0-9]*(?:95%?\s*CI|CI\s*95%?)[:\s]*\(?(\d+[.,]\d*)[\s–\-−—]+(\d+[.,]\d*)\)?/i;
             const ciMatch = stat.text.match(ciExcludesNull);
-            
+
             if (ciMatch) {
-              const low = parseFloat(ciMatch[2].replace(',', '.'));
-              const high = parseFloat(ciMatch[3].replace(',', '.'));
+              const low = parseFloat(ciMatch[2].replace(",", "."));
+              const high = parseFloat(ciMatch[3].replace(",", "."));
               // If CI doesn't cross 1.0, it's statistically significant
               if (low > 1.0 || high < 1.0) {
-                stat.significance = 'low'; // Conservative estimate without explicit p-value
+                stat.significance = "low"; // Conservative estimate without explicit p-value
               } else {
-                stat.significance = 'not-significant';
+                stat.significance = "not-significant";
               }
             } else {
-              stat.significance = 'not-significant';
+              stat.significance = "not-significant";
             }
           }
         }
         return stat;
       });
-      
+
       // Filter out purely descriptive stats that slipped through
-      rawResult.stats = rawResult.stats.filter(stat => {
+      rawResult.stats = rawResult.stats.filter((stat) => {
         const statText = stat.text.toLowerCase();
         // Reject simple percentages without statistical context
-        if (/^\d+[.,]\d*\s*%/.test(stat.text) && !pValuePattern.test(stat.text)) {
+        if (
+          /^\d+[.,]\d*\s*%/.test(stat.text) &&
+          !pValuePattern.test(stat.text)
+        ) {
           // Check if it has statistical context
           if (!/(ci|or|rr|hr|odds|risk|hazard|interval)/i.test(statText)) {
             return false;
@@ -239,13 +266,13 @@ Return ONLY valid JSON.`;
         }
         return true;
       });
-      
+
       rawResult.hasStats = rawResult.stats.length > 0;
     }
-    
+
     return rawResult;
-  } catch (err) {
-    console.error("AI stats detection error:", err);
+  } catch {
+    // AI detection failed - return empty result
     return { hasStats: false, stats: [] };
   }
 }
@@ -254,13 +281,15 @@ Return ONLY valid JSON.`;
  * Расширенная regex детекция для fallback режима
  * Используется когда AI недоступен
  */
-export function extractStatsEnhanced(text: string | undefined | null): ExtractedStats & { additionalFindings: string[] } {
+export function extractStatsEnhanced(
+  text: string | undefined | null,
+): ExtractedStats & { additionalFindings: string[] } {
   const baseStats = extractStats(text);
   const additionalFindings: string[] = [];
-  const s = (text ?? '').replace(/\s+/g, ' ');
+  const s = (text ?? "").replace(/\s+/g, " ");
 
   // Additional patterns for better coverage when AI is unavailable
-  
+
   // F-statistic: F(1, 234) = 5.67, p < 0.05
   const fRe = /\bF\s*\(\s*\d+\s*,\s*\d+\s*\)\s*=\s*[\d.]+/gi;
   for (const m of s.matchAll(fRe)) {
@@ -314,23 +343,29 @@ export async function detectStatsCombined(args: {
   text: string;
   openrouterKey?: string;
   useAI?: boolean;
-}): Promise<{ hasStats: boolean; quality: number; stats: ExtractedStats; aiStats?: AIStatsResult; usedFallback?: boolean }> {
+}): Promise<{
+  hasStats: boolean;
+  quality: number;
+  stats: ExtractedStats;
+  aiStats?: AIStatsResult;
+  usedFallback?: boolean;
+}> {
   const { text, openrouterKey, useAI = true } = args;
-  
+
   // Сначала regex
   const regexStats = extractStats(text);
   const hasRegexStats = hasAnyStats(regexStats);
   const quality = calculateStatsQuality(regexStats);
-  
+
   // Если regex нашёл - возвращаем
   if (hasRegexStats || !useAI || !openrouterKey) {
     return { hasStats: hasRegexStats, quality, stats: regexStats };
   }
-  
+
   // Если regex не нашёл - пробуем AI с fallback
   try {
     const aiStats = await detectStatsWithAI({ text, openrouterKey });
-    
+
     return {
       hasStats: hasRegexStats || aiStats.hasStats,
       quality: aiStats.hasStats ? Math.max(quality, 1) : quality,
@@ -339,18 +374,18 @@ export async function detectStatsCombined(args: {
     };
   } catch (aiError) {
     // AI недоступен - используем расширенный regex как fallback
-    console.warn('[Stats] AI detection failed, using enhanced regex fallback:', (aiError as Error).message);
-    
+    // AI detection failed, using enhanced regex fallback
+
     const enhancedStats = extractStatsEnhanced(text);
     const hasEnhancedFindings = enhancedStats.additionalFindings.length > 0;
-    
+
     // Обновляем качество если нашли дополнительные паттерны
     let fallbackQuality = quality;
     if (hasEnhancedFindings && !hasRegexStats) {
       // Даём минимальное качество если нашли что-то через enhanced regex
       fallbackQuality = 1;
     }
-    
+
     return {
       hasStats: hasRegexStats || hasEnhancedFindings,
       quality: fallbackQuality,
@@ -376,12 +411,15 @@ export async function detectStatsParallel(args: {
 }): Promise<{
   analyzed: number;
   found: number;
-  results: Map<string, {
-    hasStats: boolean;
-    quality: number;
-    stats: ExtractedStats;
-    aiStats?: AIStatsResult;
-  }>;
+  results: Map<
+    string,
+    {
+      hasStats: boolean;
+      quality: number;
+      stats: ExtractedStats;
+      aiStats?: AIStatsResult;
+    }
+  >;
 }> {
   const { articles, openrouterKey, useAI = true, parallelCount = 5 } = args;
   const results = new Map();
@@ -391,7 +429,7 @@ export async function detectStatsParallel(args: {
   const startTime = Date.now();
 
   // Очередь для обработки
-  const queue = articles.filter(a => a.abstract);
+  const queue = articles.filter((a) => a.abstract);
   const inProgress = new Set<Promise<void>>();
 
   const processQueue = async () => {
@@ -407,7 +445,7 @@ export async function detectStatsParallel(args: {
       const promise = (async () => {
         try {
           const result = await detectStatsCombined({
-            text: article.abstract || '',
+            text: article.abstract || "",
             openrouterKey,
             useAI,
           });
@@ -418,8 +456,7 @@ export async function detectStatsParallel(args: {
           if (result.hasStats || (result.aiStats && result.aiStats.hasStats)) {
             found++;
           }
-        } catch (err) {
-          console.error(`Stats detection failed for ${article.id}:`, err);
+        } catch {
           // Даже при ошибке отмечаем как проанализированную
           analyzed++;
         } finally {

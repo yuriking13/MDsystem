@@ -3,6 +3,9 @@
  * Использует модель (напр. GPT-4o-mini или Claude) для перевода заголовков и абстрактов
  */
 
+import { createLogger } from "../utils/logger.js";
+
+const log = createLogger("translate");
 const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
 
 // Модель для перевода - можно настроить
@@ -25,7 +28,7 @@ export type BatchTranslationResult = {
 export async function translateText(
   apiKey: string,
   text: string,
-  model = DEFAULT_MODEL
+  model = DEFAULT_MODEL,
 ): Promise<string> {
   const res = await fetch(OPENROUTER_API, {
     method: "POST",
@@ -79,7 +82,7 @@ export async function translateArticle(
   apiKey: string,
   title: string,
   abstract?: string | null,
-  model = DEFAULT_MODEL
+  model = DEFAULT_MODEL,
 ): Promise<TranslationResult> {
   const result: TranslationResult = {};
 
@@ -87,7 +90,7 @@ export async function translateArticle(
   try {
     result.title_ru = await translateText(apiKey, title, model);
   } catch (err) {
-    console.error("Title translation error:", err);
+    log.error("Title translation error", err as Error);
   }
 
   // Переводим абстракт если есть
@@ -95,7 +98,7 @@ export async function translateArticle(
     try {
       result.abstract_ru = await translateText(apiKey, abstract, model);
     } catch (err) {
-      console.error("Abstract translation error:", err);
+      log.error("Abstract translation error", err as Error);
     }
   }
 
@@ -117,7 +120,7 @@ export async function translateArticlesBatch(
     model?: string;
     delayMs?: number;
     onProgress?: (done: number, total: number) => void;
-  } = {}
+  } = {},
 ): Promise<BatchTranslationResult> {
   const model = options.model || DEFAULT_MODEL;
   const delayMs = options.delayMs ?? 100;
@@ -134,7 +137,7 @@ export async function translateArticlesBatch(
         apiKey,
         article.title_en,
         article.abstract_en,
-        model
+        model,
       );
 
       if (tr.title_ru || tr.abstract_ru) {
@@ -144,7 +147,7 @@ export async function translateArticlesBatch(
         failed++;
       }
     } catch (err) {
-      console.error(`Translation failed for ${article.id}:`, err);
+      log.error(`Translation failed for ${article.id}`, err as Error);
       failed++;
     }
 
@@ -179,7 +182,7 @@ export async function translateArticlesParallel(
     batchSize?: number; // Размер батча для оптимизированного перевода
     onProgress?: (done: number, total: number, speed?: number) => void;
     onSpeedUpdate?: (articlesPerSecond: number) => void;
-  } = {}
+  } = {},
 ): Promise<BatchTranslationResult> {
   const model = options.model || DEFAULT_MODEL;
   const parallelCount = options.parallelCount ?? 3;
@@ -197,47 +200,61 @@ export async function translateArticlesParallel(
 
   // Разбиваем на пакеты для оптимизированного перевода (несколько статей в одном API запросе)
   const batchPromises: Promise<void>[] = [];
-  
-  for (let batchStart = 0; batchStart < articles.length; batchStart += batchSize) {
+
+  for (
+    let batchStart = 0;
+    batchStart < articles.length;
+    batchStart += batchSize
+  ) {
     // Обрабатываем не более parallelCount батчей параллельно
     if (batchPromises.length >= parallelCount) {
       await Promise.race(batchPromises);
-      batchPromises.splice(0, batchPromises.findIndex(p => p === Promise.resolve()));
+      batchPromises.splice(
+        0,
+        batchPromises.findIndex((p) => p === Promise.resolve()),
+      );
     }
 
     const batch = articles.slice(batchStart, batchStart + batchSize);
-    
+
     const batchPromise = (async () => {
       try {
         // Используем оптимизированный перевод для этого батча
-        const batchResult = await translateArticlesBatchOptimized(apiKey, batch, model);
-        
+        const batchResult = await translateArticlesBatchOptimized(
+          apiKey,
+          batch,
+          model,
+        );
+
         // Сохраняем результаты
         for (const [articleId, tr] of batchResult.results) {
           results.set(articleId, tr);
         }
-        
+
         translated += batchResult.translated;
         failed += batchResult.failed;
         processed += batch.length;
-        
+
         // Обновляем прогресс с расчётом скорости
         if (options.onProgress) {
           const elapsedSeconds = (Date.now() - startTime) / 1000;
           const speed = processed / Math.max(elapsedSeconds, 0.1);
           options.onProgress(processed, articles.length, speed);
         }
-        
+
         if (options.onSpeedUpdate) {
           const elapsedSeconds = (Date.now() - startTime) / 1000;
           const speed = processed / Math.max(elapsedSeconds, 0.1);
           options.onSpeedUpdate(speed);
         }
       } catch (err) {
-        console.error(`Batch translation error for articles ${batchStart}-${batchStart + batchSize}:`, err);
+        log.error(
+          `Batch translation error for articles ${batchStart}-${batchStart + batchSize}`,
+          err as Error,
+        );
         failed += batch.length;
         processed += batch.length;
-        
+
         if (options.onProgress) {
           const elapsedSeconds = (Date.now() - startTime) / 1000;
           const speed = processed / Math.max(elapsedSeconds, 0.1);
@@ -245,7 +262,7 @@ export async function translateArticlesParallel(
         }
       }
     })();
-    
+
     batchPromises.push(batchPromise);
   }
 
@@ -266,7 +283,7 @@ export async function translateArticlesBatchOptimized(
     title_en: string;
     abstract_en?: string | null;
   }>,
-  model = DEFAULT_MODEL
+  model = DEFAULT_MODEL,
 ): Promise<BatchTranslationResult> {
   if (articles.length === 0) {
     return { translated: 0, failed: 0, results: new Map() };
@@ -358,7 +375,9 @@ export async function translateArticlesBatchOptimized(
           }
         }
       } catch {
-        console.error("Could not parse batch translation response, falling back to sequential");
+        log.warn(
+          "Could not parse batch translation response, falling back to sequential",
+        );
         throw new Error("JSON parse failed");
       }
     }
@@ -388,9 +407,9 @@ export async function translateArticlesBatchOptimized(
       results,
     };
   } catch (err) {
-    console.error("Batch translation error:", err);
+    log.error("Batch translation error", err as Error);
     // Фолбек на последовательный перевод
-    console.log("Falling back to sequential translation...");
+    log.info("Falling back to sequential translation...");
     return translateArticlesBatch(apiKey, articles, { model, delayMs: 200 });
   }
 }

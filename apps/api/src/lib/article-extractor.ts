@@ -67,26 +67,26 @@ export async function extractHtmlFromWord(buffer: Buffer): Promise<string> {
  */
 export function htmlToTiptapContent(html: string): unknown[] {
   const content: unknown[] = [];
-  
+
   // Split HTML into lines/blocks for simpler processing
   const blocks = html
-    .replace(/<br\s*\/?>/gi, '\n')
-    .replace(/<\/p>/gi, '</p>\n')
-    .replace(/<\/h([1-6])>/gi, '</h$1>\n')
-    .replace(/<\/tr>/gi, '</tr>\n')
-    .replace(/<\/table>/gi, '</table>\n')
-    .split('\n')
-    .filter(line => line.trim());
-  
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "</p>\n")
+    .replace(/<\/h([1-6])>/gi, "</h$1>\n")
+    .replace(/<\/tr>/gi, "</tr>\n")
+    .replace(/<\/table>/gi, "</table>\n")
+    .split("\n")
+    .filter((line) => line.trim());
+
   for (const block of blocks) {
     const trimmed = block.trim();
     if (!trimmed) continue;
-    
+
     // Check for headings
     const headingMatch = trimmed.match(/<h([1-6])[^>]*>([\s\S]*?)<\/h\1>/i);
     if (headingMatch) {
       const level = parseInt(headingMatch[1]);
-      const text = headingMatch[2].replace(/<[^>]+>/g, '').trim();
+      const text = headingMatch[2].replace(/<[^>]+>/g, "").trim();
       if (text) {
         content.push({
           type: "heading",
@@ -96,20 +96,20 @@ export function htmlToTiptapContent(html: string): unknown[] {
       }
       continue;
     }
-    
+
     // Check for table
-    if (trimmed.includes('<table')) {
+    if (trimmed.includes("<table")) {
       const tableContent = parseHtmlTable(trimmed);
       if (tableContent) {
         content.push(tableContent);
       }
       continue;
     }
-    
+
     // Check for paragraph
     const pMatch = trimmed.match(/<p[^>]*>([\s\S]*?)<\/p>/i);
     if (pMatch) {
-      const text = pMatch[1].replace(/<[^>]+>/g, '').trim();
+      const text = pMatch[1].replace(/<[^>]+>/g, "").trim();
       if (text) {
         content.push({
           type: "paragraph",
@@ -118,9 +118,9 @@ export function htmlToTiptapContent(html: string): unknown[] {
       }
       continue;
     }
-    
+
     // Plain text
-    const text = trimmed.replace(/<[^>]+>/g, '').trim();
+    const text = trimmed.replace(/<[^>]+>/g, "").trim();
     if (text) {
       content.push({
         type: "paragraph",
@@ -128,7 +128,7 @@ export function htmlToTiptapContent(html: string): unknown[] {
       });
     }
   }
-  
+
   return content;
 }
 
@@ -137,29 +137,35 @@ export function htmlToTiptapContent(html: string): unknown[] {
  */
 function parseHtmlTable(html: string): TipTapNode | null {
   const rows: TipTapNode[] = [];
-  
+
   // Extract all rows
   const rowMatches = html.match(/<tr[^>]*>[\s\S]*?<\/tr>/gi);
   if (!rowMatches) return null;
-  
+
   for (const rowHtml of rowMatches) {
     const cells: TipTapNode[] = [];
-    
+
     // Extract cells (th or td)
     const cellMatches = rowHtml.match(/<(th|td)[^>]*>([\s\S]*?)<\/\1>/gi);
     if (cellMatches) {
       for (const cellHtml of cellMatches) {
-        const isHeader = cellHtml.toLowerCase().startsWith('<th');
-        const textMatch = cellHtml.match(/<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/i);
-        const text = textMatch ? textMatch[1].replace(/<[^>]+>/g, '').trim() : '';
-        
+        const isHeader = cellHtml.toLowerCase().startsWith("<th");
+        const textMatch = cellHtml.match(
+          /<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/i,
+        );
+        const text = textMatch
+          ? textMatch[1].replace(/<[^>]+>/g, "").trim()
+          : "";
+
         cells.push({
           type: isHeader ? "tableHeader" : "tableCell",
-          content: text ? [{ type: "paragraph", content: [{ type: "text", text }] }] : [{ type: "paragraph", content: [] }],
+          content: text
+            ? [{ type: "paragraph", content: [{ type: "text", text }] }]
+            : [{ type: "paragraph", content: [] }],
         });
       }
     }
-    
+
     if (cells.length > 0) {
       rows.push({
         type: "tableRow",
@@ -167,9 +173,9 @@ function parseHtmlTable(html: string): TipTapNode | null {
       });
     }
   }
-  
+
   if (rows.length === 0) return null;
-  
+
   return {
     type: "table",
     content: rows,
@@ -181,12 +187,13 @@ function parseHtmlTable(html: string): TipTapNode | null {
  */
 export async function extractTextFromFile(
   buffer: Buffer,
-  mimeType: string
+  mimeType: string,
 ): Promise<string> {
   if (mimeType === "application/pdf") {
     return extractTextFromPdf(buffer);
   } else if (
-    mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    mimeType ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
     mimeType === "application/msword"
   ) {
     return extractTextFromWord(buffer);
@@ -198,16 +205,20 @@ export async function extractTextFromFile(
 /**
  * Prepare text for AI analysis - get start and end parts for metadata + bibliography
  */
-function prepareTextForAnalysis(text: string): { headerText: string; refText: string; fullTextForDoi: string } {
+function prepareTextForAnalysis(text: string): {
+  headerText: string;
+  refText: string;
+  fullTextForDoi: string;
+} {
   // Get first 10000 chars for header, abstract, authors, DOI, etc.
   const headerText = text.slice(0, 10000);
-  
+
   // Get last 20000 chars for bibliography (references are usually at the end)
   const refText = text.length > 20000 ? text.slice(-20000) : text;
-  
+
   // Get first 3000 chars for DOI extraction (main article DOI is usually in the header)
   const fullTextForDoi = text.slice(0, 3000);
-  
+
   return { headerText, refText, fullTextForDoi };
 }
 
@@ -216,17 +227,17 @@ function prepareTextForAnalysis(text: string): { headerText: string; refText: st
  */
 export async function extractArticleMetadataWithAI(
   text: string,
-  openrouterKey: string
+  openrouterKey: string,
 ): Promise<ExtractedArticle> {
   const { headerText, refText } = prepareTextForAnalysis(text);
-  
+
   // Combine header and reference sections with a separator
   const combinedText = `=== НАЧАЛО СТАТЬИ (первые страницы) ===
 ${headerText}
 
 === КОНЕЦ СТАТЬИ (последние страницы, включая библиографию) ===
 ${refText}`;
-  
+
   const systemPrompt = `Ты - эксперт по извлечению метаданных из научных статей. 
 Тебе предоставлены две части текста:
 1. НАЧАЛО СТАТЬИ - содержит заголовок, авторов, абстракт, DOI статьи
@@ -299,14 +310,17 @@ DOI статьи берём ТОЛЬКО из начала документа (�
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${openrouterKey}`,
+      Authorization: `Bearer ${openrouterKey}`,
       "HTTP-Referer": "https://mdsystem.app",
     },
     body: JSON.stringify({
       model: "anthropic/claude-sonnet-4",
       messages: [
         { role: "system", content: systemPrompt },
-        { role: "user", content: `Проанализируй следующий текст научной статьи и извлеки метаданные:\n\n${combinedText}` },
+        {
+          role: "user",
+          content: `Проанализируй следующий текст научной статьи и извлеки метаданные:\n\n${combinedText}`,
+        },
       ],
       temperature: 0.1,
       max_tokens: 8000, // Increased for larger bibliography
@@ -343,8 +357,8 @@ DOI статьи берём ТОЛЬКО из начала документа (�
         bibliography: parsed.bibliography || null,
       };
     }
-  } catch (e) {
-    console.error("Failed to parse AI response:", e, content);
+  } catch {
+    // Failed to parse AI response - will return null
   }
 
   return {
@@ -366,10 +380,13 @@ DOI статьи берём ТОЛЬКО из начала документа (�
  * Try to find DOI in text using regex
  * Prioritizes DOIs from the start of the document (header) over those from bibliography
  */
-export function extractDoiFromText(text: string, preferHeader: boolean = true): string | null {
+export function extractDoiFromText(
+  text: string,
+  preferHeader: boolean = true,
+): string | null {
   // DOI pattern: 10.xxxx/xxxxx
   const doiPattern = /\b(10\.\d{4,}(?:\.\d+)*\/\S+?)(?=[\s,\])">']|$)/gi;
-  
+
   if (preferHeader) {
     // First try to find DOI in the first 3000 characters (header area)
     const headerText = text.slice(0, 3000);
@@ -379,14 +396,14 @@ export function extractDoiFromText(text: string, preferHeader: boolean = true): 
       return doi.toLowerCase();
     }
   }
-  
+
   // Fallback to first DOI found anywhere
   const allMatches = text.match(doiPattern);
   if (allMatches && allMatches.length > 0) {
     const doi = allMatches[0].replace(/[.,;]+$/, "");
     return doi.toLowerCase();
   }
-  
+
   return null;
 }
 

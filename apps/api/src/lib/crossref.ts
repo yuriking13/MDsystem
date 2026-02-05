@@ -3,8 +3,11 @@
  * Для обогащения метаданных статей по DOI
  */
 
-import { resilientFetch } from './http-client.js';
-import { getCachedCrossref, normalizeDOI } from './redis.js';
+import { resilientFetch } from "./http-client.js";
+import { getCachedCrossref, normalizeDOI } from "./redis.js";
+import { createLogger } from "../utils/logger.js";
+
+const log = createLogger("crossref");
 
 const CROSSREF_API = "https://api.crossref.org";
 
@@ -86,38 +89,38 @@ export interface EnrichedArticleData {
  */
 export async function getCrossrefByDOI(
   doi: string,
-  userAgent = "ThesisMD/1.0 (mailto:support@thesis.app)"
+  userAgent = "ThesisMD/1.0 (mailto:support@thesis.app)",
 ): Promise<CrossrefWork | null> {
   // Validate and normalize DOI
   const normalizedDoi = normalizeDOI(doi);
   if (!normalizedDoi) {
-    console.warn(`[Crossref] Invalid DOI format: ${doi}`);
+    log.warn(`Invalid DOI format: ${doi}`);
     return null;
   }
-  
+
   // Use caching wrapper
   return getCachedCrossref<CrossrefWork>(normalizedDoi, async () => {
     const url = `${CROSSREF_API}/works/${encodeURIComponent(normalizedDoi)}`;
-    
+
     try {
       const res = await resilientFetch(url, {
-        apiName: 'crossref',
+        apiName: "crossref",
         headers: {
           "User-Agent": userAgent,
         },
         retry: { maxRetries: 2 },
         timeoutMs: 15000,
       });
-      
+
       if (!res.ok) {
         if (res.status === 404) return null;
         throw new Error(`Crossref API error: ${res.status}`);
       }
-      
+
       const data = (await res.json()) as CrossrefResponse;
       return data.message as CrossrefWork;
     } catch (err) {
-      console.error("Crossref fetch error:", err);
+      log.error("Crossref fetch error", err as Error);
       return null;
     }
   });
@@ -132,34 +135,37 @@ export async function searchCrossref(
     rows?: number;
     offset?: number;
     filter?: string;
-  } = {}
+  } = {},
 ): Promise<{ items: CrossrefWork[]; total: number }> {
   const url = new URL(`${CROSSREF_API}/works`);
   url.searchParams.set("query", query);
   url.searchParams.set("rows", String(options.rows || 20));
   if (options.offset) url.searchParams.set("offset", String(options.offset));
   if (options.filter) url.searchParams.set("filter", options.filter);
-  
+
   try {
     const res = await fetch(url.toString(), {
       headers: {
         "User-Agent": "ThesisMD/1.0 (mailto:support@thesis.app)",
       },
     });
-    
+
     if (!res.ok) {
       throw new Error(`Crossref search error: ${res.status}`);
     }
-    
+
     const data = (await res.json()) as CrossrefResponse;
-    const msg = data.message as { items: CrossrefWork[]; "total-results": number };
-    
+    const msg = data.message as {
+      items: CrossrefWork[];
+      "total-results": number;
+    };
+
     return {
       items: msg.items || [],
       total: msg["total-results"] || 0,
     };
   } catch (err) {
-    console.error("Crossref search error:", err);
+    log.error("Crossref search error", err as Error);
     return { items: [], total: 0 };
   }
 }
@@ -169,22 +175,22 @@ export async function searchCrossref(
  */
 export function extractEnrichedData(work: CrossrefWork): EnrichedArticleData {
   const data: EnrichedArticleData = {};
-  
+
   // Издатель
   if (work.publisher) {
     data.publisher = work.publisher;
   }
-  
+
   // Том, выпуск, страницы
   if (work.volume) data.volume = work.volume;
   if (work.issue) data.issue = work.issue;
   if (work.page) data.pages = work.page;
-  
+
   // ISSN
   if (work.ISSN?.length) {
     data.issn = work.ISSN[0];
   }
-  
+
   // Цитирования
   if (work["is-referenced-by-count"]) {
     data.citedByCount = work["is-referenced-by-count"];
@@ -192,17 +198,18 @@ export function extractEnrichedData(work: CrossrefWork): EnrichedArticleData {
   if (work["references-count"]) {
     data.referencesCount = work["references-count"];
   }
-  
+
   // Лицензия
   if (work.license?.length) {
     const openLicense = work.license.find(
-      (l) => l.URL?.includes("creativecommons") || l["content-version"] === "vor"
+      (l) =>
+        l.URL?.includes("creativecommons") || l["content-version"] === "vor",
     );
     if (openLicense) {
       data.license = openLicense.URL;
     }
   }
-  
+
   // Ссылки на полный текст
   if (work.link?.length) {
     for (const link of work.link) {
@@ -213,12 +220,12 @@ export function extractEnrichedData(work: CrossrefWork): EnrichedArticleData {
       }
     }
   }
-  
+
   // Темы/предметные области
   if (work.subject?.length) {
     data.subjects = work.subject;
   }
-  
+
   // Ссылки (references)
   if (work.reference?.length) {
     data.references = work.reference.slice(0, 50).map((ref) => ({
@@ -229,17 +236,19 @@ export function extractEnrichedData(work: CrossrefWork): EnrichedArticleData {
       journal: ref["journal-title"],
     }));
   }
-  
+
   return data;
 }
 
 /**
  * Обогатить статью данными из Crossref по DOI
  */
-export async function enrichArticleByDOI(doi: string): Promise<EnrichedArticleData | null> {
+export async function enrichArticleByDOI(
+  doi: string,
+): Promise<EnrichedArticleData | null> {
   const work = await getCrossrefByDOI(doi);
   if (!work) return null;
-  
+
   return extractEnrichedData(work);
 }
 /**
@@ -255,7 +264,7 @@ export async function enrichArticlesByDOIBatch(
     parallelCount?: number; // Количество параллельных запросов
     onProgress?: (done: number, total: number, speed?: number) => void;
     onSpeedUpdate?: (articlesPerSecond: number) => void;
-  } = {}
+  } = {},
 ): Promise<{
   enriched: number;
   failed: number;
@@ -292,7 +301,7 @@ export async function enrichArticlesByDOIBatch(
             failed++;
           }
         } catch (err) {
-          console.error(`Enrichment failed for ${article.doi}:`, err);
+          log.error(`Enrichment failed for ${article.doi}`, err as Error);
           failed++;
         } finally {
           processed++;
