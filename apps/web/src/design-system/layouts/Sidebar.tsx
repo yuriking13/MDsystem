@@ -54,7 +54,7 @@ export function Sidebar({
         width: collapsed ? "0" : widthValue,
         minWidth: collapsed ? "0" : widthValue,
         maxWidth: collapsed ? "0" : widthValue,
-        transition: "width 200ms ease-in-out",
+        transition: "width 180ms cubic-bezier(0.4, 0, 0.2, 1), min-width 180ms cubic-bezier(0.4, 0, 0.2, 1), max-width 180ms cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
       {!collapsed && (

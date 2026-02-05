@@ -90,6 +90,8 @@
   z-index: 0;
   overflow: hidden;
   pointer-events: none;
+  contain: strict;
+  will-change: background;
 
   /* Dark theme defaults */
   --abg-bg1: #01111D;
@@ -146,6 +148,7 @@
   width: 100%;
   height: 100%;
   position: relative;
+  contain: strict;
 }
 
 /* --- Individual gradient blobs --- */
@@ -164,6 +167,7 @@
   transform-origin: center center;
   animation: animBgMoveVertical 30s ease infinite;
   opacity: 1;
+  will-change: transform;
 }
 
 .animated-bg__g2 {
@@ -181,6 +185,7 @@
   transform-origin: calc(50% - 400px);
   animation: animBgMoveInCircle 20s reverse infinite;
   opacity: 1;
+  will-change: transform;
 }
 
 .animated-bg__g3 {
@@ -198,6 +203,7 @@
   transform-origin: calc(50% + 400px);
   animation: animBgMoveInCircle 40s linear infinite;
   opacity: 1;
+  will-change: transform;
 }
 
 .animated-bg__g4 {
@@ -215,6 +221,7 @@
   transform-origin: calc(50% - 200px);
   animation: animBgMoveHorizontal 40s ease infinite;
   opacity: 0.7;
+  will-change: transform;
 }
 
 .animated-bg__g5 {
@@ -232,6 +239,7 @@
   transform-origin: calc(50% - 800px) calc(50% + 200px);
   animation: animBgMoveInCircle 20s ease infinite;
   opacity: 1;
+  will-change: transform;
 }
 
 /* --- Make sure content above background is visible --- */

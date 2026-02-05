@@ -155,14 +155,14 @@
 .modal-backdrop {
   @apply fixed inset-0 z-50 flex items-center justify-center p-4;
   @apply bg-black/60 backdrop-blur-sm;
-  animation: fadeIn 150ms ease-out;
+  animation: fadeIn 100ms ease-out;
 }
 
 .modal-content {
   @apply w-full max-w-lg;
   @apply shadow-xl;
   border-radius: 0.75rem;
-  animation: scaleIn 150ms ease-out;
+  animation: scaleIn 120ms cubic-bezier(0.4, 0, 0.2, 1);
   background-color: #0d1b2a;
   border: 1px solid rgba(56, 89, 138, 0.25);
 }
@@ -320,10 +320,11 @@
 .project-card {
   @apply relative flex flex-col p-4 cursor-pointer;
   @apply hover:shadow-lg hover:shadow-black/20;
-  @apply transition-all duration-200;
   border-radius: 0.75rem;
   background-color: #0d1b2a;
   border: 1px solid rgba(56, 89, 138, 0.2);
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease;
+  will-change: transform;
 }
 
 .project-card:hover {

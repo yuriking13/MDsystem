@@ -143,10 +143,10 @@ export default {
         inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
       },
       animation: {
-        'fade-in': 'fadeIn 200ms ease-in',
-        'fade-out': 'fadeOut 200ms ease-out',
-        'slide-in': 'slideIn 300ms ease-out',
-        'slide-out': 'slideOut 300ms ease-in',
+        'fade-in': 'fadeIn 120ms ease-out',
+        'fade-out': 'fadeOut 100ms ease-in',
+        'slide-in': 'slideIn 180ms cubic-bezier(0.4, 0, 0.2, 1)',
+        'slide-out': 'slideOut 150ms cubic-bezier(0.4, 0, 0.2, 1)',
       },
       keyframes: {
         fadeIn: {
