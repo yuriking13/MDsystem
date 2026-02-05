@@ -1311,48 +1311,51 @@ export default function CitationGraph({ projectId }: Props) {
 
   // Resize observer - dynamically calculate graph dimensions from actual graph area
   useEffect(() => {
-    const target = graphAreaRef.current || containerRef.current;
-    if (!target) return;
-
     const updateSize = () => {
       if (graphAreaRef.current) {
-        // Use the actual graph area dimensions directly
         const rect = graphAreaRef.current.getBoundingClientRect();
-        setDimensions({
-          width: Math.max(Math.floor(rect.width), 400),
-          height: Math.max(Math.floor(rect.height), 300),
-        });
-      } else if (containerRef.current) {
-        // Fallback to container
-        if (isFullscreen) {
-          const aiPanelWidth = showAIAssistant ? 280 : 0;
+        if (rect.width > 0 && rect.height > 0) {
           setDimensions({
-            width: Math.max(window.innerWidth - aiPanelWidth, 400),
-            height: Math.max(window.innerHeight - 100, 300),
+            width: Math.max(Math.floor(rect.width), 400),
+            height: Math.max(Math.floor(rect.height), 300),
           });
-        } else {
-          const rect = containerRef.current.getBoundingClientRect();
-          const aiPanelWidth = showAIAssistant ? 280 : 0;
+        }
+      } else if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
           setDimensions({
-            width: Math.max(rect.width - aiPanelWidth, 400),
-            height: Math.max(rect.height - 100, 300),
+            width: Math.max(Math.floor(rect.width), 400),
+            height: Math.max(Math.floor(rect.height), 300),
           });
         }
       }
     };
 
+    // Initial calculation + delayed recalc to catch layout settling
     updateSize();
+    const raf = requestAnimationFrame(() => {
+      updateSize();
+      // One more delayed update for slow layout paints
+      setTimeout(updateSize, 100);
+    });
+
     window.addEventListener("resize", updateSize);
 
-    // Use ResizeObserver for more accurate container size tracking
+    // Observe both refs if available
     const resizeObserver = new ResizeObserver(updateSize);
-    resizeObserver.observe(target);
+    if (graphAreaRef.current) {
+      resizeObserver.observe(graphAreaRef.current);
+    }
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
 
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener("resize", updateSize);
       resizeObserver.disconnect();
     };
-  }, [showAIAssistant, isFullscreen]);
+  }, [showAIAssistant, isFullscreen, loading, data]);
 
   // Настройка сил графа после загрузки данных
   useEffect(() => {
