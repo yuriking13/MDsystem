@@ -241,7 +241,7 @@
   text-decoration: none;
   padding: 1px 2px;
   border-radius: 2px;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease;
   display: inline;
   font-style: normal !important;
   background: transparent;
@@ -452,7 +452,7 @@
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 4px;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease;
 }
 
 .bib-number-clickable:hover {
@@ -562,7 +562,7 @@
   border-radius: 4px;
   font-size: 10px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease;
 }
 
 .bib-note-save {
@@ -594,7 +594,7 @@
   color: #64748b;
   font-size: 10px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease;
 }
 
 .bib-add-note-btn:hover {
@@ -1083,7 +1083,7 @@
   padding: 4px 8px;
   font-size: 12px;
   border-radius: 4px;
-  transition: all 0.15s;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease;
 }
 
 .bib-view-toggle:hover {
@@ -1307,7 +1307,7 @@
   color: #64748b;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease;
 }
 
 .citation-filter-toggle:hover,
@@ -1341,7 +1341,7 @@
   color: #94a3b8;
   font-size: 11px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease;
 }
 
 .citation-filter-btn:hover {
@@ -1390,7 +1390,7 @@
   border: 1px solid transparent;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease;
 }
 
 .citation-article-item:hover {
@@ -1591,7 +1591,7 @@
   border-radius: 6px;
   cursor: pointer;
   color: #64748b;
-  transition: all 0.2s;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
 }
 
 .project-file-btn:hover {

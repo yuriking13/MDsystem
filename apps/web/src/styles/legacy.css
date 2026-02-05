@@ -398,7 +398,7 @@ body::before {
     0 10px 40px rgba(0, 0, 0, 0.2),
     0 0 0 1px var(--metal-highlight) inset,
     0 1px 0 var(--metal-highlight) inset;
-  transition: all var(--transition-normal) ease;
+  transition: color var(--transition-normal) ease, background-color var(--transition-normal) ease, border-color var(--transition-normal) ease, opacity var(--transition-normal) ease, box-shadow var(--transition-normal) ease, transform var(--transition-normal) ease;
   animation: fade-in-up 0.4s ease-out;
   position: relative;
   overflow: hidden;
@@ -492,7 +492,7 @@ input, select, textarea {
   color: var(--text-primary);
   font-size: 14px;
   outline: none;
-  transition: all var(--transition-normal) ease;
+  transition: color var(--transition-normal) ease, background-color var(--transition-normal) ease, border-color var(--transition-normal) ease, opacity var(--transition-normal) ease, box-shadow var(--transition-normal) ease, transform var(--transition-normal) ease;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -528,7 +528,7 @@ input:focus::placeholder {
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: all var(--transition-normal) ease;
+  transition: color var(--transition-normal) ease, background-color var(--transition-normal) ease, border-color var(--transition-normal) ease, opacity var(--transition-normal) ease, box-shadow var(--transition-normal) ease, transform var(--transition-normal) ease;
   box-shadow: 
     0 4px 20px var(--accent-glow),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
@@ -697,7 +697,7 @@ input:focus::placeholder {
   font-size: 13px;
   font-weight: 600;
   border-radius: 12px;
-  transition: all var(--transition-normal) ease;
+  transition: color var(--transition-normal) ease, background-color var(--transition-normal) ease, border-color var(--transition-normal) ease, opacity var(--transition-normal) ease, box-shadow var(--transition-normal) ease, transform var(--transition-normal) ease;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -711,7 +711,7 @@ input:focus::placeholder {
   width: 0;
   height: 2px;
   background: var(--accent-gradient);
-  transition: all var(--transition-normal) ease;
+  transition: color var(--transition-normal) ease, background-color var(--transition-normal) ease, border-color var(--transition-normal) ease, opacity var(--transition-normal) ease, box-shadow var(--transition-normal) ease, transform var(--transition-normal) ease;
   transform: translateX(-50%);
 }
 
@@ -792,7 +792,7 @@ input:focus::placeholder {
 
 .trow {
   border-bottom: 1px solid var(--border-glass);
-  transition: all var(--transition-fast) ease;
+  transition: color var(--transition-fast) ease, background-color var(--transition-fast) ease, border-color var(--transition-fast) ease, opacity var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
   color: var(--text-primary);
 }
 
@@ -900,7 +900,7 @@ input:focus::placeholder {
   border: 1px solid var(--border-glass);
   border-radius: 16px;
   cursor: pointer;
-  transition: all var(--transition-normal) ease;
+  transition: color var(--transition-normal) ease, background-color var(--transition-normal) ease, border-color var(--transition-normal) ease, opacity var(--transition-normal) ease, box-shadow var(--transition-normal) ease, transform var(--transition-normal) ease;
   position: relative;
   overflow: hidden;
 }
@@ -978,7 +978,7 @@ input:focus::placeholder {
   border-radius: 10px;
   color: var(--text-secondary);
   text-decoration: none;
-  transition: all var(--transition-fast) ease;
+  transition: color var(--transition-fast) ease, background-color var(--transition-fast) ease, border-color var(--transition-fast) ease, opacity var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
   position: relative;
   overflow: hidden;
 }
@@ -1031,7 +1031,7 @@ input:focus::placeholder {
   font-size: 16px;
   border-radius: 12px;
   border: 1px solid var(--border-glass);
-  transition: all var(--transition-normal) ease;
+  transition: color var(--transition-normal) ease, background-color var(--transition-normal) ease, border-color var(--transition-normal) ease, opacity var(--transition-normal) ease, box-shadow var(--transition-normal) ease, transform var(--transition-normal) ease;
   color: var(--text-secondary);
   position: relative;
   overflow: hidden;
@@ -1113,7 +1113,7 @@ input:focus::placeholder {
   cursor: pointer;
   font-size: 12px;
   font-weight: 500;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .lang-toggle button.active {
@@ -1311,7 +1311,7 @@ input:focus::placeholder {
   cursor: pointer;
   border-radius: 6px;
   font-size: 13px;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .editor-toolbar-fixed button:hover {
@@ -1536,7 +1536,7 @@ input:focus::placeholder {
   cursor: pointer;
   border-radius: 8px;
   font-size: 14px;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .editor-toolbar button:hover {
@@ -1934,7 +1934,7 @@ input:focus::placeholder {
   color: var(--text-secondary);
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .chart-toggle-data:hover {
@@ -2091,7 +2091,7 @@ input:focus::placeholder {
   text-decoration: none;
   padding: 1px 3px;
   border-radius: 3px;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
   display: inline;
   /* Важно: не наследует стили от родителя */
   font-style: normal !important;
@@ -2120,7 +2120,7 @@ input:focus::placeholder {
   cursor: pointer;
   z-index: 9999;
   box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
   font-size: 20px;
 }
 
@@ -2143,7 +2143,7 @@ input:focus::placeholder {
   border: 1px solid var(--border-glass);
   border-radius: 16px;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
   cursor: default;
 }
 
@@ -2192,7 +2192,7 @@ input:focus::placeholder {
   letter-spacing: -3px;
   padding: 4px 8px;
   border-radius: 6px;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .document-drag-handle:hover {
@@ -2366,7 +2366,7 @@ input:focus::placeholder {
   border: 2px solid var(--border-glass);
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .research-type-card:hover {
@@ -2414,7 +2414,7 @@ input:focus::placeholder {
   border: 2px solid var(--border-glass);
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .protocol-card:hover {
@@ -2632,7 +2632,7 @@ input:focus::placeholder {
   border: 2px solid var(--border-glass);
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .citation-style-option:hover {
@@ -2706,7 +2706,7 @@ input:focus::placeholder {
   color: var(--text-secondary);
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .view-toggle-btn:hover {
@@ -2757,7 +2757,7 @@ input:focus::placeholder {
   border: 1px solid var(--border-glass);
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .chart-type-card:hover {
@@ -2854,7 +2854,7 @@ input:focus::placeholder {
   border: 1px solid var(--border-glass);
   border-radius: 16px;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .stat-card:hover {
@@ -2918,7 +2918,7 @@ input:focus::placeholder {
   padding: 2px 8px;
   background: rgba(75, 116, 255, 0.1);
   border-radius: 6px;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .stat-card-document:hover {
@@ -3235,7 +3235,7 @@ input:focus::placeholder {
   margin-bottom: 8px;
   background: var(--bg-glass-light);
   border: 1px solid var(--border-glass);
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .article-picker-item:hover {
@@ -3297,7 +3297,7 @@ input:focus::placeholder {
   border: 1px solid var(--border-glass);
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .import-stat-item:hover {
@@ -3440,7 +3440,7 @@ input:focus::placeholder {
   border: 2px solid var(--border-glass);
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .search-source-option:hover {
@@ -3621,7 +3621,7 @@ input:focus::placeholder {
   color: var(--text-secondary);
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .graph-filter-btn:hover {
@@ -3686,7 +3686,7 @@ input:focus::placeholder {
   color: var(--text-secondary);
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 .graph-compact-btn:hover {
@@ -3707,7 +3707,7 @@ input:focus::placeholder {
   color: white;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: color 0.1s ease, background-color 0.1s ease, border-color 0.1s ease, opacity 0.1s ease, box-shadow 0.1s ease;
 }
 
 /* AI Panel - Sidebar next to graph */
@@ -3745,7 +3745,7 @@ input:focus::placeholder {
   color: rgba(200, 210, 230, 0.8);
   cursor: pointer;
   backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .graph-floating-btn:hover {
@@ -3893,7 +3893,7 @@ input:focus::placeholder {
   border-radius: 8px;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .node-info-modal-close:hover {
@@ -3984,7 +3984,7 @@ input:focus::placeholder {
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
   margin-top: 12px;
 }
 
@@ -4180,7 +4180,7 @@ input:focus::placeholder {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .rabbit-lang-btn:hover {
@@ -4205,7 +4205,7 @@ input:focus::placeholder {
   border-radius: 8px;
   color: var(--text-muted);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .rabbit-close-btn:hover {
@@ -4365,7 +4365,7 @@ input:focus::placeholder {
   color: var(--text-secondary);
   cursor: pointer;
   text-decoration: none;
-  transition: all 0.2s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
 }
 
 .rabbit-link-btn:hover {
@@ -4855,7 +4855,7 @@ input:focus::placeholder {
     linear-gradient(135deg, rgba(5, 8, 16, 0.85), rgba(10, 16, 32, 0.75));
   border: 1px solid var(--border-glass);
   border-radius: 20px;
-  transition: all var(--transition-normal);
+  transition: color var(--transition-normal) ease, background-color var(--transition-normal) ease, border-color var(--transition-normal) ease, opacity var(--transition-normal) ease, box-shadow var(--transition-normal) ease;
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(30px);
@@ -5032,7 +5032,7 @@ input:focus::placeholder {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02));
   color: var(--text-primary);
   font-size: 15px;
-  transition: all var(--transition-normal);
+  transition: color var(--transition-normal) ease, background-color var(--transition-normal) ease, border-color var(--transition-normal) ease, opacity var(--transition-normal) ease, box-shadow var(--transition-normal) ease;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   box-shadow:
