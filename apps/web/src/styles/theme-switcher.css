@@ -1,5 +1,6 @@
 /* =============================================================================
    Theme Switcher - Glassmorphic toggle (light/dark)
+   Sized to match the sidebar width
    ============================================================================= */
 
 .theme-switcher {
@@ -14,12 +15,11 @@
   position: relative;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   width: 100%;
-  max-width: 140px;
-  height: 44px;
+  height: 36px;
   box-sizing: border-box;
-  padding: 4px 6px 5px;
+  padding: 3px 4px;
   margin: 0;
   border: none;
   border-radius: 99em;
@@ -76,7 +76,8 @@
 
 .theme-switcher__icon {
   display: block;
-  width: 100%;
+  width: 20px;
+  height: 20px;
   transition: scale 200ms cubic-bezier(0.5, 0, 0, 1);
 }
 
@@ -85,7 +86,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 0 10px;
+  padding: 0 8px;
   width: 50%;
   height: 100%;
   box-sizing: border-box;
@@ -120,7 +121,7 @@
   top: 3px;
   display: block;
   width: calc(50% - 4px);
-  height: calc(100% - 8px);
+  height: calc(100% - 6px);
   border-radius: 99em;
   background-color: color-mix(in srgb, var(--c-glass) 36%, transparent);
   z-index: -1;
@@ -147,7 +148,7 @@
 
 /* Dark selected (pill on right) */
 .theme-switcher[data-active="dark"]::after {
-  translate: calc(100% + 2px) 0;
+  translate: calc(100% + 1px) 0;
   transform-origin: left;
   animation: themeSwitcherScale2 440ms ease;
 }
@@ -164,17 +165,17 @@
   100% { scale: 1 1; }
 }
 
-/* Collapsed sidebar - smaller switcher */
+/* Collapsed sidebar - show only active icon */
 .app-sidebar--collapsed .theme-switcher {
-  max-width: 44px;
+  width: 36px;
+  height: 36px;
   padding: 4px;
-  height: 44px;
-  width: 44px;
   justify-content: center;
 }
 
 .app-sidebar--collapsed .theme-switcher__option {
-  padding: 0 4px;
+  padding: 0;
+  width: 100%;
 }
 
 .app-sidebar--collapsed .theme-switcher::after {

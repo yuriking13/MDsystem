@@ -1,15 +1,15 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 /**
  * AnimatedBackground — animated gradient background with noise overlay.
  * Visibility is controlled by the parent (AppLayout).
+ * Fully autonomous animation — no cursor tracking.
  *
  * Theme-aware:
  *   Dark  → #074F83 / #01111D
  *   Light → #D88793 / #FFFFFF
  */
 export default function AnimatedBackground() {
-  const interBubbleRef = useRef<HTMLDivElement>(null);
   const [isDark, setIsDark] = useState(() => {
     return localStorage.getItem("theme") !== "light";
   });
@@ -25,38 +25,6 @@ export default function AnimatedBackground() {
       attributeFilter: ["data-theme", "class"],
     });
     return () => observer.disconnect();
-  }, []);
-
-  // Interactive mouse-follow bubble
-  useEffect(() => {
-    const interBubble = interBubbleRef.current;
-    if (!interBubble) return;
-
-    let curX = 0;
-    let curY = 0;
-    let tgX = 0;
-    let tgY = 0;
-    let animationId: number;
-
-    const move = () => {
-      curX += (tgX - curX) / 20;
-      curY += (tgY - curY) / 20;
-      interBubble.style.transform = `translate(${Math.round(curX)}px, ${Math.round(curY)}px)`;
-      animationId = requestAnimationFrame(move);
-    };
-
-    const handleMouseMove = (event: MouseEvent) => {
-      tgX = event.clientX;
-      tgY = event.clientY;
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    animationId = requestAnimationFrame(move);
-
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      cancelAnimationFrame(animationId);
-    };
   }, []);
 
   return (
@@ -105,14 +73,13 @@ export default function AnimatedBackground() {
         </defs>
       </svg>
 
-      {/* Animated gradient blobs */}
+      {/* Animated gradient blobs (fully autonomous, no cursor tracking) */}
       <div className="animated-bg__gradients">
         <div className="animated-bg__g1"></div>
         <div className="animated-bg__g2"></div>
         <div className="animated-bg__g3"></div>
         <div className="animated-bg__g4"></div>
         <div className="animated-bg__g5"></div>
-        <div className="animated-bg__interactive" ref={interBubbleRef}></div>
       </div>
     </div>
   );
