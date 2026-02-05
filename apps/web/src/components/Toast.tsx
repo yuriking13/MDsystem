@@ -139,7 +139,7 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: st
 
   const handleClose = () => {
     setIsExiting(true);
-    setTimeout(() => onRemove(toast.id), 300);
+    setTimeout(() => onRemove(toast.id), 180);
   };
 
   const icons: Record<ToastType, string> = {
@@ -203,11 +203,11 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: st
         }
         
         .toast-enter {
-          animation: toastSlideIn 0.3s ease-out forwards;
+          animation: toastSlideIn 180ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
         
         .toast-exit {
-          animation: toastSlideOut 0.3s ease-in forwards;
+          animation: toastSlideOut 150ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
         }
         
         @keyframes toastSlideIn {

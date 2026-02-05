@@ -39,8 +39,8 @@
     0px 1px 5px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent),
     0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
   transition:
-    background-color 400ms cubic-bezier(1, 0.0, 0.4, 1),
-    box-shadow 400ms cubic-bezier(1, 0.0, 0.4, 1);
+    background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Light theme adjustments */
@@ -78,7 +78,7 @@
   display: block;
   width: 20px;
   height: 20px;
-  transition: scale 200ms cubic-bezier(0.5, 0, 0, 1);
+  transition: scale 120ms cubic-bezier(0.5, 0, 0, 1);
 }
 
 .theme-switcher__option {
@@ -93,7 +93,7 @@
   border-radius: 99em;
   opacity: 1;
   cursor: pointer;
-  transition: all 160ms;
+  transition: color 120ms ease;
 }
 
 .theme-switcher__option:hover {
@@ -134,34 +134,35 @@
     inset 0px -4px 1px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent),
     0px 3px 6px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
   transition:
-    background-color 400ms cubic-bezier(1, 0.0, 0.4, 1),
-    box-shadow 400ms cubic-bezier(1, 0.0, 0.4, 1),
-    translate 400ms cubic-bezier(1, 0.0, 0.4, 1);
+    background-color 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 150ms cubic-bezier(0.4, 0, 0.2, 1),
+    translate 180ms cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: translate;
 }
 
 /* Light selected (pill on left) */
 .theme-switcher[data-active="light"]::after {
   translate: 0 0;
   transform-origin: right;
-  animation: themeSwitcherScale 440ms ease;
+  animation: themeSwitcherScale 200ms ease;
 }
 
 /* Dark selected (pill on right) */
 .theme-switcher[data-active="dark"]::after {
   translate: calc(100% + 1px) 0;
   transform-origin: left;
-  animation: themeSwitcherScale2 440ms ease;
+  animation: themeSwitcherScale2 200ms ease;
 }
 
 @keyframes themeSwitcherScale {
   0% { scale: 1 1; }
-  50% { scale: 1.1 1; }
+  50% { scale: 1.08 1; }
   100% { scale: 1 1; }
 }
 
 @keyframes themeSwitcherScale2 {
   0% { scale: 1 1; }
-  50% { scale: 1.15 1; }
+  50% { scale: 1.08 1; }
   100% { scale: 1 1; }
 }
 

@@ -176,6 +176,9 @@ export default function AppSidebar({
     const newIsDark = !isDark;
     setIsDark(newIsDark);
 
+    // Disable all CSS transitions for instant theme switch (no visual lag)
+    document.documentElement.classList.add("no-transitions");
+
     if (newIsDark) {
       document.documentElement.setAttribute("data-theme", "dark");
       document.documentElement.classList.add("dark");
@@ -191,6 +194,14 @@ export default function AppSidebar({
       document.body.classList.add("light-theme");
       localStorage.setItem("theme", "light");
     }
+
+    // Force a reflow so styles apply immediately, then re-enable transitions
+    // This double-rAF ensures the browser has painted the new theme before transitions resume
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        document.documentElement.classList.remove("no-transitions");
+      });
+    });
   };
 
   // Sync theme on mount
