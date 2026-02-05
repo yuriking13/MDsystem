@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
+import AnimatedBackground from "./AnimatedBackground";
 import { useAuth } from "../lib/AuthContext";
 
 interface ProjectInfo {
@@ -96,6 +97,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return <>{children || <Outlet />}</>;
   }
 
+  // Determine if animated background should be shown
+  // Excluded: citation graph tab, document editor page
+  const isDocumentEditor = location.pathname.match(
+    /^\/projects\/[^/]+\/documents\/[^/]+$/,
+  );
+  const searchParams = new URLSearchParams(location.search);
+  const isGraphTab =
+    location.pathname.match(/^\/projects\/[^/]+$/) &&
+    searchParams.get("tab") === "graph";
+  const showAnimatedBg = !isDocumentEditor && !isGraphTab;
+
   return (
     <ProjectContext.Provider
       value={{
@@ -108,7 +120,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
         setArticleViewStatus,
       }}
     >
-      <div className="app-layout">
+      {showAnimatedBg && <AnimatedBackground />}
+      <div className={`app-layout${showAnimatedBg ? " app-layout-with-animated-bg" : ""}`}>
         <AppSidebar
           projectName={projectInfo.name || undefined}
           projectRole={projectInfo.role || undefined}
