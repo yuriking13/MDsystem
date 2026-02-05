@@ -92,7 +92,7 @@ import {
 } from "../FlowbiteIcons";
 import NodeInfoPanel from "./NodeInfoPanel";
 import GraphLegend from "./GraphLegend";
-import GraphSidebar from "./GraphSidebar";
+// GraphSidebar removed - controls are in the header
 import { formatTime, adjustBrightness, useDebounce } from "./utils";
 import type { GraphNodeWithCoords, ClusterArticleDetail } from "../../types";
 
@@ -220,8 +220,7 @@ export default function CitationGraph({ projectId }: Props) {
   const [animationPaused, setAnimationPaused] = useState(false);
   // Полноэкранный режим
   const [isFullscreen, setIsFullscreen] = useState(false);
-  // Сайдбар свёрнут/развёрнут
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Sidebar removed - all controls moved to header
   // Стиль узлов: 'default' | 'gradient' | 'glow'
   const [nodeStyle, setNodeStyle] = useState<"default" | "gradient" | "glow">(
     "gradient",
@@ -1994,63 +1993,6 @@ export default function CitationGraph({ projectId }: Props) {
         zIndex: isFullscreen ? 9999 : "auto",
       }}
     >
-      {/* Modern Left Sidebar */}
-      <GraphSidebar
-        filter={filter}
-        onFilterChange={handleFilterChange}
-        depth={depth}
-        onDepthChange={setDepth}
-        selectedSources={selectedSources}
-        onSourcesChange={setSelectedSources}
-        yearFrom={yearFromInput}
-        yearTo={yearToInput}
-        onYearFromChange={setYearFromInput}
-        onYearToChange={setYearToInput}
-        onApplyYearFilter={() => {
-          const valFrom = yearFromInput
-            ? parseInt(yearFromInput, 10)
-            : undefined;
-          const valTo = yearToInput ? parseInt(yearToInput, 10) : undefined;
-          if (valFrom !== yearFrom) setYearFrom(valFrom);
-          if (valTo !== yearTo) setYearTo(valTo);
-        }}
-        statsQuality={statsQuality}
-        onStatsQualityChange={setStatsQuality}
-        totalNodes={stats.totalNodes}
-        totalLinks={stats.totalLinks}
-        levelCounts={stats.levelCounts}
-        onFetchReferences={handleFetchReferences}
-        fetchingRefs={fetchingRefs}
-        fetchJobRunning={fetchJobStatus?.isRunning}
-        onShowSemanticSearch={() => {
-          setShowSemanticSearch(!showSemanticSearch);
-          if (!showSemanticSearch) {
-            loadEmbeddingStats();
-            loadMissingArticlesStats();
-          }
-        }}
-        onShowMethodologyClusters={() => {
-          if (!showMethodologyClusters && methodologyClusters.length === 0) {
-            handleAnalyzeMethodologies();
-          } else {
-            setShowMethodologyClusters(!showMethodologyClusters);
-          }
-        }}
-        onShowSemanticClusters={() => {
-          if (!showSemanticClustersPanel && semanticClusters.length === 0) {
-            loadSemanticClusters();
-          }
-          setShowSemanticClustersPanel(!showSemanticClustersPanel);
-        }}
-        onShowRecommendations={loadRecommendations}
-        showSemanticSearch={showSemanticSearch}
-        showMethodologyClusters={showMethodologyClusters}
-        showSemanticClusters={showSemanticClustersPanel}
-        recommendationsCount={recommendations.length}
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
-
       {/* Main Content Area */}
       <div
         style={{
