@@ -422,6 +422,7 @@ export default function CitationGraph({ projectId }: Props) {
   }, [isLightTheme]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const graphAreaRef = useRef<HTMLDivElement>(null);
   // ForceGraph2D ref - тип any необходим из-за отсутствия типов в библиотеке
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const graphRef = useRef<any>(null);
@@ -1308,26 +1309,33 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
-  // Resize observer - dynamically calculate graph dimensions
+  // Resize observer - dynamically calculate graph dimensions from actual graph area
   useEffect(() => {
-    if (!containerRef.current) return;
+    const target = graphAreaRef.current || containerRef.current;
+    if (!target) return;
 
     const updateSize = () => {
-      if (containerRef.current) {
-        // В fullscreen режиме используем window dimensions
+      if (graphAreaRef.current) {
+        // Use the actual graph area dimensions directly
+        const rect = graphAreaRef.current.getBoundingClientRect();
+        setDimensions({
+          width: Math.max(Math.floor(rect.width), 400),
+          height: Math.max(Math.floor(rect.height), 300),
+        });
+      } else if (containerRef.current) {
+        // Fallback to container
         if (isFullscreen) {
           const aiPanelWidth = showAIAssistant ? 280 : 0;
           setDimensions({
             width: Math.max(window.innerWidth - aiPanelWidth, 400),
-            height: Math.max(window.innerHeight - 150, 300),
+            height: Math.max(window.innerHeight - 100, 300),
           });
         } else {
           const rect = containerRef.current.getBoundingClientRect();
-          // Subtract AI panel width (280px) when open, and headers height
           const aiPanelWidth = showAIAssistant ? 280 : 0;
           setDimensions({
             width: Math.max(rect.width - aiPanelWidth, 400),
-            height: Math.max(rect.height - 150, 300),
+            height: Math.max(rect.height - 100, 300),
           });
         }
       }
@@ -1338,7 +1346,7 @@ export default function CitationGraph({ projectId }: Props) {
 
     // Use ResizeObserver for more accurate container size tracking
     const resizeObserver = new ResizeObserver(updateSize);
-    resizeObserver.observe(containerRef.current);
+    resizeObserver.observe(target);
 
     return () => {
       window.removeEventListener("resize", updateSize);
@@ -1985,7 +1993,6 @@ export default function CitationGraph({ projectId }: Props) {
         display: "flex",
         flexDirection: "row",
         height: isFullscreen ? "100vh" : "calc(100vh - 48px)",
-        minHeight: "600px",
         width: isFullscreen ? "100vw" : "100%",
         position: isFullscreen ? "fixed" : "relative",
         top: isFullscreen ? 0 : "auto",
@@ -4131,7 +4138,7 @@ export default function CitationGraph({ projectId }: Props) {
           orientation="horizontal"
           showCounts={false}
           compact={true}
-          className="mx-4 my-2"
+          className="mx-4 my-1"
         />
 
         {/* Main Area: Graph + AI Panel side by side */}
@@ -4140,6 +4147,7 @@ export default function CitationGraph({ projectId }: Props) {
         >
           {/* Graph Area */}
           <div
+            ref={graphAreaRef}
             style={{
               flex: 1,
               overflow: "hidden",
