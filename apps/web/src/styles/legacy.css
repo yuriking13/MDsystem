@@ -3496,13 +3496,12 @@ input:focus::placeholder {
   background: var(--bg-glass);
   backdrop-filter: blur(20px);
   overflow: hidden;
-  min-height: 600px;
 }
 
 /* Fixed height graph container - fills available space without scroll */
 .graph-container.graph-fixed-height {
-  height: calc(100vh - 48px);
-  max-height: calc(100vh - 48px);
+  height: 100vh;
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;

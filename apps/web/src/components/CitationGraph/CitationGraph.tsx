@@ -1992,7 +1992,7 @@ export default function CitationGraph({ projectId }: Props) {
       style={{
         display: "flex",
         flexDirection: "row",
-        height: isFullscreen ? "100vh" : "calc(100vh - 48px)",
+        height: isFullscreen ? "100vh" : "100vh",
         width: isFullscreen ? "100vw" : "100%",
         position: isFullscreen ? "fixed" : "relative",
         top: isFullscreen ? 0 : "auto",

@@ -11,8 +11,10 @@
 
 /* Full width container for graph view */
 .project-detail-fullwidth {
-  @apply w-full h-full p-0;
+  @apply w-full p-0;
   max-width: 100%;
+  height: 100vh;
+  overflow: hidden;
 }
 
 /* Project Page Header */
