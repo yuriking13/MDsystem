@@ -13,7 +13,60 @@
 }
 
 /* =============================================================================
-   Articles Toolbar
+   Articles Header (unified toolbar)
+   ============================================================================= */
+
+.articles-header {
+  @apply flex items-center justify-between gap-4 py-3 px-4;
+  @apply border-b border-neutral-700/50;
+  @apply sticky top-0 z-10;
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(8px);
+}
+
+.light-theme .articles-header,
+[data-theme="light"] .articles-header {
+  @apply border-neutral-200;
+  background: rgba(249, 250, 251, 0.95);
+}
+
+.articles-header-left {
+  @apply flex items-center gap-3;
+}
+
+.articles-header-right {
+  @apply flex items-center gap-2;
+}
+
+.articles-header-title {
+  @apply flex items-center gap-2 text-base font-semibold text-white m-0;
+}
+
+.articles-header-status {
+  @apply text-blue-400 font-medium;
+}
+
+.articles-header-count {
+  @apply text-neutral-400 font-normal text-sm;
+}
+
+.light-theme .articles-header-title,
+[data-theme="light"] .articles-header-title {
+  @apply text-neutral-900;
+}
+
+.light-theme .articles-header-status,
+[data-theme="light"] .articles-header-status {
+  @apply text-blue-600;
+}
+
+.light-theme .articles-header-count,
+[data-theme="light"] .articles-header-count {
+  @apply text-neutral-500;
+}
+
+/* =============================================================================
+   Articles Toolbar (legacy support)
    ============================================================================= */
 
 .articles-toolbar {
@@ -58,12 +111,17 @@
   @apply inline-flex items-center gap-2 px-3 py-2;
   @apply text-sm font-medium;
   @apply rounded-md;
-  @apply bg-neutral-800 text-neutral-200;
-  @apply border border-neutral-700;
+  @apply text-neutral-200;
   @apply transition-all duration-150;
-  @apply hover:bg-neutral-700 hover:text-white;
-  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-neutral-950;
+  @apply hover:text-white;
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
   border-radius: 0.375rem;
+  background-color: #162236;
+  border: 1px solid rgba(56, 89, 138, 0.3);
+}
+
+.articles-toolbar-btn:hover {
+  background-color: #1e3050;
 }
 
 .articles-toolbar-btn:disabled {
@@ -94,20 +152,22 @@
 
 .article-card {
   @apply relative flex flex-col overflow-hidden;
-  @apply bg-neutral-900 dark:bg-neutral-900;
-  @apply border border-neutral-800 dark:border-neutral-800;
   @apply border-l-[3px];
   border-radius: 0.5625rem;
   transition: all 200ms ease;
+  background-color: #0d1b2a;
+  border: 1px solid rgba(56, 89, 138, 0.2);
+  border-left-width: 3px;
 }
 
 .article-card:hover {
-  @apply border-neutral-700 dark:border-neutral-700;
+  border-color: rgba(56, 89, 138, 0.4);
   @apply shadow-lg shadow-black/20;
 }
 
 .article-card--selected {
-  @apply ring-2 ring-blue-500 ring-offset-2 ring-offset-neutral-950;
+  @apply ring-2 ring-blue-500 ring-offset-2;
+  --tw-ring-offset-color: #0a1628;
 }
 
 /* Light theme */
@@ -275,9 +335,9 @@
 /* Actions Bar */
 .article-actions {
   @apply flex items-center justify-between px-3 py-2;
-  @apply bg-neutral-800/50 dark:bg-neutral-800/50;
-  @apply border-t border-neutral-800 dark:border-neutral-800;
   @apply opacity-0 transition-opacity;
+  background-color: rgba(13, 27, 42, 0.7);
+  border-top: 1px solid rgba(56, 89, 138, 0.2);
 }
 
 .article-actions--visible {
@@ -302,7 +362,11 @@
 }
 
 .article-action-btn--default {
-  @apply text-neutral-500 hover:text-neutral-300 hover:bg-neutral-700;
+  @apply text-neutral-500 hover:text-neutral-300;
+}
+
+.article-action-btn--default:hover {
+  background-color: rgba(56, 89, 138, 0.25);
 }
 
 .article-action-btn--green {
@@ -414,9 +478,10 @@
 }
 
 .article-skeleton {
-  @apply bg-neutral-800 dark:bg-neutral-800 animate-pulse;
+  @apply animate-pulse;
   @apply p-4;
   border-radius: 0.5625rem;
+  background-color: #162236;
 }
 
 .light-theme .article-skeleton,
@@ -429,9 +494,10 @@
    ============================================================================= */
 
 .article-filter-sidebar {
-  @apply w-60 bg-neutral-900 dark:bg-neutral-900;
-  @apply border-r border-neutral-800 dark:border-neutral-800;
+  @apply w-60;
   @apply flex flex-col;
+  background-color: #0d1b2a;
+  border-right: 1px solid rgba(56, 89, 138, 0.2);
 }
 
 .light-theme .article-filter-sidebar,
@@ -440,7 +506,7 @@
 }
 
 .filter-section {
-  @apply border-b border-neutral-800 dark:border-neutral-800;
+  border-bottom: 1px solid rgba(56, 89, 138, 0.2);
 }
 
 .light-theme .filter-section,
@@ -454,7 +520,11 @@
 
 .filter-section-header {
   @apply flex items-center justify-between w-full px-4 py-3 text-left;
-  @apply hover:bg-neutral-800 dark:hover:bg-neutral-800 transition-colors;
+  @apply transition-colors;
+}
+
+.filter-section-header:hover {
+  background-color: rgba(56, 89, 138, 0.15);
 }
 
 .light-theme .filter-section-header,
@@ -481,10 +551,10 @@
    ============================================================================= */
 
 .search-form-card {
-  @apply bg-neutral-900 dark:bg-neutral-900;
-  @apply border border-neutral-800 dark:border-neutral-800;
   @apply p-5;
   border-radius: 0.5625rem;
+  background-color: #0d1b2a;
+  border: 1px solid rgba(56, 89, 138, 0.2);
 }
 
 .light-theme .search-form-card,
@@ -526,10 +596,10 @@
 
 .search-source-option {
   @apply flex items-center gap-2 p-3 cursor-pointer;
-  @apply bg-neutral-800 dark:bg-neutral-800;
-  @apply border border-neutral-700 dark:border-neutral-700;
   @apply transition-all;
   border-radius: 0.375rem;
+  background-color: #162236;
+  border: 1px solid rgba(56, 89, 138, 0.3);
 }
 
 .search-source-option.active {
@@ -564,8 +634,10 @@
 }
 
 .search-checkbox {
-  @apply w-4 h-4 border-neutral-600 bg-neutral-700 text-blue-500;
+  @apply w-4 h-4 text-blue-500;
   border-radius: 0.25rem;
+  border-color: rgba(56, 89, 138, 0.4);
+  background-color: #162236;
 }
 
 .light-theme .search-checkbox,
@@ -594,8 +666,8 @@
 
 .lang-toggle {
   @apply inline-flex p-0.5;
-  @apply bg-neutral-800 dark:bg-neutral-800;
   border-radius: 0.375rem;
+  background-color: #162236;
 }
 
 .lang-toggle button {
@@ -606,7 +678,8 @@
 }
 
 .lang-toggle button.active {
-  @apply bg-neutral-700 text-white;
+  @apply text-white;
+  background-color: #1e3050;
 }
 
 .light-theme .lang-toggle,
