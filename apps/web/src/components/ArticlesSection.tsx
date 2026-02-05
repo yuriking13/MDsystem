@@ -1535,24 +1535,25 @@ export default function ArticlesSection({
 
       {/* Status navigation is now in the sidebar sub-menu */}
 
-      {/* Локальный поиск по базе */}
+      {/* Filters - single row: search, pub type, year range, source query, sort, options */}
       <div
-        className="row gap"
-        style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}
+        className="articles-filters-row"
+        style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}
       >
+        {/* Локальный поиск по названию */}
         <div
           style={{
             position: "relative",
             flex: 1,
-            minWidth: 200,
-            maxWidth: 400,
+            minWidth: 180,
+            maxWidth: 300,
           }}
         >
           <svg
             className="icon-sm"
             style={{
               position: "absolute",
-              left: 12,
+              left: 10,
               top: "50%",
               transform: "translateY(-50%)",
               color: "var(--text-muted)",
@@ -1575,14 +1576,30 @@ export default function ArticlesSection({
             onChange={(e) => setLocalSearch(e.target.value)}
             style={{
               width: "100%",
-              padding: "8px 12px 8px 36px",
-              fontSize: 13,
+              padding: "6px 10px 6px 32px",
+              fontSize: 12,
             }}
           />
         </div>
 
+        {/* Фильтр по типу публикации */}
+        {availablePubTypes.length > 0 && (
+          <select
+            value={filterPubType || ""}
+            onChange={(e) => setFilterPubType(e.target.value || null)}
+            style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12 }}
+          >
+            <option value="">Все типы</option>
+            {availablePubTypes.map((pt) => (
+              <option key={pt} value={pt}>
+                {pt}
+              </option>
+            ))}
+          </select>
+        )}
+
         {/* Фильтр по периоду годов */}
-        <div className="row gap" style={{ alignItems: "center" }}>
+        <div className="row gap" style={{ alignItems: "center", gap: 4 }}>
           <span className="muted" style={{ fontSize: 12 }}>
             Год:
           </span>
@@ -1593,7 +1610,7 @@ export default function ArticlesSection({
             onChange={(e) =>
               setYearFromFilter(e.target.value ? Number(e.target.value) : null)
             }
-            style={{ width: 70, padding: "6px 8px", fontSize: 12 }}
+            style={{ width: 65, padding: "6px 6px", fontSize: 12 }}
             min={1900}
             max={2100}
           />
@@ -1605,7 +1622,7 @@ export default function ArticlesSection({
             onChange={(e) =>
               setYearToFilter(e.target.value ? Number(e.target.value) : null)
             }
-            style={{ width: 70, padding: "6px 8px", fontSize: 12 }}
+            style={{ width: 65, padding: "6px 6px", fontSize: 12 }}
             min={1900}
             max={2100}
           />
@@ -1616,20 +1633,48 @@ export default function ArticlesSection({
                 setYearFromFilter(null);
                 setYearToFilter(null);
               }}
-              style={{ padding: "4px 8px", fontSize: 11 }}
+              style={{ padding: "3px 6px", fontSize: 11 }}
               type="button"
             >
               ✕
             </button>
           )}
         </div>
-      </div>
 
-      {/* Фильтры - строка 2: настройки отображения */}
-      <div
-        className="row gap"
-        style={{ marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}
-      >
+        {/* Фильтр по поисковому запросу (подбазы) */}
+        {availableSourceQueries.length > 0 && (
+          <select
+            value={filterSourceQuery || ""}
+            onChange={(e) => setFilterSourceQuery(e.target.value || null)}
+            style={{
+              padding: "6px 10px",
+              borderRadius: 6,
+              fontSize: 12,
+              maxWidth: 200,
+            }}
+            title="Фильтр по поисковому запросу"
+          >
+            <option value="">Все запросы</option>
+            {availableSourceQueries.map((q) => (
+              <option key={q} value={q} title={q}>
+                {q.length > 25 ? q.slice(0, 25) + "..." : q}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {/* Сортировка */}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as any)}
+          style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12 }}
+        >
+          <option value="date">По дате добавления</option>
+          <option value="stats">По статистике</option>
+          <option value="year_desc">По году ↓ (новые)</option>
+          <option value="year_asc">По году ↑ (старые)</option>
+        </select>
+
         {/* Переключатель языка */}
         <div className="lang-toggle">
           <button
@@ -1659,7 +1704,7 @@ export default function ArticlesSection({
           />
           <span
             className="muted"
-            style={{ display: "flex", alignItems: "center", gap: 4 }}
+            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}
           >
             <svg
               className="icon-sm"
@@ -1674,7 +1719,7 @@ export default function ArticlesSection({
                 d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
               />
             </svg>
-            Статистика
+            Стат.
           </span>
         </label>
 
@@ -1687,7 +1732,7 @@ export default function ArticlesSection({
           />
           <span
             className="muted"
-            style={{ display: "flex", alignItems: "center", gap: 4 }}
+            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}
           >
             <svg
               className="icon-sm"
@@ -1702,59 +1747,9 @@ export default function ArticlesSection({
                 d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
               />
             </svg>
-            Подсветка
+            Подсв.
           </span>
         </label>
-
-        {/* Фильтр по типу публикации */}
-        {availablePubTypes.length > 0 && (
-          <select
-            value={filterPubType || ""}
-            onChange={(e) => setFilterPubType(e.target.value || null)}
-            style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12 }}
-          >
-            <option value="">Все типы</option>
-            {availablePubTypes.map((pt) => (
-              <option key={pt} value={pt}>
-                {pt}
-              </option>
-            ))}
-          </select>
-        )}
-
-        {/* Сортировка */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
-          style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12 }}
-        >
-          <option value="date">По дате добавления</option>
-          <option value="stats">По статистике</option>
-          <option value="year_desc">По году ↓ (новые)</option>
-          <option value="year_asc">По году ↑ (старые)</option>
-        </select>
-
-        {/* Фильтр по поисковому запросу (подбазы) */}
-        {availableSourceQueries.length > 0 && (
-          <select
-            value={filterSourceQuery || ""}
-            onChange={(e) => setFilterSourceQuery(e.target.value || null)}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 6,
-              fontSize: 12,
-              maxWidth: 200,
-            }}
-            title="Фильтр по поисковому запросу"
-          >
-            <option value="">Все запросы</option>
-            {availableSourceQueries.map((q) => (
-              <option key={q} value={q} title={q}>
-                {q.length > 25 ? q.slice(0, 25) + "..." : q}
-              </option>
-            ))}
-          </select>
-        )}
       </div>
 
       {/* Панель массовых операций */}

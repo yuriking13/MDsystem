@@ -18,16 +18,20 @@
 
 .articles-header {
   @apply flex items-center justify-between gap-4 py-3 px-4;
-  @apply border-b border-neutral-700/50;
+  @apply border-b;
   @apply sticky top-0 z-10;
-  background: rgba(15, 23, 42, 0.95);
-  backdrop-filter: blur(8px);
+  background: rgba(13, 27, 42, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-color: rgba(56, 89, 138, 0.2);
 }
 
 .light-theme .articles-header,
 [data-theme="light"] .articles-header {
-  @apply border-neutral-200;
-  background: rgba(249, 250, 251, 0.95);
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .articles-header-left {
@@ -155,35 +159,55 @@
   @apply border-l-[3px];
   border-radius: 0.5625rem;
   transition: all 200ms ease;
-  background-color: #0d1b2a;
-  border: 1px solid rgba(56, 89, 138, 0.2);
+  /* Glass effect - dark theme */
+  background-color: rgba(13, 27, 42, 0.45);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(56, 89, 138, 0.25);
   border-left-width: 3px;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 4px 24px -4px rgba(0, 0, 0, 0.2);
 }
 
 .article-card:hover {
-  border-color: rgba(56, 89, 138, 0.4);
-  @apply shadow-lg shadow-black/20;
+  background-color: rgba(13, 27, 42, 0.55);
+  border-color: rgba(56, 89, 138, 0.45);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08),
+    0 8px 32px -4px rgba(0, 0, 0, 0.3);
 }
 
 .article-card--selected {
   @apply ring-2 ring-blue-500 ring-offset-2;
-  --tw-ring-offset-color: #0a1628;
+  --tw-ring-offset-color: transparent;
 }
 
-/* Light theme */
+/* Light theme - glass */
 .light-theme .article-card,
 [data-theme="light"] .article-card {
-  @apply bg-white border-neutral-200;
+  background-color: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-left-width: 3px;
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6),
+    0 4px 24px -4px rgba(0, 0, 0, 0.08);
 }
 
 .light-theme .article-card:hover,
 [data-theme="light"] .article-card:hover {
-  @apply border-neutral-300 shadow-lg shadow-neutral-200/50;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-color: rgba(255, 255, 255, 0.7);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.8),
+    0 8px 32px -4px rgba(0, 0, 0, 0.12);
 }
 
 .light-theme .article-card--selected,
 [data-theme="light"] .article-card--selected {
-  @apply ring-offset-white;
+  --tw-ring-offset-color: transparent;
 }
 
 /* Card Body */
@@ -336,8 +360,10 @@
 .article-actions {
   @apply flex items-center justify-between px-3 py-2;
   @apply opacity-0 transition-opacity;
-  background-color: rgba(13, 27, 42, 0.7);
-  border-top: 1px solid rgba(56, 89, 138, 0.2);
+  background-color: rgba(13, 27, 42, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(56, 89, 138, 0.15);
 }
 
 .article-actions--visible {
@@ -346,7 +372,10 @@
 
 .light-theme .article-actions,
 [data-theme="light"] .article-actions {
-  @apply bg-neutral-50 border-neutral-200;
+  background-color: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .article-status-actions,
@@ -553,13 +582,24 @@
 .search-form-card {
   @apply p-5;
   border-radius: 0.5625rem;
-  background-color: #0d1b2a;
-  border: 1px solid rgba(56, 89, 138, 0.2);
+  background-color: rgba(13, 27, 42, 0.45);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(56, 89, 138, 0.25);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 4px 24px -4px rgba(0, 0, 0, 0.2);
 }
 
 .light-theme .search-form-card,
 [data-theme="light"] .search-form-card {
-  @apply bg-white border-neutral-200;
+  background-color: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6),
+    0 4px 24px -4px rgba(0, 0, 0, 0.08);
 }
 
 .search-form-header {

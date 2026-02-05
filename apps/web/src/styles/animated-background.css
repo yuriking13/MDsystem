@@ -5,7 +5,7 @@
    Light theme: #D88793 / #FFFFFF
    ============================================================================= */
 
-/* --- Keyframes --- */
+/* --- Keyframes: blob movement --- */
 @keyframes animBgMoveInCircle {
   0% {
     transform: rotate(0deg);
@@ -42,6 +42,44 @@
   }
 }
 
+/* --- Keyframe: autonomous gradient color shift (dark) --- */
+@keyframes animBgGradientShiftDark {
+  0% {
+    background: linear-gradient(40deg, #01111D, #074F83);
+  }
+  25% {
+    background: linear-gradient(80deg, #021B2E, #0A6EA8);
+  }
+  50% {
+    background: linear-gradient(120deg, #03253F, #085D90);
+  }
+  75% {
+    background: linear-gradient(60deg, #011825, #0B5A80);
+  }
+  100% {
+    background: linear-gradient(40deg, #01111D, #074F83);
+  }
+}
+
+/* --- Keyframe: autonomous gradient color shift (light) --- */
+@keyframes animBgGradientShiftLight {
+  0% {
+    background: linear-gradient(40deg, #FFFFFF, #D88793);
+  }
+  25% {
+    background: linear-gradient(80deg, #FFF5F6, #E0949F);
+  }
+  50% {
+    background: linear-gradient(120deg, #FFECEE, #C97A86);
+  }
+  75% {
+    background: linear-gradient(60deg, #FFF0F2, #DDA0AB);
+  }
+  100% {
+    background: linear-gradient(40deg, #FFFFFF, #D88793);
+  }
+}
+
 /* --- Container --- */
 .animated-bg {
   position: fixed;
@@ -66,6 +104,7 @@
   --abg-blending: hard-light;
 
   background: linear-gradient(40deg, var(--abg-bg1), var(--abg-bg2));
+  animation: animBgGradientShiftDark 20s ease infinite;
 }
 
 /* --- Light theme --- */
@@ -83,6 +122,7 @@
   --abg-blending: multiply;
 
   background: linear-gradient(40deg, var(--abg-bg1), var(--abg-bg2));
+  animation: animBgGradientShiftLight 20s ease infinite;
 }
 
 /* --- Noise overlay --- */

@@ -5,6 +5,7 @@
 @import "./app-layout.css";
 @import "./pages.css";
 @import "./animated-background.css";
+@import "./theme-switcher.css";
 
 /* ===== DESIGN TOKENS & CSS VARIABLES ===== */
 @layer base {
