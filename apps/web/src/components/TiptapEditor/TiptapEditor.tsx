@@ -30,6 +30,7 @@ import TiptapToolbar from "./TiptapToolbar";
 import DocumentOutline from "./DocumentOutline";
 import BibliographySidebar from "./BibliographySidebar";
 import PageSettingsModal, { type PageSettings } from "./PageSettingsModal";
+import { editorEvents } from "../../lib/editorEvents";
 import {
   ChartNode,
   insertChartIntoEditor,
@@ -907,11 +908,30 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         editor.chain().focus().insertContent(tableHtml).run();
       };
 
+      // Subscribe to editor events using the event system
+      const unsubCitation = editorEvents.on<CitationAttrs>(
+        "insertCitation",
+        insertCitation,
+      );
+      const unsubChart = editorEvents.on<ChartData>("insertChart", insertChart);
+      const unsubTable = editorEvents.on<{
+        headers: string[];
+        rows: string[][];
+        title?: string;
+        statisticId?: string;
+      }>("insertTable", (data) =>
+        insertTable(data, data.title, data.statisticId),
+      );
+
+      // Backward compatibility: also set window functions during migration
       (window as any).__editorInsertCitation = insertCitation;
       (window as any).__editorInsertChart = insertChart;
       (window as any).__editorInsertTable = insertTable;
 
       return () => {
+        unsubCitation();
+        unsubChart();
+        unsubTable();
         delete (window as any).__editorInsertCitation;
         delete (window as any).__editorInsertChart;
         delete (window as any).__editorInsertTable;
@@ -955,12 +975,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     useEffect(() => {
       if (!editor || !onTableCreated) return;
 
-      const originalInsertTable = (window as any).__editorCreateTable;
-
-      (window as any).__editorCreateTable = async (
-        rows: number,
-        cols: number,
-      ) => {
+      const createTableHandler = async (rows: number, cols: number) => {
         // Insert table first
         editor
           .chain()
@@ -1055,8 +1070,18 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         }
       };
 
+      // Subscribe to createTable event
+      const unsubCreateTable = editorEvents.on<{ rows: number; cols: number }>(
+        "createTable",
+        (data) => createTableHandler(data.rows, data.cols),
+      );
+
+      // Backward compatibility
+      (window as any).__editorCreateTable = createTableHandler;
+
       return () => {
-        (window as any).__editorCreateTable = originalInsertTable;
+        unsubCreateTable();
+        delete (window as any).__editorCreateTable;
       };
     }, [editor, onTableCreated]);
 

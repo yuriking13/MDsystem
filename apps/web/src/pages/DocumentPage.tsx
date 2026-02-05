@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { getErrorMessage } from "../lib/errorUtils";
 import { useParams, useNavigate } from "react-router-dom";
+import { editorEvents } from "../lib/editorEvents";
 import TiptapEditor, {
   TiptapEditorHandle,
 } from "../components/TiptapEditor/TiptapEditor";
@@ -1380,29 +1381,36 @@ export default function DocumentPage() {
     // Небольшая задержка чтобы редактор успел зарегистрировать функцию
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    // Используем глобальную функцию вставки графика
-    const fn = (window as any).__editorInsertChart;
-    if (fn) {
-      fn({
-        id: stat.id,
-        config: stat.config,
-        table_data: stat.table_data,
-      });
-
-      // Отмечаем статистику как используемую в этом документе (только если ID валидный UUID)
-      const uuidRegex =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (uuidRegex.test(stat.id)) {
-        try {
-          await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
-        } catch (err) {
-          console.error("Failed to mark statistic as used:", err);
+    // Используем event system для вставки графика
+    editorEvents.emit("insertChart", {
+      title: stat.title || "",
+      type: (stat.config as { type?: string })?.type || "bar",
+      data: (
+        stat.config as {
+          data?: {
+            labels: string[];
+            datasets: Array<{
+              label: string;
+              data: number[];
+              backgroundColor?: string | string[];
+              borderColor?: string;
+            }>;
+          };
         }
-      } else {
-        console.warn("Skipping usage marking - invalid statistic ID:", stat.id);
+      )?.data || { labels: [], datasets: [] },
+      options: stat.config as Record<string, unknown>,
+      statisticId: stat.id,
+    });
+
+    // Отмечаем статистику как используемую в этом документе (только если ID валидный UUID)
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(stat.id)) {
+      try {
+        await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
+      } catch {
+        // Failed to mark statistic as used
       }
-    } else {
-      console.warn("Chart insertion function not available");
     }
   }
 
@@ -1414,27 +1422,25 @@ export default function DocumentPage() {
 
   // Вставить график из таблицы
   function handleInsertChartFromTable(chartHtml: string, chartId?: string) {
-    const fn = (window as any).__editorInsertChart;
-    if (fn) {
-      // Parse the chart data from HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(chartHtml, "text/html");
-      const chartContainer = doc.querySelector(".chart-container");
-      const chartDataStr = chartContainer?.getAttribute("data-chart");
+    // Parse the chart data from HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(chartHtml, "text/html");
+    const chartContainer = doc.querySelector(".chart-container");
+    const chartDataStr = chartContainer?.getAttribute("data-chart");
 
-      if (chartDataStr) {
-        try {
-          const rawData = JSON.parse(chartDataStr.replace(/&#39;/g, "'"));
-          // Convert to the format expected by __editorInsertChart
-          const chartData = {
-            id: rawData.chartId || chartId || `chart_${Date.now()}`,
-            config: rawData.config,
-            table_data: rawData.tableData,
-          };
-          fn(chartData);
-        } catch (err) {
-          console.error("Failed to parse chart data:", err);
-        }
+    if (chartDataStr) {
+      try {
+        const rawData = JSON.parse(chartDataStr.replace(/&#39;/g, "'"));
+        // Emit chart insert event
+        editorEvents.emit("insertChart", {
+          title: rawData.title || "",
+          type: rawData.config?.type || "bar",
+          data: rawData.config?.data || { labels: [], datasets: [] },
+          options: rawData.config,
+          statisticId: rawData.chartId || chartId || `chart_${Date.now()}`,
+        });
+      } catch {
+        // Failed to parse chart data
       }
     }
     setShowChartModal(false);
@@ -1490,25 +1496,22 @@ export default function DocumentPage() {
     setShowImportModal(false);
 
     const tableData = stat.table_data as TableData;
-    const fn = (window as any).__editorInsertTable;
 
-    if (fn) {
-      fn(tableData, stat.title, stat.id);
+    // Emit table insert event
+    editorEvents.emit("insertTable", {
+      rows: Array.isArray(tableData) ? tableData.length : 3,
+      cols: Array.isArray(tableData) && tableData[0] ? tableData[0].length : 3,
+    });
 
-      // Отмечаем статистику как используемую (только если ID валидный UUID)
-      const uuidRegex =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      if (uuidRegex.test(stat.id)) {
-        try {
-          await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
-        } catch (err) {
-          console.error("Failed to mark statistic as used:", err);
-        }
-      } else {
-        console.warn("Skipping usage marking - invalid statistic ID:", stat.id);
+    // Отмечаем статистику как используемую (только если ID валидный UUID)
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(stat.id)) {
+      try {
+        await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
+      } catch {
+        // Failed to mark statistic as used
       }
-    } else {
-      console.warn("Table insertion function not available");
     }
   }
 
@@ -1677,17 +1680,12 @@ export default function DocumentPage() {
       // Создаём новую цитату - API сам вычисляет правильные номера
       const res = await apiAddCitation(projectId, docId, article.id);
 
-      // Вставить цитату в редактор
-      const fn = (window as any).__editorInsertCitation;
-      if (fn) {
-        fn({
-          citationId: res.citation.id,
-          citationNumber: res.citation.inline_number,
-          articleId: article.id,
-          subNumber: res.citation.sub_number || 1,
-          note: res.citation.note || "",
-        });
-      }
+      // Вставить цитату в редактор через event system
+      editorEvents.emit("insertCitation", {
+        citationId: res.citation.id,
+        citationNumber: res.citation.inline_number,
+        note: res.citation.note || "",
+      });
 
       // Обновить документ для синхронизации списка литературы
       const updated = await apiGetDocument(projectId, docId);

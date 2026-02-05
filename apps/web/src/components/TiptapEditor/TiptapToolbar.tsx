@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Editor } from "@tiptap/react";
 import type { CitationStyle } from "../../lib/api";
 import { STYLE_CONFIGS } from "./TiptapEditor";
+import { editorEvents } from "../../lib/editorEvents";
 
 // SVG Icons (Flowbite/Heroicons style)
 const DocumentTextIcon = ({ size = 14 }: { size?: number }) => (
@@ -452,9 +453,9 @@ export default function TiptapToolbar({
   };
 
   const insertTable = (rows: number, cols: number) => {
-    const createTableFn = (window as any).__editorCreateTable;
-    if (createTableFn) {
-      createTableFn(rows, cols);
+    // Try to use event system first, fall back to direct editor call
+    if (editorEvents.hasListeners("createTable")) {
+      editorEvents.emit("createTable", { rows, cols });
     } else {
       editor
         .chain()
