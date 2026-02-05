@@ -1051,7 +1051,7 @@ export default function ArticlesSection({
                 <ol className="inline-flex items-center space-x-1 md:space-x-3">
                   <li className="inline-flex items-center">
                     <span className="inline-flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Проекты
+                      База статей
                     </span>
                   </li>
                   <li aria-current="page">
@@ -1070,7 +1070,7 @@ export default function ArticlesSection({
                         />
                       </svg>
                       <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2 dark:text-gray-400">
-                        База статей
+                        Все статьи
                       </span>
                     </div>
                   </li>
