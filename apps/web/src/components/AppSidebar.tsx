@@ -373,7 +373,7 @@ export default function AppSidebar({
       {/* Footer */}
       <div className="sidebar-footer">
         {/* Theme Switcher */}
-        <div style={{ display: "flex", justifyContent: collapsed ? "center" : "flex-start", padding: collapsed ? "0 4px" : "0 8px" }}>
+        <div style={{ display: "flex", justifyContent: "center", padding: collapsed ? "0 4px" : "0 6px" }}>
           <fieldset
             className="theme-switcher"
             data-active={isDark ? "dark" : "light"}
