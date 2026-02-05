@@ -40,32 +40,31 @@
 .app-sidebar {
   @apply relative flex flex-col h-screen sticky top-0;
   
-  /* Glass background */
+  /* Glass background — 75% transparent (25% opaque) */
   background: 
     linear-gradient(
       195deg, 
-      hsla(var(--glass-hue1), 50%, 10%, 0.75), 
-      hsla(var(--glass-hue1), 50%, 10%, 0) 40%
+      hsla(var(--glass-hue1), 50%, 12%, 0.15), 
+      hsla(var(--glass-hue1), 50%, 12%, 0) 50%
     ), 
     linear-gradient(
       15deg, 
-      hsla(var(--glass-hue2), 50%, 10%, 0.7), 
-      hsla(var(--glass-hue2), 50%, 10%, 0) 40%
+      hsla(var(--glass-hue2), 50%, 12%, 0.12), 
+      hsla(var(--glass-hue2), 50%, 12%, 0) 50%
     ), 
     linear-gradient(
-      hsla(220, 25%, 5%, 0.72)
+      hsla(220, 25%, 6%, 0.25)
     );
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   
   border-right: var(--glass-border) solid var(--glass-border-color);
   box-shadow: 
-    hsla(var(--glass-hue2), 50%, 2%, 0.5) 4px 0 16px -8px,
-    hsla(var(--glass-hue2), 50%, 4%, 0.3) 8px 0 36px -14px;
+    hsla(var(--glass-hue2), 50%, 2%, 0.3) 4px 0 16px -8px,
+    hsla(var(--glass-hue2), 50%, 4%, 0.15) 8px 0 36px -14px;
   
   width: 240px;
   transition: width 200ms ease-in-out;
-  overflow: hidden;
   z-index: 2;
 }
 
@@ -81,6 +80,7 @@
   border: 1px solid transparent;
   display: block;
   animation: sidebarGlow 2s var(--glass-ease) both;
+  clip-path: inset(-1px);
 }
 
 .sidebar-shine--top {
@@ -177,15 +177,15 @@
   display: block;
   z-index: 3;
   
-  width: 70%;
+  width: 50%;
   height: auto;
   min-height: 0;
   aspect-ratio: 1;
   
-  border: 20px solid transparent;
-  border-radius: 40px;
+  border: 16px solid transparent;
+  border-radius: 30px;
   
-  filter: blur(12px) saturate(1.25) brightness(0.5);
+  filter: blur(10px) saturate(1.25) brightness(0.5);
   mix-blend-mode: plus-lighter;
   opacity: 1;
   
@@ -204,8 +204,8 @@
 
 .sidebar-glow--top {
   --glow-hue: var(--glass-hue1);
-  top: -40px;
-  right: -40px;
+  top: -20px;
+  right: -10px;
   left: auto;
   bottom: auto;
 }
@@ -253,8 +253,8 @@
 
 .sidebar-glow--bottom {
   --glow-hue: var(--glass-hue2);
-  bottom: -40px;
-  left: -40px;
+  bottom: -20px;
+  left: -10px;
   right: auto;
   top: auto;
   
@@ -313,13 +313,13 @@
 }
 
 .sidebar-glow--bright.sidebar-glow--top {
-  inset: -5px;
+  inset: -3px;
   left: auto;
   bottom: auto;
 }
 
 .sidebar-glow--bright.sidebar-glow--bottom {
-  inset: -5px;
+  inset: -3px;
   right: auto;
   top: auto;
 }
@@ -417,23 +417,27 @@
   width: 64px;
 }
 
-/* Collapse Toggle - Middle of right edge */
+/* Collapse Toggle - sits exactly on the right edge of the sidebar */
 .sidebar-collapse-toggle {
-  @apply absolute z-20 flex items-center justify-center;
-  @apply w-6 h-6 rounded-md;
+  @apply absolute flex items-center justify-center;
+  @apply w-5 h-10 rounded-r-md;
   @apply text-neutral-400 hover:text-white;
-  @apply transition-colors cursor-pointer;
-  background-color: hsla(var(--glass-hue2), 25%, 12%, 0.9);
-  backdrop-filter: blur(8px);
-  border: 1px solid hsla(var(--glass-hue1), 30%, 40%, 0.3);
+  @apply transition-all duration-150 cursor-pointer;
+  background-color: hsla(var(--glass-hue2), 25%, 15%, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid hsla(var(--glass-hue1), 30%, 40%, 0.25);
+  border-left: none;
   top: 50%;
-  right: -12px;
-  transform: translateY(-50%);
+  right: 0;
+  transform: translate(100%, -50%);
+  z-index: 30;
 }
 
 .sidebar-collapse-toggle:hover {
-  background-color: hsla(var(--glass-hue2), 25%, 18%, 0.9);
-  border-color: hsla(var(--glass-hue1), 40%, 50%, 0.5);
+  background-color: hsla(var(--glass-hue2), 30%, 22%, 0.85);
+  border-color: hsla(var(--glass-hue1), 40%, 50%, 0.4);
+  @apply w-6;
 }
 
 /* Sidebar Header */
@@ -664,26 +668,27 @@
   --glass-hue1: 330;
   --glass-hue2: 280;
   
+  /* Glass background — 75% transparent (25% opaque) */
   background: 
     linear-gradient(
       195deg, 
-      hsla(var(--glass-hue1), 30%, 85%, 0.65), 
-      hsla(var(--glass-hue1), 30%, 95%, 0) 40%
+      hsla(var(--glass-hue1), 30%, 85%, 0.12), 
+      hsla(var(--glass-hue1), 30%, 95%, 0) 50%
     ), 
     linear-gradient(
       15deg, 
-      hsla(var(--glass-hue2), 30%, 85%, 0.55), 
-      hsla(var(--glass-hue2), 30%, 95%, 0) 40%
+      hsla(var(--glass-hue2), 30%, 85%, 0.1), 
+      hsla(var(--glass-hue2), 30%, 95%, 0) 50%
     ), 
     linear-gradient(
-      hsla(0, 0%, 100%, 0.78)
+      hsla(0, 0%, 100%, 0.25)
     );
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-right-color: hsla(var(--glass-hue2), 20%, 60%, 0.25);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-right-color: hsla(var(--glass-hue2), 20%, 60%, 0.2);
   box-shadow: 
-    hsla(var(--glass-hue2), 20%, 50%, 0.1) 4px 0 16px -8px,
-    hsla(var(--glass-hue2), 20%, 50%, 0.05) 8px 0 36px -14px;
+    hsla(var(--glass-hue2), 20%, 50%, 0.08) 4px 0 16px -8px,
+    hsla(var(--glass-hue2), 20%, 50%, 0.04) 8px 0 36px -14px;
 }
 
 .light-theme .app-sidebar::before,
@@ -711,16 +716,17 @@
 
 .light-theme .sidebar-collapse-toggle,
 [data-theme="light"] .sidebar-collapse-toggle {
-  background-color: hsla(0, 0%, 100%, 0.85);
-  backdrop-filter: blur(8px);
-  border-color: hsla(var(--glass-hue2), 20%, 60%, 0.3);
+  background-color: hsla(0, 0%, 100%, 0.5);
+  backdrop-filter: blur(12px);
+  border-color: hsla(var(--glass-hue2), 20%, 60%, 0.25);
+  border-left: none;
   @apply text-neutral-500 hover:text-neutral-700;
 }
 
 .light-theme .sidebar-collapse-toggle:hover,
 [data-theme="light"] .sidebar-collapse-toggle:hover {
-  background-color: hsla(0, 0%, 100%, 0.95);
-  border-color: hsla(var(--glass-hue1), 30%, 50%, 0.4);
+  background-color: hsla(0, 0%, 100%, 0.7);
+  border-color: hsla(var(--glass-hue1), 30%, 50%, 0.35);
 }
 
 .light-theme .sidebar-header,

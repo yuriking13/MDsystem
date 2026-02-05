@@ -254,3 +254,8 @@
 .app-layout-with-animated-bg .app-main {
   background-color: transparent;
 }
+
+/* Sidebar glass: ensure no opaque background-color overrides the glass effect */
+.app-layout-with-animated-bg .app-sidebar {
+  background-color: transparent;
+}
