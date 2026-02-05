@@ -9,10 +9,24 @@ interface ProjectInfo {
   updatedAt: string | null;
 }
 
+export type ArticleViewStatus = "candidate" | "selected" | "excluded" | "deleted" | "all";
+
+export interface ArticleCounts {
+  candidate: number;
+  selected: number;
+  excluded: number;
+  deleted: number;
+  total: number;
+}
+
 interface ProjectContextType {
   projectInfo: ProjectInfo;
   setProjectInfo: (info: Partial<ProjectInfo>) => void;
   clearProjectInfo: () => void;
+  articleCounts: ArticleCounts;
+  setArticleCounts: (counts: ArticleCounts) => void;
+  articleViewStatus: ArticleViewStatus;
+  setArticleViewStatus: (status: ArticleViewStatus) => void;
 }
 
 const defaultProjectInfo: ProjectInfo = {
@@ -21,10 +35,22 @@ const defaultProjectInfo: ProjectInfo = {
   updatedAt: null,
 };
 
+const defaultArticleCounts: ArticleCounts = {
+  candidate: 0,
+  selected: 0,
+  excluded: 0,
+  deleted: 0,
+  total: 0,
+};
+
 const ProjectContext = createContext<ProjectContextType>({
   projectInfo: defaultProjectInfo,
   setProjectInfo: () => {},
   clearProjectInfo: () => {},
+  articleCounts: defaultArticleCounts,
+  setArticleCounts: () => {},
+  articleViewStatus: "candidate",
+  setArticleViewStatus: () => {},
 });
 
 export function useProjectContext() {
@@ -44,6 +70,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const location = useLocation();
   const [projectInfo, setProjectInfoState] =
     useState<ProjectInfo>(defaultProjectInfo);
+  const [articleCounts, setArticleCounts] =
+    useState<ArticleCounts>(defaultArticleCounts);
+  const [articleViewStatus, setArticleViewStatus] =
+    useState<ArticleViewStatus>("candidate");
 
   const setProjectInfo = (info: Partial<ProjectInfo>) => {
     setProjectInfoState((prev) => ({ ...prev, ...info }));
@@ -68,7 +98,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <ProjectContext.Provider
-      value={{ projectInfo, setProjectInfo, clearProjectInfo }}
+      value={{
+        projectInfo,
+        setProjectInfo,
+        clearProjectInfo,
+        articleCounts,
+        setArticleCounts,
+        articleViewStatus,
+        setArticleViewStatus,
+      }}
     >
       <div className="app-layout">
         <AppSidebar

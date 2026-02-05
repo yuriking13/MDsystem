@@ -6,7 +6,7 @@
 /* App Layout Container */
 .app-layout {
   @apply flex min-h-screen;
-  @apply bg-neutral-100 dark:bg-neutral-950;
+  background-color: #0a1628;
 }
 
 .light-theme .app-layout,
@@ -25,8 +25,8 @@
 
 .app-sidebar {
   @apply relative flex flex-col h-screen sticky top-0;
-  @apply bg-neutral-900;
-  @apply border-r border-neutral-800;
+  background-color: #0d1b2a;
+  border-right: 1px solid rgba(56, 89, 138, 0.25);
   width: 240px;
   transition: width 200ms ease-in-out;
 }
@@ -39,18 +39,23 @@
 .sidebar-collapse-toggle {
   @apply absolute z-10 flex items-center justify-center;
   @apply w-6 h-6 rounded-md;
-  @apply bg-neutral-800 border border-neutral-700;
-  @apply text-neutral-400 hover:text-white hover:bg-neutral-700;
+  @apply text-neutral-400 hover:text-white;
   @apply transition-colors cursor-pointer;
+  background-color: #162236;
+  border: 1px solid rgba(56, 89, 138, 0.3);
   top: 50%;
   right: -12px;
   transform: translateY(-50%);
 }
 
+.sidebar-collapse-toggle:hover {
+  background-color: #1e3050;
+}
+
 /* Sidebar Header */
 .sidebar-header {
   @apply flex items-center px-4 py-4;
-  @apply border-b border-neutral-800;
+  border-bottom: 1px solid rgba(56, 89, 138, 0.25);
 }
 
 .sidebar-logo {
@@ -70,14 +75,19 @@
 
 /* Project Section */
 .sidebar-project {
-  @apply px-3 py-3 border-b border-neutral-800;
+  @apply px-3 py-3;
+  border-bottom: 1px solid rgba(56, 89, 138, 0.25);
 }
 
 .sidebar-back-btn {
   @apply flex items-center gap-2 w-full px-2 py-1.5 rounded-lg;
   @apply text-xs text-neutral-400 hover:text-white;
-  @apply hover:bg-neutral-800 transition-colors cursor-pointer;
+  @apply transition-colors cursor-pointer;
   @apply bg-transparent border-0;
+}
+
+.sidebar-back-btn:hover {
+  background-color: rgba(56, 89, 138, 0.2);
 }
 
 .sidebar-project-name {
@@ -118,9 +128,12 @@
 .sidebar-nav-item {
   @apply flex items-center gap-2.5 w-full px-3 py-2 rounded-lg;
   @apply text-neutral-400 hover:text-white;
-  @apply hover:bg-neutral-800;
   @apply transition-all duration-150;
   @apply cursor-pointer border-0 bg-transparent text-left;
+}
+
+.sidebar-nav-item:hover {
+  background-color: rgba(56, 89, 138, 0.2);
 }
 
 .sidebar-nav-item--active {
@@ -151,18 +164,72 @@
   @apply justify-center;
 }
 
+/* =============================================================================
+   Sidebar Sub-menu (Articles status sub-navigation)
+   ============================================================================= */
+
+.sidebar-submenu {
+  @apply flex flex-col gap-0.5 mt-0.5 mb-1;
+  padding-left: 0.75rem;
+}
+
+.sidebar-submenu-item {
+  @apply flex items-center gap-2 w-full px-3 py-1.5 rounded-lg;
+  @apply text-neutral-400 hover:text-white;
+  @apply transition-all duration-150;
+  @apply cursor-pointer border-0 bg-transparent text-left;
+  font-size: 0.8125rem;
+}
+
+.sidebar-submenu-item:hover {
+  background-color: rgba(56, 89, 138, 0.2);
+}
+
+.sidebar-submenu-item--active {
+  @apply bg-blue-600/15 text-blue-400;
+  @apply hover:bg-blue-600/25 hover:text-blue-300;
+}
+
+.sidebar-submenu-icon {
+  @apply w-4 h-4 shrink-0;
+}
+
+.sidebar-submenu-label {
+  @apply text-xs font-medium;
+  @apply whitespace-nowrap flex-1;
+}
+
+.sidebar-submenu-badge {
+  @apply ml-auto px-1.5 py-0.5 rounded-md text-xs font-medium;
+  @apply text-neutral-400;
+  background-color: rgba(56, 89, 138, 0.25);
+  font-size: 0.6875rem;
+}
+
+.sidebar-submenu-item--active .sidebar-submenu-badge {
+  @apply bg-blue-500/20 text-blue-400;
+}
+
+/* Collapsed state - hide submenu */
+.app-sidebar--collapsed .sidebar-submenu {
+  @apply hidden;
+}
+
 /* Sidebar Footer */
 .sidebar-footer {
   @apply px-2 py-3 space-y-1;
-  @apply border-t border-neutral-800;
+  border-top: 1px solid rgba(56, 89, 138, 0.25);
 }
 
 .sidebar-footer-btn {
   @apply flex items-center gap-2.5 w-full px-3 py-2 rounded-lg;
   @apply text-neutral-400 hover:text-white;
-  @apply hover:bg-neutral-800;
   @apply transition-colors;
   @apply cursor-pointer border-0 bg-transparent text-left;
+}
+
+.sidebar-footer-btn:hover {
+  background-color: rgba(56, 89, 138, 0.2);
 }
 
 .sidebar-footer-icon {
@@ -287,6 +354,27 @@
 .light-theme .sidebar-user-avatar,
 [data-theme="light"] .sidebar-user-avatar {
   @apply text-neutral-500;
+}
+
+/* Sub-menu Light Theme */
+.light-theme .sidebar-submenu-item,
+[data-theme="light"] .sidebar-submenu-item {
+  @apply text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100;
+}
+
+.light-theme .sidebar-submenu-item--active,
+[data-theme="light"] .sidebar-submenu-item--active {
+  @apply bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700;
+}
+
+.light-theme .sidebar-submenu-badge,
+[data-theme="light"] .sidebar-submenu-badge {
+  @apply bg-neutral-100 text-neutral-500;
+}
+
+.light-theme .sidebar-submenu-item--active .sidebar-submenu-badge,
+[data-theme="light"] .sidebar-submenu-item--active .sidebar-submenu-badge {
+  @apply bg-blue-100 text-blue-600;
 }
 
 /* =============================================================================

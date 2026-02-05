@@ -19,6 +19,7 @@ import AddArticleByDoiModal from "./AddArticleByDoiModal";
 import { useToast } from "./Toast";
 import ArticleCard from "./ArticleCard";
 import { toArticleData } from "../lib/articleAdapter";
+import { useProjectContext } from "./AppLayout";
 
 type Props = {
   projectId: string;
@@ -71,6 +72,7 @@ export default function ArticlesSection({
   onCountsChange,
 }: Props) {
   const toast = useToast();
+  const { articleViewStatus: viewStatus, setArticleViewStatus: setViewStatus, setArticleCounts: setContextCounts } = useProjectContext();
   const [articles, setArticles] = useState<Article[]>([]);
   const [counts, setCounts] = useState({
     candidate: 0,
@@ -83,9 +85,6 @@ export default function ArticlesSection({
   const [ok, setOk] = useState<string | null>(null);
 
   // Фильтр отображения
-  const [viewStatus, setViewStatus] = useState<
-    "candidate" | "selected" | "excluded" | "deleted" | "all"
-  >("candidate");
   const [showStatsOnly, setShowStatsOnly] = useState(false);
   const [filterPubType, setFilterPubType] = useState<string | null>(null);
   const [filterSourceQuery, setFilterSourceQuery] = useState<string | null>(
@@ -210,9 +209,17 @@ export default function ArticlesSection({
         setAvailableSourceQueries(res.searchQueries);
       }
       // Передаём counts наверх для отображения в табах
+      const total =
+        res.counts.candidate + res.counts.selected + res.counts.excluded;
+      // Update context counts for sidebar sub-menu
+      setContextCounts({
+        candidate: res.counts.candidate,
+        selected: res.counts.selected,
+        excluded: res.counts.excluded,
+        deleted: res.counts.deleted || 0,
+        total,
+      });
       if (onCountsChange) {
-        const total =
-          res.counts.candidate + res.counts.selected + res.counts.excluded;
         onCountsChange({
           candidate: res.counts.candidate,
           selected: res.counts.selected,
@@ -1037,48 +1044,67 @@ export default function ArticlesSection({
     return new Date(b.added_at).getTime() - new Date(a.added_at).getTime();
   });
 
+  // Current status label for header
+  const statusLabels: Record<string, string> = {
+    candidate: "Кандидаты",
+    selected: "Отобранные",
+    excluded: "Исключённые",
+    all: "Все",
+    deleted: "Корзина",
+  };
+
   return (
     <div className="articles-page">
-      {/* Header Toolbar */}
-      <div className="mb-4 w-full">
-        <div className="relative overflow-hidden bg-white px-4 shadow-md dark:bg-gray-800 sm:rounded-lg">
-          <div className="flex flex-col space-y-3 py-3 md:flex-row md:items-center md:justify-between md:space-y-0 md:space-x-4">
-            <div>
-              <nav
-                className="mb-2 flex rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700 dark:border-gray-600 dark:bg-gray-700"
-                aria-label="Breadcrumb"
+      {/* Unified Header Toolbar */}
+      <div className="articles-header">
+        <div className="articles-header-left">
+          <h5 className="articles-header-title">
+            База статей
+            <span className="articles-header-status">
+              / {statusLabels[viewStatus] || "Все"}
+            </span>
+            <span className="articles-header-count">
+              ({filteredArticles.length})
+            </span>
+          </h5>
+        </div>
+        <div className="articles-header-right">
+          {canEdit && untranslatedCount > 0 && (
+            <button
+              className="articles-toolbar-btn"
+              onClick={handleTranslate}
+              disabled={translating}
+              type="button"
+              title={`Перевести ${untranslatedCount} статей без перевода`}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <ol className="inline-flex items-center space-x-1 md:space-x-3">
-                  <li className="inline-flex items-center">
-                    <span className="inline-flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
-                      База статей
-                    </span>
-                  </li>
-                  <li aria-current="page">
-                    <div className="flex items-center">
-                      <svg
-                        aria-hidden="true"
-                        className="h-5 w-5 text-gray-400"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                      <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2 dark:text-gray-400">
-                        Все статьи
-                      </span>
-                    </div>
-                  </li>
-                </ol>
-              </nav>
-              <h5 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                />
+              </svg>
+              {translating
+                ? "Переводим..."
+                : `Перевести (${untranslatedCount})`}
+            </button>
+          )}
+          {canEdit && (
+            <>
+              <button
+                className="articles-toolbar-btn"
+                onClick={() => setShowAddByDoiModal(true)}
+                type="button"
+                title="Добавить статью по DOI"
+              >
                 <svg
-                  className="h-5 w-5 text-gray-500 dark:text-gray-400"
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1087,89 +1113,33 @@ export default function ArticlesSection({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                    d="M12 4v16m8-8H4"
                   />
                 </svg>
-                База статей
-                <span className="text-gray-500 dark:text-gray-400">
-                  ({total})
-                </span>
-              </h5>
-            </div>
-            <div className="flex flex-col items-start space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-3">
-              {canEdit && untranslatedCount > 0 && (
-                <button
-                  className="flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700"
-                  onClick={handleTranslate}
-                  disabled={translating}
-                  type="button"
-                  title={`Перевести ${untranslatedCount} статей без перевода`}
+                По DOI
+              </button>
+              <button
+                className="articles-toolbar-btn articles-toolbar-btn--primary"
+                onClick={() => setShowSearch(!showSearch)}
+                type="button"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg
-                    className="-ml-1 mr-1.5 h-3.5 w-3.5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                    />
-                  </svg>
-                  {translating
-                    ? "Переводим..."
-                    : `Перевести (${untranslatedCount})`}
-                </button>
-              )}
-              {canEdit && (
-                <>
-                  <button
-                    className="flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700"
-                    onClick={() => setShowAddByDoiModal(true)}
-                    type="button"
-                    title="Добавить статью по DOI"
-                  >
-                    <svg
-                      className="-ml-1 mr-1.5 h-3.5 w-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    По DOI
-                  </button>
-                  <button
-                    className="flex items-center justify-center rounded-lg bg-primary-700 px-4 py-2 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
-                    onClick={() => setShowSearch(!showSearch)}
-                    type="button"
-                  >
-                    <svg
-                      className="-ml-1 mr-1.5 h-3.5 w-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
-                    </svg>
-                    {showSearch ? "Скрыть поиск" : "Поиск статей"}
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                {showSearch ? "Скрыть поиск" : "Поиск статей"}
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -1563,134 +1533,7 @@ export default function ArticlesSection({
         </form>
       )}
 
-      {/* Фильтры - строка 1: статусы */}
-      <div className="row gap" style={{ marginBottom: 8, flexWrap: "wrap" }}>
-        <button
-          className={viewStatus === "candidate" ? "btn" : "btn secondary"}
-          onClick={() => setViewStatus("candidate")}
-          type="button"
-        >
-          <svg
-            className="icon-sm"
-            style={{
-              marginRight: 4,
-              display: "inline",
-              verticalAlign: "middle",
-            }}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-          Кандидаты ({counts.candidate})
-        </button>
-        <button
-          className={viewStatus === "selected" ? "btn" : "btn secondary"}
-          onClick={() => setViewStatus("selected")}
-          type="button"
-        >
-          <svg
-            className="icon-sm"
-            style={{
-              marginRight: 4,
-              display: "inline",
-              verticalAlign: "middle",
-            }}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          Отобранные ({counts.selected})
-        </button>
-        <button
-          className={viewStatus === "excluded" ? "btn" : "btn secondary"}
-          onClick={() => setViewStatus("excluded")}
-          type="button"
-        >
-          <svg
-            className="icon-sm"
-            style={{
-              marginRight: 4,
-              display: "inline",
-              verticalAlign: "middle",
-            }}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          Исключённые ({counts.excluded})
-        </button>
-        <button
-          className={viewStatus === "all" ? "btn" : "btn secondary"}
-          onClick={() => setViewStatus("all")}
-          type="button"
-        >
-          <svg
-            className="icon-sm"
-            style={{
-              marginRight: 4,
-              display: "inline",
-              verticalAlign: "middle",
-            }}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 10h16M4 14h16M4 18h16"
-            />
-          </svg>
-          Все ({total})
-        </button>
-        <button
-          className={viewStatus === "deleted" ? "btn" : "btn secondary"}
-          onClick={() => setViewStatus("deleted")}
-          type="button"
-        >
-          <svg
-            className="icon-sm"
-            style={{
-              marginRight: 4,
-              display: "inline",
-              verticalAlign: "middle",
-            }}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-          Корзина ({counts.deleted})
-        </button>
-      </div>
+      {/* Status navigation is now in the sidebar sub-menu */}
 
       {/* Локальный поиск по базе */}
       <div

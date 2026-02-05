@@ -5,13 +5,13 @@
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
   line-height: 1.5;
   
-  /* Dark Theme (Default) - Futuristic */
-  --bg-primary: #050810;
-  --bg-secondary: rgba(12, 18, 30, 0.85);
-  --bg-glass: rgba(15, 22, 40, 0.75);
-  --bg-glass-light: rgba(25, 35, 60, 0.5);
-  --bg-metal: linear-gradient(145deg, rgba(30, 40, 65, 0.9), rgba(15, 22, 38, 0.95));
-  --bg-metal-shine: linear-gradient(145deg, rgba(45, 60, 95, 0.6), rgba(25, 35, 55, 0.8));
+  /* Dark Theme (Default) - Dark Blue */
+  --bg-primary: #0a1628;
+  --bg-secondary: rgba(13, 27, 42, 0.9);
+  --bg-glass: rgba(13, 27, 42, 0.8);
+  --bg-glass-light: rgba(22, 34, 54, 0.6);
+  --bg-metal: linear-gradient(145deg, rgba(22, 34, 54, 0.9), rgba(13, 27, 42, 0.95));
+  --bg-metal-shine: linear-gradient(145deg, rgba(30, 48, 80, 0.6), rgba(22, 34, 54, 0.8));
   --border-glass: rgba(100, 140, 200, 0.1);
   --border-glass-light: rgba(120, 160, 220, 0.2);
   --border-glow: rgba(75, 116, 255, 0.4);

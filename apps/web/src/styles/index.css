@@ -111,19 +111,19 @@
     --color-info: 14 165 233;
     --color-info-foreground: 255 255 255;
     
-    /* Background Colors - Dark */
-    --color-background: 15 23 42; /* #0F172A */
-    --color-background-secondary: 30 41 59; /* #1E293B */
-    --color-background-tertiary: 51 65 85; /* #334155 */
+    /* Background Colors - Dark Blue */
+    --color-background: 10 22 40; /* #0A1628 */
+    --color-background-secondary: 13 27 42; /* #0D1B2A */
+    --color-background-tertiary: 22 34 54; /* #162236 */
     
-    /* Surface Colors - Dark */
-    --color-surface: 30 41 59;
-    --color-surface-hover: 51 65 85;
-    --color-surface-active: 71 85 105;
+    /* Surface Colors - Dark Blue */
+    --color-surface: 13 27 42;
+    --color-surface-hover: 22 34 54;
+    --color-surface-active: 30 48 80;
     
-    /* Border Colors - Dark */
-    --color-border: 51 65 85;
-    --color-border-hover: 71 85 105;
+    /* Border Colors - Dark Blue */
+    --color-border: 38 59 92;
+    --color-border-hover: 56 89 138;
     
     /* Text Colors - Dark */
     --color-text-primary: 248 250 252; /* #F8FAFC */
@@ -148,7 +148,8 @@
 
   body {
     @apply font-sans;
-    @apply bg-neutral-950 text-neutral-50;
+    @apply text-neutral-50;
+    background-color: #0a1628;
   }
 
   body.light-theme,
@@ -190,7 +191,12 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-neutral-100 dark:bg-neutral-900;
+    @apply bg-neutral-100;
+  }
+
+  .dark ::-webkit-scrollbar-track,
+  [data-theme="dark"] ::-webkit-scrollbar-track {
+    background-color: #0a1628;
   }
 
   ::-webkit-scrollbar-thumb {
@@ -211,15 +217,27 @@
 @layer components {
   /* Glass Effect */
   .glass {
-    @apply backdrop-blur-md bg-white/80 dark:bg-neutral-900/80;
-    @apply border border-neutral-200/50 dark:border-neutral-700/50;
+    @apply backdrop-blur-md bg-white/80;
+    @apply border border-neutral-200/50;
+  }
+
+  .dark .glass,
+  [data-theme="dark"] .glass {
+    background-color: rgba(13, 27, 42, 0.8);
+    border-color: rgba(56, 89, 138, 0.25);
   }
 
   /* Card Base */
   .card {
-    @apply bg-white dark:bg-neutral-900;
-    @apply border border-neutral-200 dark:border-neutral-800;
+    @apply bg-white;
+    @apply border border-neutral-200;
     @apply rounded-lg shadow-sm;
+  }
+
+  .dark .card,
+  [data-theme="dark"] .card {
+    background-color: #0d1b2a;
+    border-color: rgba(56, 89, 138, 0.2);
   }
 
   /* Focus Visible Ring */
