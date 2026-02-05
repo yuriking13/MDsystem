@@ -535,7 +535,7 @@ export default function ProjectDetailPage() {
   const nav = useNavigate();
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { setProjectName } = useProjectContext();
+  const { setProjectInfo, clearProjectInfo } = useProjectContext();
 
   const [project, setProject] = useState<Project | null>(null);
   const [members, setMembers] = useState<ProjectMember[]>([]);
@@ -691,7 +691,12 @@ export default function ProjectDetailPage() {
         apiGetDocuments(id),
       ]);
       setProject(pRes.project);
-      setProjectName(pRes.project.name); // Set project name in sidebar
+      // Set project info in sidebar
+      setProjectInfo({
+        name: pRes.project.name,
+        role: pRes.project.role,
+        updatedAt: pRes.project.updated_at,
+      });
       setMembers(mRes.members);
       setDocuments(dRes.documents);
       setEditName(pRes.project.name);
@@ -923,12 +928,12 @@ export default function ProjectDetailPage() {
     load();
   }, [id]);
 
-  // Clear project name when leaving the page
+  // Clear project info when leaving the page
   useEffect(() => {
     return () => {
-      setProjectName(null);
+      clearProjectInfo();
     };
-  }, [setProjectName]);
+  }, [clearProjectInfo]);
 
   // Загружаем статистику при переходе на вкладку
   useEffect(() => {
@@ -1424,20 +1429,14 @@ export default function ProjectDetailPage() {
     );
   }
 
-  return (
-    <div className="container" style={{ maxWidth: 1100 }}>
-      {/* Header */}
-      {/* Project Header - minimal */}
-      <div className="project-page-header">
-        <div className="project-page-title">
-          <h1>{project.name}</h1>
-          <span className="project-page-meta">
-            {project.role} • Обновлён:{" "}
-            {new Date(project.updated_at).toLocaleDateString()}
-          </span>
-        </div>
-      </div>
+  // Use full width for graph tab
+  const isGraphTab = activeTab === "graph";
 
+  return (
+    <div
+      className={isGraphTab ? "project-detail-fullwidth" : "container"}
+      style={isGraphTab ? undefined : { maxWidth: 1100 }}
+    >
       {error && (
         <div className="alert" style={{ marginBottom: 12 }}>
           {error}
@@ -3931,109 +3930,131 @@ export default function ProjectDetailPage() {
         {/* === GRAPH TAB === */}
         {activeTab === "graph" && id && <CitationGraph projectId={id} />}
 
-        {/* === TEAM TAB === */}
-        {activeTab === "team" && (
-          <div>
-            <div className="row space" style={{ marginBottom: 16 }}>
-              <h2>Команда проекта</h2>
-              {isOwner && !showInvite && (
-                <button
-                  className="btn"
-                  onClick={() => setShowInvite(true)}
-                  type="button"
-                >
-                  + Пригласить
-                </button>
-              )}
-            </div>
-
-            {showInvite && (
-              <form
-                onSubmit={handleInvite}
-                className="card"
-                style={{ marginBottom: 16 }}
-              >
-                <div className="stack">
-                  <label className="stack">
-                    <span>Email</span>
-                    <input
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="colleague@example.com"
-                      required
-                    />
-                  </label>
-                  <label className="stack">
-                    <span>Роль</span>
-                    <select
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value as any)}
-                    >
-                      <option value="viewer">Читатель (только просмотр)</option>
-                      <option value="editor">
-                        Редактор (может редактировать)
-                      </option>
-                    </select>
-                  </label>
-                  <div className="row gap">
-                    <button className="btn" disabled={inviting} type="submit">
-                      {inviting ? "Приглашаем..." : "Пригласить"}
-                    </button>
-                    <button
-                      className="btn secondary"
-                      onClick={() => setShowInvite(false)}
-                      type="button"
-                    >
-                      Отмена
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
-
-            <div className="table table-members">
-              <div className="thead">
-                <div>Email</div>
-                <div>Роль</div>
-                <div>Присоединился</div>
-                <div>Действия</div>
-              </div>
-              {members.map((m) => (
-                <div className="trow" key={m.user_id}>
-                  <div className="mono" style={{ fontSize: 13 }}>
-                    {m.email} {m.user_id === user?.id && "(вы)"}
-                  </div>
-                  <div>
-                    {m.role === "owner"
-                      ? "Владелец"
-                      : m.role === "editor"
-                        ? "Редактор"
-                        : "Читатель"}
-                  </div>
-                  <div>{new Date(m.joined_at).toLocaleDateString()}</div>
-                  <div>
-                    {isOwner && m.role !== "owner" && (
-                      <button
-                        className="btn secondary"
-                        onClick={() => handleRemoveMember(m.user_id, m.email)}
-                        type="button"
-                        style={{ fontSize: 12, padding: "6px 10px" }}
-                      >
-                        Удалить
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* === SETTINGS TAB === */}
+        {/* === SETTINGS TAB (includes team) === */}
         {activeTab === "settings" && (
           <div className="settings-page">
             <h2>Настройки проекта</h2>
+
+            {/* Команда проекта */}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <svg
+                  className="icon-md"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{ color: "var(--accent)" }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+                <h4>Команда проекта</h4>
+                {isOwner && !showInvite && (
+                  <button
+                    className="btn"
+                    onClick={() => setShowInvite(true)}
+                    type="button"
+                    style={{ marginLeft: "auto", fontSize: 13 }}
+                  >
+                    + Пригласить
+                  </button>
+                )}
+              </div>
+              <div className="settings-card-body">
+                {showInvite && (
+                  <form
+                    onSubmit={handleInvite}
+                    className="card"
+                    style={{ marginBottom: 16 }}
+                  >
+                    <div className="stack">
+                      <label className="stack">
+                        <span>Email</span>
+                        <input
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder="colleague@example.com"
+                          required
+                        />
+                      </label>
+                      <label className="stack">
+                        <span>Роль</span>
+                        <select
+                          value={inviteRole}
+                          onChange={(e) => setInviteRole(e.target.value as any)}
+                        >
+                          <option value="viewer">
+                            Читатель (только просмотр)
+                          </option>
+                          <option value="editor">
+                            Редактор (может редактировать)
+                          </option>
+                        </select>
+                      </label>
+                      <div className="row gap">
+                        <button
+                          className="btn"
+                          disabled={inviting}
+                          type="submit"
+                        >
+                          {inviting ? "Приглашаем..." : "Пригласить"}
+                        </button>
+                        <button
+                          className="btn secondary"
+                          onClick={() => setShowInvite(false)}
+                          type="button"
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+
+                <div className="table table-members">
+                  <div className="thead">
+                    <div>Email</div>
+                    <div>Роль</div>
+                    <div>Присоединился</div>
+                    <div>Действия</div>
+                  </div>
+                  {members.map((m) => (
+                    <div className="trow" key={m.user_id}>
+                      <div className="mono" style={{ fontSize: 13 }}>
+                        {m.email} {m.user_id === user?.id && "(вы)"}
+                      </div>
+                      <div>
+                        {m.role === "owner"
+                          ? "Владелец"
+                          : m.role === "editor"
+                            ? "Редактор"
+                            : "Читатель"}
+                      </div>
+                      <div>{new Date(m.joined_at).toLocaleDateString()}</div>
+                      <div>
+                        {isOwner && m.role !== "owner" && (
+                          <button
+                            className="btn secondary"
+                            onClick={() =>
+                              handleRemoveMember(m.user_id, m.email)
+                            }
+                            type="button"
+                            style={{ fontSize: 12, padding: "6px 10px" }}
+                          >
+                            Удалить
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
             {/* Основные настройки */}
             <div className="settings-card">

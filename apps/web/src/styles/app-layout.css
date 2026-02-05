@@ -85,11 +85,24 @@
   @apply truncate;
 }
 
+.sidebar-project-meta {
+  @apply mt-1 px-2 flex flex-col gap-0.5;
+}
+
+.sidebar-project-role {
+  @apply text-xs text-blue-400 font-medium;
+}
+
+.sidebar-project-date {
+  @apply text-xs text-neutral-500;
+}
+
 .app-sidebar--collapsed .sidebar-back-btn {
   @apply justify-center px-0;
 }
 
-.app-sidebar--collapsed .sidebar-project-name {
+.app-sidebar--collapsed .sidebar-project-name,
+.app-sidebar--collapsed .sidebar-project-meta {
   @apply hidden;
 }
 
@@ -229,6 +242,16 @@
 .light-theme .sidebar-project-name,
 [data-theme="light"] .sidebar-project-name {
   @apply text-neutral-900;
+}
+
+.light-theme .sidebar-project-role,
+[data-theme="light"] .sidebar-project-role {
+  @apply text-blue-600;
+}
+
+.light-theme .sidebar-project-date,
+[data-theme="light"] .sidebar-project-date {
+  @apply text-neutral-500;
 }
 
 .light-theme .sidebar-nav-item,

@@ -1985,9 +1985,9 @@ export default function CitationGraph({ projectId }: Props) {
       style={{
         display: "flex",
         flexDirection: "row",
-        height: isFullscreen ? "100vh" : "calc(100vh - 180px)",
+        height: isFullscreen ? "100vh" : "calc(100vh - 48px)",
         minHeight: "600px",
-        width: isFullscreen ? "100vw" : "auto",
+        width: isFullscreen ? "100vw" : "100%",
         position: isFullscreen ? "fixed" : "relative",
         top: isFullscreen ? 0 : "auto",
         left: isFullscreen ? 0 : "auto",

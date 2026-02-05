@@ -1038,40 +1038,39 @@ export default function ArticlesSection({
   });
 
   return (
-    <div style={{ marginTop: 24 }}>
-      <div className="row space" style={{ marginBottom: 12 }}>
-        <h2 style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <svg
-            className="icon-lg"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-            />
-          </svg>
-          База статей ({total})
-        </h2>
-        <div className="row gap">
+    <div className="articles-page">
+      {/* Header Toolbar */}
+      <div className="articles-toolbar">
+        <div className="articles-toolbar-left">
+          <h2 className="articles-title">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              />
+            </svg>
+            База статей
+            <span className="articles-count">({total})</span>
+          </h2>
+        </div>
+        <div className="articles-toolbar-right">
           {canEdit && untranslatedCount > 0 && (
             <button
-              className="btn secondary"
+              className="articles-toolbar-btn"
               onClick={handleTranslate}
               disabled={translating}
               type="button"
               title={`Перевести ${untranslatedCount} статей без перевода`}
             >
               <svg
-                className="icon-sm"
-                style={{
-                  marginRight: 6,
-                  display: "inline",
-                  verticalAlign: "middle",
-                }}
+                className="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1091,18 +1090,13 @@ export default function ArticlesSection({
           {canEdit && (
             <>
               <button
-                className="btn secondary"
+                className="articles-toolbar-btn"
                 onClick={() => setShowAddByDoiModal(true)}
                 type="button"
                 title="Добавить статью по DOI"
               >
                 <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 6,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1117,17 +1111,12 @@ export default function ArticlesSection({
                 По DOI
               </button>
               <button
-                className="btn"
+                className="articles-toolbar-btn articles-toolbar-btn--primary"
                 onClick={() => setShowSearch(!showSearch)}
                 type="button"
               >
                 <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 6,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
+                  className="w-4 h-4"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

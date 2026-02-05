@@ -38,11 +38,15 @@ interface NavItem {
 interface AppSidebarProps {
   className?: string;
   projectName?: string;
+  projectRole?: string;
+  projectUpdatedAt?: string;
 }
 
 export default function AppSidebar({
   className,
   projectName,
+  projectRole,
+  projectUpdatedAt,
 }: AppSidebarProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -114,10 +118,10 @@ export default function AppSidebar({
       tab: "graph",
     },
     {
-      id: "team",
-      label: "Команда и настройки",
-      icon: UserGroupIcon,
-      tab: "team",
+      id: "settings",
+      label: "Настройки проекта",
+      icon: Cog6ToothIcon,
+      tab: "settings",
     },
   ];
 
@@ -217,9 +221,24 @@ export default function AppSidebar({
             {!collapsed && <span>К проектам</span>}
           </button>
           {!collapsed && projectName && (
-            <div className="sidebar-project-name" title={projectName}>
-              {projectName}
-            </div>
+            <>
+              <div className="sidebar-project-name" title={projectName}>
+                {projectName}
+              </div>
+              {(projectRole || projectUpdatedAt) && (
+                <div className="sidebar-project-meta">
+                  {projectRole && (
+                    <span className="sidebar-project-role">{projectRole}</span>
+                  )}
+                  {projectUpdatedAt && (
+                    <span className="sidebar-project-date">
+                      Обновлён:{" "}
+                      {new Date(projectUpdatedAt).toLocaleDateString("ru-RU")}
+                    </span>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

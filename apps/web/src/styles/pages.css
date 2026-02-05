@@ -9,6 +9,12 @@
   @apply p-6 lg:p-8 max-w-7xl mx-auto;
 }
 
+/* Full width container for graph view */
+.project-detail-fullwidth {
+  @apply w-full h-full p-0;
+  max-width: 100%;
+}
+
 /* Project Page Header */
 .project-page-header {
   @apply mb-6;

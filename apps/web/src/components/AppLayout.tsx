@@ -3,14 +3,28 @@ import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import { useAuth } from "../lib/AuthContext";
 
-interface ProjectContextType {
-  projectName: string | null;
-  setProjectName: (name: string | null) => void;
+interface ProjectInfo {
+  name: string | null;
+  role: string | null;
+  updatedAt: string | null;
 }
 
+interface ProjectContextType {
+  projectInfo: ProjectInfo;
+  setProjectInfo: (info: Partial<ProjectInfo>) => void;
+  clearProjectInfo: () => void;
+}
+
+const defaultProjectInfo: ProjectInfo = {
+  name: null,
+  role: null,
+  updatedAt: null,
+};
+
 const ProjectContext = createContext<ProjectContextType>({
-  projectName: null,
-  setProjectName: () => {},
+  projectInfo: defaultProjectInfo,
+  setProjectInfo: () => {},
+  clearProjectInfo: () => {},
 });
 
 export function useProjectContext() {
@@ -28,7 +42,16 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { token } = useAuth();
   const location = useLocation();
-  const [projectName, setProjectName] = useState<string | null>(null);
+  const [projectInfo, setProjectInfoState] =
+    useState<ProjectInfo>(defaultProjectInfo);
+
+  const setProjectInfo = (info: Partial<ProjectInfo>) => {
+    setProjectInfoState((prev) => ({ ...prev, ...info }));
+  };
+
+  const clearProjectInfo = () => {
+    setProjectInfoState(defaultProjectInfo);
+  };
 
   // Don't show sidebar on login/register/admin pages
   const hideSidebar =
@@ -44,9 +67,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <ProjectContext.Provider value={{ projectName, setProjectName }}>
+    <ProjectContext.Provider
+      value={{ projectInfo, setProjectInfo, clearProjectInfo }}
+    >
       <div className="app-layout">
-        <AppSidebar projectName={projectName || undefined} />
+        <AppSidebar
+          projectName={projectInfo.name || undefined}
+          projectRole={projectInfo.role || undefined}
+          projectUpdatedAt={projectInfo.updatedAt || undefined}
+        />
         <main className="app-main">{children || <Outlet />}</main>
       </div>
     </ProjectContext.Provider>
