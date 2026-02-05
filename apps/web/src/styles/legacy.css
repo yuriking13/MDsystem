@@ -756,6 +756,11 @@ input:focus::placeholder {
   animation: fade-in-up 0.3s ease-out;
 }
 
+/* Remove padding when graph tab is active */
+.project-detail-fullwidth .tab-content {
+  padding-top: 0;
+}
+
 /* ===== FUTURISTIC TABLE ===== */
 
 .table {
@@ -3490,19 +3495,19 @@ input:focus::placeholder {
 .graph-container {
   background: var(--bg-glass);
   backdrop-filter: blur(20px);
-  border: 1px solid var(--border-glass);
-  border-radius: 16px;
   overflow: hidden;
   min-height: 600px;
 }
 
 /* Fixed height graph container - fills available space without scroll */
 .graph-container.graph-fixed-height {
-  height: calc(100vh - 220px);
-  max-height: calc(100vh - 220px);
+  height: calc(100vh - 48px);
+  max-height: calc(100vh - 48px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  border-radius: 0;
+  border: none;
 }
 
 /* Fullscreen mode */
@@ -3768,10 +3773,11 @@ input:focus::placeholder {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  padding: 12px 20px;
+  padding: 6px 16px;
   background: rgba(0, 0, 0, 0.05);
   border-bottom: 1px solid var(--border-glass);
   font-size: 13px;
+  flex-shrink: 0;
 }
 
 .graph-stat-item {
