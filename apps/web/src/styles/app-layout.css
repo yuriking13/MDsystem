@@ -1,6 +1,7 @@
 /* =============================================================================
    App Layout & Sidebar Styles
    Left navigation sidebar with consistent theming
+   Glass neon effect inspired by Simey's Neon Glass design
    ============================================================================= */
 
 /* App Layout Container */
@@ -20,15 +21,396 @@
 }
 
 /* =============================================================================
-   App Sidebar
+   Neon Glass CSS Variables
+   ============================================================================= */
+
+.app-sidebar {
+  --glass-hue1: 210;
+  --glass-hue2: 250;
+  --glass-border: 1px;
+  --glass-border-color: hsla(var(--glass-hue2), 12%, 20%, 0.6);
+  --glass-radius: 0px;
+  --glass-ease: cubic-bezier(0.5, 1, 0.89, 1);
+}
+
+/* =============================================================================
+   App Sidebar — Glass Effect
    ============================================================================= */
 
 .app-sidebar {
   @apply relative flex flex-col h-screen sticky top-0;
-  background-color: #0d1b2a;
-  border-right: 1px solid rgba(56, 89, 138, 0.25);
+  
+  /* Glass background */
+  background: 
+    linear-gradient(
+      195deg, 
+      hsla(var(--glass-hue1), 50%, 10%, 0.75), 
+      hsla(var(--glass-hue1), 50%, 10%, 0) 40%
+    ), 
+    linear-gradient(
+      15deg, 
+      hsla(var(--glass-hue2), 50%, 10%, 0.7), 
+      hsla(var(--glass-hue2), 50%, 10%, 0) 40%
+    ), 
+    linear-gradient(
+      hsla(220, 25%, 5%, 0.72)
+    );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  
+  border-right: var(--glass-border) solid var(--glass-border-color);
+  box-shadow: 
+    hsla(var(--glass-hue2), 50%, 2%, 0.5) 4px 0 16px -8px,
+    hsla(var(--glass-hue2), 50%, 4%, 0.3) 8px 0 36px -14px;
+  
   width: 240px;
   transition: width 200ms ease-in-out;
+  overflow: hidden;
+  z-index: 2;
+}
+
+/* =============================================================================
+   Neon Shine & Glow Elements
+   ============================================================================= */
+
+/* --- Shine: thin bright border lines --- */
+.sidebar-shine {
+  pointer-events: none;
+  position: absolute;
+  z-index: 10;
+  border: 1px solid transparent;
+  display: block;
+  animation: sidebarGlow 2s var(--glass-ease) both;
+}
+
+.sidebar-shine--top {
+  --shine-hue: var(--glass-hue1);
+  top: -1px;
+  right: -1px;
+  width: 60%;
+  height: 60%;
+  border-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: var(--glass-radius);
+  
+  background: conic-gradient(
+    from -45deg at center,
+    transparent 12%, 
+    hsla(var(--shine-hue), 80%, 60%, 0.7), 
+    transparent 50%
+  ) border-box;
+  
+  mask: 
+    linear-gradient(transparent, transparent), 
+    linear-gradient(black, black);
+  mask-repeat: no-repeat;
+  mask-clip: padding-box, border-box;
+  mask-composite: subtract;
+  -webkit-mask-composite: source-out;
+}
+
+.sidebar-shine--top::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 2;
+  border: inherit;
+  border-radius: inherit;
+  
+  background: conic-gradient(
+    from -45deg at center,
+    transparent 17%, 
+    hsla(var(--shine-hue), 80%, 85%, 0.9), 
+    transparent 33%
+  );
+}
+
+.sidebar-shine--bottom {
+  --shine-hue: var(--glass-hue2);
+  bottom: -1px;
+  left: -1px;
+  width: 60%;
+  height: 60%;
+  border-radius: 0;
+  border-bottom-left-radius: 0;
+  border-top-right-radius: var(--glass-radius);
+  
+  background: conic-gradient(
+    from 135deg at center,
+    transparent 12%, 
+    hsla(var(--shine-hue), 80%, 60%, 0.7), 
+    transparent 50%
+  ) border-box;
+  
+  mask: 
+    linear-gradient(transparent, transparent), 
+    linear-gradient(black, black);
+  mask-repeat: no-repeat;
+  mask-clip: padding-box, border-box;
+  mask-composite: subtract;
+  -webkit-mask-composite: source-out;
+  
+  animation-delay: 0.1s;
+  animation-duration: 1.8s;
+}
+
+.sidebar-shine--bottom::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  z-index: 2;
+  border: inherit;
+  border-radius: inherit;
+  
+  background: conic-gradient(
+    from 135deg at center,
+    transparent 17%, 
+    hsla(var(--shine-hue), 80%, 85%, 0.9), 
+    transparent 33%
+  );
+}
+
+/* --- Glow: diffused color bleed --- */
+.sidebar-glow {
+  pointer-events: none;
+  position: absolute;
+  display: block;
+  z-index: 3;
+  
+  width: 70%;
+  height: auto;
+  min-height: 0;
+  aspect-ratio: 1;
+  
+  border: 20px solid transparent;
+  border-radius: 40px;
+  
+  filter: blur(12px) saturate(1.25) brightness(0.5);
+  mix-blend-mode: plus-lighter;
+  opacity: 1;
+  
+  animation: sidebarGlow 1s var(--glass-ease) both;
+  animation-delay: 0.2s;
+}
+
+.sidebar-glow::before,
+.sidebar-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: inherit;
+  border-radius: inherit;
+}
+
+.sidebar-glow--top {
+  --glow-hue: var(--glass-hue1);
+  top: -40px;
+  right: -40px;
+  left: auto;
+  bottom: auto;
+}
+
+.sidebar-glow--top::before {
+  background: conic-gradient(
+    from -45deg at center,
+    transparent 0%, 
+    hsla(var(--glow-hue), 95%, 60%, 0.8), 
+    transparent 50%
+  ) border-box;
+  mask: 
+    linear-gradient(transparent, transparent), 
+    linear-gradient(black, black);
+  mask-repeat: no-repeat;
+  mask-clip: padding-box, border-box;
+  mask-composite: subtract;
+  -webkit-mask-composite: source-out;
+  filter: saturate(2) brightness(1);
+}
+
+.sidebar-glow--top::after {
+  --glow-lit: 70%;
+  --glow-sat: 100%;
+  border-width: 28px;
+  border-radius: 44px;
+  inset: -4px;
+  z-index: 4;
+  opacity: 0.75;
+  
+  background: conic-gradient(
+    from -45deg at center,
+    transparent 15%, 
+    hsla(var(--glow-hue), var(--glow-sat), var(--glow-lit), 0.8), 
+    transparent 35%
+  ) border-box;
+  mask: 
+    linear-gradient(transparent, transparent), 
+    linear-gradient(black, black);
+  mask-repeat: no-repeat;
+  mask-clip: padding-box, border-box;
+  mask-composite: subtract;
+  -webkit-mask-composite: source-out;
+}
+
+.sidebar-glow--bottom {
+  --glow-hue: var(--glass-hue2);
+  bottom: -40px;
+  left: -40px;
+  right: auto;
+  top: auto;
+  
+  animation-delay: 0.3s;
+}
+
+.sidebar-glow--bottom::before {
+  background: conic-gradient(
+    from 135deg at center,
+    transparent 0%, 
+    hsla(var(--glow-hue), 95%, 60%, 0.8), 
+    transparent 50%
+  ) border-box;
+  mask: 
+    linear-gradient(transparent, transparent), 
+    linear-gradient(black, black);
+  mask-repeat: no-repeat;
+  mask-clip: padding-box, border-box;
+  mask-composite: subtract;
+  -webkit-mask-composite: source-out;
+  filter: saturate(2) brightness(1);
+}
+
+.sidebar-glow--bottom::after {
+  --glow-lit: 70%;
+  --glow-sat: 100%;
+  border-width: 28px;
+  border-radius: 44px;
+  inset: -4px;
+  z-index: 4;
+  opacity: 0.75;
+  
+  background: conic-gradient(
+    from 135deg at center,
+    transparent 15%, 
+    hsla(var(--glow-hue), var(--glow-sat), var(--glow-lit), 0.8), 
+    transparent 35%
+  ) border-box;
+  mask: 
+    linear-gradient(transparent, transparent), 
+    linear-gradient(black, black);
+  mask-repeat: no-repeat;
+  mask-clip: padding-box, border-box;
+  mask-composite: subtract;
+  -webkit-mask-composite: source-out;
+}
+
+/* --- Glow Bright: sharper accent border --- */
+.sidebar-glow--bright {
+  border-width: 4px;
+  border-radius: 2px;
+  filter: blur(2px) brightness(0.66);
+  
+  animation-delay: 0.1s;
+  animation-duration: 1.5s;
+}
+
+.sidebar-glow--bright.sidebar-glow--top {
+  inset: -5px;
+  left: auto;
+  bottom: auto;
+}
+
+.sidebar-glow--bright.sidebar-glow--bottom {
+  inset: -5px;
+  right: auto;
+  top: auto;
+}
+
+.sidebar-glow--bright::before {
+  background: conic-gradient(
+    from -45deg at center,
+    transparent 13%, 
+    hsla(var(--glow-hue, var(--glass-hue1)), 100%, 80%, 0.9), 
+    transparent 37%
+  ) border-box;
+}
+
+.sidebar-glow--bright.sidebar-glow--bottom::before {
+  background: conic-gradient(
+    from 135deg at center,
+    transparent 13%, 
+    hsla(var(--glow-hue, var(--glass-hue2)), 100%, 80%, 0.9), 
+    transparent 37%
+  ) border-box;
+}
+
+.sidebar-glow--bright::after {
+  content: none;
+}
+
+/* =============================================================================
+   Neon Glow Animations
+   ============================================================================= */
+
+@keyframes sidebarGlow {
+  0% {
+    opacity: 0;
+  }
+  3% {
+    opacity: 1;
+  }
+  10% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.7;
+  }
+  16% {
+    opacity: 0.3;
+    animation-timing-function: var(--glass-ease);
+  }
+  100% {
+    opacity: 1;
+    animation-timing-function: var(--glass-ease);
+  }
+}
+
+/* Subtle continuous pulse for the glows */
+@keyframes sidebarGlowPulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* After initial animation, keep a gentle pulse */
+.sidebar-glow,
+.sidebar-shine {
+  animation-fill-mode: forwards;
+}
+
+/* =============================================================================
+   Inner border glow on sidebar right edge
+   ============================================================================= */
+
+.app-sidebar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 1px;
+  z-index: 11;
+  background: linear-gradient(
+    to bottom,
+    hsla(var(--glass-hue1), 60%, 70%, 0) 0%,
+    hsla(var(--glass-hue1), 60%, 70%, 0.4) 20%,
+    hsla(var(--glass-hue1), 60%, 70%, 0.1) 40%,
+    hsla(var(--glass-hue2), 60%, 70%, 0.1) 60%,
+    hsla(var(--glass-hue2), 60%, 70%, 0.4) 80%,
+    hsla(var(--glass-hue2), 60%, 70%, 0) 100%
+  );
+  pointer-events: none;
 }
 
 .app-sidebar--collapsed {
@@ -37,25 +419,27 @@
 
 /* Collapse Toggle - Middle of right edge */
 .sidebar-collapse-toggle {
-  @apply absolute z-10 flex items-center justify-center;
+  @apply absolute z-20 flex items-center justify-center;
   @apply w-6 h-6 rounded-md;
   @apply text-neutral-400 hover:text-white;
   @apply transition-colors cursor-pointer;
-  background-color: #162236;
-  border: 1px solid rgba(56, 89, 138, 0.3);
+  background-color: hsla(var(--glass-hue2), 25%, 12%, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid hsla(var(--glass-hue1), 30%, 40%, 0.3);
   top: 50%;
   right: -12px;
   transform: translateY(-50%);
 }
 
 .sidebar-collapse-toggle:hover {
-  background-color: #1e3050;
+  background-color: hsla(var(--glass-hue2), 25%, 18%, 0.9);
+  border-color: hsla(var(--glass-hue1), 40%, 50%, 0.5);
 }
 
 /* Sidebar Header */
 .sidebar-header {
   @apply flex items-center px-4 py-4;
-  border-bottom: 1px solid rgba(56, 89, 138, 0.25);
+  border-bottom: 1px solid hsla(var(--glass-hue2), 20%, 30%, 0.25);
 }
 
 .sidebar-logo {
@@ -76,7 +460,7 @@
 /* Project Section */
 .sidebar-project {
   @apply px-3 py-3;
-  border-bottom: 1px solid rgba(56, 89, 138, 0.25);
+  border-bottom: 1px solid hsla(var(--glass-hue2), 20%, 30%, 0.25);
 }
 
 .sidebar-back-btn {
@@ -87,7 +471,7 @@
 }
 
 .sidebar-back-btn:hover {
-  background-color: rgba(56, 89, 138, 0.2);
+  background-color: hsla(var(--glass-hue1), 40%, 40%, 0.15);
 }
 
 .sidebar-project-name {
@@ -133,7 +517,7 @@
 }
 
 .sidebar-nav-item:hover {
-  background-color: rgba(56, 89, 138, 0.2);
+  background-color: hsla(var(--glass-hue1), 40%, 40%, 0.15);
 }
 
 .sidebar-nav-item--active {
@@ -182,7 +566,7 @@
 }
 
 .sidebar-submenu-item:hover {
-  background-color: rgba(56, 89, 138, 0.2);
+  background-color: hsla(var(--glass-hue1), 40%, 40%, 0.15);
 }
 
 .sidebar-submenu-item--active {
@@ -202,7 +586,7 @@
 .sidebar-submenu-badge {
   @apply ml-auto px-1.5 py-0.5 rounded-md text-xs font-medium;
   @apply text-neutral-400;
-  background-color: rgba(56, 89, 138, 0.25);
+  background-color: hsla(var(--glass-hue2), 30%, 30%, 0.25);
   font-size: 0.6875rem;
 }
 
@@ -218,7 +602,7 @@
 /* Sidebar Footer */
 .sidebar-footer {
   @apply px-2 py-3 space-y-1;
-  border-top: 1px solid rgba(56, 89, 138, 0.25);
+  border-top: 1px solid hsla(var(--glass-hue2), 20%, 30%, 0.25);
 }
 
 .sidebar-footer-btn {
@@ -229,7 +613,7 @@
 }
 
 .sidebar-footer-btn:hover {
-  background-color: rgba(56, 89, 138, 0.2);
+  background-color: hsla(var(--glass-hue1), 40%, 40%, 0.15);
 }
 
 .sidebar-footer-icon {
@@ -272,23 +656,76 @@
 }
 
 /* =============================================================================
-   Light Theme
+   Light Theme — Glass effect with lighter hues
    ============================================================================= */
 
 .light-theme .app-sidebar,
 [data-theme="light"] .app-sidebar {
-  @apply bg-white border-r border-neutral-200;
+  --glass-hue1: 330;
+  --glass-hue2: 280;
+  
+  background: 
+    linear-gradient(
+      195deg, 
+      hsla(var(--glass-hue1), 30%, 85%, 0.65), 
+      hsla(var(--glass-hue1), 30%, 95%, 0) 40%
+    ), 
+    linear-gradient(
+      15deg, 
+      hsla(var(--glass-hue2), 30%, 85%, 0.55), 
+      hsla(var(--glass-hue2), 30%, 95%, 0) 40%
+    ), 
+    linear-gradient(
+      hsla(0, 0%, 100%, 0.78)
+    );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right-color: hsla(var(--glass-hue2), 20%, 60%, 0.25);
+  box-shadow: 
+    hsla(var(--glass-hue2), 20%, 50%, 0.1) 4px 0 16px -8px,
+    hsla(var(--glass-hue2), 20%, 50%, 0.05) 8px 0 36px -14px;
+}
+
+.light-theme .app-sidebar::before,
+[data-theme="light"] .app-sidebar::before {
+  background: linear-gradient(
+    to bottom,
+    hsla(var(--glass-hue1), 40%, 50%, 0) 0%,
+    hsla(var(--glass-hue1), 40%, 50%, 0.2) 20%,
+    hsla(var(--glass-hue1), 40%, 50%, 0.05) 40%,
+    hsla(var(--glass-hue2), 40%, 50%, 0.05) 60%,
+    hsla(var(--glass-hue2), 40%, 50%, 0.2) 80%,
+    hsla(var(--glass-hue2), 40%, 50%, 0) 100%
+  );
+}
+
+.light-theme .sidebar-shine,
+[data-theme="light"] .sidebar-shine {
+  opacity: 0.5;
+}
+
+.light-theme .sidebar-glow,
+[data-theme="light"] .sidebar-glow {
+  opacity: 0.35;
 }
 
 .light-theme .sidebar-collapse-toggle,
 [data-theme="light"] .sidebar-collapse-toggle {
-  @apply bg-white border-neutral-300 text-neutral-500;
-  @apply hover:bg-neutral-100 hover:text-neutral-700;
+  background-color: hsla(0, 0%, 100%, 0.85);
+  backdrop-filter: blur(8px);
+  border-color: hsla(var(--glass-hue2), 20%, 60%, 0.3);
+  @apply text-neutral-500 hover:text-neutral-700;
+}
+
+.light-theme .sidebar-collapse-toggle:hover,
+[data-theme="light"] .sidebar-collapse-toggle:hover {
+  background-color: hsla(0, 0%, 100%, 0.95);
+  border-color: hsla(var(--glass-hue1), 30%, 50%, 0.4);
 }
 
 .light-theme .sidebar-header,
 [data-theme="light"] .sidebar-header {
-  @apply border-b border-neutral-200;
+  border-bottom-color: hsla(var(--glass-hue2), 15%, 60%, 0.2);
 }
 
 .light-theme .sidebar-logo-text,
@@ -298,12 +735,17 @@
 
 .light-theme .sidebar-project,
 [data-theme="light"] .sidebar-project {
-  @apply border-b border-neutral-200;
+  border-bottom-color: hsla(var(--glass-hue2), 15%, 60%, 0.2);
 }
 
 .light-theme .sidebar-back-btn,
 [data-theme="light"] .sidebar-back-btn {
-  @apply text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100;
+  @apply text-neutral-500 hover:text-neutral-900;
+}
+
+.light-theme .sidebar-back-btn:hover,
+[data-theme="light"] .sidebar-back-btn:hover {
+  background-color: hsla(var(--glass-hue1), 30%, 50%, 0.1);
 }
 
 .light-theme .sidebar-project-name,
@@ -323,27 +765,49 @@
 
 .light-theme .sidebar-nav-item,
 [data-theme="light"] .sidebar-nav-item {
-  @apply text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100;
+  @apply text-neutral-600 hover:text-neutral-900;
+}
+
+.light-theme .sidebar-nav-item:hover,
+[data-theme="light"] .sidebar-nav-item:hover {
+  background-color: hsla(var(--glass-hue1), 30%, 50%, 0.1);
 }
 
 .light-theme .sidebar-nav-item--active,
 [data-theme="light"] .sidebar-nav-item--active {
-  @apply bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700;
+  background-color: hsla(var(--glass-hue1), 50%, 50%, 0.12);
+  @apply text-blue-600;
+}
+
+.light-theme .sidebar-nav-item--active:hover,
+[data-theme="light"] .sidebar-nav-item--active:hover {
+  background-color: hsla(var(--glass-hue1), 50%, 50%, 0.18);
+  @apply text-blue-700;
 }
 
 .light-theme .sidebar-footer,
 [data-theme="light"] .sidebar-footer {
-  @apply border-t border-neutral-200;
+  border-top-color: hsla(var(--glass-hue2), 15%, 60%, 0.2);
 }
 
 .light-theme .sidebar-footer-btn,
 [data-theme="light"] .sidebar-footer-btn {
-  @apply text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100;
+  @apply text-neutral-600 hover:text-neutral-900;
+}
+
+.light-theme .sidebar-footer-btn:hover,
+[data-theme="light"] .sidebar-footer-btn:hover {
+  background-color: hsla(var(--glass-hue1), 30%, 50%, 0.1);
 }
 
 .light-theme .sidebar-logout-btn,
 [data-theme="light"] .sidebar-logout-btn {
-  @apply hover:bg-red-50 hover:text-red-600;
+  @apply hover:text-red-600;
+}
+
+.light-theme .sidebar-logout-btn:hover,
+[data-theme="light"] .sidebar-logout-btn:hover {
+  background-color: hsla(0, 60%, 50%, 0.1);
 }
 
 .light-theme .sidebar-user-email,
@@ -359,22 +823,36 @@
 /* Sub-menu Light Theme */
 .light-theme .sidebar-submenu-item,
 [data-theme="light"] .sidebar-submenu-item {
-  @apply text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100;
+  @apply text-neutral-500 hover:text-neutral-900;
+}
+
+.light-theme .sidebar-submenu-item:hover,
+[data-theme="light"] .sidebar-submenu-item:hover {
+  background-color: hsla(var(--glass-hue1), 30%, 50%, 0.1);
 }
 
 .light-theme .sidebar-submenu-item--active,
 [data-theme="light"] .sidebar-submenu-item--active {
-  @apply bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700;
+  background-color: hsla(var(--glass-hue1), 50%, 50%, 0.1);
+  @apply text-blue-600;
+}
+
+.light-theme .sidebar-submenu-item--active:hover,
+[data-theme="light"] .sidebar-submenu-item--active:hover {
+  background-color: hsla(var(--glass-hue1), 50%, 50%, 0.16);
+  @apply text-blue-700;
 }
 
 .light-theme .sidebar-submenu-badge,
 [data-theme="light"] .sidebar-submenu-badge {
-  @apply bg-neutral-100 text-neutral-500;
+  background-color: hsla(var(--glass-hue2), 20%, 50%, 0.1);
+  @apply text-neutral-500;
 }
 
 .light-theme .sidebar-submenu-item--active .sidebar-submenu-badge,
 [data-theme="light"] .sidebar-submenu-item--active .sidebar-submenu-badge {
-  @apply bg-blue-100 text-blue-600;
+  background-color: hsla(var(--glass-hue1), 40%, 50%, 0.15);
+  @apply text-blue-600;
 }
 
 /* =============================================================================

@@ -233,6 +233,14 @@ export default function AppSidebar({
         className,
       )}
     >
+      {/* Neon Glass Glow Elements */}
+      <span className="sidebar-shine sidebar-shine--top" />
+      <span className="sidebar-shine sidebar-shine--bottom" />
+      <span className="sidebar-glow sidebar-glow--top" />
+      <span className="sidebar-glow sidebar-glow--bottom" />
+      <span className="sidebar-glow sidebar-glow--bright sidebar-glow--top" />
+      <span className="sidebar-glow sidebar-glow--bright sidebar-glow--bottom" />
+
       {/* Collapse Button - Center of right edge */}
       <button
         className="sidebar-collapse-toggle"
