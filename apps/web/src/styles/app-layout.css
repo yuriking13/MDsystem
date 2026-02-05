@@ -68,19 +68,29 @@
   @apply tracking-tight;
 }
 
-/* Back Button */
-.sidebar-back {
-  @apply px-3 py-2 border-b border-neutral-800;
+/* Project Section */
+.sidebar-project {
+  @apply px-3 py-3 border-b border-neutral-800;
 }
 
 .sidebar-back-btn {
   @apply flex items-center gap-2 w-full px-2 py-1.5 rounded-lg;
   @apply text-xs text-neutral-400 hover:text-white;
   @apply hover:bg-neutral-800 transition-colors cursor-pointer;
+  @apply bg-transparent border-0;
+}
+
+.sidebar-project-name {
+  @apply mt-2 px-2 text-sm font-semibold text-white;
+  @apply truncate;
 }
 
 .app-sidebar--collapsed .sidebar-back-btn {
   @apply justify-center px-0;
+}
+
+.app-sidebar--collapsed .sidebar-project-name {
+  @apply hidden;
 }
 
 /* Sidebar Navigation */
@@ -206,14 +216,19 @@
   @apply text-neutral-900;
 }
 
-.light-theme .sidebar-back,
-[data-theme="light"] .sidebar-back {
+.light-theme .sidebar-project,
+[data-theme="light"] .sidebar-project {
   @apply border-b border-neutral-200;
 }
 
 .light-theme .sidebar-back-btn,
 [data-theme="light"] .sidebar-back-btn {
   @apply text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100;
+}
+
+.light-theme .sidebar-project-name,
+[data-theme="light"] .sidebar-project-name {
+  @apply text-neutral-900;
 }
 
 .light-theme .sidebar-nav-item,

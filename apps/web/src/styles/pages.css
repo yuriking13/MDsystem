@@ -9,6 +9,29 @@
   @apply p-6 lg:p-8 max-w-7xl mx-auto;
 }
 
+/* Project Page Header */
+.project-page-header {
+  @apply mb-6;
+}
+
+.project-page-title h1 {
+  @apply text-xl font-bold text-white mb-1;
+}
+
+.project-page-meta {
+  @apply text-xs text-neutral-400;
+}
+
+.light-theme .project-page-title h1,
+[data-theme="light"] .project-page-title h1 {
+  @apply text-neutral-900;
+}
+
+.light-theme .project-page-meta,
+[data-theme="light"] .project-page-meta {
+  @apply text-neutral-500;
+}
+
 /* Page Header */
 .page-header {
   @apply flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8;

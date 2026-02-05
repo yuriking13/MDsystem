@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { NavLink, useLocation, useParams, useNavigate } from "react-router-dom";
+import {
+  NavLink,
+  useLocation,
+  useParams,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom";
 import { cn } from "../design-system/utils/cn";
 import {
   FolderIcon,
@@ -25,18 +31,23 @@ interface NavItem {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
-  path: string;
-  badge?: number;
+  tab?: string;
+  path?: string;
 }
 
 interface AppSidebarProps {
   className?: string;
+  projectName?: string;
 }
 
-export default function AppSidebar({ className }: AppSidebarProps) {
+export default function AppSidebar({
+  className,
+  projectName,
+}: AppSidebarProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { id: projectId } = useParams<{ id: string }>();
   const [collapsed, setCollapsed] = useState(false);
   const [isDark, setIsDark] = useState(() => {
@@ -46,6 +57,7 @@ export default function AppSidebar({ className }: AppSidebarProps) {
 
   // Check if we're inside a project
   const isInProject = location.pathname.startsWith("/projects/") && projectId;
+  const currentTab = searchParams.get("tab") || "articles";
 
   // Main navigation items
   const mainNavItems: NavItem[] = [
@@ -75,43 +87,39 @@ export default function AppSidebar({ className }: AppSidebarProps) {
       id: "articles",
       label: "База статей",
       icon: ArchiveBoxIcon,
-      path: `/projects/${projectId}?tab=articles`,
+      tab: "articles",
     },
     {
       id: "documents",
       label: "Документы",
       icon: DocumentTextIcon,
-      path: `/projects/${projectId}?tab=documents`,
+      tab: "documents",
     },
     {
       id: "files",
       label: "Файлы",
       icon: FolderOpenIcon,
-      path: `/projects/${projectId}?tab=files`,
+      tab: "files",
     },
     {
       id: "statistics",
       label: "Статистика",
       icon: ChartBarIcon,
-      path: `/projects/${projectId}?tab=statistics`,
+      tab: "statistics",
     },
     {
       id: "graph",
       label: "Граф цитирований",
       icon: ShareIcon,
-      path: `/projects/${projectId}?tab=graph`,
+      tab: "graph",
     },
     {
-      id: "team-settings",
+      id: "team",
       label: "Команда и настройки",
       icon: UserGroupIcon,
-      path: `/projects/${projectId}?tab=team`,
+      tab: "team",
     },
   ];
-
-  // Get current tab from URL
-  const searchParams = new URLSearchParams(location.search);
-  const currentTab = searchParams.get("tab") || "articles";
 
   const toggleTheme = () => {
     const newIsDark = !isDark;
@@ -156,10 +164,10 @@ export default function AppSidebar({ className }: AppSidebarProps) {
   };
 
   const handleNavClick = (item: NavItem) => {
-    if (item.path.includes("?tab=")) {
-      const [basePath, query] = item.path.split("?");
-      navigate(`${basePath}?${query}`);
-    } else {
+    if (item.tab) {
+      // Update URL search params for project tabs
+      setSearchParams({ tab: item.tab });
+    } else if (item.path) {
       navigate(item.path);
     }
   };
@@ -197,17 +205,22 @@ export default function AppSidebar({ className }: AppSidebarProps) {
         </div>
       </div>
 
-      {/* Back to Projects (when in project) */}
+      {/* Project Info (when in project) */}
       {isInProject && (
-        <div className="sidebar-back">
+        <div className="sidebar-project">
           <button
             className="sidebar-back-btn"
             onClick={() => navigate("/projects")}
             title="Назад к проектам"
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            {!collapsed && <span>Назад к проектам</span>}
+            {!collapsed && <span>К проектам</span>}
           </button>
+          {!collapsed && projectName && (
+            <div className="sidebar-project-name" title={projectName}>
+              {projectName}
+            </div>
+          )}
         </div>
       )}
 
@@ -216,10 +229,8 @@ export default function AppSidebar({ className }: AppSidebarProps) {
         <ul className="sidebar-nav-list">
           {navItems.map((item) => {
             const isActive = isInProject
-              ? item.id === currentTab ||
-                (item.id === "team-settings" &&
-                  (currentTab === "team" || currentTab === "settings"))
-              : location.pathname.startsWith(item.path);
+              ? item.tab === currentTab
+              : location.pathname.startsWith(item.path || "");
             const Icon = item.icon;
 
             return (
@@ -234,12 +245,7 @@ export default function AppSidebar({ className }: AppSidebarProps) {
                 >
                   <Icon className="sidebar-nav-icon" />
                   {!collapsed && (
-                    <>
-                      <span className="sidebar-nav-label">{item.label}</span>
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <span className="sidebar-nav-badge">{item.badge}</span>
-                      )}
-                    </>
+                    <span className="sidebar-nav-label">{item.label}</span>
                   )}
                 </button>
               </li>

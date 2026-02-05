@@ -1,8 +1,21 @@
-import React from "react";
+import React, { createContext, useContext, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
-import { cn } from "../design-system/utils/cn";
 import { useAuth } from "../lib/AuthContext";
+
+interface ProjectContextType {
+  projectName: string | null;
+  setProjectName: (name: string | null) => void;
+}
+
+const ProjectContext = createContext<ProjectContextType>({
+  projectName: null,
+  setProjectName: () => {},
+});
+
+export function useProjectContext() {
+  return useContext(ProjectContext);
+}
 
 interface AppLayoutProps {
   children?: React.ReactNode;
@@ -15,6 +28,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { token } = useAuth();
   const location = useLocation();
+  const [projectName, setProjectName] = useState<string | null>(null);
 
   // Don't show sidebar on login/register/admin pages
   const hideSidebar =
@@ -30,9 +44,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className="app-layout">
-      <AppSidebar />
-      <main className="app-main">{children || <Outlet />}</main>
-    </div>
+    <ProjectContext.Provider value={{ projectName, setProjectName }}>
+      <div className="app-layout">
+        <AppSidebar projectName={projectName || undefined} />
+        <main className="app-main">{children || <Outlet />}</main>
+      </div>
+    </ProjectContext.Provider>
   );
 }
