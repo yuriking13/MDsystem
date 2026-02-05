@@ -1,0 +1,241 @@
+/* =============================================================================
+   App Layout & Sidebar Styles
+   Left navigation sidebar with consistent theming
+   ============================================================================= */
+
+/* App Layout Container */
+.app-layout {
+  @apply flex min-h-screen;
+  @apply bg-neutral-50 dark:bg-neutral-950;
+}
+
+.app-main {
+  @apply flex-1 overflow-auto;
+  @apply bg-neutral-50 dark:bg-neutral-950;
+  min-height: 100vh;
+}
+
+/* =============================================================================
+   App Sidebar
+   ============================================================================= */
+
+.app-sidebar {
+  @apply flex flex-col h-screen sticky top-0;
+  @apply bg-neutral-900 dark:bg-neutral-950;
+  @apply border-r border-neutral-800 dark:border-neutral-800;
+  width: 260px;
+  transition: width 200ms ease-in-out;
+}
+
+.app-sidebar--collapsed {
+  width: 72px;
+}
+
+/* Sidebar Header */
+.sidebar-header {
+  @apply flex items-center justify-between px-4 py-4;
+  @apply border-b border-neutral-800;
+}
+
+.sidebar-logo {
+  @apply flex items-center gap-3;
+}
+
+.sidebar-logo-icon {
+  @apply flex items-center justify-center w-10 h-10 rounded-xl;
+  @apply bg-gradient-to-br from-blue-500 to-blue-600;
+  @apply text-white;
+}
+
+.sidebar-logo-text {
+  @apply text-lg font-bold text-white;
+  @apply tracking-tight;
+}
+
+.sidebar-collapse-btn {
+  @apply p-2 rounded-lg;
+  @apply text-neutral-400 hover:text-white;
+  @apply hover:bg-neutral-800;
+  @apply transition-colors;
+}
+
+.app-sidebar--collapsed .sidebar-collapse-btn {
+  @apply absolute right-2 top-4;
+}
+
+/* Sidebar Navigation */
+.sidebar-nav {
+  @apply flex-1 py-4 px-3 overflow-y-auto;
+}
+
+.sidebar-nav-list {
+  @apply flex flex-col gap-1;
+}
+
+.sidebar-nav-item {
+  @apply flex items-center gap-3 px-3 py-2.5 rounded-xl;
+  @apply text-neutral-400 hover:text-white;
+  @apply hover:bg-neutral-800;
+  @apply transition-all duration-150;
+  @apply cursor-pointer no-underline;
+}
+
+.sidebar-nav-item--active {
+  @apply bg-blue-600/20 text-blue-400;
+  @apply hover:bg-blue-600/30 hover:text-blue-300;
+}
+
+.sidebar-nav-icon {
+  @apply w-5 h-5 shrink-0;
+}
+
+.sidebar-nav-label {
+  @apply text-sm font-medium;
+  @apply whitespace-nowrap;
+}
+
+.sidebar-nav-badge {
+  @apply ml-auto px-2 py-0.5 rounded-full text-xs font-medium;
+  @apply bg-blue-500/20 text-blue-400;
+}
+
+/* Collapsed state - center icons */
+.app-sidebar--collapsed .sidebar-nav-item {
+  @apply justify-center px-2;
+}
+
+.app-sidebar--collapsed .sidebar-logo {
+  @apply justify-center;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  @apply px-3 py-4 space-y-2;
+  @apply border-t border-neutral-800;
+}
+
+.sidebar-footer-btn {
+  @apply flex items-center gap-3 w-full px-3 py-2.5 rounded-xl;
+  @apply text-neutral-400 hover:text-white;
+  @apply hover:bg-neutral-800;
+  @apply transition-colors;
+  @apply cursor-pointer;
+}
+
+.sidebar-footer-icon {
+  @apply w-5 h-5 shrink-0;
+}
+
+.sidebar-footer-label {
+  @apply text-sm font-medium;
+  @apply whitespace-nowrap;
+}
+
+.sidebar-logout-btn {
+  @apply hover:bg-red-500/20 hover:text-red-400;
+}
+
+/* User Profile */
+.sidebar-user {
+  @apply flex items-center gap-3 px-3 py-2.5;
+}
+
+.sidebar-user-avatar {
+  @apply text-neutral-400;
+}
+
+.sidebar-user-info {
+  @apply flex-1 min-w-0;
+}
+
+.sidebar-user-email {
+  @apply text-sm text-neutral-400 truncate block;
+}
+
+/* Collapsed state - center icons */
+.app-sidebar--collapsed .sidebar-footer-btn {
+  @apply justify-center px-2;
+}
+
+.app-sidebar--collapsed .sidebar-user {
+  @apply justify-center px-2;
+}
+
+/* =============================================================================
+   Light Theme Overrides
+   ============================================================================= */
+
+.light-theme .app-sidebar,
+[data-theme="light"] .app-sidebar {
+  @apply bg-white border-r border-neutral-200;
+}
+
+.light-theme .sidebar-header,
+[data-theme="light"] .sidebar-header {
+  @apply border-b border-neutral-200;
+}
+
+.light-theme .sidebar-logo-text,
+[data-theme="light"] .sidebar-logo-text {
+  @apply text-neutral-900;
+}
+
+.light-theme .sidebar-collapse-btn,
+[data-theme="light"] .sidebar-collapse-btn {
+  @apply text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100;
+}
+
+.light-theme .sidebar-nav-item,
+[data-theme="light"] .sidebar-nav-item {
+  @apply text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100;
+}
+
+.light-theme .sidebar-nav-item--active,
+[data-theme="light"] .sidebar-nav-item--active {
+  @apply bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700;
+}
+
+.light-theme .sidebar-footer,
+[data-theme="light"] .sidebar-footer {
+  @apply border-t border-neutral-200;
+}
+
+.light-theme .sidebar-footer-btn,
+[data-theme="light"] .sidebar-footer-btn {
+  @apply text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100;
+}
+
+.light-theme .sidebar-logout-btn,
+[data-theme="light"] .sidebar-logout-btn {
+  @apply hover:bg-red-50 hover:text-red-600;
+}
+
+.light-theme .sidebar-user-email,
+[data-theme="light"] .sidebar-user-email {
+  @apply text-neutral-600;
+}
+
+.light-theme .sidebar-user-avatar,
+[data-theme="light"] .sidebar-user-avatar {
+  @apply text-neutral-500;
+}
+
+/* =============================================================================
+   Responsive
+   ============================================================================= */
+
+@media (max-width: 768px) {
+  .app-sidebar {
+    @apply fixed left-0 top-0 z-50;
+    @apply -translate-x-full;
+    transition: transform 200ms ease-in-out, width 200ms ease-in-out;
+  }
+
+  .app-sidebar--open {
+    @apply translate-x-0;
+  }
+
+  .app-sidebar--collapsed {
+    width: 260px;
+  }
+}

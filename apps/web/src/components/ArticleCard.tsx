@@ -3,8 +3,6 @@ import { cn } from "../design-system/utils/cn";
 import {
   CheckIcon,
   XMarkIcon,
-  StarIcon,
-  DocumentTextIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   ArrowTopRightOnSquareIcon,
@@ -13,10 +11,7 @@ import {
   ClipboardDocumentIcon,
   LanguageIcon,
   ChartBarIcon,
-  EllipsisHorizontalIcon,
-  TagIcon,
 } from "@heroicons/react/24/outline";
-import { StarIcon as StarIconSolid } from "@heroicons/react/24/solid";
 
 export interface ArticleAuthor {
   name: string;
@@ -67,41 +62,51 @@ interface ArticleCardProps {
   className?: string;
 }
 
-const STATUS_COLORS: Record<
+const STATUS_CONFIG: Record<
   ArticleData["status"],
   {
     bg: string;
+    border: string;
     text: string;
+    label: string;
     icon: React.ReactNode;
   }
 > = {
   candidate: {
-    bg: "bg-yellow-100 dark:bg-yellow-900/30",
-    text: "text-yellow-700 dark:text-yellow-300",
+    bg: "bg-amber-500/10 dark:bg-amber-500/20",
+    border: "border-l-amber-500",
+    text: "text-amber-600 dark:text-amber-400",
+    label: "Candidate",
     icon: <BeakerIcon className="w-3.5 h-3.5" />,
   },
   selected: {
-    bg: "bg-green-100 dark:bg-green-900/30",
-    text: "text-green-700 dark:text-green-300",
+    bg: "bg-emerald-500/10 dark:bg-emerald-500/20",
+    border: "border-l-emerald-500",
+    text: "text-emerald-600 dark:text-emerald-400",
+    label: "Selected",
     icon: <CheckIcon className="w-3.5 h-3.5" />,
   },
   excluded: {
-    bg: "bg-red-100 dark:bg-red-900/30",
-    text: "text-red-700 dark:text-red-300",
+    bg: "bg-rose-500/10 dark:bg-rose-500/20",
+    border: "border-l-rose-500",
+    text: "text-rose-600 dark:text-rose-400",
+    label: "Excluded",
     icon: <XMarkIcon className="w-3.5 h-3.5" />,
   },
   deleted: {
-    bg: "bg-neutral-100 dark:bg-neutral-800",
+    bg: "bg-neutral-500/10 dark:bg-neutral-500/20",
+    border: "border-l-neutral-400",
     text: "text-neutral-500 dark:text-neutral-400",
+    label: "Deleted",
     icon: <XMarkIcon className="w-3.5 h-3.5" />,
   },
 };
 
-const SOURCE_COLORS: Record<ArticleData["source"], string> = {
-  pubmed: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-  doaj: "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
+const SOURCE_STYLES: Record<ArticleData["source"], string> = {
+  pubmed: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
+  doaj: "bg-purple-500/10 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400",
   wiley:
-    "bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300",
+    "bg-orange-500/10 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400",
 };
 
 const PUB_TYPE_LABELS: Record<string, string> = {
@@ -129,8 +134,8 @@ export default function ArticleCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showActions, setShowActions] = useState(false);
 
-  const statusConfig = STATUS_COLORS[article.status];
-  const sourceColor = SOURCE_COLORS[article.source];
+  const statusConfig = STATUS_CONFIG[article.status];
+  const sourceStyle = SOURCE_STYLES[article.source];
 
   const displayTitle =
     language === "ru" && article.titleRu ? article.titleRu : article.title;
@@ -146,29 +151,36 @@ export default function ArticleCard({
   const hasMoreAuthors = article.authors.length > 3;
 
   return (
-    <div
+    <article
       className={cn(
-        "group relative bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700/50 rounded-xl overflow-hidden transition-all duration-200",
-        isSelected && "ring-2 ring-blue-500 border-blue-500",
-        "hover:shadow-lg hover:border-neutral-300 dark:hover:border-neutral-600",
+        "article-mosaic-card group",
+        "relative overflow-hidden rounded-2xl border-l-4 transition-all duration-200",
+        "bg-white dark:bg-neutral-900",
+        "border border-neutral-200 dark:border-neutral-800",
+        statusConfig.border,
+        isSelected &&
+          "ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-neutral-950",
+        "hover:shadow-lg hover:shadow-neutral-200/50 dark:hover:shadow-neutral-900/50",
         className,
       )}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
     >
       {/* Main Content */}
       <div className={cn("p-4", compact && "p-3")}>
-        {/* Top Row: Checkbox + Title + Status */}
+        {/* Top Row: Checkbox + Badges */}
         <div className="flex items-start gap-3">
           {/* Selection Checkbox */}
-          <label className="shrink-0 mt-1 cursor-pointer">
+          <label className="shrink-0 mt-0.5 cursor-pointer">
             <input
               type="checkbox"
               checked={isSelected}
               onChange={() => onSelect(article.id)}
-              className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-blue-500 focus:ring-blue-500/50"
+              className="w-4 h-4 rounded-md border-neutral-300 dark:border-neutral-600 text-blue-500 focus:ring-blue-500/30 focus:ring-offset-0"
             />
           </label>
 
-          {/* Title & Meta */}
+          {/* Content */}
           <div className="flex-1 min-w-0">
             {/* Badges Row */}
             <div className="flex flex-wrap items-center gap-1.5 mb-2">
@@ -181,18 +193,17 @@ export default function ArticleCard({
                 )}
               >
                 {statusConfig.icon}
-                {article.status.charAt(0).toUpperCase() +
-                  article.status.slice(1)}
+                {statusConfig.label}
               </span>
 
               {/* Source Badge */}
               <span
                 className={cn(
-                  "px-2 py-0.5 text-xs font-medium rounded-full",
-                  sourceColor,
+                  "px-2 py-0.5 text-xs font-semibold rounded-full uppercase tracking-wider",
+                  sourceStyle,
                 )}
               >
-                {article.source.toUpperCase()}
+                {article.source}
               </span>
 
               {/* Publication Type */}
@@ -205,21 +216,14 @@ export default function ArticleCard({
 
               {/* Statistics Badge */}
               {article.stats?.hasStatistics && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-teal-500/10 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400">
                   <ChartBarIcon className="w-3 h-3" />
                   Stats
                 </span>
               )}
 
-              {/* Full Text Badge */}
-              {article.hasFreeFullText && (
-                <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
-                  Free Full Text
-                </span>
-              )}
-
-              {/* Year */}
-              <span className="text-xs text-neutral-400 ml-auto">
+              {/* Year - Right aligned */}
+              <span className="ml-auto text-xs font-medium text-neutral-400 dark:text-neutral-500">
                 {article.year}
               </span>
             </div>
@@ -227,7 +231,9 @@ export default function ArticleCard({
             {/* Title */}
             <h3
               className={cn(
-                "text-base font-semibold text-neutral-900 dark:text-neutral-100 leading-snug cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors",
+                "text-base font-semibold leading-snug cursor-pointer transition-colors",
+                "text-neutral-900 dark:text-neutral-100",
+                "hover:text-blue-600 dark:hover:text-blue-400",
                 compact && "text-sm",
               )}
               onClick={() => onOpenDetails?.(article.id)}
@@ -244,26 +250,33 @@ export default function ArticleCard({
             >
               <span className="truncate">
                 {authorsDisplay}
-                {hasMoreAuthors && ` +${article.authors.length - 3} more`}
+                {hasMoreAuthors && (
+                  <span className="text-neutral-400 dark:text-neutral-500">
+                    {" "}
+                    +{article.authors.length - 3}
+                  </span>
+                )}
               </span>
               {article.journal && (
                 <>
                   <span className="text-neutral-300 dark:text-neutral-600">
                     •
                   </span>
-                  <span className="truncate italic">{article.journal}</span>
+                  <span className="truncate italic text-neutral-500 dark:text-neutral-400">
+                    {article.journal}
+                  </span>
                 </>
               )}
             </div>
 
             {/* IDs Row */}
-            <div className="mt-2 flex items-center gap-3 text-xs text-neutral-500">
+            <div className="mt-2 flex items-center gap-4 text-xs">
               {article.pmid && (
                 <a
                   href={`https://pubmed.ncbi.nlm.nih.gov/${article.pmid}/`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:text-blue-500 transition-colors"
+                  className="inline-flex items-center gap-1 text-neutral-500 hover:text-blue-500 transition-colors"
                 >
                   PMID: {article.pmid}
                   <ArrowTopRightOnSquareIcon className="w-3 h-3" />
@@ -274,98 +287,83 @@ export default function ArticleCard({
                   href={`https://doi.org/${article.doi}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 hover:text-blue-500 transition-colors"
+                  className="inline-flex items-center gap-1 text-neutral-500 hover:text-blue-500 transition-colors"
                 >
-                  DOI:{" "}
-                  {article.doi.length > 30
-                    ? `${article.doi.slice(0, 30)}...`
-                    : article.doi}
+                  DOI
                   <ArrowTopRightOnSquareIcon className="w-3 h-3" />
                 </a>
               )}
-              {article.citationCount !== undefined && (
-                <span className="inline-flex items-center gap-1">
-                  <BookOpenIcon className="w-3 h-3" />
-                  {article.citationCount} citations
-                </span>
-              )}
+              {article.citationCount !== undefined &&
+                article.citationCount > 0 && (
+                  <span className="inline-flex items-center gap-1 text-neutral-500">
+                    <BookOpenIcon className="w-3 h-3" />
+                    {article.citationCount}
+                  </span>
+                )}
             </div>
 
-            {/* Tags */}
-            {article.tags && article.tags.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {article.tags.map((tag, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400"
+            {/* Abstract (Expandable) */}
+            {displayAbstract && !compact && (
+              <div className="mt-3">
+                <p
+                  className={cn(
+                    "text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed",
+                    !isExpanded && "line-clamp-2",
+                  )}
+                >
+                  {displayAbstract}
+                </p>
+                {displayAbstract.length > 200 && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="mt-1 text-xs font-medium text-blue-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition-colors"
                   >
-                    <TagIcon className="w-3 h-3" />
-                    {tag}
-                  </span>
-                ))}
+                    {isExpanded ? (
+                      <>
+                        <ChevronUpIcon className="w-3 h-3" />
+                        Show less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDownIcon className="w-3 h-3" />
+                        Show more
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Statistics Preview */}
+            {article.stats?.hasStatistics && isExpanded && (
+              <div className="mt-3 p-3 rounded-xl bg-teal-50 dark:bg-teal-900/20">
+                <h4 className="text-xs font-semibold text-teal-700 dark:text-teal-300 mb-1">
+                  Statistical Methods
+                </h4>
+                {article.stats.statisticalMethods && (
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400">
+                    {article.stats.statisticalMethods.join(", ")}
+                  </p>
+                )}
+                {article.stats.sampleSize && (
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1">
+                    Sample size: n={article.stats.sampleSize}
+                  </p>
+                )}
               </div>
             )}
           </div>
         </div>
-
-        {/* Abstract (Expandable) */}
-        {displayAbstract && !compact && (
-          <div className="mt-3 pl-7">
-            <div
-              className={cn(
-                "text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed",
-                !isExpanded && "line-clamp-2",
-              )}
-            >
-              {displayAbstract}
-            </div>
-            {displayAbstract.length > 200 && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="mt-1 text-xs text-blue-500 hover:text-blue-600 flex items-center gap-1"
-              >
-                {isExpanded ? (
-                  <>
-                    <ChevronUpIcon className="w-3 h-3" />
-                    Show less
-                  </>
-                ) : (
-                  <>
-                    <ChevronDownIcon className="w-3 h-3" />
-                    Show more
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Statistics Preview */}
-        {article.stats?.hasStatistics && isExpanded && (
-          <div className="mt-3 pl-7 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg text-sm">
-            <h4 className="font-medium text-emerald-700 dark:text-emerald-300 mb-1">
-              Statistical Methods
-            </h4>
-            {article.stats.statisticalMethods && (
-              <p className="text-neutral-600 dark:text-neutral-400 text-xs">
-                {article.stats.statisticalMethods.join(", ")}
-              </p>
-            )}
-            {article.stats.sampleSize && (
-              <p className="text-neutral-600 dark:text-neutral-400 text-xs mt-1">
-                Sample size: n={article.stats.sampleSize}
-              </p>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Actions Bar */}
+      {/* Actions Bar - Appears on hover */}
       <div
         className={cn(
-          "flex items-center justify-between px-4 py-2 bg-neutral-50 dark:bg-neutral-800/50 border-t border-neutral-200 dark:border-neutral-700/50",
-          "opacity-0 group-hover:opacity-100 transition-opacity",
-          showActions && "opacity-100",
+          "flex items-center justify-between px-4 py-2.5",
+          "bg-neutral-50 dark:bg-neutral-800/50",
+          "border-t border-neutral-100 dark:border-neutral-800",
+          "transition-all duration-200",
+          showActions || isSelected ? "opacity-100" : "opacity-0",
         )}
       >
         {/* Status Actions */}
@@ -374,10 +372,10 @@ export default function ArticleCard({
             onClick={() => onStatusChange(article.id, "selected")}
             disabled={article.status === "selected"}
             className={cn(
-              "p-1.5 rounded-lg transition-colors text-xs flex items-center gap-1",
+              "p-1.5 rounded-lg transition-all text-xs",
               article.status === "selected"
-                ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                : "hover:bg-green-100 dark:hover:bg-green-900/30 text-neutral-500 hover:text-green-600",
+                ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400"
+                : "text-neutral-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-400",
             )}
             title="Select"
           >
@@ -387,10 +385,10 @@ export default function ArticleCard({
             onClick={() => onStatusChange(article.id, "candidate")}
             disabled={article.status === "candidate"}
             className={cn(
-              "p-1.5 rounded-lg transition-colors text-xs flex items-center gap-1",
+              "p-1.5 rounded-lg transition-all text-xs",
               article.status === "candidate"
-                ? "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400"
-                : "hover:bg-yellow-100 dark:hover:bg-yellow-900/30 text-neutral-500 hover:text-yellow-600",
+                ? "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400"
+                : "text-neutral-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/30 dark:hover:text-amber-400",
             )}
             title="Mark as Candidate"
           >
@@ -400,10 +398,10 @@ export default function ArticleCard({
             onClick={() => onStatusChange(article.id, "excluded")}
             disabled={article.status === "excluded"}
             className={cn(
-              "p-1.5 rounded-lg transition-colors text-xs flex items-center gap-1",
+              "p-1.5 rounded-lg transition-all text-xs",
               article.status === "excluded"
-                ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                : "hover:bg-red-100 dark:hover:bg-red-900/30 text-neutral-500 hover:text-red-600",
+                ? "bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400"
+                : "text-neutral-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/30 dark:hover:text-rose-400",
             )}
             title="Exclude"
           >
@@ -416,7 +414,7 @@ export default function ArticleCard({
           {onTranslate && !article.titleRu && (
             <button
               onClick={() => onTranslate(article.id)}
-              className="p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-blue-500 transition-colors"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
               title="Translate"
             >
               <LanguageIcon className="w-4 h-4" />
@@ -425,7 +423,7 @@ export default function ArticleCard({
           {onDetectStats && !article.stats && (
             <button
               onClick={() => onDetectStats(article.id)}
-              className="p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-emerald-500 transition-colors"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-teal-500 hover:bg-teal-50 dark:hover:bg-teal-900/30 transition-colors"
               title="Detect Statistics"
             >
               <ChartBarIcon className="w-4 h-4" />
@@ -434,20 +432,14 @@ export default function ArticleCard({
           {onCopyToClipboard && (
             <button
               onClick={() => onCopyToClipboard(article.id)}
-              className="p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors"
+              className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-colors"
               title="Copy Citation"
             >
               <ClipboardDocumentIcon className="w-4 h-4" />
             </button>
           )}
-          <button
-            onClick={() => setShowActions(!showActions)}
-            className="p-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-500 transition-colors md:hidden"
-          >
-            <EllipsisHorizontalIcon className="w-4 h-4" />
-          </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

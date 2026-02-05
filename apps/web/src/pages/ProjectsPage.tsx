@@ -7,11 +7,19 @@ import {
   apiDeleteProject,
   type Project,
 } from "../lib/api";
-import { useAuth } from "../lib/AuthContext";
+import {
+  PlusIcon,
+  FolderIcon,
+  TrashIcon,
+  ArrowRightIcon,
+  CalendarIcon,
+  UserGroupIcon,
+  XMarkIcon,
+} from "@heroicons/react/24/outline";
+import { cn } from "../design-system/utils/cn";
 
 export default function ProjectsPage() {
   const nav = useNavigate();
-  const { logout } = useAuth();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +65,7 @@ export default function ProjectsPage() {
       setNewName("");
       setNewDesc("");
       setShowCreate(false);
-      setOk("Project created!");
+      setOk("Проект создан!");
       await load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -99,181 +107,240 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="container">
-      <div className="card">
-        <div className="row space">
-          <div>
-            <h1>My Projects</h1>
-            <p className="muted">Scientific research projects</p>
-          </div>
-          <div className="row gap">
-            <button
-              className="btn secondary"
-              onClick={() => nav("/settings")}
-              type="button"
-            >
-              Settings
-            </button>
-            <button className="btn secondary" onClick={logout} type="button">
-              Logout
-            </button>
-          </div>
+    <div className="page-container">
+      {/* Page Header */}
+      <header className="page-header">
+        <div>
+          <h1 className="page-title">Мои проекты</h1>
+          <p className="page-subtitle">Научно-исследовательские проекты</p>
         </div>
+        <button className="btn-primary" onClick={() => setShowCreate(true)}>
+          <PlusIcon className="w-5 h-5" />
+          Новый проект
+        </button>
+      </header>
 
-        {error && <div className="alert">{error}</div>}
-        {ok && <div className="ok">{ok}</div>}
+      {/* Alerts */}
+      {error && (
+        <div className="alert-error">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="alert-close">
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+      {ok && (
+        <div className="alert-success">
+          <span>{ok}</span>
+          <button onClick={() => setOk(null)} className="alert-close">
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
-        {/* Create button */}
-        {!showCreate && (
-          <div style={{ marginBottom: 16 }}>
-            <button
-              className="btn"
-              onClick={() => setShowCreate(true)}
-              type="button"
-            >
-              + New Project
-            </button>
-          </div>
-        )}
-
-        {/* Create form */}
-        {showCreate && (
-          <form
-            onSubmit={handleCreate}
-            className="card"
-            style={{ marginBottom: 16 }}
-          >
-            <h3>Create Project</h3>
-            <div className="stack">
-              <label className="stack">
-                <span>Project Name *</span>
-                <input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="e.g. PhD Thesis: Treatment Analysis"
-                  required
-                />
-              </label>
-              <label className="stack">
-                <span>Description (optional)</span>
-                <input
-                  value={newDesc}
-                  onChange={(e) => setNewDesc(e.target.value)}
-                  placeholder="Brief description of the research"
-                />
-              </label>
-              <div className="row gap">
-                <button className="btn" disabled={creating} type="submit">
-                  {creating ? "Creating…" : "Create"}
+      {/* Create form modal */}
+      {showCreate && (
+        <div className="modal-backdrop" onClick={() => setShowCreate(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2 className="modal-title">Создать проект</h2>
+              <button
+                className="modal-close"
+                onClick={() => setShowCreate(false)}
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreate}>
+              <div className="modal-body">
+                <label className="form-label">
+                  <span className="form-label-text">Название проекта *</span>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="например: Диссертация: Анализ терапии"
+                    required
+                    autoFocus
+                  />
+                </label>
+                <label className="form-label">
+                  <span className="form-label-text">
+                    Описание (опционально)
+                  </span>
+                  <textarea
+                    className="form-input form-textarea"
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    placeholder="Краткое описание исследования"
+                    rows={3}
+                  />
+                </label>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowCreate(false)}
+                >
+                  Отмена
                 </button>
                 <button
-                  className="btn secondary"
-                  onClick={() => setShowCreate(false)}
-                  type="button"
+                  type="submit"
+                  className="btn-primary"
+                  disabled={creating || !newName.trim()}
                 >
-                  Cancel
+                  {creating ? "Создание…" : "Создать проект"}
                 </button>
               </div>
-            </div>
-          </form>
-        )}
-
-        {/* Projects list */}
-        {loading ? (
-          <div className="muted">Loading projects…</div>
-        ) : projects.length === 0 ? (
-          <div className="muted">No projects yet. Create your first one!</div>
-        ) : (
-          <div className="projects-list">
-            {projects.map((p) => (
-              <div key={p.id} className="project-card">
-                <div className="row space">
-                  <div>
-                    <div className="project-name">{p.name}</div>
-                    {p.description && (
-                      <div className="muted" style={{ fontSize: 14 }}>
-                        {p.description}
-                      </div>
-                    )}
-                    <div
-                      className="muted"
-                      style={{ fontSize: 12, marginTop: 4 }}
-                    >
-                      Role: {p.role} • Updated:{" "}
-                      {new Date(p.updated_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                  <div className="row gap">
-                    <button
-                      className="btn"
-                      onClick={() => nav(`/projects/${p.id}`)}
-                      type="button"
-                    >
-                      Open
-                    </button>
-                    {p.role === "owner" && (
-                      <button
-                        className="btn secondary"
-                        onClick={() => openDeleteConfirm(p)}
-                        type="button"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+            </form>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Delete confirmation modal */}
-        {deleteTarget && (
-          <div className="modal-overlay">
-            <div className="modal">
-              <h3>Удаление проекта</h3>
+      {/* Projects grid */}
+      {loading ? (
+        <div className="loading-state">
+          <div className="loading-spinner" />
+          <span>Загрузка проектов…</span>
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="empty-state">
+          <FolderIcon className="empty-state-icon" />
+          <h3 className="empty-state-title">Нет проектов</h3>
+          <p className="empty-state-desc">
+            Создайте свой первый проект, чтобы начать работу
+          </p>
+          <button className="btn-primary" onClick={() => setShowCreate(true)}>
+            <PlusIcon className="w-5 h-5" />
+            Создать проект
+          </button>
+        </div>
+      ) : (
+        <div className="projects-grid">
+          {projects.map((p) => (
+            <article
+              key={p.id}
+              className="project-card"
+              onClick={() => nav(`/projects/${p.id}`)}
+            >
+              <div className="project-card-header">
+                <div className="project-card-icon">
+                  <FolderIcon className="w-6 h-6" />
+                </div>
+                <span
+                  className={cn(
+                    "project-role-badge",
+                    p.role === "owner" && "project-role-badge--owner",
+                    p.role === "editor" && "project-role-badge--editor",
+                    p.role === "viewer" && "project-role-badge--viewer",
+                  )}
+                >
+                  {p.role === "owner"
+                    ? "Владелец"
+                    : p.role === "editor"
+                      ? "Редактор"
+                      : "Читатель"}
+                </span>
+              </div>
+
+              <h3 className="project-card-title">{p.name}</h3>
+
+              {p.description && (
+                <p className="project-card-desc">{p.description}</p>
+              )}
+
+              <div className="project-card-meta">
+                <span className="project-meta-item">
+                  <CalendarIcon className="w-4 h-4" />
+                  {new Date(p.updated_at).toLocaleDateString("ru-RU")}
+                </span>
+              </div>
+
+              <div className="project-card-actions">
+                <button
+                  className="project-action-open"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nav(`/projects/${p.id}`);
+                  }}
+                >
+                  Открыть
+                  <ArrowRightIcon className="w-4 h-4" />
+                </button>
+                {p.role === "owner" && (
+                  <button
+                    className="project-action-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDeleteConfirm(p);
+                    }}
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <div className="modal-backdrop" onClick={closeDeleteConfirm}>
+          <div
+            className="modal-content modal-content--danger"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h2 className="modal-title">Удаление проекта</h2>
+              <button className="modal-close" onClick={closeDeleteConfirm}>
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="modal-body">
               <p>
                 Вы уверены что хотите удалить проект{" "}
                 <strong>"{deleteTarget.name}"</strong>?
               </p>
-              <p className="muted" style={{ fontSize: 13 }}>
+              <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
                 Это действие необратимо. Все данные проекта будут потеряны.
               </p>
-              <p style={{ marginTop: 12 }}>
-                Для подтверждения введите название проекта:
-              </p>
-              <input
-                value={deleteConfirmText}
-                onChange={(e) => setDeleteConfirmText(e.target.value)}
-                placeholder={deleteTarget.name}
-                style={{ marginBottom: 12 }}
-              />
-              {error && (
-                <div className="alert" style={{ marginBottom: 12 }}>
-                  {error}
-                </div>
-              )}
-              <div className="row gap">
-                <button
-                  className="btn danger"
-                  onClick={handleDelete}
-                  disabled={deleting || deleteConfirmText !== deleteTarget.name}
-                  type="button"
-                >
-                  {deleting ? "Удаление…" : "Удалить проект"}
-                </button>
-                <button
-                  className="btn secondary"
-                  onClick={closeDeleteConfirm}
-                  type="button"
-                >
-                  Отмена
-                </button>
-              </div>
+              <label className="form-label mt-4">
+                <span className="form-label-text">
+                  Для подтверждения введите название проекта:
+                </span>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder={deleteTarget.name}
+                />
+              </label>
+              {error && <div className="alert-error mt-4">{error}</div>}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={closeDeleteConfirm}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={handleDelete}
+                disabled={deleting || deleteConfirmText !== deleteTarget.name}
+              >
+                {deleting ? "Удаление…" : "Удалить проект"}
+              </button>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

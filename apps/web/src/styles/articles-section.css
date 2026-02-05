@@ -606,7 +606,25 @@
 }
 
 .articles-grid {
-  @apply grid grid-cols-1 lg:grid-cols-2 gap-3 p-4;
+  @apply grid gap-4 p-4;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .articles-grid {
+    grid-template-columns: 1fr;
+    @apply gap-3 p-3;
+  }
+}
+
+/* Mosaic Card Styles */
+.article-mosaic-card {
+  @apply flex flex-col;
+}
+
+.article-mosaic-card:hover {
+  @apply transform-gpu;
+  transform: translateY(-2px);
 }
 
 /* Empty State */

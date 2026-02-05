@@ -5,6 +5,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ToastProvider } from "./components/Toast";
 import { RequireAuth, useAuth } from "./lib/AuthContext";
 import { AdminAuthProvider, RequireAdmin } from "./lib/AdminContext";
+import AppLayout from "./components/AppLayout";
 
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import("./pages/LoginPage"));
@@ -43,120 +44,59 @@ function PageLoader() {
   );
 }
 
-function ThemeToggle() {
-  const [isLight, setIsLight] = useState(() => {
-    const theme = localStorage.getItem("theme");
-    console.log("Current theme from localStorage:", theme);
-    return theme === "light";
-  });
-
-  useEffect(() => {
-    console.log("Applying theme:", isLight ? "light" : "dark");
-    if (isLight) {
-      document.body.classList.add("light-theme");
-      localStorage.setItem("theme", "light");
-    } else {
-      document.body.classList.remove("light-theme");
-      localStorage.setItem("theme", "dark");
-    }
-  }, [isLight]);
-
-  return (
-    <button
-      className="theme-toggle-btn"
-      onClick={() => setIsLight(!isLight)}
-      title={isLight ? "Switch to Dark Mode" : "Switch to Light Mode"}
-    >
-      {isLight ? "Moon" : "Sun"}
-    </button>
-  );
-}
+// Theme is now managed by AppSidebar
 
 export default function App() {
-  console.log("App component is loading");
   const { token } = useAuth();
-  console.log("Auth token:", token ? "Present" : "Absent");
 
+  // Initialize theme on mount
   useEffect(() => {
-    console.log("App component mounted");
-    console.log("App component details:");
-    console.log(`  Token: ${token}`);
-    console.log(`  Window location: ${window.location.pathname}`);
-
-    return () => {
-      console.log("App component unmounting");
-    };
-  }, [token]);
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+      document.body.classList.add("light-theme");
+      document.body.classList.remove("dark");
+    } else {
+      document.documentElement.setAttribute("data-theme", "dark");
+      document.body.classList.add("dark");
+      document.body.classList.remove("light-theme");
+    }
+  }, []);
 
   return (
     <ErrorBoundary>
       <ToastProvider>
-        <ThemeToggle />
         {/* Show onboarding for authenticated users on first visit */}
         {token && <OnboardingTour />}
         <Suspense fallback={<PageLoader />}>
           <Routes>
+            {/* Public Routes (no sidebar) */}
             <Route
               path="/"
-              element={
-                <>
-                  {console.log("Rendering root redirect, token:", !!token)}
-                  <Navigate to={token ? "/projects" : "/login"} replace />
-                </>
-              }
+              element={<Navigate to={token ? "/projects" : "/login"} replace />}
             />
-            <Route
-              path="/login"
-              element={
-                <>
-                  {console.log("Rendering LoginPage route")}
-                  <LoginPage />
-                </>
-              }
-            />
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+            {/* Authenticated Routes (with sidebar) */}
             <Route
-              path="/projects"
               element={
                 <RequireAuth>
-                  <ProjectsPage />
+                  <AppLayout />
                 </RequireAuth>
               }
-            />
-            <Route
-              path="/projects/:id"
-              element={
-                <RequireAuth>
-                  <ProjectDetailPage />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/projects/:projectId/documents/:docId"
-              element={
-                <RequireAuth>
-                  <DocumentPage />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/settings"
-              element={
-                <RequireAuth>
-                  <SettingsPage />
-                </RequireAuth>
-              }
-            />
-            <Route
-              path="/docs"
-              element={
-                <RequireAuth>
-                  <DocumentationPage />
-                </RequireAuth>
-              }
-            />
+            >
+              <Route path="/projects" element={<ProjectsPage />} />
+              <Route path="/projects/:id" element={<ProjectDetailPage />} />
+              <Route
+                path="/projects/:projectId/documents/:docId"
+                element={<DocumentPage />}
+              />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/docs" element={<DocumentationPage />} />
+            </Route>
 
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLoginPage />} />
