@@ -1040,63 +1040,45 @@ export default function ArticlesSection({
   return (
     <div className="articles-page">
       {/* Header Toolbar */}
-      <div className="articles-toolbar">
-        <div className="articles-toolbar-left">
-          <h2 className="articles-title">
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-              />
-            </svg>
-            База статей
-            <span className="articles-count">({total})</span>
-          </h2>
-        </div>
-        <div className="articles-toolbar-right">
-          {canEdit && untranslatedCount > 0 && (
-            <button
-              className="articles-toolbar-btn"
-              onClick={handleTranslate}
-              disabled={translating}
-              type="button"
-              title={`Перевести ${untranslatedCount} статей без перевода`}
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+      <div className="mb-4 w-full">
+        <div className="relative overflow-hidden bg-white px-4 shadow-md dark:bg-gray-800 sm:rounded-lg">
+          <div className="flex flex-col space-y-3 py-3 md:flex-row md:items-center md:justify-between md:space-y-0 md:space-x-4">
+            <div>
+              <nav
+                className="mb-2 flex rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-700 dark:border-gray-600 dark:bg-gray-700"
+                aria-label="Breadcrumb"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                />
-              </svg>
-              {translating
-                ? "Переводим..."
-                : `Перевести (${untranslatedCount})`}
-            </button>
-          )}
-          {canEdit && (
-            <>
-              <button
-                className="articles-toolbar-btn"
-                onClick={() => setShowAddByDoiModal(true)}
-                type="button"
-                title="Добавить статью по DOI"
-              >
+                <ol className="inline-flex items-center space-x-1 md:space-x-3">
+                  <li className="inline-flex items-center">
+                    <span className="inline-flex items-center text-sm font-medium text-gray-700 dark:text-gray-300">
+                      База статей
+                    </span>
+                  </li>
+                  <li aria-current="page">
+                    <div className="flex items-center">
+                      <svg
+                        aria-hidden="true"
+                        className="h-5 w-5 text-gray-400"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2 dark:text-gray-400">
+                        Все статьи
+                      </span>
+                    </div>
+                  </li>
+                </ol>
+              </nav>
+              <h5 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
                 <svg
-                  className="w-4 h-4"
+                  className="h-5 w-5 text-gray-500 dark:text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1105,33 +1087,89 @@ export default function ArticlesSection({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 4v16m8-8H4"
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
                   />
                 </svg>
-                По DOI
-              </button>
-              <button
-                className="articles-toolbar-btn articles-toolbar-btn--primary"
-                onClick={() => setShowSearch(!showSearch)}
-                type="button"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                База статей
+                <span className="text-gray-500 dark:text-gray-400">
+                  ({total})
+                </span>
+              </h5>
+            </div>
+            <div className="flex flex-col items-start space-y-3 md:flex-row md:items-center md:space-y-0 md:space-x-3">
+              {canEdit && untranslatedCount > 0 && (
+                <button
+                  className="flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700"
+                  onClick={handleTranslate}
+                  disabled={translating}
+                  type="button"
+                  title={`Перевести ${untranslatedCount} статей без перевода`}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-                {showSearch ? "Скрыть поиск" : "Поиск статей"}
-              </button>
-            </>
-          )}
+                  <svg
+                    className="-ml-1 mr-1.5 h-3.5 w-3.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                    />
+                  </svg>
+                  {translating
+                    ? "Переводим..."
+                    : `Перевести (${untranslatedCount})`}
+                </button>
+              )}
+              {canEdit && (
+                <>
+                  <button
+                    className="flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 hover:text-primary-700 focus:z-10 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white dark:focus:ring-gray-700"
+                    onClick={() => setShowAddByDoiModal(true)}
+                    type="button"
+                    title="Добавить статью по DOI"
+                  >
+                    <svg
+                      className="-ml-1 mr-1.5 h-3.5 w-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    По DOI
+                  </button>
+                  <button
+                    className="flex items-center justify-center rounded-lg bg-primary-700 px-4 py-2 text-sm font-medium text-white hover:bg-primary-800 focus:outline-none focus:ring-4 focus:ring-primary-300 dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+                    onClick={() => setShowSearch(!showSearch)}
+                    type="button"
+                  >
+                    <svg
+                      className="-ml-1 mr-1.5 h-3.5 w-3.5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    {showSearch ? "Скрыть поиск" : "Поиск статей"}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
