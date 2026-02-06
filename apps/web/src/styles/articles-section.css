@@ -22,7 +22,7 @@
   background: transparent;
   border: none;
   border-radius: 0.75rem;
-  margin: 12px 40px 0 40px;
+  margin: 12px 60px 0 60px;
 }
 
 .light-theme .articles-header,
@@ -466,7 +466,7 @@
 .articles-grid {
   @apply grid gap-4;
   grid-template-columns: repeat(2, 1fr);
-  padding: 16px 40px;
+  padding: 16px 60px;
 }
 
 @media (max-width: 900px) {
@@ -709,7 +709,7 @@
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(56, 89, 138, 0.2);
   border-radius: 0.75rem;
-  margin: 8px 40px 0 40px;
+  margin: 8px 60px 0 60px;
 }
 
 .light-theme .articles-filters-container,
@@ -970,62 +970,83 @@
 
 /* =============================================================================
    Navigation Arrows
+   Стеклянные стрелки < и > для навигации между разделами базы статей.
+   Без видимого контейнера — пользователь видит только символы < и >.
+   Расположение: по центру зазора (60px) между sidebar/карточками и карточками/краем.
    ============================================================================= */
 
 .articles-nav-arrow {
   position: fixed;
   top: 50%;
   z-index: 9999;
-  padding: 16px 8px;
+  /* Минимальный padding только для области клика, контейнер невидим */
+  padding: 24px 6px;
   cursor: pointer;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  /* Без видимого контейнера — только символ */
+  background: transparent;
   border: none;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 32px;
-  font-weight: 300;
+  border-radius: 0;
+  /* Стеклянный полупрозрачный символ */
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 36px;
+  font-weight: 200;
   line-height: 1;
-  transition: color 150ms ease, background-color 150ms ease;
+  letter-spacing: 0;
+  transition: color 200ms ease, text-shadow 200ms ease;
+  /* Убираем outline при фокусе */
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .articles-nav-arrow:hover {
-  color: rgba(255, 255, 255, 0.9);
-  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
 }
 
-/* Левая стрелка: по центру зазора между sidebar и карточками статей */
-/* Грид карточек (.articles-grid) имеет padding: 16px 40px */
-/* Зазор от правого края сайдбара до левого края карточек = 40px */
-/* Центр зазора: sidebar_width + 20px, transform center-aligns the button */
+.articles-nav-arrow:active {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Левая стрелка: по центру зазора (60px) между правым краем sidebar и левым краем карточек */
+/* Центр зазора = sidebar_width + 30px, transform центрирует кнопку в этой точке */
 .articles-nav-arrow--left {
-  /* Развёрнутый сайдбар (240px): центр зазора = 240 + 20 = 260px */
-  left: calc(240px + 20px);
+  /* Развёрнутый сайдбар (240px): центр зазора = 240 + 30 = 270px */
+  left: calc(240px + 30px);
   transform: translate(-50%, -50%);
 }
 
 body.sidebar-collapsed .articles-nav-arrow--left {
-  /* Свёрнутый сайдбар (64px): центр зазора = 64 + 20 = 84px */
-  left: calc(64px + 20px);
+  /* Свёрнутый сайдбар (64px): центр зазора = 64 + 30 = 94px */
+  left: calc(64px + 30px);
 }
 
-/* Правая стрелка: по центру зазора между правым краем карточек и правым краем страницы */
-/* Зазор от правого края карточек до правого края viewport = 40px */
-/* Центр зазора: 20px от правого края, transform center-aligns the button */
+/* Правая стрелка: по центру зазора (60px) между правым краем карточек и правым краем viewport */
+/* Центр зазора: 30px от правого края viewport */
 .articles-nav-arrow--right {
-  right: 20px;
+  right: 30px;
   transform: translate(50%, -50%);
 }
 
+/* Светлая тема */
 .light-theme .articles-nav-arrow,
 [data-theme="light"] .articles-nav-arrow {
-  background: rgba(0, 0, 0, 0.05);
-  color: rgba(0, 0, 0, 0.4);
+  color: rgba(0, 0, 0, 0.25);
 }
 
 .light-theme .articles-nav-arrow:hover,
 [data-theme="light"] .articles-nav-arrow:hover {
-  color: rgba(0, 0, 0, 0.7);
-  background: rgba(0, 0, 0, 0.08);
+  color: rgba(0, 0, 0, 0.55);
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+}
+
+.light-theme .articles-nav-arrow:active,
+[data-theme="light"] .articles-nav-arrow:active {
+  color: rgba(0, 0, 0, 0.75);
+}
+
+/* На мобильных скрываем стрелки — недостаточно места */
+@media (max-width: 900px) {
+  .articles-nav-arrow {
+    display: none;
+  }
 }
