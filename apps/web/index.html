@@ -4,33 +4,36 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MDsystem - Thesis Management</title>
-    <script>
-      console.log("📄 HTML документ загружается...");
-      console.log("🌐 User Agent:", navigator.userAgent);
-      console.log("📱 Размер окна:", window.innerWidth + "x" + window.innerHeight);
-      
-      window.addEventListener('DOMContentLoaded', () => {
-        console.log("✅ DOMContentLoaded событие сработало");
-        const root = document.getElementById('root');
-        console.log("📍 Root элемент в DOM:", !!root);
-        if (root) {
-          console.log("📦 Root innerHTML:", root.innerHTML || "(пусто)");
-        }
-      });
-      
-      window.addEventListener('load', () => {
-        console.log("✅ Страница полностью загружена (load event)");
-      });
-      
-      window.addEventListener('error', (e) => {
-        console.error("❌ Глобальная ошибка:", e.message, e.filename, e.lineno, e.colno);
-      });
-      
-      window.onerror = function(msg, url, lineNo, columnNo, error) {
-        console.error("❌ window.onerror:", {msg, url, lineNo, columnNo, error});
-        return false;
-      };
-    </script>
+    <!-- Preconnect to API server for faster requests -->
+    <link rel="preconnect" href="/api" />
+    <!-- Preload Inter font if used -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <!-- DNS prefetch for external resources -->
+    <link rel="dns-prefetch" href="https://pubmed.ncbi.nlm.nih.gov" />
+    <style>
+      /* Critical CSS - inline for instant first paint */
+      #root { min-height: 100vh; }
+      .page-loader {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background: #0a1628;
+        color: #a0b5d8;
+        font-family: 'Inter', system-ui, sans-serif;
+      }
+      .page-loader-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(75, 116, 255, 0.2);
+        border-top-color: #4b74ff;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .page-loader p { margin-top: 16px; font-size: 14px; }
+    </style>
   </head>
   <body>
     <div id="root"></div>

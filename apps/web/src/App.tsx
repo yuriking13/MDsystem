@@ -1,6 +1,7 @@
 import React, { useEffect, useState, Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import OnboardingTour from "./components/OnboardingTour";
+// Lazy load OnboardingTour - it's only shown once to new users
+const OnboardingTour = lazy(() => import("./components/OnboardingTour"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ToastProvider } from "./components/Toast";
 import { RequireAuth, useAuth } from "./lib/AuthContext";

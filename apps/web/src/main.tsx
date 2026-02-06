@@ -5,7 +5,8 @@ import App from "./App";
 import { AuthProvider } from "./lib/AuthContext";
 import { AdminAuthProvider } from "./lib/AdminContext";
 import "./styles/index.css";
-import "./styles/admin.css";
+// admin.css is now imported in AdminLayout (lazy loaded)
+// flowbite is initialized lazily after DOM is ready
 import "flowbite";
 
 const rootElement = document.getElementById("root");

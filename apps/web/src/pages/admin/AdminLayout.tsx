@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAdminAuth } from "../../lib/AdminContext";
+import "../../styles/admin.css";
 import {
   IconUsers,
   IconChartBar,
@@ -57,16 +58,30 @@ export default function AdminLayout() {
             <IconShield size="lg" className="admin-logo-icon" />
             {sidebarOpen && <span>MDsystem Admin</span>}
           </div>
-          <button 
+          <button
             className="admin-sidebar-toggle"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             title={sidebarOpen ? "Свернуть" : "Развернуть"}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
               {sidebarOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+                />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M13 5l7 7-7 7M5 5l7 7-7 7"
+                />
               )}
             </svg>
           </button>
@@ -98,10 +113,14 @@ export default function AdminLayout() {
 
         <div className="admin-sidebar-footer">
           <Link to="/projects" className="admin-nav-item admin-back-to-app">
-            <span className="admin-nav-icon"><IconArrowLeft /></span>
-            {sidebarOpen && <span className="admin-nav-label">Вернуться в приложение</span>}
+            <span className="admin-nav-icon">
+              <IconArrowLeft />
+            </span>
+            {sidebarOpen && (
+              <span className="admin-nav-label">Вернуться в приложение</span>
+            )}
           </Link>
-          
+
           <div className="admin-user-info">
             {sidebarOpen && admin && (
               <div className="admin-user-details">
@@ -109,13 +128,19 @@ export default function AdminLayout() {
                 <span className="admin-user-role">Администратор</span>
               </div>
             )}
-            <button 
-              className="admin-logout-btn"
-              onClick={logout}
-              title="Выйти"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <button className="admin-logout-btn" onClick={logout} title="Выйти">
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                />
               </svg>
             </button>
           </div>
