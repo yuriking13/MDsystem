@@ -19,20 +19,16 @@
 .articles-header {
   @apply flex items-center justify-between gap-4 py-3 px-4;
   @apply sticky top-0 z-10;
-  background: rgba(13, 27, 42, 0.5);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(56, 89, 138, 0.2);
+  background: transparent;
+  border: none;
   border-radius: 0.75rem;
   margin: 12px 40px 0 40px;
 }
 
 .light-theme .articles-header,
 [data-theme="light"] .articles-header {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: transparent;
+  border: none;
   border-radius: 0.75rem;
 }
 
@@ -980,7 +976,7 @@
   position: fixed;
   top: 50%;
   transform: translateY(-50%);
-  z-index: 100;
+  z-index: 9999;
   padding: 16px 8px;
   cursor: pointer;
   background: rgba(255, 255, 255, 0.05);
