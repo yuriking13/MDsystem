@@ -323,7 +323,11 @@
   border-radius: 0.75rem;
   background-color: #0d1b2a;
   border: 1px solid rgba(56, 89, 138, 0.2);
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease, background-color 200ms ease;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease,
+    background-color 200ms ease;
   will-change: transform;
 }
 

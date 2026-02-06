@@ -131,7 +131,10 @@
   border-radius: 0.375rem;
   background-color: #162236;
   border: 1px solid rgba(56, 89, 138, 0.3);
-  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
 
 .articles-toolbar-btn:hover {
@@ -168,7 +171,10 @@
   @apply relative flex flex-col overflow-hidden;
   @apply border-l-[3px];
   border-radius: 0.5625rem;
-  transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    box-shadow 150ms ease;
   /* Glass effect - dark theme */
   background-color: rgba(13, 27, 42, 0.45);
   backdrop-filter: blur(16px) saturate(180%);
@@ -557,7 +563,7 @@
     grid-template-columns: 1fr;
     @apply gap-2 p-3;
   }
-  
+
   .articles-nav-arrow {
     @apply hidden;
   }
@@ -725,7 +731,10 @@
   border-radius: 0.375rem;
   background-color: #162236;
   border: 1px solid rgba(56, 89, 138, 0.3);
-  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
 }
 
 .search-source-option.active {
