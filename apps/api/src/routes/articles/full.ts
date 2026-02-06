@@ -2989,17 +2989,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         `AI Assistant raw body keys: ${Object.keys(rawBody || {}).join(", ")}`,
       );
       log.debug(
-        `AI Assistant raw graphArticles length:`,
-        rawBody?.graphArticles?.length,
+        `AI Assistant raw graphArticles length: ${rawBody?.graphArticles?.length}`,
       );
       log.debug(
-        `AI Assistant raw message:`,
-        rawBody?.message?.substring(0, 50),
+        `AI Assistant raw message: ${rawBody?.message?.substring(0, 50)}`,
       );
 
       const bodyP = GraphAIAssistantSchema.safeParse(request.body);
       if (!bodyP.success) {
-        log.debug(`AI Assistant Zod validation failed:`, bodyP.error.issues);
+        log.debug(`AI Assistant Zod validation failed`, {
+          issues: bodyP.error.issues as unknown as Record<string, unknown>,
+        });
         return reply
           .code(400)
           .send({ error: "Invalid request body", details: bodyP.error.issues });
@@ -3010,14 +3010,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         bodyP.data;
 
       log.debug(
-        `AI Assistant after Zod: graphArticles length:`,
-        graphArticles?.length,
+        `AI Assistant after Zod: graphArticles length: ${graphArticles?.length}`,
       );
       log.debug(
-        `AI Assistant clusters:`,
-        clusters?.length || 0,
-        `Gaps:`,
-        gaps?.length || 0,
+        `AI Assistant clusters: ${clusters?.length || 0}, Gaps: ${gaps?.length || 0}`,
       );
 
       try {
@@ -3045,8 +3041,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         );
         if (graphArticles && graphArticles.length > 0) {
           log.debug(
-            `AI Assistant sample article:`,
-            JSON.stringify(graphArticles[0]).slice(0, 300),
+            `AI Assistant sample article: ${JSON.stringify(graphArticles[0]).slice(0, 300)}`,
           );
           // Подсчёт по уровням
           const levelCounts: Record<string, number> = {};

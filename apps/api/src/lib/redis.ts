@@ -224,10 +224,9 @@ export async function initRedisClient(): Promise<Redis | null> {
     log.info("Using Redis backend");
     return client;
   } catch (err) {
-    log.warn(
-      "Redis connection failed, using in-memory LRU cache"(err as Error)
-        .message,
-    );
+    log.warn("Redis connection failed, using in-memory LRU cache", {
+      error: (err as Error).message,
+    });
     useRedis = false;
     return null;
   }
@@ -293,7 +292,9 @@ export async function cacheGet<T>(key: string): Promise<T | null> {
       if (!data) return null;
       return JSON.parse(data) as T;
     } catch (err) {
-      log.warn("Redis get error, trying memory"(err as Error).message);
+      log.warn("Redis get error, trying memory", {
+        error: (err as Error).message,
+      });
     }
   }
 
@@ -327,7 +328,9 @@ export async function cacheSet(
       await client.setex(key, ttl, jsonData);
       return true;
     } catch (err) {
-      log.warn("Redis set error, using memory"(err as Error).message);
+      log.warn("Redis set error, using memory", {
+        error: (err as Error).message,
+      });
     }
   }
 
@@ -403,7 +406,7 @@ export async function cacheDelPattern(pattern: string): Promise<boolean> {
         );
       }
     } catch (err) {
-      log.warn("Redis delete pattern error"(err as Error).message);
+      log.warn("Redis delete pattern error", { error: (err as Error).message });
       success = false;
     }
   }
@@ -415,7 +418,7 @@ export async function cacheDelPattern(pattern: string): Promise<boolean> {
       log.debug(`Memory: deleted ${deleted} keys matching: ${pattern}`);
     }
   } catch (err) {
-    log.warn("Memory delete pattern error"(err as Error).message);
+    log.warn("Memory delete pattern error", { error: (err as Error).message });
     success = false;
   }
 
