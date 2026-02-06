@@ -5,11 +5,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { prisma } from "../db.js";
 import { pool } from "../pg.js";
-import { Prisma } from "@prisma/client";
-
-// Infer types from Prisma schema
-type ProjectFile = Prisma.ProjectFileGetPayload<object>;
-type User = Prisma.UserGetPayload<object>;
 
 import {
   isStorageConfigured,
@@ -53,11 +48,11 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       where: { id: projectId },
       select: { createdBy: true },
     });
-    
+
     const isOwner = project?.createdBy === userId;
     const isMember = !!membership;
     const canEdit = isOwner || membership?.role === "editor";
-    
+
     return { isOwner, isMember, canEdit, hasAccess: isOwner || isMember };
   }
 
@@ -104,7 +99,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       });
 
       const result = {
-        files: files.map((f: ProjectFile & { uploader: Pick<User, 'id' | 'email'> | null }) => ({
+        files: files.map((f: any) => ({
           id: f.id,
           name: f.name,
           mimeType: f.mimeType,
@@ -126,22 +121,18 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       return result;
-    }
+    },
   );
 
   // GET /api/storage/status - Check if storage is configured
-  app.get(
-    "/storage/status",
-    { preHandler: [app.authenticate] },
-    async () => {
-      return {
-        configured: isStorageConfigured(),
-        maxFileSize: MAX_FILE_SIZE,
-        maxFileSizeFormatted: formatFileSize(MAX_FILE_SIZE),
-        allowedTypes: Object.keys(ALLOWED_MIME_TYPES),
-      };
-    }
-  );
+  app.get("/storage/status", { preHandler: [app.authenticate] }, async () => {
+    return {
+      configured: isStorageConfigured(),
+      maxFileSize: MAX_FILE_SIZE,
+      maxFileSizeFormatted: formatFileSize(MAX_FILE_SIZE),
+      allowedTypes: Object.keys(ALLOWED_MIME_TYPES),
+    };
+  });
 
   // POST /api/projects/:projectId/files - Upload a file
   app.post<{
@@ -163,7 +154,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         return reply.forbidden("You don't have access to this project");
       }
       if (!access.canEdit) {
-        return reply.forbidden("You don't have edit permissions for this project");
+        return reply.forbidden(
+          "You don't have edit permissions for this project",
+        );
       }
 
       // Get multipart data
@@ -187,7 +180,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       for await (const chunk of data.file) {
         totalSize += chunk.length;
         if (totalSize > MAX_FILE_SIZE) {
-          return reply.badRequest(`File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}`);
+          return reply.badRequest(
+            `File too large. Maximum size is ${formatFileSize(MAX_FILE_SIZE)}`,
+          );
         }
         chunks.push(chunk);
       }
@@ -196,7 +191,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
 
       // Generate storage path and upload
       const storagePath = generateStoragePath(projectId, validation.ext!);
-      
+
       try {
         await uploadFile(storagePath, buffer, mimetype);
       } catch (err) {
@@ -231,7 +226,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           createdAt: file.createdAt.toISOString(),
         },
       };
-    }
+    },
   );
 
   // GET /api/projects/:projectId/files/:fileId - Get file info
@@ -275,7 +270,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           updatedAt: file.updatedAt.toISOString(),
         },
       };
-    }
+    },
   );
 
   // GET /api/projects/:projectId/files/:fileId/download - Download file
@@ -310,24 +305,30 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
 
       // Option 1: Redirect to signed URL
       if (redirect === "true") {
-        const signedUrl = await getSignedDownloadUrl(file.storagePath, file.name);
+        const signedUrl = await getSignedDownloadUrl(
+          file.storagePath,
+          file.name,
+        );
         return reply.redirect(signedUrl);
       }
 
       // Option 2: Stream through server
       try {
         const { buffer, contentType } = await downloadFile(file.storagePath);
-        
+
         reply.header("Content-Type", contentType);
-        reply.header("Content-Disposition", `attachment; filename="${encodeURIComponent(file.name)}"`);
+        reply.header(
+          "Content-Disposition",
+          `attachment; filename="${encodeURIComponent(file.name)}"`,
+        );
         reply.header("Content-Length", buffer.length);
-        
+
         return reply.send(buffer);
       } catch (err) {
         app.log.error({ err }, "Failed to download file from S3");
         return reply.internalServerError("Failed to download file");
       }
-    }
+    },
   );
 
   // GET /api/projects/:projectId/files/:fileId/url - Get signed download URL
@@ -359,9 +360,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       const url = await getSignedDownloadUrl(file.storagePath, file.name);
-      
+
       return { url, expiresIn: 3600 };
-    }
+    },
   );
 
   // PATCH /api/projects/:projectId/files/:fileId - Update file metadata
@@ -382,7 +383,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         return reply.forbidden("You don't have access to this project");
       }
       if (!access.canEdit) {
-        return reply.forbidden("You don't have edit permissions for this project");
+        return reply.forbidden(
+          "You don't have edit permissions for this project",
+        );
       }
 
       const file = await prisma.projectFile.findFirst({
@@ -412,7 +415,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           updatedAt: updated.updatedAt.toISOString(),
         },
       };
-    }
+    },
   );
 
   // DELETE /api/projects/:projectId/files/:fileId - Delete file
@@ -431,7 +434,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         return reply.forbidden("You don't have access to this project");
       }
       if (!access.canEdit) {
-        return reply.forbidden("You don't have edit permissions for this project");
+        return reply.forbidden(
+          "You don't have edit permissions for this project",
+        );
       }
 
       const file = await prisma.projectFile.findFirst({
@@ -447,7 +452,10 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         try {
           await deleteFile(file.storagePath);
         } catch (err) {
-          app.log.error({ err }, "Failed to delete file from S3, continuing with DB deletion");
+          app.log.error(
+            { err },
+            "Failed to delete file from S3, continuing with DB deletion",
+          );
         }
       }
 
@@ -460,7 +468,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       await invalidateFiles(projectId);
 
       return { ok: true };
-    }
+    },
   );
 
   // POST /api/projects/:projectId/files/:fileId/use - Mark file as used in document
@@ -506,7 +514,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       return { ok: true };
-    }
+    },
   );
 
   // DELETE /api/projects/:projectId/files/:fileId/use - Unmark file usage in document
@@ -539,7 +547,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       // Remove documentId from usedInDocuments
-      const usedInDocuments = (file.usedInDocuments || []).filter(id => id !== documentId);
+      const usedInDocuments = (file.usedInDocuments || []).filter(
+        (id: string) => id !== documentId,
+      );
       await prisma.projectFile.update({
         where: { id: fileId },
         data: { usedInDocuments },
@@ -549,7 +559,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       await invalidateFile(projectId, fileId);
 
       return { ok: true };
-    }
+    },
   );
 
   // POST /api/projects/:projectId/files/sync - Sync file usage with document content
@@ -589,7 +599,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           if (isUsed) {
             newUsedInDocuments = [...file.usedInDocuments, documentId];
           } else {
-            newUsedInDocuments = file.usedInDocuments.filter(id => id !== documentId);
+            newUsedInDocuments = file.usedInDocuments.filter(
+              (id: string) => id !== documentId,
+            );
           }
           await prisma.projectFile.update({
             where: { id: file.id },
@@ -605,7 +617,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       return { ok: true, synced: fileIds.length };
-    }
+    },
   );
 
   // ============================================================
@@ -613,13 +625,16 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
   // ============================================================
 
   // Helper to get user's OpenRouter API key
-  async function getUserApiKey(userId: string, provider: string): Promise<string | null> {
+  async function getUserApiKey(
+    userId: string,
+    provider: string,
+  ): Promise<string | null> {
     const res = await pool.query(
       `SELECT encrypted_key FROM user_api_keys WHERE user_id = $1 AND provider = $2`,
-      [userId, provider]
+      [userId, provider],
     );
     if (res.rowCount === 0) return null;
-    
+
     try {
       const { decryptApiKey } = await import("../utils/apiKeyCrypto.js");
       return decryptApiKey(res.rows[0].encrypted_key);
@@ -660,16 +675,21 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
 
       // Check if it's a document file (PDF or Word)
       if (file.category !== "document") {
-        return reply.badRequest("Только PDF и Word документы могут быть проанализированы");
+        return reply.badRequest(
+          "Только PDF и Word документы могут быть проанализированы",
+        );
       }
 
       // Check for cached metadata (if not forcing re-analysis)
       // Use type assertion to access potentially missing fields
       const fileAny = file as any;
-      const cachedMetadata = fileAny.extractedMetadata as ExtractedArticle | null | undefined;
+      const cachedMetadata = fileAny.extractedMetadata as
+        | ExtractedArticle
+        | null
+        | undefined;
       const cachedText = fileAny.extractedText as string | null | undefined;
       const cachedAt = fileAny.extractionDate as Date | null | undefined;
-      
+
       if (!forceReanalyze && cachedMetadata && cachedText) {
         app.log.info(`Using cached metadata for file: ${file.name}`);
         return {
@@ -677,8 +697,8 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           fileId,
           fileName: file.name,
           metadata: cachedMetadata,
-          textPreview: cachedText.slice(0, 500) + 
-            (cachedText.length > 500 ? "..." : ""),
+          textPreview:
+            cachedText.slice(0, 500) + (cachedText.length > 500 ? "..." : ""),
           fullText: cachedText,
           cached: true,
           cachedAt: cachedAt,
@@ -688,7 +708,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       // Get OpenRouter API key
       const openrouterKey = await getUserApiKey(userId, "openrouter");
       if (!openrouterKey) {
-        return reply.badRequest("OpenRouter API ключ не настроен. Добавьте его в настройках.");
+        return reply.badRequest(
+          "OpenRouter API ключ не настроен. Добавьте его в настройках.",
+        );
       }
 
       try {
@@ -696,11 +718,15 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         const { buffer } = await downloadFile(file.storagePath);
 
         // Extract text from file
-        app.log.info(`Extracting text from file: ${file.name} (${file.mimeType})`);
+        app.log.info(
+          `Extracting text from file: ${file.name} (${file.mimeType})`,
+        );
         const text = await extractTextFromFile(buffer, file.mimeType);
 
         if (!text || text.trim().length < 100) {
-          return reply.badRequest("Не удалось извлечь текст из файла или файл пустой");
+          return reply.badRequest(
+            "Не удалось извлечь текст из файла или файл пустой",
+          );
         }
 
         // Try to extract DOI with regex first (prioritize header DOI)
@@ -708,12 +734,17 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
 
         // Use AI to extract metadata
         app.log.info(`Analyzing file with AI: ${file.name}`);
-        const metadata = await extractArticleMetadataWithAI(text, openrouterKey);
+        const metadata = await extractArticleMetadataWithAI(
+          text,
+          openrouterKey,
+        );
 
         // Use regex DOI if AI didn't find one (or AI got wrong DOI from bibliography)
         if (regexDoi && (!metadata.doi || metadata.doi !== regexDoi)) {
           // Prefer regex DOI from header as it's more reliable
-          app.log.info(`Using regex DOI from header: ${regexDoi} (AI found: ${metadata.doi})`);
+          app.log.info(
+            `Using regex DOI from header: ${regexDoi} (AI found: ${metadata.doi})`,
+          );
           metadata.doi = regexDoi;
         }
 
@@ -729,7 +760,10 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           });
           app.log.info(`Cached metadata for file: ${file.name}`);
         } catch (cacheErr) {
-          app.log.warn({ err: cacheErr }, `Failed to cache metadata (columns may not exist yet): ${file.name}`);
+          app.log.warn(
+            { err: cacheErr },
+            `Failed to cache metadata (columns may not exist yet): ${file.name}`,
+          );
         }
 
         return {
@@ -745,7 +779,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         app.log.error({ err }, `Failed to analyze file: ${file.name}`);
         return reply.internalServerError(err.message || "Ошибка анализа файла");
       }
-    }
+    },
   );
 
   // POST /api/projects/:projectId/files/:fileId/import-as-article - Import file as article
@@ -781,17 +815,19 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       if (!metadata || !metadata.title) {
-        return reply.badRequest("Метаданные статьи обязательны (как минимум заголовок)");
+        return reply.badRequest(
+          "Метаданные статьи обязательны (как минимум заголовок)",
+        );
       }
 
       try {
         // Check if article with this DOI already exists
         let articleId: string | null = null;
-        
+
         if (metadata.doi) {
           const existingByDoi = await pool.query(
             `SELECT id FROM articles WHERE doi = $1`,
-            [metadata.doi.toLowerCase()]
+            [metadata.doi.toLowerCase()],
           );
           if ((existingByDoi.rowCount ?? 0) > 0) {
             articleId = existingByDoi.rows[0].id;
@@ -802,8 +838,10 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         // Create new article if not found
         if (!articleId) {
           const authors = metadata.authors || [];
-          const biblioJson = metadata.bibliography ? JSON.stringify(metadata.bibliography) : null;
-          
+          const biblioJson = metadata.bibliography
+            ? JSON.stringify(metadata.bibliography)
+            : null;
+
           const insertRes = await pool.query(
             `INSERT INTO articles (
               title_en, abstract_en, authors, year, journal, doi, url, source,
@@ -827,7 +865,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
               biblioJson,
               true, // is_from_file
               new Date(),
-            ]
+            ],
           );
           articleId = insertRes.rows[0].id;
           app.log.info(`Created new article from file: ${articleId}`);
@@ -836,7 +874,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         // Check if article already in project
         const existingInProject = await pool.query(
           `SELECT 1 FROM project_articles WHERE project_id = $1 AND article_id = $2`,
-          [projectId, articleId]
+          [projectId, articleId],
         );
 
         if ((existingInProject.rowCount ?? 0) > 0) {
@@ -860,7 +898,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
             `Импорт из файла: ${file.name}`,
             fileId,
             new Date(),
-          ]
+          ],
         );
 
         // Invalidate caches
@@ -874,9 +912,11 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         };
       } catch (err: any) {
         app.log.error({ err }, "Failed to import article from file");
-        return reply.internalServerError(err.message || "Ошибка импорта статьи");
+        return reply.internalServerError(
+          err.message || "Ошибка импорта статьи",
+        );
       }
-    }
+    },
   );
 
   // POST /api/projects/:projectId/files/:fileId/import-as-document - Import file as project document
@@ -907,51 +947,73 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       // Get file info with cached text
-      const file = await prisma.projectFile.findFirst({
+      const file = (await prisma.projectFile.findFirst({
         where: { id: fileId, projectId },
-      }) as (ProjectFile & { extractedText?: string | null }) | null;
+      })) as any;
 
       if (!file) {
         return reply.notFound("File not found");
       }
 
       if (!metadata || !metadata.title) {
-        return reply.badRequest("Метаданные статьи обязательны (как минимум заголовок)");
+        return reply.badRequest(
+          "Метаданные статьи обязательны (как минимум заголовок)",
+        );
       }
 
       try {
         // Get full text from cache or re-extract if needed
         let fullText = "";
-        
+
         // Extract content with structure (HTML for Word, text for PDF)
         let structuredContent: unknown[] = [];
-        
+
         if (includeFullText) {
-          app.log.info(`Extracting content for document import: ${file.name} (storage: ${file.storagePath})`);
+          app.log.info(
+            `Extracting content for document import: ${file.name} (storage: ${file.storagePath})`,
+          );
           try {
             const { buffer } = await downloadFile(file.storagePath);
-            app.log.info(`Downloaded file ${file.name}, size: ${buffer.length} bytes`);
-            
+            app.log.info(
+              `Downloaded file ${file.name}, size: ${buffer.length} bytes`,
+            );
+
             // For Word files, use HTML extraction to preserve tables and structure
-            const isWord = file.mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-                           file.mimeType === "application/msword";
-            
+            const isWord =
+              file.mimeType ===
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+              file.mimeType === "application/msword";
+
             if (isWord) {
               const html = await extractHtmlFromWord(buffer);
-              app.log.info(`Extracted HTML from ${file.name}, length: ${html.length} chars`);
+              app.log.info(
+                `Extracted HTML from ${file.name}, length: ${html.length} chars`,
+              );
               structuredContent = htmlToTiptapContent(html);
-              app.log.info(`Converted to TipTap: ${structuredContent.length} blocks`);
+              app.log.info(
+                `Converted to TipTap: ${structuredContent.length} blocks`,
+              );
             } else {
               // For PDF, use text extraction
               fullText = await extractTextFromFile(buffer, file.mimeType);
-              app.log.info(`Extracted text from ${file.name}, length: ${fullText.length} chars`);
-              structuredContent = fullText.split(/\n\n+/).slice(0, 500).map(para => ({
-                type: "paragraph",
-                content: para.trim() ? [{ type: "text", text: para.trim() }] : [],
-              }));
+              app.log.info(
+                `Extracted text from ${file.name}, length: ${fullText.length} chars`,
+              );
+              structuredContent = fullText
+                .split(/\n\n+/)
+                .slice(0, 500)
+                .map((para) => ({
+                  type: "paragraph",
+                  content: para.trim()
+                    ? [{ type: "text", text: para.trim() }]
+                    : [],
+                }));
             }
           } catch (extractErr: any) {
-            app.log.error({ err: extractErr }, `Failed to extract content from file: ${file.name}`);
+            app.log.error(
+              { err: extractErr },
+              `Failed to extract content from file: ${file.name}`,
+            );
           }
         }
 
@@ -959,12 +1021,20 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         // No need for metadata header since it's already in the file
         const documentContent = {
           type: "doc",
-          content: structuredContent.length > 0 ? structuredContent : [
-            {
-              type: "paragraph",
-              content: [{ type: "text", text: "[Не удалось извлечь содержимое файла]" }],
-            },
-          ],
+          content:
+            structuredContent.length > 0
+              ? structuredContent
+              : [
+                  {
+                    type: "paragraph",
+                    content: [
+                      {
+                        type: "text",
+                        text: "[Не удалось извлечь содержимое файла]",
+                      },
+                    ],
+                  },
+                ],
         };
 
         // Create the document
@@ -979,7 +1049,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
             JSON.stringify(documentContent),
             userId,
             new Date(),
-          ]
+          ],
         );
 
         const documentId = docResult.rows[0].id;
@@ -999,34 +1069,40 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         // Import bibliography references as articles and create citations
         let bibliographyCount = 0;
         const mainArticleDoi = metadata.doi?.toLowerCase();
-        
+
         if (metadata.bibliography && metadata.bibliography.length > 0) {
-          app.log.info(`Importing ${metadata.bibliography.length} bibliography references`);
-          
+          app.log.info(
+            `Importing ${metadata.bibliography.length} bibliography references`,
+          );
+
           for (let i = 0; i < metadata.bibliography.length; i++) {
             const ref = metadata.bibliography[i];
             if (!ref.title && !ref.text) continue; // Skip empty refs
-            
+
             // Skip if this reference is the main article itself (by DOI)
-            if (ref.doi && mainArticleDoi && ref.doi.toLowerCase() === mainArticleDoi) {
+            if (
+              ref.doi &&
+              mainArticleDoi &&
+              ref.doi.toLowerCase() === mainArticleDoi
+            ) {
               app.log.info(`Skipping self-reference: ${ref.doi}`);
               continue;
             }
-            
+
             try {
               // Check if article with this DOI already exists
               let articleId: string | null = null;
-              
+
               if (ref.doi) {
                 const existingByDoi = await pool.query(
                   `SELECT id FROM articles WHERE doi = $1`,
-                  [ref.doi.toLowerCase()]
+                  [ref.doi.toLowerCase()],
                 );
                 if ((existingByDoi.rowCount ?? 0) > 0) {
                   articleId = existingByDoi.rows[0].id;
                 }
               }
-              
+
               // Create new article if not found
               if (!articleId) {
                 const insertRes = await pool.query(
@@ -1042,26 +1118,31 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
                     ref.doi?.toLowerCase() || null,
                     "file_import",
                     new Date(),
-                  ]
+                  ],
                 );
                 articleId = insertRes.rows[0].id;
               }
-              
+
               // Create citation linking document to article
               await pool.query(
                 `INSERT INTO citations (document_id, article_id, order_index, inline_number)
                  VALUES ($1, $2, $3, $4)
                  ON CONFLICT DO NOTHING`,
-                [documentId, articleId, i, i + 1]
+                [documentId, articleId, i, i + 1],
               );
-              
+
               bibliographyCount++;
             } catch (refErr: any) {
-              app.log.warn({ err: refErr }, `Failed to import reference: ${ref.title || ref.text?.slice(0, 50)}`);
+              app.log.warn(
+                { err: refErr },
+                `Failed to import reference: ${ref.title || ref.text?.slice(0, 50)}`,
+              );
             }
           }
-          
-          app.log.info(`Imported ${bibliographyCount} bibliography references for document ${documentId}`);
+
+          app.log.info(
+            `Imported ${bibliographyCount} bibliography references for document ${documentId}`,
+          );
         }
 
         return {
@@ -1069,14 +1150,19 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           documentId,
           documentName: metadata.title,
           bibliographyCount,
-          message: `Документ "${metadata.title}" создан из файла` + 
-            (bibliographyCount > 0 ? `. Добавлено ${bibliographyCount} источников в библиографию.` : ""),
+          message:
+            `Документ "${metadata.title}" создан из файла` +
+            (bibliographyCount > 0
+              ? `. Добавлено ${bibliographyCount} источников в библиографию.`
+              : ""),
         };
       } catch (err: any) {
         app.log.error({ err }, "Failed to import file as document");
-        return reply.internalServerError(err.message || "Ошибка создания документа");
+        return reply.internalServerError(
+          err.message || "Ошибка создания документа",
+        );
       }
-    }
+    },
   );
 };
 
