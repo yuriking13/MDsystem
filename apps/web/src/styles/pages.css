@@ -455,63 +455,58 @@
 }
 
 /* =============================================================================
-   Project Section Container (unified style like articles section)
+   Glass Panel - reusable glass-morphism container for page sections
    ============================================================================= */
 
-.project-section-container {
-  @apply w-full mx-auto mb-6;
-  max-width: 788px;
-}
-
-.project-section-header {
-  @apply flex items-center justify-between gap-4 py-3 px-4;
-  @apply sticky top-0 z-10;
+.glass-panel {
   background: rgba(13, 27, 42, 0.5);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(56, 89, 138, 0.2);
-  border-radius: 0.5rem 0.5rem 0 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
-.light-theme .project-section-header,
-[data-theme="light"] .project-section-header {
+.light-theme .glass-panel,
+[data-theme="light"] .glass-panel {
   background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.project-section-header h2 {
+.glass-panel-header {
+  @apply flex items-center justify-between gap-4 py-3 px-4;
+  border-bottom: 1px solid rgba(56, 89, 138, 0.15);
+}
+
+.light-theme .glass-panel-header,
+[data-theme="light"] .glass-panel-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.glass-panel-header h2,
+.glass-panel-header h3,
+.glass-panel-header h4 {
   @apply text-base font-semibold text-white m-0;
   @apply flex items-center gap-2;
 }
 
-.light-theme .project-section-header h2,
-[data-theme="light"] .project-section-header h2 {
+.light-theme .glass-panel-header h2,
+.light-theme .glass-panel-header h3,
+.light-theme .glass-panel-header h4,
+[data-theme="light"] .glass-panel-header h2,
+[data-theme="light"] .glass-panel-header h3,
+[data-theme="light"] .glass-panel-header h4 {
   @apply text-neutral-900;
 }
 
-.project-section-actions {
-  @apply flex items-center gap-2;
-}
-
-.project-section-body {
-  background: rgba(13, 27, 42, 0.5);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(56, 89, 138, 0.2);
-  border-top: none;
-  border-radius: 0 0 0.5rem 0.5rem;
+.glass-panel-body {
   @apply p-4;
 }
 
-.light-theme .project-section-body,
-[data-theme="light"] .project-section-body {
-  background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-top: none;
+.glass-panel-actions {
+  @apply flex items-center gap-2;
 }
 
 /* Documents Grid */
@@ -649,7 +644,7 @@
 }
 
 .settings-card {
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   background-color: rgba(13, 27, 42, 0.5);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);

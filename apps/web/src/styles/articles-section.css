@@ -18,15 +18,8 @@
 
 .articles-header-wrapper {
   @apply w-full mx-auto mb-4;
-  /* 2 cards (380px each) + 1 gap (12px) = 772px */
-  max-width: 788px;
-}
-
-@media (min-width: 1200px) {
-  .articles-header-wrapper {
-    /* For larger screens with 3 cards: 3 × 380px + 2 × 12px = 1164px */
-    max-width: 788px;
-  }
+  /* 2 cards (380px each) + 1 gap (12px) + grid padding (32px) = 804px */
+  max-width: 804px;
 }
 
 /* =============================================================================
@@ -40,7 +33,7 @@
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(56, 89, 138, 0.2);
-  border-radius: 0.5rem 0.5rem 0 0;
+  border-radius: 0.75rem 0.75rem 0 0;
 }
 
 .light-theme .articles-header,
@@ -554,6 +547,9 @@
 .articles-grid {
   @apply grid gap-3 p-4;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  max-width: 804px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (max-width: 768px) {
@@ -793,7 +789,7 @@
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(56, 89, 138, 0.2);
   border-top: none;
-  border-radius: 0 0 0.5rem 0.5rem;
+  border-radius: 0 0 0.75rem 0.75rem;
 }
 
 .light-theme .articles-filters-container,
@@ -987,6 +983,9 @@
   @apply px-4 py-2;
   background-color: rgba(59, 130, 246, 0.1);
   border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  max-width: 804px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .light-theme .bulk-actions,

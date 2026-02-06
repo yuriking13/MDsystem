@@ -1461,252 +1461,230 @@ export default function ProjectDetailPage() {
 
         {/* === DOCUMENTS TAB === */}
         {activeTab === "documents" && (
-          <div className="project-section-container">
-            <div className="project-section-header">
-              <h2>
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                Документы проекта
-              </h2>
-              <div className="project-section-actions">
-                {canEdit && (
-                  <button
-                    className="articles-toolbar-btn"
-                    onClick={() => setShowCreateDoc(true)}
-                    type="button"
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {/* Chapters Section */}
+            <div className="glass-panel">
+              <div className="glass-panel-header">
+                <h2>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Документы проекта
+                </h2>
+                <div className="glass-panel-actions">
+                  {canEdit && (
+                    <button
+                      className="articles-toolbar-btn"
+                      onClick={() => setShowCreateDoc(true)}
+                      type="button"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    Новый документ
-                  </button>
-                )}
-              </div>
-            </div>
-            <div className="project-section-body">
-              {showCreateDoc && (
-                <form
-                  onSubmit={handleCreateDocument}
-                  className="card"
-                  style={{ marginBottom: 16 }}
-                >
-                  <div className="stack">
-                    <label className="stack">
-                      <span>Название документа</span>
-                      <input
-                        value={newDocTitle}
-                        onChange={(e) => setNewDocTitle(e.target.value)}
-                        placeholder="Глава 1. Обзор литературы"
-                        required
-                      />
-                    </label>
-                    <div className="row gap">
-                      <button
-                        className="btn"
-                        disabled={creatingDoc}
-                        type="submit"
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        {creatingDoc ? "Создание..." : "Создать"}
-                      </button>
-                      <button
-                        className="btn secondary"
-                        onClick={() => setShowCreateDoc(false)}
-                        type="button"
-                      >
-                        Отмена
-                      </button>
-                    </div>
-                  </div>
-                </form>
-              )}
-
-              {documents.length === 0 ? (
-                <div className="muted">
-                  Нет документов. Создайте первый документ для написания текста
-                  диссертации.
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 4v16m8-8H4"
+                        />
+                      </svg>
+                      Новый документ
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="documents-grid">
-                  {documents.map((doc, idx) => (
-                    <div
-                      key={doc.id}
-                      className="document-card"
-                      draggable={!!canEdit}
-                      onDragStart={(e) => {
-                        e.dataTransfer.setData("text/plain", idx.toString());
-                        e.currentTarget.classList.add("dragging");
-                      }}
-                      onDragEnd={(e) => {
-                        e.currentTarget.classList.remove("dragging");
-                      }}
-                      onDragOver={(e) => {
-                        e.preventDefault();
-                        e.currentTarget.classList.add("drag-over");
-                      }}
-                      onDragLeave={(e) => {
-                        e.currentTarget.classList.remove("drag-over");
-                      }}
-                      onDrop={async (e) => {
-                        e.preventDefault();
-                        e.currentTarget.classList.remove("drag-over");
-                        const fromIdx = parseInt(
-                          e.dataTransfer.getData("text/plain"),
-                          10,
-                        );
-                        const toIdx = idx;
-                        if (fromIdx !== toIdx && id) {
-                          const newDocs = [...documents];
-                          const [moved] = newDocs.splice(fromIdx, 1);
-                          newDocs.splice(toIdx, 0, moved);
-                          setDocuments(newDocs);
-
-                          // Save new order to backend
-                          try {
-                            await apiReorderDocuments(
-                              id,
-                              newDocs.map((d) => d.id),
-                            );
-
-                            // Перенумеровать цитаты в реальном времени
-                            const renumberResult =
-                              await apiRenumberCitations(id);
-
-                            // Обновить документы с новым контентом (перенумерованные цитаты)
-                            if (renumberResult.documents) {
-                              setDocuments(renumberResult.documents);
-                            }
-
-                            // Автоматически обновить библиографию после перестановки
-                            await refreshBibliography();
-
-                            if (renumberResult.renumbered > 0) {
-                              setOk(
-                                `Порядок документов обновлён. Перенумеровано ${renumberResult.renumbered} цитат.`,
-                              );
-                            } else {
-                              setOk("Порядок документов обновлён.");
-                            }
-                          } catch (err) {
-                            setError(
-                              getErrorMessage(err) ||
-                                "Ошибка сохранения порядка",
-                            );
-                            // Revert on error
-                            const revertedDocs = await apiGetDocuments(id);
-                            setDocuments(revertedDocs.documents);
-                          }
-                        }
-                      }}
-                    >
-                      <div className="document-card-header">
-                        <div className="document-order-badge">{idx + 1}</div>
-                        {canEdit && (
-                          <div
-                            className="document-drag-handle"
-                            title="Перетащите для изменения порядка"
-                          >
-                            ⋮⋮
-                          </div>
-                        )}
-                      </div>
-
-                      <div
-                        className="document-card-body"
-                        onClick={() =>
-                          nav(`/projects/${id}/documents/${doc.id}`)
-                        }
-                      >
-                        <h4 className="document-card-title">{doc.title}</h4>
-                        <div className="document-card-dates">
-                          <div className="document-date-row">
-                            <span className="date-label">Создан:</span>
-                            <span className="date-value">
-                              {new Date(doc.created_at).toLocaleDateString(
-                                "ru-RU",
-                                {
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
-                            </span>
-                          </div>
-                          <div className="document-date-row">
-                            <span className="date-label">Изменён:</span>
-                            <span className="date-value">
-                              {new Date(doc.updated_at).toLocaleDateString(
-                                "ru-RU",
-                                {
-                                  day: "2-digit",
-                                  month: "2-digit",
-                                  year: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="document-card-footer">
+              </div>
+              <div className="glass-panel-body">
+                {showCreateDoc && (
+                  <form
+                    onSubmit={handleCreateDocument}
+                    className="card"
+                    style={{ marginBottom: 16 }}
+                  >
+                    <div className="stack">
+                      <label className="stack">
+                        <span>Название документа</span>
+                        <input
+                          value={newDocTitle}
+                          onChange={(e) => setNewDocTitle(e.target.value)}
+                          placeholder="Глава 1. Обзор литературы"
+                          required
+                        />
+                      </label>
+                      <div className="row gap">
                         <button
-                          className="btn secondary document-open-btn"
+                          className="btn"
+                          disabled={creatingDoc}
+                          type="submit"
+                        >
+                          {creatingDoc ? "Создание..." : "Создать"}
+                        </button>
+                        <button
+                          className="btn secondary"
+                          onClick={() => setShowCreateDoc(false)}
+                          type="button"
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+
+                {documents.length === 0 ? (
+                  <div className="muted">
+                    Нет документов. Создайте первый документ для написания
+                    текста диссертации.
+                  </div>
+                ) : (
+                  <div className="documents-grid">
+                    {documents.map((doc, idx) => (
+                      <div
+                        key={doc.id}
+                        className="document-card"
+                        draggable={!!canEdit}
+                        onDragStart={(e) => {
+                          e.dataTransfer.setData("text/plain", idx.toString());
+                          e.currentTarget.classList.add("dragging");
+                        }}
+                        onDragEnd={(e) => {
+                          e.currentTarget.classList.remove("dragging");
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.add("drag-over");
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.classList.remove("drag-over");
+                        }}
+                        onDrop={async (e) => {
+                          e.preventDefault();
+                          e.currentTarget.classList.remove("drag-over");
+                          const fromIdx = parseInt(
+                            e.dataTransfer.getData("text/plain"),
+                            10,
+                          );
+                          const toIdx = idx;
+                          if (fromIdx !== toIdx && id) {
+                            const newDocs = [...documents];
+                            const [moved] = newDocs.splice(fromIdx, 1);
+                            newDocs.splice(toIdx, 0, moved);
+                            setDocuments(newDocs);
+
+                            // Save new order to backend
+                            try {
+                              await apiReorderDocuments(
+                                id,
+                                newDocs.map((d) => d.id),
+                              );
+
+                              // Перенумеровать цитаты в реальном времени
+                              const renumberResult =
+                                await apiRenumberCitations(id);
+
+                              // Обновить документы с новым контентом (перенумерованные цитаты)
+                              if (renumberResult.documents) {
+                                setDocuments(renumberResult.documents);
+                              }
+
+                              // Автоматически обновить библиографию после перестановки
+                              await refreshBibliography();
+
+                              if (renumberResult.renumbered > 0) {
+                                setOk(
+                                  `Порядок документов обновлён. Перенумеровано ${renumberResult.renumbered} цитат.`,
+                                );
+                              } else {
+                                setOk("Порядок документов обновлён.");
+                              }
+                            } catch (err) {
+                              setError(
+                                getErrorMessage(err) ||
+                                  "Ошибка сохранения порядка",
+                              );
+                              // Revert on error
+                              const revertedDocs = await apiGetDocuments(id);
+                              setDocuments(revertedDocs.documents);
+                            }
+                          }
+                        }}
+                      >
+                        <div className="document-card-header">
+                          <div className="document-order-badge">{idx + 1}</div>
+                          {canEdit && (
+                            <div
+                              className="document-drag-handle"
+                              title="Перетащите для изменения порядка"
+                            >
+                              ⋮⋮
+                            </div>
+                          )}
+                        </div>
+
+                        <div
+                          className="document-card-body"
                           onClick={() =>
                             nav(`/projects/${id}/documents/${doc.id}`)
                           }
-                          type="button"
                         >
-                          <svg
-                            className="icon-sm"
-                            style={{ marginRight: 4 }}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={1.5}
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
-                            />
-                          </svg>
-                          Редактировать
-                        </button>
-                        {canEdit && (
+                          <h4 className="document-card-title">{doc.title}</h4>
+                          <div className="document-card-dates">
+                            <div className="document-date-row">
+                              <span className="date-label">Создан:</span>
+                              <span className="date-value">
+                                {new Date(doc.created_at).toLocaleDateString(
+                                  "ru-RU",
+                                  {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )}
+                              </span>
+                            </div>
+                            <div className="document-date-row">
+                              <span className="date-label">Изменён:</span>
+                              <span className="date-value">
+                                {new Date(doc.updated_at).toLocaleDateString(
+                                  "ru-RU",
+                                  {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  },
+                                )}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="document-card-footer">
                           <button
-                            className="btn secondary document-delete-btn"
+                            className="btn secondary document-open-btn"
                             onClick={() =>
-                              handleDeleteDocument(doc.id, doc.title)
+                              nav(`/projects/${id}/documents/${doc.id}`)
                             }
                             type="button"
-                            title="Удалить документ"
                           >
                             <svg
                               className="icon-sm"
+                              style={{ marginRight: 4 }}
                               fill="none"
                               stroke="currentColor"
                               strokeWidth={1.5}
@@ -1715,49 +1693,66 @@ export default function ProjectDetailPage() {
                               <path
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
-                                d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                                d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"
                               />
                             </svg>
+                            Редактировать
                           </button>
-                        )}
+                          {canEdit && (
+                            <button
+                              className="btn secondary document-delete-btn"
+                              onClick={() =>
+                                handleDeleteDocument(doc.id, doc.title)
+                              }
+                              type="button"
+                              title="Удалить документ"
+                            >
+                              <svg
+                                className="icon-sm"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={1.5}
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"
+                                />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
-              {/* Библиография и экспорт */}
-              <div className="card" style={{ marginTop: 16 }}>
-                <div className="row space" style={{ marginBottom: 12 }}>
-                  <h4
-                    style={{
-                      margin: 0,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                    }}
+            {/* Библиография и экспорт */}
+            <div className="glass-panel">
+              <div className="glass-panel-header">
+                <h3>
+                  <svg
+                    className="icon-md"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    viewBox="0 0 24 24"
+                    style={{ color: "var(--accent)" }}
                   >
-                    <svg
-                      className="icon-md"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.5}
-                      viewBox="0 0 24 24"
-                      style={{ color: "var(--accent)" }}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-                      />
-                    </svg>
-                    Библиография и экспорт
-                  </h4>
-                  <span className="id-badge">
-                    {citationStyle.toUpperCase()}
-                  </span>
-                </div>
-
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                    />
+                  </svg>
+                  Библиография и экспорт
+                </h3>
+                <span className="id-badge">{citationStyle.toUpperCase()}</span>
+              </div>
+              <div className="glass-panel-body">
                 {/* Экспорт документа */}
                 <div style={{ marginBottom: 16 }}>
                   <div
@@ -2216,15 +2211,14 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
               </div>
-              {/* End of project-section-body */}
             </div>
           </div>
         )}
 
         {/* === FILES TAB === */}
         {activeTab === "files" && id && (
-          <div className="project-section-container">
-            <div className="project-section-header">
+          <div className="glass-panel">
+            <div className="glass-panel-header">
               <h2>
                 <svg
                   className="w-5 h-5"
@@ -2241,7 +2235,7 @@ export default function ProjectDetailPage() {
                 </svg>
                 Файлы проекта
               </h2>
-              <div className="project-section-actions">
+              <div className="glass-panel-actions">
                 {canEdit && storageConfigured && (
                   <>
                     <input
@@ -2299,7 +2293,7 @@ export default function ProjectDetailPage() {
                 </button>
               </div>
             </div>
-            <div className="project-section-body">
+            <div className="glass-panel-body">
               {!storageConfigured && (
                 <div
                   className="card"
@@ -3320,15 +3314,14 @@ export default function ProjectDetailPage() {
                   </div>
                 </div>
               )}
-              {/* End of project-section-body */}
             </div>
           </div>
         )}
 
         {/* === STATISTICS TAB === */}
         {activeTab === "statistics" && id && (
-          <div className="project-section-container">
-            <div className="project-section-header">
+          <div className="glass-panel">
+            <div className="glass-panel-header">
               <h2>
                 <svg
                   className="w-5 h-5"
@@ -3346,7 +3339,7 @@ export default function ProjectDetailPage() {
                 Статистика проекта
               </h2>
             </div>
-            <div className="project-section-body statistics-page">
+            <div className="glass-panel-body statistics-page">
               <div className="statistics-controls" style={{ marginBottom: 16 }}>
                 <div className="view-toggle">
                   <button
@@ -3997,7 +3990,6 @@ export default function ProjectDetailPage() {
                   }}
                 />
               )}
-              {/* End of project-section-body */}
             </div>
           </div>
         )}
@@ -4007,568 +3999,533 @@ export default function ProjectDetailPage() {
 
         {/* === SETTINGS TAB (includes team) === */}
         {activeTab === "settings" && (
-          <div className="project-section-container" style={{ maxWidth: 600 }}>
-            <div className="project-section-header">
-              <h2>
+          <div className="settings-page" style={{ maxWidth: 600 }}>
+            {/* Команда проекта */}
+            <div className="settings-card">
+              <div className="settings-card-header">
                 <svg
-                  className="w-5 h-5"
+                  className="icon-md"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
+                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
                   />
+                </svg>
+                <h4>Команда проекта</h4>
+                {isOwner && !showInvite && (
+                  <button
+                    className="btn"
+                    onClick={() => setShowInvite(true)}
+                    type="button"
+                    style={{ marginLeft: "auto", fontSize: 13 }}
+                  >
+                    + Пригласить
+                  </button>
+                )}
+              </div>
+              <div className="settings-card-body">
+                {showInvite && (
+                  <form
+                    onSubmit={handleInvite}
+                    className="card"
+                    style={{ marginBottom: 16 }}
+                  >
+                    <div className="stack">
+                      <label className="stack">
+                        <span>Email</span>
+                        <input
+                          type="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          placeholder="colleague@example.com"
+                          required
+                        />
+                      </label>
+                      <label className="stack">
+                        <span>Роль</span>
+                        <select
+                          value={inviteRole}
+                          onChange={(e) => setInviteRole(e.target.value as any)}
+                        >
+                          <option value="viewer">
+                            Читатель (только просмотр)
+                          </option>
+                          <option value="editor">
+                            Редактор (может редактировать)
+                          </option>
+                        </select>
+                      </label>
+                      <div className="row gap">
+                        <button
+                          className="btn"
+                          disabled={inviting}
+                          type="submit"
+                        >
+                          {inviting ? "Приглашаем..." : "Пригласить"}
+                        </button>
+                        <button
+                          className="btn secondary"
+                          onClick={() => setShowInvite(false)}
+                          type="button"
+                        >
+                          Отмена
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+
+                <div className="table table-members">
+                  <div className="thead">
+                    <div>Email</div>
+                    <div>Роль</div>
+                    <div>Присоединился</div>
+                    <div>Действия</div>
+                  </div>
+                  {members.map((m) => (
+                    <div className="trow" key={m.user_id}>
+                      <div className="mono" style={{ fontSize: 13 }}>
+                        {m.email} {m.user_id === user?.id && "(вы)"}
+                      </div>
+                      <div>
+                        {m.role === "owner"
+                          ? "Владелец"
+                          : m.role === "editor"
+                            ? "Редактор"
+                            : "Читатель"}
+                      </div>
+                      <div>{new Date(m.joined_at).toLocaleDateString()}</div>
+                      <div>
+                        {isOwner && m.role !== "owner" && (
+                          <button
+                            className="btn secondary"
+                            onClick={() =>
+                              handleRemoveMember(m.user_id, m.email)
+                            }
+                            type="button"
+                            style={{ fontSize: 12, padding: "6px 10px" }}
+                          >
+                            Удалить
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Основные настройки */}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <svg
+                  className="icon-md"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{ color: "var(--accent)" }}
+                >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                Настройки проекта
-              </h2>
+                <h4>Основные</h4>
+              </div>
+              <div className="settings-card-body">
+                <div className="settings-form-group">
+                  <label>Название проекта</label>
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="settings-input"
+                  />
+                </div>
+                <div className="settings-form-group">
+                  <label>Описание</label>
+                  <textarea
+                    value={editDesc}
+                    onChange={(e) => setEditDesc(e.target.value)}
+                    placeholder="Описание проекта..."
+                    className="settings-textarea"
+                    rows={3}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="project-section-body settings-page">
-              {/* Команда проекта */}
-              <div className="settings-card">
-                <div className="settings-card-header">
-                  <svg
-                    className="icon-md"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                    />
-                  </svg>
-                  <h4>Команда проекта</h4>
-                  {isOwner && !showInvite && (
-                    <button
-                      className="btn"
-                      onClick={() => setShowInvite(true)}
-                      type="button"
-                      style={{ marginLeft: "auto", fontSize: 13 }}
+
+            {/* Тип исследования */}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <svg
+                  className="icon-md"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{ color: "var(--accent)" }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                  />
+                </svg>
+                <h4>Вид исследования</h4>
+              </div>
+              <div className="settings-card-body">
+                <p className="settings-hint">
+                  Выберите тип исследования для получения рекомендаций по
+                  структуре и оформлению
+                </p>
+                <div className="research-types-grid">
+                  {(
+                    Object.entries(RESEARCH_TYPES) as [
+                      ResearchType,
+                      (typeof RESEARCH_TYPES)[ResearchType],
+                    ][]
+                  ).map(([type, info]) => (
+                    <div
+                      key={type}
+                      className={`research-type-card ${researchType === type ? "selected" : ""}`}
+                      onClick={() => {
+                        setResearchType(type);
+                        setResearchSubtype("");
+                      }}
                     >
-                      + Пригласить
-                    </button>
-                  )}
-                </div>
-                <div className="settings-card-body">
-                  {showInvite && (
-                    <form
-                      onSubmit={handleInvite}
-                      className="card"
-                      style={{ marginBottom: 16 }}
-                    >
-                      <div className="stack">
-                        <label className="stack">
-                          <span>Email</span>
-                          <input
-                            type="email"
-                            value={inviteEmail}
-                            onChange={(e) => setInviteEmail(e.target.value)}
-                            placeholder="colleague@example.com"
-                            required
-                          />
-                        </label>
-                        <label className="stack">
-                          <span>Роль</span>
+                      <h5>{info.name}</h5>
+                      <p>{info.description}</p>
+                      {researchType === type && info.subtypes.length > 0 && (
+                        <div className="research-subtype-select">
                           <select
-                            value={inviteRole}
-                            onChange={(e) =>
-                              setInviteRole(e.target.value as any)
-                            }
+                            value={researchSubtype}
+                            onChange={(e) => setResearchSubtype(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <option value="viewer">
-                              Читатель (только просмотр)
-                            </option>
-                            <option value="editor">
-                              Редактор (может редактировать)
-                            </option>
+                            <option value="">Выберите подтип...</option>
+                            {info.subtypes.map((st) => (
+                              <option key={st.value} value={st.value}>
+                                {st.name}
+                              </option>
+                            ))}
                           </select>
-                        </label>
-                        <div className="row gap">
-                          <button
-                            className="btn"
-                            disabled={inviting}
-                            type="submit"
-                          >
-                            {inviting ? "Приглашаем..." : "Пригласить"}
-                          </button>
-                          <button
-                            className="btn secondary"
-                            onClick={() => setShowInvite(false)}
-                            type="button"
-                          >
-                            Отмена
-                          </button>
-                        </div>
-                      </div>
-                    </form>
-                  )}
-
-                  <div className="table table-members">
-                    <div className="thead">
-                      <div>Email</div>
-                      <div>Роль</div>
-                      <div>Присоединился</div>
-                      <div>Действия</div>
-                    </div>
-                    {members.map((m) => (
-                      <div className="trow" key={m.user_id}>
-                        <div className="mono" style={{ fontSize: 13 }}>
-                          {m.email} {m.user_id === user?.id && "(вы)"}
-                        </div>
-                        <div>
-                          {m.role === "owner"
-                            ? "Владелец"
-                            : m.role === "editor"
-                              ? "Редактор"
-                              : "Читатель"}
-                        </div>
-                        <div>{new Date(m.joined_at).toLocaleDateString()}</div>
-                        <div>
-                          {isOwner && m.role !== "owner" && (
-                            <button
-                              className="btn secondary"
-                              onClick={() =>
-                                handleRemoveMember(m.user_id, m.email)
-                              }
-                              type="button"
-                              style={{ fontSize: 12, padding: "6px 10px" }}
-                            >
-                              Удалить
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Основные настройки */}
-              <div className="settings-card">
-                <div className="settings-card-header">
-                  <svg
-                    className="icon-md"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                    />
-                  </svg>
-                  <h4>Основные</h4>
-                </div>
-                <div className="settings-card-body">
-                  <div className="settings-form-group">
-                    <label>Название проекта</label>
-                    <input
-                      value={editName}
-                      onChange={(e) => setEditName(e.target.value)}
-                      className="settings-input"
-                    />
-                  </div>
-                  <div className="settings-form-group">
-                    <label>Описание</label>
-                    <textarea
-                      value={editDesc}
-                      onChange={(e) => setEditDesc(e.target.value)}
-                      placeholder="Описание проекта..."
-                      className="settings-textarea"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Тип исследования */}
-              <div className="settings-card">
-                <div className="settings-card-header">
-                  <svg
-                    className="icon-md"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                    />
-                  </svg>
-                  <h4>Вид исследования</h4>
-                </div>
-                <div className="settings-card-body">
-                  <p className="settings-hint">
-                    Выберите тип исследования для получения рекомендаций по
-                    структуре и оформлению
-                  </p>
-                  <div className="research-types-grid">
-                    {(
-                      Object.entries(RESEARCH_TYPES) as [
-                        ResearchType,
-                        (typeof RESEARCH_TYPES)[ResearchType],
-                      ][]
-                    ).map(([type, info]) => (
-                      <div
-                        key={type}
-                        className={`research-type-card ${researchType === type ? "selected" : ""}`}
-                        onClick={() => {
-                          setResearchType(type);
-                          setResearchSubtype("");
-                        }}
-                      >
-                        <h5>{info.name}</h5>
-                        <p>{info.description}</p>
-                        {researchType === type && info.subtypes.length > 0 && (
-                          <div className="research-subtype-select">
-                            <select
-                              value={researchSubtype}
-                              onChange={(e) =>
-                                setResearchSubtype(e.target.value)
-                              }
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <option value="">Выберите подтип...</option>
-                              {info.subtypes.map((st) => (
-                                <option key={st.value} value={st.value}>
-                                  {st.name}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Протокол исследования */}
-              <div className="settings-card">
-                <div className="settings-card-header">
-                  <svg
-                    className="icon-md"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                    />
-                  </svg>
-                  <h4>Протокол исследования</h4>
-                </div>
-                <div className="settings-card-body">
-                  <p className="settings-hint">
-                    Выберите стандарт отчётности для AI-проверки соответствия
-                    структуры статьи
-                  </p>
-                  <div className="protocols-grid">
-                    {(
-                      Object.entries(RESEARCH_PROTOCOLS) as [
-                        ResearchProtocol,
-                        (typeof RESEARCH_PROTOCOLS)[ResearchProtocol],
-                      ][]
-                    ).map(([protocol, info]) => {
-                      const isRecommended =
-                        researchSubtype &&
-                        info.applicableTo.includes(researchSubtype);
-
-                      return (
-                        <div
-                          key={protocol}
-                          className={`protocol-card ${researchProtocol === protocol ? "selected" : ""} ${isRecommended ? "recommended" : ""}`}
-                          onClick={() => setResearchProtocol(protocol)}
-                        >
-                          <div className="protocol-card-header">
-                            <h5>{info.name}</h5>
-                            {isRecommended && (
-                              <span className="protocol-badge">
-                                Рекомендуется
-                              </span>
-                            )}
-                          </div>
-                          <p className="protocol-description">
-                            {info.description}
-                          </p>
-                          {info.keyRequirements.length > 0 && (
-                            <ul className="protocol-requirements">
-                              {info.keyRequirements
-                                .slice(0, 3)
-                                .map((req, i) => (
-                                  <li key={i}>{req}</li>
-                                ))}
-                            </ul>
-                          )}
-                          {researchProtocol === protocol &&
-                            protocol === "OTHER" && (
-                              <input
-                                value={protocolCustomName}
-                                onChange={(e) =>
-                                  setProtocolCustomName(e.target.value)
-                                }
-                                placeholder="Название протокола..."
-                                onClick={(e) => e.stopPropagation()}
-                                className="protocol-custom-input"
-                              />
-                            )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-
-              {/* AI-анализ */}
-              <div className="settings-card">
-                <div className="settings-card-header">
-                  <svg
-                    className="icon-md"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
-                  <h4>AI-анализ работы</h4>
-                </div>
-                <div className="settings-card-body">
-                  <p className="settings-hint">
-                    Включите AI-функции для автоматической проверки и
-                    рекомендаций
-                  </p>
-
-                  <div className="ai-options-stack">
-                    {/* Ошибки I и II рода */}
-                    <div className="ai-option-card">
-                      <div className="ai-option-header">
-                        <label className="ai-option-toggle">
-                          <input
-                            type="checkbox"
-                            checked={aiErrorAnalysisEnabled}
-                            onChange={(e) =>
-                              setAiErrorAnalysisEnabled(e.target.checked)
-                            }
-                          />
-                          <span className="toggle-slider"></span>
-                        </label>
-                        <div className="ai-option-title">
-                          <h5>Анализ ошибок первого и второго рода</h5>
-                          <span className="ai-badge">AI</span>
-                        </div>
-                      </div>
-                      <p className="ai-option-description">
-                        Проверка статистических тестов на предмет возможных
-                        ошибок интерпретации
-                      </p>
-
-                      {aiErrorAnalysisEnabled && (
-                        <div className="error-types-grid">
-                          <div className="error-type-card error-type-1">
-                            <h6>❌ Ошибка I рода (α)</h6>
-                            <p>
-                              Отклонили нулевую гипотезу, хотя она верна.
-                              <br />
-                              <strong>Ложноположительный результат.</strong>
-                            </p>
-                          </div>
-                          <div className="error-type-card error-type-2">
-                            <h6>⚠️ Ошибка II рода (β)</h6>
-                            <p>
-                              Не выявили эффект, хотя он существует.
-                              <br />
-                              <strong>Ложноотрицательный результат.</strong>
-                            </p>
-                          </div>
                         </div>
                       )}
                     </div>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-                    {/* Проверка соответствия протоколу */}
-                    <div className="ai-option-card">
-                      <div className="ai-option-header">
-                        <label className="ai-option-toggle">
-                          <input
-                            type="checkbox"
-                            checked={aiProtocolCheckEnabled}
-                            onChange={(e) =>
-                              setAiProtocolCheckEnabled(e.target.checked)
-                            }
-                            disabled={!researchProtocol}
-                          />
-                          <span className="toggle-slider"></span>
-                        </label>
-                        <div className="ai-option-title">
-                          <h5>Проверка соответствия протоколу</h5>
-                          <span className="ai-badge">AI</span>
+            {/* Протокол исследования */}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <svg
+                  className="icon-md"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{ color: "var(--accent)" }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+                  />
+                </svg>
+                <h4>Протокол исследования</h4>
+              </div>
+              <div className="settings-card-body">
+                <p className="settings-hint">
+                  Выберите стандарт отчётности для AI-проверки соответствия
+                  структуры статьи
+                </p>
+                <div className="protocols-grid">
+                  {(
+                    Object.entries(RESEARCH_PROTOCOLS) as [
+                      ResearchProtocol,
+                      (typeof RESEARCH_PROTOCOLS)[ResearchProtocol],
+                    ][]
+                  ).map(([protocol, info]) => {
+                    const isRecommended =
+                      researchSubtype &&
+                      info.applicableTo.includes(researchSubtype);
+
+                    return (
+                      <div
+                        key={protocol}
+                        className={`protocol-card ${researchProtocol === protocol ? "selected" : ""} ${isRecommended ? "recommended" : ""}`}
+                        onClick={() => setResearchProtocol(protocol)}
+                      >
+                        <div className="protocol-card-header">
+                          <h5>{info.name}</h5>
+                          {isRecommended && (
+                            <span className="protocol-badge">
+                              Рекомендуется
+                            </span>
+                          )}
+                        </div>
+                        <p className="protocol-description">
+                          {info.description}
+                        </p>
+                        {info.keyRequirements.length > 0 && (
+                          <ul className="protocol-requirements">
+                            {info.keyRequirements.slice(0, 3).map((req, i) => (
+                              <li key={i}>{req}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {researchProtocol === protocol &&
+                          protocol === "OTHER" && (
+                            <input
+                              value={protocolCustomName}
+                              onChange={(e) =>
+                                setProtocolCustomName(e.target.value)
+                              }
+                              placeholder="Название протокола..."
+                              onClick={(e) => e.stopPropagation()}
+                              className="protocol-custom-input"
+                            />
+                          )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* AI-анализ */}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <svg
+                  className="icon-md"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{ color: "var(--accent)" }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                <h4>AI-анализ работы</h4>
+              </div>
+              <div className="settings-card-body">
+                <p className="settings-hint">
+                  Включите AI-функции для автоматической проверки и рекомендаций
+                </p>
+
+                <div className="ai-options-stack">
+                  {/* Ошибки I и II рода */}
+                  <div className="ai-option-card">
+                    <div className="ai-option-header">
+                      <label className="ai-option-toggle">
+                        <input
+                          type="checkbox"
+                          checked={aiErrorAnalysisEnabled}
+                          onChange={(e) =>
+                            setAiErrorAnalysisEnabled(e.target.checked)
+                          }
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <div className="ai-option-title">
+                        <h5>Анализ ошибок первого и второго рода</h5>
+                        <span className="ai-badge">AI</span>
+                      </div>
+                    </div>
+                    <p className="ai-option-description">
+                      Проверка статистических тестов на предмет возможных ошибок
+                      интерпретации
+                    </p>
+
+                    {aiErrorAnalysisEnabled && (
+                      <div className="error-types-grid">
+                        <div className="error-type-card error-type-1">
+                          <h6>❌ Ошибка I рода (α)</h6>
+                          <p>
+                            Отклонили нулевую гипотезу, хотя она верна.
+                            <br />
+                            <strong>Ложноположительный результат.</strong>
+                          </p>
+                        </div>
+                        <div className="error-type-card error-type-2">
+                          <h6>⚠️ Ошибка II рода (β)</h6>
+                          <p>
+                            Не выявили эффект, хотя он существует.
+                            <br />
+                            <strong>Ложноотрицательный результат.</strong>
+                          </p>
                         </div>
                       </div>
-                      <p className="ai-option-description">
-                        {researchProtocol ? (
-                          <>
-                            Проверка структуры работы на соответствие протоколу{" "}
-                            <strong>
-                              {RESEARCH_PROTOCOLS[researchProtocol].fullName}
-                            </strong>
-                            .
-                          </>
-                        ) : (
-                          <span className="muted">
-                            Сначала выберите протокол исследования
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Стиль библиографии */}
-              <div className="settings-card">
-                <div className="settings-card-header">
-                  <svg
-                    className="icon-md"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                    />
-                  </svg>
-                  <h4>Стиль библиографии</h4>
-                </div>
-                <div className="settings-card-body">
-                  <p className="settings-hint">
-                    Выберите стиль оформления списка литературы для всех
-                    документов проекта
-                  </p>
-                  <div className="citation-styles-list">
-                    <label
-                      className={`citation-style-option ${citationStyle === "gost" ? "selected" : ""}`}
-                    >
-                      <input
-                        type="radio"
-                        name="citationStyle"
-                        value="gost"
-                        checked={citationStyle === "gost"}
-                        onChange={() => setCitationStyle("gost")}
-                      />
-                      <div className="citation-style-content">
-                        <strong>ГОСТ Р 7.0.5-2008</strong>
-                        <span className="citation-example">
-                          Иванов И.И. Название статьи // Журнал. — 2024. — Т. 1,
-                          № 2. — С. 10-20.
-                        </span>
-                      </div>
-                    </label>
-                    <label
-                      className={`citation-style-option ${citationStyle === "apa" ? "selected" : ""}`}
-                    >
-                      <input
-                        type="radio"
-                        name="citationStyle"
-                        value="apa"
-                        checked={citationStyle === "apa"}
-                        onChange={() => setCitationStyle("apa")}
-                      />
-                      <div className="citation-style-content">
-                        <strong>APA 7th Edition</strong>
-                        <span className="citation-example">
-                          Ivanov, I. I. (2024). Article title. Journal Name,
-                          1(2), 10-20.
-                        </span>
-                      </div>
-                    </label>
-                    <label
-                      className={`citation-style-option ${citationStyle === "vancouver" ? "selected" : ""}`}
-                    >
-                      <input
-                        type="radio"
-                        name="citationStyle"
-                        value="vancouver"
-                        checked={citationStyle === "vancouver"}
-                        onChange={() => setCitationStyle("vancouver")}
-                      />
-                      <div className="citation-style-content">
-                        <strong>Vancouver</strong>
-                        <span className="citation-example">
-                          Ivanov II. Article title. Journal Name.
-                          2024;1(2):10-20.
-                        </span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {canEdit && (
-                <div className="settings-save-section">
-                  <button
-                    className="btn settings-save-btn"
-                    onClick={handleSaveSettings}
-                    disabled={saving}
-                    type="button"
-                  >
-                    {saving ? (
-                      "Сохранение..."
-                    ) : (
-                      <>
-                        <svg
-                          className="icon-sm"
-                          style={{ marginRight: 6 }}
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
-                          />
-                        </svg>
-                        Сохранить настройки
-                      </>
                     )}
-                  </button>
+                  </div>
+
+                  {/* Проверка соответствия протоколу */}
+                  <div className="ai-option-card">
+                    <div className="ai-option-header">
+                      <label className="ai-option-toggle">
+                        <input
+                          type="checkbox"
+                          checked={aiProtocolCheckEnabled}
+                          onChange={(e) =>
+                            setAiProtocolCheckEnabled(e.target.checked)
+                          }
+                          disabled={!researchProtocol}
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <div className="ai-option-title">
+                        <h5>Проверка соответствия протоколу</h5>
+                        <span className="ai-badge">AI</span>
+                      </div>
+                    </div>
+                    <p className="ai-option-description">
+                      {researchProtocol ? (
+                        <>
+                          Проверка структуры работы на соответствие протоколу{" "}
+                          <strong>
+                            {RESEARCH_PROTOCOLS[researchProtocol].fullName}
+                          </strong>
+                          .
+                        </>
+                      ) : (
+                        <span className="muted">
+                          Сначала выберите протокол исследования
+                        </span>
+                      )}
+                    </p>
+                  </div>
                 </div>
-              )}
-              {/* End of project-section-body */}
+              </div>
             </div>
+
+            {/* Стиль библиографии */}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <svg
+                  className="icon-md"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style={{ color: "var(--accent)" }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                  />
+                </svg>
+                <h4>Стиль библиографии</h4>
+              </div>
+              <div className="settings-card-body">
+                <p className="settings-hint">
+                  Выберите стиль оформления списка литературы для всех
+                  документов проекта
+                </p>
+                <div className="citation-styles-list">
+                  <label
+                    className={`citation-style-option ${citationStyle === "gost" ? "selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name="citationStyle"
+                      value="gost"
+                      checked={citationStyle === "gost"}
+                      onChange={() => setCitationStyle("gost")}
+                    />
+                    <div className="citation-style-content">
+                      <strong>ГОСТ Р 7.0.5-2008</strong>
+                      <span className="citation-example">
+                        Иванов И.И. Название статьи // Журнал. — 2024. — Т. 1, №
+                        2. — С. 10-20.
+                      </span>
+                    </div>
+                  </label>
+                  <label
+                    className={`citation-style-option ${citationStyle === "apa" ? "selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name="citationStyle"
+                      value="apa"
+                      checked={citationStyle === "apa"}
+                      onChange={() => setCitationStyle("apa")}
+                    />
+                    <div className="citation-style-content">
+                      <strong>APA 7th Edition</strong>
+                      <span className="citation-example">
+                        Ivanov, I. I. (2024). Article title. Journal Name, 1(2),
+                        10-20.
+                      </span>
+                    </div>
+                  </label>
+                  <label
+                    className={`citation-style-option ${citationStyle === "vancouver" ? "selected" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name="citationStyle"
+                      value="vancouver"
+                      checked={citationStyle === "vancouver"}
+                      onChange={() => setCitationStyle("vancouver")}
+                    />
+                    <div className="citation-style-content">
+                      <strong>Vancouver</strong>
+                      <span className="citation-example">
+                        Ivanov II. Article title. Journal Name. 2024;1(2):10-20.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {canEdit && (
+              <div className="settings-save-section">
+                <button
+                  className="btn settings-save-btn"
+                  onClick={handleSaveSettings}
+                  disabled={saving}
+                  type="button"
+                >
+                  {saving ? (
+                    "Сохранение..."
+                  ) : (
+                    <>
+                      <svg
+                        className="icon-sm"
+                        style={{ marginRight: 6 }}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.5}
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z"
+                        />
+                      </svg>
+                      Сохранить настройки
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
