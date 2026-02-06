@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, {
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   apiSearchArticles,
@@ -179,6 +185,13 @@ export default function ArticlesSection({
   // Массовый выбор
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Позиции навигационных стрелок (динамический расчёт)
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [arrowPositions, setArrowPositions] = useState<{
+    left: number;
+    right: number;
+  } | null>(null);
+
   // Сортировка
   const [sortBy, setSortBy] = useState<
     "date" | "stats" | "year_desc" | "year_asc"
@@ -242,6 +255,75 @@ export default function ArticlesSection({
   useEffect(() => {
     loadArticles();
   }, [projectId, viewStatus, showStatsOnly, filterSourceQuery]);
+
+  // Динамический расчёт позиций навигационных стрелок
+  useEffect(() => {
+    function calculateArrowPositions() {
+      const grid = gridRef.current;
+      if (!grid) return;
+
+      const gridRect = grid.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+
+      // Находим sidebar toggle button для определения визуальной границы сайдбара
+      const sidebarToggle = document.querySelector(".sidebar-collapse-toggle");
+      let sidebarVisualRight = 0;
+
+      if (sidebarToggle) {
+        const toggleRect = sidebarToggle.getBoundingClientRect();
+        sidebarVisualRight = toggleRect.right;
+      } else {
+        // Fallback: используем sidebar
+        const sidebar = document.querySelector(".app-sidebar");
+        if (sidebar) {
+          sidebarVisualRight = sidebar.getBoundingClientRect().right;
+        }
+      }
+
+      // Левая стрелка: центр между правым краем toggle button и левым краем карточек
+      const leftGapCenter = (sidebarVisualRight + gridRect.left) / 2;
+
+      // Правая стрелка: центр между правым краем карточек и правым краем viewport
+      const rightGapCenter = (gridRect.right + viewportWidth) / 2;
+
+      setArrowPositions({
+        left: leftGapCenter,
+        right: viewportWidth - rightGapCenter,
+      });
+    }
+
+    // Начальный расчёт
+    calculateArrowPositions();
+
+    // Пересчёт при изменении размеров окна
+    window.addEventListener("resize", calculateArrowPositions);
+
+    // MutationObserver для отслеживания изменения класса sidebar-collapsed
+    const observer = new MutationObserver(() => {
+      // Небольшая задержка для завершения анимации сайдбара
+      setTimeout(calculateArrowPositions, 200);
+    });
+
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
+    // ResizeObserver для отслеживания изменения размера грида
+    const resizeObserver = new ResizeObserver(() => {
+      calculateArrowPositions();
+    });
+
+    if (gridRef.current) {
+      resizeObserver.observe(gridRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", calculateArrowPositions);
+      observer.disconnect();
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   // Вычислить годы из пресета
   function getYearsFromPreset(): { yearFrom: number; yearTo: number } {
@@ -1978,7 +2060,7 @@ export default function ArticlesSection({
             : "Нет статей соответствующих фильтру."}
         </div>
       ) : (
-        <div className="articles-grid">
+        <div ref={gridRef} className="articles-grid">
           {filteredArticles.map((a) => (
             <ArticleCard
               key={a.id}
@@ -2000,50 +2082,63 @@ export default function ArticlesSection({
       )}
 
       {/* Navigation Arrows - rendered via portal to escape overflow container */}
-      {createPortal(
-        (() => {
-          const statusOrder = [
-            "candidate",
-            "selected",
-            "excluded",
-            "all",
-            "deleted",
-          ];
-          const currentIndex = statusOrder.indexOf(viewStatus);
-          const prevStatus =
-            currentIndex > 0 ? statusOrder[currentIndex - 1] : null;
-          const nextStatus =
-            currentIndex < statusOrder.length - 1
-              ? statusOrder[currentIndex + 1]
-              : null;
+      {arrowPositions &&
+        createPortal(
+          (() => {
+            const statusOrder = [
+              "candidate",
+              "selected",
+              "excluded",
+              "all",
+              "deleted",
+            ];
+            const currentIndex = statusOrder.indexOf(viewStatus);
+            const prevStatus =
+              currentIndex > 0 ? statusOrder[currentIndex - 1] : null;
+            const nextStatus =
+              currentIndex < statusOrder.length - 1
+                ? statusOrder[currentIndex + 1]
+                : null;
 
-          return (
-            <>
-              {prevStatus && (
-                <button
-                  className="articles-nav-arrow articles-nav-arrow--left"
-                  onClick={() => setViewStatus(prevStatus as typeof viewStatus)}
-                  title={statusLabels[prevStatus]}
-                  type="button"
-                >
-                  ‹
-                </button>
-              )}
-              {nextStatus && (
-                <button
-                  className="articles-nav-arrow articles-nav-arrow--right"
-                  onClick={() => setViewStatus(nextStatus as typeof viewStatus)}
-                  title={statusLabels[nextStatus]}
-                  type="button"
-                >
-                  ›
-                </button>
-              )}
-            </>
-          );
-        })(),
-        document.body,
-      )}
+            return (
+              <>
+                {prevStatus && (
+                  <button
+                    className="articles-nav-arrow"
+                    onClick={() =>
+                      setViewStatus(prevStatus as typeof viewStatus)
+                    }
+                    title={statusLabels[prevStatus]}
+                    type="button"
+                    style={{
+                      left: arrowPositions.left,
+                      transform: "translate(-50%, -50%)",
+                    }}
+                  >
+                    ‹
+                  </button>
+                )}
+                {nextStatus && (
+                  <button
+                    className="articles-nav-arrow"
+                    onClick={() =>
+                      setViewStatus(nextStatus as typeof viewStatus)
+                    }
+                    title={statusLabels[nextStatus]}
+                    type="button"
+                    style={{
+                      right: arrowPositions.right,
+                      transform: "translate(50%, -50%)",
+                    }}
+                  >
+                    ›
+                  </button>
+                )}
+              </>
+            );
+          })(),
+          document.body,
+        )}
 
       {/* ResearchRabbit-style Article Sidebar/Modal */}
       {selectedArticle && (
