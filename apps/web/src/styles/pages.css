@@ -455,6 +455,250 @@
 }
 
 /* =============================================================================
+   Project Section Container (unified style like articles section)
+   ============================================================================= */
+
+.project-section-container {
+  @apply w-full mx-auto mb-6;
+  max-width: 788px;
+}
+
+.project-section-header {
+  @apply flex items-center justify-between gap-4 py-3 px-4;
+  @apply sticky top-0 z-10;
+  background: rgba(13, 27, 42, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(56, 89, 138, 0.2);
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.light-theme .project-section-header,
+[data-theme="light"] .project-section-header {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.project-section-header h2 {
+  @apply text-base font-semibold text-white m-0;
+  @apply flex items-center gap-2;
+}
+
+.light-theme .project-section-header h2,
+[data-theme="light"] .project-section-header h2 {
+  @apply text-neutral-900;
+}
+
+.project-section-actions {
+  @apply flex items-center gap-2;
+}
+
+.project-section-body {
+  background: rgba(13, 27, 42, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(56, 89, 138, 0.2);
+  border-top: none;
+  border-radius: 0 0 0.5rem 0.5rem;
+  @apply p-4;
+}
+
+.light-theme .project-section-body,
+[data-theme="light"] .project-section-body {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-top: none;
+}
+
+/* Documents Grid */
+.documents-grid {
+  @apply grid gap-3;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.document-card {
+  @apply relative flex flex-col p-4 cursor-pointer;
+  border-radius: 0.5rem;
+  background-color: rgba(13, 27, 42, 0.6);
+  border: 1px solid rgba(56, 89, 138, 0.25);
+  transition: all 150ms ease;
+}
+
+.document-card:hover {
+  background-color: rgba(13, 27, 42, 0.8);
+  border-color: rgba(56, 89, 138, 0.45);
+}
+
+.document-card.dragging {
+  opacity: 0.5;
+}
+
+.document-card.drag-over {
+  border-color: rgba(59, 130, 246, 0.6);
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.light-theme .document-card,
+[data-theme="light"] .document-card {
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .document-card:hover,
+[data-theme="light"] .document-card:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.document-card-header {
+  @apply flex items-center justify-between mb-2;
+}
+
+.document-order-badge {
+  @apply w-6 h-6 flex items-center justify-center;
+  @apply text-xs font-semibold text-blue-400;
+  border-radius: 0.375rem;
+  background-color: rgba(59, 130, 246, 0.15);
+}
+
+.light-theme .document-order-badge,
+[data-theme="light"] .document-order-badge {
+  @apply text-blue-600;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.document-drag-handle {
+  @apply text-neutral-500 cursor-grab select-none;
+  @apply hover:text-neutral-300;
+  letter-spacing: 2px;
+}
+
+.light-theme .document-drag-handle,
+[data-theme="light"] .document-drag-handle {
+  @apply text-neutral-400 hover:text-neutral-600;
+}
+
+.document-card-body {
+  @apply flex-1;
+}
+
+.document-card-title {
+  @apply text-sm font-semibold text-white mb-2;
+  @apply line-clamp-2;
+}
+
+.light-theme .document-card-title,
+[data-theme="light"] .document-card-title {
+  @apply text-neutral-900;
+}
+
+.document-card-dates {
+  @apply text-xs text-neutral-500;
+}
+
+.document-date-row {
+  @apply flex items-center gap-2;
+}
+
+.date-label {
+  @apply text-neutral-500;
+}
+
+/* Files Grid */
+.files-page {
+  @apply flex flex-col h-full;
+}
+
+.files-grid {
+  @apply grid gap-3;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.file-card {
+  @apply relative flex flex-col p-4;
+  border-radius: 0.5rem;
+  background-color: rgba(13, 27, 42, 0.6);
+  border: 1px solid rgba(56, 89, 138, 0.25);
+  transition: all 150ms ease;
+}
+
+.file-card:hover {
+  background-color: rgba(13, 27, 42, 0.8);
+  border-color: rgba(56, 89, 138, 0.45);
+}
+
+.light-theme .file-card,
+[data-theme="light"] .file-card {
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .file-card:hover,
+[data-theme="light"] .file-card:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Settings Page */
+.settings-page {
+  @apply flex flex-col gap-4;
+}
+
+.settings-card {
+  border-radius: 0.5rem;
+  background-color: rgba(13, 27, 42, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(56, 89, 138, 0.2);
+  overflow: hidden;
+}
+
+.light-theme .settings-card,
+[data-theme="light"] .settings-card {
+  background-color: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.settings-card-header {
+  @apply flex items-center gap-3 px-4 py-3;
+  @apply border-b;
+  border-color: rgba(56, 89, 138, 0.2);
+}
+
+.light-theme .settings-card-header,
+[data-theme="light"] .settings-card-header {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.settings-card-header svg {
+  @apply w-5 h-5 text-blue-400;
+}
+
+.light-theme .settings-card-header svg,
+[data-theme="light"] .settings-card-header svg {
+  @apply text-blue-600;
+}
+
+.settings-card-header h4 {
+  @apply text-sm font-semibold text-white m-0 flex-1;
+}
+
+.light-theme .settings-card-header h4,
+[data-theme="light"] .settings-card-header h4 {
+  @apply text-neutral-900;
+}
+
+.settings-card-body {
+  @apply p-4;
+}
+
+/* =============================================================================
    Animations
    ============================================================================= */
 

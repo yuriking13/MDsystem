@@ -1059,53 +1059,29 @@ export default function ArticlesSection({
 
   return (
     <div className="articles-page">
-      {/* Unified Header Toolbar */}
-      <div className="articles-header">
-        <div className="articles-header-left">
-          <h5 className="articles-header-title">
-            База статей
-            <span className="articles-header-status">
-              / {statusLabels[viewStatus] || "Все"}
-            </span>
-            <span className="articles-header-count">
-              ({filteredArticles.length})
-            </span>
-          </h5>
-        </div>
-        <div className="articles-header-right">
-          {canEdit && untranslatedCount > 0 && (
-            <button
-              className="articles-toolbar-btn"
-              onClick={handleTranslate}
-              disabled={translating}
-              type="button"
-              title={`Перевести ${untranslatedCount} статей без перевода`}
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                />
-              </svg>
-              {translating
-                ? "Переводим..."
-                : `Перевести (${untranslatedCount})`}
-            </button>
-          )}
-          {canEdit && (
-            <>
+      {/* Header + Filters Wrapper */}
+      <div className="articles-header-wrapper">
+        {/* Unified Header Toolbar */}
+        <div className="articles-header">
+          <div className="articles-header-left">
+            <h5 className="articles-header-title">
+              База статей
+              <span className="articles-header-status">
+                / {statusLabels[viewStatus] || "Все"}
+              </span>
+              <span className="articles-header-count">
+                ({filteredArticles.length})
+              </span>
+            </h5>
+          </div>
+          <div className="articles-header-right">
+            {canEdit && untranslatedCount > 0 && (
               <button
                 className="articles-toolbar-btn"
-                onClick={() => setShowAddByDoiModal(true)}
+                onClick={handleTranslate}
+                disabled={translating}
                 type="button"
-                title="Добавить статью по DOI"
+                title={`Перевести ${untranslatedCount} статей без перевода`}
               >
                 <svg
                   className="w-4 h-4"
@@ -1117,18 +1093,87 @@ export default function ArticlesSection({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M12 4v16m8-8H4"
+                    d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
                   />
                 </svg>
-                По DOI
+                {translating
+                  ? "Переводим..."
+                  : `Перевести (${untranslatedCount})`}
               </button>
-              <button
-                className="articles-toolbar-btn articles-toolbar-btn--primary"
-                onClick={() => setShowSearch(!showSearch)}
-                type="button"
-              >
+            )}
+            {canEdit && (
+              <>
+                <button
+                  className="articles-toolbar-btn"
+                  onClick={() => setShowAddByDoiModal(true)}
+                  type="button"
+                  title="Добавить статью по DOI"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  По DOI
+                </button>
+                <button
+                  className="articles-toolbar-btn articles-toolbar-btn--primary"
+                  onClick={() => setShowSearch(!showSearch)}
+                  type="button"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                  {showSearch ? "Скрыть поиск" : "Поиск статей"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <div className="alert" style={{ marginBottom: 12 }}>
+            {error}
+          </div>
+        )}
+        {ok && (
+          <div className="ok" style={{ marginBottom: 12 }}>
+            {ok}
+          </div>
+        )}
+
+        {/* Форма поиска */}
+        {showSearch && (
+          <form
+            onSubmit={
+              multiQueries.length > 0 ? handleMultiSearch : handleSearch
+            }
+            className="card search-form-card"
+            style={{ marginBottom: 16 }}
+          >
+            {/* Header */}
+            <div className="search-form-header">
+              <div className="search-form-title">
                 <svg
-                  className="w-4 h-4"
+                  className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -1140,36 +1185,379 @@ export default function ArticlesSection({
                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                   />
                 </svg>
-                {showSearch ? "Скрыть поиск" : "Поиск статей"}
-              </button>
-            </>
-          )}
-        </div>
-      </div>
+                <h3 style={{ margin: 0 }}>Поиск научных статей</h3>
+              </div>
+              <label className="row gap" style={{ alignItems: "center" }}>
+                <input
+                  type="checkbox"
+                  checked={showMultiSearch}
+                  onChange={(e) => setShowMultiSearch(e.target.checked)}
+                  className="search-checkbox"
+                />
+                <span className="muted" style={{ fontSize: 12 }}>
+                  Мультипоиск
+                </span>
+              </label>
+            </div>
 
-      {error && (
-        <div className="alert" style={{ marginBottom: 12 }}>
-          {error}
-        </div>
-      )}
-      {ok && (
-        <div className="ok" style={{ marginBottom: 12 }}>
-          {ok}
-        </div>
-      )}
+            {/* Источники поиска */}
+            <div className="search-sources-section">
+              <div className="search-section-label">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                  />
+                </svg>
+                <span>Источники:</span>
+              </div>
+              <div className="search-sources-grid">
+                {SEARCH_SOURCES.map((source) => (
+                  <label
+                    key={source.value}
+                    className={`search-source-option ${searchSources.includes(source.value) ? "active" : ""}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={searchSources.includes(source.value)}
+                      onChange={() => toggleSearchSource(source.value)}
+                      className="search-checkbox"
+                    />
+                    <div className="search-source-content">
+                      <span className="search-source-name">{source.label}</span>
+                      <span className="search-source-desc">
+                        {source.description}
+                      </span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="stack">
+              {/* Мультипоиск - список запросов */}
+              {showMultiSearch && multiQueries.length > 0 && (
+                <div style={{ marginBottom: 12 }}>
+                  <span className="muted" style={{ fontSize: 12 }}>
+                    Запросы для мультипоиска:
+                  </span>
+                  <div
+                    style={{
+                      marginTop: 8,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 6,
+                    }}
+                  >
+                    {multiQueries.map((q, idx) => (
+                      <div
+                        key={q.id}
+                        className="row gap"
+                        style={{
+                          alignItems: "center",
+                          background: "rgba(0,0,0,0.2)",
+                          padding: "8px 12px",
+                          borderRadius: 8,
+                        }}
+                      >
+                        <span style={{ flex: 1, fontSize: 13 }}>
+                          <span className="muted">{idx + 1}.</span> {q.query}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeMultiQuery(q.id)}
+                          className="btn secondary"
+                          style={{ padding: "2px 8px", fontSize: 12 }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-      {/* Форма поиска */}
-      {showSearch && (
-        <form
-          onSubmit={multiQueries.length > 0 ? handleMultiSearch : handleSearch}
-          className="card search-form-card"
-          style={{ marginBottom: 16 }}
-        >
-          {/* Header */}
-          <div className="search-form-header">
-            <div className="search-form-title">
+              <div className="row gap" style={{ alignItems: "flex-end" }}>
+                <label className="stack" style={{ flex: 1 }}>
+                  <span>
+                    Поисковый запрос {multiQueries.length > 0 ? "" : "*"}
+                  </span>
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder='например: "heart failure" AND "machine learning"'
+                    required={multiQueries.length === 0}
+                  />
+                </label>
+
+                {/* Поле поиска PubMed */}
+                <label className="stack" style={{ minWidth: 180 }}>
+                  <span>Искать в поле:</span>
+                  <select
+                    value={searchField}
+                    onChange={(e) => setSearchField(e.target.value)}
+                    style={{ padding: "8px 12px" }}
+                  >
+                    {PUBMED_SEARCH_FIELDS.map((field) => (
+                      <option key={field.value} value={field.value}>
+                        {field.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                {showMultiSearch && (
+                  <button
+                    type="button"
+                    onClick={addMultiQuery}
+                    className="btn secondary"
+                    disabled={!searchQuery.trim()}
+                    style={{ padding: "10px 16px" }}
+                    title="Добавить запрос в список"
+                  >
+                    + Добавить
+                  </button>
+                )}
+              </div>
+
+              {/* Период публикации */}
+              <div>
+                <span className="muted">Период публикации:</span>
+                <div
+                  className="row gap"
+                  style={{ flexWrap: "wrap", marginTop: 6 }}
+                >
+                  {DATE_PRESETS.map((preset) => (
+                    <label
+                      key={preset.id}
+                      className="row gap"
+                      style={{ alignItems: "center" }}
+                    >
+                      <input
+                        type="radio"
+                        name="datePreset"
+                        checked={datePreset === preset.id}
+                        onChange={() => setDatePreset(preset.id)}
+                        style={{ width: "auto" }}
+                      />
+                      <span style={{ fontSize: 13 }}>{preset.label}</span>
+                    </label>
+                  ))}
+                </div>
+
+                {datePreset === "custom" && (
+                  <div className="row gap" style={{ marginTop: 8 }}>
+                    <label className="stack" style={{ flex: 1 }}>
+                      <span>Год от</span>
+                      <input
+                        type="number"
+                        value={customYearFrom}
+                        onChange={(e) =>
+                          setCustomYearFrom(Number(e.target.value))
+                        }
+                        min={1900}
+                        max={2100}
+                      />
+                    </label>
+                    <label className="stack" style={{ flex: 1 }}>
+                      <span>Год до</span>
+                      <input
+                        type="number"
+                        value={customYearTo}
+                        onChange={(e) =>
+                          setCustomYearTo(Number(e.target.value))
+                        }
+                        min={1900}
+                        max={2100}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              {/* Доступность текста */}
+              <div>
+                <span className="muted">Доступность текста:</span>
+                <div
+                  className="row gap"
+                  style={{ flexWrap: "wrap", marginTop: 6 }}
+                >
+                  {TEXT_AVAILABILITY.map((opt) => (
+                    <label
+                      key={opt.id}
+                      className="row gap"
+                      style={{ alignItems: "center" }}
+                    >
+                      <input
+                        type="radio"
+                        name="textAvailability"
+                        checked={textAvailability === opt.id}
+                        onChange={() => setTextAvailability(opt.id)}
+                        style={{ width: "auto" }}
+                      />
+                      <span style={{ fontSize: 13 }}>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Тип публикации */}
+              <div>
+                <div
+                  className="row gap"
+                  style={{ alignItems: "center", marginBottom: 6 }}
+                >
+                  <span className="muted">Тип публикации:</span>
+                  {pubTypes.length > 1 && (
+                    <div className="row gap" style={{ marginLeft: 12 }}>
+                      <label
+                        className="row gap"
+                        style={{ alignItems: "center" }}
+                      >
+                        <input
+                          type="radio"
+                          name="pubTypesLogic"
+                          checked={pubTypesLogic === "or"}
+                          onChange={() => setPubTypesLogic("or")}
+                          style={{ width: "auto" }}
+                        />
+                        <span style={{ fontSize: 12 }}>ИЛИ</span>
+                      </label>
+                      <label
+                        className="row gap"
+                        style={{ alignItems: "center" }}
+                      >
+                        <input
+                          type="radio"
+                          name="pubTypesLogic"
+                          checked={pubTypesLogic === "and"}
+                          onChange={() => setPubTypesLogic("and")}
+                          style={{ width: "auto" }}
+                        />
+                        <span style={{ fontSize: 12 }}>И</span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+                <div className="row gap" style={{ flexWrap: "wrap" }}>
+                  {PUBLICATION_TYPES.map((pt) => (
+                    <label
+                      key={pt.id}
+                      className="row gap"
+                      style={{ alignItems: "center" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={pubTypes.includes(pt.id)}
+                        onChange={() => togglePubType(pt.id)}
+                        style={{ width: "auto" }}
+                      />
+                      <span style={{ fontSize: 13 }}>{pt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Дополнительные опции */}
+              <div
+                className="row gap"
+                style={{ flexWrap: "wrap", alignItems: "center" }}
+              >
+                <label className="stack" style={{ minWidth: 180 }}>
+                  <span>Макс. результатов на источник</span>
+                  <select
+                    value={maxResults}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "all") {
+                        handleSearchAllArticles();
+                      } else {
+                        setMaxResults(Number(val));
+                      }
+                    }}
+                    style={{ padding: "10px 12px", borderRadius: 10 }}
+                    title="Лимит применяется к каждому выбранному источнику отдельно"
+                  >
+                    <option value={10}>10</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                    <option value={500}>500</option>
+                    <option value={1000}>1000</option>
+                    <option value="all">Все статьи</option>
+                  </select>
+                </label>
+
+                <label
+                  className="row gap"
+                  style={{ alignItems: "center", marginTop: 20 }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={translateAfterSearch}
+                    onChange={(e) => setTranslateAfterSearch(e.target.checked)}
+                    style={{ width: "auto" }}
+                  />
+                  <span
+                    style={{ display: "flex", alignItems: "center", gap: 6 }}
+                  >
+                    <svg
+                      className="icon-sm"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                      />
+                    </svg>
+                    Перевести заголовки и абстракты (RU)
+                  </span>
+                </label>
+              </div>
+
+              <div className="row gap">
+                <button
+                  className="btn search-submit-btn"
+                  disabled={searching || searchSources.length === 0}
+                  type="submit"
+                >
+                  {searching
+                    ? "Поиск..."
+                    : multiQueries.length > 0
+                      ? `Мультипоиск (${multiQueries.length + (searchQuery.trim() ? 1 : 0)} запросов)`
+                      : `Найти в ${searchSources.map((s) => (s === "pubmed" ? "PubMed" : s === "doaj" ? "DOAJ" : "Wiley")).join(", ")}`}
+                </button>
+                <button
+                  className="btn secondary"
+                  onClick={() => {
+                    setShowSearch(false);
+                    setMultiQueries([]);
+                  }}
+                  type="button"
+                >
+                  Отмена
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
+        {/* Unified Filters Container */}
+        <div className="articles-filters-container">
+          {/* Row 1: Search input + Year filters */}
+          <div className="articles-filters-row">
+            <div className="articles-filter-search">
               <svg
-                className="w-5 h-5"
+                className="icon-sm"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1181,542 +1569,228 @@ export default function ArticlesSection({
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <h3 style={{ margin: 0 }}>Поиск научных статей</h3>
-            </div>
-            <label className="row gap" style={{ alignItems: "center" }}>
               <input
-                type="checkbox"
-                checked={showMultiSearch}
-                onChange={(e) => setShowMultiSearch(e.target.checked)}
-                className="search-checkbox"
+                type="text"
+                placeholder="Поиск по названию/автору..."
+                value={localSearch}
+                onChange={(e) => setLocalSearch(e.target.value)}
               />
-              <span className="muted" style={{ fontSize: 12 }}>
-                Мультипоиск
-              </span>
-            </label>
-          </div>
-
-          {/* Источники поиска */}
-          <div className="search-sources-section">
-            <div className="search-section-label">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
-              </svg>
-              <span>Источники:</span>
             </div>
-            <div className="search-sources-grid">
-              {SEARCH_SOURCES.map((source) => (
-                <label
-                  key={source.value}
-                  className={`search-source-option ${searchSources.includes(source.value) ? "active" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={searchSources.includes(source.value)}
-                    onChange={() => toggleSearchSource(source.value)}
-                    className="search-checkbox"
-                  />
-                  <div className="search-source-content">
-                    <span className="search-source-name">{source.label}</span>
-                    <span className="search-source-desc">
-                      {source.description}
-                    </span>
-                  </div>
-                </label>
-              ))}
+            <div className="articles-filter-years">
+              <span className="muted">Год:</span>
+              <input
+                type="number"
+                placeholder="от"
+                value={yearFromFilter || ""}
+                onChange={(e) =>
+                  setYearFromFilter(
+                    e.target.value ? Number(e.target.value) : null,
+                  )
+                }
+                min={1900}
+                max={2100}
+              />
+              <span className="muted">—</span>
+              <input
+                type="number"
+                placeholder="до"
+                value={yearToFilter || ""}
+                onChange={(e) =>
+                  setYearToFilter(
+                    e.target.value ? Number(e.target.value) : null,
+                  )
+                }
+                min={1900}
+                max={2100}
+              />
             </div>
           </div>
-          <div className="stack">
-            {/* Мультипоиск - список запросов */}
-            {showMultiSearch && multiQueries.length > 0 && (
-              <div style={{ marginBottom: 12 }}>
-                <span className="muted" style={{ fontSize: 12 }}>
-                  Запросы для мультипоиска:
-                </span>
-                <div
-                  style={{
-                    marginTop: 8,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                  }}
-                >
-                  {multiQueries.map((q, idx) => (
-                    <div
-                      key={q.id}
-                      className="row gap"
-                      style={{
-                        alignItems: "center",
-                        background: "rgba(0,0,0,0.2)",
-                        padding: "8px 12px",
-                        borderRadius: 8,
-                      }}
-                    >
-                      <span style={{ flex: 1, fontSize: 13 }}>
-                        <span className="muted">{idx + 1}.</span> {q.query}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => removeMultiQuery(q.id)}
-                        className="btn secondary"
-                        style={{ padding: "2px 8px", fontSize: 12 }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            <div className="row gap" style={{ alignItems: "flex-end" }}>
-              <label className="stack" style={{ flex: 1 }}>
-                <span>
-                  Поисковый запрос {multiQueries.length > 0 ? "" : "*"}
-                </span>
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder='например: "heart failure" AND "machine learning"'
-                  required={multiQueries.length === 0}
-                />
-              </label>
-
-              {/* Поле поиска PubMed */}
-              <label className="stack" style={{ minWidth: 180 }}>
-                <span>Искать в поле:</span>
-                <select
-                  value={searchField}
-                  onChange={(e) => setSearchField(e.target.value)}
-                  style={{ padding: "8px 12px" }}
-                >
-                  {PUBMED_SEARCH_FIELDS.map((field) => (
-                    <option key={field.value} value={field.value}>
-                      {field.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              {showMultiSearch && (
-                <button
-                  type="button"
-                  onClick={addMultiQuery}
-                  className="btn secondary"
-                  disabled={!searchQuery.trim()}
-                  style={{ padding: "10px 16px" }}
-                  title="Добавить запрос в список"
-                >
-                  + Добавить
-                </button>
-              )}
-            </div>
-
-            {/* Период публикации */}
-            <div>
-              <span className="muted">Период публикации:</span>
-              <div
-                className="row gap"
-                style={{ flexWrap: "wrap", marginTop: 6 }}
-              >
-                {DATE_PRESETS.map((preset) => (
-                  <label
-                    key={preset.id}
-                    className="row gap"
-                    style={{ alignItems: "center" }}
-                  >
-                    <input
-                      type="radio"
-                      name="datePreset"
-                      checked={datePreset === preset.id}
-                      onChange={() => setDatePreset(preset.id)}
-                      style={{ width: "auto" }}
-                    />
-                    <span style={{ fontSize: 13 }}>{preset.label}</span>
-                  </label>
-                ))}
-              </div>
-
-              {datePreset === "custom" && (
-                <div className="row gap" style={{ marginTop: 8 }}>
-                  <label className="stack" style={{ flex: 1 }}>
-                    <span>Год от</span>
-                    <input
-                      type="number"
-                      value={customYearFrom}
-                      onChange={(e) =>
-                        setCustomYearFrom(Number(e.target.value))
-                      }
-                      min={1900}
-                      max={2100}
-                    />
-                  </label>
-                  <label className="stack" style={{ flex: 1 }}>
-                    <span>Год до</span>
-                    <input
-                      type="number"
-                      value={customYearTo}
-                      onChange={(e) => setCustomYearTo(Number(e.target.value))}
-                      min={1900}
-                      max={2100}
-                    />
-                  </label>
-                </div>
-              )}
-            </div>
-
-            {/* Доступность текста */}
-            <div>
-              <span className="muted">Доступность текста:</span>
-              <div
-                className="row gap"
-                style={{ flexWrap: "wrap", marginTop: 6 }}
-              >
-                {TEXT_AVAILABILITY.map((opt) => (
-                  <label
-                    key={opt.id}
-                    className="row gap"
-                    style={{ alignItems: "center" }}
-                  >
-                    <input
-                      type="radio"
-                      name="textAvailability"
-                      checked={textAvailability === opt.id}
-                      onChange={() => setTextAvailability(opt.id)}
-                      style={{ width: "auto" }}
-                    />
-                    <span style={{ fontSize: 13 }}>{opt.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Тип публикации */}
-            <div>
-              <div
-                className="row gap"
-                style={{ alignItems: "center", marginBottom: 6 }}
-              >
-                <span className="muted">Тип публикации:</span>
-                {pubTypes.length > 1 && (
-                  <div className="row gap" style={{ marginLeft: 12 }}>
-                    <label className="row gap" style={{ alignItems: "center" }}>
-                      <input
-                        type="radio"
-                        name="pubTypesLogic"
-                        checked={pubTypesLogic === "or"}
-                        onChange={() => setPubTypesLogic("or")}
-                        style={{ width: "auto" }}
-                      />
-                      <span style={{ fontSize: 12 }}>ИЛИ</span>
-                    </label>
-                    <label className="row gap" style={{ alignItems: "center" }}>
-                      <input
-                        type="radio"
-                        name="pubTypesLogic"
-                        checked={pubTypesLogic === "and"}
-                        onChange={() => setPubTypesLogic("and")}
-                        style={{ width: "auto" }}
-                      />
-                      <span style={{ fontSize: 12 }}>И</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-              <div className="row gap" style={{ flexWrap: "wrap" }}>
-                {PUBLICATION_TYPES.map((pt) => (
-                  <label
-                    key={pt.id}
-                    className="row gap"
-                    style={{ alignItems: "center" }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={pubTypes.includes(pt.id)}
-                      onChange={() => togglePubType(pt.id)}
-                      style={{ width: "auto" }}
-                    />
-                    <span style={{ fontSize: 13 }}>{pt.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Дополнительные опции */}
-            <div
-              className="row gap"
-              style={{ flexWrap: "wrap", alignItems: "center" }}
+          {/* Row 2: Dropdowns - source queries, sorting, pub types */}
+          <div className="articles-filters-row">
+            <select
+              className="articles-filter-select"
+              value={filterSourceQuery || ""}
+              onChange={(e) => setFilterSourceQuery(e.target.value || null)}
+              title="Фильтр по поисковому запросу"
             >
-              <label className="stack" style={{ minWidth: 180 }}>
-                <span>Макс. результатов на источник</span>
-                <select
-                  value={maxResults}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "all") {
-                      handleSearchAllArticles();
-                    } else {
-                      setMaxResults(Number(val));
-                    }
-                  }}
-                  style={{ padding: "10px 12px", borderRadius: 10 }}
-                  title="Лимит применяется к каждому выбранному источнику отдельно"
-                >
-                  <option value={10}>10</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value={500}>500</option>
-                  <option value={1000}>1000</option>
-                  <option value="all">Все статьи</option>
-                </select>
-              </label>
+              <option value="">Все запросы</option>
+              {availableSourceQueries.map((q) => (
+                <option key={q} value={q} title={q}>
+                  {q.length > 30 ? q.slice(0, 30) + "..." : q}
+                </option>
+              ))}
+            </select>
 
-              <label
-                className="row gap"
-                style={{ alignItems: "center", marginTop: 20 }}
-              >
+            <select
+              className="articles-filter-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            >
+              <option value="date">По дате добавления</option>
+              <option value="stats">По статистике</option>
+              <option value="year_desc">По году ↓ (новые)</option>
+              <option value="year_asc">По году ↑ (старые)</option>
+            </select>
+
+            <select
+              className="articles-filter-select"
+              value={filterPubType || ""}
+              onChange={(e) => setFilterPubType(e.target.value || null)}
+            >
+              <option value="">Все типы</option>
+              {availablePubTypes.map((pt) => (
+                <option key={pt} value={pt}>
+                  {pt}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Row 3: Language toggle + checkboxes + select all */}
+          <div className="articles-filters-row articles-filters-row--options">
+            <div className="articles-filter-group">
+              <div className="lang-toggle">
+                <button
+                  className={listLang === "ru" ? "active" : ""}
+                  onClick={() => setListLang("ru")}
+                  type="button"
+                  title="Русский (если есть перевод)"
+                >
+                  RU
+                </button>
+                <button
+                  className={listLang === "en" ? "active" : ""}
+                  onClick={() => setListLang("en")}
+                  type="button"
+                  title="Английский (оригинал)"
+                >
+                  EN
+                </button>
+              </div>
+
+              <label className="articles-filter-checkbox">
                 <input
                   type="checkbox"
-                  checked={translateAfterSearch}
-                  onChange={(e) => setTranslateAfterSearch(e.target.checked)}
-                  style={{ width: "auto" }}
+                  checked={showStatsOnly}
+                  onChange={(e) => setShowStatsOnly(e.target.checked)}
                 />
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <svg
-                    className="icon-sm"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                    />
-                  </svg>
-                  Перевести заголовки и абстракты (RU)
-                </span>
+                <svg
+                  className="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+                <span>Стат.</span>
+              </label>
+
+              <label className="articles-filter-checkbox">
+                <input
+                  type="checkbox"
+                  checked={highlightStats}
+                  onChange={(e) => setHighlightStats(e.target.checked)}
+                />
+                <svg
+                  className="icon-sm"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                  />
+                </svg>
+                <span>Подсв.</span>
               </label>
             </div>
 
-            <div className="row gap">
-              <button
-                className="btn search-submit-btn"
-                disabled={searching || searchSources.length === 0}
-                type="submit"
-              >
-                {searching
-                  ? "Поиск..."
-                  : multiQueries.length > 0
-                    ? `Мультипоиск (${multiQueries.length + (searchQuery.trim() ? 1 : 0)} запросов)`
-                    : `Найти в ${searchSources.map((s) => (s === "pubmed" ? "PubMed" : s === "doaj" ? "DOAJ" : "Wiley")).join(", ")}`}
-              </button>
-              <button
-                className="btn secondary"
-                onClick={() => {
-                  setShowSearch(false);
-                  setMultiQueries([]);
-                }}
-                type="button"
-              >
-                Отмена
-              </button>
-            </div>
-          </div>
-        </form>
-      )}
-
-      {/* Unified Filters Container */}
-      <div className="articles-filters-container">
-        {/* Row 1: Search input + Year filters */}
-        <div className="articles-filters-row">
-          <div className="articles-filter-search">
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Поиск по названию/автору..."
-              value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-            />
-          </div>
-          <div className="articles-filter-years">
-            <span className="muted">Год:</span>
-            <input
-              type="number"
-              placeholder="от"
-              value={yearFromFilter || ""}
-              onChange={(e) =>
-                setYearFromFilter(
-                  e.target.value ? Number(e.target.value) : null,
-                )
-              }
-              min={1900}
-              max={2100}
-            />
-            <span className="muted">—</span>
-            <input
-              type="number"
-              placeholder="до"
-              value={yearToFilter || ""}
-              onChange={(e) =>
-                setYearToFilter(e.target.value ? Number(e.target.value) : null)
-              }
-              min={1900}
-              max={2100}
-            />
-          </div>
-        </div>
-
-        {/* Row 2: Dropdowns - source queries, sorting, pub types */}
-        <div className="articles-filters-row">
-          <select
-            className="articles-filter-select"
-            value={filterSourceQuery || ""}
-            onChange={(e) => setFilterSourceQuery(e.target.value || null)}
-            title="Фильтр по поисковому запросу"
-          >
-            <option value="">Все запросы</option>
-            {availableSourceQueries.map((q) => (
-              <option key={q} value={q} title={q}>
-                {q.length > 30 ? q.slice(0, 30) + "..." : q}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className="articles-filter-select"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-          >
-            <option value="date">По дате добавления</option>
-            <option value="stats">По статистике</option>
-            <option value="year_desc">По году ↓ (новые)</option>
-            <option value="year_asc">По году ↑ (старые)</option>
-          </select>
-
-          <select
-            className="articles-filter-select"
-            value={filterPubType || ""}
-            onChange={(e) => setFilterPubType(e.target.value || null)}
-          >
-            <option value="">Все типы</option>
-            {availablePubTypes.map((pt) => (
-              <option key={pt} value={pt}>
-                {pt}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Row 3: Language toggle + checkboxes + select all */}
-        <div className="articles-filters-row articles-filters-row--options">
-          <div className="articles-filter-group">
-            <div className="lang-toggle">
-              <button
-                className={listLang === "ru" ? "active" : ""}
-                onClick={() => setListLang("ru")}
-                type="button"
-                title="Русский (если есть перевод)"
-              >
-                RU
-              </button>
-              <button
-                className={listLang === "en" ? "active" : ""}
-                onClick={() => setListLang("en")}
-                type="button"
-                title="Английский (оригинал)"
-              >
-                EN
-              </button>
-            </div>
-
-            <label className="articles-filter-checkbox">
-              <input
-                type="checkbox"
-                checked={showStatsOnly}
-                onChange={(e) => setShowStatsOnly(e.target.checked)}
-              />
-              <svg
-                className="icon-sm"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            {canEdit && (
+              <label className="articles-filter-checkbox articles-filter-checkbox--select-all">
+                <input
+                  type="checkbox"
+                  checked={
+                    selectedIds.size > 0 &&
+                    selectedIds.size === filteredArticles.length
+                  }
+                  onChange={toggleSelectAll}
                 />
-              </svg>
-              <span>Стат.</span>
-            </label>
-
-            <label className="articles-filter-checkbox">
-              <input
-                type="checkbox"
-                checked={highlightStats}
-                onChange={(e) => setHighlightStats(e.target.checked)}
-              />
-              <svg
-                className="icon-sm"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-                />
-              </svg>
-              <span>Подсв.</span>
-            </label>
+                <span>
+                  {selectedIds.size > 0
+                    ? `Выбрано: ${selectedIds.size}`
+                    : "Выбрать все"}
+                </span>
+              </label>
+            )}
           </div>
-
-          {canEdit && (
-            <label className="articles-filter-checkbox articles-filter-checkbox--select-all">
-              <input
-                type="checkbox"
-                checked={
-                  selectedIds.size > 0 &&
-                  selectedIds.size === filteredArticles.length
-                }
-                onChange={toggleSelectAll}
-              />
-              <span>
-                {selectedIds.size > 0
-                  ? `Выбрано: ${selectedIds.size}`
-                  : "Выбрать все"}
-              </span>
-            </label>
-          )}
         </div>
+        {/* End of Header + Filters Wrapper */}
       </div>
+
+      {/* Navigation Arrows */}
+      <button
+        className="articles-nav-arrow articles-nav-arrow--left"
+        onClick={() => {
+          const prev =
+            viewStatus === "selected"
+              ? "candidate"
+              : viewStatus === "excluded"
+                ? "selected"
+                : viewStatus === "deleted"
+                  ? "excluded"
+                  : viewStatus === "all"
+                    ? "deleted"
+                    : "all";
+          setViewStatus(prev);
+        }}
+        type="button"
+        title="Предыдущий раздел"
+      >
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M15.75 19.5L8.25 12l7.5-7.5"
+          />
+        </svg>
+      </button>
+      <button
+        className="articles-nav-arrow articles-nav-arrow--right"
+        onClick={() => {
+          const next =
+            viewStatus === "candidate"
+              ? "selected"
+              : viewStatus === "selected"
+                ? "excluded"
+                : viewStatus === "excluded"
+                  ? "deleted"
+                  : viewStatus === "deleted"
+                    ? "all"
+                    : "candidate";
+          setViewStatus(next);
+        }}
+        type="button"
+        title="Следующий раздел"
+      >
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={1.5}
+            d="M8.25 4.5l7.5 7.5-7.5 7.5"
+          />
+        </svg>
+      </button>
 
       {/* Панель массовых операций */}
       {canEdit && selectedIds.size > 0 && (
