@@ -997,11 +997,11 @@
 }
 
 .articles-nav-arrow--left {
-  left: 8px;
+  left: 200px;
 }
 
 .articles-nav-arrow--right {
-  right: 8px;
+  right: 50px;
 }
 
 .light-theme .articles-nav-arrow,
