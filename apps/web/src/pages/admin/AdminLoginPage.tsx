@@ -4,6 +4,7 @@ import { getErrorMessage } from "../../lib/errorUtils";
 import { apiAdminLogin } from "../../lib/adminApi";
 import { useAdminAuth } from "../../lib/AdminContext";
 import { IconShield, IconKey, IconLock } from "../../components/FlowbiteIcons";
+import "../../styles/admin.css";
 
 export default function AdminLoginPage() {
   const nav = useNavigate();

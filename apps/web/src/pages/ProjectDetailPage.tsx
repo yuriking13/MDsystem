@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  Suspense,
+} from "react";
 import { getErrorMessage } from "../lib/errorUtils";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useProjectContext } from "../components/AppLayout";
@@ -43,24 +49,75 @@ import {
 } from "../lib/api";
 import { useProjectWebSocket } from "../lib/useProjectWebSocket";
 import { useAuth } from "../lib/AuthContext";
-import ArticlesSection from "../components/ArticlesSection";
-import CitationGraph from "../components/CitationGraph";
-import ChartFromTable, {
+import {
   CHART_TYPE_INFO,
   type ChartType,
   type TableData,
 } from "../components/ChartFromTable";
-import StatisticEditModal from "../components/StatisticEditModal";
-import CreateStatisticModal from "../components/CreateStatisticModal";
-import {
-  exportToWord,
-  exportToPdf,
-  exportBibliographyToWord,
-  exportBibliographyToTxt,
-  exportBibliographyToPdf,
-  prepareHtmlForExport,
-  captureChartsFromDOM,
-} from "../lib/exportWord";
+
+// Lazy load heavy components - they are only needed when specific tabs are active
+const ArticlesSection = React.lazy(
+  () => import("../components/ArticlesSection"),
+);
+const CitationGraph = React.lazy(() => import("../components/CitationGraph"));
+const ChartFromTable = React.lazy(() => import("../components/ChartFromTable"));
+const StatisticEditModal = React.lazy(
+  () => import("../components/StatisticEditModal"),
+);
+const CreateStatisticModal = React.lazy(
+  () => import("../components/CreateStatisticModal"),
+);
+
+// Lazy load export utilities - only needed when user triggers export
+async function getExportModule() {
+  return import("../lib/exportWord");
+}
+async function exportToWord(
+  ...args: Parameters<typeof import("../lib/exportWord").exportToWord>
+) {
+  const mod = await getExportModule();
+  return mod.exportToWord(...args);
+}
+async function exportToPdf(
+  ...args: Parameters<typeof import("../lib/exportWord").exportToPdf>
+) {
+  const mod = await getExportModule();
+  return mod.exportToPdf(...args);
+}
+async function exportBibliographyToWord(
+  ...args: Parameters<
+    typeof import("../lib/exportWord").exportBibliographyToWord
+  >
+) {
+  const mod = await getExportModule();
+  return mod.exportBibliographyToWord(...args);
+}
+async function exportBibliographyToTxt(
+  ...args: Parameters<
+    typeof import("../lib/exportWord").exportBibliographyToTxt
+  >
+) {
+  const mod = await getExportModule();
+  return mod.exportBibliographyToTxt(...args);
+}
+async function exportBibliographyToPdf(
+  ...args: Parameters<
+    typeof import("../lib/exportWord").exportBibliographyToPdf
+  >
+) {
+  const mod = await getExportModule();
+  return mod.exportBibliographyToPdf(...args);
+}
+async function prepareHtmlForExport(
+  ...args: Parameters<typeof import("../lib/exportWord").prepareHtmlForExport>
+) {
+  const mod = await getExportModule();
+  return mod.prepareHtmlForExport(...args);
+}
+async function captureChartsFromDOM() {
+  const mod = await getExportModule();
+  return mod.captureChartsFromDOM();
+}
 
 type Tab =
   | "articles"
@@ -1277,7 +1334,7 @@ export default function ProjectDetailPage() {
       await apiRenumberCitations(id);
 
       // Захватываем графики из текущего DOM (если есть)
-      const chartImages = captureChartsFromDOM();
+      const chartImages = await captureChartsFromDOM();
 
       // Получаем свежие данные для экспорта
       const res = await apiExportProject(id);
@@ -1342,7 +1399,7 @@ export default function ProjectDetailPage() {
       await apiRenumberCitations(id);
 
       // Захватываем графики из текущего DOM
-      const chartImages = captureChartsFromDOM();
+      const chartImages = await captureChartsFromDOM();
 
       // Получаем свежие данные для экспорта
       const res = await apiExportProject(id);
@@ -1452,11 +1509,15 @@ export default function ProjectDetailPage() {
       <div className="tab-content">
         {/* === ARTICLES TAB === */}
         {activeTab === "articles" && id && (
-          <ArticlesSection
-            projectId={id}
-            canEdit={!!canEdit}
-            onCountsChange={setArticleCounts}
-          />
+          <Suspense
+            fallback={<div className="p-8 text-center">Загрузка статей...</div>}
+          >
+            <ArticlesSection
+              projectId={id}
+              canEdit={!!canEdit}
+              onCountsChange={setArticleCounts}
+            />
+          </Suspense>
         )}
 
         {/* === DOCUMENTS TAB === */}
@@ -1792,7 +1853,7 @@ export default function ProjectDetailPage() {
                         await apiRenumberCitations(id);
 
                         // Захватываем графики из текущего DOM
-                        const chartImages = captureChartsFromDOM();
+                        const chartImages = await captureChartsFromDOM();
 
                         const res = await apiExportProject(id);
 
@@ -3928,7 +3989,13 @@ export default function ProjectDetailPage() {
         )}
 
         {/* === GRAPH TAB === */}
-        {activeTab === "graph" && id && <CitationGraph projectId={id} />}
+        {activeTab === "graph" && id && (
+          <Suspense
+            fallback={<div className="p-8 text-center">Загрузка графа...</div>}
+          >
+            <CitationGraph projectId={id} />
+          </Suspense>
+        )}
 
         {/* === SETTINGS TAB (includes team) === */}
         {activeTab === "settings" && (
