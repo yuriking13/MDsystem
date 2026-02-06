@@ -72,7 +72,11 @@ export default function ArticlesSection({
   onCountsChange,
 }: Props) {
   const toast = useToast();
-  const { articleViewStatus: viewStatus, setArticleViewStatus: setViewStatus, setArticleCounts: setContextCounts } = useProjectContext();
+  const {
+    articleViewStatus: viewStatus,
+    setArticleViewStatus: setViewStatus,
+    setArticleCounts: setContextCounts,
+  } = useProjectContext();
   const [articles, setArticles] = useState<Article[]>([]);
   const [counts, setCounts] = useState({
     candidate: 0,
@@ -1533,61 +1537,90 @@ export default function ArticlesSection({
         </form>
       )}
 
-      {/* Status navigation is now in the sidebar sub-menu */}
-
-      {/* Filters - single row: search, pub type, year range, source query, sort, options */}
-      <div
-        className="articles-filters-row"
-        style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" }}
-      >
-        {/* Локальный поиск по названию */}
-        <div
-          style={{
-            position: "relative",
-            flex: 1,
-            minWidth: 180,
-            maxWidth: 300,
-          }}
-        >
-          <svg
-            className="icon-sm"
-            style={{
-              position: "absolute",
-              left: 10,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "var(--text-muted)",
-            }}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      {/* Unified Filters Container */}
+      <div className="articles-filters-container">
+        {/* Row 1: Search input + Year filters */}
+        <div className="articles-filters-row">
+          <div className="articles-filter-search">
+            <svg
+              className="icon-sm"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="text"
+              placeholder="Поиск по названию/автору..."
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
             />
-          </svg>
-          <input
-            type="text"
-            placeholder="Поиск по названию/автору..."
-            value={localSearch}
-            onChange={(e) => setLocalSearch(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "6px 10px 6px 32px",
-              fontSize: 12,
-            }}
-          />
+          </div>
+          <div className="articles-filter-years">
+            <span className="muted">Год:</span>
+            <input
+              type="number"
+              placeholder="от"
+              value={yearFromFilter || ""}
+              onChange={(e) =>
+                setYearFromFilter(
+                  e.target.value ? Number(e.target.value) : null,
+                )
+              }
+              min={1900}
+              max={2100}
+            />
+            <span className="muted">—</span>
+            <input
+              type="number"
+              placeholder="до"
+              value={yearToFilter || ""}
+              onChange={(e) =>
+                setYearToFilter(e.target.value ? Number(e.target.value) : null)
+              }
+              min={1900}
+              max={2100}
+            />
+          </div>
         </div>
 
-        {/* Фильтр по типу публикации */}
-        {availablePubTypes.length > 0 && (
+        {/* Row 2: Dropdowns - source queries, sorting, pub types */}
+        <div className="articles-filters-row">
           <select
+            className="articles-filter-select"
+            value={filterSourceQuery || ""}
+            onChange={(e) => setFilterSourceQuery(e.target.value || null)}
+            title="Фильтр по поисковому запросу"
+          >
+            <option value="">Все запросы</option>
+            {availableSourceQueries.map((q) => (
+              <option key={q} value={q} title={q}>
+                {q.length > 30 ? q.slice(0, 30) + "..." : q}
+              </option>
+            ))}
+          </select>
+
+          <select
+            className="articles-filter-select"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+          >
+            <option value="date">По дате добавления</option>
+            <option value="stats">По статистике</option>
+            <option value="year_desc">По году ↓ (новые)</option>
+            <option value="year_asc">По году ↑ (старые)</option>
+          </select>
+
+          <select
+            className="articles-filter-select"
             value={filterPubType || ""}
             onChange={(e) => setFilterPubType(e.target.value || null)}
-            style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12 }}
           >
             <option value="">Все типы</option>
             {availablePubTypes.map((pt) => (
@@ -1596,428 +1629,339 @@ export default function ArticlesSection({
               </option>
             ))}
           </select>
-        )}
+        </div>
 
-        {/* Фильтр по периоду годов */}
-        <div className="row gap" style={{ alignItems: "center", gap: 4 }}>
-          <span className="muted" style={{ fontSize: 12 }}>
-            Год:
-          </span>
-          <input
-            type="number"
-            placeholder="от"
-            value={yearFromFilter || ""}
-            onChange={(e) =>
-              setYearFromFilter(e.target.value ? Number(e.target.value) : null)
-            }
-            style={{ width: 65, padding: "6px 6px", fontSize: 12 }}
-            min={1900}
-            max={2100}
-          />
-          <span className="muted">—</span>
-          <input
-            type="number"
-            placeholder="до"
-            value={yearToFilter || ""}
-            onChange={(e) =>
-              setYearToFilter(e.target.value ? Number(e.target.value) : null)
-            }
-            style={{ width: 65, padding: "6px 6px", fontSize: 12 }}
-            min={1900}
-            max={2100}
-          />
-          {(yearFromFilter || yearToFilter) && (
-            <button
-              className="btn secondary"
-              onClick={() => {
-                setYearFromFilter(null);
-                setYearToFilter(null);
-              }}
-              style={{ padding: "3px 6px", fontSize: 11 }}
-              type="button"
-            >
-              ✕
-            </button>
+        {/* Row 3: Language toggle + checkboxes + select all */}
+        <div className="articles-filters-row articles-filters-row--options">
+          <div className="articles-filter-group">
+            <div className="lang-toggle">
+              <button
+                className={listLang === "ru" ? "active" : ""}
+                onClick={() => setListLang("ru")}
+                type="button"
+                title="Русский (если есть перевод)"
+              >
+                RU
+              </button>
+              <button
+                className={listLang === "en" ? "active" : ""}
+                onClick={() => setListLang("en")}
+                type="button"
+                title="Английский (оригинал)"
+              >
+                EN
+              </button>
+            </div>
+
+            <label className="articles-filter-checkbox">
+              <input
+                type="checkbox"
+                checked={showStatsOnly}
+                onChange={(e) => setShowStatsOnly(e.target.checked)}
+              />
+              <svg
+                className="icon-sm"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+              <span>Стат.</span>
+            </label>
+
+            <label className="articles-filter-checkbox">
+              <input
+                type="checkbox"
+                checked={highlightStats}
+                onChange={(e) => setHighlightStats(e.target.checked)}
+              />
+              <svg
+                className="icon-sm"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
+                />
+              </svg>
+              <span>Подсв.</span>
+            </label>
+          </div>
+
+          {canEdit && (
+            <label className="articles-filter-checkbox articles-filter-checkbox--select-all">
+              <input
+                type="checkbox"
+                checked={
+                  selectedIds.size > 0 &&
+                  selectedIds.size === filteredArticles.length
+                }
+                onChange={toggleSelectAll}
+              />
+              <span>
+                {selectedIds.size > 0
+                  ? `Выбрано: ${selectedIds.size}`
+                  : "Выбрать все"}
+              </span>
+            </label>
           )}
         </div>
-
-        {/* Фильтр по поисковому запросу (подбазы) */}
-        {availableSourceQueries.length > 0 && (
-          <select
-            value={filterSourceQuery || ""}
-            onChange={(e) => setFilterSourceQuery(e.target.value || null)}
-            style={{
-              padding: "6px 10px",
-              borderRadius: 6,
-              fontSize: 12,
-              maxWidth: 200,
-            }}
-            title="Фильтр по поисковому запросу"
-          >
-            <option value="">Все запросы</option>
-            {availableSourceQueries.map((q) => (
-              <option key={q} value={q} title={q}>
-                {q.length > 25 ? q.slice(0, 25) + "..." : q}
-              </option>
-            ))}
-          </select>
-        )}
-
-        {/* Сортировка */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as any)}
-          style={{ padding: "6px 10px", borderRadius: 6, fontSize: 12 }}
-        >
-          <option value="date">По дате добавления</option>
-          <option value="stats">По статистике</option>
-          <option value="year_desc">По году ↓ (новые)</option>
-          <option value="year_asc">По году ↑ (старые)</option>
-        </select>
-
-        {/* Переключатель языка */}
-        <div className="lang-toggle">
-          <button
-            className={listLang === "ru" ? "active" : ""}
-            onClick={() => setListLang("ru")}
-            type="button"
-            title="Русский (если есть перевод)"
-          >
-            RU
-          </button>
-          <button
-            className={listLang === "en" ? "active" : ""}
-            onClick={() => setListLang("en")}
-            type="button"
-            title="Английский (оригинал)"
-          >
-            EN
-          </button>
-        </div>
-
-        <label className="row gap" style={{ alignItems: "center" }}>
-          <input
-            type="checkbox"
-            checked={showStatsOnly}
-            onChange={(e) => setShowStatsOnly(e.target.checked)}
-            style={{ width: "auto" }}
-          />
-          <span
-            className="muted"
-            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}
-          >
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
-            Стат.
-          </span>
-        </label>
-
-        <label className="row gap" style={{ alignItems: "center" }}>
-          <input
-            type="checkbox"
-            checked={highlightStats}
-            onChange={(e) => setHighlightStats(e.target.checked)}
-            style={{ width: "auto" }}
-          />
-          <span
-            className="muted"
-            style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}
-          >
-            <svg
-              className="icon-sm"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-              />
-            </svg>
-            Подсв.
-          </span>
-        </label>
       </div>
 
       {/* Панель массовых операций */}
-      {canEdit && (
-        <div className="bulk-actions" style={{ marginBottom: 12 }}>
-          <label className="row gap" style={{ alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={
-                selectedIds.size > 0 &&
-                selectedIds.size === filteredArticles.length
-              }
-              onChange={toggleSelectAll}
-              style={{ width: 18, height: 18 }}
-            />
-            <span className="muted" style={{ fontSize: 13 }}>
-              {selectedIds.size > 0
-                ? `Выбрано: ${selectedIds.size}`
-                : "Выбрать все"}
-            </span>
-          </label>
-
-          {selectedIds.size > 0 && (
-            <div className="row gap" style={{ marginLeft: 16 }}>
-              <button
-                className="btn secondary"
-                onClick={() => handleBulkStatus("selected")}
-                title="Добавить выбранные в отобранные"
-                type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
-              >
-                <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Отобрать
-              </button>
-              <button
-                className="btn secondary"
-                onClick={() => handleBulkStatus("excluded")}
-                title="Исключить выбранные"
-                type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
-              >
-                <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-                Исключить
-              </button>
-              <button
-                className="btn secondary"
-                onClick={handleBulkTranslate}
-                disabled={translating}
-                title="Перевести выбранные"
-                type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
-              >
-                <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                  />
-                </svg>
-                Перевести
-              </button>
-              <button
-                className="btn secondary"
-                onClick={handleEnrich}
-                disabled={enriching}
-                title="Обогатить данные через Crossref (DOI)"
-                type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
-              >
-                <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                  />
-                </svg>
-                Crossref
-              </button>
-              <button
-                className="btn secondary"
-                onClick={handleAIDetectStats}
-                disabled={detectingStats}
-                title="AI детекция статистики (OpenRouter)"
-                type="button"
+      {canEdit && selectedIds.size > 0 && (
+        <div className="bulk-actions">
+          <div className="row gap">
+            <button
+              className="btn secondary"
+              onClick={() => handleBulkStatus("selected")}
+              title="Добавить выбранные в отобранные"
+              type="button"
+              style={{ padding: "4px 10px", fontSize: 12 }}
+            >
+              <svg
+                className="icon-sm"
                 style={{
-                  padding: "4px 10px",
-                  fontSize: 12,
-                  minWidth: aiStatsProgress ? 180 : undefined,
+                  marginRight: 4,
+                  display: "inline",
+                  verticalAlign: "middle",
                 }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                {detectingStats && aiStatsProgress ? (
-                  <>
-                    <span
-                      className="spinner-small"
-                      style={{ marginRight: 6 }}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              Отобрать
+            </button>
+            <button
+              className="btn secondary"
+              onClick={() => handleBulkStatus("excluded")}
+              title="Исключить выбранные"
+              type="button"
+              style={{ padding: "4px 10px", fontSize: 12 }}
+            >
+              <svg
+                className="icon-sm"
+                style={{
+                  marginRight: 4,
+                  display: "inline",
+                  verticalAlign: "middle",
+                }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              Исключить
+            </button>
+            <button
+              className="btn secondary"
+              onClick={handleBulkTranslate}
+              disabled={translating}
+              title="Перевести выбранные"
+              type="button"
+              style={{ padding: "4px 10px", fontSize: 12 }}
+            >
+              <svg
+                className="icon-sm"
+                style={{
+                  marginRight: 4,
+                  display: "inline",
+                  verticalAlign: "middle",
+                }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                />
+              </svg>
+              Перевести
+            </button>
+            <button
+              className="btn secondary"
+              onClick={handleEnrich}
+              disabled={enriching}
+              title="Обогатить данные через Crossref (DOI)"
+              type="button"
+              style={{ padding: "4px 10px", fontSize: 12 }}
+            >
+              <svg
+                className="icon-sm"
+                style={{
+                  marginRight: 4,
+                  display: "inline",
+                  verticalAlign: "middle",
+                }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                />
+              </svg>
+              Crossref
+            </button>
+            <button
+              className="btn secondary"
+              onClick={handleAIDetectStats}
+              disabled={detectingStats}
+              title="AI детекция статистики (OpenRouter)"
+              type="button"
+              style={{
+                padding: "4px 10px",
+                fontSize: 12,
+                minWidth: aiStatsProgress ? 180 : undefined,
+              }}
+            >
+              {detectingStats && aiStatsProgress ? (
+                <>
+                  <span className="spinner-small" style={{ marginRight: 6 }} />
+                  {aiStatsProgress.percent}% ({aiStatsProgress.analyzed}/
+                  {aiStatsProgress.total})
+                </>
+              ) : (
+                <>
+                  <svg
+                    className="icon-sm"
+                    style={{
+                      marginRight: 4,
+                      display: "inline",
+                      verticalAlign: "middle",
+                    }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
-                    {aiStatsProgress.percent}% ({aiStatsProgress.analyzed}/
-                    {aiStatsProgress.total})
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="icon-sm"
-                      style={{
-                        marginRight: 4,
-                        display: "inline",
-                        verticalAlign: "middle",
-                      }}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                    AI Статистика
-                  </>
-                )}
+                  </svg>
+                  AI Статистика
+                </>
+              )}
+            </button>
+            {viewStatus !== "candidate" && viewStatus !== "deleted" && (
+              <button
+                className="btn secondary"
+                onClick={() => handleBulkStatus("candidate")}
+                title="Вернуть в кандидаты"
+                type="button"
+                style={{ padding: "4px 10px", fontSize: 12 }}
+              >
+                <svg
+                  className="icon-sm"
+                  style={{
+                    marginRight: 4,
+                    display: "inline",
+                    verticalAlign: "middle",
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                  />
+                </svg>
+                В кандидаты
               </button>
-              {viewStatus !== "candidate" && viewStatus !== "deleted" && (
-                <button
-                  className="btn secondary"
-                  onClick={() => handleBulkStatus("candidate")}
-                  title="Вернуть в кандидаты"
-                  type="button"
-                  style={{ padding: "4px 10px", fontSize: 12 }}
+            )}
+            {viewStatus !== "deleted" && (
+              <button
+                className="btn secondary"
+                onClick={() => handleBulkStatus("deleted")}
+                title="Удалить в корзину"
+                type="button"
+                style={{ padding: "4px 10px", fontSize: 12 }}
+              >
+                <svg
+                  className="icon-sm"
+                  style={{
+                    marginRight: 4,
+                    display: "inline",
+                    verticalAlign: "middle",
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg
-                    className="icon-sm"
-                    style={{
-                      marginRight: 4,
-                      display: "inline",
-                      verticalAlign: "middle",
-                    }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                    />
-                  </svg>
-                  В кандидаты
-                </button>
-              )}
-              {viewStatus !== "deleted" && (
-                <button
-                  className="btn secondary"
-                  onClick={() => handleBulkStatus("deleted")}
-                  title="Удалить в корзину"
-                  type="button"
-                  style={{ padding: "4px 10px", fontSize: 12 }}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+                Удалить
+              </button>
+            )}
+            {viewStatus === "deleted" && (
+              <button
+                className="btn secondary"
+                onClick={() => handleBulkStatus("candidate")}
+                title="Восстановить из корзины"
+                type="button"
+                style={{ padding: "4px 10px", fontSize: 12 }}
+              >
+                <svg
+                  className="icon-sm"
+                  style={{
+                    marginRight: 4,
+                    display: "inline",
+                    verticalAlign: "middle",
+                  }}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg
-                    className="icon-sm"
-                    style={{
-                      marginRight: 4,
-                      display: "inline",
-                      verticalAlign: "middle",
-                    }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                  Удалить
-                </button>
-              )}
-              {viewStatus === "deleted" && (
-                <button
-                  className="btn secondary"
-                  onClick={() => handleBulkStatus("candidate")}
-                  title="Восстановить из корзины"
-                  type="button"
-                  style={{ padding: "4px 10px", fontSize: 12 }}
-                >
-                  <svg
-                    className="icon-sm"
-                    style={{
-                      marginRight: 4,
-                      display: "inline",
-                      verticalAlign: "middle",
-                    }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  Восстановить
-                </button>
-              )}
-            </div>
-          )}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Восстановить
+              </button>
+            )}
+          </div>
         </div>
       )}
 
