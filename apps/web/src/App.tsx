@@ -35,7 +35,6 @@ const AdminArticlesPage = lazy(() => import("./pages/admin/AdminArticlesPage"));
 
 // Loading fallback component
 function PageLoader() {
-  console.log("PageLoader is displaying");
   return (
     <div className="page-loader">
       <div className="page-loader-spinner"></div>

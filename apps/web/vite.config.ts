@@ -13,8 +13,11 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // TipTap editor - большой модуль, выносим в отдельный чанк
-          'editor': [
+          // React core - загружается всегда, кешируется надолго
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+
+          // TipTap editor - загружается только на странице документа
+          'vendor-tiptap': [
             '@tiptap/react',
             '@tiptap/starter-kit',
             '@tiptap/extension-placeholder',
@@ -22,17 +25,57 @@ export default defineConfig({
             '@tiptap/extension-underline',
             '@tiptap/extension-text-align',
             '@tiptap/extension-highlight',
+            '@tiptap/extension-image',
+            '@tiptap/extension-table',
+            '@tiptap/extension-table-cell',
+            '@tiptap/extension-table-header',
+            '@tiptap/extension-table-row',
+            '@tiptap/extension-color',
+            '@tiptap/extension-text-style',
+            '@tiptap/extension-font-family',
           ],
-          // React и роутер
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // Граф цитирований
-          'graph': ['react-force-graph-2d'],
-          // Word экспорт
-          'docx': ['docx', 'file-saver'],
+
+          // Chart.js - загружается только при работе со статистикой/графиками
+          'vendor-charts': [
+            'chart.js',
+            'react-chartjs-2',
+            '@sgratzl/chartjs-chart-boxplot',
+          ],
+
+          // Граф цитирований - тяжёлая библиотека, отдельный чанк
+          'vendor-graph': ['react-force-graph-2d'],
+
+          // Word/PDF экспорт - загружается только при экспорте
+          'vendor-export': ['docx', 'file-saver'],
+
+          // Flowbite UI - используется минимально
+          'vendor-flowbite': ['flowbite', 'flowbite-react'],
+
+          // Утилиты
+          'vendor-utils': [
+            'date-fns',
+            'zod',
+            'clsx',
+            'tailwind-merge',
+            'class-variance-authority',
+            'lodash-es',
+          ],
+
+          // React Hook Form
+          'vendor-forms': ['react-hook-form'],
+
+          // Tabulator
+          'vendor-tabulator': ['tabulator-tables'],
         },
       },
     },
-    // Увеличиваем лимит предупреждения
-    chunkSizeWarningLimit: 600,
+    // Уменьшаем лимит предупреждения для лучшего контроля
+    chunkSizeWarningLimit: 300,
+    // Включаем сжатие CSS
+    cssMinify: true,
+    // Настройки для лучшей совместимости и размера
+    target: 'es2020',
+    // Source maps только для production debugging
+    sourcemap: false,
   },
 });
