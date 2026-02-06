@@ -1,16 +1,7 @@
 /**
  * MDsystem Design System
- * Complete design system with components, hooks, tokens, and utilities
+ * Utilities used across the application
  */
-
-// Components
-export * from "./components";
-
-// Hooks
-export * from "./hooks";
-
-// Tokens
-export * from "./tokens";
 
 // Utils
 export { cn } from "./utils/cn";
