@@ -637,6 +637,13 @@
 /* User Profile */
 .sidebar-user {
   @apply flex items-center gap-2.5 px-3 py-2;
+  @apply rounded-lg transition-colors cursor-pointer;
+  @apply border-0 bg-transparent text-left;
+  @apply text-neutral-400 hover:text-white;
+}
+
+.sidebar-user:hover {
+  background-color: hsla(var(--glass-hue1), 40%, 40%, 0.15);
 }
 
 .sidebar-user-avatar {

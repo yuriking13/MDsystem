@@ -477,7 +477,12 @@ export default function AppSidebar({
 
         {/* User Profile */}
         {user && (
-          <div className="sidebar-user">
+          <button
+            className="sidebar-user"
+            onClick={() => navigate("/settings")}
+            title="Перейти в настройки"
+            type="button"
+          >
             <div className="sidebar-user-avatar">
               <UserCircleIcon className="w-7 h-7" />
             </div>
@@ -486,33 +491,8 @@ export default function AppSidebar({
                 <span className="sidebar-user-email">{user.email}</span>
               </div>
             )}
-          </div>
+          </button>
         )}
-
-        {/* Settings Button */}
-        <button
-          className="sidebar-footer-btn sidebar-settings-btn"
-          onClick={() => navigate("/settings")}
-          title="Настройки аккаунта"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="sidebar-footer-icon"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.592c.55 0 1.02.398 1.11.94m-9.642 0A.995.995 0 0015.354 3h1.29A.995.995 0 0118.354 3 71.368 71.368 0 0 0 12 3.75c-2.25 0-4.408.297-6.406.844zM6.75 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm12 0a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM12 3h.008v.008H12V3z"
-            />
-          </svg>
-          {!collapsed && (
-            <span className="sidebar-footer-label">Настройки</span>
-          )}
-        </button>
 
         {/* Logout */}
         <button
