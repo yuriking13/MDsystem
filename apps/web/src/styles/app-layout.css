@@ -436,7 +436,7 @@
 }
 
 .sidebar-collapse-toggle:hover {
-  background-color: hsla(var(--glass-hue2), 30%, 22%, 0.85);
+  background-color: hsla(var(--glass-hue1), 40%, 40%, 0.15);
   border-color: hsla(var(--glass-hue1), 40%, 50%, 0.4);
   @apply w-6;
 }
@@ -733,7 +733,7 @@
 
 .light-theme .sidebar-collapse-toggle:hover,
 [data-theme="light"] .sidebar-collapse-toggle:hover {
-  background-color: hsla(0, 0%, 100%, 0.7);
+  background-color: hsla(var(--glass-hue1), 30%, 50%, 0.1);
   border-color: hsla(var(--glass-hue1), 30%, 50%, 0.35);
 }
 
