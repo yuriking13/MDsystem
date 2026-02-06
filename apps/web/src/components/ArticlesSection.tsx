@@ -1996,6 +1996,49 @@ export default function ArticlesSection({
         </div>
       )}
 
+      {/* Navigation Arrows */}
+      {(() => {
+        const statusOrder = [
+          "candidate",
+          "selected",
+          "excluded",
+          "all",
+          "deleted",
+        ];
+        const currentIndex = statusOrder.indexOf(viewStatus);
+        const prevStatus =
+          currentIndex > 0 ? statusOrder[currentIndex - 1] : null;
+        const nextStatus =
+          currentIndex < statusOrder.length - 1
+            ? statusOrder[currentIndex + 1]
+            : null;
+
+        return (
+          <>
+            {prevStatus && (
+              <button
+                className="articles-nav-arrow articles-nav-arrow--left"
+                onClick={() => setViewStatus(prevStatus as typeof viewStatus)}
+                title={statusLabels[prevStatus]}
+                type="button"
+              >
+                ‹
+              </button>
+            )}
+            {nextStatus && (
+              <button
+                className="articles-nav-arrow articles-nav-arrow--right"
+                onClick={() => setViewStatus(nextStatus as typeof viewStatus)}
+                title={statusLabels[nextStatus]}
+                type="button"
+              >
+                ›
+              </button>
+            )}
+          </>
+        );
+      })()}
+
       {/* ResearchRabbit-style Article Sidebar/Modal */}
       {selectedArticle && (
         <div

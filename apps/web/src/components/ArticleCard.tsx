@@ -167,12 +167,6 @@ export default function ArticleCard({
 
           {/* Badges */}
           <div className="article-badges">
-            {/* Status Badge */}
-            <span className={cn("article-badge", status.badge)}>
-              <StatusIcon className="w-3 h-3" />
-              {status.label}
-            </span>
-
             {/* Source Badge */}
             <span className={cn("article-badge", sourceStyle)}>
               {article.source.toUpperCase()}

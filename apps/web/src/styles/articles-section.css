@@ -18,12 +18,13 @@
 
 .articles-header {
   @apply flex items-center justify-between gap-4 py-3 px-4;
-  @apply border-b;
   @apply sticky top-0 z-10;
   background: rgba(13, 27, 42, 0.5);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-color: rgba(56, 89, 138, 0.2);
+  border: 1px solid rgba(56, 89, 138, 0.2);
+  border-radius: 0.75rem;
+  margin: 12px 16px 0 16px;
 }
 
 .light-theme .articles-header,
@@ -31,7 +32,8 @@
   background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-color: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0.75rem;
 }
 
 .articles-header-left {
@@ -466,13 +468,16 @@
 }
 
 .articles-grid {
-  @apply grid gap-3 p-4;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  @apply grid gap-4 p-4;
+  grid-template-columns: repeat(2, 1fr);
+  max-width: calc(100% - 80px);
+  margin: 0 auto;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .articles-grid {
     grid-template-columns: 1fr;
+    max-width: 100%;
     @apply gap-2 p-3;
   }
 }
@@ -698,11 +703,12 @@
 
 .articles-filters-container {
   @apply flex flex-col gap-0;
-  @apply border-b;
   background: rgba(13, 27, 42, 0.5);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-color: rgba(56, 89, 138, 0.2);
+  border: 1px solid rgba(56, 89, 138, 0.2);
+  border-radius: 0.75rem;
+  margin: 8px 16px 0 16px;
 }
 
 .light-theme .articles-filters-container,
@@ -710,7 +716,8 @@
   background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-color: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 0.75rem;
 }
 
 .articles-filters-row {
@@ -958,4 +965,57 @@
 
 .article-card {
   animation: fadeIn 100ms ease-out;
+}
+
+/* =============================================================================
+   Navigation Arrows
+   ============================================================================= */
+
+.articles-nav-arrow {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  padding: 16px 8px;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 1;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+.articles-nav-arrow:hover {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.articles-nav-arrow--left {
+  left: 50px;
+}
+
+.articles-nav-arrow--right {
+  right: 24px;
+}
+
+/* Adjust for collapsed sidebar */
+.sidebar-collapsed .articles-nav-arrow--left {
+  left: 40px;
+}
+
+.light-theme .articles-nav-arrow,
+[data-theme="light"] .articles-nav-arrow {
+  background: rgba(0, 0, 0, 0.05);
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.light-theme .articles-nav-arrow:hover,
+[data-theme="light"] .articles-nav-arrow:hover {
+  color: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.08);
 }
