@@ -975,7 +975,6 @@
 .articles-nav-arrow {
   position: fixed;
   top: 50%;
-  transform: translateY(-50%);
   z-index: 9999;
   padding: 16px 8px;
   cursor: pointer;
@@ -996,22 +995,27 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* Стрелки на 100px от краёв карточек (внутрь области грида) */
-/* Грид карточек имеет padding 40px слева/справа */
-/* Левая стрелка: левый край грида + 40px - 100px от карточки ≈ середина зазора */
+/* Левая стрелка: по центру зазора между sidebar и карточками статей */
+/* Грид карточек (.articles-grid) имеет padding: 16px 40px */
+/* Зазор от правого края сайдбара до левого края карточек = 40px */
+/* Центр зазора: sidebar_width + 20px, transform center-aligns the button */
 .articles-nav-arrow--left {
-  /* При развёрнутом сайдбаре (240px): в центре зазора между sidebar и карточками */
+  /* Развёрнутый сайдбар (240px): центр зазора = 240 + 20 = 260px */
   left: calc(240px + 20px);
+  transform: translate(-50%, -50%);
 }
 
 body.sidebar-collapsed .articles-nav-arrow--left {
-  /* При свёрнутом сайдбаре (64px): в центре зазора */
+  /* Свёрнутый сайдбар (64px): центр зазора = 64 + 20 = 84px */
   left: calc(64px + 20px);
 }
 
-/* Правая стрелка: в центре зазора между карточками и правым краем экрана */
+/* Правая стрелка: по центру зазора между правым краем карточек и правым краем страницы */
+/* Зазор от правого края карточек до правого края viewport = 40px */
+/* Центр зазора: 20px от правого края, transform center-aligns the button */
 .articles-nav-arrow--right {
   right: 20px;
+  transform: translate(50%, -50%);
 }
 
 .light-theme .articles-nav-arrow,
