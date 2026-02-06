@@ -996,12 +996,21 @@
   background: rgba(255, 255, 255, 0.08);
 }
 
+/* Левая стрелка: посередине между сайдбаром и карточками */
+/* Сайдбар развернутый: 240px, отступ карточек: 40px → середина: 240 + 20 = 260px */
 .articles-nav-arrow--left {
-  left: 200px;
+  left: calc(240px + 10px);
 }
 
+/* Сайдбар свернутый: 64px, отступ карточек: 40px → середина: 64 + 20 = 84px */
+body.sidebar-collapsed .articles-nav-arrow--left {
+  left: calc(64px + 10px);
+}
+
+/* Правая стрелка: посередине между карточками и правым краем */
+/* Отступ карточек справа: 40px → середина: 20px */
 .articles-nav-arrow--right {
-  right: 50px;
+  right: 10px;
 }
 
 .light-theme .articles-nav-arrow,
