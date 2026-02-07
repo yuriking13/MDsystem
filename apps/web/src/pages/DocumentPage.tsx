@@ -1701,12 +1701,21 @@ export default function DocumentPage() {
     }
   }
 
-  // Удалить цитату
+  // Удалить цитату из БД и из редактора
   async function handleRemoveCitation(citationId: string) {
     if (!projectId || !docId) return;
 
     try {
+      // Удаляем из БД
       await apiRemoveCitation(projectId, docId, citationId);
+
+      // Удаляем цитату из редактора (span node)
+      // Метод removeCitationById определён в CitationMark extension
+      // и экспортирован через TiptapEditorHandle
+      if (editorRef.current) {
+        editorRef.current.removeCitationById(citationId);
+      }
+
       // Обновить документ
       const updated = await apiGetDocument(projectId, docId);
       setDoc(updated.document);

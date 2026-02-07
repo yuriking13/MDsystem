@@ -236,6 +236,8 @@ export interface TiptapEditorHandle {
   getFileIds: () => string[];
   /** Scroll to a heading in the editor */
   scrollToHeading: (headingId: string) => void;
+  /** Remove a citation node from the editor by its ID */
+  removeCitationById: (citationId: string) => boolean;
 }
 
 const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
@@ -791,6 +793,12 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         },
         scrollToHeading: (headingId: string) => {
           scrollToHeading(headingId);
+        },
+        removeCitationById: (citationId: string) => {
+          if (editor && !editor.isDestroyed) {
+            return (editor.commands as any).removeCitationById(citationId);
+          }
+          return false;
         },
       }),
       [editor, updateHeadings, scrollToHeading],
