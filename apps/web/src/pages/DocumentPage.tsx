@@ -504,7 +504,52 @@ export default function DocumentPage() {
     return fileIds;
   }, []);
 
+  // Парсинг деталей цитат из HTML (номера, sub-номера, articleId)
+  // Эти номера являются авторитетными — они соответствуют тому, что видит пользователь в редакторе
+  // (после updateCitationNumbers, которая нумерует по порядку появления в документе)
+  const parseCitationDetailsFromContent = useCallback(
+    (
+      htmlContent: string,
+    ): Map<
+      string,
+      { number: number; subNumber: number; articleId: string }
+    > => {
+      const details = new Map<
+        string,
+        { number: number; subNumber: number; articleId: string }
+      >();
+      if (!htmlContent) return details;
+
+      const parser = new DOMParser();
+      const parsedDoc = parser.parseFromString(htmlContent, "text/html");
+
+      parsedDoc.querySelectorAll("[data-citation-id]").forEach((el) => {
+        const citationId = el.getAttribute("data-citation-id");
+        const number = parseInt(
+          el.getAttribute("data-citation-number") || "0",
+          10,
+        );
+        const subNumber = parseInt(
+          el.getAttribute("data-sub-number") || "1",
+          10,
+        );
+        const articleId = el.getAttribute("data-article-id") || "";
+
+        if (citationId && number > 0) {
+          details.set(citationId, { number, subNumber, articleId });
+        }
+      });
+
+      return details;
+    },
+    [],
+  );
+
   // Фильтрация цитат на основе текущего содержимого
+  // ВАЖНО: номера берутся из HTML редактора (data-citation-number, data-sub-number),
+  // а НЕ из БД. Редактор — единственный источник истины для номеров,
+  // потому что updateCitationNumbers нумерует по позиции в документе.
+  // БД обновляется позже при sync-citations.
   const visibleCitations = useMemo(() => {
     const citationIdsInContent = parseCitationsFromContent(content);
 
@@ -513,11 +558,30 @@ export default function DocumentPage() {
       return [];
     }
 
-    // Фильтруем цитаты, оставляя только те, что есть в контенте
-    return (doc?.citations || []).filter((citation) =>
-      citationIdsInContent.has(citation.id),
-    );
-  }, [content, doc?.citations, parseCitationsFromContent]);
+    // Парсим актуальные номера из HTML редактора
+    const htmlDetails = parseCitationDetailsFromContent(content);
+
+    // Фильтруем цитаты и переопределяем номера из HTML
+    return (doc?.citations || [])
+      .filter((citation) => citationIdsInContent.has(citation.id))
+      .map((citation) => {
+        const htmlInfo = htmlDetails.get(citation.id);
+        if (htmlInfo) {
+          // Используем номера из редактора (авторитетный источник)
+          return {
+            ...citation,
+            inline_number: htmlInfo.number,
+            sub_number: htmlInfo.subNumber,
+          };
+        }
+        return citation;
+      });
+  }, [
+    content,
+    doc?.citations,
+    parseCitationsFromContent,
+    parseCitationDetailsFromContent,
+  ]);
 
   // Парсинг таблиц и графиков из HTML контента
   const parseStatisticsFromContent = useCallback(
@@ -1676,9 +1740,37 @@ export default function DocumentPage() {
         note: res.citation.note || "",
       });
 
-      // Обновить документ для синхронизации списка литературы
-      const updated = await apiGetDocument(projectId, docId);
-      setDoc(updated.document);
+      // Ждём пока ProseMirror-плагин перенумерует все цитаты (debounce 50ms + запас)
+      // и onChange обновит content state
+      await new Promise((resolve) => setTimeout(resolve, 120));
+
+      // Получаем актуальный HTML из редактора после перенумерации
+      const currentHtml = editorRef.current?.getHTML() || "";
+
+      // Сохраняем контент и синхронизируем цитаты с БД
+      // Это обновит order_index и inline_number в БД в соответствии
+      // с реальным порядком цитат в документе
+      if (currentHtml) {
+        await apiUpdateDocument(projectId, docId, { content: currentHtml });
+        const orderedIds = parseCitationsOrderedFromContent(currentHtml);
+        if (orderedIds.length > 0) {
+          const syncResult = await apiSyncCitations(
+            projectId,
+            docId,
+            orderedIds,
+          );
+          if (syncResult.document) {
+            setDoc(syncResult.document);
+          }
+        } else {
+          // Если не удалось извлечь IDs, просто обновляем документ
+          const updated = await apiGetDocument(projectId, docId);
+          setDoc(updated.document);
+        }
+      } else {
+        const updated = await apiGetDocument(projectId, docId);
+        setDoc(updated.document);
+      }
 
       // НЕ закрываем модальное окно - пользователь может добавить ещё цитаты
       // setShowCitationPicker(false);
@@ -1716,9 +1808,25 @@ export default function DocumentPage() {
         editorRef.current.removeCitationById(citationId);
       }
 
-      // Обновить документ
-      const updated = await apiGetDocument(projectId, docId);
-      setDoc(updated.document);
+      // Ждём перенумерацию в редакторе (debounce 50ms + запас)
+      await new Promise((resolve) => setTimeout(resolve, 120));
+
+      // Сохраняем и синхронизируем для обновления номеров в БД
+      const currentHtml = editorRef.current?.getHTML() || "";
+      if (currentHtml) {
+        await apiUpdateDocument(projectId, docId, { content: currentHtml });
+        const orderedIds = parseCitationsOrderedFromContent(currentHtml);
+        const syncResult = await apiSyncCitations(projectId, docId, orderedIds);
+        if (syncResult.document) {
+          setDoc(syncResult.document);
+        } else {
+          const updated = await apiGetDocument(projectId, docId);
+          setDoc(updated.document);
+        }
+      } else {
+        const updated = await apiGetDocument(projectId, docId);
+        setDoc(updated.document);
+      }
     } catch (err) {
       setError(getErrorMessage(err));
     }
