@@ -986,6 +986,80 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       };
     }, [editor]);
 
+    // Row height resize: drag bottom edge of table cells to change row height
+    useEffect(() => {
+      if (!editor) return;
+      const editorDom = editor.view.dom;
+      const EDGE_ZONE = 5; // px from bottom edge to trigger resize
+      let resizing = false;
+      let startY = 0;
+      let startHeight = 0;
+      let targetRow: HTMLTableRowElement | null = null;
+
+      const handleMouseDown = (e: MouseEvent) => {
+        const cell = (e.target as HTMLElement).closest?.(
+          "td, th",
+        ) as HTMLTableCellElement | null;
+        if (!cell) return;
+        const rect = cell.getBoundingClientRect();
+        if (rect.bottom - e.clientY > EDGE_ZONE) return;
+
+        // Start resizing
+        e.preventDefault();
+        resizing = true;
+        targetRow = cell.closest("tr");
+        if (!targetRow) return;
+        startY = e.clientY;
+        startHeight = targetRow.offsetHeight;
+        document.body.style.cursor = "row-resize";
+        document.body.style.userSelect = "none";
+      };
+
+      const handleMouseMove = (e: MouseEvent) => {
+        if (resizing && targetRow) {
+          const delta = e.clientY - startY;
+          const newHeight = Math.max(24, startHeight + delta);
+          targetRow.style.height = `${newHeight}px`;
+          // Apply to all cells in the row
+          targetRow.querySelectorAll("td, th").forEach((c) => {
+            (c as HTMLElement).style.height = `${newHeight}px`;
+          });
+          return;
+        }
+        // Show row-resize cursor near bottom edge of cells
+        const cell = (e.target as HTMLElement).closest?.(
+          "td, th",
+        ) as HTMLTableCellElement | null;
+        if (cell) {
+          const rect = cell.getBoundingClientRect();
+          if (rect.bottom - e.clientY <= EDGE_ZONE) {
+            cell.style.cursor = "row-resize";
+          } else {
+            cell.style.cursor = "";
+          }
+        }
+      };
+
+      const handleMouseUp = () => {
+        if (resizing) {
+          resizing = false;
+          targetRow = null;
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+        }
+      };
+
+      editorDom.addEventListener("mousedown", handleMouseDown);
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+
+      return () => {
+        editorDom.removeEventListener("mousedown", handleMouseDown);
+        document.removeEventListener("mousemove", handleMouseMove);
+        document.removeEventListener("mouseup", handleMouseUp);
+      };
+    }, [editor]);
+
     // Update content when prop changes
     useEffect(() => {
       if (editor && content && editor.getHTML() !== content) {

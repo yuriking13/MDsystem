@@ -406,20 +406,22 @@
   white-space: nowrap;
 }
 
-/* Content wrapper - fills all available space */
+/* Content wrapper - fills all available space, centers page */
 .tiptap-content-wrapper {
   flex: 1;
   overflow: auto;
   background: var(--bg-secondary);
-  padding: 0;
+  padding: 24px 0;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 
-/* Editor content area - full width */
+/* Editor content area - centered page */
 .tiptap-editor {
-  width: 100%;
-  flex: 1;
+  width: 794px;
+  max-width: 100%;
+  flex: none;
   display: flex;
   flex-direction: column;
 }
@@ -434,7 +436,8 @@
   line-height: var(--editor-line-height, 1.5);
   background: white;
   padding: 72px 56px 72px 85px;
-  /* No box-shadow, no border-radius - fills edge to edge */
+  /* Тень для эффекта «лист бумаги» */
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   overflow-x: visible;
 }
 
@@ -920,11 +923,7 @@
   text-align: left;
   vertical-align: top;
   position: relative;
-  /* Ячейки можно растягивать по высоте через атрибут rowHeight */
   min-height: 32px;
-  /* Поддержка resize по вертикали для пользовательского изменения высоты */
-  resize: vertical;
-  overflow: auto;
   /* БЕЗ min-width - TipTap управляет через colwidth */
 }
 
@@ -963,34 +962,26 @@
   background: unset;
 }
 
-/* Table cell selection - improved visibility */
+/* Table cell selection - subtle highlight without thick borders */
 .tiptap-editor table .selectedCell,
 .tiptap-table .selectedCell,
 .tiptap-editor table td.selectedCell,
 .tiptap-editor table th.selectedCell {
-  background: rgba(59, 130, 246, 0.25) !important;
-  box-shadow: inset 0 0 0 2px #3b82f6 !important;
+  background: rgba(59, 130, 246, 0.08) !important;
+  box-shadow: none !important;
   position: relative;
 }
 
 .tiptap-editor table .selectedCell::after,
 .tiptap-editor table td.selectedCell::after,
 .tiptap-editor table th.selectedCell::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border: 2px solid #3b82f6;
-  pointer-events: none;
-  z-index: 1;
+  content: none;
 }
 
-/* Current cell focus */
+/* Current cell focus - тонкая рамка */
 .tiptap-editor table td:focus,
 .tiptap-editor table th:focus {
-  outline: 2px solid #2563eb !important;
+  outline: 1px solid rgba(37, 99, 235, 0.4) !important;
   outline-offset: -1px;
 }
 
@@ -1107,32 +1098,27 @@
   min-width: 50px;
 }
 
-/* Resize handle для колонок */
+/* Resize handle для колонок — минимальный, без яркой подсветки */
 .tiptap-editor .column-resize-handle,
 .tiptap-table .column-resize-handle,
 .tableWrapper .column-resize-handle,
 .ProseMirror .column-resize-handle {
   position: absolute;
-  right: -2px;
+  right: -1px;
   top: 0;
-  bottom: -2px;
-  width: 4px;
-  background: #3b82f6;
+  bottom: 0;
+  width: 2px;
+  background: transparent;
   cursor: col-resize;
   z-index: 20;
   pointer-events: auto !important;
-  opacity: 0.3;
-  transition: opacity 0.15s, background 0.15s, width 0.15s;
+  transition: background 0.15s;
 }
 
-/* Показываем ручку при наведении на ячейку */
-.tiptap-editor table td:hover .column-resize-handle,
-.tiptap-editor table th:hover .column-resize-handle,
-.tiptap-table td:hover .column-resize-handle,
-.tiptap-table th:hover .column-resize-handle,
-.tiptap-editor .selectedCell .column-resize-handle {
-  opacity: 1;
-  background: #2563eb;
+/* Показываем тонкую линию при наведении на ручку */
+.tiptap-editor .column-resize-handle:hover,
+.tiptap-table .column-resize-handle:hover {
+  background: rgba(0, 0, 0, 0.2);
 }
 
 /* Ячейки должны быть relative для resize handle */
@@ -1152,13 +1138,11 @@
   cursor: col-resize !important;
 }
 
-/* Во время resize - показываем handle ярче */
+/* Во время resize - тонкая линия */
 .tiptap-editor .column-resize-handle:active,
-.tiptap-editor .column-resize-handle:hover,
 .tiptap-editor .column-resize-handle.dragging {
-  opacity: 1 !important;
-  background: #1d4ed8;
-  width: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  width: 2px;
 }
 
 /* Table numbering */
