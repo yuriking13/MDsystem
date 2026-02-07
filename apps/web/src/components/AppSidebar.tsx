@@ -83,6 +83,9 @@ export default function AppSidebar({
 
   // Check if we're inside a project
   const isInProject = location.pathname.startsWith("/projects/") && projectId;
+  // Check if we're on a sub-page (e.g. document editor) rather than the project detail page itself
+  const isProjectSubPage =
+    isInProject && !location.pathname.match(/^\/projects\/[^/]+\/?$/);
   const currentTab = searchParams.get("tab") || "articles";
 
   // Article status sub-menu items
@@ -235,8 +238,13 @@ export default function AppSidebar({
 
   const handleNavClick = (item: NavItem) => {
     if (item.tab) {
-      // Update URL search params for project tabs
-      setSearchParams({ tab: item.tab });
+      if (isProjectSubPage) {
+        // Navigate back to the project page with the correct tab
+        navigate(`/projects/${projectId}?tab=${item.tab}`);
+      } else {
+        // Already on the project detail page — just update search params
+        setSearchParams({ tab: item.tab });
+      }
     } else if (item.path) {
       navigate(item.path);
     }
@@ -369,7 +377,11 @@ export default function AppSidebar({
                             <button
                               onClick={() => {
                                 setArticleViewStatus(statusItem.id);
-                                if (currentTab !== "articles") {
+                                if (isProjectSubPage) {
+                                  navigate(
+                                    `/projects/${projectId}?tab=articles`,
+                                  );
+                                } else if (currentTab !== "articles") {
                                   setSearchParams({ tab: "articles" });
                                 }
                               }}
