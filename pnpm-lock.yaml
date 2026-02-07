@@ -235,8 +235,11 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1(rollup@4.54.0)
       flowbite-react:
-        specifier: ^0.12.15
-        version: 0.12.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(tailwindcss@4.1.18)(typescript@5.9.3)
+        specifier: ^0.12.16
+        version: 0.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(tailwindcss@4.1.18)(typescript@5.9.3)
+      flowbite-react-icons:
+        specifier: ^1.3.1
+        version: 1.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       lodash-es:
         specifier: ^4.17.23
         version: 4.17.23
@@ -4872,10 +4875,19 @@ packages:
         integrity: sha512-m81hl0Bimq45MUg4maJLOnXrX+C9lZ0AkjMb9uotuVUSr729k/YiymWDfVAm63AYDH7g7y3rI3ke3XaBzWWqLw==,
       }
 
-  flowbite-react@0.12.15:
+  flowbite-react-icons@1.3.1:
     resolution:
       {
-        integrity: sha512-jaxan8/hzr8wMaT0o3P+kBleBT34c50Zalc9rQIglvlMZvLIZT8U2o21mMsLBdEo5uqAMlGOlKnnT/DkW+y71Q==,
+        integrity: sha512-EW7Ed02URG5J5xHrA109SLpd65EYdOh9TbbW8m1iYsoAKbN8PX2dv3PZgRn5V9BWsjvFJtLdB5YkH7xkUQrOQw==,
+      }
+    peerDependencies:
+      react: ">=16"
+      react-dom: ">=16"
+
+  flowbite-react@0.12.16:
+    resolution:
+      {
+        integrity: sha512-lq7Go6AhcrWI98efbuea9xG5j9DNUUiHkWROOQ8772g61CoGkkOz6hjU/WC7SIHfmvHiQFaCDIs7nhxH3uUbRg==,
       }
     hasBin: true
     peerDependencies:
@@ -10204,8 +10216,8 @@ snapshots:
 
   "@typescript-eslint/project-service@8.46.2(typescript@5.9.3)":
     dependencies:
-      "@typescript-eslint/tsconfig-utils": 8.46.2(typescript@5.9.3)
-      "@typescript-eslint/types": 8.46.2
+      "@typescript-eslint/tsconfig-utils": 8.53.1(typescript@5.9.3)
+      "@typescript-eslint/types": 8.53.1
       debug: 4.4.3
       typescript: 5.9.3
     transitivePeerDependencies:
@@ -11407,7 +11419,12 @@ snapshots:
     transitivePeerDependencies:
       - rollup
 
-  flowbite-react@0.12.15(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(tailwindcss@4.1.18)(typescript@5.9.3):
+  flowbite-react-icons@1.3.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+
+  flowbite-react@0.12.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(tailwindcss@4.1.18)(typescript@5.9.3):
     dependencies:
       "@floating-ui/core": 1.7.3
       "@floating-ui/react": 0.27.16(react-dom@18.3.1(react@18.3.1))(react@18.3.1)

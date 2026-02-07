@@ -207,7 +207,13 @@ const exportPlugin: FastifyPluginAsync = async (fastify) => {
 
       // Перенумеровываем цитаты в каждом документе для глобальной нумерации
       const documentsWithGlobalNumbers = docsRes.rows.map(
-        (doc: Record<string, unknown>) => ({
+        (doc: {
+          id: string;
+          title: string;
+          content: string;
+          order_index: number;
+          [key: string]: unknown;
+        }) => ({
           ...doc,
           content: renumberCitationsInContent(
             doc.content as string,
