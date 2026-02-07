@@ -32,7 +32,6 @@ import {
   apiGetStatistic,
   apiUpdateStatistic,
   apiCreateStatistic,
-  apiRenumberCitations,
   apiGetProjectFiles,
   apiGetFileDownloadUrl,
   apiMarkFileUsed,

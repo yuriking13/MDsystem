@@ -18,7 +18,6 @@ import {
   apiCreateDocument,
   apiDeleteDocument,
   apiReorderDocuments,
-  apiRenumberCitations,
   apiGetBibliography,
   apiExportProject,
   apiGetStatistics,
@@ -1287,9 +1286,8 @@ export default function ProjectDetailPage() {
     if (!id) return;
     setExporting(true);
     try {
-      // Обновляем нумерацию цитат перед экспортом
-      await apiRenumberCitations(id);
-
+      // Экспорт сам создаёт глобальную нумерацию в памяти,
+      // не затрагивая локальную нумерацию документов
       const res = await apiExportProject(id);
 
       // Формируем текстовый документ
@@ -1337,8 +1335,7 @@ export default function ProjectDetailPage() {
     if (!id) return;
     setExporting(true);
     try {
-      // Обновляем нумерацию цитат перед экспортом
-      await apiRenumberCitations(id);
+      // Экспорт сам создаёт глобальную нумерацию в памяти
 
       // Захватываем графики из текущего DOM (если есть)
       const chartImages = await captureChartsFromDOM();
@@ -1402,8 +1399,7 @@ export default function ProjectDetailPage() {
     setExporting(true);
 
     try {
-      // Обновляем нумерацию цитат перед экспортом
-      await apiRenumberCitations(id);
+      // Экспорт сам создаёт глобальную нумерацию в памяти
 
       // Захватываем графики из текущего DOM
       const chartImages = await captureChartsFromDOM();
@@ -1626,24 +1622,12 @@ export default function ProjectDetailPage() {
                             newDocs.map((d) => d.id),
                           );
 
-                          // Перенумеровать цитаты в реальном времени
-                          const renumberResult = await apiRenumberCitations(id);
-
-                          // Обновить документы с новым контентом (перенумерованные цитаты)
-                          if (renumberResult.documents) {
-                            setDocuments(renumberResult.documents);
-                          }
-
-                          // Автоматически обновить библиографию после перестановки
+                          // Локальная нумерация цитат НЕ меняется при смене порядка документов
+                          // (глобальный список литературы не влияет на локальный)
+                          // Обновляем только глобальный список литературы
                           await refreshBibliography();
 
-                          if (renumberResult.renumbered > 0) {
-                            setOk(
-                              `Порядок документов обновлён. Перенумеровано ${renumberResult.renumbered} цитат.`,
-                            );
-                          } else {
-                            setOk("Порядок документов обновлён.");
-                          }
+                          setOk("Порядок документов обновлён.");
                         } catch (err) {
                           setError(
                             getErrorMessage(err) || "Ошибка сохранения порядка",
@@ -1856,8 +1840,7 @@ export default function ProjectDetailPage() {
                       if (!id) return;
                       setExporting(true);
                       try {
-                        // Обновляем нумерацию цитат перед экспортом
-                        await apiRenumberCitations(id);
+                        // Экспорт сам создаёт глобальную нумерацию в памяти
 
                         // Захватываем графики из текущего DOM
                         const chartImages = await captureChartsFromDOM();
@@ -1997,8 +1980,7 @@ export default function ProjectDetailPage() {
                       if (!id) return;
                       setExporting(true);
                       try {
-                        // Обновляем нумерацию перед экспортом библиографии
-                        await apiRenumberCitations(id);
+                        // Получаем глобальную библиографию (с дедупликацией)
                         const res = await apiGetBibliography(id);
                         setBibliography(res.bibliography);
                         setBibliographyLastUpdated(Date.now());
@@ -2040,7 +2022,6 @@ export default function ProjectDetailPage() {
                       if (!id) return;
                       setExporting(true);
                       try {
-                        await apiRenumberCitations(id);
                         const res = await apiGetBibliography(id);
                         setBibliography(res.bibliography);
                         setBibliographyLastUpdated(Date.now());
@@ -2081,7 +2062,6 @@ export default function ProjectDetailPage() {
                     onClick={async () => {
                       if (!id) return;
                       try {
-                        await apiRenumberCitations(id);
                         const res = await apiGetBibliography(id);
                         setBibliography(res.bibliography);
                         setBibliographyLastUpdated(Date.now());
