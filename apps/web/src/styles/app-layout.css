@@ -636,7 +636,7 @@
 
 /* User Profile */
 .sidebar-user {
-  @apply flex items-center gap-2.5 px-3 py-2;
+  @apply flex items-center gap-2.5 w-full px-3 py-2;
   @apply rounded-lg transition-colors cursor-pointer;
   @apply border-0 bg-transparent text-left;
   @apply text-neutral-400 hover:text-white;

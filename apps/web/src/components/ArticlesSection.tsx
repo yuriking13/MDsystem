@@ -95,6 +95,13 @@ export default function ArticlesSection({
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
+  // Auto-dismiss ok notification after 10 seconds
+  useEffect(() => {
+    if (!ok) return;
+    const timer = setTimeout(() => setOk(null), 10000);
+    return () => clearTimeout(timer);
+  }, [ok]);
+
   // Фильтр отображения
   const [showStatsOnly, setShowStatsOnly] = useState(false);
   const [filterPubType, setFilterPubType] = useState<string | null>(null);

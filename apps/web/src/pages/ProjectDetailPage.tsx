@@ -601,6 +601,13 @@ export default function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
+  // Auto-dismiss ok notification after 10 seconds
+  useEffect(() => {
+    if (!ok) return;
+    const timer = setTimeout(() => setOk(null), 10000);
+    return () => clearTimeout(timer);
+  }, [ok]);
+
   // Активная вкладка - из URL params
   const activeTab = (searchParams.get("tab") as Tab) || "articles";
   const setActiveTab = (tab: Tab) => setSearchParams({ tab });

@@ -57,7 +57,11 @@ export default function AppSidebar({
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { id: projectId } = useParams<{ id: string }>();
+  const { id, projectId: routeProjectId } = useParams<{
+    id: string;
+    projectId: string;
+  }>();
+  const projectId = id || routeProjectId;
   const [collapsed, setCollapsed] = useState(false);
   const [articlesSubMenuOpen, setArticlesSubMenuOpen] = useState(true);
   const [isDark, setIsDark] = useState(() => {

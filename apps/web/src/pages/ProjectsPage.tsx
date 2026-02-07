@@ -26,6 +26,13 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
+  // Auto-dismiss ok notification after 10 seconds
+  useEffect(() => {
+    if (!ok) return;
+    const timer = setTimeout(() => setOk(null), 10000);
+    return () => clearTimeout(timer);
+  }, [ok]);
+
   // Create form
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
