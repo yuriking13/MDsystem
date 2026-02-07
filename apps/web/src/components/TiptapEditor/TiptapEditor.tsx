@@ -263,8 +263,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     }: TiptapEditorProps,
     ref,
   ) {
-    const [showOutline, setShowOutline] = useState(true);
-    const [showBibliography, setShowBibliography] = useState(true);
+    const [showOutline, setShowOutline] = useState(false);
+    const [showBibliography, setShowBibliography] = useState(false);
     const [showPageSettings, setShowPageSettings] = useState(false);
     const [reviewMode, setReviewMode] = useState(false);
     const [showCommentModal, setShowCommentModal] = useState(false);

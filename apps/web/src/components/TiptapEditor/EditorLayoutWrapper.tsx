@@ -72,8 +72,8 @@ export default function EditorLayoutWrapper({
   lastSaved,
   isUpdatingBibliography,
   children,
-  showOutline: initialShowOutline = true,
-  showBibliography: initialShowBibliography = true,
+  showOutline: initialShowOutline = false,
+  showBibliography: initialShowBibliography = false,
   className,
 }: EditorLayoutWrapperProps) {
   const [showOutline, setShowOutline] = useState(initialShowOutline);
