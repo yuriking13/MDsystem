@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import AnimatedBackground from "./AnimatedBackground";
@@ -114,6 +114,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const showAnimatedBg = !isDocumentEditor && !isGraphTab;
   const isFixedLayout = isDocumentEditor || isGraphTab;
 
+  // Lock body scroll for fixed layouts (editor, graph)
+  useEffect(() => {
+    if (isFixedLayout) {
+      document.documentElement.classList.add("layout-fixed");
+      document.body.classList.add("layout-fixed");
+    } else {
+      document.documentElement.classList.remove("layout-fixed");
+      document.body.classList.remove("layout-fixed");
+    }
+    return () => {
+      document.documentElement.classList.remove("layout-fixed");
+      document.body.classList.remove("layout-fixed");
+    };
+  }, [isFixedLayout]);
+
   return (
     <ProjectContext.Provider
       value={{
@@ -128,7 +143,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     >
       {showAnimatedBg && <AnimatedBackground />}
       <div
-        className={`app-layout${showAnimatedBg ? " app-layout-with-animated-bg" : ""}`}
+        className={`app-layout${showAnimatedBg ? " app-layout-with-animated-bg" : ""}${isFixedLayout ? " app-layout-fixed" : ""}`}
       >
         <AppSidebar
           projectName={projectInfo.name || undefined}

@@ -22,7 +22,29 @@
 }
 
 .app-main-fixed {
+  height: 100%;
+  max-height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Lock entire page for fixed layouts (editor, graph) */
+html.layout-fixed,
+html.layout-fixed body {
   height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+html.layout-fixed #root {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}
+
+.app-layout-fixed {
+  height: 100vh;
+  max-height: 100vh;
   overflow: hidden;
 }
 
