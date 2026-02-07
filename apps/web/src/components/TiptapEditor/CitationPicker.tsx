@@ -197,7 +197,7 @@ export default function CitationPicker({
   }, [selectedArticleId, filteredArticles, articles, onSelect, onClose]);
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose}>
       <div 
         className="citation-picker-modal" 
         onClick={(e) => e.stopPropagation()}
@@ -206,7 +206,11 @@ export default function CitationPicker({
         {/* Header */}
         <div className="citation-picker-header">
           <h3>📚 Выберите источник для цитирования</h3>
-          <button className="btn secondary" onClick={onClose}>✕</button>
+          <button className="modal-close" onClick={onClose}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         {/* Search */}

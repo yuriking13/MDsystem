@@ -2086,23 +2086,26 @@ export default function DocumentPage() {
       {/* Модалка импорта из статистики */}
       {showImportModal && (
         <div
-          className="modal-overlay"
+          className="modal-backdrop"
           onClick={() => setShowImportModal(false)}
         >
           <div
-            className="modal"
+            className="modal-content"
             style={{ maxWidth: 800 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="row space" style={{ marginBottom: 16 }}>
-              <h3 style={{ margin: 0 }}>📥 Импорт из Статистики</h3>
+            <div className="modal-header">
+              <h3 className="modal-title">📥 Импорт из Статистики</h3>
               <button
-                className="btn secondary"
+                className="modal-close"
                 onClick={() => setShowImportModal(false)}
               >
-                ✕
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
+            <div className="modal-body">
 
             <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
               Выберите что вставить: таблицу с данными или график
@@ -2304,6 +2307,7 @@ export default function DocumentPage() {
                 </div>
               )}
             </div>
+            </div>
           </div>
         </div>
       )}
@@ -2319,16 +2323,16 @@ export default function DocumentPage() {
 
       {/* Модалка выбора файла из проекта */}
       {showFileModal && (
-        <div className="modal-overlay" onClick={() => setShowFileModal(false)}>
+        <div className="modal-backdrop" onClick={() => setShowFileModal(false)}>
           <div
-            className="modal"
+            className="modal-content"
             style={{ maxWidth: 800 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="row space" style={{ marginBottom: 16 }}>
+            <div className="modal-header">
               <h3
+                className="modal-title"
                 style={{
-                  margin: 0,
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
@@ -2350,7 +2354,7 @@ export default function DocumentPage() {
                 Вставить файл из проекта
               </h3>
               <button
-                className="btn secondary"
+                className="modal-close"
                 onClick={() => setShowFileModal(false)}
                 type="button"
               >
@@ -2369,6 +2373,7 @@ export default function DocumentPage() {
                 </svg>
               </button>
             </div>
+            <div className="modal-body">
 
             {/* Поиск по названию файла */}
             <div style={{ marginBottom: 16 }}>
@@ -2575,6 +2580,7 @@ export default function DocumentPage() {
                 ))}
               </div>
             )}
+            </div>
           </div>
         </div>
       )}

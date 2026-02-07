@@ -1301,18 +1301,18 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         {/* Comment Modal */}
         {showCommentModal && (
           <div
-            className="modal-overlay"
+            className="modal-backdrop"
             onClick={() => setShowCommentModal(false)}
           >
             <div
-              className="modal"
+              className="modal-content"
               onClick={(e) => e.stopPropagation()}
               style={{ maxWidth: 400 }}
             >
               <div className="modal-header">
                 <h3
+                  className="modal-title"
                   style={{
-                    margin: 0,
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
@@ -1335,9 +1335,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
                   Добавить комментарий
                 </h3>
                 <button
-                  className="btn secondary"
+                  className="modal-close"
                   onClick={() => setShowCommentModal(false)}
-                  style={{ padding: 6 }}
                 >
                   <svg
                     width={18}
@@ -1355,39 +1354,29 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
                   </svg>
                 </button>
               </div>
-              <div className="modal-body" style={{ padding: "16px 20px" }}>
+              <div className="modal-body">
                 <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>
                   Комментарий будет добавлен к выделенному тексту
                 </p>
                 <textarea
+                  className="form-input form-textarea"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Введите комментарий..."
                   rows={4}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    borderRadius: 6,
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-secondary)",
-                    color: "var(--text)",
-                    resize: "vertical",
-                  }}
+                  style={{ resize: "vertical" }}
                   autoFocus
                 />
               </div>
-              <div
-                className="modal-footer"
-                style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}
-              >
+              <div className="modal-footer">
                 <button
-                  className="btn secondary"
+                  className="btn-secondary"
                   onClick={() => setShowCommentModal(false)}
                 >
                   Отмена
                 </button>
                 <button
-                  className="btn"
+                  className="btn-primary"
                   disabled={!commentText.trim()}
                   onClick={() => {
                     if (!commentText.trim()) return;

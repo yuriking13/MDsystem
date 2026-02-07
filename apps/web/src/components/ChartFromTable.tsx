@@ -879,10 +879,14 @@ export function ChartCreatorModal({ tableHtml, onClose, onInsert }: ChartModalPr
   
   if (!tableData) {
     return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal" onClick={e => e.stopPropagation()}>
-          <p>Не удалось распарсить таблицу</p>
-          <button className="btn" onClick={onClose}>Закрыть</button>
+      <div className="modal-backdrop" onClick={onClose}>
+        <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-body">
+            <p>Не удалось распарсить таблицу</p>
+          </div>
+          <div className="modal-footer">
+            <button className="btn-primary" onClick={onClose}>Закрыть</button>
+          </div>
         </div>
       </div>
     );
@@ -932,12 +936,17 @@ export function ChartCreatorModal({ tableHtml, onClose, onInsert }: ChartModalPr
   const allChartTypes: ChartType[] = ['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter', 'doughnut'];
   
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" style={{ maxWidth: 900 }} onClick={e => e.stopPropagation()}>
-        <div className="row space" style={{ marginBottom: 16 }}>
-          <h3 style={{ margin: 0 }}>Создать график из таблицы</h3>
-          <button className="btn secondary" onClick={onClose}>✕</button>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" style={{ maxWidth: 900 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 className="modal-title">Создать график из таблицы</h3>
+          <button className="modal-close" onClick={onClose}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
+        <div className="modal-body">
         
         {/* Классификация данных */}
         <div className="card" style={{ marginBottom: 16, padding: 12 }}>
@@ -1163,16 +1172,17 @@ export function ChartCreatorModal({ tableHtml, onClose, onInsert }: ChartModalPr
           </div>
         </div>
         
-        <div className="row gap">
+        </div>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>
+            Отмена
+          </button>
           <button
-            className="btn"
+            className="btn-primary"
             onClick={handleInsert}
             disabled={chartType !== 'scatter' && chartType !== 'histogram' && dataColumns.length === 0}
           >
             Вставить график
-          </button>
-          <button className="btn secondary" onClick={onClose}>
-            Отмена
           </button>
         </div>
       </div>

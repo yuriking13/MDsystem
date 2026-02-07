@@ -227,17 +227,18 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
   const allChartTypes: ChartType[] = ['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter', 'doughnut'];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal statistic-edit-modal" style={{ maxWidth: 1000 }} onClick={e => e.stopPropagation()}>
-        <div className="row space" style={{ marginBottom: 16 }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" style={{ maxWidth: 1000 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <PlusIcon />
             Создать таблицу и график
           </h3>
-          <button className="btn secondary" onClick={onClose} style={{ padding: '8px', display: 'flex', alignItems: 'center' }}>
+          <button className="modal-close" onClick={onClose}>
             <CloseIcon />
           </button>
         </div>
+        <div className="modal-body">
         
         {error && <div className="alert" style={{ marginBottom: 12 }}>{error}</div>}
 
@@ -597,12 +598,13 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
           </div>
         )}
 
+        </div>
         {/* Actions */}
-        <div className="row space" style={{ marginTop: 20 }}>
+        <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
           <div className="row gap">
             {activeTab !== 'table' && (
               <button
-                className="btn secondary"
+                className="btn-secondary"
                 onClick={() => setActiveTab(activeTab === 'classification' ? 'chart' : 'table')}
               >
                 ← Назад
@@ -610,7 +612,7 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
             )}
             {activeTab !== 'classification' && (
               <button
-                className="btn secondary"
+                className="btn-secondary"
                 onClick={() => setActiveTab(activeTab === 'table' ? 'chart' : 'classification')}
               >
                 Далее →
@@ -618,11 +620,11 @@ export default function CreateStatisticModal({ projectId, onClose, onCreated }: 
             )}
           </div>
           <div className="row gap">
-            <button className="btn secondary" onClick={onClose}>
+            <button className="btn-secondary" onClick={onClose}>
               Отмена
             </button>
             <button
-              className="btn"
+              className="btn-primary"
               onClick={handleCreate}
               disabled={saving || !title.trim()}
               style={{ display: 'flex', alignItems: 'center' }}

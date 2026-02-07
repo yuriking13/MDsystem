@@ -249,17 +249,18 @@ export default function StatisticEditModal({ statistic, onClose, onSave }: Props
   const allChartTypes: ChartType[] = ['bar', 'histogram', 'stacked', 'pie', 'line', 'boxplot', 'scatter', 'doughnut'];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal statistic-edit-modal" style={{ maxWidth: 1000 }} onClick={e => e.stopPropagation()}>
-        <div className="row space" style={{ marginBottom: 16 }}>
-          <h3 style={{ margin: 0, display: 'flex', alignItems: 'center' }}>
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-content" style={{ maxWidth: 1000 }} onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3 className="modal-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {statistic.type === 'chart' ? <ChartBarIcon /> : <TableIcon />}
             Редактировать {statistic.type === 'chart' ? 'график' : 'таблицу'}
           </h3>
-          <button className="btn secondary" onClick={onClose} style={{ padding: '8px', display: 'flex', alignItems: 'center' }}>
+          <button className="modal-close" onClick={onClose}>
             <CloseIcon />
           </button>
         </div>
+        <div className="modal-body">
 
         {/* Tabs */}
         <div className="tabs" style={{ marginBottom: 16 }}>
@@ -658,10 +659,14 @@ export default function StatisticEditModal({ statistic, onClose, onSave }: Props
           </div>
         )}
 
+        </div>
         {/* Actions */}
-        <div className="row gap" style={{ marginTop: 20 }}>
+        <div className="modal-footer">
+          <button className="btn-secondary" onClick={onClose}>
+            Отмена
+          </button>
           <button
-            className="btn"
+            className="btn-primary"
             onClick={handleSave}
             disabled={saving || !title.trim()}
             style={{ display: 'flex', alignItems: 'center' }}
@@ -677,9 +682,6 @@ export default function StatisticEditModal({ statistic, onClose, onSave }: Props
                 Сохранить изменения
               </>
             )}
-          </button>
-          <button className="btn secondary" onClick={onClose}>
-            Отмена
           </button>
         </div>
       </div>

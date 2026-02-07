@@ -2719,15 +2719,15 @@ export default function ProjectDetailPage() {
 
             {/* Модальное окно просмотра файла */}
             {previewFile && previewUrl && (
-              <div className="modal-overlay" onClick={closePreview}>
+              <div className="modal-backdrop" onClick={closePreview}>
                 <div
-                  className="modal file-preview-modal"
+                  className="modal-content file-preview-modal"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="modal-header">
-                    <h3>{previewFile.name}</h3>
+                    <h3 className="modal-title">{previewFile.name}</h3>
                     <button
-                      className="btn secondary"
+                      className="modal-close"
                       onClick={closePreview}
                       type="button"
                     >
@@ -2817,16 +2817,17 @@ export default function ProjectDetailPage() {
             {/* Модальное окно импорта статьи из файла */}
             {fileImportModal && (
               <div
-                className="modal-overlay"
+                className="modal-backdrop"
                 onClick={() => setFileImportModal(null)}
               >
                 <div
-                  className="modal"
+                  className="modal-content"
                   onClick={(e) => e.stopPropagation()}
                   style={{ maxWidth: 700, maxHeight: "90vh", overflow: "auto" }}
                 >
                   <div className="modal-header">
                     <h3
+                      className="modal-title"
                       style={{ display: "flex", alignItems: "center", gap: 8 }}
                     >
                       <svg
@@ -2845,7 +2846,7 @@ export default function ProjectDetailPage() {
                       Импорт статьи из файла
                     </h3>
                     <button
-                      className="btn secondary"
+                      className="modal-close"
                       onClick={() => setFileImportModal(null)}
                       type="button"
                     >
@@ -2864,7 +2865,7 @@ export default function ProjectDetailPage() {
                       </svg>
                     </button>
                   </div>
-                  <div className="modal-body" style={{ padding: 20 }}>
+                  <div className="modal-body">
                     <div
                       className="row space"
                       style={{ fontSize: 13, marginBottom: 16 }}
@@ -3263,14 +3264,14 @@ export default function ProjectDetailPage() {
                       )}
                     </div>
                     <button
-                      className="btn secondary"
+                      className="btn-secondary"
                       onClick={() => setFileImportModal(null)}
                       type="button"
                     >
                       Отмена
                     </button>
                     <button
-                      className="btn"
+                      className="btn-primary"
                       onClick={handleImportArticleFromFile}
                       disabled={
                         importingArticle || !fileImportModal.metadata.title
@@ -4542,18 +4543,18 @@ export default function ProjectDetailPage() {
       {/* Modal: Select chapters for export */}
       {showChapterSelectModal && (
         <div
-          className="modal-overlay"
+          className="modal-backdrop"
           onClick={() => setShowChapterSelectModal(false)}
         >
           <div
-            className="modal"
+            className="modal-content"
             onClick={(e) => e.stopPropagation()}
             style={{ maxWidth: 500 }}
           >
             <div className="modal-header">
               <h3
+                className="modal-title"
                 style={{
-                  margin: 0,
                   display: "flex",
                   alignItems: "center",
                   gap: 8,
@@ -4575,10 +4576,9 @@ export default function ProjectDetailPage() {
                 Выберите главы для экспорта
               </h3>
               <button
-                className="btn secondary"
+                className="modal-close"
                 onClick={() => setShowChapterSelectModal(false)}
                 type="button"
-                style={{ padding: 6 }}
               >
                 <svg
                   className="icon-md"
@@ -4595,7 +4595,7 @@ export default function ProjectDetailPage() {
                 </svg>
               </button>
             </div>
-            <div className="modal-body" style={{ padding: "16px 20px" }}>
+            <div className="modal-body">
               <div style={{ marginBottom: 12, display: "flex", gap: 8 }}>
                 <button
                   className="btn secondary"
@@ -4725,9 +4725,7 @@ export default function ProjectDetailPage() {
             <div
               className="modal-footer"
               style={{
-                display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
               }}
             >
               <span className="muted" style={{ fontSize: 12 }}>
@@ -4735,14 +4733,14 @@ export default function ProjectDetailPage() {
               </span>
               <div className="row gap">
                 <button
-                  className="btn secondary"
+                  className="btn-secondary"
                   onClick={() => setShowChapterSelectModal(false)}
                   type="button"
                 >
                   Отмена
                 </button>
                 <button
-                  className="btn"
+                  className="btn-primary"
                   onClick={handleExportSelectedChapters}
                   disabled={selectedChaptersForExport.size === 0 || exporting}
                   type="button"
