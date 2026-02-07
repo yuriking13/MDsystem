@@ -59,36 +59,17 @@ export default function EditorHeader({
   className,
 }: EditorHeaderProps) {
   return (
-    <header
-      className={cn(
-        "flex items-center justify-between px-3 py-2",
-        "bg-[#0d1b2a]",
-        "border-b border-[rgba(56,89,138,0.25)]",
-        "sticky top-0 z-20",
-        className,
-      )}
-    >
+    <header className={cn("editor-header", className)}>
       {/* Left section: Back button + Title */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Back button */}
-        <button
-          onClick={onBackToProject}
-          className={cn(
-            "flex items-center gap-1.5 px-2 py-1",
-            "text-sm text-neutral-400",
-            "hover:text-neutral-200",
-            "hover:bg-[#162236]",
-            "rounded transition-colors",
-          )}
-        >
+        <button onClick={onBackToProject} className="editor-header-btn">
           <IconArrowLeft size="sm" />
-          <span className="hidden sm:inline text-xs">
-            {projectName ? `Назад` : "Назад"}
-          </span>
+          <span className="hidden sm:inline text-xs">Назад</span>
         </button>
 
         {/* Divider */}
-        <div className="h-5 w-px bg-[rgba(56,89,138,0.25)] hidden sm:block" />
+        <div className="toolbar-divider hidden sm:block" />
 
         {/* Title input */}
         <input
@@ -97,15 +78,7 @@ export default function EditorHeader({
           onChange={(e) => onTitleChange(e.target.value)}
           onBlur={onTitleBlur}
           placeholder="Название документа"
-          className={cn(
-            "max-w-xs px-1.5 py-0",
-            "text-sm font-medium",
-            "bg-transparent",
-            "border-0",
-            "focus:outline-none",
-            "text-neutral-200",
-            "placeholder:text-neutral-500",
-          )}
+          className="editor-header-title"
         />
       </div>
 
@@ -123,7 +96,10 @@ export default function EditorHeader({
 
           {/* Save status */}
           {isSaving ? (
-            <span className="flex items-center gap-1 text-neutral-400">
+            <span
+              className="flex items-center gap-1"
+              style={{ color: "var(--text-secondary)" }}
+            >
               <IconRefresh size="sm" className="animate-spin" />
               <span className="hidden md:inline">Сохранение...</span>
             </span>
@@ -142,11 +118,8 @@ export default function EditorHeader({
           <button
             onClick={onToggleVersionHistory}
             className={cn(
-              "flex items-center gap-1.5 px-2 py-1",
-              "text-xs rounded transition-colors",
-              isVersionHistoryOpen
-                ? "bg-blue-500/20 text-blue-400"
-                : "text-neutral-400 hover:bg-[#162236]",
+              "editor-header-btn",
+              isVersionHistoryOpen && "active",
             )}
             title="История версий"
           >

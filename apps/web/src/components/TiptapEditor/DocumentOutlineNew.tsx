@@ -92,22 +92,19 @@ export default function DocumentOutline({
     return (
       <div
         className={cn(
-          "flex flex-col h-full",
-          "bg-[#0d1b2a]/95 backdrop-blur-sm",
-          "border-r border-[rgba(56,89,138,0.25)]",
-          "w-64",
+          "editor-sidebar flex flex-col h-full border-r w-64",
           className,
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(56,89,138,0.25)] bg-[#162236]/50">
-          <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
+        <div className="editor-sidebar-header">
+          <div className="flex items-center gap-2 editor-sidebar-title">
             <IconList size="sm" className="text-blue-400" />
             Оглавление
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
+            className="editor-header-btn"
             title="Скрыть оглавление"
           >
             <IconClose size="sm" />
@@ -116,9 +113,15 @@ export default function DocumentOutline({
 
         {/* Empty state */}
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <IconDocument size="lg" className="w-12 h-12 text-neutral-600 mb-3" />
-          <p className="text-sm text-neutral-400">Нет заголовков</p>
-          <p className="text-xs text-neutral-500 mt-1">
+          <IconDocument
+            size="lg"
+            className="w-12 h-12 mb-3"
+            style={{ color: "var(--text-muted)" }}
+          />
+          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+            Нет заголовков
+          </p>
+          <p style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 4 }}>
             Добавьте заголовки H1, H2, H3 для структуры
           </p>
         </div>
@@ -130,16 +133,13 @@ export default function DocumentOutline({
     return (
       <div
         className={cn(
-          "flex flex-col items-center py-4",
-          "bg-[#0d1b2a]/95 backdrop-blur-sm",
-          "border-r border-[rgba(56,89,138,0.25)]",
-          "w-12",
+          "editor-sidebar flex flex-col items-center py-4 border-r w-12",
           className,
         )}
       >
         <button
           onClick={onToggleCollapse}
-          className="p-2 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
+          className="editor-header-btn"
           title="Показать оглавление"
         >
           <IconList size="md" />
@@ -168,19 +168,22 @@ export default function DocumentOutline({
   return (
     <div
       className={cn(
-        "flex flex-col h-full",
-        "bg-[#0d1b2a]/95 backdrop-blur-sm",
-        "border-r border-[rgba(56,89,138,0.25)]",
-        "w-64",
+        "editor-sidebar flex flex-col h-full border-r w-64",
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(56,89,138,0.25)] bg-[#162236]/50">
-        <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
+      <div className="editor-sidebar-header">
+        <div className="flex items-center gap-2 editor-sidebar-title">
           <IconList size="sm" className="text-blue-400" />
           Оглавление
-          <span className="text-xs text-neutral-500 bg-[rgba(56,89,138,0.25)] px-1.5 py-0.5 rounded-full">
+          <span
+            className="text-xs px-1.5 py-0.5 rounded-full"
+            style={{
+              color: "var(--text-muted)",
+              background: "var(--border-glass)",
+            }}
+          >
             {headings.length}
           </span>
         </div>
@@ -188,7 +191,7 @@ export default function DocumentOutline({
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
+              className="editor-header-btn"
               title="Свернуть панель"
             >
               <IconChevronLeft size="sm" />
@@ -196,7 +199,7 @@ export default function DocumentOutline({
           )}
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
+            className="editor-header-btn"
             title="Скрыть оглавление"
           >
             <IconClose size="sm" />
@@ -212,7 +215,7 @@ export default function DocumentOutline({
             onClick={() => handleNavigate(heading.id)}
             className={cn(
               "w-full text-left px-4 py-2 text-sm transition-all",
-              "hover:bg-[#162236]/50",
+              "hover:bg-blue-500/5",
               "focus:outline-none focus:bg-slate-800/50",
               // Active state
               activeHeadingId === heading.id &&

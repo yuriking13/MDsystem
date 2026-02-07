@@ -137,23 +137,17 @@ export default function EditorLayoutWrapper({
 
         {/* Center: Editor */}
         <main
-          className={cn(
-            "flex-1 flex flex-col min-w-0 overflow-hidden",
-            "bg-[#0a1628]",
-          )}
+          className="flex-1 flex flex-col min-w-0 overflow-hidden"
+          style={{ background: "var(--bg-primary)" }}
         >
           {/* Toggle buttons when sidebars are hidden */}
           {(!showOutline || !showBibliography) && (
-            <div className="flex items-center justify-between px-3 py-1 border-b border-[rgba(56,89,138,0.25)] bg-[#0d1b2a]/50">
+            <div className="editor-header" style={{ padding: "4px 12px" }}>
               {/* Left toggle (outline) */}
               {!showOutline ? (
                 <button
                   onClick={handleToggleOutline}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2 py-1 text-xs",
-                    "text-neutral-400 hover:text-neutral-200",
-                    "hover:bg-[#162236] rounded transition-colors",
-                  )}
+                  className="editor-header-btn"
                   title="Оглавление (Ctrl+\\)"
                 >
                   <IconList size="sm" />
@@ -167,11 +161,7 @@ export default function EditorLayoutWrapper({
               {!showBibliography ? (
                 <button
                   onClick={handleToggleBibliography}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2 py-1 text-xs",
-                    "text-neutral-400 hover:text-neutral-200",
-                    "hover:bg-[#162236] rounded transition-colors",
-                  )}
+                  className="editor-header-btn"
                   title="Библиография (Ctrl+])"
                 >
                   <IconBook size="sm" />

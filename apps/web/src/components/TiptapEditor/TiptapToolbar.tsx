@@ -148,72 +148,7 @@ export default function TiptapToolbar({
 
   const isInTable = editor.isActive("table");
 
-  // Button styles
-  const btn = (active = false, color?: string): React.CSSProperties => ({
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "28px",
-    height: "28px",
-    padding: "0",
-    border: "none",
-    background: active ? "#4b74ff" : color || "transparent",
-    color: active ? "#fff" : "#a9b7da",
-    cursor: "pointer",
-    borderRadius: "4px",
-    fontSize: "13px",
-    fontWeight: 500,
-    transition: "all 0.1s",
-  });
-
-  const btnWide = (
-    color?: string,
-    textColor?: string,
-  ): React.CSSProperties => ({
-    ...btn(false, color),
-    width: "auto",
-    padding: "0 10px",
-    gap: "4px",
-    color: textColor || "#a9b7da",
-    border: color ? `1px solid ${color}` : "none",
-  });
-
-  const divider: React.CSSProperties = {
-    width: "1px",
-    height: "20px",
-    background: "rgba(255,255,255,0.1)",
-    margin: "0 4px",
-  };
-
-  const dropdownStyle: React.CSSProperties = {
-    position: "absolute",
-    top: "100%",
-    left: 0,
-    marginTop: "4px",
-    background: "#1e293b",
-    border: "1px solid rgba(255,255,255,0.1)",
-    borderRadius: "6px",
-    padding: "6px",
-    zIndex: 1000,
-    minWidth: "160px",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-  };
-
-  const dropdownItemStyle: React.CSSProperties = {
-    display: "block",
-    width: "100%",
-    padding: "6px 10px",
-    background: "transparent",
-    border: "none",
-    color: "#a9b7da",
-    fontSize: "12px",
-    textAlign: "left",
-    cursor: "pointer",
-    borderRadius: "4px",
-  };
-
   const insertTable = (rows: number, cols: number) => {
-    // Try to use event system first, fall back to direct editor call
     if (editorEvents.hasListeners("createTable")) {
       editorEvents.emit("createTable", { rows, cols });
     } else {
@@ -226,7 +161,6 @@ export default function TiptapToolbar({
     setShowTableMenu(false);
   };
 
-  // Apply cell background color
   const applyCellColor = (color: string) => {
     if (!color) {
       editor.chain().focus().setCellAttribute("backgroundColor", "").run();
@@ -236,14 +170,11 @@ export default function TiptapToolbar({
     setShowTableColorMenu(false);
   };
 
-  // Check if cursor is in header row
   const isInHeaderRow = () => {
     try {
       const { state } = editor;
       const { $from } = state.selection;
       let isHeader = false;
-
-      // Check if current cell is a tableHeader
       for (let depth = $from.depth; depth > 0; depth--) {
         const node = $from.node(depth);
         if (node?.type?.name === "tableHeader") {
@@ -261,7 +192,6 @@ export default function TiptapToolbar({
     const previousUrl = editor.getAttributes("link").href;
     const url = prompt("Введите URL:", previousUrl || "https://");
     if (url === null) return;
-
     if (url === "") {
       editor.chain().focus().unsetLink().run();
     } else {
@@ -275,10 +205,7 @@ export default function TiptapToolbar({
         <>
           {hasOutlineToggle && (
             <button
-              style={btn(
-                !!showOutline,
-                showOutline ? "rgba(75,116,255,0.2)" : undefined,
-              )}
+              className={`toolbar-btn${showOutline ? " active-subtle" : ""}`}
               onClick={onToggleOutline}
               title="Содержание документа"
             >
@@ -288,10 +215,7 @@ export default function TiptapToolbar({
 
           {hasBibliographyToggle && (
             <button
-              style={btn(
-                !!showBibliography,
-                showBibliography ? "rgba(75,116,255,0.2)" : undefined,
-              )}
+              className={`toolbar-btn${showBibliography ? " active-subtle" : ""}`}
               onClick={onToggleBibliography}
               title="Список литературы"
             >
@@ -299,41 +223,41 @@ export default function TiptapToolbar({
             </button>
           )}
 
-          <div style={divider} />
+          <div className="toolbar-divider" />
         </>
       )}
 
       {/* Text formatting */}
       <button
-        style={btn(editor.isActive("bold"))}
+        className={`toolbar-btn${editor.isActive("bold") ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleBold().run()}
         title="Жирный (Ctrl+B)"
       >
         <b>B</b>
       </button>
       <button
-        style={btn(editor.isActive("italic"))}
+        className={`toolbar-btn${editor.isActive("italic") ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleItalic().run()}
         title="Курсив (Ctrl+I)"
       >
         <i>I</i>
       </button>
       <button
-        style={btn(editor.isActive("underline"))}
+        className={`toolbar-btn${editor.isActive("underline") ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         title="Подчёркнутый (Ctrl+U)"
       >
         <u>U</u>
       </button>
       <button
-        style={btn(editor.isActive("strike"))}
+        className={`toolbar-btn${editor.isActive("strike") ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleStrike().run()}
         title="Зачёркнутый"
       >
         <s>S</s>
       </button>
 
-      <div style={divider} />
+      <div className="toolbar-divider" />
 
       {/* Font Size Selector */}
       <select
@@ -349,16 +273,8 @@ export default function TiptapToolbar({
             (editor.chain().focus() as any).unsetFontSize().run();
           }
         }}
-        style={{
-          background: "#1e293b",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: "4px",
-          color: "#a9b7da",
-          fontSize: "11px",
-          padding: "4px 6px",
-          cursor: "pointer",
-          width: "52px",
-        }}
+        className="toolbar-select"
+        style={{ width: 52 }}
         title="Размер шрифта"
       >
         <option value="">Размер</option>
@@ -379,16 +295,8 @@ export default function TiptapToolbar({
             editor.chain().focus().unsetFontFamily().run();
           }
         }}
-        style={{
-          background: "#1e293b",
-          border: "1px solid rgba(255,255,255,0.1)",
-          borderRadius: "4px",
-          color: "#a9b7da",
-          fontSize: "11px",
-          padding: "4px 6px",
-          cursor: "pointer",
-          width: "100px",
-        }}
+        className="toolbar-select"
+        style={{ width: 100 }}
         title="Шрифт"
       >
         <option value="">Шрифт</option>
@@ -403,61 +311,61 @@ export default function TiptapToolbar({
         ))}
       </select>
 
-      <div style={divider} />
+      <div className="toolbar-divider" />
 
       {/* Headings */}
       <button
-        style={btn(editor.isActive("heading", { level: 1 }))}
+        className={`toolbar-btn${editor.isActive("heading", { level: 1 }) ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
         title="Заголовок 1"
       >
         H1
       </button>
       <button
-        style={btn(editor.isActive("heading", { level: 2 }))}
+        className={`toolbar-btn${editor.isActive("heading", { level: 2 }) ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
         title="Заголовок 2"
       >
         H2
       </button>
       <button
-        style={btn(editor.isActive("heading", { level: 3 }))}
+        className={`toolbar-btn${editor.isActive("heading", { level: 3 }) ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
         title="Заголовок 3"
       >
         H3
       </button>
       <button
-        style={btn()}
+        className="toolbar-btn"
         onClick={() => (editor.chain().focus() as any).toggleIndent().run()}
         title="Отступ первой строки (Tab)"
       >
         ⇥
       </button>
 
-      <div style={divider} />
+      <div className="toolbar-divider" />
 
       {/* Lists */}
       <button
-        style={btn(editor.isActive("bulletList"))}
+        className={`toolbar-btn${editor.isActive("bulletList") ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         title="Маркированный список"
       >
         •
       </button>
       <button
-        style={btn(editor.isActive("orderedList"))}
+        className={`toolbar-btn${editor.isActive("orderedList") ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         title="Нумерованный список"
       >
         1.
       </button>
 
-      <div style={divider} />
+      <div className="toolbar-divider" />
 
       {/* Link */}
       <button
-        style={btn(editor.isActive("link"))}
+        className={`toolbar-btn${editor.isActive("link") ? " active" : ""}`}
         onClick={setLink}
         title="Ссылка"
       >
@@ -467,7 +375,7 @@ export default function TiptapToolbar({
       {/* Insert Table */}
       <div style={{ position: "relative" }} ref={tableMenuRef}>
         <button
-          style={btn()}
+          className="toolbar-btn"
           onClick={() => {
             setShowTableMenu(!showTableMenu);
             setShowTableEditMenu(false);
@@ -477,17 +385,8 @@ export default function TiptapToolbar({
           <IconTableCells size="sm" />
         </button>
         {showTableMenu && (
-          <div style={dropdownStyle}>
-            <div
-              style={{
-                fontSize: "10px",
-                color: "#64748b",
-                marginBottom: "4px",
-                padding: "0 4px",
-              }}
-            >
-              Вставить таблицу
-            </div>
+          <div className="toolbar-dropdown">
+            <div className="toolbar-dropdown-label">Вставить таблицу</div>
             {[
               [2, 2],
               [3, 3],
@@ -497,13 +396,7 @@ export default function TiptapToolbar({
               <button
                 key={`${r}x${c}`}
                 onClick={() => insertTable(r, c)}
-                style={dropdownItemStyle}
-                onMouseOver={(e) =>
-                  (e.currentTarget.style.background = "rgba(75,116,255,0.2)")
-                }
-                onMouseOut={(e) =>
-                  (e.currentTarget.style.background = "transparent")
-                }
+                className="toolbar-dropdown-item"
               >
                 {r} × {c}
               </button>
@@ -517,7 +410,7 @@ export default function TiptapToolbar({
         <>
           <div style={{ position: "relative" }} ref={tableEditMenuRef}>
             <button
-              style={btn(false, "rgba(75,116,255,0.2)")}
+              className="toolbar-btn active-subtle"
               onClick={() => {
                 setShowTableEditMenu(!showTableEditMenu);
                 setShowTableMenu(false);
@@ -528,7 +421,7 @@ export default function TiptapToolbar({
               <IconSettings size="sm" />
             </button>
             {showTableEditMenu && (
-              <div style={dropdownStyle}>
+              <div className="toolbar-dropdown">
                 {onOpenTableEditor && (
                   <>
                     <button
@@ -536,45 +429,17 @@ export default function TiptapToolbar({
                         onOpenTableEditor();
                         setShowTableEditMenu(false);
                       }}
-                      style={{
-                        ...dropdownItemStyle,
-                        color: "#4b74ff",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                      onMouseOver={(e) =>
-                        (e.currentTarget.style.background =
-                          "rgba(75,116,255,0.2)")
-                      }
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
+                      className="toolbar-dropdown-item accent"
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >
                       <IconArrowsExpand size="sm" /> Редактор таблицы
                     </button>
-                    <div
-                      style={{
-                        height: "1px",
-                        background: "rgba(255,255,255,0.1)",
-                        margin: "6px 0",
-                      }}
-                    />
+                    <div className="toolbar-dropdown-sep" />
                   </>
                 )}
-                <div
-                  style={{
-                    fontSize: "10px",
-                    color: "#64748b",
-                    marginBottom: "4px",
-                    padding: "0 4px",
-                  }}
-                >
-                  Строки
-                </div>
+                <div className="toolbar-dropdown-label">Строки</div>
                 <button
                   onClick={() => {
-                    // Защита заголовков - не добавлять строку выше если мы в заголовке
                     if (isInHeaderRow()) {
                       alert("Нельзя добавить строку выше заголовка таблицы");
                       return;
@@ -582,16 +447,8 @@ export default function TiptapToolbar({
                     editor.chain().focus().addRowBefore().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={{
-                    ...dropdownItemStyle,
-                    opacity: isInHeaderRow() ? 0.5 : 1,
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(75,116,255,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item"
+                  style={{ opacity: isInHeaderRow() ? 0.5 : 1 }}
                   title={
                     isInHeaderRow()
                       ? "Нельзя добавить строку выше заголовка"
@@ -605,19 +462,12 @@ export default function TiptapToolbar({
                     editor.chain().focus().addRowAfter().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={dropdownItemStyle}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(75,116,255,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item"
                 >
                   ↓ Добавить строку ниже
                 </button>
                 <button
                   onClick={() => {
-                    // Защита заголовков - не удалять строку заголовка
                     if (isInHeaderRow()) {
                       alert("Нельзя удалить строку заголовка таблицы");
                       return;
@@ -625,17 +475,8 @@ export default function TiptapToolbar({
                     editor.chain().focus().deleteRow().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={{
-                    ...dropdownItemStyle,
-                    color: "#f87171",
-                    opacity: isInHeaderRow() ? 0.5 : 1,
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(248,113,113,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item danger"
+                  style={{ opacity: isInHeaderRow() ? 0.5 : 1 }}
                   title={
                     isInHeaderRow() ? "Нельзя удалить строку заголовка" : ""
                   }
@@ -643,36 +484,15 @@ export default function TiptapToolbar({
                   ✕ Удалить строку {isInHeaderRow() && "🔒"}
                 </button>
 
-                <div
-                  style={{
-                    height: "1px",
-                    background: "rgba(255,255,255,0.1)",
-                    margin: "6px 0",
-                  }}
-                />
+                <div className="toolbar-dropdown-sep" />
 
-                <div
-                  style={{
-                    fontSize: "10px",
-                    color: "#64748b",
-                    marginBottom: "4px",
-                    padding: "0 4px",
-                  }}
-                >
-                  Столбцы
-                </div>
+                <div className="toolbar-dropdown-label">Столбцы</div>
                 <button
                   onClick={() => {
                     editor.chain().focus().addColumnBefore().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={dropdownItemStyle}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(75,116,255,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item"
                 >
                   ← Добавить столбец слева
                 </button>
@@ -681,13 +501,7 @@ export default function TiptapToolbar({
                     editor.chain().focus().addColumnAfter().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={dropdownItemStyle}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(75,116,255,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item"
                 >
                   → Добавить столбец справа
                 </button>
@@ -696,37 +510,19 @@ export default function TiptapToolbar({
                     editor.chain().focus().deleteColumn().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={{ ...dropdownItemStyle, color: "#f87171" }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(248,113,113,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item danger"
                 >
                   ✕ Удалить столбец
                 </button>
 
-                <div
-                  style={{
-                    height: "1px",
-                    background: "rgba(255,255,255,0.1)",
-                    margin: "6px 0",
-                  }}
-                />
+                <div className="toolbar-dropdown-sep" />
 
                 <button
                   onClick={() => {
                     editor.chain().focus().mergeCells().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={dropdownItemStyle}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(75,116,255,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item"
                 >
                   ⊞ Объединить ячейки
                 </button>
@@ -735,13 +531,7 @@ export default function TiptapToolbar({
                     editor.chain().focus().splitCell().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={dropdownItemStyle}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(75,116,255,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item"
                 >
                   ⊟ Разделить ячейку
                 </button>
@@ -750,13 +540,7 @@ export default function TiptapToolbar({
                     editor.chain().focus().toggleHeaderRow().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={dropdownItemStyle}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(75,116,255,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item"
                 >
                   ⊟ Переключить заголовок строки
                 </button>
@@ -765,32 +549,15 @@ export default function TiptapToolbar({
                     editor.chain().focus().deleteTable().run();
                     setShowTableEditMenu(false);
                   }}
-                  style={{
-                    ...dropdownItemStyle,
-                    color: "#f87171",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                  }}
-                  onMouseOver={(e) =>
-                    (e.currentTarget.style.background = "rgba(248,113,113,0.2)")
-                  }
-                  onMouseOut={(e) =>
-                    (e.currentTarget.style.background = "transparent")
-                  }
+                  className="toolbar-dropdown-item danger"
+                  style={{ display: "flex", alignItems: "center", gap: 6 }}
                 >
                   <IconTrash size="sm" /> Удалить таблицу
                 </button>
 
                 {onCreateChartFromTable && (
                   <>
-                    <div
-                      style={{
-                        height: "1px",
-                        background: "rgba(255,255,255,0.1)",
-                        margin: "6px 0",
-                      }}
-                    />
+                    <div className="toolbar-dropdown-sep" />
                     <button
                       onClick={() => {
                         // Get the table HTML from the editor
@@ -811,7 +578,6 @@ export default function TiptapToolbar({
                         );
 
                         if (tableNode) {
-                          // Create HTML from the table node
                           const div = document.createElement("div");
                           const tableEl = document.createElement("table");
 
@@ -834,20 +600,8 @@ export default function TiptapToolbar({
                         }
                         setShowTableEditMenu(false);
                       }}
-                      style={{
-                        ...dropdownItemStyle,
-                        color: "#4ade80",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                      onMouseOver={(e) =>
-                        (e.currentTarget.style.background =
-                          "rgba(74,222,128,0.2)")
-                      }
-                      onMouseOut={(e) =>
-                        (e.currentTarget.style.background = "transparent")
-                      }
+                      className="toolbar-dropdown-item success"
+                      style={{ display: "flex", alignItems: "center", gap: 6 }}
                     >
                       <IconChartBar size="sm" /> Создать график
                     </button>
@@ -860,7 +614,7 @@ export default function TiptapToolbar({
           {/* Table Cell Color Menu */}
           <div style={{ position: "relative" }} ref={tableColorMenuRef}>
             <button
-              style={btn(false, "rgba(75,116,255,0.2)")}
+              className="toolbar-btn active-subtle"
               onClick={() => {
                 setShowTableColorMenu(!showTableColorMenu);
                 setShowTableEditMenu(false);
@@ -871,40 +625,20 @@ export default function TiptapToolbar({
               <IconPaintBrush size="sm" />
             </button>
             {showTableColorMenu && (
-              <div style={{ ...dropdownStyle, minWidth: "180px" }}>
-                <div
-                  style={{
-                    fontSize: "10px",
-                    color: "#64748b",
-                    marginBottom: "4px",
-                    padding: "0 4px",
-                  }}
-                >
-                  Цвет ячейки
-                </div>
+              <div className="toolbar-dropdown" style={{ minWidth: 180 }}>
+                <div className="toolbar-dropdown-label">Цвет ячейки</div>
                 {CELL_COLORS.map((color) => (
                   <button
                     key={color.name}
                     onClick={() => applyCellColor(color.value)}
-                    style={{
-                      ...dropdownItemStyle,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                    }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.background =
-                        "rgba(75,116,255,0.2)")
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.background = "transparent")
-                    }
+                    className="toolbar-dropdown-item"
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
                   >
                     <span
                       style={{
-                        width: "16px",
-                        height: "16px",
-                        borderRadius: "3px",
+                        width: 16,
+                        height: 16,
+                        borderRadius: 3,
                         border: "1px solid rgba(255,255,255,0.2)",
                         background: color.value || "white",
                         display: "inline-block",
@@ -914,26 +648,15 @@ export default function TiptapToolbar({
                   </button>
                 ))}
 
-                <div
-                  style={{
-                    height: "1px",
-                    background: "rgba(255,255,255,0.1)",
-                    margin: "8px 0",
-                  }}
-                />
+                <div className="toolbar-dropdown-sep" />
 
-                <div
-                  style={{
-                    fontSize: "10px",
-                    color: "#64748b",
-                    marginBottom: "4px",
-                    padding: "0 4px",
-                  }}
-                >
+                <div className="toolbar-dropdown-label">
                   Выравнивание текста в ячейке
                 </div>
-                <div style={{ display: "flex", gap: "4px", padding: "0 4px" }}>
+                <div style={{ display: "flex", gap: 4, padding: "0 4px" }}>
                   <button
+                    className="toolbar-btn"
+                    style={{ flex: 1 }}
                     onClick={() => {
                       editor
                         .chain()
@@ -942,12 +665,13 @@ export default function TiptapToolbar({
                         .run();
                       setShowTableColorMenu(false);
                     }}
-                    style={{ ...btn(), flex: 1 }}
                     title="По левому краю"
                   >
                     <IconBarsLeft size="sm" />
                   </button>
                   <button
+                    className="toolbar-btn"
+                    style={{ flex: 1 }}
                     onClick={() => {
                       editor
                         .chain()
@@ -956,12 +680,13 @@ export default function TiptapToolbar({
                         .run();
                       setShowTableColorMenu(false);
                     }}
-                    style={{ ...btn(), flex: 1 }}
                     title="По центру"
                   >
                     <IconBarsCenter size="sm" />
                   </button>
                   <button
+                    className="toolbar-btn"
+                    style={{ flex: 1 }}
                     onClick={() => {
                       editor
                         .chain()
@@ -970,33 +695,21 @@ export default function TiptapToolbar({
                         .run();
                       setShowTableColorMenu(false);
                     }}
-                    style={{ ...btn(), flex: 1 }}
                     title="По правому краю"
                   >
                     <IconBarsRight size="sm" />
                   </button>
                 </div>
 
-                <div
-                  style={{
-                    height: "1px",
-                    background: "rgba(255,255,255,0.1)",
-                    margin: "8px 0",
-                  }}
-                />
+                <div className="toolbar-dropdown-sep" />
 
-                <div
-                  style={{
-                    fontSize: "10px",
-                    color: "#64748b",
-                    marginBottom: "4px",
-                    padding: "0 4px",
-                  }}
-                >
+                <div className="toolbar-dropdown-label">
                   Вертикальное выравнивание
                 </div>
-                <div style={{ display: "flex", gap: "4px", padding: "0 4px" }}>
+                <div style={{ display: "flex", gap: 4, padding: "0 4px" }}>
                   <button
+                    className="toolbar-btn"
+                    style={{ flex: 1 }}
                     onClick={() => {
                       editor
                         .chain()
@@ -1005,12 +718,13 @@ export default function TiptapToolbar({
                         .run();
                       setShowTableColorMenu(false);
                     }}
-                    style={{ ...btn(), flex: 1, fontSize: "10px" }}
                     title="Сверху"
                   >
                     <IconAlignTop size="sm" />
                   </button>
                   <button
+                    className="toolbar-btn"
+                    style={{ flex: 1 }}
                     onClick={() => {
                       editor
                         .chain()
@@ -1019,12 +733,13 @@ export default function TiptapToolbar({
                         .run();
                       setShowTableColorMenu(false);
                     }}
-                    style={{ ...btn(), flex: 1, fontSize: "10px" }}
                     title="По центру"
                   >
                     <IconAlignMiddle size="sm" />
                   </button>
                   <button
+                    className="toolbar-btn"
+                    style={{ flex: 1 }}
                     onClick={() => {
                       editor
                         .chain()
@@ -1033,7 +748,6 @@ export default function TiptapToolbar({
                         .run();
                       setShowTableColorMenu(false);
                     }}
-                    style={{ ...btn(), flex: 1, fontSize: "10px" }}
                     title="Снизу"
                   >
                     <IconAlignBottom size="sm" />
@@ -1046,62 +760,58 @@ export default function TiptapToolbar({
       )}
 
       <button
-        style={btn(editor.isActive("blockquote"))}
+        className={`toolbar-btn${editor.isActive("blockquote") ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         title="Цитата"
       >
         <IconChatBubbleQuote size="sm" />
       </button>
       <button
-        style={btn(editor.isActive("codeBlock"))}
+        className={`toolbar-btn${editor.isActive("codeBlock") ? " active" : ""}`}
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         title="Код"
       >
         <IconCodeBracket size="sm" />
       </button>
 
-      <div style={divider} />
+      <div className="toolbar-divider" />
 
       {/* Alignment */}
       <button
-        style={btn(editor.isActive({ textAlign: "left" }))}
+        className={`toolbar-btn${editor.isActive({ textAlign: "left" }) ? " active" : ""}`}
         onClick={() => editor.chain().focus().setTextAlign("left").run()}
         title="По левому краю"
       >
         <IconBarsLeft size="sm" />
       </button>
       <button
-        style={btn(editor.isActive({ textAlign: "center" }))}
+        className={`toolbar-btn${editor.isActive({ textAlign: "center" }) ? " active" : ""}`}
         onClick={() => editor.chain().focus().setTextAlign("center").run()}
         title="По центру"
       >
         <IconBarsCenter size="sm" />
       </button>
       <button
-        style={btn(editor.isActive({ textAlign: "right" }))}
+        className={`toolbar-btn${editor.isActive({ textAlign: "right" }) ? " active" : ""}`}
         onClick={() => editor.chain().focus().setTextAlign("right").run()}
         title="По правому краю"
       >
         <IconBarsRight size="sm" />
       </button>
       <button
-        style={btn(editor.isActive({ textAlign: "justify" }))}
+        className={`toolbar-btn${editor.isActive({ textAlign: "justify" }) ? " active" : ""}`}
         onClick={() => editor.chain().focus().setTextAlign("justify").run()}
         title="По ширине"
       >
         <IconBarsRight size="sm" />
       </button>
 
-      <div style={divider} />
+      <div className="toolbar-divider" />
 
       {/* Citation & Import */}
       {onInsertCitation && (
         <button
-          style={{
-            ...btnWide("rgba(74,222,128,0.3)", "#4ade80"),
-            display: "flex",
-            alignItems: "center",
-          }}
+          className="toolbar-btn-wide citation"
           onClick={onInsertCitation}
           title="Вставить цитату"
         >
@@ -1110,11 +820,7 @@ export default function TiptapToolbar({
       )}
       {onImportStatistic && (
         <button
-          style={{
-            ...btnWide("rgba(75,116,255,0.3)", "#4b74ff"),
-            display: "flex",
-            alignItems: "center",
-          }}
+          className="toolbar-btn-wide statistic"
           onClick={onImportStatistic}
           title="Импорт графика/таблицы"
         >
@@ -1123,34 +829,20 @@ export default function TiptapToolbar({
       )}
       {onImportFile && (
         <button
-          style={{
-            ...btnWide("rgba(168,85,247,0.3)", "#a855f7"),
-            display: "flex",
-            alignItems: "center",
-          }}
+          className="toolbar-btn-wide file-import"
           onClick={onImportFile}
           title="Вставить файл из проекта"
         >
-          <IconPhoto className="w-3 h-3" size="sm" style={{ marginRight: 4 }} />
-          Файл
+          <IconPhoto size="sm" /> Файл
         </button>
       )}
 
       {/* Review Mode Toggle */}
-      <div style={divider} />
+      <div className="toolbar-divider" />
 
       {onToggleReviewMode && (
         <button
-          style={{
-            ...btnWide(
-              reviewMode
-                ? "rgba(251, 191, 36, 0.3)"
-                : "rgba(100, 116, 139, 0.2)",
-              reviewMode ? "#fbbf24" : "#94a3b8",
-            ),
-            display: "flex",
-            alignItems: "center",
-          }}
+          className={`toolbar-btn-wide${reviewMode ? " review-on" : " review-off"}`}
           onClick={onToggleReviewMode}
           title={
             reviewMode
@@ -1166,11 +858,7 @@ export default function TiptapToolbar({
       {/* Add Comment Button (visible in review mode) */}
       {reviewMode && onAddComment && (
         <button
-          style={{
-            ...btnWide("rgba(251, 191, 36, 0.2)", "#fbbf24"),
-            display: "flex",
-            alignItems: "center",
-          }}
+          className="toolbar-btn-wide review-on"
           onClick={onAddComment}
           title="Добавить комментарий к выделенному тексту"
         >
@@ -1190,7 +878,7 @@ export default function TiptapToolbar({
       >
         {onOpenPageSettings && (
           <button
-            style={btn()}
+            className="toolbar-btn"
             onClick={onOpenPageSettings}
             title="Настройки страницы"
           >
@@ -1198,15 +886,7 @@ export default function TiptapToolbar({
           </button>
         )}
         <span
-          className="style-badge"
-          style={{
-            fontSize: "10px",
-            padding: "4px 8px",
-            background: "rgba(75,116,255,0.1)",
-            borderRadius: "4px",
-            color: "#64748b",
-            cursor: "pointer",
-          }}
+          className="toolbar-style-badge"
           title={`Стиль: ${styleConfig.name}\nШрифт: ${styleConfig.fontSize}pt\nИнтервал: ${styleConfig.lineHeight}\nКликните для настройки`}
           onClick={onOpenPageSettings}
         >

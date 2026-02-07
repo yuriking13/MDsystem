@@ -40,6 +40,271 @@
   background: rgba(59, 130, 246, 0.2) !important;
 }
 
+/* ---- Toolbar button (glass theme) ---- */
+.toolbar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+.toolbar-btn:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: var(--text-primary, #e2e8f0);
+}
+.toolbar-btn.active {
+  background: var(--accent, #3b82f6) !important;
+  color: #fff !important;
+}
+.toolbar-btn.active-subtle {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: var(--accent, #3b82f6) !important;
+}
+
+/* Wide variant (with label) */
+.toolbar-btn-wide {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary, #94a3b8);
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+.toolbar-btn-wide:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+.toolbar-btn-wide.citation {
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+}
+.toolbar-btn-wide.citation:hover {
+  background: rgba(74, 222, 128, 0.15) !important;
+}
+.toolbar-btn-wide.statistic {
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: var(--accent, #3b82f6);
+}
+.toolbar-btn-wide.statistic:hover {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+.toolbar-btn-wide.file-import {
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #a855f7;
+}
+.toolbar-btn-wide.file-import:hover {
+  background: rgba(168, 85, 247, 0.15) !important;
+}
+.toolbar-btn-wide.review-on {
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  color: #fbbf24;
+}
+.toolbar-btn-wide.review-on:hover {
+  background: rgba(251, 191, 36, 0.15) !important;
+}
+.toolbar-btn-wide.review-off {
+  background: rgba(100, 116, 139, 0.15);
+  color: #94a3b8;
+}
+
+/* Toolbar divider */
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border-glass, rgba(56, 89, 138, 0.25));
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* Toolbar select (font size, font family) */
+.toolbar-select {
+  background: var(--bg-glass-dark, rgba(15, 23, 42, 0.6));
+  border: 1px solid var(--border-glass, rgba(56, 89, 138, 0.25));
+  border-radius: 6px;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 11px;
+  padding: 4px 6px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.toolbar-select:focus {
+  border-color: var(--accent, #3b82f6);
+  outline: none;
+}
+
+/* Toolbar dropdown (glass theme) */
+.toolbar-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: rgba(13, 27, 42, 0.92);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(56, 89, 138, 0.3);
+  border-radius: 8px;
+  padding: 6px;
+  z-index: 1000;
+  min-width: 160px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Dropdown item */
+.toolbar-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #94a3b8);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.1s, color 0.1s;
+}
+.toolbar-dropdown-item:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--text-primary, #e2e8f0);
+}
+.toolbar-dropdown-item.danger {
+  color: #f87171;
+}
+.toolbar-dropdown-item.danger:hover {
+  background: rgba(248, 113, 113, 0.15);
+}
+.toolbar-dropdown-item.success {
+  color: #4ade80;
+}
+.toolbar-dropdown-item.success:hover {
+  background: rgba(74, 222, 128, 0.15);
+}
+.toolbar-dropdown-item.accent {
+  color: var(--accent, #3b82f6);
+}
+.toolbar-dropdown-item.accent:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+/* Dropdown section label */
+.toolbar-dropdown-label {
+  font-size: 10px;
+  color: var(--text-muted, #64748b);
+  margin-bottom: 4px;
+  padding: 0 4px;
+}
+
+/* Dropdown separator */
+.toolbar-dropdown-sep {
+  height: 1px;
+  background: var(--border-glass, rgba(56, 89, 138, 0.25));
+  margin: 6px 0;
+}
+
+/* Style badge */
+.toolbar-style-badge {
+  font-size: 10px;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 4px;
+  color: var(--text-muted, #64748b);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.toolbar-style-badge:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+/* ---- Editor header (glass theme) ---- */
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-secondary, rgba(13, 27, 42, 0.85));
+  border-bottom: 1px solid var(--border-glass, rgba(56, 89, 138, 0.25));
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  flex-shrink: 0;
+}
+
+.editor-header-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--text-secondary, #94a3b8);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.editor-header-btn:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--text-primary, #e2e8f0);
+}
+.editor-header-btn.active {
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent, #3b82f6);
+}
+
+.editor-header-title {
+  max-width: 300px;
+  padding: 2px 6px;
+  font-size: 14px;
+  font-weight: 500;
+  background: transparent;
+  border: none;
+  color: var(--text-primary, #e2e8f0);
+  outline: none;
+}
+.editor-header-title::placeholder {
+  color: var(--text-muted, #64748b);
+}
+.editor-header-title:focus {
+  border-bottom: 1px solid var(--accent, #3b82f6);
+}
+
+/* ---- Editor layout sidebar (glass theme) ---- */
+.editor-sidebar {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-secondary, rgba(13, 27, 42, 0.85));
+  border-color: var(--border-glass, rgba(56, 89, 138, 0.25));
+}
+.editor-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-glass, rgba(56, 89, 138, 0.25));
+}
+.editor-sidebar-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #e2e8f0);
+}
+
 /* Main area with outline + editor + bibliography */
 .tiptap-main-area {
   display: flex;

@@ -173,16 +173,14 @@ export default function BibliographySidebarNew({
     return (
       <div
         className={cn(
-          "flex flex-col items-center py-4",
-          "bg-[#0d1b2a]/95 backdrop-blur-sm",
-          "border-l border-[rgba(56,89,138,0.25)]",
+          "editor-sidebar flex flex-col items-center py-4",
           "w-12",
           className,
         )}
       >
         <button
           onClick={onToggleCollapse}
-          className="p-2 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
+          className="editor-header-btn p-2"
           title="Показать библиографию"
         >
           <IconBook size="md" />
@@ -203,20 +201,20 @@ export default function BibliographySidebarNew({
 
   return (
     <div
-      className={cn(
-        "flex flex-col h-full",
-        "bg-[#0d1b2a]/95 backdrop-blur-sm",
-        "border-l border-[rgba(56,89,138,0.25)]",
-        "w-80",
-        className,
-      )}
+      className={cn("editor-sidebar flex flex-col h-full", "w-80", className)}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(56,89,138,0.25)] bg-[#162236]/50">
+      <div className="editor-sidebar-header flex items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
           <IconBook size="sm" className="text-blue-400" />
           Библиография
-          <span className="px-1.5 py-0.5 text-xs bg-[#162236] rounded text-neutral-400">
+          <span
+            className="px-1.5 py-0.5 text-xs rounded"
+            style={{
+              background: "var(--bg-secondary)",
+              color: "var(--text-muted)",
+            }}
+          >
             {uniqueSourcesCount}/{safeCitations.length}
           </span>
         </div>
@@ -224,7 +222,7 @@ export default function BibliographySidebarNew({
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
+              className="editor-header-btn p-1.5"
               title="Свернуть панель"
             >
               <IconChevronsRight size="sm" />
@@ -232,7 +230,7 @@ export default function BibliographySidebarNew({
           )}
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
+            className="editor-header-btn p-1.5"
             title="Скрыть библиографию"
           >
             <IconClose size="sm" />
@@ -241,7 +239,10 @@ export default function BibliographySidebarNew({
       </div>
 
       {/* Search & View Toggle */}
-      <div className="px-4 py-2 border-b border-[rgba(56,89,138,0.25)] space-y-2">
+      <div
+        className="px-4 py-2 space-y-2"
+        style={{ borderBottom: "1px solid var(--border-glass)" }}
+      >
         {/* Search */}
         <div className="relative">
           <IconSearch
@@ -253,38 +254,48 @@ export default function BibliographySidebarNew({
             value={localSearchQuery}
             onChange={(e) => setLocalSearchQuery(e.target.value)}
             placeholder="Поиск цитат..."
-            className={cn(
-              "w-full pl-8 pr-3 py-1.5 text-sm text-neutral-200",
-              "bg-[#162236]/50",
-              "border border-[rgba(56,89,138,0.25)] rounded-lg",
-              "focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50",
-              "placeholder:text-neutral-500",
-            )}
+            className="toolbar-select w-full pl-8 pr-3 py-1.5 text-sm rounded-lg"
           />
         </div>
 
         {/* View toggle */}
         <div className="flex items-center justify-between">
-          <div className="flex rounded-lg border border-[rgba(56,89,138,0.25)] overflow-hidden">
+          <div
+            className="flex rounded-lg overflow-hidden"
+            style={{ border: "1px solid var(--border-glass)" }}
+          >
             <button
               onClick={() => setViewMode("all")}
               className={cn(
                 "px-3 py-1 text-xs transition-colors",
                 viewMode === "all"
                   ? "bg-blue-500 text-white"
-                  : "bg-[#162236]/50 text-neutral-400 hover:bg-[#162236]",
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
               )}
+              style={
+                viewMode !== "all"
+                  ? { background: "var(--bg-secondary)" }
+                  : undefined
+              }
             >
               Все
             </button>
             <button
               onClick={() => setViewMode("bySource")}
               className={cn(
-                "px-3 py-1 text-xs transition-colors border-l border-[rgba(56,89,138,0.25)]",
+                "px-3 py-1 text-xs transition-colors",
                 viewMode === "bySource"
                   ? "bg-blue-500 text-white"
-                  : "bg-[#162236]/50 text-neutral-400 hover:bg-[#162236]",
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
               )}
+              style={
+                viewMode !== "bySource"
+                  ? {
+                      background: "var(--bg-secondary)",
+                      borderLeft: "1px solid var(--border-glass)",
+                    }
+                  : { borderLeft: "1px solid var(--border-glass)" }
+              }
             >
               По источнику
             </button>
@@ -306,7 +317,15 @@ export default function BibliographySidebarNew({
           </div>
         ) : viewMode === "all" ? (
           // All citations view
-          <div className="divide-y divide-[rgba(56,89,138,0.2)]">
+          <div
+            className="divide-y"
+            style={
+              {
+                "--tw-divide-opacity": 1,
+                borderColor: "var(--border-glass)",
+              } as React.CSSProperties
+            }
+          >
             {sortedCitations.map((citation) => (
               <CitationItem
                 key={citation.id}
@@ -330,7 +349,15 @@ export default function BibliographySidebarNew({
           </div>
         ) : (
           // Grouped by source view
-          <div className="divide-y divide-[rgba(56,89,138,0.2)]">
+          <div
+            className="divide-y"
+            style={
+              {
+                "--tw-divide-opacity": 1,
+                borderColor: "var(--border-glass)",
+              } as React.CSSProperties
+            }
+          >
             {Array.from(groupedCitations.entries())
               .sort((a, b) => (a[1][0]?.number || 0) - (b[1][0]?.number || 0))
               .map(([dedupeKey, citationInfos]) => {
@@ -396,7 +423,7 @@ function CitationItem({
   canEditNote,
 }: CitationItemProps) {
   return (
-    <div className="p-3 hover:bg-neutral-50 dark:hover:bg-[#162236]/50 transition-colors group">
+    <div className="p-3 hover:bg-neutral-50 dark:hover:bg-blue-500/5 transition-colors group">
       <div className="flex items-start gap-2">
         {/* Number badge */}
         <button
@@ -443,8 +470,8 @@ function CitationItem({
                 placeholder="Add quote from text..."
                 className={cn(
                   "w-full p-2 text-xs",
-                  "bg-neutral-50 dark:bg-[#162236]",
-                  "border border-neutral-200 dark:border-[rgba(56,89,138,0.3)] rounded",
+                  "bg-neutral-50 dark:bg-[var(--bg-secondary)]",
+                  "border border-neutral-200 dark:border-[var(--border-glass)] rounded",
                   "focus:outline-none focus:ring-1 focus:ring-blue-500",
                   "resize-none",
                 )}
@@ -541,11 +568,14 @@ function SourceGroup({
   const inlineNumber = citationInfos[0]?.number || 1;
 
   return (
-    <div className="border-b border-neutral-100 dark:border-[rgba(56,89,138,0.2)] last:border-b-0">
+    <div
+      className="border-b last:border-b-0"
+      style={{ borderColor: "var(--border-glass)" }}
+    >
       {/* Source header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-3 text-left hover:bg-neutral-50 dark:hover:bg-[#162236]/50 transition-colors"
+        className="w-full p-3 text-left hover:bg-blue-500/5 transition-colors"
       >
         <div className="flex items-start gap-2">
           <span className="shrink-0 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
@@ -594,7 +624,8 @@ function SourceGroup({
             return (
               <div
                 key={citation.id}
-                className="flex items-start gap-2 p-2 bg-neutral-50 dark:bg-[#162236]/50 rounded"
+                className="flex items-start gap-2 p-2 rounded"
+                style={{ background: "var(--bg-secondary)" }}
               >
                 <button
                   onClick={() => onNavigate(citation.id)}
@@ -612,8 +643,8 @@ function SourceGroup({
                         placeholder="Add quote..."
                         className={cn(
                           "w-full p-2 text-xs",
-                          "bg-white dark:bg-[#0d1b2a]",
-                          "border border-neutral-200 dark:border-[rgba(56,89,138,0.3)] rounded",
+                          "bg-white dark:bg-[var(--bg-primary)]",
+                          "border border-neutral-200 dark:border-[var(--border-glass)] rounded",
                           "focus:outline-none focus:ring-1 focus:ring-blue-500",
                           "resize-none",
                         )}
