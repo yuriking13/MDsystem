@@ -57,11 +57,8 @@ export default function AppSidebar({
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { id, projectId: routeProjectId } = useParams<{
-    id: string;
-    projectId: string;
-  }>();
-  const projectId = id || routeProjectId;
+  const { id, projectId } = useParams<{ id?: string; projectId?: string }>();
+  const activeProjectId = projectId || id;
   const [collapsed, setCollapsed] = useState(false);
   const [articlesSubMenuOpen, setArticlesSubMenuOpen] = useState(true);
   const [isDark, setIsDark] = useState(() => {
@@ -82,8 +79,21 @@ export default function AppSidebar({
   }, [collapsed]);
 
   // Check if we're inside a project
-  const isInProject = location.pathname.startsWith("/projects/") && projectId;
+  const isInProject =
+    location.pathname.startsWith("/projects/") && Boolean(activeProjectId);
   const currentTab = searchParams.get("tab") || "articles";
+
+  const goToProjectTab = (tab: string) => {
+    if (!activeProjectId) return;
+    const targetPath = `/projects/${activeProjectId}`;
+
+    if (location.pathname !== targetPath) {
+      navigate({ pathname: targetPath, search: `?tab=${tab}` });
+      return;
+    }
+
+    setSearchParams({ tab });
+  };
 
   // Article status sub-menu items
   const articleStatusItems: {
@@ -236,7 +246,7 @@ export default function AppSidebar({
   const handleNavClick = (item: NavItem) => {
     if (item.tab) {
       // Update URL search params for project tabs
-      setSearchParams({ tab: item.tab });
+      goToProjectTab(item.tab);
     } else if (item.path) {
       navigate(item.path);
     }
@@ -369,8 +379,14 @@ export default function AppSidebar({
                             <button
                               onClick={() => {
                                 setArticleViewStatus(statusItem.id);
-                                if (currentTab !== "articles") {
-                                  setSearchParams({ tab: "articles" });
+                                if (
+                                  activeProjectId &&
+                                  location.pathname !==
+                                    `/projects/${activeProjectId}`
+                                ) {
+                                  goToProjectTab("articles");
+                                } else if (currentTab !== "articles") {
+                                  goToProjectTab("articles");
                                 }
                               }}
                               className={cn(
