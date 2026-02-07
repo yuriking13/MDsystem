@@ -159,22 +159,18 @@ const exportPlugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      // Объединённый контент с перенумерованными цитатами
-      let mergedContent = "";
-      for (const doc of docsRes.rows) {
-        if (mergedContent) {
-          mergedContent += '<hr class="chapter-break" />';
-        }
-        mergedContent += `<h1 class="chapter-title">${doc.title}</h1>`;
-
-        // Перенумеровываем цитаты в контенте
-        let content = doc.content || "";
+      // Функция перенумерации цитат в HTML контенте документа
+      function renumberCitationsInContent(
+        content: string,
+        docId: string,
+      ): string {
+        if (!content) return "";
 
         // Заменяем data-citation-number и текст [n] в span элементах
-        content = content.replace(
+        let result = content.replace(
           /<span[^>]*class="citation-ref"[^>]*data-citation-number="(\d+)"[^>]*>\[(\d+)\]<\/span>/g,
           (match: string, attrNum: string, textNum: string) => {
-            const key = `${doc.id}:${attrNum}`;
+            const key = `${docId}:${attrNum}`;
             const globalNum = citationMapping.get(key);
             if (globalNum !== undefined) {
               return match
@@ -189,10 +185,10 @@ const exportPlugin: FastifyPluginAsync = async (fastify) => {
         );
 
         // Также обрабатываем обратный порядок атрибутов (data-citation-number перед class)
-        content = content.replace(
+        result = result.replace(
           /<span[^>]*data-citation-number="(\d+)"[^>]*class="citation-ref"[^>]*>\[(\d+)\]<\/span>/g,
           (match: string, attrNum: string, textNum: string) => {
-            const key = `${doc.id}:${attrNum}`;
+            const key = `${docId}:${attrNum}`;
             const globalNum = citationMapping.get(key);
             if (globalNum !== undefined) {
               return match
@@ -206,13 +202,40 @@ const exportPlugin: FastifyPluginAsync = async (fastify) => {
           },
         );
 
-        mergedContent += content;
+        return result;
+      }
+
+      // Перенумеровываем цитаты в каждом документе для глобальной нумерации
+      const documentsWithGlobalNumbers = docsRes.rows.map(
+        (doc: {
+          id: string;
+          title: string;
+          content: string;
+          order_index: number;
+          [key: string]: unknown;
+        }) => ({
+          ...doc,
+          content: renumberCitationsInContent(
+            doc.content as string,
+            doc.id as string,
+          ),
+        }),
+      );
+
+      // Объединённый контент с перенумерованными цитатами
+      let mergedContent = "";
+      for (const doc of documentsWithGlobalNumbers) {
+        if (mergedContent) {
+          mergedContent += '<hr class="chapter-break" />';
+        }
+        mergedContent += `<h1 class="chapter-title">${doc.title}</h1>`;
+        mergedContent += doc.content || "";
       }
 
       return {
         projectName,
         citationStyle,
-        documents: docsRes.rows,
+        documents: documentsWithGlobalNumbers, // Документы с глобальной нумерацией цитат
         bibliography,
         mergedContent, // Объединённый контент с перенумерованными цитатами
       };

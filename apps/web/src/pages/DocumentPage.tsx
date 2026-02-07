@@ -32,7 +32,6 @@ import {
   apiGetStatistic,
   apiUpdateStatistic,
   apiCreateStatistic,
-  apiRenumberCitations,
   apiGetProjectFiles,
   apiGetFileDownloadUrl,
   apiMarkFileUsed,
@@ -441,7 +440,7 @@ export default function DocumentPage() {
     load();
   }, [projectId, docId]);
 
-  // Извлечение ID цитат из HTML контента
+  // Извлечение ID цитат из HTML контента (как Set для быстрой проверки наличия)
   const parseCitationsFromContent = useCallback(
     (htmlContent: string): Set<string> => {
       if (!htmlContent) return new Set();
@@ -455,6 +454,29 @@ export default function DocumentPage() {
         const citationId = el.getAttribute("data-citation-id");
         if (citationId) {
           citationIds.add(citationId);
+        }
+      });
+
+      return citationIds;
+    },
+    [],
+  );
+
+  // Извлечение ID цитат из HTML контента в порядке появления в документе (document order)
+  // Нужен для передачи порядка цитат на сервер при синхронизации
+  const parseCitationsOrderedFromContent = useCallback(
+    (htmlContent: string): string[] => {
+      if (!htmlContent) return [];
+
+      const parser = new DOMParser();
+      const parsedDoc = parser.parseFromString(htmlContent, "text/html");
+      const citationIds: string[] = [];
+
+      // querySelectorAll возвращает элементы в document order
+      parsedDoc.querySelectorAll("[data-citation-id]").forEach((el) => {
+        const citationId = el.getAttribute("data-citation-id");
+        if (citationId) {
+          citationIds.push(citationId);
         }
       });
 
@@ -616,31 +638,48 @@ export default function DocumentPage() {
       if (!projectId || !docId) return;
       setSaving(true);
       try {
-        // Проверяем, изменились ли цитаты
+        // Проверяем, изменились ли цитаты (состав или порядок)
         const oldCitationIds = doc?.content
           ? parseCitationsFromContent(doc.content)
           : new Set<string>();
         const newCitationIds = parseCitationsFromContent(newContent);
-        const citationsChanged =
+
+        // Получаем упорядоченные массивы для проверки порядка и передачи на сервер
+        const oldOrderedIds = doc?.content
+          ? parseCitationsOrderedFromContent(doc.content)
+          : [];
+        const newOrderedIds = parseCitationsOrderedFromContent(newContent);
+
+        // Цитаты изменились если:
+        // 1. Изменился состав (добавлены/удалены) ИЛИ
+        // 2. Изменился порядок (перетаскивание) - важно для правильной нумерации
+        const setChanged =
           oldCitationIds.size !== newCitationIds.size ||
           [...oldCitationIds].some((id) => !newCitationIds.has(id));
+        const orderChanged =
+          !setChanged &&
+          newOrderedIds.length > 0 &&
+          (oldOrderedIds.length !== newOrderedIds.length ||
+            oldOrderedIds.some((id, i) => id !== newOrderedIds[i]));
+        const citationsChanged = setChanged || orderChanged;
 
         await apiUpdateDocument(projectId, docId, { content: newContent });
         // Keep local doc state in sync so we don't think there are pending edits after save
         setDoc((prev) => (prev ? { ...prev, content: newContent } : prev));
 
-        // Если цитаты изменились, синхронизируем с БД
-        // Это удалит цитаты, которых больше нет в тексте, и перенумерует остальные
+        // Если цитаты изменились (состав или порядок), синхронизируем с БД
+        // Это удалит цитаты, которых больше нет в тексте, обновит порядок
+        // и перенумерует все цитаты в соответствии с позицией в документе
         if (citationsChanged) {
           try {
             setUpdatingBibliography(true);
 
-            // Синхронизируем цитаты - передаём ID цитат, которые есть в HTML
-            const citationIdsArray = Array.from(newCitationIds);
+            // Синхронизируем цитаты - передаём ID цитат в порядке появления в документе
+            // Сервер использует этот порядок для обновления order_index и нумерации
             const syncResult = await apiSyncCitations(
               projectId,
               docId,
-              citationIdsArray,
+              newOrderedIds,
             );
 
             if (syncResult.document) {
@@ -769,6 +808,7 @@ export default function DocumentPage() {
       doc?.content,
       parseStatisticsFromContent,
       parseCitationsFromContent,
+      parseCitationsOrderedFromContent,
       parseFilesFromContent,
       statistics,
     ],
@@ -1626,9 +1666,13 @@ export default function DocumentPage() {
       const res = await apiAddCitation(projectId, docId, article.id);
 
       // Вставить цитату в редактор через event system
+      // ВАЖНО: articleId нужен для группировки цитат одного источника
+      // subNumber нужен для корректного отображения n#k
       editorEvents.emit("insertCitation", {
         citationId: res.citation.id,
         citationNumber: res.citation.inline_number,
+        articleId: article.id,
+        subNumber: res.citation.sub_number || 1,
         note: res.citation.note || "",
       });
 
@@ -1657,12 +1701,21 @@ export default function DocumentPage() {
     }
   }
 
-  // Удалить цитату
+  // Удалить цитату из БД и из редактора
   async function handleRemoveCitation(citationId: string) {
     if (!projectId || !docId) return;
 
     try {
+      // Удаляем из БД
       await apiRemoveCitation(projectId, docId, citationId);
+
+      // Удаляем цитату из редактора (span node)
+      // Метод removeCitationById определён в CitationMark extension
+      // и экспортирован через TiptapEditorHandle
+      if (editorRef.current) {
+        editorRef.current.removeCitationById(citationId);
+      }
+
       // Обновить документ
       const updated = await apiGetDocument(projectId, docId);
       setDoc(updated.document);

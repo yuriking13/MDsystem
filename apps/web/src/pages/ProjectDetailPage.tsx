@@ -18,7 +18,6 @@ import {
   apiCreateDocument,
   apiDeleteDocument,
   apiReorderDocuments,
-  apiRenumberCitations,
   apiGetBibliography,
   apiExportProject,
   apiGetStatistics,
@@ -1287,9 +1286,8 @@ export default function ProjectDetailPage() {
     if (!id) return;
     setExporting(true);
     try {
-      // Обновляем нумерацию цитат перед экспортом
-      await apiRenumberCitations(id);
-
+      // Экспорт сам создаёт глобальную нумерацию в памяти,
+      // не затрагивая локальную нумерацию документов
       const res = await apiExportProject(id);
 
       // Формируем текстовый документ
@@ -1337,8 +1335,7 @@ export default function ProjectDetailPage() {
     if (!id) return;
     setExporting(true);
     try {
-      // Обновляем нумерацию цитат перед экспортом
-      await apiRenumberCitations(id);
+      // Экспорт сам создаёт глобальную нумерацию в памяти
 
       // Захватываем графики из текущего DOM (если есть)
       const chartImages = await captureChartsFromDOM();
@@ -1402,8 +1399,7 @@ export default function ProjectDetailPage() {
     setExporting(true);
 
     try {
-      // Обновляем нумерацию цитат перед экспортом
-      await apiRenumberCitations(id);
+      // Экспорт сам создаёт глобальную нумерацию в памяти
 
       // Захватываем графики из текущего DOM
       const chartImages = await captureChartsFromDOM();
@@ -1449,9 +1445,61 @@ export default function ProjectDetailPage() {
         number: idx + 1,
       }));
 
+      // Создаём маппинг глобальный номер -> новый последовательный номер
+      // Документы уже содержат глобальные номера (из export endpoint)
+      const globalToSelectedNumber = new Map<number, number>();
+      for (let i = 0; i < selectedBibliography.length; i++) {
+        globalToSelectedNumber.set(selectedBibliography[i].number, i + 1);
+      }
+
+      // Перенумеровываем цитаты в контенте выбранных документов
+      // (из глобальной нумерации в последовательную для выбранных глав)
+      const renumberedDocuments = preparedDocuments.map((d) => {
+        if (!d.content) return d;
+        let content = d.content;
+
+        // Заменяем data-citation-number и текст [n]
+        content = content.replace(
+          /<span[^>]*class="citation-ref"[^>]*data-citation-number="(\d+)"[^>]*>\[(\d+)\]<\/span>/g,
+          (match: string, attrNum: string, textNum: string) => {
+            const globalNum = parseInt(attrNum, 10);
+            const newNum = globalToSelectedNumber.get(globalNum);
+            if (newNum !== undefined) {
+              return match
+                .replace(
+                  `data-citation-number="${attrNum}"`,
+                  `data-citation-number="${newNum}"`,
+                )
+                .replace(`[${textNum}]`, `[${newNum}]`);
+            }
+            return match;
+          },
+        );
+
+        // Обрабатываем обратный порядок атрибутов
+        content = content.replace(
+          /<span[^>]*data-citation-number="(\d+)"[^>]*class="citation-ref"[^>]*>\[(\d+)\]<\/span>/g,
+          (match: string, attrNum: string, textNum: string) => {
+            const globalNum = parseInt(attrNum, 10);
+            const newNum = globalToSelectedNumber.get(globalNum);
+            if (newNum !== undefined) {
+              return match
+                .replace(
+                  `data-citation-number="${attrNum}"`,
+                  `data-citation-number="${newNum}"`,
+                )
+                .replace(`[${textNum}]`, `[${newNum}]`);
+            }
+            return match;
+          },
+        );
+
+        return { ...d, content };
+      });
+
       await exportToWord(
         res.projectName,
-        preparedDocuments,
+        renumberedDocuments,
         renumberedBib,
         res.citationStyle,
         undefined, // не объединённый
@@ -1626,24 +1674,12 @@ export default function ProjectDetailPage() {
                             newDocs.map((d) => d.id),
                           );
 
-                          // Перенумеровать цитаты в реальном времени
-                          const renumberResult = await apiRenumberCitations(id);
-
-                          // Обновить документы с новым контентом (перенумерованные цитаты)
-                          if (renumberResult.documents) {
-                            setDocuments(renumberResult.documents);
-                          }
-
-                          // Автоматически обновить библиографию после перестановки
+                          // Локальная нумерация цитат НЕ меняется при смене порядка документов
+                          // (глобальный список литературы не влияет на локальный)
+                          // Обновляем только глобальный список литературы
                           await refreshBibliography();
 
-                          if (renumberResult.renumbered > 0) {
-                            setOk(
-                              `Порядок документов обновлён. Перенумеровано ${renumberResult.renumbered} цитат.`,
-                            );
-                          } else {
-                            setOk("Порядок документов обновлён.");
-                          }
+                          setOk("Порядок документов обновлён.");
                         } catch (err) {
                           setError(
                             getErrorMessage(err) || "Ошибка сохранения порядка",
@@ -1856,8 +1892,7 @@ export default function ProjectDetailPage() {
                       if (!id) return;
                       setExporting(true);
                       try {
-                        // Обновляем нумерацию цитат перед экспортом
-                        await apiRenumberCitations(id);
+                        // Экспорт сам создаёт глобальную нумерацию в памяти
 
                         // Захватываем графики из текущего DOM
                         const chartImages = await captureChartsFromDOM();
@@ -1997,8 +2032,7 @@ export default function ProjectDetailPage() {
                       if (!id) return;
                       setExporting(true);
                       try {
-                        // Обновляем нумерацию перед экспортом библиографии
-                        await apiRenumberCitations(id);
+                        // Получаем глобальную библиографию (с дедупликацией)
                         const res = await apiGetBibliography(id);
                         setBibliography(res.bibliography);
                         setBibliographyLastUpdated(Date.now());
@@ -2040,7 +2074,6 @@ export default function ProjectDetailPage() {
                       if (!id) return;
                       setExporting(true);
                       try {
-                        await apiRenumberCitations(id);
                         const res = await apiGetBibliography(id);
                         setBibliography(res.bibliography);
                         setBibliographyLastUpdated(Date.now());
@@ -2081,7 +2114,6 @@ export default function ProjectDetailPage() {
                     onClick={async () => {
                       if (!id) return;
                       try {
-                        await apiRenumberCitations(id);
                         const res = await apiGetBibliography(id);
                         setBibliography(res.bibliography);
                         setBibliographyLastUpdated(Date.now());

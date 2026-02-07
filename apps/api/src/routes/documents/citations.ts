@@ -376,7 +376,11 @@ const citationsPlugin: FastifyPluginAsync = async (fastify) => {
       }
 
       const { docId, projectId } = paramsP.data;
-      const citationIdsInHtml = new Set(bodyP.data.citationIds);
+      // citationIds приходят в порядке появления в документе (document order)
+      // Этот порядок определяется фронтендом через querySelectorAll, который
+      // обходит DOM в document order
+      const orderedCitationIds = bodyP.data.citationIds;
+      const citationIdsInHtml = new Set(orderedCitationIds);
 
       // Получаем все цитаты документа из БД
       const existingCitations = await pool.query(
@@ -401,11 +405,26 @@ const citationsPlugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // =======================================================================
+      // ОБНОВЛЕНИЕ order_index НА ОСНОВЕ ПОРЯДКА В ДОКУМЕНТЕ
+      // =======================================================================
+      // Фронтенд передаёт citationIds в порядке появления в HTML (document order).
+      // Обновляем order_index чтобы он отражал реальную позицию цитат в тексте.
+      // Это критично для правильной нумерации при перетаскивании цитат.
+      // =======================================================================
+      for (let i = 0; i < orderedCitationIds.length; i++) {
+        await pool.query(
+          `UPDATE citations SET order_index = $1 WHERE id = $2 AND document_id = $3`,
+          [i, orderedCitationIds[i], docId],
+        );
+      }
+
+      // =======================================================================
       // ДЕДУПЛИКАЦИЯ: объединяем цитаты на статьи с одинаковым PMID/DOI
       // Все цитаты одной "логической" статьи должны иметь один inline_number
       // =======================================================================
 
       // Получаем все цитаты с данными статей для дедупликации
+      // ВАЖНО: сортируем по order_index, который теперь отражает порядок в документе
       const citationsWithArticles = await pool.query(
         `SELECT c.id, c.article_id, c.order_index, a.pmid, a.doi, a.title_en
          FROM citations c
@@ -416,6 +435,7 @@ const citationsPlugin: FastifyPluginAsync = async (fastify) => {
       );
 
       // Группируем по ключу дедупликации, сохраняем порядок первого появления
+      // Порядок определяется позицией в документе (order_index обновлён выше)
       const dedupeKeyToNumber = new Map<string, number>();
       const dedupeKeyOrder: string[] = [];
 
@@ -426,7 +446,7 @@ const citationsPlugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      // Присваиваем номера в порядке первого появления
+      // Присваиваем номера в порядке первого появления в документе
       dedupeKeyOrder.forEach((key, index) => {
         dedupeKeyToNumber.set(key, index + 1);
       });
@@ -445,6 +465,7 @@ const citationsPlugin: FastifyPluginAsync = async (fastify) => {
 
       // Перенумеровываем sub_number для каждой группы дедупликации
       // (группируем по ключу, а не по article_id)
+      // sub_number определяет порядок цитат одного источника (n#1, n#2, n#3)
       const citationsByDedupeKey = new Map<
         string,
         Array<{ id: string; order_index: number }>
@@ -458,7 +479,7 @@ const citationsPlugin: FastifyPluginAsync = async (fastify) => {
       }
 
       for (const [, citations] of citationsByDedupeKey) {
-        // Сортируем по order_index и присваиваем sub_number
+        // Сортируем по order_index (позиция в документе) и присваиваем sub_number
         citations.sort((a, b) => a.order_index - b.order_index);
         for (let i = 0; i < citations.length; i++) {
           await pool.query(
@@ -467,19 +488,6 @@ const citationsPlugin: FastifyPluginAsync = async (fastify) => {
           );
         }
       }
-
-      // Обновляем order_index для последовательности
-      await pool.query(
-        `WITH numbered AS (
-          SELECT id, ROW_NUMBER() OVER (ORDER BY order_index) - 1 as new_order
-          FROM citations WHERE document_id = $1
-        )
-        UPDATE citations c
-        SET order_index = n.new_order
-        FROM numbered n
-        WHERE c.id = n.id`,
-        [docId],
-      );
 
       // Возвращаем обновлённый документ с цитатами
       const hasSubNumber = await hasSubNumberColumn();

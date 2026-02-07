@@ -38,7 +38,10 @@ export const CitationMark = Node.create<CitationMarkOptions>({
   
   selectable: true,
   
-  draggable: false,
+  // Разрешаем перетаскивание цитат для изменения их позиции в документе.
+  // При переносе цитаты ProseMirror-плагин автоматически перенумеровывает
+  // все цитаты в соответствии с новым порядком появления.
+  draggable: true,
 
   addOptions() {
     return {
