@@ -1445,9 +1445,61 @@ export default function ProjectDetailPage() {
         number: idx + 1,
       }));
 
+      // Создаём маппинг глобальный номер -> новый последовательный номер
+      // Документы уже содержат глобальные номера (из export endpoint)
+      const globalToSelectedNumber = new Map<number, number>();
+      for (let i = 0; i < selectedBibliography.length; i++) {
+        globalToSelectedNumber.set(selectedBibliography[i].number, i + 1);
+      }
+
+      // Перенумеровываем цитаты в контенте выбранных документов
+      // (из глобальной нумерации в последовательную для выбранных глав)
+      const renumberedDocuments = preparedDocuments.map((d) => {
+        if (!d.content) return d;
+        let content = d.content;
+
+        // Заменяем data-citation-number и текст [n]
+        content = content.replace(
+          /<span[^>]*class="citation-ref"[^>]*data-citation-number="(\d+)"[^>]*>\[(\d+)\]<\/span>/g,
+          (match: string, attrNum: string, textNum: string) => {
+            const globalNum = parseInt(attrNum, 10);
+            const newNum = globalToSelectedNumber.get(globalNum);
+            if (newNum !== undefined) {
+              return match
+                .replace(
+                  `data-citation-number="${attrNum}"`,
+                  `data-citation-number="${newNum}"`,
+                )
+                .replace(`[${textNum}]`, `[${newNum}]`);
+            }
+            return match;
+          },
+        );
+
+        // Обрабатываем обратный порядок атрибутов
+        content = content.replace(
+          /<span[^>]*data-citation-number="(\d+)"[^>]*class="citation-ref"[^>]*>\[(\d+)\]<\/span>/g,
+          (match: string, attrNum: string, textNum: string) => {
+            const globalNum = parseInt(attrNum, 10);
+            const newNum = globalToSelectedNumber.get(globalNum);
+            if (newNum !== undefined) {
+              return match
+                .replace(
+                  `data-citation-number="${attrNum}"`,
+                  `data-citation-number="${newNum}"`,
+                )
+                .replace(`[${textNum}]`, `[${newNum}]`);
+            }
+            return match;
+          },
+        );
+
+        return { ...d, content };
+      });
+
       await exportToWord(
         res.projectName,
-        preparedDocuments,
+        renumberedDocuments,
         renumberedBib,
         res.citationStyle,
         undefined, // не объединённый
