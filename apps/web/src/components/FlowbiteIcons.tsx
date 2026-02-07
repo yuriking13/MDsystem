@@ -1248,6 +1248,268 @@ export function IconSend({ className, size = "md", style }: IconProps) {
   );
 }
 
+// Chevron Left icon
+export function IconChevronLeft({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.75 19.5L8.25 12l7.5-7.5"
+      />
+    </svg>
+  );
+}
+
+// Chevron Down icon
+export function IconChevronDown({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+      />
+    </svg>
+  );
+}
+
+// Chevron Up icon
+export function IconChevronUp({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4.5 15.75l7.5-7.5 7.5 7.5"
+      />
+    </svg>
+  );
+}
+
+// Logout / Arrow Right On Rectangle icon
+export function IconLogout({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"
+      />
+    </svg>
+  );
+}
+
+// User Circle icon
+export function IconUserCircle({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  );
+}
+
+// Share icon
+export function IconShare({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"
+      />
+    </svg>
+  );
+}
+
+// Minus icon
+export function IconMinus({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
+    </svg>
+  );
+}
+
+// Beaker icon
+export function IconBeaker({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
+      />
+    </svg>
+  );
+}
+
+// Cube / CubeTransparent icon
+export function IconCube({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M21 7.5l-2.25-1.313M21 7.5v2.25m0-2.25l-2.25 1.313M3 7.5l2.25-1.313M3 7.5l2.25 1.313M3 7.5v2.25m9 3l2.25-1.313M12 12.75l-2.25-1.313M12 12.75V15m0 6.75l2.25-1.313M12 21.75V15m0 0l-2.25-1.313M3 16.5v2.25M21 16.5v2.25M12 3v3.75m0 0l-2.25 1.313M12 6.75l2.25 1.313"
+      />
+    </svg>
+  );
+}
+
+// Arrows Contract / ArrowsPointingIn icon
+export function IconArrowsContract({
+  className,
+  size = "md",
+  style,
+}: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25"
+      />
+    </svg>
+  );
+}
+
+// Pause icon
+export function IconPause({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M15.75 5.25v13.5m-7.5-13.5v13.5"
+      />
+    </svg>
+  );
+}
+
+// Viewfinder / Target icon
+export function IconViewfinder({ className, size = "md", style }: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M7.5 3.75H6A2.25 2.25 0 003.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0120.25 6v1.5m0 9V18A2.25 2.25 0 0118 20.25h-1.5m-9 0H6A2.25 2.25 0 013.75 18v-1.5M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+    </svg>
+  );
+}
+
+// Check Circle Filled icon
+export function IconCheckCircleFilled({
+  className,
+  size = "md",
+  style,
+}: IconProps) {
+  return (
+    <svg
+      className={getClass(className, size)}
+      style={style}
+      fill="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        fillRule="evenodd"
+        d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z"
+        clipRule="evenodd"
+      />
+    </svg>
+  );
+}
+
 // Trending Up icon
 export function IconTrendingUp({ className, size = "md", style }: IconProps) {
   return (

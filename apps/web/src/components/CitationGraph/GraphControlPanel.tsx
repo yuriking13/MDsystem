@@ -1,23 +1,23 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "../../design-system/utils/cn";
 import {
-  ChevronDownIcon,
-  ChevronRightIcon,
-  AdjustmentsHorizontalIcon,
-  FunnelIcon,
-  ChartBarIcon,
-  ClockIcon,
-  SparklesIcon,
-  MagnifyingGlassIcon,
-  BeakerIcon,
-  CubeTransparentIcon,
-  ArrowsPointingOutIcon,
-  ArrowsPointingInIcon,
-  PlayIcon,
-  PauseIcon,
-  ArrowPathIcon,
-  ArrowDownTrayIcon,
-} from "@heroicons/react/24/outline";
+  IconChevronDown as ChevronDownIcon,
+  IconChevronRight as ChevronRightIcon,
+  IconAdjustments as AdjustmentsHorizontalIcon,
+  IconFilter as FunnelIcon,
+  IconChartBar as ChartBarIcon,
+  IconClock as ClockIcon,
+  IconSparkles as SparklesIcon,
+  IconSearch as MagnifyingGlassIcon,
+  IconBeaker as BeakerIcon,
+  IconCube as CubeTransparentIcon,
+  IconArrowsExpand as ArrowsPointingOutIcon,
+  IconArrowsContract as ArrowsPointingInIcon,
+  IconPlay as PlayIcon,
+  IconPause as PauseIcon,
+  IconRefresh as ArrowPathIcon,
+  IconDownload as ArrowDownTrayIcon,
+} from "../FlowbiteIcons";
 
 type FilterType = "all" | "selected" | "excluded";
 type DepthType = 1 | 2 | 3;

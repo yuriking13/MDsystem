@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { cn } from "../../design-system/utils/cn";
 import {
-  XMarkIcon,
-  CalendarIcon,
-  TagIcon,
-  DocumentTextIcon,
-  ArrowTrendingUpIcon,
-  StarIcon,
-  CheckCircleIcon,
-  PlusIcon,
-  ArrowTopRightOnSquareIcon,
-  ArrowPathIcon,
-  LanguageIcon,
-  LinkIcon,
-} from "@heroicons/react/24/outline";
-import { CheckCircleIcon as CheckCircleSolidIcon } from "@heroicons/react/24/solid";
+  IconClose as XMarkIcon,
+  IconCalendar as CalendarIcon,
+  IconTag as TagIcon,
+  IconDocumentText as DocumentTextIcon,
+  IconTrendingUp as ArrowTrendingUpIcon,
+  IconStar as StarIcon,
+  IconCheckCircle as CheckCircleIcon,
+  IconPlus as PlusIcon,
+  IconExternalLink as ArrowTopRightOnSquareIcon,
+  IconRefresh as ArrowPathIcon,
+  IconTranslate as LanguageIcon,
+  IconLink as LinkIcon,
+  IconCheckCircleFilled as CheckCircleSolidIcon,
+} from "../FlowbiteIcons";
 import {
   apiGetArticleByPmid,
   apiTranslateText,

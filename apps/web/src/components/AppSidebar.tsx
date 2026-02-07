@@ -8,27 +8,27 @@ import {
 } from "react-router-dom";
 import { cn } from "../design-system/utils/cn";
 import {
-  FolderIcon,
-  DocumentTextIcon,
-  Cog6ToothIcon,
-  BookOpenIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  ChevronDownIcon,
-  ArrowRightOnRectangleIcon,
-  UserCircleIcon,
-  ArchiveBoxIcon,
-  FolderOpenIcon,
-  ChartBarIcon,
-  ShareIcon,
-  UserGroupIcon,
-  ArrowLeftIcon,
-  ClipboardDocumentListIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ListBulletIcon,
-  TrashIcon,
-} from "@heroicons/react/24/outline";
+  IconFolder as FolderIcon,
+  IconDocumentText as DocumentTextIcon,
+  IconSettings as Cog6ToothIcon,
+  IconBook as BookOpenIcon,
+  IconChevronLeft as ChevronLeftIcon,
+  IconChevronRight as ChevronRightIcon,
+  IconChevronDown as ChevronDownIcon,
+  IconLogout as ArrowRightOnRectangleIcon,
+  IconUserCircle as UserCircleIcon,
+  IconArchive as ArchiveBoxIcon,
+  IconFolderOpen as FolderOpenIcon,
+  IconChartBar as ChartBarIcon,
+  IconShare as ShareIcon,
+  IconUsers as UserGroupIcon,
+  IconArrowLeft as ArrowLeftIcon,
+  IconClipboard as ClipboardDocumentListIcon,
+  IconCheckCircle as CheckCircleIcon,
+  IconXCircle as XCircleIcon,
+  IconList as ListBulletIcon,
+  IconTrash as TrashIcon,
+} from "./FlowbiteIcons";
 import { useAuth } from "../lib/AuthContext";
 import { useProjectContext, type ArticleViewStatus } from "./AppLayout";
 
