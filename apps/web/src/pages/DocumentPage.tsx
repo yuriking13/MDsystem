@@ -53,6 +53,21 @@ import {
   type DocumentVersion,
 } from "../lib/api";
 import { type ProjectFileNodeAttrs } from "../components/TiptapEditor/extensions/ProjectFileNode";
+import {
+  IconRefresh,
+  IconPlay,
+  IconMusicalNote,
+  IconDocument,
+  IconDocumentPdf,
+  IconPhoto,
+  IconFilm,
+  IconClock,
+  IconClose,
+  IconPlus,
+  IconUndo,
+  IconFolder,
+  IconSearch,
+} from "../components/FlowbiteIcons";
 import ChartFromTable, {
   CHART_TYPE_INFO,
   ChartCreatorModal,
@@ -98,20 +113,10 @@ function FilePickerItem({
             borderRadius: 6,
           }}
         >
-          <svg
+          <IconRefresh
             className="w-6 h-6 animate-spin"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
             style={{ color: "var(--text-muted)" }}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-            />
-          </svg>
+          />
         </div>
       );
     }
@@ -166,14 +171,10 @@ function FilePickerItem({
               justifyContent: "center",
             }}
           >
-            <svg
+            <IconPlay
               className="w-8 h-8"
-              fill="currentColor"
-              viewBox="0 0 24 24"
               style={{ color: "white", opacity: 0.9 }}
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
+            />
           </div>
         </div>
       );
@@ -193,84 +194,28 @@ function FilePickerItem({
         }}
       >
         {file.category === "audio" && (
-          <svg
+          <IconMusicalNote
             className="w-10 h-10"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
             style={{ color: "var(--accent)" }}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z"
-            />
-          </svg>
+          />
         )}
         {file.category === "document" && (
-          <svg
+          <IconDocument
             className="w-10 h-10"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
             style={{ color: "var(--accent)" }}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-            />
-          </svg>
+          />
         )}
         {file.category === "other" && (
-          <svg
+          <IconDocumentPdf
             className="w-10 h-10"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
             style={{ color: "var(--text-muted)" }}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-            />
-          </svg>
+          />
         )}
         {file.category === "image" && !thumbnailUrl && (
-          <svg
-            className="w-10 h-10"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
-            style={{ color: "var(--accent)" }}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-            />
-          </svg>
+          <IconPhoto className="w-10 h-10" style={{ color: "var(--accent)" }} />
         )}
         {file.category === "video" && !thumbnailUrl && (
-          <svg
-            className="w-10 h-10"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            viewBox="0 0 24 24"
-            style={{ color: "var(--accent)" }}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z"
-            />
-          </svg>
+          <IconFilm className="w-10 h-10" style={{ color: "var(--accent)" }} />
         )}
       </div>
     );
@@ -1771,7 +1716,12 @@ export default function DocumentPage() {
   return (
     <div
       className="document-page-container"
-      style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        height: "100vh",
+        overflow: "hidden",
+      }}
     >
       <EditorHeader
         title={title}
@@ -1792,6 +1742,7 @@ export default function DocumentPage() {
           minHeight: 0,
           display: "flex",
           flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         {showVersionHistory && (
@@ -1822,19 +1773,7 @@ export default function DocumentPage() {
                   gap: 8,
                 }}
               >
-                <svg
-                  className="icon-md"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
+                <IconClock className="icon-md" />
                 История версий документа
               </h3>
               <button
@@ -1842,19 +1781,7 @@ export default function DocumentPage() {
                 onClick={() => setShowVersionHistory(false)}
                 style={{ padding: "4px 8px" }}
               >
-                <svg
-                  className="icon-sm"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <IconClose className="icon-sm" />
               </button>
             </div>
 
@@ -1892,20 +1819,7 @@ export default function DocumentPage() {
                 disabled={creatingVersion}
                 style={{ whiteSpace: "nowrap" }}
               >
-                <svg
-                  className="icon-sm"
-                  style={{ marginRight: 4 }}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 4.5v15m7.5-7.5h-15"
-                  />
-                </svg>
+                <IconPlus className="icon-sm" style={{ marginRight: 4 }} />
                 {creatingVersion ? "Сохранение..." : "Сохранить версию"}
               </button>
             </div>
@@ -2004,20 +1918,10 @@ export default function DocumentPage() {
                         "Восстановление..."
                       ) : (
                         <>
-                          <svg
+                          <IconUndo
                             className="icon-sm"
                             style={{ marginRight: 4 }}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={1.5}
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"
-                            />
-                          </svg>
+                          />
                           Восстановить
                         </>
                       )}
@@ -2100,213 +2004,210 @@ export default function DocumentPage() {
                 className="modal-close"
                 onClick={() => setShowImportModal(false)}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <IconClose className="w-5 h-5" />
               </button>
             </div>
             <div className="modal-body">
+              <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
+                Выберите что вставить: таблицу с данными или график
+              </p>
 
-            <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
-              Выберите что вставить: таблицу с данными или график
-            </p>
+              <div style={{ maxHeight: 500, overflow: "auto" }}>
+                {loadingStats ? (
+                  <div className="muted">Загрузка...</div>
+                ) : statistics.length === 0 ? (
+                  <div
+                    className="muted"
+                    style={{ textAlign: "center", padding: 40 }}
+                  >
+                    Нет доступных данных.
+                    <br />
+                    Создайте их в разделе Статистика проекта.
+                  </div>
+                ) : (
+                  <div className="import-stats-list">
+                    {statistics.map((stat) => {
+                      const chartInfo = stat.chart_type
+                        ? CHART_TYPE_INFO[stat.chart_type as ChartType]
+                        : null;
+                      const tableData = stat.table_data as TableData | null;
 
-            <div style={{ maxHeight: 500, overflow: "auto" }}>
-              {loadingStats ? (
-                <div className="muted">Загрузка...</div>
-              ) : statistics.length === 0 ? (
-                <div
-                  className="muted"
-                  style={{ textAlign: "center", padding: 40 }}
-                >
-                  Нет доступных данных.
-                  <br />
-                  Создайте их в разделе Статистика проекта.
-                </div>
-              ) : (
-                <div className="import-stats-list">
-                  {statistics.map((stat) => {
-                    const chartInfo = stat.chart_type
-                      ? CHART_TYPE_INFO[stat.chart_type as ChartType]
-                      : null;
-                    const tableData = stat.table_data as TableData | null;
-
-                    return (
-                      <div
-                        key={stat.id}
-                        className="import-stat-item-expanded"
-                        style={{
-                          background: "rgba(0,0,0,0.2)",
-                          borderRadius: 12,
-                          padding: 16,
-                          marginBottom: 16,
-                        }}
-                      >
+                      return (
                         <div
-                          className="import-stat-header"
-                          style={{ marginBottom: 12 }}
+                          key={stat.id}
+                          className="import-stat-item-expanded"
+                          style={{
+                            background: "rgba(0,0,0,0.2)",
+                            borderRadius: 12,
+                            padding: 16,
+                            marginBottom: 16,
+                          }}
                         >
                           <div
-                            className="import-stat-title"
-                            style={{ fontSize: 15, fontWeight: 600 }}
+                            className="import-stat-header"
+                            style={{ marginBottom: 12 }}
                           >
-                            {stat.title || "Без названия"}
-                          </div>
-                          {stat.description && (
                             <div
-                              className="import-stat-desc muted"
-                              style={{ fontSize: 12, marginTop: 4 }}
+                              className="import-stat-title"
+                              style={{ fontSize: 15, fontWeight: 600 }}
                             >
-                              {stat.description}
+                              {stat.title || "Без названия"}
                             </div>
-                          )}
-                        </div>
-
-                        <div
-                          className="row gap"
-                          style={{ alignItems: "flex-start" }}
-                        >
-                          {/* Таблица */}
-                          {tableData && (
-                            <div
-                              style={{
-                                flex: 1,
-                                background: "white",
-                                borderRadius: 8,
-                                padding: 12,
-                              }}
-                            >
+                            {stat.description && (
                               <div
-                                style={{
-                                  fontSize: 11,
-                                  color: "#64748b",
-                                  marginBottom: 8,
-                                }}
+                                className="import-stat-desc muted"
+                                style={{ fontSize: 12, marginTop: 4 }}
                               >
-                                Таблица ({tableData.rows?.length || 0} строк)
+                                {stat.description}
                               </div>
+                            )}
+                          </div>
+
+                          <div
+                            className="row gap"
+                            style={{ alignItems: "flex-start" }}
+                          >
+                            {/* Таблица */}
+                            {tableData && (
                               <div
                                 style={{
-                                  maxHeight: 150,
-                                  overflow: "auto",
-                                  fontSize: 11,
+                                  flex: 1,
+                                  background: "white",
+                                  borderRadius: 8,
+                                  padding: 12,
                                 }}
                               >
-                                <table
+                                <div
                                   style={{
-                                    width: "100%",
-                                    borderCollapse: "collapse",
-                                    color: "#1e293b",
+                                    fontSize: 11,
+                                    color: "#64748b",
+                                    marginBottom: 8,
                                   }}
                                 >
-                                  <thead>
-                                    <tr>
-                                      {tableData.headers?.map((h, i) => (
-                                        <th
-                                          key={i}
-                                          style={{
-                                            border: "1px solid #d1d5db",
-                                            padding: "4px 8px",
-                                            background: "#f3f4f6",
-                                            fontWeight: 600,
-                                          }}
-                                        >
-                                          {h}
-                                        </th>
-                                      ))}
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    {tableData.rows
-                                      ?.slice(0, 5)
-                                      .map((row, i) => (
-                                        <tr key={i}>
-                                          {row.map((cell, j) => (
-                                            <td
-                                              key={j}
-                                              style={{
-                                                border: "1px solid #d1d5db",
-                                                padding: "4px 8px",
-                                              }}
-                                            >
-                                              {cell}
-                                            </td>
-                                          ))}
-                                        </tr>
-                                      ))}
-                                    {(tableData.rows?.length || 0) > 5 && (
+                                  Таблица ({tableData.rows?.length || 0} строк)
+                                </div>
+                                <div
+                                  style={{
+                                    maxHeight: 150,
+                                    overflow: "auto",
+                                    fontSize: 11,
+                                  }}
+                                >
+                                  <table
+                                    style={{
+                                      width: "100%",
+                                      borderCollapse: "collapse",
+                                      color: "#1e293b",
+                                    }}
+                                  >
+                                    <thead>
                                       <tr>
-                                        <td
-                                          colSpan={
-                                            tableData.headers?.length || 1
-                                          }
-                                          style={{
-                                            textAlign: "center",
-                                            color: "#64748b",
-                                            padding: 4,
-                                          }}
-                                        >
-                                          ... ещё{" "}
-                                          {(tableData.rows?.length || 0) - 5}{" "}
-                                          строк
-                                        </td>
+                                        {tableData.headers?.map((h, i) => (
+                                          <th
+                                            key={i}
+                                            style={{
+                                              border: "1px solid #d1d5db",
+                                              padding: "4px 8px",
+                                              background: "#f3f4f6",
+                                              fontWeight: 600,
+                                            }}
+                                          >
+                                            {h}
+                                          </th>
+                                        ))}
                                       </tr>
-                                    )}
-                                  </tbody>
-                                </table>
+                                    </thead>
+                                    <tbody>
+                                      {tableData.rows
+                                        ?.slice(0, 5)
+                                        .map((row, i) => (
+                                          <tr key={i}>
+                                            {row.map((cell, j) => (
+                                              <td
+                                                key={j}
+                                                style={{
+                                                  border: "1px solid #d1d5db",
+                                                  padding: "4px 8px",
+                                                }}
+                                              >
+                                                {cell}
+                                              </td>
+                                            ))}
+                                          </tr>
+                                        ))}
+                                      {(tableData.rows?.length || 0) > 5 && (
+                                        <tr>
+                                          <td
+                                            colSpan={
+                                              tableData.headers?.length || 1
+                                            }
+                                            style={{
+                                              textAlign: "center",
+                                              color: "#64748b",
+                                              padding: 4,
+                                            }}
+                                          >
+                                            ... ещё{" "}
+                                            {(tableData.rows?.length || 0) - 5}{" "}
+                                            строк
+                                          </td>
+                                        </tr>
+                                      )}
+                                    </tbody>
+                                  </table>
+                                </div>
+                                <button
+                                  className="btn secondary"
+                                  style={{ marginTop: 12, width: "100%" }}
+                                  onClick={() => handleInsertTable(stat)}
+                                >
+                                  📋 Вставить таблицу
+                                </button>
                               </div>
-                              <button
-                                className="btn secondary"
-                                style={{ marginTop: 12, width: "100%" }}
-                                onClick={() => handleInsertTable(stat)}
-                              >
-                                📋 Вставить таблицу
-                              </button>
-                            </div>
-                          )}
+                            )}
 
-                          {/* График */}
-                          {stat.config && tableData && (
-                            <div
-                              style={{
-                                flex: 1,
-                                background: "rgba(0,0,0,0.3)",
-                                borderRadius: 8,
-                                padding: 12,
-                              }}
-                            >
+                            {/* График */}
+                            {stat.config && tableData && (
                               <div
                                 style={{
-                                  fontSize: 11,
-                                  color: "#64748b",
-                                  marginBottom: 8,
+                                  flex: 1,
+                                  background: "rgba(0,0,0,0.3)",
+                                  borderRadius: 8,
+                                  padding: 12,
                                 }}
                               >
-                                {chartInfo?.name || "График"}
+                                <div
+                                  style={{
+                                    fontSize: 11,
+                                    color: "#64748b",
+                                    marginBottom: 8,
+                                  }}
+                                >
+                                  {chartInfo?.name || "График"}
+                                </div>
+                                <div style={{ height: 150 }}>
+                                  <ChartFromTable
+                                    tableData={tableData}
+                                    config={stat.config as any}
+                                    height={150}
+                                  />
+                                </div>
+                                <button
+                                  className="btn"
+                                  style={{ marginTop: 12, width: "100%" }}
+                                  onClick={() => handleInsertStatistic(stat)}
+                                >
+                                  📊 Вставить график
+                                </button>
                               </div>
-                              <div style={{ height: 150 }}>
-                                <ChartFromTable
-                                  tableData={tableData}
-                                  config={stat.config as any}
-                                  height={150}
-                                />
-                              </div>
-                              <button
-                                className="btn"
-                                style={{ marginTop: 12, width: "100%" }}
-                                onClick={() => handleInsertStatistic(stat)}
-                              >
-                                📊 Вставить график
-                              </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -2338,19 +2239,7 @@ export default function DocumentPage() {
                   gap: 8,
                 }}
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
-                  />
-                </svg>
+                <IconFolder className="w-5 h-5" />
                 Вставить файл из проекта
               </h3>
               <button
@@ -2358,228 +2247,139 @@ export default function DocumentPage() {
                 onClick={() => setShowFileModal(false)}
                 type="button"
               >
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <IconClose className="w-5 h-5" />
               </button>
             </div>
             <div className="modal-body">
-
-            {/* Поиск по названию файла */}
-            <div style={{ marginBottom: 16 }}>
-              <div style={{ position: "relative" }}>
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  viewBox="0 0 24 24"
-                  style={{
-                    position: "absolute",
-                    left: 12,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    color: "var(--text-muted)",
-                    pointerEvents: "none",
-                  }}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-                  />
-                </svg>
-                <input
-                  type="text"
-                  placeholder="Поиск по названию файла..."
-                  value={fileSearch}
-                  onChange={(e) => setFileSearch(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px 10px 40px",
-                    borderRadius: 8,
-                    border: "1px solid var(--border-glass)",
-                    background: "var(--bg-glass-light)",
-                    color: "var(--text-primary)",
-                    fontSize: 14,
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Фильтр по типу */}
-            <div
-              className="row gap"
-              style={{ marginBottom: 16, flexWrap: "wrap" }}
-            >
-              {(["all", "image", "video", "audio", "document"] as const).map(
-                (cat) => (
-                  <button
-                    key={cat}
-                    className={`btn ${fileFilter === cat ? "" : "secondary"}`}
-                    onClick={() => setFileFilter(cat)}
+              {/* Поиск по названию файла */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ position: "relative" }}>
+                  <IconSearch
+                    className="w-5 h-5"
                     style={{
-                      fontSize: 12,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
+                      position: "absolute",
+                      left: 12,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      color: "var(--text-muted)",
+                      pointerEvents: "none",
                     }}
-                    type="button"
-                  >
-                    {cat === "all" && (
-                      <>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
-                          />
-                        </svg>
-                        Все
-                      </>
-                    )}
-                    {cat === "image" && (
-                      <>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-                          />
-                        </svg>
-                        Изображения
-                      </>
-                    )}
-                    {cat === "video" && (
-                      <>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h1.5C5.496 19.5 6 18.996 6 18.375m-3.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-1.5A1.125 1.125 0 0118 18.375M20.625 4.5H3.375m17.25 0c.621 0 1.125.504 1.125 1.125M20.625 4.5h-1.5C18.504 4.5 18 5.004 18 5.625m3.75 0v1.5c0 .621-.504 1.125-1.125 1.125M3.375 4.5c-.621 0-1.125.504-1.125 1.125M3.375 4.5h1.5C5.496 4.5 6 5.004 6 5.625m-3.75 0v1.5c0 .621.504 1.125 1.125 1.125m0 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m1.5-3.75C5.496 8.25 6 7.746 6 7.125v-1.5M4.875 8.25C5.496 8.25 6 8.754 6 9.375v1.5m0-5.25v5.25m0-5.25C6 5.004 6.504 4.5 7.125 4.5h9.75c.621 0 1.125.504 1.125 1.125m1.125 2.625h1.5m-1.5 0A1.125 1.125 0 0118 7.125v-1.5m1.125 2.625c-.621 0-1.125.504-1.125 1.125v1.5m2.625-2.625c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125M18 5.625v5.25M7.125 12h9.75m-9.75 0A1.125 1.125 0 016 10.875M7.125 12C6.504 12 6 12.504 6 13.125m0-2.25C6 11.496 5.496 12 4.875 12M18 10.875c0 .621-.504 1.125-1.125 1.125M18 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m-12 5.25v-5.25m0 5.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125m-12 0v-1.5c0-.621-.504-1.125-1.125-1.125M18 18.375v-5.25m0 5.25v-1.5c0-.621.504-1.125 1.125-1.125M18 13.125v1.5c0 .621.504 1.125 1.125 1.125M18 13.125c0-.621.504-1.125 1.125-1.125M6 13.125v1.5c0 .621-.504 1.125-1.125 1.125M6 13.125C6 12.504 5.496 12 4.875 12m-1.5 0h1.5m-1.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M19.125 12h1.5m0 0c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h1.5m14.25 0h1.5"
-                          />
-                        </svg>
-                        Видео
-                      </>
-                    )}
-                    {cat === "audio" && (
-                      <>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z"
-                          />
-                        </svg>
-                        Аудио
-                      </>
-                    )}
-                    {cat === "document" && (
-                      <>
-                        <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
-                          />
-                        </svg>
-                        Документы
-                      </>
-                    )}
-                  </button>
-                ),
-              )}
-            </div>
-
-            {loadingFiles ? (
-              <div style={{ textAlign: "center", padding: 40 }}>
-                <div className="muted">Загрузка файлов...</div>
-              </div>
-            ) : filteredFiles.length === 0 ? (
-              <div style={{ textAlign: "center", padding: 40 }}>
-                <svg
-                  className="w-12 h-12"
-                  style={{ color: "var(--text-muted)", margin: "0 auto 12px" }}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
                   />
-                </svg>
-                <div className="muted">
-                  {projectFiles.length === 0
-                    ? 'Нет загруженных файлов. Загрузите файлы во вкладке "Файлы" проекта.'
-                    : fileSearch
-                      ? "Файлы не найдены по вашему запросу"
-                      : "Нет файлов выбранного типа"}
+                  <input
+                    type="text"
+                    placeholder="Поиск по названию файла..."
+                    value={fileSearch}
+                    onChange={(e) => setFileSearch(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px 10px 40px",
+                      borderRadius: 8,
+                      border: "1px solid var(--border-glass)",
+                      background: "var(--bg-glass-light)",
+                      color: "var(--text-primary)",
+                      fontSize: 14,
+                    }}
+                  />
                 </div>
               </div>
-            ) : (
+
+              {/* Фильтр по типу */}
               <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
-                  gap: 12,
-                  maxHeight: 450,
-                  overflow: "auto",
-                  padding: 4,
-                }}
+                className="row gap"
+                style={{ marginBottom: 16, flexWrap: "wrap" }}
               >
-                {filteredFiles.map((file) => (
-                  <FilePickerItem
-                    key={file.id}
-                    file={file}
-                    projectId={projectId!}
-                    onSelect={() => handleInsertFile(file)}
-                  />
-                ))}
+                {(["all", "image", "video", "audio", "document"] as const).map(
+                  (cat) => (
+                    <button
+                      key={cat}
+                      className={`btn ${fileFilter === cat ? "" : "secondary"}`}
+                      onClick={() => setFileFilter(cat)}
+                      style={{
+                        fontSize: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                      }}
+                      type="button"
+                    >
+                      {cat === "all" && (
+                        <>
+                          <IconFolder size="sm" />
+                          Все
+                        </>
+                      )}
+                      {cat === "image" && (
+                        <>
+                          <IconPhoto size="sm" />
+                          Изображения
+                        </>
+                      )}
+                      {cat === "video" && (
+                        <>
+                          <IconFilm size="sm" />
+                          Видео
+                        </>
+                      )}
+                      {cat === "audio" && (
+                        <>
+                          <IconMusicalNote size="sm" />
+                          Аудио
+                        </>
+                      )}
+                      {cat === "document" && (
+                        <>
+                          <IconDocument size="sm" />
+                          Документы
+                        </>
+                      )}
+                    </button>
+                  ),
+                )}
               </div>
-            )}
+
+              {loadingFiles ? (
+                <div style={{ textAlign: "center", padding: 40 }}>
+                  <div className="muted">Загрузка файлов...</div>
+                </div>
+              ) : filteredFiles.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 40 }}>
+                  <IconFolder
+                    className="w-12 h-12"
+                    style={{
+                      color: "var(--text-muted)",
+                      margin: "0 auto 12px",
+                    }}
+                  />
+                  <div className="muted">
+                    {projectFiles.length === 0
+                      ? 'Нет загруженных файлов. Загрузите файлы во вкладке "Файлы" проекта.'
+                      : fileSearch
+                        ? "Файлы не найдены по вашему запросу"
+                        : "Нет файлов выбранного типа"}
+                  </div>
+                </div>
+              ) : (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(140px, 1fr))",
+                    gap: 12,
+                    maxHeight: 450,
+                    overflow: "auto",
+                    padding: 4,
+                  }}
+                >
+                  {filteredFiles.map((file) => (
+                    <FilePickerItem
+                      key={file.id}
+                      file={file}
+                      projectId={projectId!}
+                      onSelect={() => handleInsertFile(file)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

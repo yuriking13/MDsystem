@@ -1,5 +1,27 @@
 /* ===== CITATION GRAPH STYLES ===== */
 
+/* Graph Container - fills all available space */
+.graph-container {
+  display: flex;
+  flex: 1;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.graph-fixed-height {
+  min-height: 0;
+}
+
+.graph-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+}
+
 /* Graph Container */
 .citation-graph-container {
   display: flex;

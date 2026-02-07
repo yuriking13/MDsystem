@@ -8,14 +8,14 @@ import {
   type Project,
 } from "../lib/api";
 import {
-  PlusIcon,
-  FolderIcon,
-  TrashIcon,
-  ArrowRightIcon,
-  CalendarIcon,
-  UserGroupIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
+  IconPlus as PlusIcon,
+  IconFolder as FolderIcon,
+  IconTrash as TrashIcon,
+  IconArrowRight as ArrowRightIcon,
+  IconCalendar as CalendarIcon,
+  IconUsers as UserGroupIcon,
+  IconClose as XMarkIcon,
+} from "../components/FlowbiteIcons";
 import { cn } from "../design-system/utils/cn";
 
 export default function ProjectsPage() {

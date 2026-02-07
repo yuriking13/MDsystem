@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo } from "react";
 import { cn } from "../../design-system/utils/cn";
+import {
+  IconList,
+  IconClose,
+  IconDocument,
+  IconChevronLeft,
+} from "../FlowbiteIcons";
 
 export interface Heading {
   level: number;
@@ -87,68 +93,32 @@ export default function DocumentOutline({
       <div
         className={cn(
           "flex flex-col h-full",
-          "bg-slate-900/95 backdrop-blur-sm",
-          "border-r border-slate-700/50",
+          "bg-[#0d1b2a]/95 backdrop-blur-sm",
+          "border-r border-[rgba(56,89,138,0.25)]",
           "w-64",
           className,
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-slate-800/50">
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-200">
-            <svg
-              className="w-4 h-4 text-blue-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-              />
-            </svg>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(56,89,138,0.25)] bg-[#162236]/50">
+          <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
+            <IconList size="sm" className="text-blue-400" />
             Оглавление
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg transition-colors"
+            className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
             title="Скрыть оглавление"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <IconClose size="sm" />
           </button>
         </div>
 
         {/* Empty state */}
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-          <svg
-            className="w-12 h-12 text-slate-600 mb-3"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1}
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            />
-          </svg>
-          <p className="text-sm text-slate-400">Нет заголовков</p>
-          <p className="text-xs text-slate-500 mt-1">
+          <IconDocument size="lg" className="w-12 h-12 text-neutral-600 mb-3" />
+          <p className="text-sm text-neutral-400">Нет заголовков</p>
+          <p className="text-xs text-neutral-500 mt-1">
             Добавьте заголовки H1, H2, H3 для структуры
           </p>
         </div>
@@ -161,30 +131,18 @@ export default function DocumentOutline({
       <div
         className={cn(
           "flex flex-col items-center py-4",
-          "bg-slate-900/95 backdrop-blur-sm",
-          "border-r border-slate-700/50",
+          "bg-[#0d1b2a]/95 backdrop-blur-sm",
+          "border-r border-[rgba(56,89,138,0.25)]",
           "w-12",
           className,
         )}
       >
         <button
           onClick={onToggleCollapse}
-          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg transition-colors"
+          className="p-2 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
           title="Показать оглавление"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-            />
-          </svg>
+          <IconList size="md" />
         </button>
 
         {/* Mini indicators for headings - vertical dots */}
@@ -197,7 +155,7 @@ export default function DocumentOutline({
                 "w-1.5 h-1.5 rounded-full transition-colors shrink-0",
                 activeHeadingId === heading.id
                   ? "bg-blue-400 ring-2 ring-blue-400/30"
-                  : "bg-slate-500 hover:bg-blue-400",
+                  : "bg-neutral-500 hover:bg-blue-400",
               )}
               title={heading.text}
             />
@@ -211,30 +169,18 @@ export default function DocumentOutline({
     <div
       className={cn(
         "flex flex-col h-full",
-        "bg-slate-900/95 backdrop-blur-sm",
-        "border-r border-slate-700/50",
+        "bg-[#0d1b2a]/95 backdrop-blur-sm",
+        "border-r border-[rgba(56,89,138,0.25)]",
         "w-64",
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-slate-800/50">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-200">
-          <svg
-            className="w-4 h-4 text-blue-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
-            />
-          </svg>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(56,89,138,0.25)] bg-[#162236]/50">
+        <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
+          <IconList size="sm" className="text-blue-400" />
           Оглавление
-          <span className="text-xs text-slate-500 bg-slate-700/50 px-1.5 py-0.5 rounded-full">
+          <span className="text-xs text-neutral-500 bg-[rgba(56,89,138,0.25)] px-1.5 py-0.5 rounded-full">
             {headings.length}
           </span>
         </div>
@@ -242,42 +188,18 @@ export default function DocumentOutline({
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg transition-colors"
+              className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
               title="Свернуть панель"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5"
-                />
-              </svg>
+              <IconChevronLeft size="sm" />
             </button>
           )}
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg transition-colors"
+            className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
             title="Скрыть оглавление"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <IconClose size="sm" />
           </button>
         </div>
       </div>
@@ -290,7 +212,7 @@ export default function DocumentOutline({
             onClick={() => handleNavigate(heading.id)}
             className={cn(
               "w-full text-left px-4 py-2 text-sm transition-all",
-              "hover:bg-slate-800/50",
+              "hover:bg-[#162236]/50",
               "focus:outline-none focus:bg-slate-800/50",
               // Active state
               activeHeadingId === heading.id &&
@@ -308,7 +230,7 @@ export default function DocumentOutline({
                   "shrink-0 font-mono text-xs",
                   activeHeadingId === heading.id
                     ? "text-blue-400"
-                    : "text-slate-500",
+                    : "text-neutral-500",
                   heading.level === 1 && "font-semibold",
                 )}
               >
@@ -321,9 +243,9 @@ export default function DocumentOutline({
                   "flex-1 truncate",
                   activeHeadingId === heading.id
                     ? "text-blue-300 font-medium"
-                    : "text-slate-300",
+                    : "text-neutral-300",
                   heading.level === 1 && "font-medium",
-                  heading.level === 3 && "text-slate-400",
+                  heading.level === 3 && "text-neutral-400",
                 )}
               >
                 {heading.text || "(Без названия)"}

@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import { cn } from "../design-system/utils/cn";
 import {
-  CheckIcon,
-  XMarkIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  ArrowTopRightOnSquareIcon,
-  BeakerIcon,
-  ClipboardDocumentIcon,
-  LanguageIcon,
-  ChartBarIcon,
-} from "@heroicons/react/24/outline";
+  IconCheck as CheckIcon,
+  IconClose as XMarkIcon,
+  IconChevronDown as ChevronDownIcon,
+  IconChevronUp as ChevronUpIcon,
+  IconExternalLink as ArrowTopRightOnSquareIcon,
+  IconBeaker as BeakerIcon,
+  IconClipboard as ClipboardDocumentIcon,
+  IconTranslate as LanguageIcon,
+  IconChartBar as ChartBarIcon,
+} from "./FlowbiteIcons";
 
 export interface ArticleAuthor {
   name: string;

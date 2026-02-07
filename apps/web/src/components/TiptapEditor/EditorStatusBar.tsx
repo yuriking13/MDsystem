@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { cn } from "../../design-system/utils/cn";
+import { IconClock, IconBook, IconRefresh, IconCheck } from "../FlowbiteIcons";
 
 interface EditorStatusBarProps {
   /** Current word count */
@@ -73,9 +74,9 @@ export default function EditorStatusBar({
     <div
       className={cn(
         "flex items-center justify-between px-4 py-2",
-        "border-t border-slate-700/50",
-        "bg-slate-800/80 backdrop-blur-sm",
-        "text-xs text-slate-400",
+        "border-t border-[rgba(56,89,138,0.25)]",
+        "bg-[#0d1b2a]/80 backdrop-blur-sm",
+        "text-xs text-neutral-400",
         "select-none",
         className,
       )}
@@ -84,13 +85,13 @@ export default function EditorStatusBar({
       <div className="flex items-center gap-4">
         {/* Word count with optional goal */}
         <div className="flex items-center gap-2">
-          <span className="font-medium text-slate-300">
+          <span className="font-medium text-neutral-300">
             {wordCount.toLocaleString()} слов
           </span>
 
           {wordCountGoal && wordCountProgress !== null && (
             <div className="flex items-center gap-1.5">
-              <div className="w-20 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+              <div className="w-20 h-1.5 bg-[rgba(56,89,138,0.3)] rounded-full overflow-hidden">
                 <div
                   className={cn(
                     "h-full rounded-full transition-all duration-300",
@@ -100,12 +101,12 @@ export default function EditorStatusBar({
                         ? "bg-blue-500"
                         : wordCountProgress >= 50
                           ? "bg-amber-500"
-                          : "bg-slate-400",
+                          : "bg-neutral-400",
                   )}
                   style={{ width: `${wordCountProgress}%` }}
                 />
               </div>
-              <span className="text-slate-500">
+              <span className="text-neutral-500">
                 {wordCountProgress}% из {wordCountGoal.toLocaleString()}
               </span>
             </div>
@@ -113,30 +114,18 @@ export default function EditorStatusBar({
         </div>
 
         {/* Character count */}
-        <span className="text-slate-500">
+        <span className="text-neutral-500">
           {characterCount.toLocaleString()} симв.
         </span>
 
         {/* Page count - always show */}
-        <span className="text-slate-500">
+        <span className="text-neutral-500">
           {pageCount !== undefined && pageCount > 0 ? pageCount : 1} стр.
         </span>
 
         {/* Reading time */}
-        <span className="text-slate-500 flex items-center gap-1">
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+        <span className="text-neutral-500 flex items-center gap-1">
+          <IconClock size="sm" />
           {readingTime} чтение
         </span>
       </div>
@@ -145,20 +134,8 @@ export default function EditorStatusBar({
       <div className="flex items-center gap-4">
         {/* Citation count */}
         {citationCount !== undefined && citationCount > 0 && (
-          <span className="text-slate-500 flex items-center gap-1">
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-              />
-            </svg>
+          <span className="text-neutral-500 flex items-center gap-1">
+            <IconBook size="sm" />
             {citationCount} цитат
           </span>
         )}
@@ -166,56 +143,20 @@ export default function EditorStatusBar({
         {/* Bibliography update indicator */}
         {isUpdatingBibliography && (
           <span className="flex items-center gap-1.5 text-blue-400">
-            <svg
-              className="w-3.5 h-3.5 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <IconRefresh size="sm" className="animate-spin" />
             Обновление...
           </span>
         )}
 
         {/* Save status */}
         {isSaving ? (
-          <span className="flex items-center gap-1.5 text-slate-400">
-            <svg
-              className="w-3.5 h-3.5 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+          <span className="flex items-center gap-1.5 text-neutral-400">
+            <IconRefresh size="sm" className="animate-spin" />
             Сохранение...
           </span>
         ) : lastSavedText ? (
           <span className="flex items-center gap-1.5 text-green-400">
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+            <IconCheck size="sm" />
             Сохранено {lastSavedText}
           </span>
         ) : null}

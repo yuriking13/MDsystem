@@ -1,13 +1,13 @@
 import React from "react";
 import { cn } from "../../design-system/utils/cn";
 import {
-  MagnifyingGlassIcon,
-  MinusIcon,
-  PlusIcon,
-  ArrowsPointingOutIcon,
-  ViewfinderCircleIcon,
-  Cog6ToothIcon,
-} from "@heroicons/react/24/outline";
+  IconSearch as MagnifyingGlassIcon,
+  IconMinus as MinusIcon,
+  IconPlus as PlusIcon,
+  IconArrowsExpand as ArrowsPointingOutIcon,
+  IconViewfinder as ViewfinderCircleIcon,
+  IconSettings as Cog6ToothIcon,
+} from "../FlowbiteIcons";
 
 interface GraphToolbarProps {
   // Zoom controls
