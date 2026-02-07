@@ -1,12 +1,12 @@
 import React from "react";
 import { cn } from "../../design-system/utils/cn";
 import {
-  IconSearch as MagnifyingGlassIcon,
-  IconMinus as MinusIcon,
-  IconPlus as PlusIcon,
-  IconArrowsExpand as ArrowsPointingOutIcon,
-  IconViewfinder as ViewfinderCircleIcon,
-  IconSettings as Cog6ToothIcon,
+  IconSearch,
+  IconMinus,
+  IconPlus,
+  IconArrowsExpand,
+  IconTarget,
+  IconSettings,
 } from "../FlowbiteIcons";
 
 interface GraphToolbarProps {
@@ -65,7 +65,10 @@ export default function GraphToolbar({
     >
       {/* Search */}
       <div className="relative">
-        <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <IconSearch
+          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"
+          size="sm"
+        />
         <input
           type="text"
           value={searchQuery}
@@ -96,7 +99,7 @@ export default function GraphToolbar({
           className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
           title="Zoom Out"
         >
-          <MinusIcon className="w-4 h-4" />
+          <IconMinus className="w-4 h-4" size="sm" />
         </button>
 
         {zoomLevel !== undefined && (
@@ -110,7 +113,7 @@ export default function GraphToolbar({
           className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
           title="Zoom In"
         >
-          <PlusIcon className="w-4 h-4" />
+          <IconPlus className="w-4 h-4" size="sm" />
         </button>
       </div>
 
@@ -124,7 +127,7 @@ export default function GraphToolbar({
           className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
           title="Fit to View"
         >
-          <ArrowsPointingOutIcon className="w-4 h-4" />
+          <IconArrowsExpand className="w-4 h-4" size="sm" />
         </button>
 
         <button
@@ -132,7 +135,7 @@ export default function GraphToolbar({
           className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
           title="Center Graph"
         >
-          <ViewfinderCircleIcon className="w-4 h-4" />
+          <IconTarget className="w-4 h-4" size="sm" />
         </button>
       </div>
 
@@ -168,7 +171,7 @@ export default function GraphToolbar({
             className="p-1.5 hover:bg-slate-700/50 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
             title="Graph Settings"
           >
-            <Cog6ToothIcon className="w-4 h-4" />
+            <IconSettings className="w-4 h-4" size="sm" />
           </button>
         </>
       )}

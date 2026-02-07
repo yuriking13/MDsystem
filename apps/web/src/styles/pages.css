@@ -14,13 +14,15 @@
   @apply w-full p-0;
   max-width: 100%;
   height: 100%;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-primary);
 }
 
 .project-detail-fullwidth .tab-content {
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;

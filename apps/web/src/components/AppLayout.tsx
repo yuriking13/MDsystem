@@ -10,7 +10,12 @@ interface ProjectInfo {
   updatedAt: string | null;
 }
 
-export type ArticleViewStatus = "candidate" | "selected" | "excluded" | "deleted" | "all";
+export type ArticleViewStatus =
+  | "candidate"
+  | "selected"
+  | "excluded"
+  | "deleted"
+  | "all";
 
 export interface ArticleCounts {
   candidate: number;
@@ -107,6 +112,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     location.pathname.match(/^\/projects\/[^/]+$/) &&
     searchParams.get("tab") === "graph";
   const showAnimatedBg = !isDocumentEditor && !isGraphTab;
+  const isFixedLayout = isDocumentEditor || isGraphTab;
 
   return (
     <ProjectContext.Provider
@@ -121,13 +127,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
       }}
     >
       {showAnimatedBg && <AnimatedBackground />}
-      <div className={`app-layout${showAnimatedBg ? " app-layout-with-animated-bg" : ""}`}>
+      <div
+        className={`app-layout${showAnimatedBg ? " app-layout-with-animated-bg" : ""}`}
+      >
         <AppSidebar
           projectName={projectInfo.name || undefined}
           projectRole={projectInfo.role || undefined}
           projectUpdatedAt={projectInfo.updatedAt || undefined}
         />
-        <main className="app-main">{children || <Outlet />}</main>
+        <main className={`app-main${isFixedLayout ? " app-main-fixed" : ""}`}>
+          {children || <Outlet />}
+        </main>
       </div>
     </ProjectContext.Provider>
   );

@@ -1,22 +1,22 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "../../design-system/utils/cn";
 import {
-  IconChevronDown as ChevronDownIcon,
-  IconChevronRight as ChevronRightIcon,
-  IconAdjustments as AdjustmentsHorizontalIcon,
-  IconFilter as FunnelIcon,
-  IconChartBar as ChartBarIcon,
-  IconClock as ClockIcon,
-  IconSparkles as SparklesIcon,
-  IconSearch as MagnifyingGlassIcon,
-  IconBeaker as BeakerIcon,
-  IconCube as CubeTransparentIcon,
-  IconArrowsExpand as ArrowsPointingOutIcon,
-  IconArrowsContract as ArrowsPointingInIcon,
-  IconPlay as PlayIcon,
-  IconPause as PauseIcon,
-  IconRefresh as ArrowPathIcon,
-  IconDownload as ArrowDownTrayIcon,
+  IconChevronDown,
+  IconChevronRight,
+  IconAdjustments,
+  IconFilter,
+  IconChartBar,
+  IconClock,
+  IconSparkles,
+  IconSearch,
+  IconBeaker,
+  IconCube,
+  IconArrowsExpand,
+  IconArrowsCollapse,
+  IconPlay,
+  IconPause,
+  IconRefresh,
+  IconDownload,
 } from "../FlowbiteIcons";
 
 type FilterType = "all" | "selected" | "excluded";
@@ -146,9 +146,9 @@ function CollapsibleSection({
           {title}
         </div>
         {isOpen ? (
-          <ChevronDownIcon className="w-4 h-4 text-slate-400" />
+          <IconChevronDown className="w-4 h-4 text-slate-400" size="sm" />
         ) : (
-          <ChevronRightIcon className="w-4 h-4 text-slate-400" />
+          <IconChevronRight className="w-4 h-4 text-slate-400" size="sm" />
         )}
       </button>
       {isOpen && <div className="px-4 pb-4 space-y-3">{children}</div>}
@@ -444,7 +444,7 @@ export default function GraphControlPanel({
           className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
           title="Expand panel"
         >
-          <ChevronRightIcon className="w-5 h-5" />
+          <IconChevronRight className="w-5 h-5" size="md" />
         </button>
         <div className="flex-1" />
         <div className="flex flex-col gap-1 text-center">
@@ -470,7 +470,7 @@ export default function GraphControlPanel({
           className="p-1 rounded hover:bg-slate-700/50 text-slate-400 hover:text-slate-200 transition-colors"
           title="Collapse panel"
         >
-          <ChevronDownIcon className="w-4 h-4 rotate-90" />
+          <IconChevronDown className="w-4 h-4 rotate-90" size="sm" />
         </button>
       </div>
 
@@ -503,7 +503,7 @@ export default function GraphControlPanel({
       {/* Scrollable Sections */}
       <div className="flex-1 overflow-y-auto">
         {/* Node Filters */}
-        <CollapsibleSection title="Nodes" icon={<FunnelIcon />} defaultOpen>
+        <CollapsibleSection title="Nodes" icon={<IconFilter />} defaultOpen>
           <SelectInput
             label="Status Filter"
             value={filter}
@@ -554,7 +554,7 @@ export default function GraphControlPanel({
         {/* Date Filters */}
         <CollapsibleSection
           title="Date Range"
-          icon={<ClockIcon />}
+          icon={<IconClock />}
           defaultOpen={false}
         >
           <div className="flex items-center gap-2">
@@ -585,7 +585,7 @@ export default function GraphControlPanel({
         {/* Analytics */}
         <CollapsibleSection
           title="Analytics"
-          icon={<ChartBarIcon />}
+          icon={<IconChartBar />}
           defaultOpen={false}
         >
           {levelCounts && (
@@ -651,7 +651,7 @@ export default function GraphControlPanel({
         {/* Graph Settings */}
         <CollapsibleSection
           title="Settings"
-          icon={<AdjustmentsHorizontalIcon />}
+          icon={<IconAdjustments />}
           defaultOpen={false}
         >
           <SliderInput
@@ -732,7 +732,7 @@ export default function GraphControlPanel({
         {/* AI & Tools */}
         <CollapsibleSection
           title="AI & Tools"
-          icon={<SparklesIcon />}
+          icon={<IconSparkles />}
           defaultOpen
         >
           <div className="space-y-2">
@@ -747,7 +747,7 @@ export default function GraphControlPanel({
                 )}
               >
                 <span className="flex items-center gap-2">
-                  <SparklesIcon className="w-4 h-4" />
+                  <IconSparkles className="w-4 h-4" size="sm" />
                   AI Assistant
                 </span>
                 {showAIAssistant && (
@@ -767,7 +767,7 @@ export default function GraphControlPanel({
                 )}
               >
                 <span className="flex items-center gap-2">
-                  <MagnifyingGlassIcon className="w-4 h-4" />
+                  <IconSearch className="w-4 h-4" size="sm" />
                   Semantic Search
                 </span>
               </button>
@@ -784,7 +784,7 @@ export default function GraphControlPanel({
                 )}
               >
                 <span className="flex items-center gap-2">
-                  <CubeTransparentIcon className="w-4 h-4" />
+                  <IconCube className="w-4 h-4" size="sm" />
                   Semantic Clusters
                 </span>
               </button>
@@ -801,7 +801,7 @@ export default function GraphControlPanel({
                 )}
               >
                 <span className="flex items-center gap-2">
-                  <BeakerIcon className="w-4 h-4" />
+                  <IconBeaker className="w-4 h-4" size="sm" />
                   Methodology Analysis
                 </span>
               </button>
@@ -818,7 +818,7 @@ export default function GraphControlPanel({
                 )}
               >
                 <span className="flex items-center gap-2">
-                  <ChartBarIcon className="w-4 h-4" />
+                  <IconChartBar className="w-4 h-4" size="sm" />
                   Gap Analysis
                 </span>
               </button>
@@ -835,7 +835,7 @@ export default function GraphControlPanel({
                 )}
               >
                 <span className="flex items-center gap-2">
-                  <SparklesIcon className="w-4 h-4" />
+                  <IconSparkles className="w-4 h-4" size="sm" />
                   Recommendations
                 </span>
               </button>
@@ -858,12 +858,12 @@ export default function GraphControlPanel({
           >
             {animationPaused ? (
               <>
-                <PlayIcon className="w-4 h-4" />
+                <IconPlay className="w-4 h-4" size="sm" />
                 Resume
               </>
             ) : (
               <>
-                <PauseIcon className="w-4 h-4" />
+                <IconPause className="w-4 h-4" size="sm" />
                 Pause
               </>
             )}
@@ -875,9 +875,9 @@ export default function GraphControlPanel({
             title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
           >
             {isFullscreen ? (
-              <ArrowsPointingInIcon className="w-4 h-4" />
+              <IconArrowsCollapse className="w-4 h-4" size="sm" />
             ) : (
-              <ArrowsPointingOutIcon className="w-4 h-4" />
+              <IconArrowsExpand className="w-4 h-4" size="sm" />
             )}
           </button>
         </div>
@@ -894,12 +894,12 @@ export default function GraphControlPanel({
         >
           {fetchingRefs ? (
             <>
-              <ArrowPathIcon className="w-4 h-4 animate-spin" />
+              <IconRefresh className="w-4 h-4 animate-spin" size="sm" />
               Fetching...
             </>
           ) : (
             <>
-              <ArrowPathIcon className="w-4 h-4" />
+              <IconRefresh className="w-4 h-4" size="sm" />
               Fetch References
             </>
           )}
@@ -910,13 +910,13 @@ export default function GraphControlPanel({
             onClick={onRefreshGraph}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-md transition-colors"
           >
-            <ArrowPathIcon className="w-4 h-4" />
+            <IconRefresh className="w-4 h-4" size="sm" />
             Refresh
           </button>
 
           <div className="relative group">
             <button className="flex items-center justify-center p-2 bg-slate-700 hover:bg-slate-600 text-slate-300 rounded-md transition-colors">
-              <ArrowDownTrayIcon className="w-4 h-4" />
+              <IconDownload className="w-4 h-4" size="sm" />
             </button>
             <div className="absolute bottom-full right-0 mb-1 hidden group-hover:block">
               <div className="bg-slate-800 border border-slate-700 rounded-md shadow-lg py-1 min-w-25">

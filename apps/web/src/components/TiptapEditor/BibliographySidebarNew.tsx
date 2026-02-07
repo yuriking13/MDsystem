@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { cn } from "../../design-system/utils/cn";
-import type { Citation } from "../../lib/api";
 import {
   IconBook,
   IconClose,
   IconSearch,
-  IconChevronRight,
   IconChevronDown,
+  IconChevronsRight,
 } from "../FlowbiteIcons";
+import type { Citation } from "../../lib/api";
 import {
   groupCitationsBySource,
   sortCitationsForDisplay,
@@ -227,7 +227,7 @@ export default function BibliographySidebarNew({
               className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
               title="Свернуть панель"
             >
-              <IconChevronRight size="sm" />
+              <IconChevronsRight size="sm" />
             </button>
           )}
           <button

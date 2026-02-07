@@ -21,12 +21,9 @@
   contain: layout style;
 }
 
-/* For pages that should fill the viewport without scrolling (editor, graph) */
-.app-main:has(.document-page-container),
-.app-main:has(.project-detail-fullwidth) {
-  overflow: hidden;
-  min-height: 0;
+.app-main-fixed {
   height: 100vh;
+  overflow: hidden;
 }
 
 /* =============================================================================

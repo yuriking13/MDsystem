@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "../../design-system/utils/cn";
+import { IconList, IconBook } from "../FlowbiteIcons";
 import DocumentOutlineNew, { type Heading } from "./DocumentOutlineNew";
 import BibliographySidebarNew from "./BibliographySidebarNew";
 import EditorStatusBar from "./EditorStatusBar";
