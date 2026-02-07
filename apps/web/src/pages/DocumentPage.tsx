@@ -1771,7 +1771,7 @@ export default function DocumentPage() {
   return (
     <div
       className="document-page-container"
-      style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
+      style={{ display: "flex", flexDirection: "column", height: "100vh", overflow: "hidden" }}
     >
       <EditorHeader
         title={title}
@@ -1792,6 +1792,7 @@ export default function DocumentPage() {
           minHeight: 0,
           display: "flex",
           flexDirection: "column",
+          overflow: "hidden",
         }}
       >
         {showVersionHistory && (

@@ -167,15 +167,15 @@ export default function BibliographySidebarNew({
       <div
         className={cn(
           "flex flex-col items-center py-4",
-          "bg-slate-900/95 backdrop-blur-sm",
-          "border-l border-slate-700/50",
+          "bg-[#0d1b2a]/95 backdrop-blur-sm",
+          "border-l border-[rgba(56,89,138,0.25)]",
           "w-12",
           className,
         )}
       >
         <button
           onClick={onToggleCollapse}
-          className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg transition-colors"
+          className="p-2 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
           title="Показать библиографию"
         >
           <svg
@@ -196,10 +196,10 @@ export default function BibliographySidebarNew({
         {/* Citation count indicator */}
         {safeCitations.length > 0 && (
           <div className="mt-4 flex flex-col items-center gap-1">
-            <span className="text-xs font-medium text-slate-400">
+            <span className="text-xs font-medium text-neutral-400">
               {uniqueSourcesCount}
             </span>
-            <span className="text-[10px] text-slate-500">ист.</span>
+            <span className="text-[10px] text-neutral-500">ист.</span>
           </div>
         )}
       </div>
@@ -210,15 +210,15 @@ export default function BibliographySidebarNew({
     <div
       className={cn(
         "flex flex-col h-full",
-        "bg-slate-900/95 backdrop-blur-sm",
-        "border-l border-slate-700/50",
+        "bg-[#0d1b2a]/95 backdrop-blur-sm",
+        "border-l border-[rgba(56,89,138,0.25)]",
         "w-80",
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50 bg-slate-800/50">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-200">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(56,89,138,0.25)] bg-[#162236]/50">
+        <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
           <svg
             className="w-4 h-4 text-blue-400"
             fill="none"
@@ -233,7 +233,7 @@ export default function BibliographySidebarNew({
             />
           </svg>
           Библиография
-          <span className="px-1.5 py-0.5 text-xs bg-slate-800 rounded text-slate-400">
+          <span className="px-1.5 py-0.5 text-xs bg-[#162236] rounded text-neutral-400">
             {uniqueSourcesCount}/{safeCitations.length}
           </span>
         </div>
@@ -241,7 +241,7 @@ export default function BibliographySidebarNew({
           {onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg transition-colors"
+              className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
               title="Свернуть панель"
             >
               <svg
@@ -261,7 +261,7 @@ export default function BibliographySidebarNew({
           )}
           <button
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-700/50 rounded-lg transition-colors"
+            className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
             title="Скрыть библиографию"
           >
             <svg
@@ -282,11 +282,11 @@ export default function BibliographySidebarNew({
       </div>
 
       {/* Search & View Toggle */}
-      <div className="px-4 py-2 border-b border-slate-700/50 space-y-2">
+      <div className="px-4 py-2 border-b border-[rgba(56,89,138,0.25)] space-y-2">
         {/* Search */}
         <div className="relative">
           <svg
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -304,25 +304,25 @@ export default function BibliographySidebarNew({
             onChange={(e) => setLocalSearchQuery(e.target.value)}
             placeholder="Поиск цитат..."
             className={cn(
-              "w-full pl-8 pr-3 py-1.5 text-sm text-slate-200",
-              "bg-slate-800/50",
-              "border border-slate-700/50 rounded-lg",
+              "w-full pl-8 pr-3 py-1.5 text-sm text-neutral-200",
+              "bg-[#162236]/50",
+              "border border-[rgba(56,89,138,0.25)] rounded-lg",
               "focus:outline-none focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/50",
-              "placeholder:text-slate-500",
+              "placeholder:text-neutral-500",
             )}
           />
         </div>
 
         {/* View toggle */}
         <div className="flex items-center justify-between">
-          <div className="flex rounded-lg border border-slate-700/50 overflow-hidden">
+          <div className="flex rounded-lg border border-[rgba(56,89,138,0.25)] overflow-hidden">
             <button
               onClick={() => setViewMode("all")}
               className={cn(
                 "px-3 py-1 text-xs transition-colors",
                 viewMode === "all"
                   ? "bg-blue-500 text-white"
-                  : "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50",
+                  : "bg-[#162236]/50 text-neutral-400 hover:bg-[#162236]",
               )}
             >
               Все
@@ -330,10 +330,10 @@ export default function BibliographySidebarNew({
             <button
               onClick={() => setViewMode("bySource")}
               className={cn(
-                "px-3 py-1 text-xs transition-colors border-l border-slate-700/50",
+                "px-3 py-1 text-xs transition-colors border-l border-[rgba(56,89,138,0.25)]",
                 viewMode === "bySource"
                   ? "bg-blue-500 text-white"
-                  : "bg-slate-800/50 text-slate-400 hover:bg-slate-700/50",
+                  : "bg-[#162236]/50 text-neutral-400 hover:bg-[#162236]",
               )}
             >
               По источнику
@@ -347,7 +347,7 @@ export default function BibliographySidebarNew({
         {sortedCitations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
             <svg
-              className="w-12 h-12 text-slate-600 mb-3"
+              className="w-12 h-12 text-neutral-600 mb-3"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -359,16 +359,16 @@ export default function BibliographySidebarNew({
                 d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
               />
             </svg>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-neutral-400">
               {localSearchQuery ? "Цитаты не найдены" : "Нет цитат"}
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-neutral-500 mt-1">
               Используйте кнопку "Цитировать" для добавления
             </p>
           </div>
         ) : viewMode === "all" ? (
           // All citations view
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-[rgba(56,89,138,0.2)]">
             {sortedCitations.map((citation) => (
               <CitationItem
                 key={citation.id}
@@ -392,7 +392,7 @@ export default function BibliographySidebarNew({
           </div>
         ) : (
           // Grouped by source view
-          <div className="divide-y divide-slate-800">
+          <div className="divide-y divide-[rgba(56,89,138,0.2)]">
             {Array.from(groupedCitations.entries())
               .sort((a, b) => (a[1][0]?.number || 0) - (b[1][0]?.number || 0))
               .map(([dedupeKey, citationInfos]) => {
@@ -458,7 +458,7 @@ function CitationItem({
   canEditNote,
 }: CitationItemProps) {
   return (
-    <div className="p-3 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors group">
+    <div className="p-3 hover:bg-neutral-50 dark:hover:bg-[#162236]/50 transition-colors group">
       <div className="flex items-start gap-2">
         {/* Number badge */}
         <button
@@ -473,19 +473,19 @@ function CitationItem({
         <div className="flex-1 min-w-0">
           {/* Authors */}
           {citation.article?.authors && citation.article.authors.length > 0 && (
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
               {citation.article.authors.slice(0, 3).join(", ")}
               {citation.article.authors.length > 3 && " et al."}
             </p>
           )}
 
           {/* Title */}
-          <p className="text-sm text-slate-800 dark:text-slate-200 line-clamp-2 mt-0.5">
+          <p className="text-sm text-neutral-800 dark:text-neutral-200 line-clamp-2 mt-0.5">
             {citation.article?.title_en || "Untitled"}
           </p>
 
           {/* Journal & Year */}
-          <div className="flex items-center gap-2 mt-1 text-xs text-slate-400">
+          <div className="flex items-center gap-2 mt-1 text-xs text-neutral-400">
             {citation.article?.journal && (
               <span className="truncate max-w-37.5">
                 {citation.article.journal}
@@ -505,8 +505,8 @@ function CitationItem({
                 placeholder="Add quote from text..."
                 className={cn(
                   "w-full p-2 text-xs",
-                  "bg-neutral-50 dark:bg-slate-800",
-                  "border border-slate-200 dark:border-slate-700 rounded",
+                  "bg-neutral-50 dark:bg-[#162236]",
+                  "border border-neutral-200 dark:border-[rgba(56,89,138,0.3)] rounded",
                   "focus:outline-none focus:ring-1 focus:ring-blue-500",
                   "resize-none",
                 )}
@@ -522,7 +522,7 @@ function CitationItem({
                 </button>
                 <button
                   onClick={onCancelEditNote}
-                  className="px-2 py-1 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+                  className="px-2 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200 transition-colors"
                 >
                   Cancel
                 </button>
@@ -532,8 +532,8 @@ function CitationItem({
             <p
               onClick={canEditNote ? onStartEditNote : undefined}
               className={cn(
-                "mt-2 text-xs text-slate-600 dark:text-slate-400 italic",
-                "border-l-2 border-slate-300 dark:border-slate-600 pl-2",
+                "mt-2 text-xs text-neutral-600 dark:text-neutral-400 italic",
+                "border-l-2 border-neutral-300 dark:border-neutral-600 pl-2",
                 canEditNote && "cursor-pointer hover:border-blue-400",
               )}
               title={canEditNote ? "Click to edit" : undefined}
@@ -543,7 +543,7 @@ function CitationItem({
           ) : canEditNote ? (
             <button
               onClick={onStartEditNote}
-              className="mt-2 text-xs text-slate-400 hover:text-blue-500 transition-colors"
+              className="mt-2 text-xs text-neutral-400 hover:text-blue-500 transition-colors"
             >
               + Add quote...
             </button>
@@ -554,7 +554,7 @@ function CitationItem({
         {onRemove && (
           <button
             onClick={onRemove}
-            className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all"
+            className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-red-500 transition-all"
             title="Remove citation"
           >
             <svg
@@ -615,11 +615,11 @@ function SourceGroup({
   const inlineNumber = citationInfos[0]?.number || 1;
 
   return (
-    <div className="border-b border-neutral-100 dark:border-slate-800 last:border-b-0">
+    <div className="border-b border-neutral-100 dark:border-[rgba(56,89,138,0.2)] last:border-b-0">
       {/* Source header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-3 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors"
+        className="w-full p-3 text-left hover:bg-neutral-50 dark:hover:bg-[#162236]/50 transition-colors"
       >
         <div className="flex items-start gap-2">
           <span className="shrink-0 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
@@ -629,25 +629,25 @@ function SourceGroup({
           <div className="flex-1 min-w-0">
             {firstCitation.article?.authors &&
               firstCitation.article.authors.length > 0 && (
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
                   {firstCitation.article.authors.slice(0, 3).join(", ")}
                   {firstCitation.article.authors.length > 3 && " et al."}
                 </p>
               )}
-            <p className="text-sm text-slate-800 dark:text-slate-200 line-clamp-2">
+            <p className="text-sm text-neutral-800 dark:text-neutral-200 line-clamp-2">
               {firstCitation.article?.title_en || "Untitled"}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
             {citationInfos.length > 1 && (
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-neutral-400">
                 x{citationInfos.length}
               </span>
             )}
             <svg
               className={cn(
-                "w-4 h-4 text-slate-400 transition-transform",
+                "w-4 h-4 text-neutral-400 transition-transform",
                 isExpanded && "rotate-180",
               )}
               fill="none"
@@ -677,7 +677,7 @@ function SourceGroup({
             return (
               <div
                 key={citation.id}
-                className="flex items-start gap-2 p-2 bg-neutral-50 dark:bg-slate-800/50 rounded"
+                className="flex items-start gap-2 p-2 bg-neutral-50 dark:bg-[#162236]/50 rounded"
               >
                 <button
                   onClick={() => onNavigate(citation.id)}
@@ -695,8 +695,8 @@ function SourceGroup({
                         placeholder="Add quote..."
                         className={cn(
                           "w-full p-2 text-xs",
-                          "bg-white dark:bg-slate-900",
-                          "border border-slate-200 dark:border-slate-700 rounded",
+                          "bg-white dark:bg-[#0d1b2a]",
+                          "border border-neutral-200 dark:border-[rgba(56,89,138,0.3)] rounded",
                           "focus:outline-none focus:ring-1 focus:ring-blue-500",
                           "resize-none",
                         )}
@@ -712,7 +712,7 @@ function SourceGroup({
                         </button>
                         <button
                           onClick={onCancelEditNote}
-                          className="px-2 py-0.5 text-xs text-slate-500"
+                          className="px-2 py-0.5 text-xs text-neutral-500"
                         >
                           Cancel
                         </button>
@@ -726,9 +726,9 @@ function SourceGroup({
                           : undefined
                       }
                       className={cn(
-                        "text-xs text-slate-600 dark:text-slate-400 italic",
+                        "text-xs text-neutral-600 dark:text-neutral-400 italic",
                         canEditNote &&
-                          "cursor-pointer hover:text-slate-800 dark:hover:text-slate-200",
+                          "cursor-pointer hover:text-neutral-800 dark:hover:text-neutral-200",
                       )}
                     >
                       "{citation.note}"
@@ -737,7 +737,7 @@ function SourceGroup({
                     canEditNote && (
                       <button
                         onClick={() => onStartEditNote(citation)}
-                        className="text-xs text-slate-400 hover:text-blue-500"
+                        className="text-xs text-neutral-400 hover:text-blue-500"
                       >
                         + Add quote
                       </button>
@@ -748,7 +748,7 @@ function SourceGroup({
                 {onRemove && (
                   <button
                     onClick={() => onRemove(citation.id)}
-                    className="p-1 text-slate-400 hover:text-red-500"
+                    className="p-1 text-neutral-400 hover:text-red-500"
                   >
                     <svg
                       className="w-3 h-3"

@@ -56,8 +56,8 @@ export default function EditorHeader({
     <header
       className={cn(
         "flex items-center justify-between px-3 py-2",
-        "bg-slate-900",
-        "border-b border-slate-700/50",
+        "bg-[#0d1b2a]",
+        "border-b border-[rgba(56,89,138,0.25)]",
         "sticky top-0 z-20",
         className,
       )}
@@ -69,9 +69,9 @@ export default function EditorHeader({
           onClick={onBackToProject}
           className={cn(
             "flex items-center gap-1.5 px-2 py-1",
-            "text-sm text-slate-400",
-            "hover:text-slate-200",
-            "hover:bg-slate-800/50",
+            "text-sm text-neutral-400",
+            "hover:text-neutral-200",
+            "hover:bg-[#162236]",
             "rounded transition-colors",
           )}
         >
@@ -94,7 +94,7 @@ export default function EditorHeader({
         </button>
 
         {/* Divider */}
-        <div className="h-5 w-px bg-slate-700/50 hidden sm:block" />
+        <div className="h-5 w-px bg-[rgba(56,89,138,0.25)] hidden sm:block" />
 
         {/* Title input */}
         <input
@@ -109,8 +109,8 @@ export default function EditorHeader({
             "bg-transparent",
             "border-0",
             "focus:outline-none",
-            "text-slate-200",
-            "placeholder:text-slate-500",
+            "text-neutral-200",
+            "placeholder:text-neutral-500",
           )}
         />
       </div>
@@ -141,7 +141,7 @@ export default function EditorHeader({
 
           {/* Save status */}
           {isSaving ? (
-            <span className="flex items-center gap-1 text-slate-400">
+            <span className="flex items-center gap-1 text-neutral-400">
               <svg
                 className="w-3.5 h-3.5 animate-spin"
                 fill="none"
@@ -188,7 +188,7 @@ export default function EditorHeader({
               "text-xs rounded transition-colors",
               isVersionHistoryOpen
                 ? "bg-blue-500/20 text-blue-400"
-                : "text-slate-400 hover:bg-slate-800/50",
+                : "text-neutral-400 hover:bg-[#162236]",
             )}
             title="История версий"
           >
