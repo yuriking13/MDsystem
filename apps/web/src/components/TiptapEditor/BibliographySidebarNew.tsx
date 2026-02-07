@@ -2,6 +2,13 @@ import React, { useState, useCallback, useMemo } from "react";
 import { cn } from "../../design-system/utils/cn";
 import type { Citation } from "../../lib/api";
 import {
+  IconBook,
+  IconClose,
+  IconSearch,
+  IconChevronRight,
+  IconChevronDown,
+} from "../FlowbiteIcons";
+import {
   groupCitationsBySource,
   sortCitationsForDisplay,
   shouldShowSubNumber,
@@ -178,19 +185,7 @@ export default function BibliographySidebarNew({
           className="p-2 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
           title="Показать библиографию"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-            />
-          </svg>
+          <IconBook size="md" />
         </button>
 
         {/* Citation count indicator */}
@@ -219,19 +214,7 @@ export default function BibliographySidebarNew({
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[rgba(56,89,138,0.25)] bg-[#162236]/50">
         <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
-          <svg
-            className="w-4 h-4 text-blue-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-            />
-          </svg>
+          <IconBook size="sm" className="text-blue-400" />
           Библиография
           <span className="px-1.5 py-0.5 text-xs bg-[#162236] rounded text-neutral-400">
             {uniqueSourcesCount}/{safeCitations.length}
@@ -244,19 +227,7 @@ export default function BibliographySidebarNew({
               className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
               title="Свернуть панель"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M11.25 4.5l7.5 7.5-7.5 7.5m-6-15l7.5 7.5-7.5 7.5"
-                />
-              </svg>
+              <IconChevronRight size="sm" />
             </button>
           )}
           <button
@@ -264,19 +235,7 @@ export default function BibliographySidebarNew({
             className="p-1.5 text-neutral-400 hover:text-neutral-200 hover:bg-[#162236] rounded-lg transition-colors"
             title="Скрыть библиографию"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <IconClose size="sm" />
           </button>
         </div>
       </div>
@@ -285,19 +244,10 @@ export default function BibliographySidebarNew({
       <div className="px-4 py-2 border-b border-[rgba(56,89,138,0.25)] space-y-2">
         {/* Search */}
         <div className="relative">
-          <svg
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"
-            />
-          </svg>
+          <IconSearch
+            size="sm"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500"
+          />
           <input
             type="text"
             value={localSearchQuery}
@@ -346,19 +296,7 @@ export default function BibliographySidebarNew({
       <div className="flex-1 overflow-y-auto">
         {sortedCitations.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-            <svg
-              className="w-12 h-12 text-neutral-600 mb-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1}
-                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-              />
-            </svg>
+            <IconBook size="lg" className="w-12 h-12 text-neutral-600 mb-3" />
             <p className="text-sm text-neutral-400">
               {localSearchQuery ? "Цитаты не найдены" : "Нет цитат"}
             </p>
@@ -557,19 +495,7 @@ function CitationItem({
             className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-red-500 transition-all"
             title="Remove citation"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <IconClose size="sm" />
           </button>
         )}
       </div>
@@ -645,22 +571,13 @@ function SourceGroup({
                 x{citationInfos.length}
               </span>
             )}
-            <svg
+            <IconChevronDown
+              size="sm"
               className={cn(
-                "w-4 h-4 text-neutral-400 transition-transform",
+                "text-neutral-400 transition-transform",
                 isExpanded && "rotate-180",
               )}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
+            />
           </div>
         </div>
       </button>
@@ -750,19 +667,7 @@ function SourceGroup({
                     onClick={() => onRemove(citation.id)}
                     className="p-1 text-neutral-400 hover:text-red-500"
                   >
-                    <svg
-                      className="w-3 h-3"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    <IconClose size="sm" />
                   </button>
                 )}
               </div>

@@ -1,5 +1,11 @@
 import React from "react";
 import { cn } from "../../design-system/utils/cn";
+import {
+  IconArrowLeft,
+  IconRefresh,
+  IconCheck,
+  IconClock,
+} from "../FlowbiteIcons";
 
 interface EditorHeaderProps {
   /** Document title */
@@ -75,19 +81,7 @@ export default function EditorHeader({
             "rounded transition-colors",
           )}
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-            />
-          </svg>
+          <IconArrowLeft size="sm" />
           <span className="hidden sm:inline text-xs">
             {projectName ? `Назад` : "Назад"}
           </span>
@@ -122,19 +116,7 @@ export default function EditorHeader({
           {/* Bibliography updating */}
           {isUpdatingBibliography && (
             <span className="flex items-center gap-1.5 text-blue-400">
-              <svg
-                className="w-4 h-4 animate-spin"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
+              <IconRefresh size="sm" className="animate-spin" />
               <span className="hidden md:inline">Обновление...</span>
             </span>
           )}
@@ -142,37 +124,13 @@ export default function EditorHeader({
           {/* Save status */}
           {isSaving ? (
             <span className="flex items-center gap-1 text-neutral-400">
-              <svg
-                className="w-3.5 h-3.5 animate-spin"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
+              <IconRefresh size="sm" className="animate-spin" />
               <span className="hidden md:inline">Сохранение...</span>
             </span>
           ) : (
             !isUpdatingBibliography && (
               <span className="flex items-center gap-1.5 text-green-400">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
+                <IconCheck size="sm" />
                 <span className="hidden md:inline">Сохранено</span>
               </span>
             )
@@ -192,19 +150,7 @@ export default function EditorHeader({
             )}
             title="История версий"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <IconClock size="sm" />
             <span className="hidden md:inline">Версии</span>
           </button>
         )}

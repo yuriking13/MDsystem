@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { cn } from "../../design-system/utils/cn";
+import { IconClock, IconBook, IconRefresh, IconCheck } from "../FlowbiteIcons";
 
 interface EditorStatusBarProps {
   /** Current word count */
@@ -124,19 +125,7 @@ export default function EditorStatusBar({
 
         {/* Reading time */}
         <span className="text-neutral-500 flex items-center gap-1">
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <IconClock size="sm" />
           {readingTime} чтение
         </span>
       </div>
@@ -146,19 +135,7 @@ export default function EditorStatusBar({
         {/* Citation count */}
         {citationCount !== undefined && citationCount > 0 && (
           <span className="text-neutral-500 flex items-center gap-1">
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-              />
-            </svg>
+            <IconBook size="sm" />
             {citationCount} цитат
           </span>
         )}
@@ -166,19 +143,7 @@ export default function EditorStatusBar({
         {/* Bibliography update indicator */}
         {isUpdatingBibliography && (
           <span className="flex items-center gap-1.5 text-blue-400">
-            <svg
-              className="w-3.5 h-3.5 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <IconRefresh size="sm" className="animate-spin" />
             Обновление...
           </span>
         )}
@@ -186,36 +151,12 @@ export default function EditorStatusBar({
         {/* Save status */}
         {isSaving ? (
           <span className="flex items-center gap-1.5 text-neutral-400">
-            <svg
-              className="w-3.5 h-3.5 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
+            <IconRefresh size="sm" className="animate-spin" />
             Сохранение...
           </span>
         ) : lastSavedText ? (
           <span className="flex items-center gap-1.5 text-green-400">
-            <svg
-              className="w-3.5 h-3.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
+            <IconCheck size="sm" />
             Сохранено {lastSavedText}
           </span>
         ) : null}
