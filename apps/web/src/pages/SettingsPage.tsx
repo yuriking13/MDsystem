@@ -102,6 +102,13 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
 
+  // Auto-dismiss ok notification after 10 seconds
+  useEffect(() => {
+    if (!ok) return;
+    const timer = setTimeout(() => setOk(null), 10000);
+    return () => clearTimeout(timer);
+  }, [ok]);
+
   const list = useMemo(
     () => Providers.map((p) => ({ p, has: !!keys[p], meta: ProviderMeta[p] })),
     [keys],
