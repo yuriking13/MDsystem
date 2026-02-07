@@ -19,6 +19,19 @@
   flex-direction: column;
 }
 
+.project-detail-fullwidth .tab-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.project-detail-fullwidth .tab-content > * {
+  flex: 1;
+  min-height: 0;
+}
+
 /* Project Page Header */
 .project-page-header {
   @apply mb-6;
