@@ -1,4 +1,4 @@
-import TableCell from '@tiptap/extension-table-cell';
+import TableCell from "@tiptap/extension-table-cell";
 
 export const CustomTableCell = TableCell.extend({
   addAttributes() {
@@ -7,7 +7,11 @@ export const CustomTableCell = TableCell.extend({
       backgroundColor: {
         default: null,
         parseHTML: (element) => {
-          return element.style.backgroundColor || element.getAttribute('data-bgcolor') || null;
+          return (
+            element.style.backgroundColor ||
+            element.getAttribute("data-bgcolor") ||
+            null
+          );
         },
         renderHTML: (attributes) => {
           return {};
@@ -27,6 +31,18 @@ export const CustomTableCell = TableCell.extend({
           return {};
         },
       },
+      // Высота ячейки (для ручного изменения высоты строки)
+      rowHeight: {
+        default: null,
+        parseHTML: (element) => {
+          const h =
+            element.style.height || element.getAttribute("data-row-height");
+          return h ? parseInt(h, 10) || null : null;
+        },
+        renderHTML: (attributes) => {
+          return {};
+        },
+      },
     };
   },
 
@@ -40,20 +56,28 @@ export const CustomTableCell = TableCell.extend({
     if (attrs.backgroundColor) {
       styleParts.push(`background-color: ${attrs.backgroundColor}`);
     }
-    if (attrs.textAlign && attrs.textAlign !== 'left') {
+    if (attrs.textAlign && attrs.textAlign !== "left") {
       styleParts.push(`text-align: ${attrs.textAlign}`);
     }
-    if (attrs.verticalAlign && attrs.verticalAlign !== 'top') {
+    if (attrs.verticalAlign && attrs.verticalAlign !== "top") {
       styleParts.push(`vertical-align: ${attrs.verticalAlign}`);
+    }
+    if (attrs.rowHeight) {
+      styleParts.push(`height: ${attrs.rowHeight}px`);
     }
 
     const mergedAttrs: Record<string, any> = {
       ...HTMLAttributes,
-      ...(styleParts.length ? { style: styleParts.join('; ') } : {}),
-      ...(attrs.backgroundColor ? { 'data-bgcolor': attrs.backgroundColor } : {}),
+      ...(styleParts.length ? { style: styleParts.join("; ") } : {}),
+      ...(attrs.backgroundColor
+        ? { "data-bgcolor": attrs.backgroundColor }
+        : {}),
+      ...(attrs.rowHeight
+        ? { "data-row-height": String(attrs.rowHeight) }
+        : {}),
     };
 
-    return ['td', mergedAttrs, 0];
+    return ["td", mergedAttrs, 0];
   },
 });
 

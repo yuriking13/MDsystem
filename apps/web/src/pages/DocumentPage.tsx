@@ -332,6 +332,12 @@ function calculateDocumentStats(html: string): DocumentStats {
   try {
     const parser = new DOMParser();
     const parsed = parser.parseFromString(html, "text/html");
+
+    // Удаляем таблицы из подсчёта — символы и слова в таблицах
+    // не учитываются в общей статистике текстового документа
+    const tables = parsed.querySelectorAll("table");
+    tables.forEach((table) => table.remove());
+
     const text = parsed.body.textContent || "";
     const words = text.trim().split(/\s+/).filter(Boolean);
     const wordCount = words.length;

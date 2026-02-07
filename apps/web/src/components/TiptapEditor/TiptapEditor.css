@@ -920,6 +920,11 @@
   text-align: left;
   vertical-align: top;
   position: relative;
+  /* Ячейки можно растягивать по высоте через атрибут rowHeight */
+  min-height: 32px;
+  /* Поддержка resize по вертикали для пользовательского изменения высоты */
+  resize: vertical;
+  overflow: auto;
   /* БЕЗ min-width - TipTap управляет через colwidth */
 }
 
@@ -1019,9 +1024,13 @@
    ============================================ */
 
 /* Table wrapper для ресайза - фиксируем ширину контейнера и оставляем overflow видимым */
+/* Ограничение высоты: ~4 страницы (4 * 1000px) чтобы узкие ячейки
+   с большим количеством текста не растягивали таблицу бесконечно */
 .tiptap-editor .tableWrapper,
 .ProseMirror .tableWrapper {
   overflow: visible !important;
+  overflow-y: auto !important;
+  max-height: 4000px;
   margin: 1em 0;
   position: relative;
   width: 100%;
