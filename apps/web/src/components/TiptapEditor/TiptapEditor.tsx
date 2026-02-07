@@ -947,6 +947,45 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       };
     }, [editor]);
 
+    // Hover highlighting: citation [n] in editor ↔ sidebar bibliography item
+    useEffect(() => {
+      if (!editor) return;
+      const editorDom = editor.view.dom;
+
+      const handleMouseOver = (e: Event) => {
+        const target = (e.target as HTMLElement).closest?.(".citation-ref");
+        if (target) {
+          const citationId = target.getAttribute("data-citation-id");
+          if (citationId) {
+            // Highlight corresponding sidebar item
+            document
+              .querySelectorAll(`[data-sidebar-citation-id="${citationId}"]`)
+              .forEach((el) => el.classList.add("sidebar-hover-highlight"));
+          }
+        }
+      };
+
+      const handleMouseOut = (e: Event) => {
+        const target = (e.target as HTMLElement).closest?.(".citation-ref");
+        if (target) {
+          const citationId = target.getAttribute("data-citation-id");
+          if (citationId) {
+            document
+              .querySelectorAll(`[data-sidebar-citation-id="${citationId}"]`)
+              .forEach((el) => el.classList.remove("sidebar-hover-highlight"));
+          }
+        }
+      };
+
+      editorDom.addEventListener("mouseover", handleMouseOver);
+      editorDom.addEventListener("mouseout", handleMouseOut);
+
+      return () => {
+        editorDom.removeEventListener("mouseover", handleMouseOver);
+        editorDom.removeEventListener("mouseout", handleMouseOut);
+      };
+    }, [editor]);
+
     // Update content when prop changes
     useEffect(() => {
       if (editor && content && editor.getHTML() !== content) {

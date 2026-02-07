@@ -247,14 +247,15 @@ export default function BibliographySidebarNew({
         <div className="relative">
           <IconSearch
             size="sm"
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500"
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
+            style={{ width: 14, height: 14 }}
           />
           <input
             type="text"
             value={localSearchQuery}
             onChange={(e) => setLocalSearchQuery(e.target.value)}
             placeholder="Поиск цитат..."
-            className="toolbar-select w-full pl-8 pr-3 py-1.5 text-sm rounded-lg"
+            className="toolbar-select w-full pl-7 pr-3 py-1.5 text-sm rounded-lg"
           />
         </div>
 
@@ -394,6 +395,20 @@ export default function BibliographySidebarNew({
   );
 }
 
+// Highlight citation in editor text on hover (sidebar → editor)
+function highlightCitationInEditor(citationId: string, highlight: boolean) {
+  const els = document.querySelectorAll(
+    `.citation-ref[data-citation-id="${citationId}"]`,
+  );
+  els.forEach((el) => {
+    if (highlight) {
+      el.classList.add("citation-hover-highlight");
+    } else {
+      el.classList.remove("citation-hover-highlight");
+    }
+  });
+}
+
 // Citation item component
 interface CitationItemProps {
   citation: Citation;
@@ -423,7 +438,12 @@ function CitationItem({
   canEditNote,
 }: CitationItemProps) {
   return (
-    <div className="p-3 hover:bg-neutral-50 dark:hover:bg-blue-500/5 transition-colors group">
+    <div
+      className="p-3 hover:bg-neutral-50 dark:hover:bg-blue-500/5 transition-colors group"
+      data-sidebar-citation-id={citation.id}
+      onMouseEnter={() => highlightCitationInEditor(citation.id, true)}
+      onMouseLeave={() => highlightCitationInEditor(citation.id, false)}
+    >
       <div className="flex items-start gap-2">
         {/* Number badge */}
         <button
@@ -626,6 +646,13 @@ function SourceGroup({
                 key={citation.id}
                 className="flex items-start gap-2 p-2 rounded"
                 style={{ background: "var(--bg-secondary)" }}
+                data-sidebar-citation-id={citation.id}
+                onMouseEnter={() =>
+                  highlightCitationInEditor(citation.id, true)
+                }
+                onMouseLeave={() =>
+                  highlightCitationInEditor(citation.id, false)
+                }
               >
                 <button
                   onClick={() => onNavigate(citation.id)}

@@ -1431,24 +1431,11 @@ export default function DocumentPage() {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     // Используем event system для вставки графика
+    // ChartData ожидает { id, config, table_data }
     editorEvents.emit("insertChart", {
-      title: stat.title || "",
-      type: (stat.config as { type?: string })?.type || "bar",
-      data: (
-        stat.config as {
-          data?: {
-            labels: string[];
-            datasets: Array<{
-              label: string;
-              data: number[];
-              backgroundColor?: string | string[];
-              borderColor?: string;
-            }>;
-          };
-        }
-      )?.data || { labels: [], datasets: [] },
-      options: stat.config as Record<string, unknown>,
-      statisticId: stat.id,
+      id: stat.id,
+      config: stat.config,
+      table_data: stat.table_data,
     });
 
     // Отмечаем статистику как используемую в этом документе (только если ID валидный UUID)
@@ -1457,6 +1444,19 @@ export default function DocumentPage() {
     if (uuidRegex.test(stat.id)) {
       try {
         await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
+        // Обновляем локальное состояние used_in_documents
+        setStatistics((prev) =>
+          prev.map((s) =>
+            s.id === stat.id
+              ? {
+                  ...s,
+                  used_in_documents: [
+                    ...new Set([...(s.used_in_documents || []), docId]),
+                  ],
+                }
+              : s,
+          ),
+        );
       } catch {
         // Failed to mark statistic as used
       }
@@ -1546,10 +1546,37 @@ export default function DocumentPage() {
 
     const tableData = stat.table_data as TableData;
 
-    // Emit table insert event
+    // Извлекаем заголовки и строки из table_data
+    // table_data может быть массивом строк (первая строка = заголовки)
+    let headers: string[] = [];
+    let rows: string[][] = [];
+
+    if (Array.isArray(tableData) && tableData.length > 0) {
+      // Первая строка — заголовки, остальные — данные
+      headers = (tableData[0] as unknown[]).map((cell) => String(cell ?? ""));
+      rows = (tableData as unknown[][])
+        .slice(1)
+        .map((row) => (row as unknown[]).map((cell) => String(cell ?? "")));
+    } else if (
+      tableData &&
+      typeof tableData === "object" &&
+      "headers" in tableData
+    ) {
+      // table_data уже в формате { headers, rows }
+      const td = tableData as unknown as {
+        headers: string[];
+        rows: string[][];
+      };
+      headers = td.headers || [];
+      rows = td.rows || [];
+    }
+
+    // Emit table insert event с ДАННЫМИ, а не просто размерами
     editorEvents.emit("insertTable", {
-      rows: Array.isArray(tableData) ? tableData.length : 3,
-      cols: Array.isArray(tableData) && tableData[0] ? tableData[0].length : 3,
+      headers,
+      rows,
+      title: stat.title || undefined,
+      statisticId: stat.id,
     });
 
     // Отмечаем статистику как используемую (только если ID валидный UUID)
@@ -1558,6 +1585,19 @@ export default function DocumentPage() {
     if (uuidRegex.test(stat.id)) {
       try {
         await apiMarkStatisticUsedInDocument(projectId, stat.id, docId);
+        // Обновляем локальное состояние used_in_documents
+        setStatistics((prev) =>
+          prev.map((s) =>
+            s.id === stat.id
+              ? {
+                  ...s,
+                  used_in_documents: [
+                    ...new Set([...(s.used_in_documents || []), docId]),
+                  ],
+                }
+              : s,
+          ),
+        );
       } catch {
         // Failed to mark statistic as used
       }
