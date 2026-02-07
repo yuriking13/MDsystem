@@ -1995,12 +1995,13 @@ export default function CitationGraph({ projectId }: Props) {
       style={{
         display: "flex",
         flexDirection: "row",
-        height: isFullscreen ? "100vh" : "100vh",
+        height: isFullscreen ? "100vh" : "100%",
         width: isFullscreen ? "100vw" : "100%",
         position: isFullscreen ? "fixed" : "relative",
         top: isFullscreen ? 0 : "auto",
         left: isFullscreen ? 0 : "auto",
         zIndex: isFullscreen ? 9999 : "auto",
+        overflow: "hidden",
       }}
     >
       {/* Main Content Area */}
