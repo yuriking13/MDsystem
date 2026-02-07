@@ -56,124 +56,85 @@ export default function AddArticleByDoiModal({
   }
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="modal"
+        className="modal-content"
         onClick={(e) => e.stopPropagation()}
         style={{ maxWidth: "500px" }}
       >
         <div className="modal-header">
-          <h2>Добавить статью по DOI</h2>
-          <button className="close-btn" onClick={onClose} disabled={loading}>
-            ×
+          <h2 className="modal-title">Добавить статью по DOI</h2>
+          <button className="modal-close" onClick={onClose} disabled={loading}>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="modal-body">
-          <div style={{ marginBottom: "16px" }}>
-            <label
-              style={{ display: "block", marginBottom: "8px", fontWeight: 500 }}
-            >
-              DOI статьи
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            <label className="form-label">
+              <span className="form-label-text">DOI статьи</span>
+              <input
+                type="text"
+                className="form-input"
+                value={doi}
+                onChange={(e) => setDoi(e.target.value)}
+                placeholder="Например: 10.1038/nature12373"
+                disabled={loading}
+                autoFocus
+              />
+              <small style={{ color: "var(--color-text-tertiary)", marginTop: "4px", display: "block", fontSize: "0.75rem" }}>
+                Введите полный DOI статьи. Данные будут загружены из базы Crossref.
+              </small>
             </label>
-            <input
-              type="text"
-              value={doi}
-              onChange={(e) => setDoi(e.target.value)}
-              placeholder="Например: 10.1038/nature12373"
-              disabled={loading}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                fontSize: "14px",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-              }}
-              autoFocus
-            />
-            <small
-              style={{ color: "#666", marginTop: "4px", display: "block" }}
-            >
-              Введите полный DOI статьи. Данные будут загружены из базы
-              Crossref.
-            </small>
-          </div>
 
-          <div style={{ marginBottom: "16px" }}>
-            <label
-              style={{ display: "block", marginBottom: "8px", fontWeight: 500 }}
-            >
-              Статус в проекте
+            <label className="form-label">
+              <span className="form-label-text">Статус в проекте</span>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <input
+                    type="radio"
+                    value="candidate"
+                    checked={status === "candidate"}
+                    onChange={(e) => setStatus(e.target.value as "candidate")}
+                    disabled={loading}
+                  />
+                  Кандидат
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <input
+                    type="radio"
+                    value="selected"
+                    checked={status === "selected"}
+                    onChange={(e) => setStatus(e.target.value as "selected")}
+                    disabled={loading}
+                  />
+                  Отобранная
+                </label>
+              </div>
             </label>
-            <div style={{ display: "flex", gap: "12px" }}>
-              <label
-                style={{ display: "flex", alignItems: "center", gap: "6px" }}
-              >
-                <input
-                  type="radio"
-                  value="candidate"
-                  checked={status === "candidate"}
-                  onChange={(e) => setStatus(e.target.value as "candidate")}
-                  disabled={loading}
-                />
-                Кандидат
-              </label>
-              <label
-                style={{ display: "flex", alignItems: "center", gap: "6px" }}
-              >
-                <input
-                  type="radio"
-                  value="selected"
-                  checked={status === "selected"}
-                  onChange={(e) => setStatus(e.target.value as "selected")}
-                  disabled={loading}
-                />
-                Отобранная
-              </label>
-            </div>
-          </div>
 
-          {error && (
-            <div
-              style={{
-                padding: "12px",
-                backgroundColor: "#fee",
-                border: "1px solid #fcc",
-                borderRadius: "4px",
-                color: "#c33",
-                marginBottom: "16px",
-              }}
-            >
-              {error}
-            </div>
-          )}
+            {error && (
+              <div className="alert-error">
+                {error}
+              </div>
+            )}
+          </div>
 
           <div className="modal-footer">
             <button
               type="button"
+              className="btn-secondary"
               onClick={onClose}
               disabled={loading}
-              style={{
-                padding: "8px 16px",
-                backgroundColor: "#f5f5f5",
-                border: "1px solid #ddd",
-                borderRadius: "4px",
-                cursor: loading ? "not-allowed" : "pointer",
-              }}
             >
               Отмена
             </button>
             <button
               type="submit"
+              className="btn-primary"
               disabled={loading || !doi.trim()}
-              style={{
-                padding: "8px 16px",
-                backgroundColor: loading ? "#ccc" : "#007bff",
-                color: "white",
-                border: "none",
-                borderRadius: "4px",
-                cursor: loading || !doi.trim() ? "not-allowed" : "pointer",
-              }}
             >
               {loading ? "Добавление..." : "Добавить"}
             </button>

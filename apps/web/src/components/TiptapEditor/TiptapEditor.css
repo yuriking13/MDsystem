@@ -1225,15 +1225,30 @@
    ============================================ */
 
 .citation-picker-modal {
-  background: #1e293b;
-  border-radius: 12px;
+  background-color: rgba(13, 27, 42, 0.85);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(56, 89, 138, 0.25);
+  border-radius: 0.75rem;
   width: 700px;
   max-width: 95vw;
   max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
+    0 20px 60px -10px rgba(0, 0, 0, 0.5);
+  animation: scaleIn 120ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.light-theme .citation-picker-modal,
+[data-theme="light"] .citation-picker-modal {
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.6),
+    0 20px 60px -10px rgba(0, 0, 0, 0.15);
 }
 
 .citation-picker-header {
@@ -1241,21 +1256,37 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(56, 89, 138, 0.15);
+}
+
+.light-theme .citation-picker-header,
+[data-theme="light"] .citation-picker-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 
 .citation-picker-header h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 1.125rem;
   font-weight: 600;
   color: #e2e8f0;
+}
+
+.light-theme .citation-picker-header h3,
+[data-theme="light"] .citation-picker-header h3 {
+  color: #111827;
 }
 
 /* Search container */
 .citation-search-container {
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(56, 89, 138, 0.15);
   background: rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .citation-search-container,
+[data-theme="light"] .citation-search-container {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .citation-search-row {
