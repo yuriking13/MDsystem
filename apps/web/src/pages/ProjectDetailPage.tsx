@@ -1522,9 +1522,9 @@ export default function ProjectDetailPage() {
 
         {/* === DOCUMENTS TAB === */}
         {activeTab === "documents" && (
-          <div>
-            <div className="row space" style={{ marginBottom: 16 }}>
-              <h2>Документы проекта</h2>
+          <div className="documents-page">
+            <div className="documents-header">
+              <h5 className="documents-header-title">Документы проекта</h5>
               {canEdit && (
                 <button
                   className="btn"
@@ -1539,8 +1539,8 @@ export default function ProjectDetailPage() {
             {showCreateDoc && (
               <form
                 onSubmit={handleCreateDocument}
-                className="card"
-                style={{ marginBottom: 16 }}
+                className="search-form-card"
+                style={{ margin: 0 }}
               >
                 <div className="stack">
                   <label className="stack">
@@ -1754,7 +1754,7 @@ export default function ProjectDetailPage() {
             )}
 
             {/* Библиография и экспорт */}
-            <div className="card" style={{ marginTop: 16 }}>
+            <div className="bibliography-export-card">
               <div className="row space" style={{ marginBottom: 12 }}>
                 <h4
                   style={{
@@ -2244,8 +2244,8 @@ export default function ProjectDetailPage() {
         {/* === FILES TAB === */}
         {activeTab === "files" && id && (
           <div className="files-page">
-            <div className="row space" style={{ marginBottom: 16 }}>
-              <h2 style={{ margin: 0 }}>Файлы проекта</h2>
+            <div className="files-header">
+              <h5 className="files-header-title">Файлы проекта</h5>
               <div className="row gap">
                 {canEdit && storageConfigured && (
                   <>
@@ -3307,9 +3307,9 @@ export default function ProjectDetailPage() {
           <div className="statistics-page">
             <div className="statistics-header">
               <div>
-                <h2
+                <h5
+                  className="statistics-header-title"
                   style={{
-                    margin: 0,
                     display: "flex",
                     alignItems: "center",
                     gap: 8,
@@ -3332,7 +3332,7 @@ export default function ProjectDetailPage() {
                       animation: wsConnected ? "pulse 2s infinite" : "none",
                     }}
                   />
-                </h2>
+                </h5>
                 <div className="muted" style={{ fontSize: 13 }}>
                   Графики и таблицы из документов проекта
                   {wsConnected && (
@@ -4000,7 +4000,7 @@ export default function ProjectDetailPage() {
         {/* === SETTINGS TAB (includes team) === */}
         {activeTab === "settings" && (
           <div className="settings-page">
-            <h2>Настройки проекта</h2>
+            <h5 className="settings-page-title">Настройки проекта</h5>
 
             {/* Команда проекта */}
             <div className="settings-card">
