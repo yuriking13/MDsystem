@@ -1111,6 +1111,15 @@ export default function ProjectDetailPage() {
       : "Удалить эту поврежденную запись?";
 
     if (!confirm(confirmMessage)) return;
+
+    // Если ID невалидный (не UUID), просто удаляем из локального состояния
+    // — такая запись не может существовать в БД
+    if (!isValidUuid) {
+      setStatistics(statistics.filter((s) => s.id !== statId));
+      setOk("Поврежденная запись удалена");
+      return;
+    }
+
     try {
       await apiDeleteStatistic(id, statId);
       setStatistics(statistics.filter((s) => s.id !== statId));

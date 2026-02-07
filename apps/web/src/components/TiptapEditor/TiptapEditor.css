@@ -542,6 +542,21 @@
   }
 }
 
+/* Citation hover highlight - при наведении на цитату в сайдбаре подсвечиваем [n] в тексте */
+.tiptap-editor .citation-ref.citation-hover-highlight {
+  background: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 6px rgba(59, 130, 246, 0.5);
+  border-radius: 3px;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+/* Sidebar citation hover highlight - при наведении на [n] в тексте подсвечиваем элемент в сайдбаре */
+[data-sidebar-citation-id].sidebar-hover-highlight {
+  background: rgba(59, 130, 246, 0.15) !important;
+  box-shadow: inset 3px 0 0 #3b82f6;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
 /* GOST style headings - centered, no dot */
 .gost-style .tiptap-editor h1,
 .gost-style .tiptap-editor h2,
