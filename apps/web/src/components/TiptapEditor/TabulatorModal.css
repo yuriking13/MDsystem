@@ -5,15 +5,33 @@
 .tabulator-container {
   width: 100%;
   min-height: 320px;
+  max-height: 60vh;
+  overflow: auto;
 }
 
 .tabulator-controls {
   margin-bottom: 8px;
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .tabulator-buttons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Highlight row number column */
+.tabulator-container .row-number-col {
+  color: #94a3b8;
+  font-size: 11px;
+  text-align: center;
+  background: #f8fafc;
+}
+
+/* Selected row styling */
+.tabulator-container .tabulator-row:hover {
+  background: rgba(59, 130, 246, 0.04) !important;
 }

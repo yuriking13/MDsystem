@@ -909,7 +909,9 @@
   /* table-layout: fixed ОБЯЗАТЕЛЕН для ресайза через colwidth */
   table-layout: fixed !important;
   border: 2px solid #1e293b !important;
-  /* Позволяем таблице расширяться через inline style min-width */
+  /* Таблица НЕ должна выходить за границы страницы */
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* Table rows with custom height support */
@@ -939,7 +941,11 @@
   vertical-align: top;
   position: relative;
   min-height: 32px;
-  /* БЕЗ min-width - TipTap управляет через colwidth */
+  /* Предотвращаем выход текста за границы ячейки */
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  overflow: hidden;
 }
 
 .tiptap-editor table th,
@@ -1029,14 +1035,11 @@
    TABLE RESIZE - TipTap specific
    ============================================ */
 
-/* Table wrapper для ресайза - фиксируем ширину контейнера и оставляем overflow видимым */
-/* Ограничение высоты: ~4 страницы (4 * 1000px) чтобы узкие ячейки
-   с большим количеством текста не растягивали таблицу бесконечно */
+/* Table wrapper для ресайза - строго в границах страницы */
 .tiptap-editor .tableWrapper,
 .ProseMirror .tableWrapper {
-  overflow: visible !important;
-  overflow-y: auto !important;
-  max-height: 4000px;
+  overflow-x: auto !important;
+  overflow-y: visible !important;
   margin: 1em 0;
   position: relative;
   width: 100%;
@@ -1049,8 +1052,9 @@
 .ProseMirror .tableWrapper table {
   table-layout: fixed !important;
   display: table;
-  width: 100%;
-  overflow: visible;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden;
   border-collapse: collapse;
   /* width управляется через colwidth атрибуты на ячейках и col элементы */
 }
@@ -1075,8 +1079,8 @@
 
 .rm-with-pagination .tableWrapper table {
   display: table !important;
-  width: auto !important;
-  max-width: 100%;
+  width: 100% !important;
+  max-width: 100% !important;
   table-layout: fixed !important;
   border-collapse: collapse !important;
 }
@@ -1140,10 +1144,10 @@
 .tiptap-editor table td,
 .tiptap-editor table th {
   position: relative;
-  overflow: visible;
+  overflow: hidden;
   padding: 8px;
-  /* Ширина управляется через colwidth атрибут и col элементы */
-  /* БЕЗ width свойства - пусть браузер использует colwidth */
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Resize cursor при перетаскивании */
@@ -1158,6 +1162,17 @@
 .tiptap-editor .column-resize-handle.dragging {
   background: rgba(0, 0, 0, 0.3);
   width: 2px;
+}
+
+/* Row resize: bottom edge hover indicator */
+.tiptap-editor table tr {
+  position: relative;
+}
+
+/* Row height attribute visual indicator */
+.tiptap-editor table tr[style*="height"] > td,
+.tiptap-editor table tr[style*="height"] > th {
+  box-sizing: border-box;
 }
 
 /* Table numbering */

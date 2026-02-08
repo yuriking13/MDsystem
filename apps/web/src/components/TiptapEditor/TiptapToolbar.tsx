@@ -551,14 +551,15 @@ export default function TiptapToolbar({
                 <button
                   onClick={() => {
                     const height = prompt(
-                      "Введите высоту строки в пикселях (20-200):",
+                      "Введите высоту строки в пикселях (10-500):",
                       "30",
                     );
                     if (height) {
                       const numHeight = Math.max(
-                        20,
-                        Math.min(200, Number(height)),
+                        10,
+                        Math.min(500, Number(height)),
                       );
+                      if (isNaN(numHeight)) return;
                       (editor.chain().focus() as any)
                         .setRowHeight(numHeight)
                         .run();

@@ -523,9 +523,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       return null;
     }, [editor]);
 
+    // Drag-to-resize row height handler
     useEffect(() => {
       if (!editor || !editor.view) return;
       const viewDom = editor.view.dom;
+      const EDGE_ZONE = 6; // px from bottom edge to trigger resize
       let activeRow: HTMLTableRowElement | null = null;
       let dragging = false;
       let startY = 0;
@@ -539,20 +541,45 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       };
 
       const onMouseMove = (event: MouseEvent) => {
-        if (!dragging || !activeRow) return;
-        applyRowHeight(activeRow, event.clientY);
+        if (dragging && activeRow) {
+          applyRowHeight(activeRow, event.clientY);
+          return;
+        }
+        // Show row-resize cursor near bottom edge of rows
+        const target = event.target as HTMLElement;
+        const cell = target.closest?.("td, th") as HTMLTableCellElement | null;
+        if (cell) {
+          const row = cell.closest("tr") as HTMLTableRowElement | null;
+          if (row) {
+            const rect = row.getBoundingClientRect();
+            if (
+              rect.bottom - event.clientY <= EDGE_ZONE &&
+              rect.bottom - event.clientY >= 0
+            ) {
+              viewDom.style.cursor = "row-resize";
+              return;
+            }
+          }
+        }
+        if (!dragging) {
+          viewDom.style.cursor = "";
+        }
       };
 
       const onMouseUp = (event: MouseEvent) => {
         if (!dragging || !activeRow) return;
+        const finalHeight = applyRowHeight(activeRow, event.clientY);
         dragging = false;
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+        viewDom.style.cursor = "";
+        const cell = activeRow.querySelector("td, th");
+        activeRow = null;
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
-        const finalHeight = applyRowHeight(activeRow, event.clientY);
-        const cell = activeRow.querySelector("td, th");
         if (!cell) return;
-        const cellPos = editor.view.posAtDOM(cell, 0);
         try {
+          const cellPos = editor.view.posAtDOM(cell, 0);
           const chain = editor.chain().focus().setTextSelection(cellPos) as any;
           chain.setRowHeight(finalHeight).run();
         } catch (err) {
@@ -562,25 +589,31 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
       const onMouseDown = (event: MouseEvent) => {
         const target = event.target as HTMLElement;
-        const row = target.closest("tr") as HTMLTableRowElement | null;
+        // Don't intercept column-resize handles
+        if (target.classList.contains("column-resize-handle")) return;
+        const cell = target.closest("td, th") as HTMLTableCellElement | null;
+        if (!cell) return;
+        const row = cell.closest("tr") as HTMLTableRowElement | null;
         if (!row || !row.closest("table")) return;
         const rect = row.getBoundingClientRect();
         const offsetFromBottom = rect.bottom - event.clientY;
-        if (offsetFromBottom > 8 || offsetFromBottom < 0) {
-          return;
-        }
+        if (offsetFromBottom > EDGE_ZONE || offsetFromBottom < 0) return;
         event.preventDefault();
         activeRow = row;
         dragging = true;
         startY = event.clientY;
         startHeight = rect.height;
+        document.body.style.cursor = "row-resize";
+        document.body.style.userSelect = "none";
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
       };
 
       viewDom.addEventListener("mousedown", onMouseDown);
+      viewDom.addEventListener("mousemove", onMouseMove);
       return () => {
         viewDom.removeEventListener("mousedown", onMouseDown);
+        viewDom.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
       };
@@ -1035,79 +1068,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       };
     }, [editor]);
 
-    // Row height resize: drag bottom edge of table cells to change row height
-    useEffect(() => {
-      if (!editor) return;
-      const editorDom = editor.view.dom;
-      const EDGE_ZONE = 5; // px from bottom edge to trigger resize
-      let resizing = false;
-      let startY = 0;
-      let startHeight = 0;
-      let targetRow: HTMLTableRowElement | null = null;
-
-      const handleMouseDown = (e: MouseEvent) => {
-        const cell = (e.target as HTMLElement).closest?.(
-          "td, th",
-        ) as HTMLTableCellElement | null;
-        if (!cell) return;
-        const rect = cell.getBoundingClientRect();
-        if (rect.bottom - e.clientY > EDGE_ZONE) return;
-
-        // Start resizing
-        e.preventDefault();
-        resizing = true;
-        targetRow = cell.closest("tr");
-        if (!targetRow) return;
-        startY = e.clientY;
-        startHeight = targetRow.offsetHeight;
-        document.body.style.cursor = "row-resize";
-        document.body.style.userSelect = "none";
-      };
-
-      const handleMouseMove = (e: MouseEvent) => {
-        if (resizing && targetRow) {
-          const delta = e.clientY - startY;
-          const newHeight = Math.max(24, startHeight + delta);
-          targetRow.style.height = `${newHeight}px`;
-          // Apply to all cells in the row
-          targetRow.querySelectorAll("td, th").forEach((c) => {
-            (c as HTMLElement).style.height = `${newHeight}px`;
-          });
-          return;
-        }
-        // Show row-resize cursor near bottom edge of cells
-        const cell = (e.target as HTMLElement).closest?.(
-          "td, th",
-        ) as HTMLTableCellElement | null;
-        if (cell) {
-          const rect = cell.getBoundingClientRect();
-          if (rect.bottom - e.clientY <= EDGE_ZONE) {
-            cell.style.cursor = "row-resize";
-          } else {
-            cell.style.cursor = "";
-          }
-        }
-      };
-
-      const handleMouseUp = () => {
-        if (resizing) {
-          resizing = false;
-          targetRow = null;
-          document.body.style.cursor = "";
-          document.body.style.userSelect = "";
-        }
-      };
-
-      editorDom.addEventListener("mousedown", handleMouseDown);
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-
-      return () => {
-        editorDom.removeEventListener("mousedown", handleMouseDown);
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-      };
-    }, [editor]);
+    // (row resize handled by the unified drag-to-resize handler above)
 
     // Update content when prop changes
     useEffect(() => {
