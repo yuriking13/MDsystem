@@ -7,6 +7,7 @@ import './TabulatorModal.css';
 export type TableEditorPayload = {
   data: string[][];
   colWidths?: number[];
+  rowHeights?: number[];
   statisticId?: string | null;
 };
 
@@ -14,6 +15,7 @@ interface TableEditorModalProps {
   open: boolean;
   initialData: string[][];
   initialColWidths?: number[];
+  initialRowHeights?: number[];
   onClose: () => void;
   onSave: (payload: TableEditorPayload) => void;
 }
@@ -61,13 +63,22 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
   open,
   initialData,
   initialColWidths,
+  initialRowHeights,
   onClose,
   onSave,
 }) => {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const tableRef = useRef<any | null>(null);
-  const [columnsCount, setColumnsCount] = useState<number>(0);
-  const ModalAny = Modal as any;
+  const [selectedRowIdx, setSelectedRowIdx] = useState<number | null>(null);
+
+  // Handle row height change
+  const handleRowHeightChange = (height: number) => {
+    const table = tableRef.current;
+    if (!table || selectedRowIdx === null) return;
+    const rows = table.rowManager?.rows || [];
+    const row = rows[selectedRowIdx];
+    if (row) {
+      row.getElement?.().style.height = `${height}px`;
+    }
+  };
   const ModalHeader = ModalAny?.Header || ((props: any) => <div {...props} />);
   const ModalBody = ModalAny?.Body || ((props: any) => <div {...props} />);
   const ModalFooter = ModalAny?.Footer || ((props: any) => <div {...props} />);
@@ -145,7 +156,15 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     const data = rowsToData(rows, cols);
     const colDefs = table.getColumns();
     const colWidths = colDefs.map((c: any) => c.getWidth());
-    onSave({ data, colWidths });
+    
+    // Get row heights from Tabulator rows
+    const rowElements = table.rowManager?.rows || [];
+    const rowHeights = rowElements.map((row: any) => {
+      const height = row.getElement?.()?.offsetHeight;
+      return height ? Math.max(20, Math.round(height)) : 30;
+    });
+    
+    onSave({ data, colWidths, rowHeights });
   };
 
   return (
@@ -160,6 +179,27 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
             <Button size="sm" color="gray" onClick={handleAddColumn}>
               + Колонка
             </Button>
+          </div>
+          <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <label htmlFor="row-select" style={{ marginRight: '8px', fontSize: '14px' }}>
+              Высота строки:
+            </label>
+            <input
+              id="row-select"
+              type="number"
+              min="20"
+              max="200"
+              value={selectedRowIdx !== null ? 30 : ''}
+              placeholder="Высота (px)"
+              onChange={(e) => handleRowHeightChange(Number(e.target.value))}
+              style={{
+                padding: '4px 8px',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                fontSize: '14px',
+                width: '100px',
+              }}
+            />
           </div>
         </div>
         <div className="tabulator-container" ref={containerRef} />

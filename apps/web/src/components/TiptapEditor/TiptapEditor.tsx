@@ -14,8 +14,8 @@ import TextAlign from "@tiptap/extension-text-align";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
-import TableRow from "@tiptap/extension-table-row";
 import { CustomTable } from "./extensions/CustomTable";
+import { CustomTableRow } from "./extensions/CustomTableRow";
 import { CustomTableCell } from "./extensions/CustomTableCell";
 import { CustomTableHeader } from "./extensions/CustomTableHeader";
 import { TextStyle } from "@tiptap/extension-text-style";
@@ -50,6 +50,9 @@ import {
   type TrackChangeAttrs,
 } from "./extensions/TrackChangesMark";
 import StatisticEditModal from "../StatisticEditModal";
+import TableEditorModal, {
+  type TableEditorPayload,
+} from "./TableEditorModal";
 import type { ProjectStatistic, DataClassification } from "../../lib/api";
 import type { TableData, ChartConfig } from "../ChartFromTable";
 import { IconChatBubbleQuote, IconClose, IconPlus } from "../FlowbiteIcons";
@@ -223,6 +226,7 @@ type StatEditorState = {
   tablePos: number;
   tableNodeSize: number;
   colWidths?: number[];
+  rowHeights?: number[];
 };
 
 export interface TiptapEditorHandle {
@@ -271,6 +275,14 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const [commentText, setCommentText] = useState("");
     const [statEditorState, setStatEditorState] =
       useState<StatEditorState | null>(null);
+    const [showTableEditor, setShowTableEditor] = useState(false);
+    const [tableEditorData, setTableEditorData] = useState<{
+      data: string[][];
+      colWidths?: number[];
+      rowHeights?: number[];
+      pos: number;
+      nodeSize: number;
+    } | null>(null);
     const [headings, setHeadings] = useState<EditorHeading[]>([]);
     const [currentStyle, setCurrentStyle] =
       useState<CitationStyle>(citationStyle);
@@ -377,7 +389,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
 
       // Simple extensions
-      if (TableRow) extList.push(TableRow);
+      if (CustomTableRow) extList.push(CustomTableRow);
       if (CustomTableCell) extList.push(CustomTableCell);
       if (CustomTableHeader) extList.push(CustomTableHeader);
       if (TextStyle) extList.push(TextStyle);
@@ -525,6 +537,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       data: string[][],
       widths?: number[],
       statisticId?: string | null,
+      rowHeights?: number[],
     ) => {
       const cols = data.reduce((m, r) => Math.max(m, r.length), 0);
       let html = '<table class="tiptap-table"';
@@ -542,7 +555,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       html += "</colgroup>";
 
       data.forEach((row, rowIdx) => {
-        html += "<tr>";
+        const rowHeight = rowHeights?.[rowIdx];
+        const styleAttr = rowHeight ? ` style="height: ${rowHeight}px;"` : "";
+        html += `<tr${styleAttr}>`;
         for (let c = 0; c < cols; c++) {
           const text = row[c] ?? "";
           const tag = rowIdx === 0 ? "th" : "td";
@@ -572,10 +587,15 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       const { node, pos, dom } = info;
       const rowsData: string[][] = [];
       const colWidths: number[] = [];
+      const rowHeights: number[] = [];
 
       node.forEach((rowNode: any) => {
         if (rowNode?.type?.name === "tableRow") {
           const rowArr: string[] = [];
+          const rowHeight = rowNode.attrs?.rowHeight;
+          if (rowHeight) {
+            rowHeights.push(rowHeight);
+          }
           rowNode.forEach((cellNode: any, colIdx: number) => {
             if (
               cellNode?.type?.name === "tableCell" ||
@@ -592,74 +612,41 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         }
       });
 
-      const statisticId = dom?.getAttribute("data-statistic-id") || null;
-      const headers = rowsData[0] || [];
-      const dataRows = rowsData.slice(1);
-      const maxCols = headers.reduce(
-        (m, _, idx) => Math.max(m, idx + 1),
-        dataRows.reduce((m, r) => Math.max(m, r.length), 0),
-      );
-      const normalizedHeaders = Array.from(
-        { length: maxCols },
-        (_, i) => headers[i] || `Колонка ${i + 1}`,
-      );
-      const normalizedRows = dataRows.map((r) =>
-        Array.from({ length: maxCols }, (_, i) => r[i] || ""),
-      );
-
-      let baseStatistic: ProjectStatistic = {
-        id: statisticId || "",
-        type: "table",
-        title: statisticId
-          ? "Таблица"
-          : `Таблица ${new Date().toLocaleString("ru-RU")}`,
-        description: "Автоматически создана в документе",
-        config: {
-          type: "bar",
-          title: statisticId
-            ? "Таблица"
-            : `Таблица ${new Date().toLocaleString("ru-RU")}`,
-          labelColumn: 0,
-          dataColumns:
-            maxCols > 1
-              ? Array.from({ length: maxCols - 1 }, (_, i) => i + 1)
-              : [0],
-          bins: 10,
-          xColumn: maxCols > 1 ? 1 : 0,
-          yColumn: maxCols > 2 ? 2 : 0,
-        } as ChartConfig,
-        table_data: {
-          headers: normalizedHeaders,
-          rows: normalizedRows,
-        },
-        data_classification: {
-          variableType: "quantitative",
-          subType: "continuous",
-        },
-        chart_type: "bar",
-        order_index: 0,
-        created_at: "",
-        updated_at: "",
-      };
-
-      if (statisticId && onLoadStatistic) {
-        try {
-          const loaded = await onLoadStatistic(statisticId);
-          if (loaded) {
-            baseStatistic = loaded;
-          }
-        } catch (e) {
-          console.error("Failed to load statistic for editor", e);
-        }
-      }
-
-      setStatEditorState({
-        statistic: baseStatistic,
-        tablePos: pos,
-        tableNodeSize: node.nodeSize,
-        colWidths,
+      // Open table editor modal
+      setTableEditorData({
+        data: rowsData,
+        colWidths: colWidths.length > 0 ? colWidths : undefined,
+        rowHeights: rowHeights.length > 0 ? rowHeights : undefined,
+        pos,
+        nodeSize: node.nodeSize,
       });
-    }, [editor, getSelectedTableInfo, onLoadStatistic]);
+      setShowTableEditor(true);
+    }, [editor, getSelectedTableInfo]);
+
+    const handleSaveTableEditor = useCallback(
+      (payload: TableEditorPayload) => {
+        if (!editor || !tableEditorData) return;
+
+        const { pos, nodeSize } = tableEditorData;
+        const html = buildTableHtml(
+          [payload.data[0], ...payload.data.slice(1)] || [],
+          payload.colWidths,
+          null,
+          payload.rowHeights,
+        );
+
+        editor
+          .chain()
+          .focus()
+          .setTextSelection({ from: pos, to: pos + nodeSize })
+          .insertContent(html)
+          .run();
+
+        setShowTableEditor(false);
+        setTableEditorData(null);
+      },
+      [editor, tableEditorData],
+    );
 
     const handleSaveStatisticEditor = useCallback(
       async (updates: {
@@ -672,7 +659,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }) => {
         if (!editor || !statEditorState) return;
 
-        const { statistic, tablePos, tableNodeSize, colWidths } =
+        const { statistic, tablePos, tableNodeSize, colWidths, rowHeights } =
           statEditorState;
         const currentTableData =
           updates.tableData || (statistic.table_data as TableData);
@@ -703,6 +690,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           dataArray,
           colWidths,
           statisticId || statistic.id || null,
+          rowHeights,
         );
 
         editor
@@ -1503,6 +1491,21 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               </div>
             </div>
           </div>
+        )}
+
+        {/* Table Editor Modal */}
+        {showTableEditor && tableEditorData && (
+          <TableEditorModal
+            open={showTableEditor}
+            initialData={tableEditorData.data}
+            initialColWidths={tableEditorData.colWidths}
+            initialRowHeights={tableEditorData.rowHeights}
+            onClose={() => {
+              setShowTableEditor(false);
+              setTableEditorData(null);
+            }}
+            onSave={handleSaveTableEditor}
+          />
         )}
       </div>
     );

@@ -544,6 +544,43 @@ export default function TiptapToolbar({
                 >
                   ⊟ Переключить заголовок строки
                 </button>
+
+                <div className="toolbar-dropdown-sep" />
+
+                <div className="toolbar-dropdown-label">Высота строки</div>
+                <button
+                  onClick={() => {
+                    const height = prompt(
+                      "Введите высоту строки в пикселях (20-200):",
+                      "30",
+                    );
+                    if (height) {
+                      const numHeight = Math.max(
+                        20,
+                        Math.min(200, Number(height)),
+                      );
+                      (editor.chain().focus() as any)
+                        .setRowHeight(numHeight)
+                        .run();
+                      setShowTableEditMenu(false);
+                    }
+                  }}
+                  className="toolbar-dropdown-item"
+                >
+                  📏 Установить высоту
+                </button>
+                <button
+                  onClick={() => {
+                    (editor.chain().focus() as any).deleteRowHeight().run();
+                    setShowTableEditMenu(false);
+                  }}
+                  className="toolbar-dropdown-item"
+                >
+                  ↺ Сбросить высоту
+                </button>
+
+                <div className="toolbar-dropdown-sep" />
+
                 <button
                   onClick={() => {
                     editor.chain().focus().deleteTable().run();

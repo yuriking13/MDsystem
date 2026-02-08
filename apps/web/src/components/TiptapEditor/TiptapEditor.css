@@ -912,6 +912,21 @@
   /* Позволяем таблице расширяться через inline style min-width */
 }
 
+/* Table rows with custom height support */
+.tiptap-editor table tr,
+.tiptap-editor .tiptap table tr,
+.tiptap-table tr {
+  /* Height can be controlled via inline style */
+  transition: height 0.15s ease;
+}
+
+.tiptap-editor table tr[style*="height"],
+.tiptap-editor .tiptap table tr[style*="height"],
+.tiptap-table tr[style*="height"] {
+  /* Allow inline height styles to be visible */
+  display: table-row;
+}
+
 .tiptap-editor table td,
 .tiptap-editor table th,
 .tiptap-editor .tiptap table td,
