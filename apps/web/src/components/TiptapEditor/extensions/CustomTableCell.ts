@@ -31,20 +31,6 @@ export const CustomTableCell = TableCell.extend({
           return {};
         },
       },
-      // Высота ячейки (для ручного изменения высоты строки)
-      rowHeight: {
-        default: null,
-        parseHTML: (element) => {
-          const h =
-            element.style.height || element.getAttribute("data-row-height");
-          if (!h) return null;
-          const parsed = parseInt(h, 10);
-          return parsed && parsed >= 10 ? parsed : null;
-        },
-        renderHTML: (attributes) => {
-          return {};
-        },
-      },
     };
   },
 
@@ -64,19 +50,12 @@ export const CustomTableCell = TableCell.extend({
     if (attrs.verticalAlign && attrs.verticalAlign !== "top") {
       styleParts.push(`vertical-align: ${attrs.verticalAlign}`);
     }
-    if (attrs.rowHeight && attrs.rowHeight >= 10) {
-      styleParts.push(`height: ${attrs.rowHeight}px`);
-      styleParts.push(`min-height: ${attrs.rowHeight}px`);
-    }
 
     const mergedAttrs: Record<string, any> = {
       ...HTMLAttributes,
       ...(styleParts.length ? { style: styleParts.join("; ") } : {}),
       ...(attrs.backgroundColor
         ? { "data-bgcolor": attrs.backgroundColor }
-        : {}),
-      ...(attrs.rowHeight
-        ? { "data-row-height": String(attrs.rowHeight) }
         : {}),
     };
 

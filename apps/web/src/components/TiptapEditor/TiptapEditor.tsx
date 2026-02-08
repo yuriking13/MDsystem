@@ -573,15 +573,29 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
         viewDom.style.cursor = "";
-        const cell = activeRow.querySelector("td, th");
+        const row = activeRow;
         activeRow = null;
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
-        if (!cell) return;
+        // Persist height to ProseMirror via direct transaction (no chain/focus needed)
         try {
-          const cellPos = editor.view.posAtDOM(cell, 0);
-          const chain = editor.chain().focus().setTextSelection(cellPos) as any;
-          chain.setRowHeight(finalHeight).run();
+          const firstCell = row.querySelector("td, th");
+          if (!firstCell) return;
+          const pos = editor.view.posAtDOM(firstCell, 0);
+          const $pos = editor.state.doc.resolve(pos);
+          for (let d = $pos.depth; d >= 0; d--) {
+            const node = $pos.node(d);
+            if (node.type.name === "tableRow") {
+              const rowPos = $pos.before(d);
+              const safeHeight = Math.max(10, Math.round(finalHeight));
+              const tr = editor.state.tr.setNodeMarkup(rowPos, undefined, {
+                ...node.attrs,
+                rowHeight: safeHeight,
+              });
+              editor.view.dispatch(tr);
+              break;
+            }
+          }
         } catch (err) {
           console.error("Failed to set row height during drag", err);
         }

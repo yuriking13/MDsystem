@@ -214,13 +214,18 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
         });
       });
 
-      // Row click to select
-      table.on("rowClick", (_e: any, row: any) => {
+      // Row click to select (use both rowClick and cellClick for reliability)
+      const handleRowSelect = (row: any) => {
         const rows = table.getRows();
         const idx = rows.indexOf(row);
         if (idx >= 0) {
           selectRow(idx);
         }
+      };
+      table.on("rowClick", (_e: any, row: any) => handleRowSelect(row));
+      table.on("cellClick", (_e: any, cell: any) => {
+        const row = cell.getRow();
+        if (row) handleRowSelect(row);
       });
 
       tableRef.current = table;
