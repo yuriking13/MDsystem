@@ -940,7 +940,7 @@
   text-align: left;
   vertical-align: top;
   position: relative;
-  min-height: 32px;
+  min-height: 10px;
   /* Предотвращаем выход текста за границы ячейки */
   word-break: break-word;
   overflow-wrap: break-word;
@@ -1038,7 +1038,7 @@
 /* Table wrapper для ресайза - строго в границах страницы */
 .tiptap-editor .tableWrapper,
 .ProseMirror .tableWrapper {
-  overflow-x: auto !important;
+  overflow-x: hidden !important;
   overflow-y: visible !important;
   margin: 1em 0;
   position: relative;
@@ -1074,7 +1074,7 @@
 /* Override pagination styles that break colgroups/grids */
 .rm-with-pagination .tableWrapper {
   max-width: 100%;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .rm-with-pagination .tableWrapper table {

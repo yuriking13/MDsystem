@@ -37,7 +37,9 @@ export const CustomTableCell = TableCell.extend({
         parseHTML: (element) => {
           const h =
             element.style.height || element.getAttribute("data-row-height");
-          return h ? parseInt(h, 10) || null : null;
+          const parsed = h ? parseInt(h, 10) || null : null;
+          // Enforce minimum height of 10px
+          return parsed ? Math.max(10, parsed) : null;
         },
         renderHTML: (attributes) => {
           return {};
