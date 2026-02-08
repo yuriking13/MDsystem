@@ -83,7 +83,10 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     const rows = table.rowManager?.rows || [];
     const row = rows[selectedRowIdx];
     if (row) {
-      row.getElement?.().style.height = `${height}px`;
+      const el = row.getElement?.();
+      if (el) {
+        el.style.height = `${height}px`;
+      }
     }
   };
 
