@@ -916,20 +916,30 @@
   overflow: hidden !important;
 }
 
-/* Table rows with custom height support */
+/* Table rows with custom height support - specific selectors only */
 .tiptap-editor table tr,
 .tiptap-editor .tiptap table tr,
 .tiptap-table tr {
   transition: height 0.15s ease;
 }
 
-.tiptap-editor table tr[style*="height"],
-.tiptap-editor .tiptap table tr[style*="height"],
+/* IMPORTANT: Specific selectors for rows with set height */
 .tiptap-editor table tr[data-row-height],
 .tiptap-editor .tiptap table tr[data-row-height],
-.tiptap-table tr[style*="height"],
 .tiptap-table tr[data-row-height] {
-  display: table-row;
+  display: table-row !important;
+  /* Allow inline styles to work */
+  height: auto;
+  min-height: 10px;
+}
+
+/* Additional: For rows with inline height style */
+.tiptap-editor table tr[style*="height"],
+.tiptap-editor .tiptap table tr[style*="height"],
+.tiptap-table tr[style*="height"] {
+  display: table-row !important;
+  box-sizing: border-box;
+  /* Don't override height - let inline style win */
 }
 
 .tiptap-editor table td,
@@ -958,6 +968,13 @@
 .tiptap-table tr {
   min-height: 10px;
   box-sizing: border-box;
+}
+
+/* CRITICAL: Override aggressive .ProseMirror selector */
+.tiptap-editor .ProseMirror table tr[data-row-height],
+.ProseMirror .tableWrapper tr[data-row-height] {
+  min-height: inherit !important;
+  height: auto;
 }
 
 .tiptap-editor table th,
@@ -1192,6 +1209,8 @@
 .tiptap-editor table tr[data-row-height] > td,
 .tiptap-editor table tr[data-row-height] > th {
   box-sizing: border-box;
+  min-height: inherit;
+  height: 100%;
 }
 
 /* Table numbering */
