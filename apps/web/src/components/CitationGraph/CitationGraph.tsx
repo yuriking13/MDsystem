@@ -4418,6 +4418,9 @@ export default function CitationGraph({ projectId }: Props) {
                     onSelect={() => {}}
                     onStatusChange={() => {}}
                     language={globalLang}
+                    showCheckbox={false}
+                    showAbstractToggle={false}
+                    showActions={false}
                   />
                 </div>
               )}

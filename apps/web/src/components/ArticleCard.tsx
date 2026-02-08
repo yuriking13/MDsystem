@@ -58,6 +58,9 @@ interface ArticleCardProps {
   onCopyToClipboard?: (id: string) => void;
   language?: "en" | "ru";
   compact?: boolean;
+  showCheckbox?: boolean;
+  showAbstractToggle?: boolean;
+  showActions?: boolean;
   className?: string;
 }
 
@@ -114,6 +117,9 @@ export default function ArticleCard({
   onCopyToClipboard,
   language = "en",
   compact = false,
+  showCheckbox = true,
+  showAbstractToggle = true,
+  showActions: showActionsProp = true,
   className,
 }: ArticleCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -157,13 +163,15 @@ export default function ArticleCard({
         {/* Top Row: Checkbox + Badges */}
         <div className="article-card-top">
           {/* Selection Checkbox */}
-          <label className="article-checkbox">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => onSelect(article.id)}
-            />
-          </label>
+          {showCheckbox && (
+            <label className="article-checkbox">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => onSelect(article.id)}
+              />
+            </label>
+          )}
 
           {/* Badges */}
           <div className="article-badges">
@@ -252,7 +260,7 @@ export default function ArticleCard({
             >
               {displayAbstract}
             </p>
-            {displayAbstract.length > 150 && (
+            {displayAbstract.length > 150 && showAbstractToggle && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="article-abstract-toggle"
@@ -275,86 +283,88 @@ export default function ArticleCard({
       </div>
 
       {/* Actions Bar */}
-      <div
-        className={cn(
-          "article-actions",
-          (showActions || isSelected) && "article-actions--visible",
-        )}
-      >
-        {/* Status Actions */}
-        <div className="article-status-actions">
-          <button
-            onClick={() => onStatusChange(article.id, "selected")}
-            disabled={article.status === "selected"}
-            className={cn(
-              "article-action-btn",
-              article.status === "selected"
-                ? "article-action-btn--active-green"
-                : "article-action-btn--green",
-            )}
-            title="Select"
-          >
-            <CheckIcon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onStatusChange(article.id, "candidate")}
-            disabled={article.status === "candidate"}
-            className={cn(
-              "article-action-btn",
-              article.status === "candidate"
-                ? "article-action-btn--active-amber"
-                : "article-action-btn--amber",
-            )}
-            title="Candidate"
-          >
-            <BeakerIcon className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => onStatusChange(article.id, "excluded")}
-            disabled={article.status === "excluded"}
-            className={cn(
-              "article-action-btn",
-              article.status === "excluded"
-                ? "article-action-btn--active-rose"
-                : "article-action-btn--rose",
-            )}
-            title="Exclude"
-          >
-            <XMarkIcon className="w-4 h-4" />
-          </button>
-        </div>
+      {showActionsProp && (
+        <div
+          className={cn(
+            "article-actions",
+            (showActions || isSelected) && "article-actions--visible",
+          )}
+        >
+          {/* Status Actions */}
+          <div className="article-status-actions">
+            <button
+              onClick={() => onStatusChange(article.id, "selected")}
+              disabled={article.status === "selected"}
+              className={cn(
+                "article-action-btn",
+                article.status === "selected"
+                  ? "article-action-btn--active-green"
+                  : "article-action-btn--green",
+              )}
+              title="Select"
+            >
+              <CheckIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onStatusChange(article.id, "candidate")}
+              disabled={article.status === "candidate"}
+              className={cn(
+                "article-action-btn",
+                article.status === "candidate"
+                  ? "article-action-btn--active-amber"
+                  : "article-action-btn--amber",
+              )}
+              title="Candidate"
+            >
+              <BeakerIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => onStatusChange(article.id, "excluded")}
+              disabled={article.status === "excluded"}
+              className={cn(
+                "article-action-btn",
+                article.status === "excluded"
+                  ? "article-action-btn--active-rose"
+                  : "article-action-btn--rose",
+              )}
+              title="Exclude"
+            >
+              <XMarkIcon className="w-4 h-4" />
+            </button>
+          </div>
 
-        {/* Utility Actions */}
-        <div className="article-util-actions">
-          {onTranslate && !article.titleRu && (
-            <button
-              onClick={() => onTranslate(article.id)}
-              className="article-action-btn article-action-btn--default"
-              title="Translate"
-            >
-              <LanguageIcon className="w-4 h-4" />
-            </button>
-          )}
-          {onDetectStats && !article.stats && (
-            <button
-              onClick={() => onDetectStats(article.id)}
-              className="article-action-btn article-action-btn--default"
-              title="Detect Statistics"
-            >
-              <ChartBarIcon className="w-4 h-4" />
-            </button>
-          )}
-          {onCopyToClipboard && (
-            <button
-              onClick={() => onCopyToClipboard(article.id)}
-              className="article-action-btn article-action-btn--default"
-              title="Copy Citation"
-            >
-              <ClipboardDocumentIcon className="w-4 h-4" />
-            </button>
-          )}
+          {/* Utility Actions */}
+          <div className="article-util-actions">
+            {onTranslate && !article.titleRu && (
+              <button
+                onClick={() => onTranslate(article.id)}
+                className="article-action-btn article-action-btn--default"
+                title="Translate"
+              >
+                <LanguageIcon className="w-4 h-4" />
+              </button>
+            )}
+            {onDetectStats && !article.stats && (
+              <button
+                onClick={() => onDetectStats(article.id)}
+                className="article-action-btn article-action-btn--default"
+                title="Detect Statistics"
+              >
+                <ChartBarIcon className="w-4 h-4" />
+              </button>
+            )}
+            {onCopyToClipboard && (
+              <button
+                onClick={() => onCopyToClipboard(article.id)}
+                className="article-action-btn article-action-btn--default"
+                title="Copy Citation"
+              >
+                <ClipboardDocumentIcon className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </article>
   );
 }
