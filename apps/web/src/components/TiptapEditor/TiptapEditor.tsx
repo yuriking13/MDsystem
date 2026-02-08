@@ -584,20 +584,22 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           const rowId = row.getAttribute("data-row-id");
           let foundAndUpdated = false;
           let targetPos: number | null = null;
-          let targetAttrs: Record<string, any> | null = null;
+          let targetAttrs: Record<string, any> = {};
+          let hasTargetAttrs = false;
 
           if (rowId) {
             editor.state.doc.descendants((node: any, pos: number) => {
               if (node.type.name === "tableRow" && node.attrs.rowId === rowId) {
                 targetPos = pos;
-                targetAttrs = node.attrs;
+                targetAttrs = node.attrs as Record<string, any>;
+                hasTargetAttrs = true;
                 return false;
               }
               return true;
             });
           }
 
-          if (targetPos !== null && targetAttrs) {
+          if (targetPos !== null && hasTargetAttrs) {
             const tr = editor.state.tr.setNodeMarkup(targetPos, undefined, {
               ...targetAttrs,
               rowHeight: safeHeight,
