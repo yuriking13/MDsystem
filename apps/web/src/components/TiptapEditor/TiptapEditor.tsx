@@ -821,14 +821,31 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         }
       };
 
-      const onMouseDown = (event: MouseEvent) => {
-        const target = event.target as HTMLElement | null;
-        const handle = target?.closest?.(".column-resize-handle");
+      const getResizeHandle = (target: EventTarget | null) => {
+        if (!(target instanceof HTMLElement)) return null;
+        return target.closest(".column-resize-handle");
+      };
+
+      const addDragListeners = () => {
+        document.addEventListener("mousemove", onMouseMove, true);
+        document.addEventListener("mouseup", onMouseUp, true);
+        document.addEventListener("pointermove", onMouseMove, true);
+        document.addEventListener("pointerup", onMouseUp, true);
+      };
+
+      const removeDragListeners = () => {
+        document.removeEventListener("mousemove", onMouseMove, true);
+        document.removeEventListener("mouseup", onMouseUp, true);
+        document.removeEventListener("pointermove", onMouseMove, true);
+        document.removeEventListener("pointerup", onMouseUp, true);
+      };
+
+      const onMouseDown = (event: MouseEvent | PointerEvent) => {
+        const handle = getResizeHandle(event.target);
         if (!handle) return;
         activeTable = handle.closest("table");
         if (!activeTable) return;
-        document.addEventListener("mousemove", onMouseMove);
-        document.addEventListener("mouseup", onMouseUp);
+        addDragListeners();
       };
 
       const onMouseMove = () => {
@@ -850,16 +867,16 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           window.cancelAnimationFrame(rafId);
           rafId = null;
         }
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
+        removeDragListeners();
         requestAnimationFrame(() => clampTableToContainer(table, true));
       };
 
-      viewDom.addEventListener("mousedown", onMouseDown);
+      viewDom.addEventListener("mousedown", onMouseDown, true);
+      viewDom.addEventListener("pointerdown", onMouseDown, true);
       return () => {
-        viewDom.removeEventListener("mousedown", onMouseDown);
-        document.removeEventListener("mousemove", onMouseMove);
-        document.removeEventListener("mouseup", onMouseUp);
+        viewDom.removeEventListener("mousedown", onMouseDown, true);
+        viewDom.removeEventListener("pointerdown", onMouseDown, true);
+        removeDragListeners();
         if (rafId !== null) {
           window.cancelAnimationFrame(rafId);
         }
