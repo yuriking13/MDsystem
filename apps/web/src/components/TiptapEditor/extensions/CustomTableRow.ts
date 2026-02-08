@@ -1,4 +1,8 @@
+import { Plugin } from "prosemirror-state";
 import TableRow from "@tiptap/extension-table-row";
+
+const createRowId = () =>
+  `row-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
 export const CustomTableRow = TableRow.extend({
   addAttributes() {
@@ -27,7 +31,46 @@ export const CustomTableRow = TableRow.extend({
           };
         },
       },
+      rowId: {
+        default: null,
+        parseHTML: (element) => {
+          return element.getAttribute("data-row-id") || createRowId();
+        },
+        renderHTML: (attributes) => {
+          if (!attributes.rowId) {
+            return {};
+          }
+          return { "data-row-id": attributes.rowId };
+        },
+      },
     };
+  },
+
+  addProseMirrorPlugins() {
+    const parentPlugins = this.parent?.() || [];
+    const tableRowName = this.name;
+    return [
+      ...parentPlugins,
+      new Plugin({
+        appendTransaction: (transactions, _oldState, newState) => {
+          if (!transactions.some((tr) => tr.docChanged)) return null;
+          let tr = newState.tr;
+          let changed = false;
+
+          newState.doc.descendants((node, pos) => {
+            if (node.type.name === tableRowName && !node.attrs.rowId) {
+              tr = tr.setNodeMarkup(pos, undefined, {
+                ...node.attrs,
+                rowId: createRowId(),
+              });
+              changed = true;
+            }
+          });
+
+          return changed ? tr : null;
+        },
+      }),
+    ];
   },
 
   addCommands() {

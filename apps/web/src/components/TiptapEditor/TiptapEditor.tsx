@@ -537,6 +537,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         const delta = clientY - startY;
         const newHeight = Math.max(10, startHeight + delta);
         row.style.height = `${newHeight}px`;
+        row.style.minHeight = `${newHeight}px`;
         return newHeight;
       };
 
@@ -579,21 +580,50 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         document.removeEventListener("mouseup", onMouseUp);
         // Persist height to ProseMirror via direct transaction (no chain/focus needed)
         try {
-          const firstCell = row.querySelector("td, th");
-          if (!firstCell) return;
-          const pos = editor.view.posAtDOM(firstCell, 0);
-          const $pos = editor.state.doc.resolve(pos);
-          for (let d = $pos.depth; d >= 0; d--) {
-            const node = $pos.node(d);
-            if (node.type.name === "tableRow") {
-              const rowPos = $pos.before(d);
-              const safeHeight = Math.max(10, Math.round(finalHeight));
-              const tr = editor.state.tr.setNodeMarkup(rowPos, undefined, {
-                ...node.attrs,
-                rowHeight: safeHeight,
-              });
-              editor.view.dispatch(tr);
-              break;
+          const safeHeight = Math.max(10, Math.round(finalHeight));
+          const rowId = row.getAttribute("data-row-id");
+          let foundAndUpdated = false;
+          let targetPos: number | null = null;
+          let targetAttrs: Record<string, any> | null = null;
+
+          if (rowId) {
+            editor.state.doc.descendants((node: any, pos: number) => {
+              if (node.type.name === "tableRow" && node.attrs.rowId === rowId) {
+                targetPos = pos;
+                targetAttrs = node.attrs;
+                return false;
+              }
+              return true;
+            });
+          }
+
+          if (targetPos !== null && targetAttrs) {
+            const tr = editor.state.tr.setNodeMarkup(targetPos, undefined, {
+              ...targetAttrs,
+              rowHeight: safeHeight,
+              rowId,
+            });
+            editor.view.dispatch(tr);
+            foundAndUpdated = true;
+          }
+
+          if (!foundAndUpdated) {
+            const firstCell = row.querySelector("td, th");
+            if (!firstCell) return;
+            const pos = editor.view.posAtDOM(firstCell, 0);
+            const $pos = editor.state.doc.resolve(pos);
+            for (let d = $pos.depth; d >= 0; d--) {
+              const node = $pos.node(d);
+              if (node.type.name === "tableRow") {
+                const rowPos = $pos.before(d);
+                const tr = editor.state.tr.setNodeMarkup(rowPos, undefined, {
+                  ...node.attrs,
+                  rowHeight: safeHeight,
+                  rowId: rowId || node.attrs.rowId,
+                });
+                editor.view.dispatch(tr);
+                break;
+              }
             }
           }
         } catch (err) {
