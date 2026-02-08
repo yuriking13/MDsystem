@@ -665,6 +665,136 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       };
     }, [editor]);
 
+    // Keep table width within page after column resize
+    useEffect(() => {
+      if (!editor || !editor.view) return;
+      const viewDom = editor.view.dom;
+      let activeTable: HTMLTableElement | null = null;
+
+      const normalizeTableColumns = (table: HTMLTableElement) => {
+        const wrapper = table.closest(".tableWrapper") as HTMLElement | null;
+        const containerWidth =
+          wrapper?.clientWidth || table.parentElement?.clientWidth || 0;
+        if (!containerWidth) return;
+
+        const cols = Array.from(
+          table.querySelectorAll("colgroup col"),
+        ) as HTMLTableColElement[];
+        if (!cols.length) return;
+
+        const widths = cols.map((col) => {
+          const styleWidth = col.style.width;
+          const parsed = parseFloat(styleWidth);
+          if (!Number.isNaN(parsed) && parsed > 0) {
+            return parsed;
+          }
+          const computed = window.getComputedStyle(col).width;
+          const computedParsed = parseFloat(computed);
+          return !Number.isNaN(computedParsed) && computedParsed > 0
+            ? computedParsed
+            : 0;
+        });
+
+        const total = widths.reduce((sum, w) => sum + w, 0);
+        if (!total || total <= containerWidth + 1) return;
+
+        const minWidth = 50;
+        const scale = containerWidth / total;
+        let scaled = widths.map((w) => Math.max(minWidth, Math.round(w * scale)));
+        let scaledTotal = scaled.reduce((sum, w) => sum + w, 0);
+
+        if (scaledTotal > containerWidth) {
+          let over = scaledTotal - containerWidth;
+          const order = scaled
+            .map((w, idx) => ({ w, idx }))
+            .sort((a, b) => b.w - a.w);
+          for (const { idx } of order) {
+            if (over <= 0) break;
+            const reducible = scaled[idx] - minWidth;
+            if (reducible <= 0) continue;
+            const reduceBy = Math.min(reducible, over);
+            scaled[idx] -= reduceBy;
+            over -= reduceBy;
+          }
+        }
+
+        const firstCell = table.querySelector("td, th");
+        if (!firstCell) return;
+
+        try {
+          const pos = editor.view.posAtDOM(firstCell, 0);
+          const $pos = editor.state.doc.resolve(pos);
+          for (let d = $pos.depth; d >= 0; d--) {
+            const node = $pos.node(d);
+            if (node.type.name === "table") {
+              const tablePos = $pos.before(d);
+              let colIndex = 0;
+              let rowIndex = 0;
+              let tr = editor.state.tr;
+
+              node.forEach((rowNode: any, rowOffset: number) => {
+                if (rowIndex > 0) return;
+                const rowPos = tablePos + 1 + rowOffset;
+                rowNode.forEach((cellNode: any, cellOffset: number) => {
+                  const colspan = cellNode.attrs?.colspan || 1;
+                  const nextWidths = scaled.slice(
+                    colIndex,
+                    colIndex + colspan,
+                  );
+                  while (nextWidths.length < colspan) {
+                    nextWidths.push(minWidth);
+                  }
+                  colIndex += colspan;
+
+                  const current = cellNode.attrs?.colwidth;
+                  const same =
+                    Array.isArray(current) &&
+                    current.length === nextWidths.length &&
+                    current.every((val: number, idx: number) => val === nextWidths[idx]);
+                  if (same) return;
+
+                  const cellPos = rowPos + 1 + cellOffset;
+                  tr = tr.setNodeMarkup(cellPos, undefined, {
+                    ...cellNode.attrs,
+                    colwidth: nextWidths,
+                  });
+                });
+                rowIndex += 1;
+              });
+
+              if (tr.docChanged) {
+                editor.view.dispatch(tr);
+              }
+              break;
+            }
+          }
+        } catch (err) {
+          console.error("Failed to normalize table width after resize", err);
+        }
+      };
+
+      const onMouseDown = (event: MouseEvent) => {
+        const target = event.target as HTMLElement | null;
+        const handle = target?.closest?.(".column-resize-handle");
+        if (!handle) return;
+        activeTable = handle.closest("table");
+      };
+
+      const onMouseUp = () => {
+        if (!activeTable) return;
+        const table = activeTable;
+        activeTable = null;
+        requestAnimationFrame(() => normalizeTableColumns(table));
+      };
+
+      viewDom.addEventListener("mousedown", onMouseDown);
+      document.addEventListener("mouseup", onMouseUp);
+      return () => {
+        viewDom.removeEventListener("mousedown", onMouseDown);
+        document.removeEventListener("mouseup", onMouseUp);
+      };
+    }, [editor]);
+
     const escapeHtml = (value: string) =>
       value
         .replace(/&/g, "&amp;")
