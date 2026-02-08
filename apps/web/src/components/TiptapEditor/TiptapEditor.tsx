@@ -670,23 +670,38 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       if (!editor || !editor.view) return;
       const viewDom = editor.view.dom;
       let activeTable: HTMLTableElement | null = null;
+      let rafId: number | null = null;
+      const minWidth = 50;
 
-      const normalizeTableColumns = (table: HTMLTableElement) => {
+      const getContainerWidth = (table: HTMLTableElement) => {
         const wrapper = table.closest(".tableWrapper") as HTMLElement | null;
-        const containerWidth =
-          wrapper?.clientWidth || table.parentElement?.clientWidth || 0;
-        if (!containerWidth) return;
+        const editorRoot = table.closest(".tiptap-editor") as HTMLElement | null;
+        return (
+          wrapper?.clientWidth ||
+          editorRoot?.clientWidth ||
+          table.parentElement?.clientWidth ||
+          0
+        );
+      };
 
-        const cols = Array.from(
-          table.querySelectorAll("colgroup col"),
-        ) as HTMLTableColElement[];
-        if (!cols.length) return;
-
-        const widths = cols.map((col) => {
+      const getColumnWidths = (
+        cols: HTMLTableColElement[],
+        containerWidth: number,
+      ) => {
+        return cols.map((col) => {
           const styleWidth = col.style.width;
-          const parsed = parseFloat(styleWidth);
-          if (!Number.isNaN(parsed) && parsed > 0) {
-            return parsed;
+          if (styleWidth) {
+            if (styleWidth.includes("%")) {
+              const pct = parseFloat(styleWidth);
+              if (!Number.isNaN(pct)) {
+                return (containerWidth * pct) / 100;
+              }
+            } else {
+              const parsed = parseFloat(styleWidth);
+              if (!Number.isNaN(parsed) && parsed > 0) {
+                return parsed;
+              }
+            }
           }
           const computed = window.getComputedStyle(col).width;
           const computedParsed = parseFloat(computed);
@@ -694,11 +709,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             ? computedParsed
             : 0;
         });
+      };
 
+      const clampWidths = (widths: number[], containerWidth: number) => {
         const total = widths.reduce((sum, w) => sum + w, 0);
-        if (!total || total <= containerWidth + 1) return;
-
-        const minWidth = 50;
+        if (!total || total <= containerWidth + 1) return null;
         const scale = containerWidth / total;
         let scaled = widths.map((w) => Math.max(minWidth, Math.round(w * scale)));
         let scaledTotal = scaled.reduce((sum, w) => sum + w, 0);
@@ -718,6 +733,20 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           }
         }
 
+        return scaled;
+      };
+
+      const applyDomWidths = (
+        cols: HTMLTableColElement[],
+        widths: number[],
+      ) => {
+        cols.forEach((col, idx) => {
+          const width = widths[idx] ?? minWidth;
+          col.style.width = `${width}px`;
+        });
+      };
+
+      const applyDocWidths = (table: HTMLTableElement, widths: number[]) => {
         const firstCell = table.querySelector("td, th");
         if (!firstCell) return;
 
@@ -737,10 +766,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
                 const rowPos = tablePos + 1 + rowOffset;
                 rowNode.forEach((cellNode: any, cellOffset: number) => {
                   const colspan = cellNode.attrs?.colspan || 1;
-                  const nextWidths = scaled.slice(
-                    colIndex,
-                    colIndex + colspan,
-                  );
+                  const nextWidths = widths.slice(colIndex, colIndex + colspan);
                   while (nextWidths.length < colspan) {
                     nextWidths.push(minWidth);
                   }
@@ -750,7 +776,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
                   const same =
                     Array.isArray(current) &&
                     current.length === nextWidths.length &&
-                    current.every((val: number, idx: number) => val === nextWidths[idx]);
+                    current.every(
+                      (val: number, idx: number) => val === nextWidths[idx],
+                    );
                   if (same) return;
 
                   const cellPos = rowPos + 1 + cellOffset;
@@ -773,25 +801,68 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         }
       };
 
+      const clampTableToContainer = (
+        table: HTMLTableElement,
+        applyDoc: boolean,
+      ) => {
+        const containerWidth = getContainerWidth(table);
+        if (!containerWidth) return;
+        const cols = Array.from(
+          table.querySelectorAll("colgroup col"),
+        ) as HTMLTableColElement[];
+        if (!cols.length) return;
+
+        const widths = getColumnWidths(cols, containerWidth);
+        const scaled = clampWidths(widths, containerWidth);
+        if (!scaled) return;
+        applyDomWidths(cols, scaled);
+        if (applyDoc) {
+          applyDocWidths(table, scaled);
+        }
+      };
+
       const onMouseDown = (event: MouseEvent) => {
         const target = event.target as HTMLElement | null;
         const handle = target?.closest?.(".column-resize-handle");
         if (!handle) return;
         activeTable = handle.closest("table");
+        if (!activeTable) return;
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      };
+
+      const onMouseMove = () => {
+        if (!activeTable) return;
+        if (rafId !== null) return;
+        rafId = window.requestAnimationFrame(() => {
+          rafId = null;
+          if (activeTable) {
+            clampTableToContainer(activeTable, false);
+          }
+        });
       };
 
       const onMouseUp = () => {
         if (!activeTable) return;
         const table = activeTable;
         activeTable = null;
-        requestAnimationFrame(() => normalizeTableColumns(table));
+        if (rafId !== null) {
+          window.cancelAnimationFrame(rafId);
+          rafId = null;
+        }
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        requestAnimationFrame(() => clampTableToContainer(table, true));
       };
 
       viewDom.addEventListener("mousedown", onMouseDown);
-      document.addEventListener("mouseup", onMouseUp);
       return () => {
         viewDom.removeEventListener("mousedown", onMouseDown);
+        document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
+        if (rafId !== null) {
+          window.cancelAnimationFrame(rafId);
+        }
       };
     }, [editor]);
 
