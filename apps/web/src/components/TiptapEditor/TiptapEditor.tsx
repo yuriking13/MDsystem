@@ -50,9 +50,7 @@ import {
   type TrackChangeAttrs,
 } from "./extensions/TrackChangesMark";
 import StatisticEditModal from "../StatisticEditModal";
-import TableEditorModal, {
-  type TableEditorPayload,
-} from "./TableEditorModal";
+import TableEditorModal, { type TableEditorPayload } from "./TableEditorModal";
 import type { ProjectStatistic, DataClassification } from "../../lib/api";
 import type { TableData, ChartConfig } from "../ChartFromTable";
 import { IconChatBubbleQuote, IconClose, IconPlus } from "../FlowbiteIcons";
@@ -629,7 +627,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
         const { pos, nodeSize } = tableEditorData;
         const html = buildTableHtml(
-          [payload.data[0], ...payload.data.slice(1)] || [],
+          payload.data,
           payload.colWidths,
           null,
           payload.rowHeights,

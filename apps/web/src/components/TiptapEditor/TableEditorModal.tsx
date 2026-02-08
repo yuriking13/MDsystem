@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Modal, Button } from 'flowbite-react';
-import { TabulatorFull as Tabulator } from 'tabulator-tables';
-import 'tabulator-tables/dist/css/tabulator.min.css';
-import './TabulatorModal.css';
+import React, { useEffect, useRef, useState } from "react";
+import { Modal, Button } from "flowbite-react";
+import { TabulatorFull as Tabulator } from "tabulator-tables";
+import "tabulator-tables/dist/css/tabulator.min.css";
+import "./TabulatorModal.css";
 
 export type TableEditorPayload = {
   data: string[][];
@@ -27,7 +27,7 @@ const buildColumns = (cols: number, widths?: number[]) => {
     columns.push({
       title: `Колонка ${i + 1}`,
       field: `c${i}`,
-      editor: 'input',
+      editor: "input",
       headerSort: false,
       resizable: true,
       minWidth: 50,
@@ -42,7 +42,7 @@ const dataToRows = (data: string[][], cols: number) => {
   return data.map((row, idx) => {
     const obj: Record<string, any> = { id: idx };
     for (let c = 0; c < cols; c++) {
-      obj[`c${c}`] = row[c] ?? '';
+      obj[`c${c}`] = row[c] ?? "";
     }
     return obj;
   });
@@ -53,7 +53,7 @@ const rowsToData = (rows: any[], cols: number) => {
   return rows.map((rowObj) => {
     const arr: string[] = [];
     for (let c = 0; c < cols; c++) {
-      arr.push(rowObj[`c${c}`] ?? '');
+      arr.push(rowObj[`c${c}`] ?? "");
     }
     return arr;
   });
@@ -67,7 +67,14 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
   onClose,
   onSave,
 }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const tableRef = useRef<any | null>(null);
+  const [columnsCount, setColumnsCount] = useState<number>(0);
   const [selectedRowIdx, setSelectedRowIdx] = useState<number | null>(null);
+  const ModalAny = Modal as any;
+  const ModalHeader = ModalAny?.Header || ((props: any) => <div {...props} />);
+  const ModalBody = ModalAny?.Body || ((props: any) => <div {...props} />);
+  const ModalFooter = ModalAny?.Footer || ((props: any) => <div {...props} />);
 
   // Handle row height change
   const handleRowHeightChange = (height: number) => {
@@ -79,9 +86,6 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
       row.getElement?.().style.height = `${height}px`;
     }
   };
-  const ModalHeader = ModalAny?.Header || ((props: any) => <div {...props} />);
-  const ModalBody = ModalAny?.Body || ((props: any) => <div {...props} />);
-  const ModalFooter = ModalAny?.Footer || ((props: any) => <div {...props} />);
 
   // Initialize table on open
   useEffect(() => {
@@ -94,7 +98,10 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
       return;
     }
 
-    const cols = Math.max(1, initialData.reduce((max, row) => Math.max(max, row.length), 0));
+    const cols = Math.max(
+      1,
+      initialData.reduce((max, row) => Math.max(max, row.length), 0),
+    );
     setColumnsCount(cols);
 
     // Delay to allow setColumnsCount to settle
@@ -104,11 +111,11 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
       const table = new Tabulator(containerRef.current, {
         data: dataToRows(initialData, cols),
         columns: buildColumns(cols, initialColWidths),
-        layout: 'fitColumns',
+        layout: "fitColumns",
         reactiveData: false,
         selectable: false,
         columnDefaults: {
-          editor: 'input',
+          editor: "input",
           resizable: true,
           minWidth: 50,
         },
@@ -124,7 +131,7 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     const cols = columnsCount;
     const rowObj: Record<string, any> = { id: Date.now() };
     for (let c = 0; c < cols; c++) {
-      rowObj[`c${c}`] = '';
+      rowObj[`c${c}`] = "";
     }
     table.addRow(rowObj, true);
   };
@@ -137,13 +144,13 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     const colDef = {
       title: `Колонка ${newIndex + 1}`,
       field,
-      editor: 'input',
+      editor: "input",
       resizable: true,
       minWidth: 50,
     } as any;
     table.addColumn(colDef, false, undefined, undefined, true);
     table.getData().forEach((row: any) => {
-      row[field] = row[field] ?? '';
+      row[field] = row[field] ?? "";
     });
     setColumnsCount(newIndex + 1);
   };
@@ -156,19 +163,25 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     const data = rowsToData(rows, cols);
     const colDefs = table.getColumns();
     const colWidths = colDefs.map((c: any) => c.getWidth());
-    
+
     // Get row heights from Tabulator rows
     const rowElements = table.rowManager?.rows || [];
     const rowHeights = rowElements.map((row: any) => {
       const height = row.getElement?.()?.offsetHeight;
       return height ? Math.max(20, Math.round(height)) : 30;
     });
-    
+
     onSave({ data, colWidths, rowHeights });
   };
 
   return (
-    <Modal show={open} size="6xl" dismissible onClose={onClose} className="tabulator-modal">
+    <Modal
+      show={open}
+      size="6xl"
+      dismissible
+      onClose={onClose}
+      className="tabulator-modal"
+    >
       <ModalHeader>Редактирование таблицы</ModalHeader>
       <ModalBody>
         <div className="tabulator-controls">
@@ -180,8 +193,18 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
               + Колонка
             </Button>
           </div>
-          <div style={{ marginTop: '12px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <label htmlFor="row-select" style={{ marginRight: '8px', fontSize: '14px' }}>
+          <div
+            style={{
+              marginTop: "12px",
+              display: "flex",
+              gap: "8px",
+              alignItems: "center",
+            }}
+          >
+            <label
+              htmlFor="row-select"
+              style={{ marginRight: "8px", fontSize: "14px" }}
+            >
               Высота строки:
             </label>
             <input
@@ -189,15 +212,15 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
               type="number"
               min="20"
               max="200"
-              value={selectedRowIdx !== null ? 30 : ''}
+              value={selectedRowIdx !== null ? 30 : ""}
               placeholder="Высота (px)"
               onChange={(e) => handleRowHeightChange(Number(e.target.value))}
               style={{
-                padding: '4px 8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '14px',
-                width: '100px',
+                padding: "4px 8px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                fontSize: "14px",
+                width: "100px",
               }}
             />
           </div>
