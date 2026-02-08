@@ -224,7 +224,7 @@ type StatEditorState = {
   tablePos: number;
   tableNodeSize: number;
   colWidths?: number[];
-  rowHeights?: number[];
+  rowHeights?: Array<number | null>;
 };
 
 export interface TiptapEditorHandle {
@@ -277,7 +277,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const [tableEditorData, setTableEditorData] = useState<{
       data: string[][];
       colWidths?: number[];
-      rowHeights?: number[];
+      rowHeights?: Array<number | null>;
       pos: number;
       nodeSize: number;
     } | null>(null);
@@ -645,7 +645,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       data: string[][],
       widths?: number[],
       statisticId?: string | null,
-      rowHeights?: number[],
+      rowHeights?: Array<number | null>,
     ) => {
       const cols = data.reduce((m, r) => Math.max(m, r.length), 0);
       let html = '<table class="tiptap-table"';
@@ -668,9 +668,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
       data.forEach((row, rowIdx) => {
         const rowHeight = rowHeights?.[rowIdx];
-        // Enforce minimum 10px; ignore 0 (means "auto")
+        // Enforce minimum 10px; ignore null/0 (means "auto")
         const safeHeight =
-          rowHeight && rowHeight >= 10 ? Math.round(rowHeight) : 0;
+          typeof rowHeight === "number" && rowHeight >= 10
+            ? Math.round(rowHeight)
+            : 0;
         const heightAttrs = safeHeight
           ? ` data-row-height="${safeHeight}" style="height: ${safeHeight}px; min-height: ${safeHeight}px;"`
           : "";
@@ -705,14 +707,19 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       const { node, pos, dom } = info;
       const rowsData: string[][] = [];
       const colWidths: number[] = [];
-      const rowHeights: number[] = [];
+      const rowHeights: Array<number | null> = [];
 
       node.forEach((rowNode: any) => {
         if (rowNode?.type?.name === "tableRow") {
           const rowArr: string[] = [];
           const rowHeight = rowNode.attrs?.rowHeight;
           // Always push a value so indices stay aligned with row indices
-          rowHeights.push(rowHeight ? Math.max(10, rowHeight) : 0);
+          // Store null if no height, not 0 - distinguishes "no height set"
+          rowHeights.push(
+            typeof rowHeight === "number" && rowHeight >= 10
+              ? Math.round(rowHeight)
+              : null,
+          );
           rowNode.forEach((cellNode: any, colIdx: number) => {
             if (
               cellNode?.type?.name === "tableCell" ||

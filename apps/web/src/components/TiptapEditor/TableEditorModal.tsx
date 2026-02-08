@@ -7,7 +7,7 @@ import "./TabulatorModal.css";
 export type TableEditorPayload = {
   data: string[][];
   colWidths?: number[];
-  rowHeights?: number[];
+  rowHeights?: Array<number | null>;
   statisticId?: string | null;
 };
 
@@ -15,7 +15,7 @@ interface TableEditorModalProps {
   open: boolean;
   initialData: string[][];
   initialColWidths?: number[];
-  initialRowHeights?: number[];
+  initialRowHeights?: Array<number | null>;
   onClose: () => void;
   onSave: (payload: TableEditorPayload) => void;
 }
@@ -191,14 +191,20 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
 
       table.on("tableBuilt", () => {
         // Apply initial row heights
-        if (initialRowHeights) {
+        if (initialRowHeights && initialRowHeights.length > 0) {
           const rows = table.getRows();
           initialRowHeights.forEach((h, idx) => {
-            if (h && h > 0 && rows[idx]) {
+            if (typeof h === "number" && h >= 10 && rows[idx]) {
               const el = rows[idx].getElement();
               if (el) {
-                el.style.height = `${h}px`;
-                el.style.minHeight = `${h}px`;
+                const safeHeight = Math.max(10, Math.min(500, Math.round(h)));
+                el.style.height = `${safeHeight}px`;
+                el.style.minHeight = `${safeHeight}px`;
+                try {
+                  rows[idx].revalidate?.();
+                } catch (err) {
+                  // revalidate may not exist in older Tabulator versions
+                }
               }
             }
           });
@@ -332,8 +338,25 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     const tabulatorRows = table.getRows();
     const rowHeights = tabulatorRows.map((row: any) => {
       const el = row.getElement();
-      const height = el?.offsetHeight;
-      return height ? Math.max(10, Math.round(height)) : 30;
+      if (!el) return 30;
+
+      // Priority 1: Use explicitly set inline style (most reliable)
+      const styleHeight = el.style.height;
+      if (styleHeight) {
+        const parsed = parseInt(styleHeight, 10);
+        if (!Number.isNaN(parsed) && parsed >= 10) {
+          return Math.max(10, Math.min(500, parsed));
+        }
+      }
+
+      // Priority 2: Fall back to offsetHeight if style not set
+      const offsetHeight = el.offsetHeight;
+      if (offsetHeight && offsetHeight >= 10) {
+        return Math.max(10, Math.min(500, Math.round(offsetHeight)));
+      }
+
+      // Fallback: return default only if nothing is set
+      return 30;
     });
 
     onSave({ data, colWidths, rowHeights });
