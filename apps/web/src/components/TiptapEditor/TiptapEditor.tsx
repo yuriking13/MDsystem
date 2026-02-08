@@ -650,7 +650,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
       data.forEach((row, rowIdx) => {
         const rowHeight = rowHeights?.[rowIdx];
-        const styleAttr = rowHeight ? ` style="height: ${rowHeight}px;"` : "";
+        // Enforce minimum height of 10px
+        const safeHeight = rowHeight ? Math.max(10, rowHeight) : null;
+        const styleAttr = safeHeight ? ` style="height: ${safeHeight}px; min-height: ${safeHeight}px;"` : "";
         html += `<tr${styleAttr}>`;
         for (let c = 0; c < cols; c++) {
           const text = row[c] ?? "";
