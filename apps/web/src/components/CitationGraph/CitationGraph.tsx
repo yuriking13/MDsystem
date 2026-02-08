@@ -91,7 +91,10 @@ import {
   IconCheckCircle,
 } from "../FlowbiteIcons";
 import NodeInfoPanel from "./NodeInfoPanel";
-import GraphLegend from "./GraphLegend";
+import ArticleCard, {
+  type ArticleAuthor,
+  type ArticleData,
+} from "../ArticleCard";
 // GraphSidebar removed - controls are in the header
 import { formatTime, adjustBrightness, useDebounce } from "./utils";
 import type { GraphNodeWithCoords, ClusterArticleDetail } from "../../types";
@@ -135,7 +138,14 @@ export default function CitationGraph({ projectId }: Props) {
     availableReferences?: number;
     availableCiting?: number;
   }>({ totalNodes: 0, totalLinks: 0 });
-  const [hoveredNode, setHoveredNode] = useState<GraphNode | null>(null);
+  const [hoveredNode, setHoveredNode] = useState<GraphNodeWithCoords | null>(
+    null,
+  );
+  const [hoverPosition, setHoverPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const hoverPositionRef = useRef<{ x: number; y: number } | null>(null);
   const [selectedNodeForDisplay, setSelectedNodeForDisplay] =
     useState<GraphNode | null>(null);
   const [fetchingRefs, setFetchingRefs] = useState(false);
@@ -1437,60 +1447,140 @@ export default function CitationGraph({ projectId }: Props) {
     [highlightPValue, aiFoundArticleIds, graphColors],
   );
 
-  const nodeLabel = useCallback(
-    (node: GraphNodeWithCoords) => {
-      const citedByCount = node.citedByCount || 0;
-      const level = node.graphLevel ?? 1;
-      const statsQ = node.statsQuality || 0;
+  const nodeLabel = useCallback(() => "", []);
 
-      let levelText = "";
-      if (level === 0) levelText = " [Цитирует]";
-      else if (level === 2) levelText = " [Ссылка]";
-      else if (level === 3) levelText = " [Связанная]";
+  const clearHoverCard = useCallback(() => {
+    setHoveredNode(null);
+    setHoverPosition(null);
+  }, []);
 
-      let statsText = "";
-      if (statsQ > 0) statsText = ` • P-value: ${"★".repeat(statsQ)}`;
-
-      // Показываем название если есть (с учётом языка)
-      const title =
-        globalLang === "ru" && node.title_ru ? node.title_ru : node.title;
-      // Для placeholder узлов без title показываем PMID/DOI
-      let displayTitle = "";
-      if (title) {
-        displayTitle = `\n📄 ${title.substring(0, 120)}${title.length > 120 ? "..." : ""}`;
-      } else if (node.pmid && node.id?.startsWith("pmid:")) {
-        displayTitle = `\n🔗 PMID: ${node.pmid} (загрузите данные)`;
-      } else if (node.doi) {
-        displayTitle = `\n🔗 DOI: ${node.doi}`;
+  const handleGraphMouseMove = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!graphAreaRef.current) return;
+      const rect = graphAreaRef.current.getBoundingClientRect();
+      const pos = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+      hoverPositionRef.current = pos;
+      if (hoveredNode) {
+        setHoverPosition(pos);
       }
-
-      // Показываем авторов для внешних статей (level !== 1)
-      let authorsText = "";
-      if (level !== 1 && node.authors) {
-        const authorsStr =
-          typeof node.authors === "string"
-            ? node.authors
-            : Array.isArray(node.authors)
-              ? node.authors.join(", ")
-              : "";
-        if (authorsStr) {
-          authorsText = `\n👤 ${authorsStr.substring(0, 80)}${authorsStr.length > 80 ? "..." : ""}`;
-        }
-      }
-
-      // Добавляем год и журнал если есть
-      let metaInfo = "";
-      if (node.year) {
-        metaInfo += `\n📅 ${node.year}`;
-        if (node.journal) {
-          metaInfo += ` • ${node.journal.substring(0, 40)}${node.journal.length > 40 ? "..." : ""}`;
-        }
-      }
-
-      return `${node.label}${levelText}${citedByCount > 0 ? ` (${citedByCount} цит.)` : ""}${statsText}${displayTitle}${authorsText}${metaInfo}`;
     },
-    [globalLang],
+    [hoveredNode],
   );
+
+  const handleNodeHover = useCallback(
+    (node: GraphNodeWithCoords | null) => {
+      if (!node) {
+        clearHoverCard();
+        return;
+      }
+      setHoveredNode(node);
+      if (hoverPositionRef.current) {
+        setHoverPosition(hoverPositionRef.current);
+      }
+    },
+    [clearHoverCard],
+  );
+
+  const normalizeStatus = useCallback(
+    (status?: string, graphLevel?: number): ArticleData["status"] => {
+      const normalized = (status || "").toLowerCase();
+      if (
+        normalized === "candidate" ||
+        normalized === "selected" ||
+        normalized === "excluded" ||
+        normalized === "deleted"
+      ) {
+        return normalized as ArticleData["status"];
+      }
+      if (graphLevel !== undefined && graphLevel !== 1) {
+        return "candidate";
+      }
+      return "candidate";
+    },
+    [],
+  );
+
+  const normalizeSource = useCallback(
+    (source?: string): ArticleData["source"] => {
+      const normalized = (source || "").toLowerCase();
+      if (normalized === "doaj" || normalized === "wiley" || normalized === "pubmed") {
+        return normalized as ArticleData["source"];
+      }
+      return "pubmed";
+    },
+    [],
+  );
+
+  const normalizeAuthors = useCallback(
+    (authors?: string | string[]): ArticleAuthor[] => {
+      if (!authors) return [];
+      const list = Array.isArray(authors) ? authors : authors.split(/,|;/);
+      return list
+        .map((name) => name.trim())
+        .filter(Boolean)
+        .map((name) => ({ name }));
+    },
+    [],
+  );
+
+  const hoverCardArticle = useMemo<ArticleData | null>(() => {
+    if (!hoveredNode) return null;
+    const year =
+      hoveredNode.year !== null && hoveredNode.year !== undefined
+        ? hoveredNode.year
+        : new Date().getFullYear();
+
+    return {
+      id: hoveredNode.id,
+      pmid: hoveredNode.pmid || undefined,
+      doi: hoveredNode.doi || undefined,
+      title: hoveredNode.title || hoveredNode.label || "Untitled",
+      titleRu: hoveredNode.title_ru || undefined,
+      authors: normalizeAuthors(hoveredNode.authors),
+      journal: hoveredNode.journal || undefined,
+      year,
+      abstract: hoveredNode.abstract || undefined,
+      abstractRu: hoveredNode.abstract_ru || undefined,
+      publicationType: undefined,
+      status: normalizeStatus(hoveredNode.status, hoveredNode.graphLevel),
+      sourceQuery: undefined,
+      source: normalizeSource(hoveredNode.source),
+      citationCount: hoveredNode.citedByCount,
+      hasFullText: undefined,
+      hasFreeFullText: undefined,
+      stats:
+        hoveredNode.statsQuality && hoveredNode.statsQuality > 0
+          ? { hasStatistics: true }
+          : undefined,
+      tags: undefined,
+      notes: undefined,
+    };
+  }, [hoveredNode, normalizeAuthors, normalizeSource, normalizeStatus]);
+
+  const hoverCardPosition = useMemo(() => {
+    if (!hoverPosition) return null;
+    const cardWidth = 360;
+    const cardHeight = 320;
+    const padding = 16;
+
+    let x = hoverPosition.x + padding;
+    let y = hoverPosition.y + padding;
+
+    if (x + cardWidth > dimensions.width) {
+      x = hoverPosition.x - cardWidth - padding;
+    }
+    if (y + cardHeight > dimensions.height) {
+      y = hoverPosition.y - cardHeight - padding;
+    }
+
+    return {
+      x: Math.max(padding, x),
+      y: Math.max(padding, y),
+    };
+  }, [hoverPosition, dimensions.width, dimensions.height]);
 
   // Размер узла зависит от количества цитирований - как в ResearchRabbit
   const nodeVal = useCallback(
@@ -4055,96 +4145,6 @@ export default function CitationGraph({ projectId }: Props) {
             </div>
           )}
 
-        {/* Legend - New Component */}
-        <GraphLegend
-          nodeTypes={[
-            ...(aiFoundArticleIds.size > 0
-              ? [
-                  {
-                    id: "ai-found",
-                    label: `AI найдено: ${aiFoundArticleIds.size}`,
-                    color: "#00ffff",
-                    description: "Статьи найденные AI-ассистентом",
-                  },
-                ]
-              : []),
-            ...(highlightPValue
-              ? [
-                  {
-                    id: "pvalue",
-                    label: "P-value",
-                    color: "#fbbf24",
-                    description: "Статьи со значимым P-value",
-                  },
-                ]
-              : []),
-            ...(depth >= 3
-              ? [
-                  {
-                    id: "citing",
-                    label: "Цитирующие",
-                    color: "#ec4899",
-                    description: "Статьи цитирующие статьи из базы",
-                  },
-                ]
-              : []),
-            {
-              id: "selected",
-              label: "Отобранные",
-              color: "#22c55e",
-              description: "Включённые в обзор статьи",
-            },
-            {
-              id: "pubmed",
-              label: "PubMed",
-              color: "#3b82f6",
-              description: "Кандидаты из PubMed",
-            },
-            {
-              id: "doaj",
-              label: "DOAJ",
-              color: "#eab308",
-              description: "Кандидаты из DOAJ",
-            },
-            {
-              id: "wiley",
-              label: "Wiley",
-              color: "#8b5cf6",
-              description: "Кандидаты из Wiley",
-            },
-            {
-              id: "excluded",
-              label: "Исключённые",
-              color: "#ef4444",
-              description: "Исключённые из обзора",
-            },
-            ...(depth >= 2
-              ? [
-                  {
-                    id: "references",
-                    label: "Ссылки",
-                    color: "#f97316",
-                    description: "Ссылки из статей проекта",
-                  },
-                ]
-              : []),
-            ...(depth >= 3
-              ? [
-                  {
-                    id: "related",
-                    label: "Связанные",
-                    color: "#06b6d4",
-                    description: "Связанные по цитированиям",
-                  },
-                ]
-              : []),
-          ]}
-          orientation="horizontal"
-          showCounts={false}
-          compact={true}
-          className="mx-4 my-1"
-        />
-
         {/* Main Area: Graph + AI Panel side by side */}
         <div
           style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}
@@ -4152,6 +4152,8 @@ export default function CitationGraph({ projectId }: Props) {
           {/* Graph Area */}
           <div
             ref={graphAreaRef}
+            onMouseMove={handleGraphMouseMove}
+            onMouseLeave={clearHoverCard}
             style={{
               flex: 1,
               overflow: "hidden",
@@ -4317,7 +4319,7 @@ export default function CitationGraph({ projectId }: Props) {
                   warmupTicks={animationPaused ? 0 : 80}
                   d3AlphaMin={0.001}
                   onEngineStop={() => {}}
-                  onNodeHover={(node: any) => setHoveredNode(node)}
+                  onNodeHover={handleNodeHover}
                   onNodeClick={(node: any, event: any) => {
                     if (event?.altKey) {
                       if (node.doi) {
@@ -4400,6 +4402,25 @@ export default function CitationGraph({ projectId }: Props) {
                 </div>
               </div>
             )}
+            {hoverCardPosition &&
+              hoverCardArticle &&
+              !selectedNodeForDisplay && (
+                <div
+                  className="graph-hover-card"
+                  style={{
+                    left: hoverCardPosition.x,
+                    top: hoverCardPosition.y,
+                  }}
+                >
+                  <ArticleCard
+                    article={hoverCardArticle}
+                    isSelected={false}
+                    onSelect={() => {}}
+                    onStatusChange={() => {}}
+                    language={globalLang}
+                  />
+                </div>
+              )}
           </div>
 
           {/* AI Assistant Panel - Side by side with graph */}

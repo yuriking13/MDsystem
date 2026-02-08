@@ -17,6 +17,12 @@ import {
 import { getLevelColor, getLevelName, getGraphNodeColors } from "./utils";
 import type { EnrichedNodeData } from "./types";
 
+function getPValueLabel(quality: number): string {
+  if (quality >= 3) return "p < 0.001";
+  if (quality === 2) return "p < 0.01";
+  return "p < 0.05";
+}
+
 type Props = {
   node: any;
   projectId: string;
@@ -427,10 +433,10 @@ export default function NodeInfoPanel({
         <div className="node-info-row">
           <div className="node-info-label">
             <IconStar size="sm" />
-            P-value
+            P-value (значимость)
           </div>
           <div className="node-info-value" style={{ color: "var(--warning)" }}>
-            {"★".repeat(node.statsQuality)}
+            {getPValueLabel(node.statsQuality)}
           </div>
         </div>
       )}
