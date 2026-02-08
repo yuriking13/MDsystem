@@ -553,12 +553,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         if (!cell) return;
         const cellPos = editor.view.posAtDOM(cell, 0);
         try {
-          editor
-            .chain()
-            .focus()
-            .setTextSelection(cellPos)
-            .setRowHeight(finalHeight)
-            .run();
+          const chain = editor.chain().focus().setTextSelection(cellPos) as any;
+          chain.setRowHeight(finalHeight).run();
         } catch (err) {
           console.error("Failed to set row height during drag", err);
         }
