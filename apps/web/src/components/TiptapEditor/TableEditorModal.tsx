@@ -213,8 +213,8 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
             <input
               id="row-select"
               type="number"
-              min="20"
-              max="200"
+              min="10"
+              max="400"
               value={selectedRowIdx !== null ? 30 : ""}
               placeholder="Высота (px)"
               onChange={(e) => handleRowHeightChange(Number(e.target.value))}

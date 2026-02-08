@@ -523,6 +523,73 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       return null;
     }, [editor]);
 
+    useEffect(() => {
+      if (!editor || !editor.view) return;
+      const viewDom = editor.view.dom;
+      let activeRow: HTMLTableRowElement | null = null;
+      let dragging = false;
+      let startY = 0;
+      let startHeight = 0;
+
+      const applyRowHeight = (row: HTMLTableRowElement, clientY: number) => {
+        const delta = clientY - startY;
+        const newHeight = Math.max(10, startHeight + delta);
+        row.style.height = `${newHeight}px`;
+        return newHeight;
+      };
+
+      const onMouseMove = (event: MouseEvent) => {
+        if (!dragging || !activeRow) return;
+        applyRowHeight(activeRow, event.clientY);
+      };
+
+      const onMouseUp = (event: MouseEvent) => {
+        if (!dragging || !activeRow) return;
+        dragging = false;
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+        const finalHeight = applyRowHeight(activeRow, event.clientY);
+        const cell = activeRow.querySelector("td, th");
+        if (!cell) return;
+        const cellPos = editor.view.posAtDOM(cell, 0);
+        try {
+          editor
+            .chain()
+            .focus()
+            .setTextSelection(cellPos)
+            .setRowHeight(finalHeight)
+            .run();
+        } catch (err) {
+          console.error("Failed to set row height during drag", err);
+        }
+      };
+
+      const onMouseDown = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        const row = target.closest("tr") as HTMLTableRowElement | null;
+        if (!row || !row.closest("table")) return;
+        const rect = row.getBoundingClientRect();
+        const offsetFromBottom = rect.bottom - event.clientY;
+        if (offsetFromBottom > 8 || offsetFromBottom < 0) {
+          return;
+        }
+        event.preventDefault();
+        activeRow = row;
+        dragging = true;
+        startY = event.clientY;
+        startHeight = rect.height;
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
+      };
+
+      viewDom.addEventListener("mousedown", onMouseDown);
+      return () => {
+        viewDom.removeEventListener("mousedown", onMouseDown);
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
+      };
+    }, [editor]);
+
     const escapeHtml = (value: string) =>
       value
         .replace(/&/g, "&amp;")
