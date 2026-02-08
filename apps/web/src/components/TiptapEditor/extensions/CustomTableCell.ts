@@ -37,9 +37,9 @@ export const CustomTableCell = TableCell.extend({
         parseHTML: (element) => {
           const h =
             element.style.height || element.getAttribute("data-row-height");
-          const parsed = h ? parseInt(h, 10) || null : null;
-          // Enforce minimum height of 10px
-          return parsed ? Math.max(10, parsed) : null;
+          if (!h) return null;
+          const parsed = parseInt(h, 10);
+          return parsed && parsed >= 10 ? parsed : null;
         },
         renderHTML: (attributes) => {
           return {};
@@ -64,8 +64,9 @@ export const CustomTableCell = TableCell.extend({
     if (attrs.verticalAlign && attrs.verticalAlign !== "top") {
       styleParts.push(`vertical-align: ${attrs.verticalAlign}`);
     }
-    if (attrs.rowHeight) {
+    if (attrs.rowHeight && attrs.rowHeight >= 10) {
       styleParts.push(`height: ${attrs.rowHeight}px`);
+      styleParts.push(`min-height: ${attrs.rowHeight}px`);
     }
 
     const mergedAttrs: Record<string, any> = {

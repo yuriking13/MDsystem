@@ -640,25 +640,31 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
       html += ">";
 
+      // Convert absolute pixel widths to percentages so the table stays within the page
       html += "<colgroup>";
+      const totalWidth = widths
+        ? widths.reduce((sum, w) => sum + (w || 100), 0)
+        : cols * 100;
       for (let c = 0; c < cols; c++) {
-        const w = widths?.[c];
-        const px = w ? Math.max(40, Math.round(w)) : 100;
-        html += `<col style="width: ${px}px;" />`;
+        const w = widths?.[c] || 100;
+        const pct = ((w / totalWidth) * 100).toFixed(2);
+        html += `<col style="width: ${pct}%;" />`;
       }
       html += "</colgroup>";
 
       data.forEach((row, rowIdx) => {
         const rowHeight = rowHeights?.[rowIdx];
-        // Enforce minimum height of 10px
-        const safeHeight = rowHeight ? Math.max(10, rowHeight) : null;
-        const heightAttrs = safeHeight 
-          ? ` data-row-height="${safeHeight}" style="height: ${safeHeight}px; min-height: ${safeHeight}px;"` 
+        // Enforce minimum 10px; ignore 0 (means "auto")
+        const safeHeight =
+          rowHeight && rowHeight >= 10 ? Math.round(rowHeight) : 0;
+        const heightAttrs = safeHeight
+          ? ` data-row-height="${safeHeight}" style="height: ${safeHeight}px; min-height: ${safeHeight}px;"`
           : "";
         html += `<tr${heightAttrs}>`;
         for (let c = 0; c < cols; c++) {
           const text = row[c] ?? "";
           const tag = rowIdx === 0 ? "th" : "td";
+          // Store colwidth for TipTap resize tracking
           const w = widths?.[c];
           const cwAttr = w ? ` colwidth="${Math.max(40, Math.round(w))}"` : "";
           html += `<${tag}${cwAttr}><p>${escapeHtml(text)}</p></${tag}>`;
@@ -691,9 +697,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         if (rowNode?.type?.name === "tableRow") {
           const rowArr: string[] = [];
           const rowHeight = rowNode.attrs?.rowHeight;
-          // Always push rowHeight to maintain index alignment (even if null/undefined)
-          rowHeights.push(rowHeight || null);
-          
+          // Always push a value so indices stay aligned with row indices
+          rowHeights.push(rowHeight ? Math.max(10, rowHeight) : 0);
           rowNode.forEach((cellNode: any, colIdx: number) => {
             if (
               cellNode?.type?.name === "tableCell" ||

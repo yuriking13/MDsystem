@@ -912,13 +912,14 @@
   /* Таблица НЕ должна выходить за границы страницы */
   width: 100% !important;
   max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
 }
 
 /* Table rows with custom height support */
 .tiptap-editor table tr,
 .tiptap-editor .tiptap table tr,
 .tiptap-table tr {
-  /* Height can be controlled via inline style */
   transition: height 0.15s ease;
 }
 
@@ -928,7 +929,6 @@
 .tiptap-editor .tiptap table tr[data-row-height],
 .tiptap-table tr[style*="height"],
 .tiptap-table tr[data-row-height] {
-  /* Allow inline height styles to be visible */
   display: table-row;
 }
 
@@ -939,16 +939,25 @@
 .tiptap-table td,
 .tiptap-table th {
   border: 1px solid #1e293b !important;
-  padding: 8px 12px !important;
+  padding: 4px 6px !important;
   text-align: left;
   vertical-align: top;
   position: relative;
   min-height: 10px;
+  box-sizing: border-box;
   /* Предотвращаем выход текста за границы ячейки */
   word-break: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
   overflow: hidden;
+}
+
+/* Rows inherit height from inline style; enforce min-height 10px */
+.tiptap-editor table tr,
+.tiptap-editor .tiptap table tr,
+.tiptap-table tr {
+  min-height: 10px;
+  box-sizing: border-box;
 }
 
 .tiptap-editor table th,
@@ -1041,13 +1050,13 @@
 /* Table wrapper для ресайза - строго в границах страницы */
 .tiptap-editor .tableWrapper,
 .ProseMirror .tableWrapper {
-  overflow-x: hidden !important;
-  overflow-y: visible !important;
+  overflow: hidden !important;
   margin: 1em 0;
   position: relative;
   width: 100%;
   max-width: 100%;
   display: block;
+  box-sizing: border-box;
 }
 
 /* Таблица внутри wrapper - разрешаем resize, ширина под контейнер */
@@ -1057,8 +1066,9 @@
   display: table;
   width: 100% !important;
   max-width: 100% !important;
-  overflow: hidden;
+  overflow: hidden !important;
   border-collapse: collapse;
+  box-sizing: border-box;
   /* width управляется через colwidth атрибуты на ячейках и col элементы */
 }
 
@@ -1077,7 +1087,8 @@
 /* Override pagination styles that break colgroups/grids */
 .rm-with-pagination .tableWrapper {
   max-width: 100%;
-  overflow-x: hidden;
+  overflow: hidden !important;
+  box-sizing: border-box;
 }
 
 .rm-with-pagination .tableWrapper table {
@@ -1086,6 +1097,8 @@
   max-width: 100% !important;
   table-layout: fixed !important;
   border-collapse: collapse !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }
 
 .rm-with-pagination .tableWrapper table > tr {
@@ -1148,9 +1161,10 @@
 .tiptap-editor table th {
   position: relative;
   overflow: hidden;
-  padding: 8px;
+  padding: 4px 6px;
   word-break: break-word;
   overflow-wrap: break-word;
+  box-sizing: border-box;
 }
 
 /* Resize cursor при перетаскивании */
