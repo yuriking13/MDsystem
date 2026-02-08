@@ -652,8 +652,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         const rowHeight = rowHeights?.[rowIdx];
         // Enforce minimum height of 10px
         const safeHeight = rowHeight ? Math.max(10, rowHeight) : null;
-        const styleAttr = safeHeight ? ` style="height: ${safeHeight}px; min-height: ${safeHeight}px;"` : "";
-        html += `<tr${styleAttr}>`;
+        const heightAttrs = safeHeight 
+          ? ` data-row-height="${safeHeight}" style="height: ${safeHeight}px; min-height: ${safeHeight}px;"` 
+          : "";
+        html += `<tr${heightAttrs}>`;
         for (let c = 0; c < cols; c++) {
           const text = row[c] ?? "";
           const tag = rowIdx === 0 ? "th" : "td";
@@ -689,9 +691,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         if (rowNode?.type?.name === "tableRow") {
           const rowArr: string[] = [];
           const rowHeight = rowNode.attrs?.rowHeight;
-          if (rowHeight) {
-            rowHeights.push(rowHeight);
-          }
+          // Always push rowHeight to maintain index alignment (even if null/undefined)
+          rowHeights.push(rowHeight || null);
+          
           rowNode.forEach((cellNode: any, colIdx: number) => {
             if (
               cellNode?.type?.name === "tableCell" ||

@@ -924,7 +924,10 @@
 
 .tiptap-editor table tr[style*="height"],
 .tiptap-editor .tiptap table tr[style*="height"],
-.tiptap-table tr[style*="height"] {
+.tiptap-editor table tr[data-row-height],
+.tiptap-editor .tiptap table tr[data-row-height],
+.tiptap-table tr[style*="height"],
+.tiptap-table tr[data-row-height] {
   /* Allow inline height styles to be visible */
   display: table-row;
 }
@@ -1171,7 +1174,9 @@
 
 /* Row height attribute visual indicator */
 .tiptap-editor table tr[style*="height"] > td,
-.tiptap-editor table tr[style*="height"] > th {
+.tiptap-editor table tr[style*="height"] > th,
+.tiptap-editor table tr[data-row-height] > td,
+.tiptap-editor table tr[data-row-height] > th {
   box-sizing: border-box;
 }
 

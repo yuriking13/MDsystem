@@ -7,8 +7,11 @@ export const CustomTableRow = TableRow.extend({
       rowHeight: {
         default: null,
         parseHTML: (element) => {
-          const height = element.style.height;
-          const parsed = height ? parseInt(height, 10) : null;
+          // Parse from data-attribute first (more reliable), then fallback to style
+          const dataHeight = element.getAttribute('data-row-height');
+          const styleHeight = element.style.height;
+          const rawHeight = dataHeight || styleHeight;
+          const parsed = rawHeight ? parseInt(rawHeight, 10) : null;
           // Enforce minimum height of 10px
           return parsed ? Math.max(10, parsed) : null;
         },
@@ -19,6 +22,7 @@ export const CustomTableRow = TableRow.extend({
           // Enforce minimum height of 10px when rendering
           const safeHeight = Math.max(10, attributes.rowHeight);
           return {
+            'data-row-height': String(safeHeight),
             style: `height: ${safeHeight}px; min-height: ${safeHeight}px;`,
           };
         },
