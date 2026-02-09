@@ -7,6 +7,21 @@
 @import "./animated-background.css";
 @import "./theme-switcher.css";
 
+/* Register custom primary color scale for Tailwind v4 utilities */
+@theme {
+  --color-primary-50: #FFFDF9;
+  --color-primary-100: #FFF8EC;
+  --color-primary-200: #FFEFD5;
+  --color-primary-300: #FFE4B8;
+  --color-primary-400: #FFD48A;
+  --color-primary-500: #F5BA5C;
+  --color-primary-600: #D99A3A;
+  --color-primary-700: #B87A20;
+  --color-primary-800: #8C5A10;
+  --color-primary-900: #5C3A08;
+  --color-primary-950: #3D2604;
+}
+
 /* ===== DESIGN TOKENS & CSS VARIABLES ===== */
 @layer base {
   :root {
