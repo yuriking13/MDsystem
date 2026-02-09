@@ -50,47 +50,47 @@
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
     
-    /* Light Theme Colors */
-    --color-primary: 59 130 246; /* #3B82F6 */
+    /* Light Theme Colors — Papaya Whip */
+    --color-primary: 200 125 42; /* #C87D2A */
     --color-primary-foreground: 255 255 255;
     
-    --color-secondary: 107 114 128; /* #6B7280 */
+    --color-secondary: 140 122 107; /* #8C7A6B */
     --color-secondary-foreground: 255 255 255;
     
-    --color-success: 16 185 129; /* #10B981 */
+    --color-success: 21 128 61; /* #15803D */
     --color-success-foreground: 255 255 255;
     
-    --color-warning: 245 158 11; /* #F59E0B */
+    --color-warning: 234 88 12; /* #EA580C */
     --color-warning-foreground: 255 255 255;
     
-    --color-error: 239 68 68; /* #EF4444 */
+    --color-error: 220 38 38; /* #DC2626 */
     --color-error-foreground: 255 255 255;
     
-    --color-info: 14 165 233; /* #0EA5E9 */
+    --color-info: 14 116 144; /* #0E7490 */
     --color-info-foreground: 255 255 255;
     
-    /* Background Colors */
+    /* Background Colors — Papaya Whip */
     --color-background: 255 255 255;
-    --color-background-secondary: 249 250 251; /* #F9FAFB */
-    --color-background-tertiary: 243 244 246; /* #F3F4F6 */
+    --color-background-secondary: 255 239 213; /* #FFEFD5 */
+    --color-background-tertiary: 255 248 236; /* #FFF8EC */
     
     /* Surface Colors */
     --color-surface: 255 255 255;
-    --color-surface-hover: 249 250 251;
-    --color-surface-active: 243 244 246;
+    --color-surface-hover: 255 248 236; /* #FFF8EC */
+    --color-surface-active: 255 239 213; /* #FFEFD5 */
     
-    /* Border Colors */
-    --color-border: 229 231 235; /* #E5E7EB */
-    --color-border-hover: 209 213 219;
+    /* Border Colors — warm */
+    --color-border: 224 214 202; /* #E0D6CA */
+    --color-border-hover: 196 181 163; /* #C4B5A3 */
     
-    /* Text Colors */
-    --color-text-primary: 17 24 39; /* #111827 */
-    --color-text-secondary: 107 114 128; /* #6B7280 */
-    --color-text-tertiary: 156 163 175; /* #9CA3AF */
-    --color-text-disabled: 209 213 219;
+    /* Text Colors — warm */
+    --color-text-primary: 45 31 16; /* #2D1F10 */
+    --color-text-secondary: 107 87 68; /* #6B5744 */
+    --color-text-tertiary: 140 122 107; /* #8C7A6B */
+    --color-text-disabled: 196 181 163; /* #C4B5A3 */
     
     /* Overlay */
-    --color-overlay: 0 0 0 / 0.5;
+    --color-overlay: 45 31 16 / 0.4;
   }
 
   [data-theme="dark"] {
@@ -156,7 +156,8 @@
 
   body.light-theme,
   [data-theme="light"] body {
-    @apply bg-neutral-100 text-neutral-900;
+    background-color: #FDFCFB;
+    color: #2D1F10;
   }
 
   h1, h2, h3, h4, h5, h6 {

@@ -46,7 +46,7 @@
 /* Light theme adjustments */
 .light-theme .theme-switcher,
 [data-theme="light"] .theme-switcher {
-  --c-content: #224;
+  --c-content: #2D1F10;
   --glass-reflex-dark: 1;
   --glass-reflex-light: 1;
 }

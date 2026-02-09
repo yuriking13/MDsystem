@@ -211,7 +211,7 @@
 
 .light-theme .modal-header,
 [data-theme="light"] .modal-header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid rgba(200, 125, 42, 0.15);
 }
 
 .modal-title {
@@ -260,8 +260,8 @@
 
 .light-theme .modal-footer,
 [data-theme="light"] .modal-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
-  background-color: rgba(255, 255, 255, 0.35);
+  border-top: 1px solid rgba(200, 125, 42, 0.15);
+  background-color: rgba(255, 248, 236, 0.5);
 }
 
 /* =============================================================================
@@ -404,7 +404,7 @@
 
 .light-theme .project-card-icon,
 [data-theme="light"] .project-card-icon {
-  @apply bg-blue-100 text-blue-600;
+  @apply bg-primary-100 text-primary-700;
 }
 
 .project-role-badge {
@@ -432,7 +432,7 @@
 
 .light-theme .project-role-badge--editor,
 [data-theme="light"] .project-role-badge--editor {
-  @apply bg-blue-100 text-blue-700;
+  @apply bg-primary-100 text-primary-800;
 }
 
 .light-theme .project-role-badge--viewer,
@@ -467,7 +467,7 @@
 
 .light-theme .project-card-meta,
 [data-theme="light"] .project-card-meta {
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  border-top: 1px solid rgba(200, 125, 42, 0.12);
 }
 
 .project-meta-item {
@@ -488,7 +488,7 @@
 
 .light-theme .project-action-open,
 [data-theme="light"] .project-action-open {
-  @apply text-blue-600 hover:bg-blue-50;
+  @apply text-primary-700 hover:bg-primary-50;
 }
 
 .project-action-delete {

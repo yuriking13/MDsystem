@@ -2,7 +2,7 @@
    Animated Gradient Background
    Theme-aware animated background with noise overlay and interactive bubble.
    Dark theme:  #074F83 / #01111D
-   Light theme: #D88793 / #FFFFFF
+   Light theme: #C87D2A / #FFEFD5
    ============================================================================= */
 
 /* --- Keyframes: blob movement --- */
@@ -64,19 +64,19 @@
 /* --- Keyframe: autonomous gradient color shift (light) --- */
 @keyframes animBgGradientShiftLight {
   0% {
-    background: linear-gradient(40deg, #FFFFFF, #D88793);
+    background: linear-gradient(40deg, #FDFCFB, #FFEFD5);
   }
   25% {
-    background: linear-gradient(80deg, #FFF5F6, #E0949F);
+    background: linear-gradient(80deg, #FFF8EC, #FFE4B8);
   }
   50% {
-    background: linear-gradient(120deg, #FFECEE, #C97A86);
+    background: linear-gradient(120deg, #FFEFD5, #FFD48A);
   }
   75% {
-    background: linear-gradient(60deg, #FFF0F2, #DDA0AB);
+    background: linear-gradient(60deg, #FFF8EC, #F5BA5C);
   }
   100% {
-    background: linear-gradient(40deg, #FFFFFF, #D88793);
+    background: linear-gradient(40deg, #FDFCFB, #FFEFD5);
   }
 }
 
@@ -112,13 +112,13 @@
 .animated-bg[data-theme-mode="light"],
 .light-theme .animated-bg,
 [data-theme="light"] .animated-bg {
-  --abg-bg1: #FFFFFF;
-  --abg-bg2: #D88793;
-  --abg-color1: 216, 135, 147;  /* #D88793 */
-  --abg-color2: 230, 160, 170;  /* lighter pink */
-  --abg-color3: 200, 120, 140;  /* rose */
-  --abg-color4: 240, 180, 190;  /* pale pink */
-  --abg-color5: 255, 230, 235;  /* near white pink */
+  --abg-bg1: #FDFCFB;
+  --abg-bg2: #FFEFD5;
+  --abg-color1: 200, 125, 42;   /* #C87D2A — primary gold */
+  --abg-color2: 217, 154, 58;   /* #D99A3A — lighter gold */
+  --abg-color3: 184, 122, 32;   /* #B87A20 — darker gold */
+  --abg-color4: 245, 186, 92;   /* #F5BA5C — warm gold */
+  --abg-color5: 255, 239, 213;  /* #FFEFD5 — papaya whip */
   --abg-blending: multiply;
 
   background: linear-gradient(40deg, var(--abg-bg1), var(--abg-bg2));

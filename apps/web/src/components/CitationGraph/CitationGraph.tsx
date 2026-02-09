@@ -378,19 +378,19 @@ export default function CitationGraph({ projectId }: Props) {
 
   // Предвычисленные цвета для текущей темы (включая цвета узлов)
   const graphColors = useMemo(() => {
-    // Пастельные цвета для светлой темы (новая палитра)
+    // Пастельные цвета для светлой темы (тёплая палитра Papaya Whip)
     const pastelColors = {
-      citing: "#FC9DBF", // розовый
-      selected: "#C6DDCD", // мятный
-      excluded: "#FABAAE", // коралловый
-      candidatePubmed: "#ACDBEB", // голубой
-      candidateDoaj: "#FFEDC7", // кремовый
-      candidateWiley: "#E2D3E8", // лавандовый
-      reference: "#F9D7B2", // персиковый
-      related: "#C7DBDA", // серо-мятный
-      aiFound: "#D086C5", // фиолетово-розовый
-      pvalue: "#FBD6E6", // светло-розовый
-      default: "#E2D3E8", // лавандовый (нейтральный)
+      citing: "#F5BA5C", // золотой
+      selected: "#A3D9A5", // мятно-зелёный
+      excluded: "#E8A59A", // тёплый коралл
+      candidatePubmed: "#D99A3A", // насыщенный золотой
+      candidateDoaj: "#FFEFD5", // кремовый (papaya whip)
+      candidateWiley: "#C4A6D4", // лавандовый
+      reference: "#FFD48A", // светло-золотой
+      related: "#B8D4D0", // серо-мятный
+      aiFound: "#C87D2A", // тёплый янтарный
+      pvalue: "#FFE4B8", // бледно-золотой
+      default: "#E0D6CA", // тёплый нейтральный
     };
 
     // Яркие цвета для тёмной темы
@@ -411,19 +411,19 @@ export default function CitationGraph({ projectId }: Props) {
     const nodeColors = isLightTheme ? pastelColors : vibrantColors;
 
     return {
-      bg: isLightTheme ? "#f8fafc" : "#0b0f19",
-      bgFullscreen: isLightTheme ? "#f1f5f9" : "#050810",
+      bg: isLightTheme ? "#FDFCFB" : "#0b0f19",
+      bgFullscreen: isLightTheme ? "#FFF8EC" : "#050810",
       linkColor: isLightTheme
-        ? "rgba(148, 163, 184, 0.4)"
+        ? "rgba(140, 122, 107, 0.4)"
         : "rgba(100, 130, 180, 0.25)",
       strokeColor: isLightTheme
-        ? "rgba(100, 116, 139, 0.2)"
+        ? "rgba(107, 92, 77, 0.2)"
         : "rgba(255, 255, 255, 0.15)",
       clusterStrokeColor: isLightTheme
-        ? "rgba(100, 116, 139, 0.35)"
+        ? "rgba(107, 92, 77, 0.35)"
         : "rgba(255, 255, 255, 0.3)",
       textColor: isLightTheme
-        ? "rgba(30, 41, 59, 0.8)"
+        ? "rgba(45, 31, 16, 0.8)"
         : "rgba(255, 255, 255, 0.7)",
       shadowAlpha: isLightTheme ? "40" : "60",
       // Цвета узлов
@@ -1506,7 +1506,11 @@ export default function CitationGraph({ projectId }: Props) {
   const normalizeSource = useCallback(
     (source?: string): ArticleData["source"] => {
       const normalized = (source || "").toLowerCase();
-      if (normalized === "doaj" || normalized === "wiley" || normalized === "pubmed") {
+      if (
+        normalized === "doaj" ||
+        normalized === "wiley" ||
+        normalized === "pubmed"
+      ) {
         return normalized as ArticleData["source"];
       }
       return "pubmed";

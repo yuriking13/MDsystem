@@ -59,7 +59,7 @@
 
 .light-theme .articles-header-status,
 [data-theme="light"] .articles-header-status {
-  @apply text-blue-600;
+  @apply text-primary-700;
 }
 
 .light-theme .articles-header-count,
@@ -144,8 +144,8 @@
 
 .light-theme .articles-toolbar-btn--primary,
 [data-theme="light"] .articles-toolbar-btn--primary {
-  @apply bg-blue-600 text-white border-blue-500;
-  @apply hover:bg-blue-500;
+  @apply bg-primary-700 text-white border-primary-600;
+  @apply hover:bg-primary-600;
 }
 
 /* =============================================================================
@@ -269,7 +269,7 @@
 
 .light-theme .article-title,
 [data-theme="light"] .article-title {
-  @apply text-neutral-900 hover:text-blue-600;
+  @apply text-neutral-900 hover:text-primary-700;
 }
 
 /* Meta */
@@ -317,7 +317,7 @@
 
 .light-theme .article-id-link,
 [data-theme="light"] .article-id-link {
-  @apply text-neutral-500 hover:text-blue-600;
+  @apply text-neutral-500 hover:text-primary-700;
 }
 
 /* Abstract */
@@ -351,7 +351,7 @@
 
 .light-theme .article-abstract-toggle,
 [data-theme="light"] .article-abstract-toggle {
-  @apply text-blue-600 hover:text-blue-700;
+  @apply text-primary-700 hover:text-primary-800;
 }
 
 /* Actions Bar */
@@ -373,7 +373,7 @@
   background-color: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  border-top: 1px solid rgba(200, 125, 42, 0.12);
 }
 
 .article-status-actions,
@@ -663,7 +663,7 @@
 
 .light-theme .search-source-option.active,
 [data-theme="light"] .search-source-option.active {
-  @apply border-blue-500 bg-blue-50;
+  @apply border-primary-600 bg-primary-50;
 }
 
 .search-source-content {
@@ -778,7 +778,7 @@
 
 .light-theme .articles-filter-search input:focus,
 [data-theme="light"] .articles-filter-search input:focus {
-  @apply ring-blue-500/20 border-blue-400;
+  @apply ring-primary-600/20 border-primary-500;
 }
 
 /* Year Filter */
@@ -838,7 +838,7 @@
 
 .light-theme .articles-filter-select:focus,
 [data-theme="light"] .articles-filter-select:focus {
-  @apply ring-blue-500/20 border-blue-400;
+  @apply ring-primary-600/20 border-primary-500;
 }
 
 /* Filter Group */
@@ -912,8 +912,8 @@
 
 .light-theme .bulk-actions,
 [data-theme="light"] .bulk-actions {
-  background-color: rgba(59, 130, 246, 0.05);
-  border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+  background-color: rgba(200, 125, 42, 0.05);
+  border-bottom: 1px solid rgba(200, 125, 42, 0.15);
 }
 
 /* =============================================================================

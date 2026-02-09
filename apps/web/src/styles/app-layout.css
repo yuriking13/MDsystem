@@ -700,8 +700,8 @@ html.layout-fixed #root {
 
 .light-theme .app-sidebar,
 [data-theme="light"] .app-sidebar {
-  --glass-hue1: 330;
-  --glass-hue2: 280;
+  --glass-hue1: 35;
+  --glass-hue2: 25;
   
   /* Glass background — 75% transparent (25% opaque) */
   background: 
@@ -796,7 +796,7 @@ html.layout-fixed #root {
 
 .light-theme .sidebar-project-role,
 [data-theme="light"] .sidebar-project-role {
-  @apply text-blue-600;
+  @apply text-primary-700;
 }
 
 .light-theme .sidebar-project-date,
@@ -817,13 +817,13 @@ html.layout-fixed #root {
 .light-theme .sidebar-nav-item--active,
 [data-theme="light"] .sidebar-nav-item--active {
   background-color: hsla(var(--glass-hue1), 50%, 50%, 0.12);
-  @apply text-blue-600;
+  @apply text-primary-700;
 }
 
 .light-theme .sidebar-nav-item--active:hover,
 [data-theme="light"] .sidebar-nav-item--active:hover {
   background-color: hsla(var(--glass-hue1), 50%, 50%, 0.18);
-  @apply text-blue-700;
+  @apply text-primary-800;
 }
 
 .light-theme .sidebar-footer,
@@ -875,13 +875,13 @@ html.layout-fixed #root {
 .light-theme .sidebar-submenu-item--active,
 [data-theme="light"] .sidebar-submenu-item--active {
   background-color: hsla(var(--glass-hue1), 50%, 50%, 0.1);
-  @apply text-blue-600;
+  @apply text-primary-700;
 }
 
 .light-theme .sidebar-submenu-item--active:hover,
 [data-theme="light"] .sidebar-submenu-item--active:hover {
   background-color: hsla(var(--glass-hue1), 50%, 50%, 0.16);
-  @apply text-blue-700;
+  @apply text-primary-800;
 }
 
 .light-theme .sidebar-submenu-badge,
@@ -893,7 +893,7 @@ html.layout-fixed #root {
 .light-theme .sidebar-submenu-item--active .sidebar-submenu-badge,
 [data-theme="light"] .sidebar-submenu-item--active .sidebar-submenu-badge {
   background-color: hsla(var(--glass-hue1), 40%, 50%, 0.15);
-  @apply text-blue-600;
+  @apply text-primary-700;
 }
 
 /* =============================================================================
