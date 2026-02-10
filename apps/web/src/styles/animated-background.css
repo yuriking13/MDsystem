@@ -22,7 +22,7 @@
 .animated-bg[data-theme-mode="light"],
 .light-theme .animated-bg,
 [data-theme="light"] .animated-bg {
-  background: linear-gradient(-29deg, #f3b067, #211f1f);
+  background: linear-gradient(-29deg, #211f1f, #f3b067);
 }
 
 /* --- Make sure content above background is visible --- */
