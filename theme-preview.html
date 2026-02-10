@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MDsystem — Превью светлой темы</title>
+  <style>
+    /* ========================================
+       LIGHT THEME DESIGN TOKENS
+       Основа: #FFEFD5 (papayawhip) + #FFFFFF
+       ======================================== */
+
+    :root {
+      /* ─── Глобальные токены (design-system) ─── */
+      --color-primary: #C87D2A;              /* тёплый золотисто-коричневый — аналог #3B82F6 */
+      --color-primary-foreground: #FFFFFF;
+      --color-secondary: #8C7A6B;            /* тёплый серо-коричневый — аналог #6B7280 */
+      --color-secondary-foreground: #FFFFFF;
+      --color-text-primary: #2D1F10;          /* почти чёрный, тёплый — аналог #F8FAFC */
+      --color-text-secondary: #6B5744;        /* средний коричневый — аналог #CBD5E1 */
+      --color-background-primary: #FFFFFF;
+      --color-background-secondary: #FFEFD5;  /* papayawhip — аналог #0D1B2A */
+
+      /* ─── Legacy tokens ─── */
+      --bg-primary: #FFFFFF;                  /* аналог #0A1628 */
+      --bg-secondary: rgba(255, 239, 213, 0.9); /* аналог rgba(13,27,42,0.9) */
+      --text-primary: #2D1F10;                /* аналог #E8F0FF */
+      --text-secondary: #7A6652;              /* аналог #A0B5D8 */
+      --accent: #C87D2A;
+      --accent-secondary: #A855F7;            /* фиолетовый акцент — аналог #7C3AED */
+      --success: #15803D;
+      --success-secondary: #0D9488;           /* бирюзовый — аналог #06B6D4 */
+      --danger: #DC2626;
+      --danger-secondary: #EA580C;            /* оранжевый — аналог #F97316 */
+
+      /* ─── Полутона и градиенты FFEFD5 ─── */
+      --papaya-50:  #FFFDF9;
+      --papaya-100: #FFF8EC;
+      --papaya-200: #FFEFD5;
+      --papaya-300: #FFE4B8;
+      --papaya-400: #FFD48A;
+      --papaya-500: #F5BA5C;
+      --papaya-600: #D99A3A;
+      --papaya-700: #B87A20;
+      --papaya-800: #8C5A10;
+      --papaya-900: #5C3A08;
+
+      /* ─── Нейтральные тёплые ─── */
+      --warm-50:  #FDFCFB;
+      --warm-100: #F9F6F2;
+      --warm-200: #F0EBE4;
+      --warm-300: #E0D6CA;
+      --warm-400: #C4B5A3;
+      --warm-500: #A89580;
+      --warm-600: #8C7A68;
+      --warm-700: #6B5C4D;
+      --warm-800: #4A3D32;
+      --warm-900: #2D1F10;
+
+      /* ─── Радиусы, тени ─── */
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(45,31,16,0.06), 0 1px 2px rgba(45,31,16,0.04);
+      --shadow-md: 0 4px 12px rgba(45,31,16,0.08), 0 2px 4px rgba(45,31,16,0.04);
+      --shadow-lg: 0 12px 32px rgba(45,31,16,0.12), 0 4px 8px rgba(45,31,16,0.06);
+    }
+
+    /* ─── Reset ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Layout ─── */
+    .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+
+    .header {
+      text-align: center;
+      padding: 48px 24px;
+      background: linear-gradient(135deg, var(--papaya-100) 0%, var(--papaya-200) 50%, var(--papaya-300) 100%);
+      border-radius: var(--radius-lg);
+      margin-bottom: 48px;
+      border: 1px solid var(--papaya-300);
+    }
+    .header h1 { font-size: 2.25rem; font-weight: 700; color: var(--warm-900); margin-bottom: 8px; }
+    .header p { font-size: 1.1rem; color: var(--warm-600); }
+
+    .section { margin-bottom: 48px; }
+    .section-title {
+      font-size: 1.4rem; font-weight: 700; color: var(--warm-800);
+      margin-bottom: 20px; padding-bottom: 12px;
+      border-bottom: 2px solid var(--papaya-300);
+    }
+
+    /* ─── Color Swatches ─── */
+    .swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+    }
+    .swatch {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--warm-200);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .swatch:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .swatch-color { height: 80px; }
+    .swatch-info { padding: 10px 12px; background: #fff; }
+    .swatch-name { font-size: 0.75rem; font-weight: 600; color: var(--warm-700); text-transform: uppercase; letter-spacing: 0.04em; }
+    .swatch-hex { font-size: 0.8rem; color: var(--warm-500); font-family: 'JetBrains Mono', monospace; }
+
+    /* ─── Buttons ─── */
+    .btn-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; align-items: center; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px;
+      font-size: 0.9rem; font-weight: 600;
+      border-radius: var(--radius-sm);
+      border: none; cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    /* btn-primary — аналог dark #2563EB */
+    .btn-primary {
+      background: #C87D2A;
+      color: #FFFFFF;
+    }
+    .btn-primary:hover { background: #B06E22; }
+    .btn-primary:active { background: #9A5F1C; }
+
+    /* btn-secondary — аналог dark #162236 */
+    .btn-secondary {
+      background: var(--papaya-100);
+      color: var(--text-primary);
+      border: 1px solid rgba(200, 125, 42, 0.25);
+    }
+    .btn-secondary:hover { background: var(--papaya-200); border-color: rgba(200, 125, 42, 0.4); }
+
+    /* action-button.primary — аналог dark #3B82F6 */
+    .btn-action-primary {
+      background: #C87D2A;
+      color: #FFFFFF;
+    }
+    .btn-action-primary:hover { background: #B06E22; }
+
+    /* action-button.secondary — аналог dark #334155 */
+    .btn-action-secondary {
+      background: var(--warm-200);
+      color: var(--warm-700);
+    }
+    .btn-action-secondary:hover { background: var(--warm-300); color: var(--warm-800); }
+
+    /* articles-toolbar-btn--primary — аналог dark #2563EB с glow */
+    .btn-toolbar-primary {
+      background: #C87D2A;
+      color: #FFFFFF;
+      border: 1px solid #D99A3A;
+      box-shadow: 0 0 12px rgba(200, 125, 42, 0.25);
+    }
+    .btn-toolbar-primary:hover {
+      background: #D99A3A;
+      box-shadow: 0 0 20px rgba(200, 125, 42, 0.45);
+    }
+
+    .btn-accent {
+      background: var(--accent-secondary);
+      color: #FFFFFF;
+    }
+    .btn-accent:hover { background: #9333EA; }
+
+    .btn-success {
+      background: var(--success);
+      color: #FFFFFF;
+    }
+    .btn-success:hover { background: #166534; }
+
+    .btn-danger {
+      background: var(--danger);
+      color: #FFFFFF;
+    }
+    .btn-danger:hover { background: #B91C1C; }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--color-primary);
+      border: 1.5px solid var(--color-primary);
+    }
+    .btn-outline:hover { background: rgba(200, 125, 42, 0.08); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--warm-600);
+    }
+    .btn-ghost:hover { background: var(--warm-100); color: var(--warm-800); }
+
+    /* ─── Badges ─── */
+    .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 4px 12px;
+      font-size: 0.78rem; font-weight: 600;
+      border-radius: 999px;
+      border: 1px solid transparent;
+    }
+
+    /* admin-stat-primary — аналог rgba(75,116,255,0.15) */
+    .badge-primary {
+      background: rgba(200, 125, 42, 0.12);
+      color: #C87D2A;
+      border-color: rgba(200, 125, 42, 0.25);
+    }
+
+    /* admin-badge-secondary — аналог rgba(107,114,128,0.15) */
+    .badge-secondary {
+      background: rgba(140, 122, 107, 0.12);
+      color: #8C7A6B;
+      border-color: rgba(140, 122, 107, 0.25);
+    }
+
+    .badge-accent {
+      background: rgba(168, 85, 247, 0.1);
+      color: #9333EA;
+      border-color: rgba(168, 85, 247, 0.2);
+    }
+    .badge-success {
+      background: rgba(21, 128, 61, 0.1);
+      color: #15803D;
+      border-color: rgba(21, 128, 61, 0.2);
+    }
+    .badge-danger {
+      background: rgba(220, 38, 38, 0.1);
+      color: #DC2626;
+      border-color: rgba(220, 38, 38, 0.2);
+    }
+    .badge-warning {
+      background: rgba(234, 88, 12, 0.1);
+      color: #EA580C;
+      border-color: rgba(234, 88, 12, 0.2);
+    }
+
+    /* ─── Cards ─── */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+
+    .card {
+      background: #FFFFFF;
+      border: 1px solid var(--warm-200);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+    }
+    .card:hover { box-shadow: var(--shadow-md); border-color: var(--papaya-300); }
+
+    .card-papaya {
+      background: linear-gradient(145deg, #FFFFFF 0%, var(--papaya-50) 100%);
+      border-color: var(--papaya-300);
+    }
+
+    .card-highlighted {
+      background: var(--papaya-100);
+      border-color: var(--papaya-400);
+    }
+
+    .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; color: var(--warm-800); }
+    .card p { font-size: 0.9rem; color: var(--warm-600); line-height: 1.6; }
+    .card-footer { margin-top: 16px; display: flex; gap: 8px; }
+
+    /* ─── Stat Cards (admin) ─── */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .stat-card {
+      background: #FFFFFF;
+      border: 1px solid var(--warm-200);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat-icon {
+      width: 44px; height: 44px;
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem; margin-bottom: 12px;
+    }
+    .stat-icon-primary {
+      background: rgba(200, 125, 42, 0.12);
+      color: #C87D2A;
+    }
+    .stat-icon-accent {
+      background: rgba(168, 85, 247, 0.12);
+      color: #A855F7;
+    }
+    .stat-icon-success {
+      background: rgba(13, 148, 136, 0.12);
+      color: #0D9488;
+    }
+    .stat-icon-danger {
+      background: rgba(234, 88, 12, 0.12);
+      color: #EA580C;
+    }
+    .stat-value { font-size: 1.75rem; font-weight: 700; color: var(--warm-900); }
+    .stat-label { font-size: 0.8rem; color: var(--warm-500); font-weight: 500; margin-top: 2px; }
+
+    /* ─── Inputs ─── */
+    .input-group { margin-bottom: 16px; max-width: 400px; }
+    .input-label {
+      display: block;
+      font-size: 0.8rem; font-weight: 600;
+      color: var(--warm-700);
+      margin-bottom: 6px;
+    }
+    .input {
+      width: 100%;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      border: 1.5px solid var(--warm-300);
+      border-radius: var(--radius-sm);
+      background: #FFFFFF;
+      color: var(--text-primary);
+      transition: all 0.2s;
+      font-family: inherit;
+      outline: none;
+    }
+    .input::placeholder { color: var(--warm-400); }
+    .input:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(200, 125, 42, 0.12);
+    }
+
+    .textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      border: 1.5px solid var(--warm-300);
+      border-radius: var(--radius-sm);
+      background: #FFFFFF;
+      color: var(--text-primary);
+      resize: vertical;
+      font-family: inherit;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .textarea:focus {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(200, 125, 42, 0.12);
+    }
+
+    /* ─── Sidebar mockup ─── */
+    .layout-demo {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 0;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--warm-200);
+      box-shadow: var(--shadow-md);
+      min-height: 420px;
+    }
+
+    .sidebar {
+      background: var(--papaya-200);
+      border-right: 1px solid var(--papaya-300);
+      padding: 24px 16px;
+    }
+    .sidebar-logo { font-weight: 800; font-size: 1.15rem; color: var(--warm-900); margin-bottom: 24px; padding: 0 8px; }
+    .sidebar-nav { list-style: none; }
+    .sidebar-nav li {
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem; font-weight: 500;
+      color: var(--warm-700);
+      cursor: pointer;
+      margin-bottom: 2px;
+      transition: all 0.15s;
+    }
+    .sidebar-nav li:hover { background: var(--papaya-300); color: var(--warm-900); }
+    .sidebar-nav li.active {
+      background: rgba(200, 125, 42, 0.15);
+      color: #C87D2A;
+      font-weight: 600;
+    }
+
+    .main-content {
+      background: #FFFFFF;
+      padding: 28px;
+    }
+    .main-content h2 { font-size: 1.35rem; font-weight: 700; color: var(--warm-900); margin-bottom: 6px; }
+    .main-content .subtitle { font-size: 0.9rem; color: var(--warm-500); margin-bottom: 24px; }
+
+    .toolbar {
+      display: flex; gap: 8px; align-items: center;
+      padding: 12px 16px;
+      background: var(--papaya-50);
+      border: 1px solid var(--warm-200);
+      border-radius: var(--radius-sm);
+      margin-bottom: 20px;
+    }
+    .toolbar-search {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--warm-300);
+      border-radius: var(--radius-sm);
+      background: #FFFFFF;
+      font-size: 0.85rem;
+      outline: none;
+      color: var(--text-primary);
+    }
+    .toolbar-search:focus { border-color: var(--color-primary); }
+
+    /* ─── Table ─── */
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--warm-200);
+      border-radius: var(--radius-sm);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th {
+      text-align: left; padding: 12px 16px;
+      background: var(--papaya-100);
+      color: var(--warm-700); font-weight: 600;
+      border-bottom: 1px solid var(--warm-200);
+      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em;
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--warm-100);
+      color: var(--warm-800);
+    }
+    tr:hover td { background: var(--papaya-50); }
+
+    /* ─── Editor mock (TiptapEditor fallbacks) ─── */
+    .editor-mock {
+      border: 1.5px solid var(--warm-300);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .editor-toolbar-mock {
+      display: flex; gap: 4px; padding: 8px 12px;
+      background: var(--papaya-100);
+      border-bottom: 1px solid var(--warm-200);
+    }
+    .editor-toolbar-btn {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-sm);
+      border: none; cursor: pointer;
+      background: transparent;
+      color: var(--warm-600);   /* fallback аналог #E2E8F0 в light */
+      font-weight: 700;
+      transition: all 0.15s;
+    }
+    .editor-toolbar-btn:hover { background: var(--warm-200); color: var(--warm-800); }
+    .editor-body-mock {
+      padding: 20px;
+      min-height: 160px;
+      background: #FFFFFF;
+      color: var(--warm-900);    /* var(--text-primary) */
+      font-size: 0.95rem; line-height: 1.7;
+    }
+    .editor-body-mock .placeholder {
+      color: var(--warm-400);    /* var(--text-secondary) fallback аналог #94A3B8 */
+      font-style: italic;
+    }
+
+    /* ─── Gradient backgrounds showcase ─── */
+    .gradient-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .gradient-box {
+      height: 120px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: flex-end;
+      padding: 14px 18px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid rgba(200, 180, 150, 0.2);
+    }
+    .gradient-label {
+      font-size: 0.75rem; font-weight: 600;
+      color: var(--warm-700);
+      background: rgba(255,255,255,0.85);
+      padding: 4px 10px;
+      border-radius: 4px;
+      backdrop-filter: blur(4px);
+    }
+
+    /* ─── Typography showcase ─── */
+    .typo-row { margin-bottom: 12px; }
+    .typo-row .label { font-size: 0.7rem; color: var(--warm-500); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2px; }
+    .typo-h1 { font-size: 2rem; font-weight: 800; color: var(--warm-900); }
+    .typo-h2 { font-size: 1.5rem; font-weight: 700; color: var(--warm-800); }
+    .typo-h3 { font-size: 1.15rem; font-weight: 600; color: var(--warm-700); }
+    .typo-body { font-size: 0.95rem; color: var(--warm-700); line-height: 1.7; max-width: 600px; }
+    .typo-caption { font-size: 0.8rem; color: var(--warm-500); }
+    .typo-code { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #C87D2A; background: var(--papaya-100); padding: 2px 8px; border-radius: 4px; }
+
+    /* ─── Alerts ─── */
+    .alert {
+      padding: 14px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      margin-bottom: 12px;
+      border-left: 4px solid;
+    }
+    .alert-info { background: rgba(200,125,42,0.06); border-color: #C87D2A; color: #9A5F1C; }
+    .alert-success { background: rgba(21,128,61,0.06); border-color: #15803D; color: #166534; }
+    .alert-warning { background: rgba(234,88,12,0.06); border-color: #EA580C; color: #C2410C; }
+    .alert-error { background: rgba(220,38,38,0.06); border-color: #DC2626; color: #B91C1C; }
+
+    /* ─── Dark / Light compare ─── */
+    .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .compare-card {
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .compare-dark {
+      background: #0A1628;
+      color: #E8F0FF;
+      border: 1px solid rgba(56,89,138,0.3);
+    }
+    .compare-dark h4 { color: #E8F0FF; margin-bottom: 12px; font-size: 1rem; }
+    .compare-dark .compare-token { color: #A0B5D8; font-size: 0.82rem; margin-bottom: 4px; }
+    .compare-dark .compare-token span { color: #3B82F6; font-family: monospace; }
+
+    .compare-light {
+      background: #FFFFFF;
+      color: var(--warm-900);
+      border: 1px solid var(--warm-200);
+    }
+    .compare-light h4 { color: var(--warm-900); margin-bottom: 12px; font-size: 1rem; }
+    .compare-light .compare-token { color: var(--warm-600); font-size: 0.82rem; margin-bottom: 4px; }
+    .compare-light .compare-token span { color: #C87D2A; font-family: monospace; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 768px) {
+      .layout-demo { grid-template-columns: 1fr; }
+      .compare-grid { grid-template-columns: 1fr; }
+      .header h1 { font-size: 1.8rem; }
+    }
+
+    /* ─── Token mapping table ─── */
+    .token-table { margin-top: 12px; }
+    .token-table th { font-size: 0.72rem; }
+    .token-table td { font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; }
+    .token-table .color-dot {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      vertical-align: middle;
+      margin-right: 6px;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+  <!-- ═══════════ HEADER ═══════════ -->
+  <div class="header">
+    <h1>🎨 MDsystem — Светлая тема</h1>
+    <p>Основа: <strong>#FFEFD5</strong> (Papaya Whip) + <strong>#FFFFFF</strong> — тёплая, уютная палитра</p>
+  </div>
+
+  <!-- ═══════════ COLOR PALETTE ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">🎨 Палитра: Papaya Whip</h2>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:#FFFDF9"></div><div class="swatch-info"><div class="swatch-name">Papaya 50</div><div class="swatch-hex">#FFFDF9</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#FFF8EC"></div><div class="swatch-info"><div class="swatch-name">Papaya 100</div><div class="swatch-hex">#FFF8EC</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#FFEFD5"></div><div class="swatch-info"><div class="swatch-name">Papaya 200</div><div class="swatch-hex">#FFEFD5</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#FFE4B8"></div><div class="swatch-info"><div class="swatch-name">Papaya 300</div><div class="swatch-hex">#FFE4B8</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#FFD48A"></div><div class="swatch-info"><div class="swatch-name">Papaya 400</div><div class="swatch-hex">#FFD48A</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#F5BA5C"></div><div class="swatch-info"><div class="swatch-name">Papaya 500</div><div class="swatch-hex">#F5BA5C</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#D99A3A"></div><div class="swatch-info"><div class="swatch-name">Papaya 600</div><div class="swatch-hex">#D99A3A</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#B87A20"></div><div class="swatch-info"><div class="swatch-name">Papaya 700</div><div class="swatch-hex">#B87A20</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#8C5A10"></div><div class="swatch-info"><div class="swatch-name">Papaya 800</div><div class="swatch-hex">#8C5A10</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#5C3A08"></div><div class="swatch-info"><div class="swatch-name">Papaya 900</div><div class="swatch-hex">#5C3A08</div></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">🌫 Нейтральные тёплые</h2>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:#FDFCFB"></div><div class="swatch-info"><div class="swatch-name">Warm 50</div><div class="swatch-hex">#FDFCFB</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#F9F6F2"></div><div class="swatch-info"><div class="swatch-name">Warm 100</div><div class="swatch-hex">#F9F6F2</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#F0EBE4"></div><div class="swatch-info"><div class="swatch-name">Warm 200</div><div class="swatch-hex">#F0EBE4</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#E0D6CA"></div><div class="swatch-info"><div class="swatch-name">Warm 300</div><div class="swatch-hex">#E0D6CA</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#C4B5A3"></div><div class="swatch-info"><div class="swatch-name">Warm 400</div><div class="swatch-hex">#C4B5A3</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#A89580"></div><div class="swatch-info"><div class="swatch-name">Warm 500</div><div class="swatch-hex">#A89580</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#8C7A68"></div><div class="swatch-info"><div class="swatch-name">Warm 600</div><div class="swatch-hex">#8C7A68</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#6B5C4D"></div><div class="swatch-info"><div class="swatch-name">Warm 700</div><div class="swatch-hex">#6B5C4D</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#4A3D32"></div><div class="swatch-info"><div class="swatch-name">Warm 800</div><div class="swatch-hex">#4A3D32</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#2D1F10"></div><div class="swatch-info"><div class="swatch-name">Warm 900</div><div class="swatch-hex">#2D1F10</div></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">💎 Акцентные цвета</h2>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="swatch-color" style="background:#C87D2A"></div><div class="swatch-info"><div class="swatch-name">Primary</div><div class="swatch-hex">#C87D2A</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#A855F7"></div><div class="swatch-info"><div class="swatch-name">Accent</div><div class="swatch-hex">#A855F7</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#15803D"></div><div class="swatch-info"><div class="swatch-name">Success</div><div class="swatch-hex">#15803D</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#0D9488"></div><div class="swatch-info"><div class="swatch-name">Teal</div><div class="swatch-hex">#0D9488</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#DC2626"></div><div class="swatch-info"><div class="swatch-name">Danger</div><div class="swatch-hex">#DC2626</div></div></div>
+      <div class="swatch"><div class="swatch-color" style="background:#EA580C"></div><div class="swatch-info"><div class="swatch-name">Warning</div><div class="swatch-hex">#EA580C</div></div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ GRADIENTS ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">🌅 Градиенты</h2>
+    <div class="gradient-grid">
+      <div class="gradient-box" style="background: linear-gradient(135deg, #FFFFFF 0%, #FFEFD5 100%);">
+        <span class="gradient-label">White → Papaya</span>
+      </div>
+      <div class="gradient-box" style="background: linear-gradient(135deg, #FFF8EC 0%, #FFE4B8 100%);">
+        <span class="gradient-label">Papaya 100 → 300</span>
+      </div>
+      <div class="gradient-box" style="background: linear-gradient(135deg, #FFEFD5 0%, #FFD48A 50%, #F5BA5C 100%);">
+        <span class="gradient-label">Papaya 200 → 500</span>
+      </div>
+      <div class="gradient-box" style="background: linear-gradient(135deg, #FFEFD5 0%, rgba(200,125,42,0.15) 100%);">
+        <span class="gradient-label">Papaya → Primary tint</span>
+      </div>
+      <div class="gradient-box" style="background: linear-gradient(180deg, #FFFFFF 0%, #FFF8EC 40%, #FFEFD5 100%);">
+        <span class="gradient-label">Page fade ↓</span>
+      </div>
+      <div class="gradient-box" style="background: linear-gradient(135deg, #F9F6F2 0%, #FFEFD5 50%, #F0EBE4 100%);">
+        <span class="gradient-label">Warm neutral → Papaya</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TYPOGRAPHY ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">📝 Типографика</h2>
+    <div class="typo-row"><div class="label">Heading 1 — 2rem / 800</div><div class="typo-h1">Обзор литературы</div></div>
+    <div class="typo-row"><div class="label">Heading 2 — 1.5rem / 700</div><div class="typo-h2">Метаданные статьи</div></div>
+    <div class="typo-row"><div class="label">Heading 3 — 1.15rem / 600</div><div class="typo-h3">Ключевые находки и рекомендации</div></div>
+    <div class="typo-row"><div class="label">Body — 0.95rem / normal</div><div class="typo-body">Система помогает исследователям организовать научные статьи, извлечь ключевые данные и построить граф цитирования для визуального анализа связей между публикациями.</div></div>
+    <div class="typo-row"><div class="label">Caption — 0.8rem</div><div class="typo-caption">Последнее обновление: 09.02.2026 · 42 статьи · 128 связей</div></div>
+    <div class="typo-row"><div class="label">Code</div><span class="typo-code">const theme = 'light';</span></div>
+  </div>
+
+  <!-- ═══════════ BUTTONS ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">🔘 Кнопки</h2>
+    <div class="btn-row">
+      <button class="btn btn-primary">Primary</button>
+      <button class="btn btn-secondary">Secondary</button>
+      <button class="btn btn-action-primary">Action Primary</button>
+      <button class="btn btn-action-secondary">Action Secondary</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-toolbar-primary">Toolbar Primary ✨</button>
+      <button class="btn btn-outline">Outline</button>
+      <button class="btn btn-ghost">Ghost</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-accent">Accent</button>
+      <button class="btn btn-success">Success</button>
+      <button class="btn btn-danger">Danger</button>
+    </div>
+  </div>
+
+  <!-- ═══════════ BADGES ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">🏷 Бейджи</h2>
+    <div class="badge-row">
+      <span class="badge badge-primary">Primary</span>
+      <span class="badge badge-secondary">Secondary</span>
+      <span class="badge badge-accent">Accent</span>
+      <span class="badge badge-success">Success</span>
+      <span class="badge badge-danger">Danger</span>
+      <span class="badge badge-warning">Warning</span>
+    </div>
+  </div>
+
+  <!-- ═══════════ ALERTS ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">⚠️ Уведомления</h2>
+    <div class="alert alert-info">ℹ️ Индексация 12 новых статей завершена. Граф обновлён.</div>
+    <div class="alert alert-success">✅ Файл «methodology.pdf» успешно загружен и обработан.</div>
+    <div class="alert alert-warning">⚡ Обнаружены дубликаты DOI. Рекомендуется ручная проверка.</div>
+    <div class="alert alert-error">❌ Не удалось подключиться к API CrossRef. Повторная попытка через 30 сек.</div>
+  </div>
+
+  <!-- ═══════════ FORM INPUTS ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">📋 Поля ввода</h2>
+    <div class="input-group">
+      <label class="input-label">Название статьи</label>
+      <input class="input" type="text" placeholder="Введите название...">
+    </div>
+    <div class="input-group">
+      <label class="input-label">DOI</label>
+      <input class="input" type="text" placeholder="10.1000/xyz123" value="10.1038/s41586-024-07487-w">
+    </div>
+    <div class="input-group">
+      <label class="input-label">Аннотация</label>
+      <textarea class="textarea" placeholder="Краткое описание содержания статьи..."></textarea>
+    </div>
+  </div>
+
+  <!-- ═══════════ STAT CARDS ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">📊 Статистика (admin panel)</h2>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-primary">📄</div>
+        <div class="stat-value">1,284</div>
+        <div class="stat-label">Статьи</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-accent">👥</div>
+        <div class="stat-value">56</div>
+        <div class="stat-label">Пользователи</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-success">🔗</div>
+        <div class="stat-value">3,847</div>
+        <div class="stat-label">Связи</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon stat-icon-danger">🔔</div>
+        <div class="stat-value">12</div>
+        <div class="stat-label">Очередь задач</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ CARDS ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">🗂 Карточки</h2>
+    <div class="card-grid">
+      <div class="card">
+        <h3>Стандартная карточка</h3>
+        <p>Белый фон, тёплая граница. Используется для списка статей и проектов.</p>
+        <div class="card-footer">
+          <span class="badge badge-primary">Nature</span>
+          <span class="badge badge-success">Обработано</span>
+        </div>
+      </div>
+      <div class="card card-papaya">
+        <h3>Карточка Papaya Gradient</h3>
+        <p>Градиент от белого к Papaya 50. Для выделенных или рекомендуемых элементов.</p>
+        <div class="card-footer">
+          <button class="btn btn-primary" style="padding:6px 14px;font-size:0.8rem">Открыть</button>
+          <button class="btn btn-ghost" style="padding:6px 14px;font-size:0.8rem">Подробнее</button>
+        </div>
+      </div>
+      <div class="card card-highlighted">
+        <h3>Выделенная карточка</h3>
+        <p>Papaya 100 фон. Для важных уведомлений, текущего выбора, активного проекта.</p>
+        <div class="card-footer">
+          <span class="badge badge-accent">Рекомендация</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ LAYOUT DEMO ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">🖥 Layout: Sidebar + Content</h2>
+    <div class="layout-demo">
+      <div class="sidebar">
+        <div class="sidebar-logo">📚 MDsystem</div>
+        <ul class="sidebar-nav">
+          <li class="active">📄 Статьи</li>
+          <li>📁 Проекты</li>
+          <li>🔍 Поиск</li>
+          <li>🕸 Граф цитирования</li>
+          <li>⚙️ Настройки</li>
+          <li>👤 Профиль</li>
+        </ul>
+      </div>
+      <div class="main-content">
+        <h2>Мои статьи</h2>
+        <p class="subtitle">Управление библиотекой научных публикаций</p>
+
+        <div class="toolbar">
+          <input class="toolbar-search" placeholder="Поиск по названию, автору, DOI..." />
+          <button class="btn btn-primary" style="padding:8px 16px;font-size:0.85rem">+ Добавить</button>
+          <button class="btn btn-secondary" style="padding:8px 16px;font-size:0.85rem">Фильтры</button>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Название</th>
+                <th>Авторы</th>
+                <th>Год</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Deep learning for NLP: A survey</td>
+                <td>Smith, J. et al.</td>
+                <td>2024</td>
+                <td><span class="badge badge-success">Обработано</span></td>
+              </tr>
+              <tr>
+                <td>Transformer architectures revisited</td>
+                <td>Chen, L. & Wang, M.</td>
+                <td>2025</td>
+                <td><span class="badge badge-primary">В процессе</span></td>
+              </tr>
+              <tr>
+                <td>Meta-analysis of clinical trials</td>
+                <td>Johnson, R.</td>
+                <td>2023</td>
+                <td><span class="badge badge-warning">Ожидает</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ EDITOR MOCK ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">📝 Текстовый редактор (Tiptap)</h2>
+    <div class="editor-mock">
+      <div class="editor-toolbar-mock">
+        <button class="editor-toolbar-btn"><b>B</b></button>
+        <button class="editor-toolbar-btn"><i>I</i></button>
+        <button class="editor-toolbar-btn"><u>U</u></button>
+        <button class="editor-toolbar-btn">H₁</button>
+        <button class="editor-toolbar-btn">H₂</button>
+        <button class="editor-toolbar-btn">≡</button>
+        <button class="editor-toolbar-btn">🔗</button>
+        <button class="editor-toolbar-btn">📷</button>
+      </div>
+      <div class="editor-body-mock">
+        <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:8px;color:var(--warm-900)">Введение</h2>
+        <p style="margin-bottom:12px">В данной работе мы рассматриваем применение методов машинного обучения для автоматической классификации научных публикаций по тематическим кластерам.</p>
+        <p class="placeholder">Продолжите ввод текста здесь...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ DARK vs LIGHT COMPARE ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">🔄 Сравнение: Dark ↔ Light</h2>
+    <div class="compare-grid">
+      <div class="compare-card compare-dark">
+        <h4>🌙 Dark Theme</h4>
+        <div class="compare-token">--color-primary: <span>#3B82F6</span></div>
+        <div class="compare-token">--bg-primary: <span>#0A1628</span></div>
+        <div class="compare-token">--bg-secondary: <span>rgba(13,27,42,0.9)</span></div>
+        <div class="compare-token">--text-primary: <span>#E8F0FF</span></div>
+        <div class="compare-token">--text-secondary: <span>#A0B5D8</span></div>
+        <div class="compare-token">--accent-secondary: <span>#7C3AED</span></div>
+        <div class="compare-token">btn-primary: <span>#2563EB</span></div>
+        <div class="compare-token">btn-secondary bg: <span>#162236</span></div>
+        <div class="compare-token">badge-secondary: <span>rgba(107,114,128,0.15)</span></div>
+        <div class="compare-token">toolbar glow: <span>rgba(37,99,235,0.4)</span></div>
+      </div>
+      <div class="compare-card compare-light">
+        <h4>☀️ Light Theme (Papaya Whip)</h4>
+        <div class="compare-token">--color-primary: <span>#C87D2A</span></div>
+        <div class="compare-token">--bg-primary: <span>#FFFFFF</span></div>
+        <div class="compare-token">--bg-secondary: <span>rgba(255,239,213,0.9)</span></div>
+        <div class="compare-token">--text-primary: <span>#2D1F10</span></div>
+        <div class="compare-token">--text-secondary: <span>#7A6652</span></div>
+        <div class="compare-token">--accent-secondary: <span>#A855F7</span></div>
+        <div class="compare-token">btn-primary: <span>#C87D2A</span></div>
+        <div class="compare-token">btn-secondary bg: <span>#FFF8EC</span></div>
+        <div class="compare-token">badge-secondary: <span>rgba(140,122,107,0.12)</span></div>
+        <div class="compare-token">toolbar glow: <span>rgba(200,125,42,0.25)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ TOKEN MAPPING TABLE ═══════════ -->
+  <div class="section">
+    <h2 class="section-title">📋 Полная таблица маппинга токенов</h2>
+    <div class="table-wrapper token-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Категория</th>
+            <th>Токен / Класс</th>
+            <th>Dark значение</th>
+            <th>Light значение</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td rowspan="6">Глобальные</td><td>--color-primary</td><td><span class="color-dot" style="background:#3B82F6"></span>#3B82F6</td><td><span class="color-dot" style="background:#C87D2A"></span>#C87D2A</td></tr>
+          <tr><td>--color-secondary</td><td><span class="color-dot" style="background:#6B7280"></span>#6B7280</td><td><span class="color-dot" style="background:#8C7A6B"></span>#8C7A6B</td></tr>
+          <tr><td>--color-text-primary</td><td><span class="color-dot" style="background:#F8FAFC"></span>#F8FAFC</td><td><span class="color-dot" style="background:#2D1F10"></span>#2D1F10</td></tr>
+          <tr><td>--color-text-secondary</td><td><span class="color-dot" style="background:#CBD5E1"></span>#CBD5E1</td><td><span class="color-dot" style="background:#6B5744"></span>#6B5744</td></tr>
+          <tr><td>--color-bg-primary</td><td><span class="color-dot" style="background:#0A1628"></span>#0A1628</td><td><span class="color-dot" style="background:#FFFFFF;border-color:#ccc"></span>#FFFFFF</td></tr>
+          <tr><td>--color-bg-secondary</td><td><span class="color-dot" style="background:#0D1B2A"></span>#0D1B2A</td><td><span class="color-dot" style="background:#FFEFD5"></span>#FFEFD5</td></tr>
+
+          <tr><td rowspan="4">Legacy</td><td>--text-primary</td><td><span class="color-dot" style="background:#E8F0FF"></span>#E8F0FF</td><td><span class="color-dot" style="background:#2D1F10"></span>#2D1F10</td></tr>
+          <tr><td>--text-secondary</td><td><span class="color-dot" style="background:#A0B5D8"></span>#A0B5D8</td><td><span class="color-dot" style="background:#7A6652"></span>#7A6652</td></tr>
+          <tr><td>--accent-secondary</td><td><span class="color-dot" style="background:#7C3AED"></span>#7C3AED</td><td><span class="color-dot" style="background:#A855F7"></span>#A855F7</td></tr>
+          <tr><td>--danger-secondary</td><td><span class="color-dot" style="background:#F97316"></span>#F97316</td><td><span class="color-dot" style="background:#EA580C"></span>#EA580C</td></tr>
+
+          <tr><td rowspan="4">Кнопки</td><td>.btn-primary</td><td><span class="color-dot" style="background:#2563EB"></span>#2563EB</td><td><span class="color-dot" style="background:#C87D2A"></span>#C87D2A</td></tr>
+          <tr><td>.btn-primary:hover</td><td><span class="color-dot" style="background:#1D4ED8"></span>#1D4ED8</td><td><span class="color-dot" style="background:#B06E22"></span>#B06E22</td></tr>
+          <tr><td>.btn-secondary bg</td><td><span class="color-dot" style="background:#162236"></span>#162236</td><td><span class="color-dot" style="background:#FFF8EC"></span>#FFF8EC</td></tr>
+          <tr><td>.btn-secondary:hover</td><td><span class="color-dot" style="background:#1E3050"></span>#1E3050</td><td><span class="color-dot" style="background:#FFEFD5"></span>#FFEFD5</td></tr>
+
+          <tr><td rowspan="3">Citation Graph</td><td>.action-btn-primary</td><td><span class="color-dot" style="background:#3B82F6"></span>#3B82F6</td><td><span class="color-dot" style="background:#C87D2A"></span>#C87D2A</td></tr>
+          <tr><td>.action-btn-secondary</td><td><span class="color-dot" style="background:#334155"></span>#334155</td><td><span class="color-dot" style="background:#F0EBE4"></span>#F0EBE4</td></tr>
+          <tr><td>.toolbar-btn glow</td><td>rgba(37,99,235,0.4)</td><td>rgba(200,125,42,0.25)</td></tr>
+
+          <tr><td rowspan="2">Admin/Badge</td><td>.stat-icon bg</td><td>rgba(75,116,255,0.15)</td><td>rgba(200,125,42,0.12)</td></tr>
+          <tr><td>.badge-secondary</td><td>rgba(107,114,128,0.15)</td><td>rgba(140,122,107,0.12)</td></tr>
+
+          <tr><td rowspan="2">Editor</td><td>text-primary fallback</td><td><span class="color-dot" style="background:#E2E8F0"></span>#E2E8F0</td><td><span class="color-dot" style="background:#2D1F10"></span>#2D1F10</td></tr>
+          <tr><td>text-secondary fallback</td><td><span class="color-dot" style="background:#94A3B8"></span>#94A3B8</td><td><span class="color-dot" style="background:#7A6652"></span>#7A6652</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:40px 0 20px;color:var(--warm-400);font-size:0.8rem;">
+    MDsystem Light Theme Preview · February 2026
+  </div>
+</div>
+
+</body>
+</html>

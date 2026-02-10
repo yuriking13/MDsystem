@@ -1,86 +1,11 @@
 /* =============================================================================
-   Animated Gradient Background
-   Theme-aware animated background with noise overlay and interactive bubble.
-   Dark theme:  #074F83 / #01111D
-   Light theme: #C87D2A / #FFEFD5
+   Static Gradient Background
+   Theme-aware static linear gradient at -29°.
+   Dark theme:  #01111D → #074F83
+   Light theme: #f3b067 → #211f1f
    ============================================================================= */
 
-/* --- Keyframes: blob movement --- */
-@keyframes animBgMoveInCircle {
-  0% {
-    transform: rotate(0deg);
-  }
-  50% {
-    transform: rotate(180deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes animBgMoveVertical {
-  0% {
-    transform: translateY(-50%);
-  }
-  50% {
-    transform: translateY(50%);
-  }
-  100% {
-    transform: translateY(-50%);
-  }
-}
-
-@keyframes animBgMoveHorizontal {
-  0% {
-    transform: translateX(-50%) translateY(-10%);
-  }
-  50% {
-    transform: translateX(50%) translateY(10%);
-  }
-  100% {
-    transform: translateX(-50%) translateY(-10%);
-  }
-}
-
-/* --- Keyframe: autonomous gradient color shift (dark) --- */
-@keyframes animBgGradientShiftDark {
-  0% {
-    background: linear-gradient(40deg, #01111D, #074F83);
-  }
-  25% {
-    background: linear-gradient(80deg, #021B2E, #0A6EA8);
-  }
-  50% {
-    background: linear-gradient(120deg, #03253F, #085D90);
-  }
-  75% {
-    background: linear-gradient(60deg, #011825, #0B5A80);
-  }
-  100% {
-    background: linear-gradient(40deg, #01111D, #074F83);
-  }
-}
-
-/* --- Keyframe: autonomous gradient color shift (light) --- */
-@keyframes animBgGradientShiftLight {
-  0% {
-    background: linear-gradient(40deg, #FDFCFB, #FFEFD5);
-  }
-  25% {
-    background: linear-gradient(80deg, #FFF8EC, #FFE4B8);
-  }
-  50% {
-    background: linear-gradient(120deg, #FFEFD5, #FFD48A);
-  }
-  75% {
-    background: linear-gradient(60deg, #FFF8EC, #F5BA5C);
-  }
-  100% {
-    background: linear-gradient(40deg, #FDFCFB, #FFEFD5);
-  }
-}
-
-/* --- Container --- */
+/* --- Container (dark theme default) --- */
 .animated-bg {
   position: fixed;
   top: 0;
@@ -88,158 +13,16 @@
   width: 100vw;
   height: 100vh;
   z-index: 0;
-  overflow: hidden;
   pointer-events: none;
-  contain: strict;
-  will-change: background;
 
-  /* Dark theme defaults */
-  --abg-bg1: #01111D;
-  --abg-bg2: #074F83;
-  --abg-color1: 7, 79, 131;     /* #074F83 */
-  --abg-color2: 4, 50, 90;      /* dark teal blend */
-  --abg-color3: 10, 90, 150;    /* lighter blue */
-  --abg-color4: 3, 40, 70;      /* deep blue */
-  --abg-color5: 1, 17, 29;      /* #01111D */
-  --abg-circle-size: 80%;
-  --abg-blending: hard-light;
-
-  background: linear-gradient(40deg, var(--abg-bg1), var(--abg-bg2));
-  animation: animBgGradientShiftDark 20s ease infinite;
+  background: linear-gradient(-29deg, #01111D, #074F83);
 }
 
 /* --- Light theme --- */
 .animated-bg[data-theme-mode="light"],
 .light-theme .animated-bg,
 [data-theme="light"] .animated-bg {
-  --abg-bg1: #FDFCFB;
-  --abg-bg2: #FFEFD5;
-  --abg-color1: 200, 125, 42;   /* #C87D2A — primary gold */
-  --abg-color2: 217, 154, 58;   /* #D99A3A — lighter gold */
-  --abg-color3: 184, 122, 32;   /* #B87A20 — darker gold */
-  --abg-color4: 245, 186, 92;   /* #F5BA5C — warm gold */
-  --abg-color5: 255, 239, 213;  /* #FFEFD5 — papaya whip */
-  --abg-blending: multiply;
-
-  background: linear-gradient(40deg, var(--abg-bg1), var(--abg-bg2));
-  animation: animBgGradientShiftLight 20s ease infinite;
-}
-
-/* --- Noise overlay --- */
-.animated-bg__noise {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  z-index: 1;
-  mix-blend-mode: soft-light;
-  opacity: 0.3;
-}
-
-/* --- SVG blur (hidden) --- */
-.animated-bg__svg-blur {
-  display: none;
-}
-
-/* --- Gradients container --- */
-.animated-bg__gradients {
-  filter: url(#animBgGoo) blur(40px);
-  width: 100%;
-  height: 100%;
-  position: relative;
-  contain: strict;
-}
-
-/* --- Individual gradient blobs --- */
-.animated-bg__g1 {
-  position: absolute;
-  background: radial-gradient(
-    circle at center,
-    rgba(var(--abg-color1), 0.8) 0,
-    rgba(var(--abg-color1), 0) 50%
-  ) no-repeat;
-  mix-blend-mode: var(--abg-blending);
-  width: var(--abg-circle-size);
-  height: var(--abg-circle-size);
-  top: calc(50% - var(--abg-circle-size) / 2);
-  left: calc(50% - var(--abg-circle-size) / 2);
-  transform-origin: center center;
-  animation: animBgMoveVertical 30s ease infinite;
-  opacity: 1;
-  will-change: transform;
-}
-
-.animated-bg__g2 {
-  position: absolute;
-  background: radial-gradient(
-    circle at center,
-    rgba(var(--abg-color2), 0.8) 0,
-    rgba(var(--abg-color2), 0) 50%
-  ) no-repeat;
-  mix-blend-mode: var(--abg-blending);
-  width: var(--abg-circle-size);
-  height: var(--abg-circle-size);
-  top: calc(50% - var(--abg-circle-size) / 2);
-  left: calc(50% - var(--abg-circle-size) / 2);
-  transform-origin: calc(50% - 400px);
-  animation: animBgMoveInCircle 20s reverse infinite;
-  opacity: 1;
-  will-change: transform;
-}
-
-.animated-bg__g3 {
-  position: absolute;
-  background: radial-gradient(
-    circle at center,
-    rgba(var(--abg-color3), 0.8) 0,
-    rgba(var(--abg-color3), 0) 50%
-  ) no-repeat;
-  mix-blend-mode: var(--abg-blending);
-  width: var(--abg-circle-size);
-  height: var(--abg-circle-size);
-  top: calc(50% - var(--abg-circle-size) / 2 + 200px);
-  left: calc(50% - var(--abg-circle-size) / 2 - 500px);
-  transform-origin: calc(50% + 400px);
-  animation: animBgMoveInCircle 40s linear infinite;
-  opacity: 1;
-  will-change: transform;
-}
-
-.animated-bg__g4 {
-  position: absolute;
-  background: radial-gradient(
-    circle at center,
-    rgba(var(--abg-color4), 0.8) 0,
-    rgba(var(--abg-color4), 0) 50%
-  ) no-repeat;
-  mix-blend-mode: var(--abg-blending);
-  width: var(--abg-circle-size);
-  height: var(--abg-circle-size);
-  top: calc(50% - var(--abg-circle-size) / 2);
-  left: calc(50% - var(--abg-circle-size) / 2);
-  transform-origin: calc(50% - 200px);
-  animation: animBgMoveHorizontal 40s ease infinite;
-  opacity: 0.7;
-  will-change: transform;
-}
-
-.animated-bg__g5 {
-  position: absolute;
-  background: radial-gradient(
-    circle at center,
-    rgba(var(--abg-color5), 0.8) 0,
-    rgba(var(--abg-color5), 0) 50%
-  ) no-repeat;
-  mix-blend-mode: var(--abg-blending);
-  width: calc(var(--abg-circle-size) * 2);
-  height: calc(var(--abg-circle-size) * 2);
-  top: calc(50% - var(--abg-circle-size));
-  left: calc(50% - var(--abg-circle-size));
-  transform-origin: calc(50% - 800px) calc(50% + 200px);
-  animation: animBgMoveInCircle 20s ease infinite;
-  opacity: 1;
-  will-change: transform;
+  background: linear-gradient(-29deg, #f3b067, #211f1f);
 }
 
 /* --- Make sure content above background is visible --- */
@@ -253,17 +36,15 @@
   z-index: 1;
 }
 
-/* Make app-layout background transparent so animated bg shows through */
+/* Make app-layout background transparent so gradient shows through */
 .app-layout-with-animated-bg {
   background-color: transparent !important;
 }
 
-/* Ensure page content has semi-transparent backgrounds so gradient peeks through */
 .app-layout-with-animated-bg .app-main {
   background-color: transparent;
 }
 
-/* Sidebar glass: ensure no opaque background-color overrides the glass effect */
 .app-layout-with-animated-bg .app-sidebar {
   background-color: transparent;
 }
