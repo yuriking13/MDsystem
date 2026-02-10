@@ -117,13 +117,13 @@
   @apply hover:text-white;
   @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
   border-radius: 0.375rem;
-  background-color: #162236;
-  border: 1px solid rgba(56, 89, 138, 0.3);
+  background-color: var(--btn-secondary);
+  border: 1px solid var(--input-border);
   transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
 
 .articles-toolbar-btn:hover {
-  background-color: #1e3050;
+  background-color: var(--tab-hover-bg);
 }
 
 .articles-toolbar-btn:disabled {
@@ -158,10 +158,10 @@
   border-radius: 0.5625rem;
   transition: background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
   /* Glass effect - dark theme */
-  background-color: rgba(13, 27, 42, 0.45);
+  background-color: var(--card-bg);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border: 1px solid rgba(56, 89, 138, 0.25);
+  border: 1px solid var(--card-border);
   border-left-width: 3px;
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.05),
@@ -184,7 +184,7 @@
 /* Light theme - glass */
 .light-theme .article-card,
 [data-theme="light"] .article-card {
-  background-color: rgba(255, 255, 255, 0.45);
+  background-color: var(--card-bg);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -358,7 +358,7 @@
 .article-actions {
   @apply flex items-center justify-between px-3 py-2;
   @apply opacity-0 transition-opacity;
-  background-color: rgba(13, 27, 42, 0.3);
+  background-color: var(--modal-footer-bg);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-top: 1px solid rgba(56, 89, 138, 0.15);
@@ -519,7 +519,7 @@
   @apply animate-pulse;
   @apply p-4;
   border-radius: 0.5625rem;
-  background-color: #162236;
+  background-color: var(--btn-secondary);
 }
 
 .light-theme .article-skeleton,
@@ -534,7 +534,7 @@
 .article-filter-sidebar {
   @apply w-60;
   @apply flex flex-col;
-  background-color: #0d1b2a;
+  background-color: var(--bg-secondary);
   border-right: 1px solid rgba(56, 89, 138, 0.2);
 }
 
@@ -592,7 +592,7 @@
   @apply p-5;
   margin: 12px 60px 0 60px;
   border-radius: 0.5625rem;
-  background-color: rgba(13, 27, 42, 0.45);
+  background-color: var(--card-bg);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid rgba(56, 89, 138, 0.25);
@@ -647,7 +647,7 @@
 .search-source-option {
   @apply flex items-center gap-2 p-3 cursor-pointer;
   border-radius: 0.375rem;
-  background-color: #162236;
+  background-color: var(--btn-secondary);
   border: 1px solid rgba(56, 89, 138, 0.3);
   transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
@@ -687,7 +687,7 @@
   @apply w-4 h-4 text-blue-500;
   border-radius: 0.25rem;
   border-color: rgba(56, 89, 138, 0.4);
-  background-color: #162236;
+  background-color: var(--input-bg);
 }
 
 .light-theme .search-checkbox,
@@ -761,7 +761,7 @@
   @apply w-full pl-9 pr-3 py-2 text-sm;
   @apply text-white placeholder-neutral-500;
   border-radius: 0.375rem;
-  background-color: rgba(22, 34, 54, 0.8);
+  background-color: var(--bg-glass-light);
   border: 1px solid rgba(56, 89, 138, 0.3);
 }
 
@@ -794,7 +794,7 @@
   @apply w-16 px-2 py-2 text-sm text-center;
   @apply text-white placeholder-neutral-500;
   border-radius: 0.375rem;
-  background-color: rgba(22, 34, 54, 0.8);
+  background-color: var(--bg-glass-light);
   border: 1px solid rgba(56, 89, 138, 0.3);
 }
 
@@ -821,7 +821,7 @@
   @apply flex-1;
   min-width: 150px;
   border-radius: 0.375rem;
-  background-color: rgba(22, 34, 54, 0.8);
+  background-color: var(--bg-glass-light);
   border: 1px solid rgba(56, 89, 138, 0.3);
   cursor: pointer;
 }
@@ -923,7 +923,7 @@
 .lang-toggle {
   @apply inline-flex p-0.5;
   border-radius: 0.375rem;
-  background-color: #162236;
+  background-color: var(--btn-secondary);
 }
 
 .lang-toggle button {
@@ -935,7 +935,7 @@
 
 .lang-toggle button.active {
   @apply text-white;
-  background-color: #1e3050;
+  background-color: var(--tab-hover-bg);
 }
 
 .light-theme .lang-toggle,

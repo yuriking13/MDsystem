@@ -15,14 +15,14 @@
   z-index: 0;
   pointer-events: none;
 
-  background: linear-gradient(-29deg, #01111D, #074F83);
+  background: linear-gradient(-29deg, var(--anim-bg-1), var(--anim-bg-2));
 }
 
 /* --- Light theme --- */
 .animated-bg[data-theme-mode="light"],
 .light-theme .animated-bg,
 [data-theme="light"] .animated-bg {
-  background: linear-gradient(-29deg, #211f1f, #f3b067);
+  background: linear-gradient(-29deg, var(--anim-bg-1), var(--anim-bg-2));
 }
 
 /* --- Make sure content above background is visible --- */
