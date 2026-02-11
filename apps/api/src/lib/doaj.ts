@@ -212,7 +212,7 @@ export async function doajFetchAll(args: {
     filters,
     batchSize = 100,
     throttleMs = 500,
-    maxTotal = 500,
+    maxTotal = 10000,
   } = args;
 
   // First request to get total count
