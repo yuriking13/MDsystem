@@ -21,12 +21,14 @@ import {
   type Article,
   type SearchFilters,
   type SearchSource,
+  type SearchProgressEvent,
 } from "../lib/api";
 import AddArticleByDoiModal from "./AddArticleByDoiModal";
 import { useToast } from "./Toast";
 import ArticleCard from "./ArticleCard";
 import { toArticleData } from "../lib/articleAdapter";
 import { useProjectContext } from "./AppLayout";
+import { useProjectWebSocket } from "../lib/useProjectWebSocket";
 
 type Props = {
   projectId: string;
@@ -72,6 +74,37 @@ const TEXT_AVAILABILITY = [
   { id: "full", label: "Полный текст" },
   { id: "free_full", label: "Бесплатный полный текст" },
 ];
+
+/**
+ * Real-time elapsed timer component for search progress
+ */
+function SearchElapsedTimer({ startTime, isRunning }: { startTime: number; isRunning: boolean }) {
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    if (!isRunning || !startTime) return;
+    const interval = setInterval(() => {
+      setElapsed(Date.now() - startTime);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [startTime, isRunning]);
+
+  useEffect(() => {
+    if (!isRunning) {
+      setElapsed(Date.now() - startTime);
+    }
+  }, [isRunning, startTime]);
+
+  const seconds = Math.floor(elapsed / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return (
+    <span>
+      {minutes > 0 ? `${minutes} мин. ${remainingSeconds} сек.` : `${seconds} сек.`}
+    </span>
+  );
+}
 
 export default function ArticlesSection({
   projectId,
@@ -150,6 +183,22 @@ export default function ArticlesSection({
   const [maxResults, setMaxResults] = useState(100);
   const [searching, setSearching] = useState(false);
 
+  // Прогресс поиска (real-time через WebSocket)
+  const [searchProgress, setSearchProgress] = useState<{
+    stage: string;
+    stageLabel: string;
+    totalFound?: number;
+    collected?: number;
+    relevanceKept?: number;
+    relevanceRemoved?: number;
+    saved?: number;
+    translated?: number;
+    statsFound?: number;
+    elapsedMs: number;
+    estimatedTotalMs?: number;
+  } | null>(null);
+  const searchStartTimeRef = useRef<number>(0);
+
   // Поиск всех статей
   const [showAllArticlesConfirm, setShowAllArticlesConfirm] = useState(false);
   const [allArticlesCount, setAllArticlesCount] = useState<number | null>(null);
@@ -210,6 +259,64 @@ export default function ArticlesSection({
   // Фильтр по периоду годов
   const [yearFromFilter, setYearFromFilter] = useState<number | null>(null);
   const [yearToFilter, setYearToFilter] = useState<number | null>(null);
+
+  // ============ WebSocket for search progress ============
+  const handleSearchProgressEvent = useCallback(
+    (event: any) => {
+      if (event.type !== "search:progress") return;
+      const data = event.payload as SearchProgressEvent;
+
+      const elapsed = Date.now() - searchStartTimeRef.current;
+
+      const stageLabels: Record<string, string> = {
+        searching: "Отправляем запрос в базы данных...",
+        searching_source: `Поиск в ${(data.source || "").toUpperCase()}...`,
+        search_complete: `Найдено ${data.collected || 0} статей (${data.totalFound || 0} всего в базах)`,
+        relevance_filter: `AI-проверка релевантности: ${data.processed || 0}/${data.total || 0}...`,
+        relevance_filter_done: `Проверка завершена: оставлено ${data.kept || 0} из ${data.total || 0} (${data.removed || 0} отфильтровано)`,
+        saving: `Сохраняем в базу: ${data.saved || 0}/${data.total || 0}...`,
+        saved: `Сохранено ${data.added || 0} статей`,
+        enriching: `Обогащение метаданными Crossref...`,
+        translating: `Перевод статей: ${data.translated || 0}/${data.total || 0}...`,
+        detecting_stats: `Анализ статистики: ${data.analyzed || 0}/${data.total || 0} (найдена в ${data.found || 0})...`,
+        complete: data.message || "Готово!",
+      };
+
+      // Estimate remaining time based on progress
+      let estimatedTotalMs: number | undefined;
+      if (data.stage === "relevance_filter" && data.processed && data.total && data.processed > 0) {
+        const rate = elapsed / data.processed;
+        estimatedTotalMs = rate * data.total;
+      } else if (data.stage === "saving" && data.saved && data.total && data.saved > 0) {
+        const rate = elapsed / data.saved;
+        estimatedTotalMs = rate * data.total;
+      } else if (data.stage === "translating" && data.translated && data.total && data.translated > 0) {
+        const rate = elapsed / data.translated;
+        estimatedTotalMs = rate * data.total;
+      }
+
+      setSearchProgress({
+        stage: data.stage,
+        stageLabel: stageLabels[data.stage] || data.stage,
+        totalFound: data.totalFound,
+        collected: data.collected,
+        relevanceKept: data.kept,
+        relevanceRemoved: data.removed,
+        saved: data.saved || data.added,
+        translated: data.translated,
+        statsFound: data.found,
+        elapsedMs: elapsed,
+        estimatedTotalMs,
+      });
+    },
+    [],
+  );
+
+  useProjectWebSocket({
+    projectId,
+    onEvent: handleSearchProgressEvent,
+    enabled: searching,
+  });
 
   async function loadArticles() {
     setLoading(true);
@@ -372,6 +479,12 @@ export default function ArticlesSection({
     setSearching(true);
     setError(null);
     setOk(null);
+    searchStartTimeRef.current = Date.now();
+    setSearchProgress({
+      stage: "init",
+      stageLabel: "Инициализация поиска...",
+      elapsedMs: 0,
+    });
 
     const { yearFrom, yearTo } = getYearsFromPreset();
 
@@ -421,6 +534,8 @@ export default function ArticlesSection({
       setError(err?.message || "Ошибка поиска");
     } finally {
       setSearching(false);
+      // Keep progress visible for 3 seconds after completion
+      setTimeout(() => setSearchProgress(null), 3000);
     }
   }
 
@@ -1599,6 +1714,74 @@ export default function ArticlesSection({
             </div>
           </div>
         </form>
+      )}
+
+      {/* Search Progress Panel */}
+      {searching && searchProgress && (
+        <div className="search-progress-panel" style={{
+          background: "var(--bg-secondary, #f8f9fa)",
+          border: "1px solid var(--border-color, #e2e8f0)",
+          borderRadius: "12px",
+          padding: "16px 20px",
+          marginBottom: "16px",
+          animation: "fadeIn 0.3s ease",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
+            <div className="search-progress-spinner" style={{
+              width: "20px",
+              height: "20px",
+              border: "3px solid var(--border-color, #e2e8f0)",
+              borderTopColor: "var(--accent-color, #3b82f6)",
+              borderRadius: "50%",
+              animation: searchProgress.stage === "complete" ? "none" : "spin 1s linear infinite",
+            }} />
+            <span style={{ fontWeight: 600, fontSize: "14px" }}>
+              {searchProgress.stageLabel}
+            </span>
+          </div>
+
+          {/* Progress stages timeline */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", color: "var(--text-muted, #94a3b8)" }}>
+            {searchProgress.totalFound !== undefined && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
+                <span>Найдено в базах: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.totalFound}</strong> статей, собрано <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.collected || 0}</strong></span>
+              </div>
+            )}
+            {searchProgress.relevanceKept !== undefined && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
+                <span>AI-проверка: оставлено <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.relevanceKept}</strong>, отфильтровано <strong style={{ color: "var(--warning-color, #f59e0b)" }}>{searchProgress.relevanceRemoved || 0}</strong></span>
+              </div>
+            )}
+            {searchProgress.saved !== undefined && searchProgress.saved > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
+                <span>Сохранено в базу: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.saved}</strong> статей</span>
+              </div>
+            )}
+            {searchProgress.translated !== undefined && searchProgress.translated > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
+                <span>Переведено: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.translated}</strong></span>
+              </div>
+            )}
+            {searchProgress.statsFound !== undefined && searchProgress.statsFound > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
+                <span>Статистика найдена в: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.statsFound}</strong></span>
+              </div>
+            )}
+          </div>
+
+          {/* Timer */}
+          <div style={{ marginTop: "8px", fontSize: "11px", color: "var(--text-muted, #94a3b8)", display: "flex", justifyContent: "space-between" }}>
+            <SearchElapsedTimer startTime={searchStartTimeRef.current} isRunning={searchProgress.stage !== "complete"} />
+            {searchProgress.estimatedTotalMs && searchProgress.stage !== "complete" && (
+              <span>~{Math.ceil((searchProgress.estimatedTotalMs - searchProgress.elapsedMs) / 1000)} сек. осталось</span>
+            )}
+          </div>
+        </div>
       )}
 
       {/* Unified Filters Container */}

@@ -273,6 +273,127 @@ export async function translateArticlesParallel(
 }
 
 /**
+ * Верификация перевода — лёгкий AI-агент проверяет, что перевод действительно является переводом,
+ * а не сообщением об ошибке, отказом или бессмыслицей.
+ *
+ * @returns проверенный перевод, или null если перевод не прошёл верификацию
+ */
+export async function verifyTranslation(
+  apiKey: string,
+  originalText: string,
+  translatedText: string,
+  model = "openai/gpt-4o-mini",
+): Promise<string | null> {
+  // Quick heuristic checks before calling AI
+  const refusalPatterns = [
+    /извини/i,
+    /не могу/i,
+    /не понял/i,
+    /sorry/i,
+    /i can't/i,
+    /i cannot/i,
+    /unable to/i,
+    /as an ai/i,
+    /как ии/i,
+    /я не в состоянии/i,
+    /не удалось/i,
+    /ошибка/i,
+    /error/i,
+    /пожалуйста, предоставьте/i,
+    /please provide/i,
+  ];
+
+  const isLikelyRefusal = refusalPatterns.some((p) => p.test(translatedText));
+
+  // If translated text is very similar to original (wasn't actually translated)
+  const isSameAsOriginal =
+    translatedText.trim().toLowerCase() === originalText.trim().toLowerCase();
+
+  // If translated text is way too short compared to original
+  const isSuspiciouslyShort =
+    translatedText.length < originalText.length * 0.2 &&
+    originalText.length > 20;
+
+  // If translated text is way too long compared to original
+  const isSuspiciouslyLong = translatedText.length > originalText.length * 5;
+
+  // Easy cases that don't need AI verification
+  if (isSameAsOriginal || isSuspiciouslyLong) {
+    return null;
+  }
+
+  // If no red flags, accept translation without AI check
+  if (!isLikelyRefusal && !isSuspiciouslyShort) {
+    return translatedText;
+  }
+
+  // For suspicious cases, verify with a lightweight AI check
+  try {
+    const res = await fetch(OPENROUTER_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+        "HTTP-Referer": "https://mdsystem.app",
+        "X-Title": "MDsystem Translation Verification",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "system",
+            content: `You verify translations. Given an original English text and its Russian translation, determine if the translation is valid.
+
+A translation is INVALID if it:
+- Is an error message or refusal ("Sorry, I can't...", "Извините...")
+- Is completely unrelated to the original
+- Is gibberish or nonsensical
+
+A translation is VALID even if:
+- It's not perfect
+- Some terms are transliterated
+- It's a technical/medical text
+
+Respond with ONLY "VALID" or "INVALID".`,
+          },
+          {
+            role: "user",
+            content: `Original: ${originalText}\n\nTranslation: ${translatedText}`,
+          },
+        ],
+        max_tokens: 10,
+        temperature: 0,
+      }),
+    });
+
+    if (!res.ok) {
+      // On API error, accept the translation if it doesn't have refusal patterns
+      return isLikelyRefusal ? null : translatedText;
+    }
+
+    type VerifyResponse = {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+
+    const data = (await res.json()) as VerifyResponse;
+    const verdict = data?.choices?.[0]?.message?.content?.trim().toUpperCase();
+
+    if (verdict === "VALID") {
+      return translatedText;
+    }
+
+    log.warn(
+      `Translation verification failed: "${translatedText.slice(0, 80)}..." for original "${originalText.slice(0, 80)}..."`,
+    );
+    return null;
+  } catch (err) {
+    log.error("Translation verification error", err as Error);
+    // On error, accept if no obvious refusal, reject if likely refusal
+    return isLikelyRefusal ? null : translatedText;
+  }
+}
+
+/**
  * Оптимизированный пакетный перевод - одним запросом несколько статей
  * Для экономии API вызовов
  */

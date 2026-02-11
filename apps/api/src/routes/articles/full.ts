@@ -18,6 +18,7 @@ import {
 import {
   translateArticlesParallel,
   translateArticlesBatchOptimized,
+  verifyTranslation,
 } from "../../lib/translate.js";
 import { findPdfSource, downloadPdf } from "../../lib/pdf-download.js";
 import {
@@ -34,6 +35,8 @@ import {
 } from "../../lib/redis.js";
 import { getUserId } from "../../utils/auth-helpers.js";
 import { createLogger } from "../../utils/logger.js";
+import { filterArticlesByRelevance } from "../../lib/ai-relevance-filter.js";
+import { broadcastToProject } from "../../websocket.js";
 
 const log = createLogger("articles");
 
@@ -634,8 +637,22 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(403).send({ error: "No edit access to project" });
       }
 
-      // Получить API ключ пользователя
+      const projectId = paramsP.data.id;
+
+      // Helper: send WebSocket progress event
+      function sendProgress(stage: string, detail: Record<string, unknown>) {
+        broadcastToProject(projectId, {
+          type: "search:progress",
+          projectId,
+          payload: { stage, ...detail },
+          timestamp: Date.now(),
+          userId,
+        });
+      }
+
+      // Получить API ключи пользователя
       const apiKey = await getUserApiKey(userId, "pubmed");
+      const openrouterKey = await getUserApiKey(userId, "openrouter");
 
       // Выбранные источники поиска
       const sources = bodyP.data.sources || ["pubmed"];
@@ -643,7 +660,6 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Формируем фильтры PubMed
       const filters: PubMedFilters = {};
 
-      // Поле поиска (Title, Abstract, Author и т.д.)
       if (bodyP.data.filters?.searchField) {
         filters.searchField = bodyP.data.filters
           .searchField as PubMedFilters["searchField"];
@@ -661,13 +677,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (bodyP.data.filters?.fullTextOnly) {
         filters.fullTextOnly = true;
       }
-      // Опция перевода
+
       const shouldTranslate = bodyP.data.filters?.translate === true;
-
-      // Типы публикации из фильтров поиска
       const searchPubTypes = bodyP.data.filters?.publicationTypes || [];
-
-      // Сохраняем поисковый запрос для группировки
       const searchQuery = bodyP.data.query;
 
       // Получаем PMIDs и DOIs статей, которые УЖЕ есть в проекте
@@ -675,7 +687,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         `SELECT a.pmid, a.doi FROM project_articles pa
          JOIN articles a ON a.id = pa.article_id
          WHERE pa.project_id = $1`,
-        [paramsP.data.id],
+        [projectId],
       );
       const existingPmidsInProject = new Set<string>(
         existingInProjectRes.rows
@@ -688,7 +700,6 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           .filter(Boolean) as string[],
       );
 
-      // Запрашиваем больше статей, так как часть может быть уже в проекте
       const existingCount =
         existingPmidsInProject.size + existingDoisInProject.size;
       const searchMultiplier = Math.min(
@@ -698,39 +709,31 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const maxPerSource =
         Math.ceil(bodyP.data.maxResults / sources.length) * searchMultiplier;
 
-      // Сохраняем статьи и добавляем в проект
-      let added = 0;
-      let skipped = 0;
+      // ================================================================
+      // PHASE 1: COLLECT articles from all sources into unified array
+      // ================================================================
+      sendProgress("searching", { sources, query: searchQuery });
+
+      type CollectedArticle = UniversalArticle & { pubType?: string };
+      const collectedArticles: CollectedArticle[] = [];
       let totalCount = 0;
       let totalFetched = 0;
-      const articleIds: string[] = [];
-      const newArticleIds: string[] = []; // Новые статьи для перевода
-      const processedPmids = new Set<string>(); // Для дедупликации между поисками
-      const processedDois = new Set<string>(); // Для дедупликации по DOI
+      const processedPmids = new Set<string>();
+      const processedDois = new Set<string>();
+      let skipped = 0;
 
-      // Целевое количество НОВЫХ статей для проекта
-      const targetNewArticles = bodyP.data.maxResults;
-
-      // Результаты по источникам
-      const sourceResults: Record<string, { count: number; added: number }> =
-        {};
+      const sourceResults: Record<string, { count: number; added: number }> = {};
 
       // ============ PUBMED SEARCH ============
       if (sources.includes("pubmed")) {
         sourceResults.pubmed = { count: 0, added: 0 };
+        sendProgress("searching_source", { source: "pubmed" });
 
-        // Если выбрано несколько типов публикации - делаем ОТДЕЛЬНЫЙ поиск для каждого типа
         if (searchPubTypes.length > 1) {
           for (const pubType of searchPubTypes) {
-            if (added >= targetNewArticles) break;
-
             const typeFilters = { ...filters, publicationTypes: [pubType] };
-
             try {
-              const maxForType = Math.ceil(
-                maxPerSource / searchPubTypes.length,
-              );
-
+              const maxForType = Math.ceil(maxPerSource / searchPubTypes.length);
               const { count, items } = await pubmedFetchAll({
                 apiKey: apiKey || undefined,
                 topic: bodyP.data.query,
@@ -738,66 +741,39 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 maxTotal: maxForType,
                 throttleMs: apiKey ? 100 : 350,
               });
-
               sourceResults.pubmed.count += count;
               totalCount += count;
               totalFetched += items.length;
 
               for (const article of items) {
-                if (added >= targetNewArticles) break;
+                const pmid = article.pmid;
+                if (!pmid || processedPmids.has(pmid)) continue;
+                processedPmids.add(pmid);
+                if (article.doi) processedDois.add(article.doi.toLowerCase());
+                if (existingPmidsInProject.has(pmid)) { skipped++; continue; }
 
-                try {
-                  const pmid = article.pmid;
-
-                  if (!pmid || processedPmids.has(pmid)) continue;
-                  processedPmids.add(pmid);
-                  if (article.doi) processedDois.add(article.doi.toLowerCase());
-
-                  if (existingPmidsInProject.has(pmid)) {
-                    await findOrCreateArticle(article, [pubType]);
-                    skipped++;
-                    continue;
-                  }
-
-                  const articleId = await findOrCreateArticle(article, [
-                    pubType,
-                  ]);
-                  articleIds.push(articleId);
-
-                  const wasAdded = await addArticleToProject(
-                    paramsP.data.id,
-                    articleId,
-                    userId,
-                    searchQuery,
-                  );
-                  if (wasAdded) {
-                    added++;
-                    sourceResults.pubmed.added++;
-                    newArticleIds.push(articleId);
-                    existingPmidsInProject.add(pmid);
-                  } else {
-                    skipped++;
-                  }
-                } catch (err) {
-                  log.error(
-                    "Error saving article",
-                    err instanceof Error ? err : new Error(String(err)),
-                  );
-                }
+                collectedArticles.push({
+                  pmid: article.pmid,
+                  doi: article.doi,
+                  title: article.title,
+                  abstract: article.abstract,
+                  authors: article.authors,
+                  journal: article.journal,
+                  year: article.year,
+                  url: article.url,
+                  studyTypes: article.studyTypes,
+                  source: "pubmed",
+                  pubType,
+                });
               }
             } catch (err) {
-              log.error(
-                "Error searching PubMed",
-                err instanceof Error ? err : new Error(String(err)),
-                { pubType },
-              );
+              log.error("Error searching PubMed", err instanceof Error ? err : new Error(String(err)), { pubType });
             }
           }
         } else {
           if (searchPubTypes.length === 1) {
             filters.publicationTypes = searchPubTypes;
           }
-
           try {
             const { count, items } = await pubmedFetchAll({
               apiKey: apiKey || undefined,
@@ -806,383 +782,433 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               maxTotal: maxPerSource,
               throttleMs: apiKey ? 100 : 350,
             });
-
             sourceResults.pubmed.count = count;
             totalCount += count;
             totalFetched += items.length;
 
             for (const article of items) {
-              if (added >= targetNewArticles) break;
-
-              try {
-                const pmid = article.pmid;
-
-                if (pmid) {
-                  if (processedPmids.has(pmid)) continue;
-                  processedPmids.add(pmid);
-                  if (existingPmidsInProject.has(pmid)) {
-                    skipped++;
-                    continue;
-                  }
-                }
-                if (article.doi) processedDois.add(article.doi.toLowerCase());
-
-                const articleId = await findOrCreateArticle(
-                  article,
-                  searchPubTypes.length === 1 ? searchPubTypes : undefined,
-                );
-                articleIds.push(articleId);
-
-                const wasAdded = await addArticleToProject(
-                  paramsP.data.id,
-                  articleId,
-                  userId,
-                  searchQuery,
-                );
-                if (wasAdded) {
-                  added++;
-                  sourceResults.pubmed.added++;
-                  newArticleIds.push(articleId);
-                  if (pmid) existingPmidsInProject.add(pmid);
-                } else {
-                  skipped++;
-                }
-              } catch (err) {
-                log.error(
-                  "Error saving article",
-                  err instanceof Error ? err : new Error(String(err)),
-                );
+              const pmid = article.pmid;
+              if (pmid) {
+                if (processedPmids.has(pmid)) continue;
+                processedPmids.add(pmid);
+                if (existingPmidsInProject.has(pmid)) { skipped++; continue; }
               }
+              if (article.doi) processedDois.add(article.doi.toLowerCase());
+
+              collectedArticles.push({
+                pmid: article.pmid,
+                doi: article.doi,
+                title: article.title,
+                abstract: article.abstract,
+                authors: article.authors,
+                journal: article.journal,
+                year: article.year,
+                url: article.url,
+                studyTypes: article.studyTypes,
+                source: "pubmed",
+                pubType: searchPubTypes.length === 1 ? searchPubTypes[0] : undefined,
+              });
             }
           } catch (err) {
-            log.error(
-              "Error searching PubMed",
-              err instanceof Error ? err : new Error(String(err)),
-            );
+            log.error("Error searching PubMed", err instanceof Error ? err : new Error(String(err)));
           }
         }
       }
 
       // ============ DOAJ SEARCH ============
-      if (sources.includes("doaj") && added < targetNewArticles) {
+      if (sources.includes("doaj")) {
         sourceResults.doaj = { count: 0, added: 0 };
+        sendProgress("searching_source", { source: "doaj" });
 
         try {
           const doajFilters = {
-            publishedFrom: bodyP.data.filters?.yearFrom
-              ? `${bodyP.data.filters.yearFrom}-01-01`
-              : undefined,
-            publishedTo: bodyP.data.filters?.yearTo
-              ? `${bodyP.data.filters.yearTo}-12-31`
-              : undefined,
+            publishedFrom: bodyP.data.filters?.yearFrom ? `${bodyP.data.filters.yearFrom}-01-01` : undefined,
+            publishedTo: bodyP.data.filters?.yearTo ? `${bodyP.data.filters.yearTo}-12-31` : undefined,
           };
-
           const { count, items } = await doajFetchAll({
             topic: bodyP.data.query,
             filters: doajFilters,
             maxTotal: maxPerSource,
             throttleMs: 500,
           });
-
           sourceResults.doaj.count = count;
           totalCount += count;
           totalFetched += items.length;
 
           for (const article of items) {
-            if (added >= targetNewArticles) break;
+            const doi = article.doi?.toLowerCase();
+            if (doi && (processedDois.has(doi) || existingDoisInProject.has(doi))) { skipped++; continue; }
+            if (doi) processedDois.add(doi);
 
-            try {
-              const doi = article.doi?.toLowerCase();
-
-              // Skip if already processed or exists
-              if (
-                doi &&
-                (processedDois.has(doi) || existingDoisInProject.has(doi))
-              ) {
-                skipped++;
-                continue;
-              }
-              if (doi) processedDois.add(doi);
-
-              const universal = doajToUniversal(article);
-              const articleId = await findOrCreateUniversalArticle(universal);
-              articleIds.push(articleId);
-
-              const wasAdded = await addArticleToProject(
-                paramsP.data.id,
-                articleId,
-                userId,
-                `${searchQuery} [DOAJ]`,
-              );
-              if (wasAdded) {
-                added++;
-                sourceResults.doaj.added++;
-                newArticleIds.push(articleId);
-                if (doi) existingDoisInProject.add(doi);
-              } else {
-                skipped++;
-              }
-            } catch (err) {
-              log.error(
-                "Error saving DOAJ article",
-                err instanceof Error ? err : new Error(String(err)),
-              );
-            }
+            collectedArticles.push({
+              ...doajToUniversal(article),
+            });
           }
         } catch (err) {
-          log.error(
-            "Error searching DOAJ",
-            err instanceof Error ? err : new Error(String(err)),
-          );
+          log.error("Error searching DOAJ", err instanceof Error ? err : new Error(String(err)));
         }
       }
 
       // ============ WILEY SEARCH ============
-      if (sources.includes("wiley") && added < targetNewArticles) {
+      if (sources.includes("wiley")) {
         sourceResults.wiley = { count: 0, added: 0 };
+        sendProgress("searching_source", { source: "wiley" });
 
         try {
           const wileyFilters = {
-            publishedFrom: bodyP.data.filters?.yearFrom
-              ? `${bodyP.data.filters.yearFrom}-01-01`
-              : undefined,
-            publishedTo: bodyP.data.filters?.yearTo
-              ? `${bodyP.data.filters.yearTo}-12-31`
-              : undefined,
+            publishedFrom: bodyP.data.filters?.yearFrom ? `${bodyP.data.filters.yearFrom}-01-01` : undefined,
+            publishedTo: bodyP.data.filters?.yearTo ? `${bodyP.data.filters.yearTo}-12-31` : undefined,
           };
-
           const { count, items } = await wileyFetchAll({
             topic: bodyP.data.query,
             filters: wileyFilters,
             maxTotal: maxPerSource,
             throttleMs: 500,
           });
-
           sourceResults.wiley.count = count;
           totalCount += count;
           totalFetched += items.length;
 
           for (const article of items) {
-            if (added >= targetNewArticles) break;
+            const doi = article.doi?.toLowerCase();
+            if (doi && (processedDois.has(doi) || existingDoisInProject.has(doi))) { skipped++; continue; }
+            if (doi) processedDois.add(doi);
 
-            try {
-              const doi = article.doi?.toLowerCase();
-
-              // Skip if already processed or exists
-              if (
-                doi &&
-                (processedDois.has(doi) || existingDoisInProject.has(doi))
-              ) {
-                skipped++;
-                continue;
-              }
-              if (doi) processedDois.add(doi);
-
-              const universal = wileyToUniversal(article);
-              const articleId = await findOrCreateUniversalArticle(universal);
-              articleIds.push(articleId);
-
-              const wasAdded = await addArticleToProject(
-                paramsP.data.id,
-                articleId,
-                userId,
-                `${searchQuery} [Wiley]`,
-              );
-              if (wasAdded) {
-                added++;
-                sourceResults.wiley.added++;
-                newArticleIds.push(articleId);
-                if (doi) existingDoisInProject.add(doi);
-              } else {
-                skipped++;
-              }
-            } catch (err) {
-              log.error(
-                "Error saving Wiley article",
-                err instanceof Error ? err : new Error(String(err)),
-              );
-            }
+            collectedArticles.push({
+              ...wileyToUniversal(article),
+            });
           }
         } catch (err) {
-          log.error(
-            "Error searching Wiley",
-            err instanceof Error ? err : new Error(String(err)),
-          );
+          log.error("Error searching Wiley", err instanceof Error ? err : new Error(String(err)));
         }
       }
+
+      sendProgress("search_complete", {
+        totalFound: totalCount,
+        totalFetched: totalFetched,
+        collected: collectedArticles.length,
+        skippedDuplicates: skipped,
+      });
+
+      // ================================================================
+      // PHASE 2: AI RELEVANCE FILTER — remove irrelevant articles
+      // ================================================================
+      let relevanceFiltered = 0;
+      let articlesToSave = collectedArticles;
+
+      if (openrouterKey && collectedArticles.length > 0) {
+        sendProgress("relevance_filter", {
+          total: collectedArticles.length,
+          processed: 0,
+          kept: collectedArticles.length,
+        });
+
+        try {
+          const filterResult = await filterArticlesByRelevance({
+            articles: collectedArticles,
+            query: searchQuery,
+            apiKey: openrouterKey,
+            onProgress: (processed, total, kept) => {
+              sendProgress("relevance_filter", { total, processed, kept });
+            },
+          });
+
+          articlesToSave = filterResult.relevant as CollectedArticle[];
+          relevanceFiltered = filterResult.removed;
+
+          sendProgress("relevance_filter_done", {
+            total: collectedArticles.length,
+            kept: articlesToSave.length,
+            removed: relevanceFiltered,
+          });
+        } catch (err) {
+          log.error("AI relevance filter error", err instanceof Error ? err : new Error(String(err)));
+          // On error, keep all articles
+          articlesToSave = collectedArticles;
+        }
+      }
+
+      // ================================================================
+      // PHASE 3: SAVE filtered articles to DB + link to project
+      // ================================================================
+      sendProgress("saving", { total: articlesToSave.length, saved: 0 });
+
+      let added = 0;
+      const articleIds: string[] = [];
+      const newArticleIds: string[] = [];
+      const targetNewArticles = bodyP.data.maxResults;
+
+      for (let i = 0; i < articlesToSave.length; i++) {
+        if (added >= targetNewArticles) break;
+
+        const article = articlesToSave[i];
+        try {
+          // Convert to PubMedArticle format for findOrCreateArticle
+          const pubmedFormat: PubMedArticle = {
+            pmid: article.pmid || "",
+            doi: article.doi,
+            title: article.title,
+            abstract: article.abstract,
+            authors: article.authors,
+            journal: article.journal,
+            year: article.year,
+            url: article.url,
+            studyTypes: article.studyTypes || [],
+          };
+
+          let articleId: string;
+          if (article.source === "pubmed") {
+            const pubTypes = article.pubType ? [article.pubType] : undefined;
+            articleId = await findOrCreateArticle(pubmedFormat, pubTypes);
+          } else {
+            articleId = await findOrCreateUniversalArticle(article);
+          }
+
+          articleIds.push(articleId);
+
+          const sourceTag = article.source !== "pubmed" ? ` [${article.source.toUpperCase()}]` : "";
+          const wasAdded = await addArticleToProject(
+            projectId,
+            articleId,
+            userId,
+            `${searchQuery}${sourceTag}`,
+          );
+
+          if (wasAdded) {
+            added++;
+            const srcKey = article.source;
+            if (sourceResults[srcKey]) sourceResults[srcKey].added++;
+            newArticleIds.push(articleId);
+            if (article.pmid) existingPmidsInProject.add(article.pmid);
+            if (article.doi) existingDoisInProject.add(article.doi.toLowerCase());
+          } else {
+            skipped++;
+          }
+        } catch (err) {
+          log.error("Error saving article", err instanceof Error ? err : new Error(String(err)));
+        }
+
+        // Send progress every 50 articles
+        if ((i + 1) % 50 === 0 || i === articlesToSave.length - 1) {
+          sendProgress("saving", { total: articlesToSave.length, saved: added });
+        }
+      }
+
+      sendProgress("saved", { added, skipped });
+
+      // ================================================================
+      // PHASE 4: POST-PROCESSING (enrichment, translation, stats)
+      // ================================================================
 
       // Обогащение Crossref если запрошено
       let enriched = 0;
       const shouldEnrichByDOI = bodyP.data.filters?.enrichByDOI;
       if (shouldEnrichByDOI && newArticleIds.length > 0) {
-        // Получаем статьи с DOI без Crossref данных
+        sendProgress("enriching", { total: newArticleIds.length });
         const toEnrich = await pool.query(
           `SELECT id, doi FROM articles 
            WHERE id = ANY($1) AND doi IS NOT NULL 
            AND (raw_json->>'crossref' IS NULL OR raw_json->>'crossref' = '{}')`,
           [newArticleIds],
         );
-
         if (toEnrich.rows.length > 0) {
           try {
-            const result = await enrichArticlesByDOIBatch(toEnrich.rows, {
-              parallelCount: 3,
-            });
-
+            const result = await enrichArticlesByDOIBatch(toEnrich.rows, { parallelCount: 3 });
             enriched = result.enriched;
-
-            // Сохраняем результаты
             for (const [articleId, data] of result.results) {
               try {
                 await pool.query(
-                  `UPDATE articles SET 
-                    raw_json = raw_json || $1::jsonb
-                   WHERE id = $2`,
+                  `UPDATE articles SET raw_json = raw_json || $1::jsonb WHERE id = $2`,
                   [JSON.stringify({ crossref: data }), articleId],
                 );
               } catch (err) {
-                log.error(
-                  "Crossref update error",
-                  err instanceof Error ? err : new Error(String(err)),
-                );
+                log.error("Crossref update error", err instanceof Error ? err : new Error(String(err)));
               }
             }
           } catch (err) {
-            log.error(
-              "Crossref enrichment error",
-              err instanceof Error ? err : new Error(String(err)),
-            );
+            log.error("Crossref enrichment error", err instanceof Error ? err : new Error(String(err)));
           }
         }
       }
 
-      // Перевод если запрошен
+      // Перевод с верификацией
       let translated = 0;
-      if (shouldTranslate && newArticleIds.length > 0) {
-        const openrouterKey = await getUserApiKey(userId, "openrouter");
+      if (shouldTranslate && newArticleIds.length > 0 && openrouterKey) {
+        sendProgress("translating", { total: newArticleIds.length, translated: 0 });
 
-        if (openrouterKey) {
-          // Получаем статьи без переводов
-          const toTranslate = await pool.query(
-            `SELECT id, title_en, abstract_en FROM articles 
-             WHERE id = ANY($1) AND title_ru IS NULL`,
-            [newArticleIds],
-          );
+        const toTranslate = await pool.query(
+          `SELECT id, title_en, abstract_en FROM articles 
+           WHERE id = ANY($1) AND title_ru IS NULL`,
+          [newArticleIds],
+        );
 
-          if (toTranslate.rows.length > 0) {
-            try {
-              // Переводим пакетами по 5 статей для надёжности
-              const BATCH_SIZE = 5;
-              for (let i = 0; i < toTranslate.rows.length; i += BATCH_SIZE) {
-                const batch = toTranslate.rows.slice(i, i + BATCH_SIZE);
+        if (toTranslate.rows.length > 0) {
+          try {
+            const TR_BATCH = 5;
+            for (let i = 0; i < toTranslate.rows.length; i += TR_BATCH) {
+              const batch = toTranslate.rows.slice(i, i + TR_BATCH);
+              const { results } = await translateArticlesBatchOptimized(openrouterKey, batch);
 
-                const { results } = await translateArticlesBatchOptimized(
-                  openrouterKey,
-                  batch,
-                );
+              for (const [articleId, tr] of results) {
+                // Верификация перевода: проверяем что перевод — действительно перевод, а не ошибка AI
+                const originalTitle = batch.find((b: { id: string }) => b.id === articleId)?.title_en || "";
+                const verifiedTitle = tr.title_ru ? await verifyTranslation(openrouterKey, originalTitle, tr.title_ru) : null;
+                const verifiedAbstract = tr.abstract_ru || null;
 
-                // Сохраняем переводы
-                for (const [articleId, tr] of results) {
-                  if (tr.title_ru || tr.abstract_ru) {
-                    await pool.query(
-                      `UPDATE articles SET 
-                        title_ru = COALESCE($1, title_ru), 
-                        abstract_ru = COALESCE($2, abstract_ru)
-                       WHERE id = $3`,
-                      [tr.title_ru || null, tr.abstract_ru || null, articleId],
-                    );
-                    translated++;
-                  }
+                if (verifiedTitle || verifiedAbstract) {
+                  await pool.query(
+                    `UPDATE articles SET 
+                      title_ru = COALESCE($1, title_ru), 
+                      abstract_ru = COALESCE($2, abstract_ru)
+                     WHERE id = $3`,
+                    [verifiedTitle, verifiedAbstract, articleId],
+                  );
+                  translated++;
                 }
               }
-            } catch (err) {
-              log.error("Translation batch error:", err);
+
+              sendProgress("translating", {
+                total: toTranslate.rows.length,
+                translated,
+              });
             }
+          } catch (err) {
+            log.error("Translation batch error:", err);
           }
         }
       }
 
-      // Детектирование AI статистики если запрошено
+      // Двойная детекция статистики с AI кросс-верификацией
       let statsAnalyzed = 0;
       let statsFound = 0;
       const shouldDetectStats = bodyP.data.filters?.detectStats;
-      if (shouldDetectStats && newArticleIds.length > 0) {
-        const openrouterKey = await getUserApiKey(userId, "openrouter");
+      if (shouldDetectStats && newArticleIds.length > 0 && openrouterKey) {
+        sendProgress("detecting_stats", { total: newArticleIds.length, analyzed: 0, found: 0 });
 
-        if (openrouterKey) {
-          // Получаем статьи с абстрактами без AI статистики
-          const toAnalyze = await pool.query(
-            `SELECT id, abstract_en, abstract_ru FROM articles 
-             WHERE id = ANY($1) 
-             AND (abstract_en IS NOT NULL OR abstract_ru IS NOT NULL)
-             AND (stats_json->>'ai' IS NULL OR stats_json->>'ai' = '{}')`,
-            [newArticleIds],
-          );
+        const toAnalyze = await pool.query(
+          `SELECT id, abstract_en, abstract_ru FROM articles 
+           WHERE id = ANY($1) 
+           AND (abstract_en IS NOT NULL OR abstract_ru IS NOT NULL)
+           AND (stats_json->>'ai' IS NULL OR stats_json->>'ai' = '{}')`,
+          [newArticleIds],
+        );
 
-          if (toAnalyze.rows.length > 0) {
-            try {
-              const articles = toAnalyze.rows.map((r) => ({
-                id: r.id,
-                abstract: r.abstract_en || r.abstract_ru || "",
-              }));
+        if (toAnalyze.rows.length > 0) {
+          try {
+            const articlesForStats = toAnalyze.rows.map((r: { id: string; abstract_en?: string; abstract_ru?: string }) => ({
+              id: r.id,
+              abstract: r.abstract_en || r.abstract_ru || "",
+            }));
 
-              const result = await detectStatsParallel({
-                articles,
+            // Первый проход: regex + AI
+            const firstPass = await detectStatsParallel({
+              articles: articlesForStats,
+              openrouterKey,
+              useAI: true,
+              parallelCount: 3,
+            });
+
+            // Второй проход: повторная AI проверка для статей, где результаты первого прохода неоднозначны
+            // (regex нашёл, а AI нет, или наоборот)
+            const secondPassArticles: Array<{ id: string; abstract: string }> = [];
+            for (const article of articlesForStats) {
+              const firstResult = firstPass.results.get(article.id);
+              if (!firstResult) continue;
+
+              const regexFound = firstResult.hasStats;
+              const aiFound = firstResult.aiStats?.hasStats || false;
+
+              // Если результаты расходятся — нужна повторная проверка
+              if (regexFound !== aiFound) {
+                secondPassArticles.push(article);
+              }
+            }
+
+            let secondPassResults: Map<string, { hasStats: boolean; quality: number; stats: any; aiStats?: any }> = new Map();
+            if (secondPassArticles.length > 0) {
+              log.info(`Double-check stats for ${secondPassArticles.length} ambiguous articles`);
+              const secondPass = await detectStatsParallel({
+                articles: secondPassArticles,
                 openrouterKey,
                 useAI: true,
                 parallelCount: 3,
               });
-
-              statsAnalyzed = result.analyzed;
-              statsFound = result.found;
-
-              // Сохраняем результаты
-              for (const [articleId, statsResult] of result.results) {
-                try {
-                  if (
-                    statsResult.aiStats &&
-                    statsResult.aiStats.stats &&
-                    statsResult.aiStats.stats.length > 0
-                  ) {
-                    await pool.query(
-                      `UPDATE articles SET 
-                        has_stats = true,
-                        stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
-                        stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
-                       WHERE id = $3`,
-                      [
-                        statsResult.quality,
-                        JSON.stringify({ ai: statsResult.aiStats }),
-                        articleId,
-                      ],
-                    );
-                  } else {
-                    await pool.query(
-                      `UPDATE articles SET 
-                        stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": false, "stats": []}}'::jsonb
-                       WHERE id = $1`,
-                      [articleId],
-                    );
-                  }
-                } catch (err) {
-                  log.error("Stats update error:", err);
-                }
-              }
-            } catch (err) {
-              log.error("AI stats detection error:", err);
+              secondPassResults = secondPass.results;
             }
+
+            // Объединяем результаты: если оба прохода подтвердили наличие статистики — высокая уверенность
+            for (const [articleId, firstResult] of firstPass.results) {
+              try {
+                const secondResult = secondPassResults.get(articleId);
+                const regexFound = firstResult.hasStats;
+                const aiFound1 = firstResult.aiStats?.hasStats || false;
+                const aiFound2 = secondResult?.aiStats?.hasStats;
+
+                // Определяем финальный результат
+                let finalHasStats = false;
+                let finalQuality = firstResult.quality;
+                let confidence = "single";
+
+                if (secondResult !== undefined) {
+                  // Двойная проверка: если хотя бы 2 из 3 говорят "да" — есть статистика
+                  const votes = [regexFound, aiFound1, aiFound2 || false].filter(Boolean).length;
+                  finalHasStats = votes >= 2;
+                  finalQuality = Math.max(firstResult.quality, secondResult?.quality || 0);
+                  confidence = finalHasStats ? "double_confirmed" : "double_denied";
+                } else {
+                  finalHasStats = regexFound || aiFound1;
+                  confidence = "single";
+                }
+
+                if (finalHasStats) {
+                  statsFound++;
+
+                  const combinedAiStats = {
+                    ...(firstResult.aiStats || {}),
+                    confidence,
+                    doubleChecked: secondResult !== undefined,
+                  };
+
+                  await pool.query(
+                    `UPDATE articles SET 
+                      has_stats = true,
+                      stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
+                      stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
+                     WHERE id = $3`,
+                    [finalQuality, JSON.stringify({ ai: combinedAiStats }), articleId],
+                  );
+                } else {
+                  await pool.query(
+                    `UPDATE articles SET 
+                      stats_json = COALESCE(stats_json, '{}'::jsonb) || $1::jsonb
+                     WHERE id = $2`,
+                    [JSON.stringify({ ai: { hasStats: false, stats: [], confidence, doubleChecked: secondResult !== undefined } }), articleId],
+                  );
+                }
+
+                statsAnalyzed++;
+              } catch (err) {
+                log.error("Stats update error:", err);
+              }
+            }
+
+            sendProgress("detecting_stats", {
+              total: toAnalyze.rows.length,
+              analyzed: statsAnalyzed,
+              found: statsFound,
+            });
+          } catch (err) {
+            log.error("AI stats detection error:", err);
           }
         }
       }
 
       // Обновляем updated_at проекта
-      await pool.query(`UPDATE projects SET updated_at = now() WHERE id = $1`, [
-        paramsP.data.id,
-      ]);
+      await pool.query(`UPDATE projects SET updated_at = now() WHERE id = $1`, [projectId]);
 
       // Invalidate articles cache after adding new articles
       if (added > 0) {
-        await invalidateArticles(paramsP.data.id);
+        await invalidateArticles(projectId);
       }
 
       // Build message with source breakdown
@@ -1206,6 +1232,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             : `${added} статей добавлено`;
       }
 
+      if (relevanceFiltered > 0) {
+        message += `, ${relevanceFiltered} отфильтровано AI как нерелевантные`;
+      }
       if (translated > 0) {
         message += `, ${translated} переведено`;
       }
@@ -1216,11 +1245,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         message += `, найдена статистика в ${statsFound}`;
       }
 
+      sendProgress("complete", { message });
+
       return {
         totalFound: totalCount,
         fetched: totalFetched,
         added,
         skipped,
+        relevanceFiltered,
         translated,
         enriched,
         statsAnalyzed,

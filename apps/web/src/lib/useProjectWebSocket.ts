@@ -10,6 +10,7 @@ export type WSEventType =
   | "document:deleted"
   | "article:statusChanged"
   | "project:updated"
+  | "search:progress"
   | "connected"
   | "pong";
 

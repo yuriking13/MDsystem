@@ -470,7 +470,7 @@ export async function pubmedFetchAll(args: {
   });
 
   const batchSize = args.batchSize ?? 200;
-  const maxTotal = args.maxTotal ?? 2000;
+  const maxTotal = args.maxTotal ?? 10000;
 
   const items: PubMedArticle[] = [];
   const total = Math.min(count, maxTotal);

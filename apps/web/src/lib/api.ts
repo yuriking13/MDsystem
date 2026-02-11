@@ -329,9 +329,37 @@ export type SearchResult = {
   fetched: number;
   added: number;
   skipped: number;
+  relevanceFiltered?: number;
   translated?: number;
+  enriched?: number;
+  statsAnalyzed?: number;
+  statsFound?: number;
   sources?: Record<string, { count: number; added: number }>;
   message: string;
+};
+
+// Тип для прогресса поиска через WebSocket
+export type SearchProgressEvent = {
+  stage: string;
+  // Stage-specific data
+  sources?: string[];
+  query?: string;
+  source?: string;
+  totalFound?: number;
+  totalFetched?: number;
+  collected?: number;
+  skippedDuplicates?: number;
+  total?: number;
+  processed?: number;
+  kept?: number;
+  removed?: number;
+  saved?: number;
+  added?: number;
+  skipped?: number;
+  translated?: number;
+  analyzed?: number;
+  found?: number;
+  message?: string;
 };
 
 export async function apiSearchArticles(
