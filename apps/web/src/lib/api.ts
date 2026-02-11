@@ -2152,6 +2152,51 @@ export async function apiGraphAIAssistant(
   );
 }
 
+// ========== Articles AI Assistant (for Candidates) ==========
+
+export type ArticlesAISuggestedArticle = {
+  id: string;
+  title_en: string | null;
+  title_ru: string | null;
+  year: number | null;
+  journal: string | null;
+  authors: string[] | null;
+  source: string | null;
+  has_stats: boolean;
+  stats_quality: number;
+  status: string;
+  reason: string;
+  relevanceScore: number;
+};
+
+export type ArticlesAIAssistantResponse = {
+  ok: boolean;
+  response: string;
+  suggestedArticles: ArticlesAISuggestedArticle[];
+  suggestedArticleIds: string[];
+  summary: {
+    totalMatched: number;
+    criteria: string;
+  } | null;
+  totalAnalyzed: number;
+  error?: string;
+};
+
+export async function apiArticlesAIAssistant(
+  projectId: string,
+  message: string,
+  status: "candidate" | "selected" | "excluded" | "all" = "candidate",
+  maxSuggestions: number = 10,
+): Promise<ArticlesAIAssistantResponse> {
+  return apiFetch<ArticlesAIAssistantResponse>(
+    `/api/projects/${projectId}/articles-ai-assistant`,
+    {
+      method: "POST",
+      body: JSON.stringify({ message, status, maxSuggestions }),
+    },
+  );
+}
+
 // ========== Document Versioning ==========
 
 export type DocumentVersion = {

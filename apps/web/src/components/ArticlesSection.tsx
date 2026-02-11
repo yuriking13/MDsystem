@@ -16,6 +16,7 @@ import {
   apiGetPdfSource,
   getPdfDownloadUrl,
   apiConvertArticleToDocument,
+  apiBulkUpdateStatus,
   PUBMED_SEARCH_FIELDS,
   SEARCH_SOURCES,
   type Article,
@@ -24,6 +25,7 @@ import {
   type SearchProgressEvent,
 } from "../lib/api";
 import AddArticleByDoiModal from "./AddArticleByDoiModal";
+import ArticleAISidebar from "./ArticleAISidebar";
 import { useToast } from "./Toast";
 import ArticleCard from "./ArticleCard";
 import { toArticleData } from "../lib/articleAdapter";
@@ -113,6 +115,7 @@ export default function ArticlesSection({
 }: Props) {
   const toast = useToast();
   const {
+    projectInfo,
     articleViewStatus: viewStatus,
     setArticleViewStatus: setViewStatus,
     setArticleCounts: setContextCounts,
@@ -233,6 +236,9 @@ export default function ArticlesSection({
 
   // Добавление статьи по DOI
   const [showAddByDoiModal, setShowAddByDoiModal] = useState(false);
+
+  // AI ассистент
+  const [showAISidebar, setShowAISidebar] = useState(false);
 
   // Глобальные настройки отображения
   const [listLang, setListLang] = useState<"ru" | "en">("ru"); // Язык в списке
@@ -1302,6 +1308,27 @@ export default function ArticlesSection({
                 По DOI
               </button>
               <button
+                className="articles-toolbar-btn articles-toolbar-btn--ai"
+                onClick={() => setShowAISidebar(!showAISidebar)}
+                type="button"
+                title="AI помощник — подбор статей по параметрам"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                {showAISidebar ? "Скрыть AI" : "AI подбор"}
+              </button>
+              <button
                 className="articles-toolbar-btn articles-toolbar-btn--primary liquid-metal"
                 onClick={() => setShowSearch(!showSearch)}
                 type="button"
@@ -2252,21 +2279,22 @@ export default function ArticlesSection({
       ) : (
         <div ref={gridRef} className="articles-grid">
           {filteredArticles.map((a) => (
-            <ArticleCard
-              key={a.id}
-              article={toArticleData(a)}
-              isSelected={selectedIds.has(a.id)}
-              onSelect={toggleSelect}
-              onStatusChange={(id, newStatus) => {
-                const article = articles.find((art) => art.id === id);
-                if (article) {
-                  handleStatusChange(article, newStatus);
-                }
-              }}
-              onOpenDetails={() => setSelectedArticle(a)}
-              language={listLang}
-              compact={false}
-            />
+            <div key={a.id} id={`article-${a.id}`}>
+              <ArticleCard
+                article={toArticleData(a)}
+                isSelected={selectedIds.has(a.id)}
+                onSelect={toggleSelect}
+                onStatusChange={(id, newStatus) => {
+                  const article = articles.find((art) => art.id === id);
+                  if (article) {
+                    handleStatusChange(article, newStatus);
+                  }
+                }}
+                onOpenDetails={() => setSelectedArticle(a)}
+                language={listLang}
+                compact={false}
+              />
+            </div>
           ))}
         </div>
       )}
@@ -3077,6 +3105,37 @@ export default function ArticlesSection({
           }}
         />
       )}
+
+      {/* AI Assistant Sidebar */}
+      <ArticleAISidebar
+        isOpen={showAISidebar}
+        onToggle={() => setShowAISidebar(!showAISidebar)}
+        onClose={() => setShowAISidebar(false)}
+        projectId={projectId}
+        projectName={projectInfo.name || undefined}
+        viewStatus={viewStatus}
+        candidateCount={counts.candidate}
+        onAddToSelected={async (articleIds) => {
+          try {
+            await apiBulkUpdateStatus(projectId, articleIds, "selected");
+            toast.success(
+              `${articleIds.length} ${articleIds.length === 1 ? "статья добавлена" : "статей добавлено"} в отобранные`,
+            );
+            loadArticles();
+          } catch (err: any) {
+            toast.error(err.message || "Ошибка при изменении статуса");
+          }
+        }}
+        onHighlightArticle={(articleId) => {
+          // Scroll to the article in the list
+          const el = document.getElementById(`article-${articleId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            el.classList.add("article-highlight-flash");
+            setTimeout(() => el.classList.remove("article-highlight-flash"), 2000);
+          }
+        }}
+      />
     </div>
   );
 }
