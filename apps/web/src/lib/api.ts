@@ -2290,3 +2290,138 @@ export async function apiTriggerAutoVersion(
     body: JSON.stringify({ content }),
   });
 }
+
+// ========== AI Writing Assistant ==========
+
+export type AIImproveTextVariant = {
+  text: string;
+  changes: string;
+};
+
+export type DOIFullTextStatus = {
+  doi: string;
+  fullTextFound: boolean;
+  fullTextUrl?: string;
+};
+
+export type AIImproveTextResponse = {
+  ok: boolean;
+  variant1: AIImproveTextVariant;
+  variant2: AIImproveTextVariant;
+  notes: string | null;
+  doiFullTextStatus?: DOIFullTextStatus[];
+  mode: "academic" | "academic_with_sources";
+  error?: string;
+};
+
+export async function apiAIImproveText(
+  projectId: string,
+  data: {
+    selectedText: string;
+    context?: string;
+    documentTitle?: string;
+    mode?: "academic" | "academic_with_sources";
+    citationDois?: string[];
+    fullTextSnippets?: Array<{ doi: string; text: string }>;
+  },
+): Promise<AIImproveTextResponse> {
+  return apiFetch<AIImproveTextResponse>(
+    `/api/projects/${projectId}/ai-writing-assistant/improve`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export type AIGenerateTableResponse = {
+  ok: boolean;
+  title: string;
+  description: string;
+  headers: string[];
+  rows: string[][];
+  suggestedChartType: string;
+  chartTitle: string | null;
+  notes: string | null;
+  error?: string;
+};
+
+export async function apiAIGenerateTable(
+  projectId: string,
+  data: {
+    selectedText: string;
+    tableType?: "comparison" | "summary" | "data" | "auto";
+    documentTitle?: string;
+  },
+): Promise<AIGenerateTableResponse> {
+  return apiFetch<AIGenerateTableResponse>(
+    `/api/projects/${projectId}/ai-writing-assistant/generate-table`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export type AIGenerateIllustrationResponse = {
+  ok: boolean;
+  title: string;
+  description: string;
+  type: string;
+  svgCode: string;
+  figureCaption: string | null;
+  notes: string | null;
+  error?: string;
+};
+
+export async function apiAIGenerateIllustration(
+  projectId: string,
+  data: {
+    selectedText: string;
+    illustrationType?:
+      | "diagram"
+      | "flowchart"
+      | "schema"
+      | "infographic"
+      | "auto";
+    documentTitle?: string;
+  },
+): Promise<AIGenerateIllustrationResponse> {
+  return apiFetch<AIGenerateIllustrationResponse>(
+    `/api/projects/${projectId}/ai-writing-assistant/generate-illustration`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export type AILookupFulltextResponse = {
+  ok: boolean;
+  doi: string | null;
+  pmid: string | null;
+  articleInProject: boolean;
+  articleInfo: {
+    title: string | null;
+    abstract: string | null;
+    authors: string[] | null;
+    year: number | null;
+    journal: string | null;
+  } | null;
+  fullTextFound: boolean;
+  fullTextUrl: string | null;
+  error?: string;
+};
+
+export async function apiAILookupFulltext(
+  projectId: string,
+  data: { doi?: string; pmid?: string },
+): Promise<AILookupFulltextResponse> {
+  return apiFetch<AILookupFulltextResponse>(
+    `/api/projects/${projectId}/ai-writing-assistant/lookup-fulltext`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+}

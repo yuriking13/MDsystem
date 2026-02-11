@@ -51,6 +51,7 @@ import {
 } from "./extensions/TrackChangesMark";
 import StatisticEditModal from "../StatisticEditModal";
 import TableEditorModal, { type TableEditorPayload } from "./TableEditorModal";
+import AIWritingAssistant from "./AIWritingAssistant";
 import type { ProjectStatistic, DataClassification } from "../../lib/api";
 import type { TableData, ChartConfig } from "../ChartFromTable";
 import { IconChatBubbleQuote, IconClose, IconPlus } from "../FlowbiteIcons";
@@ -282,6 +283,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       nodeSize: number;
     } | null>(null);
     const [headings, setHeadings] = useState<EditorHeading[]>([]);
+    const [showAIAssistant, setShowAIAssistant] = useState(false);
     const [currentStyle, setCurrentStyle] =
       useState<CitationStyle>(citationStyle);
     const [editorError, setEditorError] = useState<string | null>(null);
@@ -675,7 +677,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
       const getContainerWidth = (table: HTMLTableElement) => {
         const wrapper = table.closest(".tableWrapper") as HTMLElement | null;
-        const editorRoot = table.closest(".tiptap-editor") as HTMLElement | null;
+        const editorRoot = table.closest(
+          ".tiptap-editor",
+        ) as HTMLElement | null;
         return (
           wrapper?.clientWidth ||
           editorRoot?.clientWidth ||
@@ -715,7 +719,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         const total = widths.reduce((sum, w) => sum + w, 0);
         if (!total || total <= containerWidth + 1) return null;
         const scale = containerWidth / total;
-        let scaled = widths.map((w) => Math.max(minWidth, Math.round(w * scale)));
+        let scaled = widths.map((w) =>
+          Math.max(minWidth, Math.round(w * scale)),
+        );
         let scaledTotal = scaled.reduce((sum, w) => sum + w, 0);
 
         if (scaledTotal > containerWidth) {
@@ -1662,6 +1668,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               }
               setShowCommentModal(true);
             }}
+            onToggleAIAssistant={
+              projectId ? () => setShowAIAssistant((prev) => !prev) : undefined
+            }
+            showAIAssistant={showAIAssistant}
           />
         )}
         <div className="tiptap-main-area">
@@ -1807,6 +1817,27 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               setTableEditorData(null);
             }}
             onSave={handleSaveTableEditor}
+          />
+        )}
+
+        {/* AI Writing Assistant */}
+        {showAIAssistant && projectId && (
+          <AIWritingAssistant
+            editor={editor}
+            projectId={projectId}
+            documentTitle={undefined}
+            onClose={() => setShowAIAssistant(false)}
+            onSaveStatistic={
+              onSaveStatistic
+                ? async (data) => {
+                    return onSaveStatistic(null, {
+                      title: data.title,
+                      description: data.description,
+                      tableData: data.tableData,
+                    });
+                  }
+                : undefined
+            }
           />
         )}
       </div>

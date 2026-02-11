@@ -23,6 +23,7 @@ import {
   IconAlignBottom,
   IconPhoto,
   IconPencil,
+  IconSparkles,
 } from "../FlowbiteIcons";
 
 // Cell colors for table customization
@@ -88,6 +89,9 @@ interface TiptapToolbarProps {
   reviewMode?: boolean;
   onToggleReviewMode?: () => void;
   onAddComment?: () => void;
+  // AI Assistant
+  onToggleAIAssistant?: () => void;
+  showAIAssistant?: boolean;
 }
 
 export default function TiptapToolbar({
@@ -106,6 +110,8 @@ export default function TiptapToolbar({
   reviewMode = false,
   onToggleReviewMode,
   onAddComment,
+  onToggleAIAssistant,
+  showAIAssistant = false,
 }: TiptapToolbarProps) {
   const [showTableMenu, setShowTableMenu] = useState(false);
   const [showTableEditMenu, setShowTableEditMenu] = useState(false);
@@ -903,6 +909,21 @@ export default function TiptapToolbar({
           <IconChatBubbleQuote size="sm" />
           Комментарий
         </button>
+      )}
+
+      {/* AI Assistant Button */}
+      {onToggleAIAssistant && (
+        <>
+          <div className="toolbar-divider" />
+          <button
+            className={`toolbar-btn-wide ai-btn${showAIAssistant ? " active" : ""}`}
+            onClick={onToggleAIAssistant}
+            title="AI Ассистент — улучшение текста, таблицы, иллюстрации"
+          >
+            <IconSparkles size="sm" />
+            AI
+          </button>
+        </>
       )}
 
       {/* Style indicator and page settings */}
