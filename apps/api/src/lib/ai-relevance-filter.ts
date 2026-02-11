@@ -143,7 +143,12 @@ Evaluate each article's relevance to the search query. Return JSON with "relevan
         reasoning_sample?: string;
       };
 
-      const relevant = new Set<number>(parsed.relevant || []);
+      const allowedIndices = new Set(articles.map((a) => a.idx));
+      const relevant = new Set<number>(
+        (parsed.relevant || []).filter(
+          (idx) => Number.isInteger(idx) && allowedIndices.has(idx),
+        ),
+      );
 
       // Log filtering result
       const removedCount = (parsed.irrelevant || []).length;
@@ -157,6 +162,14 @@ Evaluate each article's relevance to the search query. Return JSON with "relevan
       if (relevant.size < articles.length * 0.2) {
         log.warn(
           `AI removed >80% of articles (${relevant.size}/${articles.length}), keeping all as safety measure`,
+        );
+        return new Set(articles.map((a) => a.idx));
+      }
+
+      // If response contains no valid indices from this batch, keep all.
+      if (relevant.size === 0) {
+        log.warn(
+          "AI returned no valid relevance indices for this batch, keeping all articles",
         );
         return new Set(articles.map((a) => a.idx));
       }
@@ -223,7 +236,8 @@ export async function filterArticlesByRelevance<
 
     // Prepare batch with indices
     const batchWithIndices: RelevanceArticle[] = batch.map((a, batchIdx) => ({
-      idx: i + batchIdx,
+      // Use 1-based local indices inside each batch to match prompt examples.
+      idx: batchIdx + 1,
       title: a.title,
       abstract: a.abstract,
     }));
@@ -239,7 +253,7 @@ export async function filterArticlesByRelevance<
     // Collect relevant articles
     for (const item of batchWithIndices) {
       if (relevantIndices.has(item.idx)) {
-        relevantArticles.push(articles[item.idx]);
+        relevantArticles.push(batch[item.idx - 1]);
       }
     }
 

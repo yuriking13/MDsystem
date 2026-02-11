@@ -3041,6 +3041,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const { message, graphArticles, context, filters, clusters, gaps } =
         bodyP.data;
 
+      const access = await checkProjectAccess(projectId, userId, false);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No access to this project" });
+      }
+
       log.debug(
         `AI Assistant after Zod: graphArticles length: ${graphArticles?.length}`,
       );
@@ -3432,6 +3437,11 @@ ${articlesForAI || "Нет статей с полными данными для 
 
       const projectId = paramsP.data.id;
       const { message, status, maxSuggestions } = bodyP.data;
+
+      const access = await checkProjectAccess(projectId, userId, false);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "No access to this project" });
+      }
 
       try {
         // Получаем API ключ OpenRouter
