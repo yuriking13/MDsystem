@@ -1115,7 +1115,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               const firstResult = firstPass.results.get(article.id);
               if (!firstResult) continue;
 
-              const regexFound = firstResult.hasStats;
+              const regexFound = hasAnyStats(firstResult.stats);
               const aiFound = firstResult.aiStats?.hasStats || false;
 
               // Если результаты расходятся — нужна повторная проверка
@@ -1140,7 +1140,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             for (const [articleId, firstResult] of firstPass.results) {
               try {
                 const secondResult = secondPassResults.get(articleId);
-                const regexFound = firstResult.hasStats;
+                const regexFound = hasAnyStats(firstResult.stats);
                 const aiFound1 = firstResult.aiStats?.hasStats || false;
                 const aiFound2 = secondResult?.aiStats?.hasStats;
 
@@ -2615,23 +2615,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (articleIds && articleIds.length > 0) {
         // Выбранные статьи, которые ещё не проанализированы AI
         articlesRes = await pool.query(
-          `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality, a.stats_json
+          `SELECT a.id, a.abstract_en, a.abstract_ru, a.has_stats, a.stats_quality, a.stats_json
            FROM articles a
            JOIN project_articles pa ON pa.article_id = a.id
            WHERE pa.project_id = $1 
              AND a.id = ANY($2)
-             AND a.abstract_en IS NOT NULL
+             AND (a.abstract_en IS NOT NULL OR a.abstract_ru IS NOT NULL)
              AND (a.stats_json IS NULL OR a.stats_json->'ai' IS NULL)`,
           [paramsP.data.id, articleIds],
         );
       } else {
         // Все статьи без AI-статистики
         articlesRes = await pool.query(
-          `SELECT a.id, a.abstract_en, a.has_stats, a.stats_quality, a.stats_json
+          `SELECT a.id, a.abstract_en, a.abstract_ru, a.has_stats, a.stats_quality, a.stats_json
            FROM articles a
            JOIN project_articles pa ON pa.article_id = a.id
            WHERE pa.project_id = $1 
-             AND a.abstract_en IS NOT NULL
+             AND (a.abstract_en IS NOT NULL OR a.abstract_ru IS NOT NULL)
              AND (a.stats_json IS NULL OR a.stats_json->'ai' IS NULL)`,
           [paramsP.data.id],
         );
@@ -2639,7 +2639,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const articles = articlesRes.rows.map((r) => ({
         id: r.id,
-        abstract: r.abstract_en,
+        abstract: r.abstract_en || r.abstract_ru,
       }));
       const total = articles.length;
 
@@ -2730,12 +2730,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 ],
               );
             } else if (statsResult.hasStats) {
-              // Отмечаем что AI анализ был проведён (пустой результат)
+              // Regex нашёл статистику, даже если AI-часть ничего не вернула.
               await pool.query(
                 `UPDATE articles SET 
                   has_stats = true,
                   stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
-                  stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": false, "stats": []}}'::jsonb
+                  stats_json = COALESCE(stats_json, '{}'::jsonb) || '{"ai": {"hasStats": true, "stats": [], "source": "regex"}}'::jsonb
                  WHERE id = $2`,
                 [statsResult.quality, articleId],
               );
@@ -3272,7 +3272,7 @@ ${articlesForAI || "Нет статей с полными данными для 
 5. Вернуть их ID для подсветки на графе
 
 ПРАВИЛА:
-- Возвращай ТОЛЬКО ID статей из списка выше (формат: "pmid:12345" или "doi:10.1234/...")
+- Возвращай ТОЛЬКО значения поля "ID" из списка выше (в точности как в данных)
 - Если статей нет или их мало - честно скажи об этом
 - Ранжируй по релевантности: сначала наиболее подходящие
 - Учитывай название, аннотацию, журнал, год при поиске
@@ -3282,10 +3282,10 @@ ${articlesForAI || "Нет статей с полными данными для 
 ФОРМАТ ОТВЕТА (строго JSON):
 {
   "response": "Твой текстовый ответ пользователю с объяснением что найдено",
-  "foundArticleIds": ["pmid:12345", "doi:10.1234/example"],
+  "foundArticleIds": ["uuid-article-id-1", "pmid:12345"],
   "foundArticlesInfo": [
     {
-      "id": "pmid:12345",
+      "id": "uuid-article-id-1",
       "reason": "Почему эта статья релевантна запросу"
     }
   ]

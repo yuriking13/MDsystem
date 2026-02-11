@@ -14,6 +14,109 @@ async function readJsonSafe(res: Response): Promise<any> {
   }
 }
 
+type ParsedSSEEvent = {
+  event: string;
+  data: unknown;
+};
+
+function parseSSEEventBlock(block: string): ParsedSSEEvent | null {
+  const lines = block.split("\n");
+  let eventType = "message";
+  const dataLines: string[] = [];
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+    if (!line || line.startsWith(":")) continue;
+
+    if (line.startsWith("event:")) {
+      eventType = line.slice(6).trim() || "message";
+      continue;
+    }
+
+    if (line.startsWith("data:")) {
+      dataLines.push(line.slice(5).trimStart());
+    }
+  }
+
+  if (dataLines.length === 0) return null;
+
+  const rawData = dataLines.join("\n");
+  try {
+    return { event: eventType, data: JSON.parse(rawData) };
+  } catch {
+    return { event: eventType, data: rawData };
+  }
+}
+
+async function consumeSSEStream<T>(
+  response: Response,
+  options: {
+    finalEvent?: string;
+    onEvent?: (event: string, data: unknown) => void;
+  } = {},
+): Promise<T> {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("Stream body is not available");
+  }
+
+  const decoder = new TextDecoder();
+  const finalEvent = options.finalEvent || "complete";
+  let buffer = "";
+  let finalPayload: T | null = null;
+
+  const processBlock = (block: string) => {
+    const parsed = parseSSEEventBlock(block);
+    if (!parsed) return;
+
+    options.onEvent?.(parsed.event, parsed.data);
+
+    if (parsed.event === "error") {
+      const err =
+        typeof parsed.data === "string"
+          ? parsed.data
+          : (parsed.data as { error?: string } | null)?.error ||
+            "Unknown stream error";
+      throw new Error(err);
+    }
+
+    if (parsed.event === finalEvent) {
+      finalPayload = parsed.data as T;
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+    const blocks = buffer.split("\n\n");
+    buffer = blocks.pop() || "";
+
+    for (const block of blocks) {
+      if (block.trim()) {
+        processBlock(block);
+      }
+    }
+  }
+
+  buffer += decoder.decode().replace(/\r\n/g, "\n");
+  if (buffer.trim()) {
+    const tailBlocks = buffer.split("\n\n");
+    for (const block of tailBlocks) {
+      if (block.trim()) {
+        processBlock(block);
+      }
+    }
+  }
+
+  if (!finalPayload) {
+    throw new Error("Stream ended without complete event");
+  }
+
+  return finalPayload;
+}
+
 export async function apiFetch<T>(
   path: string,
   init: RequestInit & { auth?: boolean } = {},
@@ -460,7 +563,9 @@ export async function apiBulkUpdateStatus(
 export type TranslateResult = {
   ok: true;
   translated: number;
+  failed?: number;
   total: number;
+  speed?: number;
   message: string;
 };
 
@@ -469,37 +574,62 @@ export async function apiTranslateArticles(
   articleIds?: string[],
   untranslatedOnly = true,
 ): Promise<TranslateResult> {
-  return apiFetch<TranslateResult>(
-    `/api/projects/${projectId}/articles/translate`,
-    {
-      method: "POST",
-      body: JSON.stringify({ articleIds, untranslatedOnly }),
+  const token = getToken();
+  const response = await fetch(`/api/projects/${projectId}/articles/translate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-  );
+    body: JSON.stringify({ articleIds, untranslatedOnly }),
+  });
+
+  if (!response.ok) {
+    const payload = (await readJsonSafe(response)) as
+      | ApiErrorPayload
+      | string
+      | null;
+    const msg =
+      typeof payload === "string"
+        ? payload
+        : payload?.message || payload?.error || `HTTP ${response.status}`;
+    throw new Error(msg);
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType?.includes("text/event-stream")) {
+    return consumeSSEStream<TranslateResult>(response);
+  }
+
+  return (await response.json()) as TranslateResult;
 }
 
 // AI детекция статистики (SSE streaming)
 export type AIStatsProgress = {
-  batch: number;
-  totalBatches: number;
   analyzed: number;
   found: number;
-  errors: number;
+  done: number;
   total: number;
   percent: number;
+  speed?: number;
+  eta?: number;
+  // Legacy fields for compatibility with older callers
+  batch?: number;
+  totalBatches?: number;
+  errors?: number;
 };
 
 export type AIStatsResult = {
   ok: true;
   analyzed: number;
   found: number;
-  errors: number;
+  errors?: number;
   total: number;
   message: string;
 };
 
 export type AIStatsCallbacks = {
-  onStart?: (data: { total: number; batchSize: number }) => void;
+  onStart?: (data: { total: number; batchSize?: number; parallelCount?: number }) => void;
   onProgress?: (data: AIStatsProgress) => void;
   onComplete?: (data: AIStatsResult) => void;
   onError?: (error: Error) => void;
@@ -525,77 +655,110 @@ export async function apiDetectStatsWithAI(
   );
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `HTTP ${response.status}`);
+    const payload = (await readJsonSafe(response)) as
+      | ApiErrorPayload
+      | string
+      | null;
+    const msg =
+      typeof payload === "string"
+        ? payload
+        : payload?.message || payload?.error || `HTTP ${response.status}`;
+    throw new Error(msg);
   }
 
   const contentType = response.headers.get("content-type");
 
   // Если это SSE - обрабатываем стрим
   if (contentType?.includes("text/event-stream")) {
-    return new Promise((resolve, reject) => {
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let result: AIStatsResult | null = null;
+    try {
+      const result = await consumeSSEStream<AIStatsResult>(response, {
+        onEvent: (event, data) => {
+          if (!data || typeof data !== "object") return;
+          const payload = data as Record<string, unknown>;
 
-      const processLine = (line: string) => {
-        if (line.startsWith("event: ")) {
-          // Сохраняем тип события для следующей строки data
-          buffer = line.slice(7);
-        } else if (line.startsWith("data: ")) {
-          const eventType = buffer;
-          buffer = "";
-          try {
-            const data = JSON.parse(line.slice(6));
-
-            if (eventType === "start" && callbacks?.onStart) {
-              callbacks.onStart(data);
-            } else if (eventType === "progress" && callbacks?.onProgress) {
-              callbacks.onProgress(data);
-            } else if (eventType === "complete") {
-              result = data;
-              callbacks?.onComplete?.(data);
-            }
-          } catch (e) {
-            console.error("SSE parse error:", e);
+          if (event === "start") {
+            callbacks?.onStart?.({
+              total: Number(payload.total || 0),
+              batchSize:
+                payload.batchSize !== undefined
+                  ? Number(payload.batchSize)
+                  : undefined,
+              parallelCount:
+                payload.parallelCount !== undefined
+                  ? Number(payload.parallelCount)
+                  : undefined,
+            });
+            return;
           }
-        }
+
+          if (event === "progress") {
+            const total = Number(payload.total || 0);
+            const done = Number(
+              payload.done !== undefined ? payload.done : payload.analyzed || 0,
+            );
+            const analyzed = Number(
+              payload.analyzed !== undefined ? payload.analyzed : done,
+            );
+            const percent =
+              payload.percent !== undefined
+                ? Number(payload.percent)
+                : total > 0
+                  ? Math.round((done / total) * 100)
+                  : 0;
+
+            callbacks?.onProgress?.({
+              analyzed,
+              found: Number(payload.found || 0),
+              done,
+              total,
+              percent,
+              speed:
+                payload.speed !== undefined ? Number(payload.speed) : undefined,
+              eta: payload.eta !== undefined ? Number(payload.eta) : undefined,
+            });
+            return;
+          }
+
+          if (event === "complete") {
+            const normalized: AIStatsResult = {
+              ok: true,
+              analyzed: Number(
+                payload.analyzed !== undefined
+                  ? payload.analyzed
+                  : payload.done || 0,
+              ),
+              found: Number(payload.found || 0),
+              errors:
+                payload.errors !== undefined
+                  ? Number(payload.errors)
+                  : undefined,
+              total: Number(payload.total || 0),
+              message: String(payload.message || "Анализ завершён"),
+            };
+            callbacks?.onComplete?.(normalized);
+          }
+        },
+      });
+
+      const normalized: AIStatsResult = {
+        ok: true,
+        analyzed: Number(result?.analyzed ?? 0),
+        found: Number(result?.found ?? 0),
+        errors:
+          result?.errors !== undefined ? Number(result.errors) : undefined,
+        total: Number(result?.total ?? 0),
+        message: String(result?.message || "Анализ завершён"),
       };
 
-      const read = async () => {
-        try {
-          while (true) {
-            const { done, value } = await reader!.read();
-            if (done) {
-              if (result) {
-                resolve(result);
-              } else {
-                reject(new Error("Stream ended without complete event"));
-              }
-              break;
-            }
-
-            const text = decoder.decode(value, { stream: true });
-            const lines = text.split("\n");
-            for (const line of lines) {
-              if (line.trim()) {
-                processLine(line);
-              }
-            }
-          }
-        } catch (err) {
-          callbacks?.onError?.(err as Error);
-          reject(err);
-        }
-      };
-
-      read();
-    });
+      return normalized;
+    } catch (err) {
+      callbacks?.onError?.(err as Error);
+      throw err;
+    }
   }
 
   // Если обычный JSON ответ (для совместимости)
-  const data = await response.json();
+  const data = (await response.json()) as AIStatsResult;
   callbacks?.onComplete?.(data);
   return data;
 }
@@ -1209,7 +1372,9 @@ export type SemanticCluster = {
 
 export type SemanticClustersResponse = {
   clusters: SemanticCluster[];
-  unclustered: string[];
+  unclustered: Array<
+    string | { id: string; title: string; year: number | null }
+  >;
   stats: {
     totalClusters: number;
     totalArticles: number;
