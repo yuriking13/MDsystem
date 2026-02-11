@@ -8,7 +8,7 @@ const log = createLogger("embeddings-job");
 
 // Константы
 const MAX_JOB_DURATION_MS = 60 * 60 * 1000; // 1 час максимум
-const BATCH_SIZE = 50; // Размер batch для API (OpenRouter поддерживает до 2048)
+const DEFAULT_BATCH_SIZE = 50; // Размер batch для API (OpenRouter поддерживает до 2048)
 const BATCH_DELAY_MS = 200; // Задержка между batches для rate limiting
 const PARALLEL_BATCHES = 3; // Количество параллельных batch запросов
 
@@ -183,9 +183,14 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
     articleIds,
     includeReferences = true,
     includeCitedBy = true,
+    batchSize,
     importMissingArticles = false,
   } = payload;
   const startTime = Date.now();
+  const effectiveBatchSize = Math.min(
+    Math.max(Math.floor(batchSize ?? DEFAULT_BATCH_SIZE), 1),
+    2048,
+  );
 
   log.info("Starting embeddings job", {
     jobId,
@@ -353,13 +358,13 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
     errors = articles.rows.length - articlesWithText.length;
 
     // Разбиваем на batches
-    const batches = chunkArray(articlesWithText, BATCH_SIZE);
+    const batches = chunkArray(articlesWithText, effectiveBatchSize);
 
     log.info("Processing with batch API", {
       jobId,
       totalArticles: articlesWithText.length,
       batches: batches.length,
-      batchSize: BATCH_SIZE,
+      batchSize: effectiveBatchSize,
       parallelBatches: PARALLEL_BATCHES,
     });
 

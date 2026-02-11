@@ -366,6 +366,21 @@ export async function detectStatsCombined(args: {
   try {
     const aiStats = await detectStatsWithAI({ text, openrouterKey });
 
+    if (!aiStats.hasStats && !hasRegexStats) {
+      // If AI returned no findings, still try enhanced regex patterns as a fallback.
+      const enhancedStats = extractStatsEnhanced(text);
+      const hasEnhancedFindings = enhancedStats.additionalFindings.length > 0;
+      if (hasEnhancedFindings) {
+        return {
+          hasStats: true,
+          quality: Math.max(quality, 1),
+          stats: regexStats,
+          aiStats,
+          usedFallback: true,
+        };
+      }
+    }
+
     return {
       hasStats: hasRegexStats || aiStats.hasStats,
       quality: aiStats.hasStats ? Math.max(quality, 1) : quality,
@@ -430,6 +445,7 @@ export async function detectStatsParallel(args: {
 
   // Очередь для обработки
   const queue = articles.filter((a) => a.abstract);
+  const totalToProcess = queue.length;
   const inProgress = new Set<Promise<void>>();
 
   const processQueue = async () => {
@@ -466,7 +482,7 @@ export async function detectStatsParallel(args: {
           if (args.onProgress) {
             const elapsedSeconds = (Date.now() - startTime) / 1000;
             const speed = processed / Math.max(elapsedSeconds, 0.1);
-            args.onProgress(processed, queue.length + processed, speed);
+            args.onProgress(processed, totalToProcess, speed);
           }
 
           if (args.onSpeedUpdate && processed % 3 === 0) {

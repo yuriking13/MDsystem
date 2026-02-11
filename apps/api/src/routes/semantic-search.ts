@@ -9,7 +9,7 @@ import type { FastifyPluginCallback } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
-import { getUserApiKey } from "../utils/project-access.js";
+import { getUserApiKey, checkProjectAccessPool } from "../utils/project-access.js";
 import { queryEmbeddingCache } from "../utils/embedding-cache.js";
 import { startBoss } from "../worker/boss.js";
 import type { EmbeddingsJobPayload } from "../worker/types.js";
@@ -58,6 +58,11 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {
@@ -202,6 +207,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
       const {
         articleIds,
+        batchSize,
         includeReferences,
         includeCitedBy,
         importMissingArticles,
@@ -210,6 +216,11 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {
@@ -325,6 +336,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           articleIds: articleIds || null,
           includeReferences,
           includeCitedBy,
+          batchSize,
           importMissingArticles,
         };
         await boss.send("embeddings:generate", payload);
@@ -366,6 +378,11 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {
@@ -420,6 +437,11 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         return reply.code(401).send({ error: "Unauthorized" });
       }
 
+      const access = await checkProjectAccessPool(projectId, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
+      }
+
       try {
         const result = await pool.query(
           `UPDATE embedding_jobs 
@@ -461,6 +483,11 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {
@@ -512,6 +539,11 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {
@@ -582,6 +614,11 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {
@@ -714,6 +751,11 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {

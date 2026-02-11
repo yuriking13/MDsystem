@@ -198,35 +198,38 @@ export async function translateArticlesParallel(
   let processed = 0;
   const startTime = Date.now();
 
-  // Разбиваем на пакеты для оптимизированного перевода (несколько статей в одном API запросе)
-  const batchPromises: Promise<void>[] = [];
+  // Разбиваем на пакеты для оптимизированного перевода
+  const batches: Array<
+    Array<{
+      id: string;
+      title_en: string;
+      abstract_en?: string | null;
+    }>
+  > = [];
+  for (let batchStart = 0; batchStart < articles.length; batchStart += batchSize) {
+    batches.push(articles.slice(batchStart, batchStart + batchSize));
+  }
 
-  for (
-    let batchStart = 0;
-    batchStart < articles.length;
-    batchStart += batchSize
-  ) {
-    // Обрабатываем не более parallelCount батчей параллельно
-    if (batchPromises.length >= parallelCount) {
-      await Promise.race(batchPromises);
-      batchPromises.splice(
-        0,
-        batchPromises.findIndex((p) => p === Promise.resolve()),
-      );
-    }
+  let nextBatchIdx = 0;
+  const workerCount = Math.min(Math.max(parallelCount, 1), batches.length);
 
-    const batch = articles.slice(batchStart, batchStart + batchSize);
+  const runWorker = async () => {
+    while (true) {
+      const currentBatchIdx = nextBatchIdx++;
+      if (currentBatchIdx >= batches.length) {
+        return;
+      }
 
-    const batchPromise = (async () => {
+      const batch = batches[currentBatchIdx];
+      const batchStart = currentBatchIdx * batchSize;
+
       try {
-        // Используем оптимизированный перевод для этого батча
         const batchResult = await translateArticlesBatchOptimized(
           apiKey,
           batch,
           model,
         );
 
-        // Сохраняем результаты
         for (const [articleId, tr] of batchResult.results) {
           results.set(articleId, tr);
         }
@@ -234,40 +237,27 @@ export async function translateArticlesParallel(
         translated += batchResult.translated;
         failed += batchResult.failed;
         processed += batch.length;
-
-        // Обновляем прогресс с расчётом скорости
-        if (options.onProgress) {
-          const elapsedSeconds = (Date.now() - startTime) / 1000;
-          const speed = processed / Math.max(elapsedSeconds, 0.1);
-          options.onProgress(processed, articles.length, speed);
-        }
-
-        if (options.onSpeedUpdate) {
-          const elapsedSeconds = (Date.now() - startTime) / 1000;
-          const speed = processed / Math.max(elapsedSeconds, 0.1);
-          options.onSpeedUpdate(speed);
-        }
       } catch (err) {
         log.error(
-          `Batch translation error for articles ${batchStart}-${batchStart + batchSize}`,
+          `Batch translation error for articles ${batchStart}-${batchStart + batch.length}`,
           err as Error,
         );
         failed += batch.length;
         processed += batch.length;
-
-        if (options.onProgress) {
-          const elapsedSeconds = (Date.now() - startTime) / 1000;
-          const speed = processed / Math.max(elapsedSeconds, 0.1);
-          options.onProgress(processed, articles.length, speed);
-        }
       }
-    })();
 
-    batchPromises.push(batchPromise);
-  }
+      const elapsedSeconds = (Date.now() - startTime) / 1000;
+      const speed = processed / Math.max(elapsedSeconds, 0.1);
+      if (options.onProgress) {
+        options.onProgress(processed, articles.length, speed);
+      }
+      if (options.onSpeedUpdate) {
+        options.onSpeedUpdate(speed);
+      }
+    }
+  };
 
-  // Ждём завершения всех батчей
-  await Promise.all(batchPromises);
+  await Promise.all(Array.from({ length: workerCount }, () => runWorker()));
 
   return { translated, failed, results };
 }

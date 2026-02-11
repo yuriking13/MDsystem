@@ -12,7 +12,7 @@ import type { FastifyPluginCallback } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
-import { getUserApiKey } from "../utils/project-access.js";
+import { getUserApiKey, checkProjectAccessPool } from "../utils/project-access.js";
 
 // Цвета для кластеров
 const CLUSTER_COLORS = [
@@ -79,6 +79,11 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {
@@ -293,6 +298,11 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         return reply.code(401).send({ error: "Unauthorized" });
       }
 
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
+      }
+
       try {
         // Проверяем существование таблицы
         const tableCheck = await pool.query(
@@ -481,6 +491,11 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         return reply.code(401).send({ error: "Unauthorized" });
       }
 
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
+      }
+
       try {
         // Получаем embedding статьи
         const articleEmbedding = await pool.query(
@@ -604,6 +619,11 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {
@@ -743,6 +763,11 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       if (!query?.trim()) {
@@ -919,6 +944,11 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId, true);
+      if (!access.ok) {
+        return reply.code(403).send({ error: "Access denied" });
       }
 
       try {

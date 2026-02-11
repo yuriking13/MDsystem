@@ -25,6 +25,9 @@ import { getUserApiKey } from "../utils/project-access.js";
 import { createLogger } from "../utils/logger.js";
 
 const log = createLogger("ai-writing-assistant");
+const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
+const OPENROUTER_PRIMARY_MODEL = "openai/gpt-4o-mini";
+const OPENROUTER_FALLBACK_MODEL = "google/gemini-2.0-flash-001";
 
 // ===== Schemas =====
 
@@ -73,38 +76,60 @@ async function callLLM(
 ): Promise<string> {
   const temperature = options?.temperature ?? 0.7;
   const maxTokens = options?.maxTokens ?? 4096;
+  const models = [OPENROUTER_PRIMARY_MODEL, OPENROUTER_FALLBACK_MODEL];
+  const errors: string[] = [];
 
-  // Try OpenAI API first
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature,
-      max_tokens: maxTokens,
-    }),
-  });
+  for (const model of models) {
+    try {
+      const response = await fetch(OPENROUTER_API, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://mdsystem.app",
+          "X-Title": "MDsystem Writing Assistant",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          temperature,
+          max_tokens: maxTokens,
+        }),
+        signal: AbortSignal.timeout(45000),
+      });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    log.error("LLM API request failed", undefined, {
-      status: String(response.status),
-      error: errorText.slice(0, 200),
-    });
-    throw new Error(
-      `LLM API error: ${response.status} - ${errorText.slice(0, 200)}`,
-    );
+      if (!response.ok) {
+        const errorText = await response.text();
+        const shortError = `model=${model} status=${response.status} err=${errorText.slice(0, 200)}`;
+        errors.push(shortError);
+
+        // Invalid key/permissions won't be fixed by model fallback.
+        if (response.status === 401 || response.status === 403) {
+          break;
+        }
+        continue;
+      }
+
+      const data = (await response.json()) as any;
+      const content = data.choices?.[0]?.message?.content?.trim();
+      if (content) {
+        return content;
+      }
+
+      errors.push(`model=${model} empty-content`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`model=${model} fetch-error=${msg.slice(0, 200)}`);
+    }
   }
 
-  const data = (await response.json()) as any;
-  return data.choices?.[0]?.message?.content || "";
+  log.error("LLM API request failed for all models", undefined, {
+    errors: errors.join(" | "),
+  });
+  throw new Error(`LLM API error: ${errors[0] || "unknown error"}`);
 }
 
 // ===== Helper: Extract DOIs from text =====
@@ -148,9 +173,40 @@ async function lookupArticleByDoi(
   };
 }
 
+async function lookupArticleByPmid(
+  projectId: string,
+  pmid: string,
+): Promise<{
+  title: string | null;
+  abstract: string | null;
+  authors: string[] | null;
+  year: number | null;
+  journal: string | null;
+  doi: string | null;
+} | null> {
+  const res = await pool.query(
+    `SELECT a.title_en, a.abstract_en, a.authors, a.year, a.journal, a.doi
+     FROM articles a
+     JOIN project_articles pa ON pa.article_id = a.id
+     WHERE pa.project_id = $1 AND a.pmid = $2
+     LIMIT 1`,
+    [projectId, pmid],
+  );
+  if (res.rowCount === 0) return null;
+  const row = res.rows[0];
+  return {
+    title: row.title_en,
+    abstract: row.abstract_en,
+    authors: row.authors,
+    year: row.year,
+    journal: row.journal,
+    doi: row.doi,
+  };
+}
+
 // ===== Helper: Try to find full text via PubMed/PMC =====
 
-async function tryFindFullText(
+async function tryFindFullTextByDoi(
   doi: string,
 ): Promise<{ found: boolean; url?: string; snippet?: string }> {
   try {
@@ -187,6 +243,31 @@ async function tryFindFullText(
     return { found: false };
   } catch (err) {
     log.warn("Failed to lookup full text", { doi });
+    return { found: false };
+  }
+}
+
+async function tryFindFullTextByPmid(
+  pmid: string,
+): Promise<{ found: boolean; url?: string }> {
+  try {
+    const idConvUrl = `https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids=${encodeURIComponent(pmid)}&format=json`;
+    const response = await fetch(idConvUrl, {
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!response.ok) return { found: false };
+
+    const data = (await response.json()) as any;
+    const record = data?.records?.[0];
+    if (record?.pmcid) {
+      return {
+        found: true,
+        url: `https://www.ncbi.nlm.nih.gov/pmc/articles/${record.pmcid}/`,
+      };
+    }
+
+    return { found: false };
+  } catch {
     return { found: false };
   }
 }
@@ -326,6 +407,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
     Body: z.infer<typeof ImproveTextBodySchema>;
   }>(
     "/projects/:projectId/ai-writing-assistant/improve",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const userId = getUserId(request);
       const { projectId } = request.params;
@@ -354,12 +436,12 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
         fullTextSnippets,
       } = parsed.data;
 
-      // Get user's OpenAI API key
-      const apiKey = await getUserApiKey(userId, "openai");
+      // Get user's OpenRouter API key
+      const apiKey = await getUserApiKey(userId, "openrouter");
       if (!apiKey) {
         return reply.code(400).send({
           error:
-            "OpenAI API key not configured. Add it in Settings > API Keys.",
+            "OpenRouter API key not configured. Add it in Settings > API Keys.",
         });
       }
 
@@ -471,7 +553,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
           for (const doi of dois.slice(0, 5)) {
             const hasUserSnippet = fullTextSnippets?.some((s) => s.doi === doi);
             if (!hasUserSnippet) {
-              const ftResult = await tryFindFullText(doi);
+              const ftResult = await tryFindFullTextByDoi(doi);
               doiFullTextStatus.push({
                 doi,
                 fullTextFound: ftResult.found,
@@ -507,6 +589,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
     Body: z.infer<typeof GenerateTableBodySchema>;
   }>(
     "/projects/:projectId/ai-writing-assistant/generate-table",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const userId = getUserId(request);
       const { projectId } = request.params;
@@ -526,11 +609,11 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
 
       const { selectedText, tableType, documentTitle } = parsed.data;
 
-      const apiKey = await getUserApiKey(userId, "openai");
+      const apiKey = await getUserApiKey(userId, "openrouter");
       if (!apiKey) {
         return reply.code(400).send({
           error:
-            "OpenAI API key not configured. Add it in Settings > API Keys.",
+            "OpenRouter API key not configured. Add it in Settings > API Keys.",
         });
       }
 
@@ -594,6 +677,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
     Body: z.infer<typeof GenerateIllustrationBodySchema>;
   }>(
     "/projects/:projectId/ai-writing-assistant/generate-illustration",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const userId = getUserId(request);
       const { projectId } = request.params;
@@ -613,11 +697,11 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
 
       const { selectedText, illustrationType, documentTitle } = parsed.data;
 
-      const apiKey = await getUserApiKey(userId, "openai");
+      const apiKey = await getUserApiKey(userId, "openrouter");
       if (!apiKey) {
         return reply.code(400).send({
           error:
-            "OpenAI API key not configured. Add it in Settings > API Keys.",
+            "OpenRouter API key not configured. Add it in Settings > API Keys.",
         });
       }
 
@@ -680,6 +764,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
     Body: z.infer<typeof LookupFulltextBodySchema>;
   }>(
     "/projects/:projectId/ai-writing-assistant/lookup-fulltext",
+    { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const userId = getUserId(request);
       const { projectId } = request.params;
@@ -705,17 +790,28 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       try {
-        const targetDoi = doi || "";
+        let targetDoi = doi || "";
+        let article: Awaited<ReturnType<typeof lookupArticleByDoi>> | Awaited<
+          ReturnType<typeof lookupArticleByPmid>
+        > | null = null;
 
         // Look up in project database
-        const article = targetDoi
-          ? await lookupArticleByDoi(projectId, targetDoi)
-          : null;
+        if (targetDoi) {
+          article = await lookupArticleByDoi(projectId, targetDoi);
+        } else if (pmid) {
+          const byPmid = await lookupArticleByPmid(projectId, pmid);
+          article = byPmid;
+          if (byPmid?.doi) {
+            targetDoi = byPmid.doi;
+          }
+        }
 
         // Try to find full text URL
         const fullTextResult = targetDoi
-          ? await tryFindFullText(targetDoi)
-          : { found: false };
+          ? await tryFindFullTextByDoi(targetDoi)
+          : pmid
+            ? await tryFindFullTextByPmid(pmid)
+            : { found: false };
 
         return reply.send({
           ok: true,
