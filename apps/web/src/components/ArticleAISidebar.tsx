@@ -33,10 +33,10 @@ type Props = {
   isOpen: boolean;
   onToggle: () => void;
   onClose: () => void;
-  projectId: string;
+  projectId?: string;
   projectName?: string;
-  viewStatus: "candidate" | "selected" | "excluded" | "deleted" | "all";
-  candidateCount: number;
+  viewStatus?: "candidate" | "selected" | "excluded" | "deleted" | "all";
+  candidateCount?: number;
   // Callback when user clicks "add to selected" on a suggested article
   onAddToSelected?: (articleIds: string[]) => void;
   // Callback to highlight an article in the list
@@ -61,10 +61,10 @@ export default function ArticleAISidebar({
   isOpen,
   onToggle,
   onClose,
-  projectId,
+  projectId = "",
   projectName,
-  viewStatus,
-  candidateCount,
+  viewStatus = "candidate",
+  candidateCount = 0,
   onAddToSelected,
   onHighlightArticle,
   // For backward compatibility with tests
@@ -92,7 +92,12 @@ export default function ArticleAISidebar({
 
   // Auto scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (
+      messagesEndRef.current &&
+      typeof messagesEndRef.current.scrollIntoView === "function"
+    ) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   // Focus input when opened
@@ -185,22 +190,44 @@ export default function ArticleAISidebar({
       id: "analyze",
       label: "Analyze",
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+          />
         </svg>
       ),
       onClick: () =>
         onAnalyzeSelection
           ? onAnalyzeSelection()
-          : handleSend("Проанализируй отобранные статьи и выдели ключевые темы"),
+          : handleSend(
+              "Проанализируй отобранные статьи и выдели ключевые темы",
+            ),
       disabled: (selectedArticlesCount ?? candidateCount) === 0,
     },
     {
       id: "summarize",
       label: "Summarize",
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 12h16M4 18h7"
+          />
         </svg>
       ),
       onClick: () =>
@@ -212,8 +239,18 @@ export default function ArticleAISidebar({
       id: "find-similar",
       label: "Find Similar",
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+          />
         </svg>
       ),
       onClick: () =>
@@ -226,14 +263,26 @@ export default function ArticleAISidebar({
       id: "criteria",
       label: "Criteria",
       icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+          />
         </svg>
       ),
       onClick: () =>
         onGenerateCriteria
           ? onGenerateCriteria()
-          : handleSend("Предложи критерии отбора статей на основе текущих кандидатов"),
+          : handleSend(
+              "Предложи критерии отбора статей на основе текущих кандидатов",
+            ),
     },
   ];
 
@@ -333,7 +382,9 @@ export default function ArticleAISidebar({
             </svg>
             <span>MD Assistant</span>
           </div>
-          <div className="article-ai-header-sub">AI-powered research helper</div>
+          <div className="article-ai-header-sub">
+            AI-powered research helper
+          </div>
         </div>
         <div className="article-ai-header-actions">
           {messages.length > 0 && (
@@ -342,9 +393,20 @@ export default function ArticleAISidebar({
               onClick={handleClearChat}
               title="Очистить чат"
               type="button"
+              aria-label="Clear chat"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
               </svg>
             </button>
           )}
@@ -354,8 +416,18 @@ export default function ArticleAISidebar({
             type="button"
             aria-label=""
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>
@@ -364,47 +436,76 @@ export default function ArticleAISidebar({
       {/* Context Banner */}
       {(selectedArticlesCount ?? candidateCount) > 0 && (
         <div className="article-ai-context">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            />
           </svg>
           <span>
-            <strong>{selectedArticlesCount ?? candidateCount}</strong> articles selected
+            <strong>{selectedArticlesCount ?? candidateCount}</strong> articles
+            selected
             {projectName && (
-              <> in <em>{projectName}</em></>
+              <>
+                {" "}
+                in <em>{projectName}</em>
+              </>
             )}
           </span>
         </div>
       )}
 
-      {/* Settings Row */}
-      <div className="article-ai-settings">
-        <label className="article-ai-setting-label">
-          <span>Макс. рекомендаций:</span>
-          <select
-            value={maxSuggestions}
-            onChange={(e) => setMaxSuggestions(Number(e.target.value))}
-            className="article-ai-setting-select"
-          >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={30}>30</option>
-            <option value={50}>50</option>
-          </select>
-        </label>
-      </div>
+      {/* Settings Row (only in internal mode) */}
+      {!externalMessages && (
+        <div className="article-ai-settings">
+          <label className="article-ai-setting-label">
+            <span>Макс. рекомендаций:</span>
+            <select
+              value={maxSuggestions}
+              onChange={(e) => setMaxSuggestions(Number(e.target.value))}
+              className="article-ai-setting-select"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={30}>30</option>
+              <option value={50}>50</option>
+            </select>
+          </label>
+        </div>
+      )}
 
       {/* Messages Area */}
       <div className="article-ai-messages">
         {messages.length === 0 ? (
           <div className="article-ai-empty">
             <div className="article-ai-empty-icon">
-              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+              <svg
+                className="w-12 h-12"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                />
               </svg>
             </div>
             <h4>How can I help?</h4>
-            <p>Ask questions about your articles, request analysis, or get AI recommendations for article selection.</p>
+            <p>
+              Ask questions about your articles, request analysis, or get AI
+              recommendations for article selection.
+            </p>
 
             {/* Quick Actions */}
             <div className="article-ai-quick-actions">
@@ -418,6 +519,11 @@ export default function ArticleAISidebar({
                 >
                   {action.icon}
                   <span>{action.label}</span>
+                  {action.description && (
+                    <span className="article-ai-quick-btn-desc">
+                      {action.description}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -431,8 +537,18 @@ export default function ArticleAISidebar({
                   onClick={prompt.onClick}
                   type="button"
                 >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg
+                    className="w-3 h-3"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
                   </svg>
                   {prompt.label}
                 </button>
@@ -448,8 +564,18 @@ export default function ArticleAISidebar({
               >
                 {msg.role === "assistant" && (
                   <div className="article-ai-message-avatar">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
                     </svg>
                   </div>
                 )}
@@ -457,112 +583,161 @@ export default function ArticleAISidebar({
                   <div className="article-ai-message-text">{msg.content}</div>
 
                   {/* Suggested Articles */}
-                  {msg.suggestedArticles && msg.suggestedArticles.length > 0 && (
-                    <div className="article-ai-suggestions">
-                      <div className="article-ai-suggestions-header">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span>
-                          Рекомендованные статьи ({msg.suggestedArticles.length})
-                          {msg.totalAnalyzed && (
-                            <span className="article-ai-analyzed-badge">
-                              из {msg.totalAnalyzed} проанализированных
-                            </span>
-                          )}
-                        </span>
-                        {onAddToSelected && (
-                          <button
-                            className="article-ai-add-all-btn"
-                            onClick={() =>
-                              onAddToSelected(
-                                msg.suggestedArticles!
-                                  .filter((a) => a.status === "candidate")
-                                  .map((a) => a.id),
-                              )
-                            }
-                            type="button"
-                            title="Добавить все рекомендованные в отобранные"
+                  {msg.suggestedArticles &&
+                    msg.suggestedArticles.length > 0 && (
+                      <div className="article-ai-suggestions">
+                        <div className="article-ai-suggestions-header">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
                           >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            Отобрать все
-                          </button>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                          <span>
+                            Рекомендованные статьи (
+                            {msg.suggestedArticles.length})
+                            {msg.totalAnalyzed && (
+                              <span className="article-ai-analyzed-badge">
+                                из {msg.totalAnalyzed} проанализированных
+                              </span>
+                            )}
+                          </span>
+                          {onAddToSelected && (
+                            <button
+                              className="article-ai-add-all-btn"
+                              onClick={() =>
+                                onAddToSelected(
+                                  msg
+                                    .suggestedArticles!.filter(
+                                      (a) => a.status === "candidate",
+                                    )
+                                    .map((a) => a.id),
+                                )
+                              }
+                              type="button"
+                              title="Добавить все рекомендованные в отобранные"
+                            >
+                              <svg
+                                className="w-3 h-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M5 13l4 4L19 7"
+                                />
+                              </svg>
+                              Отобрать все
+                            </button>
+                          )}
+                        </div>
+                        <div className="article-ai-suggestions-list">
+                          {msg.suggestedArticles.map((article, idx) => (
+                            <div
+                              key={article.id}
+                              className="article-ai-suggestion-item"
+                            >
+                              <div className="article-ai-suggestion-rank">
+                                {idx + 1}
+                              </div>
+                              <div className="article-ai-suggestion-body">
+                                <div
+                                  className="article-ai-suggestion-title"
+                                  onClick={() =>
+                                    onHighlightArticle?.(article.id)
+                                  }
+                                  title="Показать в списке"
+                                >
+                                  {article.title_ru ||
+                                    article.title_en ||
+                                    "Без названия"}
+                                </div>
+                                <div className="article-ai-suggestion-meta">
+                                  {article.year && (
+                                    <span className="article-ai-tag">
+                                      {article.year}
+                                    </span>
+                                  )}
+                                  {article.journal && (
+                                    <span className="article-ai-tag">
+                                      {article.journal}
+                                    </span>
+                                  )}
+                                  {article.has_stats && (
+                                    <span className="article-ai-tag article-ai-tag--stats">
+                                      Стат. {article.stats_quality}/3
+                                    </span>
+                                  )}
+                                  {article.source && (
+                                    <span className="article-ai-tag article-ai-tag--source">
+                                      {article.source.toUpperCase()}
+                                    </span>
+                                  )}
+                                  <span
+                                    className={`article-ai-tag article-ai-tag--status article-ai-tag--${article.status}`}
+                                  >
+                                    {article.status === "candidate"
+                                      ? "Кандидат"
+                                      : article.status === "selected"
+                                        ? "Отобрана"
+                                        : article.status === "excluded"
+                                          ? "Исключена"
+                                          : article.status}
+                                  </span>
+                                </div>
+                                {article.reason && (
+                                  <div className="article-ai-suggestion-reason">
+                                    {article.reason}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="article-ai-suggestion-actions">
+                                {article.status === "candidate" &&
+                                  onAddToSelected && (
+                                    <button
+                                      className="article-ai-action-btn article-ai-action-btn--select"
+                                      onClick={() =>
+                                        onAddToSelected([article.id])
+                                      }
+                                      type="button"
+                                      title="Добавить в отобранные"
+                                    >
+                                      <svg
+                                        className="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M5 13l4 4L19 7"
+                                        />
+                                      </svg>
+                                    </button>
+                                  )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        {msg.summary && (
+                          <div className="article-ai-summary">
+                            <span>Критерии: {msg.summary.criteria}</span>
+                          </div>
                         )}
                       </div>
-                      <div className="article-ai-suggestions-list">
-                        {msg.suggestedArticles.map((article, idx) => (
-                          <div
-                            key={article.id}
-                            className="article-ai-suggestion-item"
-                          >
-                            <div className="article-ai-suggestion-rank">
-                              {idx + 1}
-                            </div>
-                            <div className="article-ai-suggestion-body">
-                              <div
-                                className="article-ai-suggestion-title"
-                                onClick={() =>
-                                  onHighlightArticle?.(article.id)
-                                }
-                                title="Показать в списке"
-                              >
-                                {article.title_ru || article.title_en || "Без названия"}
-                              </div>
-                              <div className="article-ai-suggestion-meta">
-                                {article.year && (
-                                  <span className="article-ai-tag">{article.year}</span>
-                                )}
-                                {article.journal && (
-                                  <span className="article-ai-tag">{article.journal}</span>
-                                )}
-                                {article.has_stats && (
-                                  <span className="article-ai-tag article-ai-tag--stats">
-                                    Стат. {article.stats_quality}/3
-                                  </span>
-                                )}
-                                {article.source && (
-                                  <span className="article-ai-tag article-ai-tag--source">
-                                    {article.source.toUpperCase()}
-                                  </span>
-                                )}
-                                <span className={`article-ai-tag article-ai-tag--status article-ai-tag--${article.status}`}>
-                                  {article.status === "candidate" ? "Кандидат" : article.status === "selected" ? "Отобрана" : article.status === "excluded" ? "Исключена" : article.status}
-                                </span>
-                              </div>
-                              {article.reason && (
-                                <div className="article-ai-suggestion-reason">
-                                  {article.reason}
-                                </div>
-                              )}
-                            </div>
-                            <div className="article-ai-suggestion-actions">
-                              {article.status === "candidate" && onAddToSelected && (
-                                <button
-                                  className="article-ai-action-btn article-ai-action-btn--select"
-                                  onClick={() =>
-                                    onAddToSelected([article.id])
-                                  }
-                                  type="button"
-                                  title="Добавить в отобранные"
-                                >
-                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      {msg.summary && (
-                        <div className="article-ai-summary">
-                          <span>Критерии: {msg.summary.criteria}</span>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                    )}
 
                   <div className="article-ai-message-time">
                     {msg.timestamp.toLocaleTimeString([], {
@@ -578,15 +753,40 @@ export default function ArticleAISidebar({
             {isLoading && (
               <div className="article-ai-message article-ai-message--assistant">
                 <div className="article-ai-message-avatar">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
                   </svg>
                 </div>
                 <div className="article-ai-message-content">
                   <div className="article-ai-loading">
-                    <span className="animate-bounce" style={{ animationDelay: "0ms" }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: "150ms" }}>.</span>
-                    <span className="animate-bounce" style={{ animationDelay: "300ms" }}>.</span>
+                    <span
+                      className="animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    >
+                      .
+                    </span>
+                    <span
+                      className="animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    >
+                      .
+                    </span>
+                    <span
+                      className="animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    >
+                      .
+                    </span>
                   </div>
                 </div>
               </div>
@@ -614,9 +814,20 @@ export default function ArticleAISidebar({
             onClick={() => handleSend()}
             disabled={isLoading || !input.trim()}
             type="button"
+            aria-label="Send message"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+              />
             </svg>
           </button>
         </div>
