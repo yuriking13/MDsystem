@@ -3398,6 +3398,325 @@ ${articlesForAI || "Нет статей с полными данными для 
     },
   );
 
+  // ========== AI Assistant for Articles Base (Candidates) ==========
+  // POST /api/projects/:id/articles-ai-assistant
+  // AI анализирует базу статей (кандидатов) и рекомендует статьи для добавления в отобранные
+  // на основе запроса пользователя (темы, детали, статистика и т.д.)
+
+  const ArticlesAIAssistantSchema = z.object({
+    message: z.string().min(1).max(2000),
+    status: z.enum(["candidate", "selected", "excluded", "all"]).default("candidate"),
+    maxSuggestions: z.number().int().min(1).max(50).default(10),
+  });
+
+  fastify.post(
+    "/projects/:id/articles-ai-assistant",
+    {
+      preHandler: [fastify.authenticate],
+      bodyLimit: 1 * 1024 * 1024, // 1MB
+    },
+    async (request, reply) => {
+      const userId = getUserId(request);
+
+      const paramsP = ProjectIdSchema.safeParse(request.params);
+      if (!paramsP.success) {
+        return reply.code(400).send({ error: "Invalid project ID" });
+      }
+
+      const bodyP = ArticlesAIAssistantSchema.safeParse(request.body);
+      if (!bodyP.success) {
+        return reply
+          .code(400)
+          .send({ error: "Invalid request body", details: bodyP.error.issues });
+      }
+
+      const projectId = paramsP.data.id;
+      const { message, status, maxSuggestions } = bodyP.data;
+
+      try {
+        // Получаем API ключ OpenRouter
+        const openrouterKey = await getUserApiKey(userId, "openrouter");
+        if (!openrouterKey) {
+          return reply.code(400).send({
+            ok: false,
+            error:
+              "Для AI ассистента нужен API ключ OpenRouter. Добавьте его в Настройках.",
+          });
+        }
+
+        // Получаем информацию о проекте
+        const projectRes = await pool.query(
+          `SELECT p.name, p.description, p.research_type, p.research_subtype
+           FROM projects p WHERE p.id = $1`,
+          [projectId],
+        );
+        const project = projectRes.rows[0];
+
+        // Загружаем статьи из базы (кандидаты или указанный статус)
+        const statusFilter = status === "all" ? null : status;
+        const articlesRes = await pool.query(
+          `SELECT a.id, a.doi, a.pmid, a.title_en, a.title_ru,
+                  a.abstract_en, a.abstract_ru, a.authors, a.year,
+                  a.journal, a.source, a.has_stats, a.stats_json,
+                  a.stats_quality, a.publication_types,
+                  pa.status, pa.notes, pa.tags, pa.source_query
+           FROM articles a
+           JOIN project_articles pa ON a.id = pa.article_id
+           WHERE pa.project_id = $1
+           ${statusFilter ? "AND pa.status = $2" : "AND pa.status != 'deleted'"}
+           ORDER BY a.year DESC NULLS LAST, pa.added_at DESC`,
+          statusFilter ? [projectId, statusFilter] : [projectId],
+        );
+
+        const articles = articlesRes.rows;
+        log.debug(
+          `Articles AI Assistant: loaded ${articles.length} articles for project ${projectId} (status: ${status})`,
+        );
+
+        if (articles.length === 0) {
+          return {
+            ok: true,
+            response: "В базе нет статей для анализа. Сначала найдите и добавьте статьи через поиск.",
+            suggestedArticles: [],
+            totalAnalyzed: 0,
+          };
+        }
+
+        // Подсчёт статистик по статьям
+        const statusCounts: Record<string, number> = {};
+        const sourceCounts: Record<string, number> = {};
+        let withStats = 0;
+        let withAbstract = 0;
+        const years: number[] = [];
+
+        for (const a of articles) {
+          statusCounts[a.status] = (statusCounts[a.status] || 0) + 1;
+          sourceCounts[a.source || "unknown"] =
+            (sourceCounts[a.source || "unknown"] || 0) + 1;
+          if (a.has_stats) withStats++;
+          if (a.abstract_en || a.abstract_ru) withAbstract++;
+          if (a.year) years.push(a.year);
+        }
+
+        const yearMin = years.length > 0 ? Math.min(...years) : null;
+        const yearMax = years.length > 0 ? Math.max(...years) : null;
+
+        // Формируем список статей для AI (компактный формат)
+        const articlesForAI = articles
+          .map((a, idx) => {
+            const parts = [
+              `[${idx + 1}] ID: ${a.id}`,
+              `Статус: ${a.status}`,
+              a.title_ru
+                ? `Название (RU): ${a.title_ru}`
+                : a.title_en
+                  ? `Название (EN): ${a.title_en}`
+                  : null,
+              a.year ? `Год: ${a.year}` : null,
+              a.journal ? `Журнал: ${a.journal}` : null,
+              a.authors
+                ? `Авторы: ${Array.isArray(a.authors) ? a.authors.slice(0, 3).join(", ") + (a.authors.length > 3 ? "..." : "") : String(a.authors).substring(0, 150)}`
+                : null,
+              a.source ? `Источник: ${a.source.toUpperCase()}` : null,
+              a.publication_types && a.publication_types.length > 0
+                ? `Типы: ${a.publication_types.join(", ")}`
+                : null,
+              a.has_stats ? `Статистика: Да (качество: ${a.stats_quality || 0}/3)` : null,
+              a.stats_json
+                ? `Данные статистики: ${JSON.stringify(a.stats_json).substring(0, 300)}`
+                : null,
+              a.abstract_ru
+                ? `Аннотация (RU): ${a.abstract_ru.substring(0, 400)}`
+                : a.abstract_en
+                  ? `Аннотация (EN): ${a.abstract_en.substring(0, 400)}`
+                  : null,
+              a.source_query ? `Поисковый запрос: ${a.source_query}` : null,
+              a.tags && a.tags.length > 0 ? `Теги: ${a.tags.join(", ")}` : null,
+              a.notes ? `Заметки: ${a.notes.substring(0, 200)}` : null,
+            ].filter(Boolean);
+            return parts.join("\n");
+          })
+          .join("\n\n---\n\n");
+
+        // Формируем системный промпт
+        const systemPrompt = `Ты - AI ассистент для научного исследователя. Твоя задача - анализировать базу научных статей (кандидатов) и рекомендовать наиболее подходящие статьи для отбора.
+
+═══════════════════════════════════════════════════
+📊 КОНТЕКСТ ПРОЕКТА
+═══════════════════════════════════════════════════
+
+Название: ${project?.name || "Без названия"}
+Описание: ${project?.description || "Нет описания"}
+Тип исследования: ${project?.research_type || "Не указан"}
+${project?.research_subtype ? `Подтип: ${project.research_subtype}` : ""}
+
+═══════════════════════════════════════════════════
+📈 СТАТИСТИКА БАЗЫ СТАТЕЙ
+═══════════════════════════════════════════════════
+
+Всего статей: ${articles.length}
+Статусы: ${Object.entries(statusCounts).map(([k, v]) => `${k}: ${v}`).join(", ")}
+Источники: ${Object.entries(sourceCounts).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(", ")}
+С абстрактом: ${withAbstract}
+Со статистикой: ${withStats}
+${yearMin && yearMax ? `Годы публикаций: ${yearMin} - ${yearMax}` : ""}
+
+═══════════════════════════════════════════════════
+📚 БАЗА СТАТЕЙ (${articles.length} шт.)
+═══════════════════════════════════════════════════
+
+${articlesForAI}
+
+═══════════════════════════════════════════════════
+🎯 ТВОЯ ЗАДАЧА
+═══════════════════════════════════════════════════
+
+1. Понять запрос пользователя:
+   • Что он ищет? (тема, методология, конкретные детали, статистика...)
+   • Какие критерии отбора? (год, тип публикации, наличие статистики...)
+   
+2. Проанализировать ВСЕ статьи из базы
+
+3. Отобрать до ${maxSuggestions} наиболее подходящих статей
+
+4. Объяснить, почему каждая статья подходит
+
+═══════════════════════════════════════════════════
+✅ ПРАВИЛА
+═══════════════════════════════════════════════════
+
+• Возвращай ТОЛЬКО ID статей из списка выше
+• Ранжируй по релевантности (лучшие - в начале)
+• Объясняй причину выбора каждой статьи
+• Если подходящих статей мало - честно скажи об этом
+• Учитывай: название, аннотацию, статистику, журнал, год, тип, теги
+
+═══════════════════════════════════════════════════
+📋 ФОРМАТ ОТВЕТА (СТРОГО JSON)
+═══════════════════════════════════════════════════
+
+{
+  "response": "Развёрнутый ответ пользователю на русском языке с анализом и рекомендациями",
+  "suggestedArticleIds": ["uuid-1", "uuid-2"],
+  "suggestedArticlesInfo": [
+    {
+      "id": "uuid-1",
+      "reason": "Почему эта статья подходит под запрос",
+      "relevanceScore": 0.95
+    }
+  ],
+  "summary": {
+    "totalMatched": 5,
+    "criteria": "Краткое описание использованных критериев отбора"
+  }
+}
+
+ВАЖНО:
+• Отвечай на русском языке
+• Возвращай ТОЛЬКО valid JSON
+• ID должны быть из предоставленного списка
+• Если ничего не найдено - suggestedArticleIds = []`;
+
+        // Вызываем OpenRouter с Claude
+        const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
+
+        const res = await fetch(OPENROUTER_API, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${openrouterKey}`,
+            "HTTP-Referer": "https://mdsystem.app",
+          },
+          body: JSON.stringify({
+            model: "anthropic/claude-sonnet-4",
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: message },
+            ],
+            temperature: 0.2,
+            max_tokens: 4000,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          throw new Error(
+            `OpenRouter error ${res.status}: ${err.slice(0, 200)}`,
+          );
+        }
+
+        type OpenRouterResponse = {
+          choices: Array<{ message: { content: string } }>;
+        };
+        const data = (await res.json()) as OpenRouterResponse;
+        const content = data.choices?.[0]?.message?.content || "";
+
+        // Парсим JSON из ответа
+        let parsed: any = {
+          response: content,
+          suggestedArticleIds: [],
+          suggestedArticlesInfo: [],
+        };
+        try {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsed = JSON.parse(jsonMatch[0]);
+          }
+        } catch {
+          parsed = {
+            response: content,
+            suggestedArticleIds: [],
+            suggestedArticlesInfo: [],
+          };
+        }
+
+        // Валидируем найденные ID
+        const validIds = new Set(articles.map((a: any) => a.id));
+        const validatedIds = (parsed.suggestedArticleIds || []).filter(
+          (id: string) => validIds.has(id),
+        );
+
+        // Собираем полную информацию о рекомендованных статьях
+        const articlesMap = new Map(articles.map((a: any) => [a.id, a]));
+        const suggestedArticles = validatedIds.map((id: string) => {
+          const article = articlesMap.get(id);
+          const info = (parsed.suggestedArticlesInfo || []).find(
+            (i: any) => i.id === id,
+          );
+          return {
+            id,
+            title_en: article?.title_en,
+            title_ru: article?.title_ru,
+            year: article?.year,
+            journal: article?.journal,
+            authors: article?.authors,
+            source: article?.source,
+            has_stats: article?.has_stats,
+            stats_quality: article?.stats_quality,
+            status: article?.status,
+            reason: info?.reason || "",
+            relevanceScore: info?.relevanceScore || 0,
+          };
+        });
+
+        return {
+          ok: true,
+          response: parsed.response || content,
+          suggestedArticles,
+          suggestedArticleIds: validatedIds,
+          summary: parsed.summary || null,
+          totalAnalyzed: articles.length,
+        };
+      } catch (err: any) {
+        log.error("Articles AI Assistant error:", err);
+        return reply.code(500).send({
+          ok: false,
+          error: err?.message || "AI Assistant error",
+        });
+      }
+    },
+  );
+
   // ============================================================
   // Convert Article to Document
   // ============================================================
