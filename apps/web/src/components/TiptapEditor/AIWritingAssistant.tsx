@@ -13,7 +13,6 @@ import {
   apiAIImproveText,
   apiAIGenerateTable,
   apiAIGenerateIllustration,
-  apiAILookupFulltext,
   type AIImproveTextVariant,
   type DOIFullTextStatus,
   type AIGenerateTableResponse,
@@ -68,6 +67,59 @@ function extractDOIsFromText(text: string): string[] {
   const matches = text.match(doiRegex);
   if (!matches) return [];
   return [...new Set(matches.map((d) => d.trim()))];
+}
+
+function sanitizeSvg(svgCode: string): string {
+  if (!svgCode || typeof window === "undefined" || typeof DOMParser === "undefined") {
+    return "";
+  }
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgCode, "image/svg+xml");
+    const root = doc.documentElement;
+
+    if (!root || root.tagName.toLowerCase() !== "svg") {
+      return "";
+    }
+
+    const blockedTags = [
+      "script",
+      "foreignObject",
+      "iframe",
+      "object",
+      "embed",
+      "link",
+      "meta",
+    ];
+
+    blockedTags.forEach((tag) => {
+      doc.querySelectorAll(tag).forEach((el) => el.remove());
+    });
+
+    doc.querySelectorAll("*").forEach((el) => {
+      for (const attr of [...el.attributes]) {
+        const name = attr.name.toLowerCase();
+        const value = attr.value.trim().toLowerCase();
+
+        if (name.startsWith("on")) {
+          el.removeAttribute(attr.name);
+          continue;
+        }
+
+        if (
+          (name === "href" || name === "xlink:href") &&
+          value.startsWith("javascript:")
+        ) {
+          el.removeAttribute(attr.name);
+        }
+      }
+    });
+
+    return new XMLSerializer().serializeToString(root);
+  } catch {
+    return "";
+  }
 }
 
 // ===== Component =====
@@ -395,8 +447,14 @@ export default function AIWritingAssistant({
   const handleInsertIllustration = useCallback(() => {
     if (!illustrationResult || !editor) return;
 
+    const safeSvg = sanitizeSvg(illustrationResult.svgCode);
+    if (!safeSvg) {
+      setError("Некорректный SVG-код иллюстрации");
+      return;
+    }
+
     // Create a blob URL from SVG
-    const svgBlob = new Blob([illustrationResult.svgCode], {
+    const svgBlob = new Blob([safeSvg], {
       type: "image/svg+xml",
     });
     const svgUrl = URL.createObjectURL(svgBlob);
@@ -1032,9 +1090,7 @@ export default function AIWritingAssistant({
         )}
 
         <div className="ai-illustration-preview">
-          <div
-            dangerouslySetInnerHTML={{ __html: illustrationResult.svgCode }}
-          />
+          <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(illustrationResult.svgCode) }} />
         </div>
 
         {illustrationResult.figureCaption && (

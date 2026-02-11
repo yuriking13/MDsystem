@@ -73,7 +73,8 @@ const ProviderMeta: Record<
   },
   openrouter: {
     name: "OpenRouter",
-    description: "API для перевода статей и AI-детекции статистики",
+    description:
+      "Единый AI-провайдер: ассистенты, перевод, семантический поиск и AI-анализ",
     icon: (
       <svg
         className="icon-md"
