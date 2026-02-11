@@ -17,7 +17,8 @@ export type WSEventType =
   | "embedding:progress"
   | "embedding:completed"
   | "embedding:error"
-  | "embedding:cancelled";
+  | "embedding:cancelled"
+  | "search:progress";
 
 export interface WSEvent {
   type: WSEventType;
