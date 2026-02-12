@@ -1,13 +1,22 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { clearToken, getToken, setToken } from "./auth";
+import { clearToken, getToken, setAuthTokens } from "./auth";
 import { apiMe, type AuthUser } from "./api";
 
 type AuthState = {
   token: string | null;
   user: AuthUser | null;
   loading: boolean;
-  loginWithToken: (token: string) => Promise<void>;
+  loginWithToken: (
+    token: string,
+    refreshToken?: string | null,
+  ) => Promise<void>;
   logout: () => void;
   refreshMe: () => Promise<void>;
 };
@@ -29,8 +38,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(me.user);
   }
 
-  async function loginWithToken(t: string) {
-    setToken(t);
+  async function loginWithToken(t: string, refreshToken?: string | null) {
+    setAuthTokens(t, refreshToken);
     setTokenState(t);
     await refreshMe();
   }
@@ -54,6 +63,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const syncAuthState = () => {
+      const t = getToken();
+      setTokenState(t);
+      if (!t) {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener("auth-token-changed", syncAuthState);
+    return () =>
+      window.removeEventListener("auth-token-changed", syncAuthState);
+  }, []);
+
   const value = useMemo<AuthState>(
     () => ({ token, user, loading, loginWithToken, logout, refreshMe }),
     [token, user, loading],
@@ -73,7 +96,8 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const loc = useLocation();
 
   if (loading) return <div className="container">Loading…</div>;
-  if (!token) return <Navigate to="/login" replace state={{ from: loc.pathname }} />;
+  if (!token)
+    return <Navigate to="/login" replace state={{ from: loc.pathname }} />;
 
   return <>{children}</>;
 }

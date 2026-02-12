@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { getToken } from "./auth";
+import { apiFetch } from "./api";
 
 // Типы событий
 export type WSEventType =
@@ -102,27 +102,14 @@ export function useProjectWebSocket({
     }
 
     const startConnection = async () => {
-      const token = getToken();
-      if (!token) {
-        setIsConnected(false);
-        return;
-      }
-
       try {
-        const ticketRes = await fetch("/api/ws-ticket", {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${token}`,
+        const ticketPayload = await apiFetch<{ ticket?: string }>(
+          "/api/ws-ticket",
+          {
+            method: "POST",
+            body: JSON.stringify({ projectId }),
           },
-          body: JSON.stringify({ projectId }),
-        });
-
-        if (!ticketRes.ok) {
-          throw new Error(`Failed to get WS ticket (${ticketRes.status})`);
-        }
-
-        const ticketPayload = (await ticketRes.json()) as { ticket?: string };
+        );
         if (!ticketPayload.ticket) {
           throw new Error("WS ticket response is invalid");
         }
