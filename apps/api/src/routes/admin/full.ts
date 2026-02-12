@@ -3,6 +3,7 @@ import { z } from "zod";
 import { pool } from "../../pg.js";
 import crypto from "crypto";
 import { verifyPassword } from "../../lib/password.js";
+import { rateLimits } from "../../plugins/rate-limit.js";
 
 // Admin token handling
 function generateAdminToken(): string {
@@ -738,37 +739,41 @@ export async function adminRoutes(app: FastifyInstance) {
   );
 
   // Log error (internal use)
-  app.post("/api/admin/errors/log", async (req) => {
-    const body = z
-      .object({
-        errorType: z.string(),
-        errorMessage: z.string(),
-        errorStack: z.string().optional(),
-        userId: z.string().uuid().optional(),
-        requestPath: z.string().optional(),
-        requestMethod: z.string().optional(),
-        requestBody: z.any().optional(),
-      })
-      .parse(req.body);
+  app.post(
+    "/api/admin/errors/log",
+    { preHandler: [requireAdmin, rateLimits.api] },
+    async (req) => {
+      const body = z
+        .object({
+          errorType: z.string(),
+          errorMessage: z.string(),
+          errorStack: z.string().optional(),
+          userId: z.string().uuid().optional(),
+          requestPath: z.string().optional(),
+          requestMethod: z.string().optional(),
+          requestBody: z.any().optional(),
+        })
+        .parse(req.body);
 
-    await pool.query(
-      `INSERT INTO system_error_logs 
-       (error_type, error_message, error_stack, user_id, request_path, request_method, request_body, ip_address)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [
-        body.errorType,
-        body.errorMessage,
-        body.errorStack,
-        body.userId,
-        body.requestPath,
-        body.requestMethod,
-        JSON.stringify(body.requestBody),
-        req.ip,
-      ],
-    );
+      await pool.query(
+        `INSERT INTO system_error_logs 
+         (error_type, error_message, error_stack, user_id, request_path, request_method, request_body, ip_address)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          body.errorType,
+          body.errorMessage,
+          body.errorStack,
+          body.userId,
+          body.requestPath,
+          body.requestMethod,
+          JSON.stringify(body.requestBody),
+          req.ip,
+        ],
+      );
 
-    return { ok: true };
-  });
+      return { ok: true };
+    },
+  );
 
   // ===== Audit Log =====
   app.get(
@@ -1328,40 +1333,44 @@ export async function adminRoutes(app: FastifyInstance) {
   );
 
   // ===== Client-side Error Logging =====
-  app.post("/api/errors/client", async (req) => {
-    const body = z
-      .object({
-        errorType: z.string(),
-        errorMessage: z.string(),
-        errorStack: z.string().optional(),
-        url: z.string().optional(),
-        userAgent: z.string().optional(),
-        componentStack: z.string().optional(),
-      })
-      .parse(req.body);
+  app.post(
+    "/api/errors/client",
+    { preHandler: [rateLimits.api] },
+    async (req) => {
+      const body = z
+        .object({
+          errorType: z.string(),
+          errorMessage: z.string(),
+          errorStack: z.string().optional(),
+          url: z.string().optional(),
+          userAgent: z.string().optional(),
+          componentStack: z.string().optional(),
+        })
+        .parse(req.body);
 
-    // Try to get user from token if present
-    let userId = null;
-    try {
-      await req.jwtVerify();
-      userId = (req.user as any)?.sub;
-    } catch {
-      // Ignore auth errors - user might not be logged in
-    }
+      // Try to get user from token if present
+      let userId = null;
+      try {
+        await req.jwtVerify();
+        userId = (req.user as any)?.sub;
+      } catch {
+        // Ignore auth errors - user might not be logged in
+      }
 
-    await logSystemError(
-      `client_${body.errorType}`,
-      body.errorMessage,
-      body.errorStack || body.componentStack || null,
-      userId,
-      body.url || null,
-      "CLIENT",
-      { userAgent: body.userAgent },
-      req.ip,
-    );
+      await logSystemError(
+        `client_${body.errorType}`,
+        body.errorMessage,
+        body.errorStack || body.componentStack || null,
+        userId,
+        body.url || null,
+        "CLIENT",
+        { userAgent: body.userAgent },
+        req.ip,
+      );
 
-    return { ok: true };
-  });
+      return { ok: true };
+    },
+  );
 
   // ===== Bulk Operations =====
   app.post(

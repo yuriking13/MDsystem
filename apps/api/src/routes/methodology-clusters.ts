@@ -14,6 +14,7 @@
 import type { FastifyPluginCallback } from "fastify";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
+import { checkProjectAccessPool } from "../utils/project-access.js";
 
 const methodologyKeywords = {
   rct: [
@@ -102,6 +103,11 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(404).send({ error: "Project not found" });
       }
 
       try {
@@ -225,7 +231,6 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
         fastify.log.error("Methodology analysis error:", error);
         return reply.code(500).send({
           error: "Failed to analyze methodologies",
-          details: error.message,
         });
       }
     },
@@ -246,6 +251,11 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
 
       if (!userId) {
         return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(404).send({ error: "Project not found" });
       }
 
       try {
@@ -300,7 +310,6 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
         fastify.log.error("Methodology stats error:", error);
         return reply.code(500).send({
           error: "Failed to get methodology stats",
-          details: error.message,
         });
       }
     },
