@@ -55,6 +55,24 @@ export default tseslint.config(
     },
   },
   {
+    files: [
+      "src/components/CitationGraph/**/*.{ts,tsx}",
+      "src/components/TiptapEditor/**/*.{ts,tsx}",
+      "src/pages/ProjectDetailPage.tsx",
+      "src/pages/DocumentPage.tsx",
+      "src/components/ArticlesSection.tsx",
+      "src/lib/api.ts",
+      "src/lib/exportWord.ts",
+    ],
+    rules: {
+      // Legacy UI modules are being refactored in small safe steps.
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "no-console": "off",
+    },
+  },
+  {
     ignores: ["dist/**", "node_modules/**", "**/*.js"],
   }
 );

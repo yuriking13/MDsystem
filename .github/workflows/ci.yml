@@ -51,7 +51,7 @@ jobs:
         run: pnpm --filter api exec prisma generate
 
       - name: Lint API (blocking warning budget)
-        run: pnpm --filter api exec eslint src --ext .ts --max-warnings 239
+        run: pnpm --filter api exec eslint src --ext .ts --max-warnings 53
 
       - name: Typecheck API
         run: pnpm --filter api typecheck
@@ -97,7 +97,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint WEB (blocking warning budget)
-        run: pnpm --filter web exec eslint src --ext .ts,.tsx --max-warnings 415
+        run: pnpm --filter web exec eslint src --ext .ts,.tsx --max-warnings 89
 
       - name: Typecheck WEB
         run: pnpm --filter web typecheck
