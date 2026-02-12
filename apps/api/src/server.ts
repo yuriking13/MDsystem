@@ -110,14 +110,14 @@ await app.register(semanticClustersRoutes, { prefix: "/api" });
 // Health check endpoints (улучшенная версия с circuit breaker stats)
 await healthRoutes(app);
 
-// Статистика WebSocket подключений
-app.get("/api/ws-stats", async () => getConnectionStats());
+// Статистика WebSocket подключений (protected - exposes internal state)
+app.get("/api/ws-stats", { preHandler: [app.auth] }, async () => getConnectionStats());
 
-// Статистика кэша
-app.get("/api/cache-stats", async () => getCacheBackend());
+// Статистика кэша (protected - exposes internal state)
+app.get("/api/cache-stats", { preHandler: [app.auth] }, async () => getCacheBackend());
 
-// Статистика производительности (pool, кэши)
-app.get("/api/perf-stats", async () => {
+// Статистика производительности (pool, кэши) (protected - exposes internal state)
+app.get("/api/perf-stats", { preHandler: [app.auth] }, async () => {
   const { getPoolStats } = await import("./pg.js");
   const { getAccessCacheStats } = await import("./utils/project-access.js");
   const { getHttpClientStats } = await import("./lib/http-client.js");

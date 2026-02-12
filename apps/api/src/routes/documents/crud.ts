@@ -285,12 +285,18 @@ const crudPlugin: FastifyPluginAsync = async (fastify) => {
 
       const { documentIds } = bodyP.data;
 
-      // Update order_index for each document
-      for (let i = 0; i < documentIds.length; i++) {
+      // Batch update order_index using a single query with UNNEST
+      // This avoids N+1 queries when reordering many documents
+      if (documentIds.length > 0) {
+        const ids = documentIds;
+        const indexes = documentIds.map((_: string, i: number) => i);
+
         await pool.query(
-          `UPDATE documents SET order_index = $1, updated_at = NOW()
-           WHERE id = $2 AND project_id = $3`,
-          [i, documentIds[i], paramsP.data.projectId],
+          `UPDATE documents AS d
+           SET order_index = v.new_order, updated_at = NOW()
+           FROM (SELECT UNNEST($1::uuid[]) AS id, UNNEST($2::int[]) AS new_order) AS v
+           WHERE d.id = v.id AND d.project_id = $3`,
+          [ids, indexes, paramsP.data.projectId],
         );
       }
 

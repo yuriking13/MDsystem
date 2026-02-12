@@ -182,9 +182,9 @@ export function healthRoutes(app: FastifyInstance) {
   });
 
   /**
-   * Detailed health check (admin only style, no auth for simplicity)
+   * Detailed health check - protected (exposes internal config)
    */
-  app.get('/api/health/detailed', async () => {
+  app.get('/api/health/detailed', { preHandler: [app.auth] }, async () => {
     const [database, cache, storage] = await Promise.all([
       checkDatabase(),
       checkCache(),
@@ -216,9 +216,9 @@ export function healthRoutes(app: FastifyInstance) {
   });
 
   /**
-   * Reset circuit breaker for an API (for admin/debugging)
+   * Reset circuit breaker for an API (admin/debugging - protected)
    */
-  app.post('/api/health/circuit-breaker/:apiName/reset', async (req) => {
+  app.post('/api/health/circuit-breaker/:apiName/reset', { preHandler: [app.auth] }, async (req) => {
     const { apiName } = req.params as { apiName: string };
     resetCircuitBreaker(apiName);
     return { status: 'ok', message: `Circuit breaker for ${apiName} reset` };

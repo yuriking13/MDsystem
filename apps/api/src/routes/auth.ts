@@ -62,7 +62,7 @@ export async function authRoutes(app: FastifyInstance) {
         .parse(req.body);
 
       const found = await pool.query(
-        `SELECT id, email, password_hash FROM users WHERE email=$1`,
+        `SELECT id, email, password_hash, is_blocked, blocked_reason, password_reset_required FROM users WHERE email=$1`,
         [body.email],
       );
 
@@ -73,6 +73,14 @@ export async function authRoutes(app: FastifyInstance) {
 
       const ok = await verifyPassword(user.password_hash, body.password);
       if (!ok) return reply.code(401).send({ error: "Invalid credentials" });
+
+      // Check if user is blocked
+      if (user.is_blocked) {
+        return reply.code(403).send({
+          error: "AccountBlocked",
+          message: user.blocked_reason || "Your account has been blocked. Contact support.",
+        });
+      }
 
       await pool.query(`UPDATE users SET last_login_at=now() WHERE id=$1`, [
         user.id,

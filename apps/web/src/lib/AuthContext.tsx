@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { clearToken, getToken, setToken } from "./auth";
+import { clearToken, getToken, setToken, setRefreshToken, getRefreshToken } from "./auth";
 import { apiMe, type AuthUser } from "./api";
 
 type AuthState = {
   token: string | null;
   user: AuthUser | null;
   loading: boolean;
-  loginWithToken: (token: string) => Promise<void>;
+  loginWithToken: (token: string, refreshToken?: string) => Promise<void>;
   logout: () => void;
   refreshMe: () => Promise<void>;
 };
@@ -29,8 +29,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(me.user);
   }
 
-  async function loginWithToken(t: string) {
+  async function loginWithToken(t: string, refreshTok?: string) {
     setToken(t);
+    if (refreshTok) setRefreshToken(refreshTok);
     setTokenState(t);
     await refreshMe();
   }
