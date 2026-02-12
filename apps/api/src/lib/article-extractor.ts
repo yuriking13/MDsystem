@@ -383,6 +383,7 @@ DOI статьи берём ТОЛЬКО из начала документа (�
 export function extractDoiFromText(
   text: string,
   preferHeader: boolean = true,
+  allowBodyFallback: boolean = true,
 ): string | null {
   // DOI pattern: 10.xxxx/xxxxx
   const doiPattern = /\b(10\.\d{4,}(?:\.\d+)*\/\S+?)(?=[\s,\])">']|$)/gi;
@@ -394,6 +395,11 @@ export function extractDoiFromText(
     if (headerMatch && headerMatch.length > 0) {
       const doi = headerMatch[0].replace(/[.,;]+$/, "");
       return doi.toLowerCase();
+    }
+
+    // In strict header mode don't fallback to bibliography/body.
+    if (!allowBodyFallback) {
+      return null;
     }
   }
 

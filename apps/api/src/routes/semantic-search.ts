@@ -212,6 +212,9 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         includeCitedBy,
         importMissingArticles,
       } = parsedBody.data;
+      const normalizedArticleIds = articleIds
+        ? [...new Set(articleIds)]
+        : undefined;
       const userId = getUserId(request);
 
       if (!userId) {
@@ -254,12 +257,62 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
         // Посчитаем сколько всего статей в графе без embeddings
         let missingCount = 0;
-        if (articleIds && articleIds.length > 0) {
+        if (normalizedArticleIds && normalizedArticleIds.length > 0) {
           const res = await pool.query(
-            `SELECT COUNT(*) AS cnt FROM article_embeddings WHERE article_id = ANY($1)`,
-            [articleIds],
+            `WITH project_article_ids AS (
+              SELECT a.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+            ),
+            reference_article_ids AS (
+              SELECT DISTINCT ref_article.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
+              JOIN articles ref_article ON ref_article.pmid = ref_pmid
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+                AND $2 = true
+            ),
+            cited_by_article_ids AS (
+              SELECT DISTINCT cited_article.id
+              FROM articles a
+              JOIN project_articles pa ON pa.article_id = a.id
+              CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+              JOIN articles cited_article ON cited_article.pmid = cited_pmid
+              WHERE pa.project_id = $1 AND pa.status != 'deleted'
+                AND $3 = true
+            ),
+            all_graph_article_ids AS (
+              SELECT id FROM project_article_ids
+              UNION
+              SELECT id FROM reference_article_ids
+              UNION
+              SELECT id FROM cited_by_article_ids
+            )
+            SELECT
+              COUNT(*) AS allowed_count,
+              COUNT(ae.article_id) AS with_embeddings
+            FROM all_graph_article_ids ag
+            LEFT JOIN article_embeddings ae ON ae.article_id = ag.id
+            WHERE ag.id = ANY($4)`,
+            [projectId, includeReferences, includeCitedBy, normalizedArticleIds],
           );
-          missingCount = articleIds.length - parseInt(res.rows[0].cnt, 10);
+          const allowedCount = parseInt(res.rows[0].allowed_count, 10);
+          const withEmbeddings = parseInt(res.rows[0].with_embeddings, 10);
+
+          if (allowedCount !== normalizedArticleIds.length) {
+            return reply.code(400).send({
+              error:
+                "Some articleIds are not available in this project citation graph",
+              details: {
+                requested: normalizedArticleIds.length,
+                allowed: allowedCount,
+              },
+            });
+          }
+
+          missingCount = allowedCount - withEmbeddings;
         } else {
           const missingQuery = `
             WITH project_article_ids AS (
@@ -333,7 +386,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           projectId,
           userId,
           jobId,
-          articleIds: articleIds || null,
+          articleIds: normalizedArticleIds || null,
           includeReferences,
           includeCitedBy,
           batchSize,

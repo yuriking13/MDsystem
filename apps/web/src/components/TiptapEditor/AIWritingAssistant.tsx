@@ -829,7 +829,7 @@ export default function AIWritingAssistant({
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".txt,.pdf,.html,.htm"
+                    accept=".txt,.html,.htm"
                     style={{ display: "none" }}
                     onChange={handleFileUpload}
                   />

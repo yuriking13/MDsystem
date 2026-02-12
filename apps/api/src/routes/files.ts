@@ -729,8 +729,9 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           );
         }
 
-        // Try to extract DOI with regex first (prioritize header DOI)
-        const regexDoi = extractDoiFromText(text, true);
+        // Extract DOI from header strictly first, fallback to full-text only if AI has nothing.
+        const headerRegexDoi = extractDoiFromText(text, true, false);
+        const fallbackRegexDoi = extractDoiFromText(text, false);
 
         // Use AI to extract metadata
         app.log.info(`Analyzing file with AI: ${file.name}`);
@@ -739,13 +740,19 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           openrouterKey,
         );
 
-        // Use regex DOI if AI didn't find one (or AI got wrong DOI from bibliography)
-        if (regexDoi && (!metadata.doi || metadata.doi !== regexDoi)) {
-          // Prefer regex DOI from header as it's more reliable
+        // Header DOI is usually the article DOI; allow it to correct AI output.
+        if (
+          headerRegexDoi &&
+          (!metadata.doi ||
+            metadata.doi.toLowerCase() !== headerRegexDoi.toLowerCase())
+        ) {
           app.log.info(
-            `Using regex DOI from header: ${regexDoi} (AI found: ${metadata.doi})`,
+            `Using regex DOI from header: ${headerRegexDoi} (AI found: ${metadata.doi})`,
           );
-          metadata.doi = regexDoi;
+          metadata.doi = headerRegexDoi;
+        } else if (!metadata.doi && fallbackRegexDoi) {
+          // Only use body-level fallback DOI when AI found nothing at all.
+          metadata.doi = fallbackRegexDoi;
         }
 
         // Cache the extracted metadata and text (gracefully handle if columns don't exist)

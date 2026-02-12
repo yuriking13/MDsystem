@@ -246,11 +246,43 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
     let articles;
     if (articleIds && articleIds.length > 0) {
       articles = await pool.query(
-        `SELECT a.id, a.title_en, a.abstract_en
-         FROM articles a
-         WHERE a.id = ANY($1)
-           AND NOT EXISTS (SELECT 1 FROM article_embeddings ae WHERE ae.article_id = a.id)`,
-        [articleIds],
+        `WITH project_article_ids AS (
+          SELECT a.id
+          FROM articles a
+          JOIN project_articles pa ON pa.article_id = a.id
+          WHERE pa.project_id = $1 AND pa.status != 'deleted'
+        ),
+        reference_article_ids AS (
+          SELECT DISTINCT ref_article.id
+          FROM articles a
+          JOIN project_articles pa ON pa.article_id = a.id
+          CROSS JOIN LATERAL unnest(COALESCE(a.reference_pmids, ARRAY[]::text[])) AS ref_pmid
+          JOIN articles ref_article ON ref_article.pmid = ref_pmid
+          WHERE pa.project_id = $1 AND pa.status != 'deleted'
+            AND $3 = true
+        ),
+        cited_by_article_ids AS (
+          SELECT DISTINCT cited_article.id
+          FROM articles a
+          JOIN project_articles pa ON pa.article_id = a.id
+          CROSS JOIN LATERAL unnest(COALESCE(a.cited_by_pmids, ARRAY[]::text[])) AS cited_pmid
+          JOIN articles cited_article ON cited_article.pmid = cited_pmid
+          WHERE pa.project_id = $1 AND pa.status != 'deleted'
+            AND $4 = true
+        ),
+        all_graph_article_ids AS (
+          SELECT id FROM project_article_ids
+          UNION
+          SELECT id FROM reference_article_ids
+          UNION
+          SELECT id FROM cited_by_article_ids
+        )
+        SELECT a.id, a.title_en, a.abstract_en
+        FROM articles a
+        JOIN all_graph_article_ids ag ON ag.id = a.id
+        WHERE a.id = ANY($2)
+          AND NOT EXISTS (SELECT 1 FROM article_embeddings ae WHERE ae.article_id = a.id)`,
+        [projectId, articleIds, includeReferences, includeCitedBy],
       );
     } else {
       const query = `

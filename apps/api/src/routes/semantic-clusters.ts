@@ -44,6 +44,14 @@ const gapAnalysisSchema = z.object({
   yearTo: z.number().int().min(1900).max(2100).optional(),
 });
 
+const smartSemanticSearchSchema = z.object({
+  query: z.string().trim().min(1).max(1000),
+  threshold: z.number().min(0).max(1).default(0.6),
+  limit: z.number().int().min(1).max(100).default(20),
+  clusterId: z.string().uuid().optional(),
+  includeGapAnalysis: z.boolean().optional(),
+});
+
 export const semanticClustersRoutes: FastifyPluginCallback = (
   fastify,
   _opts,
@@ -554,8 +562,13 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
           FROM article_embeddings ae
           JOIN all_graph_article_ids ag ON ag.id = ae.article_id
           JOIN articles a ON a.id = ae.article_id
-          LEFT JOIN semantic_cluster_articles sca ON sca.article_id = ae.article_id
-          LEFT JOIN semantic_clusters sc ON sc.id = sca.cluster_id AND sc.project_id = $1
+          LEFT JOIN semantic_cluster_articles sca
+            ON sca.article_id = ae.article_id
+           AND EXISTS (
+             SELECT 1 FROM semantic_clusters scx
+             WHERE scx.id = sca.cluster_id AND scx.project_id = $1
+           )
+          LEFT JOIN semantic_clusters sc ON sc.id = sca.cluster_id
           WHERE ae.article_id != $3
             AND 1 - (ae.embedding <=> $2::vector) >= $4
           ORDER BY similarity DESC
@@ -739,25 +752,26 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
    */
   fastify.post<{
     Params: { projectId: string };
-    Body: {
-      query: string;
-      threshold?: number;
-      limit?: number;
-      clusterId?: string;
-      includeGapAnalysis?: boolean;
-    };
+    Body: z.infer<typeof smartSemanticSearchSchema>;
   }>(
     "/projects/:projectId/citation-graph/smart-semantic-search",
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { projectId } = request.params;
+      const parsedBody = smartSemanticSearchSchema.safeParse(request.body || {});
+      if (!parsedBody.success) {
+        return reply
+          .code(400)
+          .send({ error: "Invalid request body", details: parsedBody.error });
+      }
+
       const {
         query,
         threshold = 0.6,
         limit = 20,
         clusterId,
         // includeGapAnalysis reserved for future use
-      } = request.body || {};
+      } = parsedBody.data;
 
       const userId = getUserId(request);
 
@@ -768,10 +782,6 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
       const access = await checkProjectAccessPool(projectId, userId);
       if (!access.ok) {
         return reply.code(403).send({ error: "Access denied" });
-      }
-
-      if (!query?.trim()) {
-        return reply.code(400).send({ error: "Query is required" });
       }
 
       try {
@@ -844,8 +854,13 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
           FROM article_embeddings ae
           JOIN all_graph_article_ids ag ON ag.id = ae.article_id
           JOIN articles a ON a.id = ae.article_id
-          LEFT JOIN semantic_cluster_articles sca ON sca.article_id = ae.article_id
-          LEFT JOIN semantic_clusters sc ON sc.id = sca.cluster_id AND sc.project_id = $2
+          LEFT JOIN semantic_cluster_articles sca
+            ON sca.article_id = ae.article_id
+           AND EXISTS (
+             SELECT 1 FROM semantic_clusters scx
+             WHERE scx.id = sca.cluster_id AND scx.project_id = $2
+           )
+          LEFT JOIN semantic_clusters sc ON sc.id = sca.cluster_id
           LEFT JOIN project_articles pa ON pa.article_id = a.id AND pa.project_id = $2
           WHERE 1 - (ae.embedding <=> $1::vector) >= $3
           ${clusterFilter}
