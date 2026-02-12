@@ -62,7 +62,7 @@ export async function authRoutes(app: FastifyInstance) {
         .parse(req.body);
 
       const found = await pool.query(
-        `SELECT id, email, password_hash FROM users WHERE email=$1`,
+        `SELECT id, email, password_hash, is_blocked FROM users WHERE email=$1`,
         [body.email],
       );
 
@@ -70,6 +70,15 @@ export async function authRoutes(app: FastifyInstance) {
         return reply.code(401).send({ error: "Invalid credentials" });
 
       const user = found.rows[0];
+
+      if (user.is_blocked) {
+        return reply
+          .code(403)
+          .send({
+            error: "AccountBlocked",
+            message: "User account is blocked",
+          });
+      }
 
       const ok = await verifyPassword(user.password_hash, body.password);
       if (!ok) return reply.code(401).send({ error: "Invalid credentials" });
@@ -107,12 +116,10 @@ export async function authRoutes(app: FastifyInstance) {
       // Проверяем refresh token
       const userData = await app.verifyRefreshToken(body.refreshToken);
       if (!userData) {
-        return reply
-          .code(401)
-          .send({
-            error: "InvalidRefreshToken",
-            message: "Invalid or expired refresh token",
-          });
+        return reply.code(401).send({
+          error: "InvalidRefreshToken",
+          message: "Invalid or expired refresh token",
+        });
       }
 
       // Отзываем старый refresh token (token rotation)

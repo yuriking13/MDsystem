@@ -35,6 +35,33 @@ function getMemoryStore(name: string): Map<string, RateLimitStore> {
   return memoryStores.get(name)!;
 }
 
+/**
+ * Non-blocking Redis key scan by pattern.
+ */
+async function scanRedisKeys(pattern: string): Promise<string[]> {
+  const redis = getRedisClient();
+  if (!redis) {
+    return [];
+  }
+
+  let cursor = "0";
+  const keys: string[] = [];
+
+  do {
+    const [nextCursor, batch] = await redis.scan(
+      cursor,
+      "MATCH",
+      pattern,
+      "COUNT",
+      200,
+    );
+    cursor = nextCursor;
+    keys.push(...batch);
+  } while (cursor !== "0");
+
+  return keys;
+}
+
 // Периодическая очистка устаревших записей в memory store
 setInterval(() => {
   const now = Date.now();
@@ -237,7 +264,7 @@ export async function getRateLimitStats() {
     try {
       const redis = getRedisClient();
       if (redis) {
-        const keys = await redis.keys("ratelimit:*");
+        const keys = await scanRedisKeys("ratelimit:*");
         const grouped: Record<string, number> = {};
 
         for (const key of keys) {
@@ -286,7 +313,7 @@ export async function clearRateLimit(
         if (key) {
           await redis.del(`ratelimit:${name}:${key}`);
         } else {
-          const keys = await redis.keys(`ratelimit:${name}:*`);
+          const keys = await scanRedisKeys(`ratelimit:${name}:*`);
           if (keys.length > 0) {
             await redis.del(...keys);
           }

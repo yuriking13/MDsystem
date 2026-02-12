@@ -30,6 +30,7 @@ import { startWorkers, stopWorkers } from "./worker/index.js";
 import { registerWebSocket, getConnectionStats } from "./websocket.js";
 import { initCache, getCacheBackend, closeCache } from "./lib/redis.js";
 import { getRateLimitStats } from "./plugins/rate-limit.js";
+import { requireAdminAccess } from "./utils/require-admin.js";
 
 const app = Fastify({
   logger: {
@@ -60,6 +61,9 @@ setupNotFoundHandler(app);
 
 await app.register(envGuard);
 
+// Auth/JWT должен быть зарегистрирован до служебных плагинов с preHandler
+await app.register(authPlugin);
+
 // OpenAPI/Swagger documentation
 await app.register(swaggerPlugin);
 
@@ -89,7 +93,6 @@ await app.register(multipart, {
     fileSize: env.MAX_FILE_SIZE_MB * 1024 * 1024, // MB to bytes
   },
 });
-await app.register(authPlugin);
 
 // WebSocket для real-time синхронизации
 await registerWebSocket(app);
@@ -111,13 +114,17 @@ await app.register(semanticClustersRoutes, { prefix: "/api" });
 await healthRoutes(app);
 
 // Статистика WebSocket подключений
-app.get("/api/ws-stats", async () => getConnectionStats());
+app.get("/api/ws-stats", { preHandler: [requireAdminAccess] }, async () =>
+  getConnectionStats(),
+);
 
 // Статистика кэша
-app.get("/api/cache-stats", async () => getCacheBackend());
+app.get("/api/cache-stats", { preHandler: [requireAdminAccess] }, async () =>
+  getCacheBackend(),
+);
 
 // Статистика производительности (pool, кэши)
-app.get("/api/perf-stats", async () => {
+app.get("/api/perf-stats", { preHandler: [requireAdminAccess] }, async () => {
   const { getPoolStats } = await import("./pg.js");
   const { getAccessCacheStats } = await import("./utils/project-access.js");
   const { getHttpClientStats } = await import("./lib/http-client.js");

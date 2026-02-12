@@ -12,7 +12,10 @@ import type { FastifyPluginCallback } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
-import { getUserApiKey, checkProjectAccessPool } from "../utils/project-access.js";
+import {
+  getUserApiKey,
+  checkProjectAccessPool,
+} from "../utils/project-access.js";
 
 // Цвета для кластеров
 const CLUSTER_COLORS = [
@@ -758,7 +761,9 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const { projectId } = request.params;
-      const parsedBody = smartSemanticSearchSchema.safeParse(request.body || {});
+      const parsedBody = smartSemanticSearchSchema.safeParse(
+        request.body || {},
+      );
       if (!parsedBody.success) {
         return reply
           .code(400)
@@ -990,7 +995,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
 
 function parseEmbedding(embeddingStr: string): number[] {
   // Формат: "[0.1,0.2,...]"
-  const cleaned = embeddingStr.replace(/[\[\]]/g, "");
+  const cleaned = embeddingStr.replace(/\[|\]/g, "");
   return cleaned.split(",").map((s) => parseFloat(s.trim()));
 }
 

@@ -2,6 +2,9 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import websocketPlugin from "@fastify/websocket";
 import type { WebSocket } from "ws";
 import { createLogger } from "./utils/logger.js";
+import { checkProjectAccessPool } from "./utils/project-access.js";
+import crypto from "crypto";
+import { z } from "zod";
 
 const log = createLogger("WebSocket");
 
@@ -40,7 +43,13 @@ interface WSParams {
 }
 
 interface WSQuery {
-  token?: string;
+  ticket?: string;
+}
+
+interface WsTicketRecord {
+  userId: string;
+  projectId: string;
+  expiresAt: number;
 }
 
 // Хранилище соединений по projectId
@@ -48,6 +57,43 @@ const projectConnections = new Map<string, Set<AppWebSocket>>();
 
 // Хранилище соединений по userId для персональных уведомлений
 const userConnections = new Map<string, Set<AppWebSocket>>();
+
+// Одноразовые короткоживущие tickets для WS handshake
+const wsTickets = new Map<string, WsTicketRecord>();
+const WS_TICKET_TTL_MS = 60 * 1000;
+
+function cleanupExpiredTickets() {
+  const now = Date.now();
+  for (const [ticket, record] of wsTickets.entries()) {
+    if (record.expiresAt <= now) {
+      wsTickets.delete(ticket);
+    }
+  }
+}
+
+function issueWsTicket(userId: string, projectId: string): string {
+  cleanupExpiredTickets();
+  const ticket = crypto.randomBytes(24).toString("base64url");
+  wsTickets.set(ticket, {
+    userId,
+    projectId,
+    expiresAt: Date.now() + WS_TICKET_TTL_MS,
+  });
+  return ticket;
+}
+
+function consumeWsTicket(ticket: string): WsTicketRecord | null {
+  cleanupExpiredTickets();
+  const record = wsTickets.get(ticket);
+  if (!record) {
+    return null;
+  }
+  wsTickets.delete(ticket);
+  if (record.expiresAt <= Date.now()) {
+    return null;
+  }
+  return record;
+}
 
 /**
  * Отправить событие всем подключённым клиентам проекта
@@ -191,30 +237,72 @@ export const wsEvents = {
 export async function registerWebSocket(app: FastifyInstance) {
   await app.register(websocketPlugin);
 
+  // Выдача короткоживущего ticket для безопасного WS-подключения
+  app.post("/api/ws-ticket", { preHandler: [app.auth] }, async (req, reply) => {
+    const parsed = z
+      .object({
+        projectId: z.string().uuid(),
+      })
+      .safeParse(req.body);
+
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: "BadRequest",
+        message: "Invalid projectId",
+      });
+    }
+
+    const userId = req.user.sub;
+    const { projectId } = parsed.data;
+    const access = await checkProjectAccessPool(projectId, userId);
+    if (!access.ok) {
+      return reply.code(404).send({
+        error: "NotFound",
+        message: "Project not found",
+      });
+    }
+
+    const ticket = issueWsTicket(userId, projectId);
+    return {
+      ticket,
+      expiresInMs: WS_TICKET_TTL_MS,
+    };
+  });
+
   // WebSocket endpoint для подписки на проект
   app.get(
     "/ws/project/:projectId",
     { websocket: true },
-    (
+    async (
       socket: AppWebSocket,
       req: FastifyRequest<{ Params: WSParams; Querystring: WSQuery }>,
     ) => {
       const { projectId } = req.params;
-      const { token } = req.query;
+      const { ticket } = req.query;
 
-      // Верификация токена через Fastify JWT
-      let userId: string | null = null;
-      try {
-        if (token) {
-          // Используем встроенный jwt.verify из @fastify/jwt
-          const decoded = app.jwt.verify(token) as { sub: string };
-          userId = decoded.sub;
-        }
-      } catch (err) {
-        log.warn("Token verification failed", {
-          error: err instanceof Error ? err.message : String(err),
-        });
-        socket.close(4001, "Invalid token");
+      // WebSocket connection is allowed only for authenticated project members.
+      if (!ticket) {
+        socket.close(4001, "Authentication required");
+        return;
+      }
+
+      const wsTicket = consumeWsTicket(ticket);
+      if (!wsTicket) {
+        socket.close(4001, "Invalid ticket");
+        return;
+      }
+
+      const userId = wsTicket.userId;
+      if (wsTicket.projectId !== projectId) {
+        socket.close(4001, "Invalid ticket scope");
+        return;
+      }
+
+      // Проверка членства в проекте (ACL)
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        log.warn("WebSocket access denied", { projectId, userId });
+        socket.close(4003, "Project access denied");
         return;
       }
 
@@ -229,12 +317,10 @@ export async function registerWebSocket(app: FastifyInstance) {
       projectConnections.get(projectId)!.add(socket);
 
       // Добавляем в Map пользователя
-      if (userId) {
-        if (!userConnections.has(userId)) {
-          userConnections.set(userId, new Set());
-        }
-        userConnections.get(userId)!.add(socket);
+      if (!userConnections.has(userId)) {
+        userConnections.set(userId, new Set());
       }
+      userConnections.get(userId)!.add(socket);
 
       log.info("Client connected", { projectId, userId });
 
@@ -278,13 +364,11 @@ export async function registerWebSocket(app: FastifyInstance) {
         }
 
         // Удаляем из Map пользователя
-        if (userId) {
-          const userSockets = userConnections.get(userId);
-          if (userSockets) {
-            userSockets.delete(socket);
-            if (userSockets.size === 0) {
-              userConnections.delete(userId);
-            }
+        const userSockets = userConnections.get(userId);
+        if (userSockets) {
+          userSockets.delete(socket);
+          if (userSockets.size === 0) {
+            userConnections.delete(userId);
           }
         }
       });

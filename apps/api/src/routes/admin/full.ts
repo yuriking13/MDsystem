@@ -3,6 +3,7 @@ import { z } from "zod";
 import { pool } from "../../pg.js";
 import crypto from "crypto";
 import { verifyPassword } from "../../lib/password.js";
+import { rateLimits } from "../../plugins/rate-limit.js";
 
 // Admin token handling
 function generateAdminToken(): string {
@@ -92,71 +93,87 @@ async function logSystemError(
 
 export async function adminRoutes(app: FastifyInstance) {
   // Admin login with separate token (can use password or special admin token)
-  app.post("/api/admin/login", async (req, reply) => {
-    const body = z
-      .object({
-        email: z.string().email(),
-        password: z.string().min(1),
-        adminToken: z.string().optional(), // Optional additional admin token for extra security
-      })
-      .parse(req.body);
+  app.post(
+    "/api/admin/login",
+    { preHandler: [rateLimits.login] },
+    async (req, reply) => {
+      const body = z
+        .object({
+          email: z.string().email(),
+          password: z.string().min(1),
+          adminToken: z.string().optional(), // Optional additional admin token for extra security
+        })
+        .parse(req.body);
 
-    const found = await pool.query(
-      `SELECT id, email, password_hash, is_admin, admin_token_hash FROM users WHERE email = $1`,
-      [body.email],
-    );
+      const found = await pool.query(
+        `SELECT id, email, password_hash, is_admin, admin_token_hash, is_blocked FROM users WHERE email = $1`,
+        [body.email],
+      );
 
-    if (!found.rowCount) {
-      return reply.code(401).send({ error: "Invalid credentials" });
-    }
-
-    const user = found.rows[0];
-
-    // Verify password
-    const passwordOk = await verifyPassword(user.password_hash, body.password);
-    if (!passwordOk) {
-      return reply.code(401).send({ error: "Invalid credentials" });
-    }
-
-    // Must be admin
-    if (!user.is_admin) {
-      return reply.code(403).send({ error: "Admin access required" });
-    }
-
-    // If admin has token set, require it
-    if (user.admin_token_hash && !body.adminToken) {
-      return reply
-        .code(401)
-        .send({ error: "Admin token required", requiresToken: true });
-    }
-
-    if (user.admin_token_hash && body.adminToken) {
-      const tokenHash = hashAdminToken(body.adminToken);
-      if (tokenHash !== user.admin_token_hash) {
-        return reply.code(401).send({ error: "Invalid admin token" });
+      if (!found.rowCount) {
+        return reply.code(401).send({ error: "Invalid credentials" });
       }
-    }
 
-    // Update last login
-    await pool.query(`UPDATE users SET last_login_at = now() WHERE id = $1`, [
-      user.id,
-    ]);
+      const user = found.rows[0];
 
-    // Log admin login
-    const ipAddress = req.ip;
-    await logAdminAction(user.id, "admin_login", null, null, {}, ipAddress);
+      if (user.is_blocked) {
+        return reply
+          .code(403)
+          .send({
+            error: "AccountBlocked",
+            message: "User account is blocked",
+          });
+      }
 
-    const token = app.jwt.sign({
-      sub: user.id,
-      email: user.email,
-      isAdmin: true,
-    } as any);
+      // Verify password
+      const passwordOk = await verifyPassword(
+        user.password_hash,
+        body.password,
+      );
+      if (!passwordOk) {
+        return reply.code(401).send({ error: "Invalid credentials" });
+      }
 
-    return {
-      user: { id: user.id, email: user.email, isAdmin: true },
-      token,
-    };
-  });
+      // Must be admin
+      if (!user.is_admin) {
+        return reply.code(403).send({ error: "Admin access required" });
+      }
+
+      // If admin has token set, require it
+      if (user.admin_token_hash && !body.adminToken) {
+        return reply
+          .code(401)
+          .send({ error: "Admin token required", requiresToken: true });
+      }
+
+      if (user.admin_token_hash && body.adminToken) {
+        const tokenHash = hashAdminToken(body.adminToken);
+        if (tokenHash !== user.admin_token_hash) {
+          return reply.code(401).send({ error: "Invalid admin token" });
+        }
+      }
+
+      // Update last login
+      await pool.query(`UPDATE users SET last_login_at = now() WHERE id = $1`, [
+        user.id,
+      ]);
+
+      // Log admin login
+      const ipAddress = req.ip;
+      await logAdminAction(user.id, "admin_login", null, null, {}, ipAddress);
+
+      const token = app.jwt.sign({
+        sub: user.id,
+        email: user.email,
+        isAdmin: true,
+      } as any);
+
+      return {
+        user: { id: user.id, email: user.email, isAdmin: true },
+        token,
+      };
+    },
+  );
 
   // Verify admin status
   app.get("/api/admin/me", { preHandler: [requireAdmin] }, async (req: any) => {
@@ -738,37 +755,41 @@ export async function adminRoutes(app: FastifyInstance) {
   );
 
   // Log error (internal use)
-  app.post("/api/admin/errors/log", async (req) => {
-    const body = z
-      .object({
-        errorType: z.string(),
-        errorMessage: z.string(),
-        errorStack: z.string().optional(),
-        userId: z.string().uuid().optional(),
-        requestPath: z.string().optional(),
-        requestMethod: z.string().optional(),
-        requestBody: z.any().optional(),
-      })
-      .parse(req.body);
+  app.post(
+    "/api/admin/errors/log",
+    { preHandler: [requireAdmin, rateLimits.api] },
+    async (req) => {
+      const body = z
+        .object({
+          errorType: z.string(),
+          errorMessage: z.string(),
+          errorStack: z.string().optional(),
+          userId: z.string().uuid().optional(),
+          requestPath: z.string().optional(),
+          requestMethod: z.string().optional(),
+          requestBody: z.any().optional(),
+        })
+        .parse(req.body);
 
-    await pool.query(
-      `INSERT INTO system_error_logs 
-       (error_type, error_message, error_stack, user_id, request_path, request_method, request_body, ip_address)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-      [
-        body.errorType,
-        body.errorMessage,
-        body.errorStack,
-        body.userId,
-        body.requestPath,
-        body.requestMethod,
-        JSON.stringify(body.requestBody),
-        req.ip,
-      ],
-    );
+      await pool.query(
+        `INSERT INTO system_error_logs 
+         (error_type, error_message, error_stack, user_id, request_path, request_method, request_body, ip_address)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          body.errorType,
+          body.errorMessage,
+          body.errorStack,
+          body.userId,
+          body.requestPath,
+          body.requestMethod,
+          JSON.stringify(body.requestBody),
+          req.ip,
+        ],
+      );
 
-    return { ok: true };
-  });
+      return { ok: true };
+    },
+  );
 
   // ===== Audit Log =====
   app.get(
@@ -1328,40 +1349,44 @@ export async function adminRoutes(app: FastifyInstance) {
   );
 
   // ===== Client-side Error Logging =====
-  app.post("/api/errors/client", async (req) => {
-    const body = z
-      .object({
-        errorType: z.string(),
-        errorMessage: z.string(),
-        errorStack: z.string().optional(),
-        url: z.string().optional(),
-        userAgent: z.string().optional(),
-        componentStack: z.string().optional(),
-      })
-      .parse(req.body);
+  app.post(
+    "/api/errors/client",
+    { preHandler: [rateLimits.api] },
+    async (req) => {
+      const body = z
+        .object({
+          errorType: z.string(),
+          errorMessage: z.string(),
+          errorStack: z.string().optional(),
+          url: z.string().optional(),
+          userAgent: z.string().optional(),
+          componentStack: z.string().optional(),
+        })
+        .parse(req.body);
 
-    // Try to get user from token if present
-    let userId = null;
-    try {
-      await req.jwtVerify();
-      userId = (req.user as any)?.sub;
-    } catch {
-      // Ignore auth errors - user might not be logged in
-    }
+      // Try to get user from token if present
+      let userId = null;
+      try {
+        await req.jwtVerify();
+        userId = (req.user as any)?.sub;
+      } catch {
+        // Ignore auth errors - user might not be logged in
+      }
 
-    await logSystemError(
-      `client_${body.errorType}`,
-      body.errorMessage,
-      body.errorStack || body.componentStack || null,
-      userId,
-      body.url || null,
-      "CLIENT",
-      { userAgent: body.userAgent },
-      req.ip,
-    );
+      await logSystemError(
+        `client_${body.errorType}`,
+        body.errorMessage,
+        body.errorStack || body.componentStack || null,
+        userId,
+        body.url || null,
+        "CLIENT",
+        { userAgent: body.userAgent },
+        req.ip,
+      );
 
-    return { ok: true };
-  });
+      return { ok: true };
+    },
+  );
 
   // ===== Bulk Operations =====
   app.post(
