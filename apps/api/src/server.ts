@@ -10,6 +10,7 @@ import authPlugin from "./auth.js";
 import { setupErrorHandler, setupNotFoundHandler } from "./utils/errors.js";
 
 import { authRoutes } from "./routes/auth.js";
+import { passwordResetRoutes } from "./routes/password-reset.js";
 import settingsRoutes from "./routes/settings.js";
 import projectsRoutes from "./routes/projects.js";
 import articlesRoutes from "./routes/articles.js";
@@ -75,8 +76,25 @@ await app.register(compress, {
 
 // Security headers (Helmet)
 await app.register(helmet, {
-  contentSecurityPolicy: env.NODE_ENV === "production" ? undefined : false, // Отключаем CSP в dev для удобства
+  // Настроенный CSP для production
+  contentSecurityPolicy:
+    env.NODE_ENV === "production"
+      ? {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"], // TODO: удалить unsafe-inline после рефакторинга
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "https:"],
+            connectSrc: ["'self'", env.CORS_ORIGIN],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"],
+          },
+        }
+      : false, // Отключаем CSP в dev для удобства
   crossOriginEmbedderPolicy: false, // Для совместимости с S3 файлами
+  crossOriginResourcePolicy: { policy: "cross-origin" },
 });
 
 await app.register(cors, {
@@ -95,6 +113,7 @@ await app.register(authPlugin);
 await registerWebSocket(app);
 
 await authRoutes(app);
+await passwordResetRoutes(app);
 await adminRoutes(app);
 await app.register(settingsRoutes, { prefix: "/api" });
 await app.register(projectsRoutes, { prefix: "/api" });
