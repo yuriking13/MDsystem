@@ -1260,11 +1260,7 @@ export async function apiExportCitationGraph(
   format: "json" | "graphml" | "cytoscape" | "gexf" = "json",
 ): Promise<Blob> {
   const url = `/api/projects/${projectId}/citation-graph/export?format=${format}`;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  });
+  const response = await fetchWithAuthRetry(url, {}, true);
 
   if (!response.ok) {
     throw new Error(`Export failed: ${response.statusText}`);

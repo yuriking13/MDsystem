@@ -1012,7 +1012,6 @@ export default function DocumentPage() {
       // Try to create an exit version (best effort)
       if (projectId && docId && content) {
         // Use sendBeacon for reliability on page unload
-        const token = localStorage.getItem("token");
         navigator.sendBeacon(
           `/api/projects/${projectId}/documents/${docId}/versions`,
           new Blob(
