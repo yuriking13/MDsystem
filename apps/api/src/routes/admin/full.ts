@@ -91,6 +91,23 @@ async function logSystemError(
   }
 }
 
+function normalizePagination(
+  pageInput: number,
+  limitInput: number,
+  defaultLimit: number,
+): { page: number; limit: number; offset: number } {
+  const page =
+    Number.isFinite(pageInput) && pageInput > 0 ? Math.floor(pageInput) : 1;
+  const rawLimit =
+    Number.isFinite(limitInput) && limitInput > 0
+      ? Math.floor(limitInput)
+      : defaultLimit;
+  const limit = Math.min(rawLimit, 100);
+  const offset = (page - 1) * limit;
+
+  return { page, limit, offset };
+}
+
 export async function adminRoutes(app: FastifyInstance) {
   // Admin login with separate token (can use password or special admin token)
   app.post(
@@ -117,12 +134,10 @@ export async function adminRoutes(app: FastifyInstance) {
       const user = found.rows[0];
 
       if (user.is_blocked) {
-        return reply
-          .code(403)
-          .send({
-            error: "AccountBlocked",
-            message: "User account is blocked",
-          });
+        return reply.code(403).send({
+          error: "AccountBlocked",
+          message: "User account is blocked",
+        });
       }
 
       // Verify password
@@ -266,7 +281,11 @@ export async function adminRoutes(app: FastifyInstance) {
         })
         .parse(req.query);
 
-      const offset = (query.page - 1) * query.limit;
+      const { page, limit, offset } = normalizePagination(
+        query.page,
+        query.limit,
+        20,
+      );
       let whereClause = "";
       const params: any[] = [];
 
@@ -290,7 +309,7 @@ export async function adminRoutes(app: FastifyInstance) {
         ${whereClause}
         GROUP BY u.id, sub.status
         ORDER BY u.created_at DESC
-        LIMIT ${query.limit} OFFSET ${offset}
+        LIMIT ${limit} OFFSET ${offset}
       `,
           params,
         ),
@@ -300,8 +319,8 @@ export async function adminRoutes(app: FastifyInstance) {
       return {
         users: users.rows,
         total: parseInt(total.rows[0].count),
-        page: query.page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+        page,
+        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
       };
     },
   );
@@ -511,7 +530,11 @@ export async function adminRoutes(app: FastifyInstance) {
         })
         .parse(req.query);
 
-      const offset = (query.page - 1) * query.limit;
+      const { page, limit, offset } = normalizePagination(
+        query.page,
+        query.limit,
+        50,
+      );
       const conditions: string[] = [];
       const params: any[] = [];
       let paramIdx = 1;
@@ -544,7 +567,7 @@ export async function adminRoutes(app: FastifyInstance) {
         JOIN users u ON u.id = a.user_id
         ${whereClause}
         ORDER BY a.created_at DESC
-        LIMIT ${query.limit} OFFSET ${offset}
+        LIMIT ${limit} OFFSET ${offset}
       `,
           params,
         ),
@@ -557,8 +580,8 @@ export async function adminRoutes(app: FastifyInstance) {
       return {
         activity: activity.rows,
         total: parseInt(total.rows[0].count),
-        page: query.page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+        page,
+        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
       };
     },
   );
@@ -673,7 +696,11 @@ export async function adminRoutes(app: FastifyInstance) {
         })
         .parse(req.query);
 
-      const offset = (query.page - 1) * query.limit;
+      const { page, limit, offset } = normalizePagination(
+        query.page,
+        query.limit,
+        50,
+      );
       const conditions: string[] = [];
       const params: any[] = [];
       let paramIdx = 1;
@@ -699,7 +726,7 @@ export async function adminRoutes(app: FastifyInstance) {
         LEFT JOIN users r ON r.id = e.resolved_by
         ${whereClause}
         ORDER BY e.created_at DESC
-        LIMIT ${query.limit} OFFSET ${offset}
+        LIMIT ${limit} OFFSET ${offset}
       `,
           params,
         ),
@@ -715,8 +742,8 @@ export async function adminRoutes(app: FastifyInstance) {
       return {
         errors: errors.rows,
         total: parseInt(total.rows[0].count),
-        page: query.page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+        page,
+        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
         errorTypes: types.rows.map((r) => r.error_type),
       };
     },
@@ -811,7 +838,11 @@ export async function adminRoutes(app: FastifyInstance) {
         })
         .parse(req.query);
 
-      const offset = (query.page - 1) * query.limit;
+      const { page, limit, offset } = normalizePagination(
+        query.page,
+        query.limit,
+        50,
+      );
       const conditions: string[] = [];
       const params: any[] = [];
       let paramIdx = 1;
@@ -836,7 +867,7 @@ export async function adminRoutes(app: FastifyInstance) {
         JOIN users u ON u.id = al.admin_id
         ${whereClause}
         ORDER BY al.created_at DESC
-        LIMIT ${query.limit} OFFSET ${offset}
+        LIMIT ${limit} OFFSET ${offset}
       `,
           params,
         ),
@@ -849,8 +880,8 @@ export async function adminRoutes(app: FastifyInstance) {
       return {
         logs: logs.rows,
         total: parseInt(total.rows[0].count),
-        page: query.page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+        page,
+        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
       };
     },
   );
@@ -1491,7 +1522,11 @@ export async function adminRoutes(app: FastifyInstance) {
         })
         .parse(req.query);
 
-      const offset = (query.page - 1) * query.limit;
+      const { page, limit, offset } = normalizePagination(
+        query.page,
+        query.limit,
+        20,
+      );
       const conditions: string[] = [];
       const params: any[] = [];
       let paramIdx = 1;
@@ -1536,7 +1571,7 @@ export async function adminRoutes(app: FastifyInstance) {
               ? "COUNT(DISTINCT pa.article_id)"
               : `p.${sortColumn}`
         } ${sortOrder}
-        LIMIT ${query.limit} OFFSET ${offset}
+        LIMIT ${limit} OFFSET ${offset}
       `,
           params,
         ),
@@ -1549,8 +1584,8 @@ export async function adminRoutes(app: FastifyInstance) {
       return {
         projects: projects.rows,
         total: parseInt(total.rows[0].count),
-        page: query.page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+        page,
+        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
       };
     },
   );
@@ -1704,7 +1739,11 @@ export async function adminRoutes(app: FastifyInstance) {
         })
         .parse(req.query);
 
-      const offset = (query.page - 1) * query.limit;
+      const { page, limit, offset } = normalizePagination(
+        query.page,
+        query.limit,
+        50,
+      );
       let whereClause = "";
       const params: any[] = [];
 
@@ -1722,7 +1761,7 @@ export async function adminRoutes(app: FastifyInstance) {
         LEFT JOIN users u ON u.id = p.created_by
         ${whereClause}
         ORDER BY j.created_at DESC
-        LIMIT ${query.limit} OFFSET ${offset}
+        LIMIT ${limit} OFFSET ${offset}
       `,
           params,
         ),
@@ -1741,8 +1780,8 @@ export async function adminRoutes(app: FastifyInstance) {
       return {
         jobs: jobs.rows,
         total: parseInt(total.rows[0].count),
-        page: query.page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+        page,
+        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
         summary: summary.rows,
       };
     },
@@ -1826,7 +1865,11 @@ export async function adminRoutes(app: FastifyInstance) {
         })
         .parse(req.query);
 
-      const offset = (query.page - 1) * query.limit;
+      const { page, limit, offset } = normalizePagination(
+        query.page,
+        query.limit,
+        50,
+      );
       const conditions: string[] = [];
       const params: any[] = [];
       let paramIdx = 1;
@@ -1863,7 +1906,7 @@ export async function adminRoutes(app: FastifyInstance) {
         ${whereClause}
         GROUP BY a.id
         ORDER BY a.created_at DESC
-        LIMIT ${query.limit} OFFSET ${offset}
+        LIMIT ${limit} OFFSET ${offset}
       `,
           params,
         ),
@@ -1885,8 +1928,8 @@ export async function adminRoutes(app: FastifyInstance) {
       return {
         articles: articles.rows,
         total: parseInt(total.rows[0].count),
-        page: query.page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+        page,
+        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
         sources: sources.rows,
         stats: stats.rows[0],
       };
@@ -1940,7 +1983,11 @@ export async function adminRoutes(app: FastifyInstance) {
         })
         .parse(req.query);
 
-      const offset = (query.page - 1) * query.limit;
+      const { page, limit, offset } = normalizePagination(
+        query.page,
+        query.limit,
+        50,
+      );
       const conditions: string[] = [];
       const params: any[] = [];
       let paramIdx = 1;
@@ -1968,7 +2015,7 @@ export async function adminRoutes(app: FastifyInstance) {
         LEFT JOIN users u ON u.id = pf.uploaded_by
         ${whereClause}
         ORDER BY pf.created_at DESC
-        LIMIT ${query.limit} OFFSET ${offset}
+        LIMIT ${limit} OFFSET ${offset}
       `,
           params,
         ),
@@ -1990,8 +2037,8 @@ export async function adminRoutes(app: FastifyInstance) {
       return {
         files: files.rows,
         total: parseInt(total.rows[0].count),
-        page: query.page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / query.limit),
+        page,
+        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
         summary: summary.rows,
       };
     },

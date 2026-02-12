@@ -23,7 +23,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       const res = await apiLogin(email.trim(), password);
-      await loginWithToken(res.token);
+      await loginWithToken(res.token, res.refreshToken);
       nav(redirectTo, { replace: true });
     } catch (err: unknown) {
       setError(parseApiError(getErrorMessage(err)));
@@ -39,50 +39,104 @@ export default function LoginPage() {
           {/* Left side - Feature list */}
           <div className="auth-features">
             <a href="/" className="auth-logo">
-              <svg className="auth-logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="auth-logo-icon"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               MDsystem
             </a>
 
             <div className="auth-features-list">
               <div className="auth-feature">
-                <svg className="auth-feature-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="auth-feature-icon"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <div>
                   <h3>Умный поиск статей</h3>
-                  <p>Интеграция с PubMed, DOAJ, Wiley для поиска научных публикаций по ключевым словам и MeSH терминам.</p>
+                  <p>
+                    Интеграция с PubMed, DOAJ, Wiley для поиска научных
+                    публикаций по ключевым словам и MeSH терминам.
+                  </p>
                 </div>
               </div>
 
               <div className="auth-feature">
-                <svg className="auth-feature-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="auth-feature-icon"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <div>
                   <h3>Граф цитирований</h3>
-                  <p>Визуализация связей между статьями, выявление ключевых работ и анализ citation network.</p>
+                  <p>
+                    Визуализация связей между статьями, выявление ключевых работ
+                    и анализ citation network.
+                  </p>
                 </div>
               </div>
 
               <div className="auth-feature">
-                <svg className="auth-feature-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="auth-feature-icon"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <div>
                   <h3>AI-ассистент</h3>
-                  <p>Интеллектуальный помощник для формирования поисковых запросов и анализа результатов.</p>
+                  <p>
+                    Интеллектуальный помощник для формирования поисковых
+                    запросов и анализа результатов.
+                  </p>
                 </div>
               </div>
 
               <div className="auth-feature">
-                <svg className="auth-feature-icon" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="auth-feature-icon"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <div>
                   <h3>Редактор документов</h3>
-                  <p>Создание научных обзоров с автоматической вставкой цитирований и генерацией библиографии.</p>
+                  <p>
+                    Создание научных обзоров с автоматической вставкой
+                    цитирований и генерацией библиографии.
+                  </p>
                 </div>
               </div>
             </div>
@@ -92,7 +146,7 @@ export default function LoginPage() {
           <div className="auth-form-container">
             <div className="auth-form-card">
               <h1 className="auth-title">Добро пожаловать</h1>
-              
+
               <form onSubmit={submit} className="auth-form">
                 <div className="auth-field">
                   <label htmlFor="email">Email</label>

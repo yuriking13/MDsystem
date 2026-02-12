@@ -1,9 +1,17 @@
-import { getToken } from "./auth";
+import { clearToken, getRefreshToken, getToken, setAuthTokens } from "./auth";
 
 type ApiErrorPayload = {
   error?: string;
   message?: string;
 };
+
+type RefreshResponsePayload = {
+  accessToken?: string;
+  refreshToken?: string;
+  token?: string;
+};
+
+let refreshInFlight: Promise<string | null> | null = null;
 
 async function readJsonSafe(res: Response): Promise<any> {
   const txt = await res.text();
@@ -12,6 +20,118 @@ async function readJsonSafe(res: Response): Promise<any> {
   } catch {
     return txt;
   }
+}
+
+function buildRequestHeaders(init: RequestInit): Headers {
+  const headers = new Headers(init.headers);
+  const isFormDataBody =
+    typeof FormData !== "undefined" && init.body instanceof FormData;
+
+  if (!headers.has("content-type") && init.body && !isFormDataBody) {
+    headers.set("content-type", "application/json");
+  }
+
+  return headers;
+}
+
+async function fetchWithToken(
+  path: string,
+  init: RequestInit,
+  token: string | null,
+): Promise<Response> {
+  const headers = buildRequestHeaders(init);
+  if (token) {
+    headers.set("authorization", `Bearer ${token}`);
+  } else {
+    headers.delete("authorization");
+  }
+
+  return fetch(path, {
+    ...init,
+    headers,
+  });
+}
+
+async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        clearToken();
+      }
+      return null;
+    }
+
+    const payload = (await readJsonSafe(response)) as
+      | RefreshResponsePayload
+      | string
+      | null;
+
+    if (!payload || typeof payload === "string") {
+      clearToken();
+      return null;
+    }
+
+    const nextAccessToken = payload.accessToken || payload.token;
+    if (!nextAccessToken || !payload.refreshToken) {
+      clearToken();
+      return null;
+    }
+
+    setAuthTokens(nextAccessToken, payload.refreshToken);
+    return nextAccessToken;
+  } catch {
+    return null;
+  }
+}
+
+async function getRefreshedAccessToken(): Promise<string | null> {
+  if (!refreshInFlight) {
+    refreshInFlight = refreshAccessToken().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+}
+
+async function fetchWithAuthRetry(
+  path: string,
+  init: RequestInit,
+  auth: boolean,
+): Promise<Response> {
+  if (!auth) {
+    return fetchWithToken(path, init, null);
+  }
+
+  let response = await fetchWithToken(path, init, getToken());
+  if (response.status !== 401) {
+    return response;
+  }
+
+  if (!getRefreshToken()) {
+    clearToken();
+    return response;
+  }
+
+  const newToken = await getRefreshedAccessToken();
+  if (!newToken) {
+    return response;
+  }
+
+  response = await fetchWithToken(path, init, newToken);
+  return response;
 }
 
 type ParsedSSEEvent = {
@@ -121,22 +241,8 @@ export async function apiFetch<T>(
   path: string,
   init: RequestInit & { auth?: boolean } = {},
 ): Promise<T> {
-  const headers = new Headers(init.headers);
-
-  if (!headers.has("content-type") && init.body) {
-    headers.set("content-type", "application/json");
-  }
-
   const auth = init.auth ?? true;
-  if (auth) {
-    const token = getToken();
-    if (token) headers.set("authorization", `Bearer ${token}`);
-  }
-
-  const res = await fetch(path, {
-    ...init,
-    headers,
-  });
+  const res = await fetchWithAuthRetry(path, init, auth);
 
   if (!res.ok) {
     const payload = (await readJsonSafe(res)) as
@@ -154,7 +260,12 @@ export async function apiFetch<T>(
 }
 
 export type AuthUser = { id: string; email: string };
-export type AuthResponse = { user: AuthUser; token: string };
+export type AuthResponse = {
+  user: AuthUser;
+  token: string;
+  accessToken?: string;
+  refreshToken?: string;
+};
 
 export async function apiRegister(
   email: string,
@@ -574,15 +685,14 @@ export async function apiTranslateArticles(
   articleIds?: string[],
   untranslatedOnly = true,
 ): Promise<TranslateResult> {
-  const token = getToken();
-  const response = await fetch(`/api/projects/${projectId}/articles/translate`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  const response = await fetchWithAuthRetry(
+    `/api/projects/${projectId}/articles/translate`,
+    {
+      method: "POST",
+      body: JSON.stringify({ articleIds, untranslatedOnly }),
     },
-    body: JSON.stringify({ articleIds, untranslatedOnly }),
-  });
+    true,
+  );
 
   if (!response.ok) {
     const payload = (await readJsonSafe(response)) as
@@ -629,7 +739,11 @@ export type AIStatsResult = {
 };
 
 export type AIStatsCallbacks = {
-  onStart?: (data: { total: number; batchSize?: number; parallelCount?: number }) => void;
+  onStart?: (data: {
+    total: number;
+    batchSize?: number;
+    parallelCount?: number;
+  }) => void;
   onProgress?: (data: AIStatsProgress) => void;
   onComplete?: (data: AIStatsResult) => void;
   onError?: (error: Error) => void;
@@ -640,18 +754,13 @@ export async function apiDetectStatsWithAI(
   articleIds?: string[],
   callbacks?: AIStatsCallbacks,
 ): Promise<AIStatsResult> {
-  const token = getToken();
-
-  const response = await fetch(
+  const response = await fetchWithAuthRetry(
     `/api/projects/${projectId}/articles/ai-detect-stats`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
       body: JSON.stringify({ articleIds }),
     },
+    true,
   );
 
   if (!response.ok) {
@@ -1976,25 +2085,35 @@ export async function apiUploadFile(
   file: File,
   onProgress?: (percent: number) => void,
 ): Promise<{ file: ProjectFile }> {
-  const token = getToken();
   const formData = new FormData();
   formData.append("file", file);
 
   return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+    const send = (token: string | null, allowRetry: boolean) => {
+      const xhr = new XMLHttpRequest();
 
-    if (onProgress) {
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable) {
-          onProgress(Math.round((e.loaded / e.total) * 100));
+      if (onProgress) {
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            onProgress(Math.round((e.loaded / e.total) * 100));
+          }
+        });
+      }
+
+      xhr.addEventListener("load", async () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(JSON.parse(xhr.responseText));
+          return;
         }
-      });
-    }
 
-    xhr.addEventListener("load", () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        resolve(JSON.parse(xhr.responseText));
-      } else {
+        if (allowRetry && xhr.status === 401) {
+          const newToken = await getRefreshedAccessToken();
+          if (newToken) {
+            send(newToken, false);
+            return;
+          }
+        }
+
         try {
           const error = JSON.parse(xhr.responseText);
           reject(
@@ -2003,15 +2122,21 @@ export async function apiUploadFile(
         } catch {
           reject(new Error(`HTTP ${xhr.status}`));
         }
+      });
+
+      xhr.addEventListener("error", () => reject(new Error("Network error")));
+      xhr.addEventListener("abort", () =>
+        reject(new Error("Upload cancelled")),
+      );
+
+      xhr.open("POST", `/api/projects/${projectId}/files`);
+      if (token) {
+        xhr.setRequestHeader("Authorization", `Bearer ${token}`);
       }
-    });
+      xhr.send(formData);
+    };
 
-    xhr.addEventListener("error", () => reject(new Error("Network error")));
-    xhr.addEventListener("abort", () => reject(new Error("Upload cancelled")));
-
-    xhr.open("POST", `/api/projects/${projectId}/files`);
-    if (token) xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-    xhr.send(formData);
+    send(getToken(), true);
   });
 }
 
