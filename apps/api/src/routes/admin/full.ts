@@ -1,18 +1,13 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 import { pool } from "../../pg.js";
-import crypto from "crypto";
 import { verifyPassword } from "../../lib/password.js";
 import { rateLimits } from "../../plugins/rate-limit.js";
-
-// Admin token handling
-function generateAdminToken(): string {
-  return crypto.randomBytes(32).toString("hex");
-}
-
-function hashAdminToken(token: string): string {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
+import {
+  generateAdminToken,
+  hashAdminToken,
+  normalizePagination,
+} from "./helpers.js";
 
 // Middleware to verify admin access
 async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
@@ -89,23 +84,6 @@ async function logSystemError(
   } catch (err) {
     console.error("Failed to log system error:", err);
   }
-}
-
-function normalizePagination(
-  pageInput: number,
-  limitInput: number,
-  defaultLimit: number,
-): { page: number; limit: number; offset: number } {
-  const page =
-    Number.isFinite(pageInput) && pageInput > 0 ? Math.floor(pageInput) : 1;
-  const rawLimit =
-    Number.isFinite(limitInput) && limitInput > 0
-      ? Math.floor(limitInput)
-      : defaultLimit;
-  const limit = Math.min(rawLimit, 100);
-  const offset = (page - 1) * limit;
-
-  return { page, limit, offset };
 }
 
 export async function adminRoutes(app: FastifyInstance) {
