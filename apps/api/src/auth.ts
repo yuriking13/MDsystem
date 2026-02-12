@@ -80,6 +80,14 @@ function parseExpiration(exp: string): number {
   }
 }
 
+type BlockStatusCacheEntry = {
+  isBlocked: boolean;
+  expiresAt: number;
+};
+
+const BLOCK_STATUS_CACHE_TTL_MS = 10_000;
+const blockedStatusCache = new Map<string, BlockStatusCacheEntry>();
+
 export default fp(async (app: FastifyInstance) => {
   await app.register(jwt, {
     secret: env.JWT_SECRET,
@@ -129,7 +137,7 @@ export default fp(async (app: FastifyInstance) => {
 
     // Ищем токен в БД
     const result = await pool.query(
-      `SELECT rt.user_id, u.email, rt.expires_at
+      `SELECT rt.user_id, u.email, u.is_blocked, rt.expires_at
        FROM refresh_tokens rt
        JOIN users u ON u.id = rt.user_id
        WHERE rt.token_hash = $1 AND rt.revoked = false`,
@@ -140,7 +148,12 @@ export default fp(async (app: FastifyInstance) => {
       return null;
     }
 
-    const { user_id: userId, email, expires_at: expiresAt } = result.rows[0];
+    const {
+      user_id: userId,
+      email,
+      is_blocked: isBlocked,
+      expires_at: expiresAt,
+    } = result.rows[0];
 
     // Проверяем срок действия
     if (new Date(expiresAt) < new Date()) {
@@ -150,6 +163,24 @@ export default fp(async (app: FastifyInstance) => {
       ]);
       return null;
     }
+
+    // Мгновенная инвалидизация blocked пользователей в refresh-потоке.
+    if (isBlocked) {
+      blockedStatusCache.set(userId, {
+        isBlocked: true,
+        expiresAt: Date.now() + BLOCK_STATUS_CACHE_TTL_MS,
+      });
+      await pool.query(
+        "UPDATE refresh_tokens SET revoked = true WHERE user_id = $1 AND revoked = false",
+        [userId],
+      );
+      return null;
+    }
+
+    blockedStatusCache.set(userId, {
+      isBlocked: false,
+      expiresAt: Date.now() + BLOCK_STATUS_CACHE_TTL_MS,
+    });
 
     return { userId, email };
   };
@@ -176,6 +207,27 @@ export default fp(async (app: FastifyInstance) => {
     );
   };
 
+  const isUserBlocked = async (userId: string): Promise<boolean> => {
+    const cached = blockedStatusCache.get(userId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.isBlocked;
+    }
+
+    const result = await pool.query(
+      "SELECT is_blocked FROM users WHERE id = $1",
+      [userId],
+    );
+    const isBlocked =
+      (result.rowCount ?? 0) > 0 && Boolean(result.rows[0].is_blocked);
+
+    blockedStatusCache.set(userId, {
+      isBlocked,
+      expiresAt: Date.now() + BLOCK_STATUS_CACHE_TTL_MS,
+    });
+
+    return isBlocked;
+  };
+
   // Декораторы
   app.decorate("generateTokens", generateTokens);
   app.decorate("verifyRefreshToken", verifyRefreshToken);
@@ -188,12 +240,25 @@ export default fp(async (app: FastifyInstance) => {
 
       // Проверяем что это access token, а не refresh
       if (req.user.type === "refresh") {
-        return reply
-          .code(401)
-          .send({
-            error: "InvalidTokenType",
-            message: "Access token required",
-          });
+        return reply.code(401).send({
+          error: "InvalidTokenType",
+          message: "Access token required",
+        });
+      }
+
+      // Дополнительная защита: даже живой access-token не должен работать
+      // для пользователя, которого только что заблокировали админом.
+      const userId = req.user?.sub;
+      if (!userId) {
+        return reply.code(401).send({ error: "Unauthorized" });
+      }
+
+      if (await isUserBlocked(userId)) {
+        await revokeAllUserTokens(userId);
+        return reply.code(403).send({
+          error: "AccountBlocked",
+          message: "User account is blocked",
+        });
       }
     } catch (err) {
       const error = err as Error;

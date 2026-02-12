@@ -33,6 +33,26 @@ export default tseslint.config(
     },
   },
   {
+    files: [
+      "src/routes/admin/full.ts",
+      "src/routes/articles/full.ts",
+      "src/routes/documents/graph.ts",
+      "src/routes/semantic-search.ts",
+      "src/routes/semantic-clusters.ts",
+      "src/routes/files.ts",
+      "src/routes/ai-writing-assistant.ts",
+      "src/worker/**/*.ts",
+      "src/lib/pubmed.ts",
+      "src/lib/doaj.ts",
+      "src/lib/wiley.ts",
+      "src/lib/article-extractor.ts",
+    ],
+    rules: {
+      // Legacy modules are being decomposed incrementally.
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
     ignores: ["dist/**", "node_modules/**", "*.js"],
   }
 );

@@ -25,8 +25,8 @@ jobs:
             git reset --hard origin/main
 
             corepack enable
-            corepack prepare pnpm@latest --activate
-            pnpm install
+            corepack prepare pnpm@9.15.0 --activate
+            pnpm install --frozen-lockfile
 
             # Generate Prisma client BEFORE build (required for new models)
             pnpm --filter api exec prisma generate
@@ -36,6 +36,10 @@ jobs:
 
             # ---- Run Database Migrations ----
             export DATABASE_URL="postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}"
+            ENABLE_PRISMA_DB_PUSH="${{ secrets.ENABLE_PRISMA_DB_PUSH }}"
+            ALLOW_DESTRUCTIVE_DB_PUSH="${{ secrets.ALLOW_DESTRUCTIVE_DB_PUSH }}"
+            ENABLE_PRISMA_DB_PUSH="${ENABLE_PRISMA_DB_PUSH:-false}"
+            ALLOW_DESTRUCTIVE_DB_PUSH="${ALLOW_DESTRUCTIVE_DB_PUSH:-false}"
 
             # Reset pg-boss schema (drop old schema so pg-boss can recreate it correctly on start)
             # pg-boss manages its own schema and will create correct tables automatically
@@ -46,8 +50,41 @@ jobs:
             echo "Dropping conflicting views..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/drop_admin_views.sql || echo "Views dropped or did not exist"
 
-            # Using db push because the database is not baselined for migrations
-            pnpm --filter api exec prisma db push --accept-data-loss
+            # Generate SQL diff in all modes (dry-run/checklist material)
+            echo "Generating Prisma schema diff (dry-run)..."
+            pnpm --filter api exec prisma migrate diff \
+              --from-url "$DATABASE_URL" \
+              --to-schema-datamodel prisma/schema.prisma \
+              --script > /tmp/prisma-diff.sql
+
+            if [ ! -s /tmp/prisma-diff.sql ]; then
+              echo "No Prisma schema diff detected."
+            else
+              echo "Prisma schema diff generated at /tmp/prisma-diff.sql"
+            fi
+
+            # Fail-fast if potentially destructive SQL is detected and override is not explicit.
+            if grep -Eiq 'DROP[[:space:]]+TABLE|DROP[[:space:]]+COLUMN|TRUNCATE[[:space:]]+TABLE|ALTER[[:space:]]+TABLE.*DROP[[:space:]]+CONSTRAINT' /tmp/prisma-diff.sql; then
+              echo "Potentially destructive schema changes detected in Prisma diff."
+              if [ "$ALLOW_DESTRUCTIVE_DB_PUSH" != "true" ]; then
+                echo "ERROR: ALLOW_DESTRUCTIVE_DB_PUSH=true is required after manual review."
+                echo "See deploy/DB_RUNBOOK.md for the checklist and Adminer steps."
+                exit 4
+              fi
+            fi
+
+            # Optional auto-apply mode (disabled by default to preserve manual Adminer workflow).
+            if [ "$ENABLE_PRISMA_DB_PUSH" = "true" ]; then
+              echo "ENABLE_PRISMA_DB_PUSH=true -> applying prisma db push"
+              DB_PUSH_ARGS="--skip-generate"
+              if [ "$ALLOW_DESTRUCTIVE_DB_PUSH" = "true" ]; then
+                DB_PUSH_ARGS="$DB_PUSH_ARGS --accept-data-loss"
+              fi
+              pnpm --filter api exec prisma db push $DB_PUSH_ARGS
+            else
+              echo "Skipping prisma db push (manual DB mode)."
+              echo "Apply schema changes manually via Adminer using deploy/DB_RUNBOOK.md."
+            fi
 
             # Apply additional migrations (project_files table)
             echo "Applying project_files migration..."

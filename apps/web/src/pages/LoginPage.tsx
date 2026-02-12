@@ -183,9 +183,9 @@ export default function LoginPage() {
                     />
                     <span>Запомнить меня</span>
                   </label>
-                  <Link to="/forgot-password" className="auth-link">
-                    Забыли пароль?
-                  </Link>
+                  <span className="auth-link">
+                    Сброс пароля временно отключен, обратитесь к администратору
+                  </span>
                 </div>
 
                 {error && <div className="auth-error">{error}</div>}

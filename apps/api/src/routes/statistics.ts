@@ -51,11 +51,20 @@ const JsonObjectSchema = z.record(JsonValueSchema);
 const MAX_TABLE_COLUMNS = 100;
 const MAX_TABLE_ROWS = 2000;
 const MAX_TABLE_CELL_LENGTH = 4000;
+const XSS_PAYLOAD_RE =
+  /<\s*script\b|<\/\s*script\b|javascript:|on\w+\s*=|<\s*(iframe|object|embed)\b/i;
+
+function containsXssPayload(value: string): boolean {
+  return XSS_PAYLOAD_RE.test(value);
+}
 
 const TableCellSchema = z
   .union([z.string(), z.number(), z.boolean(), z.null(), z.undefined()])
   .transform((value) => (value == null ? "" : String(value)))
-  .pipe(z.string().max(MAX_TABLE_CELL_LENGTH));
+  .pipe(z.string().max(MAX_TABLE_CELL_LENGTH))
+  .refine((value) => !containsXssPayload(value), {
+    message: "Table cell contains potentially unsafe script content",
+  });
 
 const TableDataSchema = z
   .object({
@@ -68,8 +77,20 @@ const TableDataSchema = z
 
 const CreateStatisticSchema = z.object({
   type: z.enum(["chart", "table"]),
-  title: z.string().min(1).max(500),
-  description: z.string().max(2000).optional(),
+  title: z
+    .string()
+    .min(1)
+    .max(500)
+    .refine((value) => !containsXssPayload(value), {
+      message: "Title contains potentially unsafe script content",
+    }),
+  description: z
+    .string()
+    .max(2000)
+    .refine((value) => !containsXssPayload(value), {
+      message: "Description contains potentially unsafe script content",
+    })
+    .optional(),
   config: JsonObjectSchema,
   tableData: TableDataSchema.optional(),
   dataClassification: z
@@ -89,8 +110,21 @@ const CreateStatisticSchema = z.object({
 });
 
 const UpdateStatisticSchema = z.object({
-  title: z.string().min(1).max(500).optional(),
-  description: z.string().max(2000).optional(),
+  title: z
+    .string()
+    .min(1)
+    .max(500)
+    .refine((value) => !containsXssPayload(value), {
+      message: "Title contains potentially unsafe script content",
+    })
+    .optional(),
+  description: z
+    .string()
+    .max(2000)
+    .refine((value) => !containsXssPayload(value), {
+      message: "Description contains potentially unsafe script content",
+    })
+    .optional(),
   config: JsonObjectSchema.optional(),
   tableData: TableDataSchema.optional(),
   dataClassification: z

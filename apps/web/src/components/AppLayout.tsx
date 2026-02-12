@@ -94,8 +94,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     !token ||
     location.pathname.startsWith("/login") ||
     location.pathname.startsWith("/register") ||
-    location.pathname.startsWith("/forgot-password") ||
-    location.pathname.startsWith("/reset-password") ||
     location.pathname.startsWith("/admin");
 
   // Determine if animated background should be shown

@@ -9,7 +9,10 @@ import type { FastifyPluginCallback } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
-import { getUserApiKey, checkProjectAccessPool } from "../utils/project-access.js";
+import {
+  getUserApiKey,
+  checkProjectAccessPool,
+} from "../utils/project-access.js";
 import { queryEmbeddingCache } from "../utils/embedding-cache.js";
 import { startBoss } from "../worker/boss.js";
 import type { EmbeddingsJobPayload } from "../worker/types.js";
@@ -179,7 +182,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         fastify.log.error("Semantic search error:", error);
         return reply.code(500).send({
           error: "Failed to perform semantic search",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -296,7 +299,12 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
             FROM all_graph_article_ids ag
             LEFT JOIN article_embeddings ae ON ae.article_id = ag.id
             WHERE ag.id = ANY($4)`,
-            [projectId, includeReferences, includeCitedBy, normalizedArticleIds],
+            [
+              projectId,
+              includeReferences,
+              includeCitedBy,
+              normalizedArticleIds,
+            ],
           );
           const allowedCount = parseInt(res.rows[0].allowed_count, 10);
           const withEmbeddings = parseInt(res.rows[0].with_embeddings, 10);
@@ -410,7 +418,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         fastify.log.error("Generate embeddings error:", error);
         return reply.code(500).send({
           error: "Failed to start embedding generation",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -467,7 +475,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         fastify.log.error("Get embedding job error:", error);
         return reply.code(500).send({
           error: "Failed to get job status",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -515,7 +523,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         fastify.log.error("Cancel embedding job error:", error);
         return reply.code(500).send({
           error: "Failed to cancel job",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -571,7 +579,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         fastify.log.error("Get embedding jobs error:", error);
         return reply.code(500).send({
           error: "Failed to get jobs",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -646,7 +654,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         fastify.log.error("Missing articles stats error:", error);
         return reply.code(500).send({
           error: "Failed to get missing articles stats",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -780,7 +788,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         fastify.log.error("Embedding stats error:", error);
         return reply.code(500).send({
           error: "Failed to get embedding stats",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -902,7 +910,7 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         fastify.log.error("Semantic neighbors error:", error);
         return reply.code(500).send({
           error: "Failed to get semantic neighbors",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
