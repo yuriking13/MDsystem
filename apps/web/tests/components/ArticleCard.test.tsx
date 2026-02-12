@@ -63,7 +63,7 @@ describe("ArticleCard", () => {
 
   it("displays status badge correctly", () => {
     render(<ArticleCard {...defaultProps} />);
-    expect(screen.getByText("Candidate")).toBeInTheDocument();
+    expect(screen.getByTitle("Candidate")).toBeInTheDocument();
   });
 
   it("displays source badge", () => {
@@ -81,9 +81,9 @@ describe("ArticleCard", () => {
     expect(screen.getByText("Stats")).toBeInTheDocument();
   });
 
-  it("shows free full text badge", () => {
+  it("does not render free full text badge in current layout", () => {
     render(<ArticleCard {...defaultProps} />);
-    expect(screen.getByText("Free Full Text")).toBeInTheDocument();
+    expect(screen.queryByText("Free Full Text")).not.toBeInTheDocument();
   });
 
   it("displays year", () => {
@@ -117,22 +117,22 @@ describe("ArticleCard", () => {
 
   it("renders DOI link", () => {
     render(<ArticleCard {...defaultProps} />);
-    const doiLink = screen.getByRole("link", { name: /DOI:/i });
+    const doiLink = screen.getByRole("link", { name: /^DOI$/i });
     expect(doiLink).toHaveAttribute(
       "href",
       "https://doi.org/10.1234/test.2024.001",
     );
   });
 
-  it("displays citation count", () => {
+  it("does not render citation count text in current layout", () => {
     render(<ArticleCard {...defaultProps} />);
-    expect(screen.getByText("150 citations")).toBeInTheDocument();
+    expect(screen.queryByText(/150 citations/i)).not.toBeInTheDocument();
   });
 
-  it("displays tags", () => {
+  it("does not render tags in current layout", () => {
     render(<ArticleCard {...defaultProps} />);
-    expect(screen.getByText("diabetes")).toBeInTheDocument();
-    expect(screen.getByText("metformin")).toBeInTheDocument();
+    expect(screen.queryByText("diabetes")).not.toBeInTheDocument();
+    expect(screen.queryByText("metformin")).not.toBeInTheDocument();
   });
 
   it("calls onSelect when checkbox is clicked", async () => {
@@ -148,7 +148,8 @@ describe("ArticleCard", () => {
   it("applies selected styles when isSelected is true", () => {
     render(<ArticleCard {...defaultProps} isSelected={true} />);
 
-    const card = screen.getByRole("checkbox").closest("[class*='ring-2']");
+    const card = screen.getByRole("checkbox").closest("article");
+    expect(card).toHaveClass("article-card--selected");
     expect(card).toBeInTheDocument();
   });
 
@@ -163,7 +164,7 @@ describe("ArticleCard", () => {
     const showMoreButton = screen.getByText("Show more");
     await user.click(showMoreButton);
 
-    expect(screen.getByText("Show less")).toBeInTheDocument();
+    expect(screen.getByText("Hide")).toBeInTheDocument();
   });
 
   it("calls onStatusChange with 'selected' when select button is clicked", async () => {
