@@ -2,8 +2,14 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
+const isVitest = process.env.VITEST === "true";
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      babel: isVitest ? { plugins: ["istanbul"] } : undefined,
+    }),
+  ],
   test: {
     globals: true,
     environment: "jsdom",
