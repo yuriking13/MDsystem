@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 import { pool } from "../../pg.js";
+import crypto from "crypto";
 import { verifyPassword } from "../../lib/password.js";
 import { rateLimits } from "../../plugins/rate-limit.js";
 import {
