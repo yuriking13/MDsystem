@@ -23,7 +23,7 @@ export default function LoginPage() {
     setBusy(true);
     try {
       const res = await apiLogin(email.trim(), password);
-      await loginWithToken(res.token);
+      await loginWithToken(res.accessToken || res.token, res.refreshToken);
       nav(redirectTo, { replace: true });
     } catch (err: unknown) {
       setError(parseApiError(getErrorMessage(err)));

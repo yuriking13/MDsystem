@@ -31,7 +31,7 @@ export default function RegisterPage() {
     setBusy(true);
     try {
       const res = await apiRegister(email.trim(), password);
-      await loginWithToken(res.token);
+      await loginWithToken(res.accessToken || res.token, res.refreshToken);
       nav("/projects", { replace: true });
     } catch (err: unknown) {
       setError(parseApiError(getErrorMessage(err)));

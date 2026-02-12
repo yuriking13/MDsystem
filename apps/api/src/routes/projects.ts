@@ -179,21 +179,21 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         updates.push(`citation_style = $${idx++}`);
         values.push(bodyP.data.citationStyle);
       }
-      if (bodyP.data.researchType !== undefined && bodyP.data.researchType !== null) {
+      if (bodyP.data.researchType !== undefined) {
         updates.push(`research_type = $${idx++}`);
-        values.push(bodyP.data.researchType);
+        values.push(bodyP.data.researchType ?? null);
       }
-      if (bodyP.data.researchSubtype !== undefined && bodyP.data.researchSubtype !== null) {
+      if (bodyP.data.researchSubtype !== undefined) {
         updates.push(`research_subtype = $${idx++}`);
-        values.push(bodyP.data.researchSubtype);
+        values.push(bodyP.data.researchSubtype ?? null);
       }
-      if (bodyP.data.researchProtocol !== undefined && bodyP.data.researchProtocol !== null) {
+      if (bodyP.data.researchProtocol !== undefined) {
         updates.push(`research_protocol = $${idx++}`);
-        values.push(bodyP.data.researchProtocol);
+        values.push(bodyP.data.researchProtocol ?? null);
       }
-      if (bodyP.data.protocolCustomName !== undefined && bodyP.data.protocolCustomName !== null) {
+      if (bodyP.data.protocolCustomName !== undefined) {
         updates.push(`protocol_custom_name = $${idx++}`);
-        values.push(bodyP.data.protocolCustomName);
+        values.push(bodyP.data.protocolCustomName ?? null);
       }
       if (bodyP.data.aiErrorAnalysisEnabled !== undefined) {
         updates.push(`ai_error_analysis_enabled = $${idx++}`);

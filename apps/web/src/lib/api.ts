@@ -1,4 +1,4 @@
-import { getToken } from "./auth";
+import { getToken, refreshAccessToken } from "./auth";
 
 type ApiErrorPayload = {
   error?: string;
@@ -138,6 +138,35 @@ export async function apiFetch<T>(
     headers,
   });
 
+  // Auto-refresh on 401 TokenExpired
+  if (res.status === 401 && auth) {
+    const payload401 = (await readJsonSafe(res)) as ApiErrorPayload | string | null;
+    const errCode = typeof payload401 === "object" && payload401 !== null ? payload401.error : null;
+    
+    if (errCode === "TokenExpired" || errCode === "Unauthorized") {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        // Retry request with new token
+        headers.set("authorization", `Bearer ${newToken}`);
+        const retryRes = await fetch(path, { ...init, headers });
+        if (!retryRes.ok) {
+          const retryPayload = (await readJsonSafe(retryRes)) as ApiErrorPayload | string | null;
+          const retryMsg = typeof retryPayload === "string"
+            ? retryPayload
+            : retryPayload?.message || retryPayload?.error || `HTTP ${retryRes.status}`;
+          throw new Error(retryMsg);
+        }
+        return (await retryRes.json()) as T;
+      }
+    }
+
+    // If refresh also failed, throw original error
+    const msg401 = typeof payload401 === "string"
+      ? payload401
+      : payload401?.message || payload401?.error || `HTTP ${res.status}`;
+    throw new Error(msg401);
+  }
+
   if (!res.ok) {
     const payload = (await readJsonSafe(res)) as
       | ApiErrorPayload
@@ -154,7 +183,7 @@ export async function apiFetch<T>(
 }
 
 export type AuthUser = { id: string; email: string };
-export type AuthResponse = { user: AuthUser; token: string };
+export type AuthResponse = { user: AuthUser; token: string; accessToken?: string; refreshToken?: string };
 
 export async function apiRegister(
   email: string,
@@ -1151,9 +1180,10 @@ export async function apiExportCitationGraph(
   format: "json" | "graphml" | "cytoscape" | "gexf" = "json",
 ): Promise<Blob> {
   const url = `/api/projects/${projectId}/citation-graph/export?format=${format}`;
+  const token = getToken();
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
 
