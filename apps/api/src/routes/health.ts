@@ -23,9 +23,9 @@ interface HealthStatus {
   uptime: number;
   version: string;
   checks: {
-    database: ComponentHealth;
-    cache: ComponentHealth;
-    storage: ComponentHealth;
+    database: PublicComponentHealth;
+    cache: PublicComponentHealth;
+    storage: PublicComponentHealth;
   };
 }
 
@@ -36,7 +36,18 @@ interface ComponentHealth {
   details?: Record<string, unknown>;
 }
 
+type PublicComponentHealth = Pick<ComponentHealth, "status" | "latencyMs">;
+
 const startTime = Date.now();
+
+function toPublicComponentHealth(
+  component: ComponentHealth,
+): PublicComponentHealth {
+  return {
+    status: component.status,
+    latencyMs: component.latencyMs,
+  };
+}
 
 async function checkDatabase(): Promise<ComponentHealth> {
   const start = Date.now();
@@ -138,11 +149,15 @@ export function healthRoutes(app: FastifyInstance) {
       return reply.status(503).send({
         status: "not_ready",
         reason: "Database unavailable",
-        database: db,
       });
     }
 
-    return { status: "ready", database: db };
+    return {
+      status: "ready",
+      checks: {
+        database: toPublicComponentHealth(db),
+      },
+    };
   });
 
   /**
@@ -157,7 +172,11 @@ export function healthRoutes(app: FastifyInstance) {
       checkStorage(),
     ]);
 
-    const checks = { database, cache, storage };
+    const checks = {
+      database: toPublicComponentHealth(database),
+      cache: toPublicComponentHealth(cache),
+      storage: toPublicComponentHealth(storage),
+    };
 
     // Determine overall status
     let overallStatus: "healthy" | "degraded" | "unhealthy" = "healthy";

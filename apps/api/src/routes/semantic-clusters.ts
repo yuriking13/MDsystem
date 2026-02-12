@@ -286,7 +286,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         fastify.log.error("Semantic clustering error:", error);
         return reply.code(500).send({
           error: "Failed to create semantic clusters",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -476,7 +476,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         fastify.log.error({ error: message }, "Get semantic clusters error");
         return reply.code(500).send({
           error: "Failed to get semantic clusters",
-          details: message,
+          message: "Internal server error",
         });
       }
     },
@@ -604,7 +604,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         fastify.log.error("Get semantic neighbors error:", error);
         return reply.code(500).send({
           error: "Failed to get semantic neighbors",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -743,7 +743,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         fastify.log.error("Gap analysis error:", error);
         return reply.code(500).send({
           error: "Failed to perform gap analysis",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -943,7 +943,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         fastify.log.error("Smart semantic search error:", error);
         return reply.code(500).send({
           error: "Failed to perform smart semantic search",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },
@@ -982,7 +982,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         fastify.log.error("Delete semantic clusters error:", error);
         return reply.code(500).send({
           error: "Failed to delete semantic clusters",
-          details: error.message,
+          message: "Internal server error",
         });
       }
     },

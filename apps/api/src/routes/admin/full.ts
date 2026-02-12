@@ -1028,6 +1028,10 @@ export async function adminRoutes(app: FastifyInstance) {
         ],
       );
 
+      if (body.blocked) {
+        await app.revokeAllUserTokens(userId);
+      }
+
       await logAdminAction(
         req.user.sub,
         body.blocked ? "block_user" : "unblock_user",
@@ -2112,6 +2116,15 @@ export async function adminRoutes(app: FastifyInstance) {
           body.userIds,
         ],
       );
+
+      if (body.blocked && body.userIds.length > 0) {
+        await pool.query(
+          `UPDATE refresh_tokens
+           SET revoked = true
+           WHERE user_id = ANY($1::uuid[])`,
+          [body.userIds],
+        );
+      }
 
       await logAdminAction(
         req.user.sub,
