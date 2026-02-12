@@ -2,17 +2,20 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { resolve } from "path";
 
-export default defineConfig({
-  plugins: [react()],
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react({
+      babel: mode === "test" ? { plugins: ["istanbul"] } : undefined,
+    }),
+  ],
   test: {
     globals: true,
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
     setupFiles: ["./tests/setup.ts"],
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reporter: ["text", "json", "html"],
-      experimentalAstAwareRemapping: false,
       include: [
         "src/components/ArticleCard.tsx",
         "src/components/ArticleAISidebar.tsx",
@@ -39,4 +42,4 @@ export default defineConfig({
       "@": resolve(__dirname, "./src"),
     },
   },
-});
+}));
