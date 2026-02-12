@@ -7,6 +7,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
+    deps: {
+      optimizer: {
+        web: {
+          enabled: false,
+        },
+      },
+    },
     include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
     setupFiles: ["./tests/setup.ts"],
     coverage: {
