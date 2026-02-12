@@ -225,8 +225,8 @@ export function formatErrorResponse(
     response.error.details = error.details;
   }
 
-  // В development режиме добавляем stack trace
-  if (includeStack && error.stack) {
+  // Только в явном development режиме добавляем stack trace (opt-in)
+  if (includeStack && process.env.NODE_ENV === "development" && error.stack) {
     response.error.details = {
       ...(typeof response.error.details === "object"
         ? response.error.details

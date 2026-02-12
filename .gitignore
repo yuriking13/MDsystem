@@ -8,6 +8,9 @@ build
 apps/**/dist
 apps/**/build
 
+# Coverage reports
+coverage
+
 # env
 .env
 .env.*.local
@@ -24,3 +27,6 @@ apps/api/prisma/dev.db
 
 # Compiled JS in src (should be in dist only)
 apps/web/src/**/*.js
+
+# Backup files
+*.bak

@@ -86,7 +86,7 @@ await app.register(helmet, {
       ? {
           directives: {
             defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"], // TODO: удалить unsafe-inline после рефакторинга
+            scriptSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'"],
             imgSrc: ["'self'", "data:", "https:"],
             connectSrc: ["'self'", env.CORS_ORIGIN],

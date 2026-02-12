@@ -23,6 +23,7 @@ import { getUserId } from "../utils/auth-helpers.js";
 import { checkProjectAccessPool } from "../utils/project-access.js";
 import { getUserApiKey } from "../utils/project-access.js";
 import { createLogger } from "../utils/logger.js";
+import { rateLimits } from "../plugins/rate-limit.js";
 
 const log = createLogger("ai-writing-assistant");
 const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
@@ -407,7 +408,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
     Body: z.infer<typeof ImproveTextBodySchema>;
   }>(
     "/projects/:projectId/ai-writing-assistant/improve",
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [rateLimits.ai, fastify.authenticate] },
     async (request, reply) => {
       const userId = getUserId(request);
       const { projectId } = request.params;
@@ -575,7 +576,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (err: any) {
         log.error("AI text improvement failed", err, { projectId });
         return reply.code(500).send({
-          error: err.message || "AI text improvement failed",
+          error: "AI text improvement failed",
         });
       }
     },
@@ -589,7 +590,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
     Body: z.infer<typeof GenerateTableBodySchema>;
   }>(
     "/projects/:projectId/ai-writing-assistant/generate-table",
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [rateLimits.ai, fastify.authenticate] },
     async (request, reply) => {
       const userId = getUserId(request);
       const { projectId } = request.params;
@@ -663,7 +664,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (err: any) {
         log.error("AI table generation failed", err, { projectId });
         return reply.code(500).send({
-          error: err.message || "AI table generation failed",
+          error: "AI table generation failed",
         });
       }
     },
@@ -677,7 +678,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
     Body: z.infer<typeof GenerateIllustrationBodySchema>;
   }>(
     "/projects/:projectId/ai-writing-assistant/generate-illustration",
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [rateLimits.ai, fastify.authenticate] },
     async (request, reply) => {
       const userId = getUserId(request);
       const { projectId } = request.params;
@@ -750,7 +751,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
       } catch (err: any) {
         log.error("AI illustration generation failed", err, { projectId });
         return reply.code(500).send({
-          error: err.message || "AI illustration generation failed",
+          error: "AI illustration generation failed",
         });
       }
     },
@@ -764,7 +765,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
     Body: z.infer<typeof LookupFulltextBodySchema>;
   }>(
     "/projects/:projectId/ai-writing-assistant/lookup-fulltext",
-    { preHandler: [fastify.authenticate] },
+    { preHandler: [rateLimits.ai, fastify.authenticate] },
     async (request, reply) => {
       const userId = getUserId(request);
       const { projectId } = request.params;
@@ -791,9 +792,10 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
 
       try {
         let targetDoi = doi || "";
-        let article: Awaited<ReturnType<typeof lookupArticleByDoi>> | Awaited<
-          ReturnType<typeof lookupArticleByPmid>
-        > | null = null;
+        let article:
+          | Awaited<ReturnType<typeof lookupArticleByDoi>>
+          | Awaited<ReturnType<typeof lookupArticleByPmid>>
+          | null = null;
 
         // Look up in project database
         if (targetDoi) {
@@ -828,7 +830,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
           pmid: pmid || "",
         });
         return reply.code(500).send({
-          error: err.message || "Full text lookup failed",
+          error: "Full text lookup failed",
         });
       }
     },

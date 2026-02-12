@@ -232,6 +232,24 @@ export const rateLimits = {
     windowMs: 60 * 1000,
     message: "API rate limit exceeded. Please slow down.",
   }),
+
+  /** AI endpoints: 20 запросов в минуту per user (дорогие LLM API вызовы) */
+  ai: createRateLimiter("ai", {
+    max: 20,
+    windowMs: 60 * 1000,
+    keyGenerator: (req) => {
+      const user = (req as FastifyRequest & { user?: { sub?: string } }).user;
+      return user?.sub || req.ip || "unknown";
+    },
+    message: "Too many AI requests. Please wait before trying again.",
+  }),
+
+  /** Client error logging: 10 в минуту per IP */
+  clientError: createRateLimiter("client-error", {
+    max: 10,
+    windowMs: 60 * 1000,
+    message: "Too many error reports. Please try again later.",
+  }),
 };
 
 /**

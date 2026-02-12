@@ -784,7 +784,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         };
       } catch (err: any) {
         app.log.error({ err }, `Failed to analyze file: ${file.name}`);
-        return reply.internalServerError(err.message || "Ошибка анализа файла");
+        return reply.internalServerError("Ошибка анализа файла");
       }
     },
   );
@@ -919,9 +919,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         };
       } catch (err: any) {
         app.log.error({ err }, "Failed to import article from file");
-        return reply.internalServerError(
-          err.message || "Ошибка импорта статьи",
-        );
+        return reply.internalServerError("Ошибка импорта статьи");
       }
     },
   );
@@ -1165,9 +1163,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         };
       } catch (err: any) {
         app.log.error({ err }, "Failed to import file as document");
-        return reply.internalServerError(
-          err.message || "Ошибка создания документа",
-        );
+        return reply.internalServerError("Ошибка создания документа");
       }
     },
   );

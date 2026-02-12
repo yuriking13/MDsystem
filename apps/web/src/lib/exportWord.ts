@@ -22,6 +22,18 @@ import {
 } from "docx";
 import { saveAs } from "file-saver";
 
+/**
+ * Escape HTML special characters to prevent XSS in generated HTML documents.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export type ExportDocument = {
   title: string;
   content?: string | null;
@@ -1626,7 +1638,7 @@ export function generatePrintHtml(
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>${projectName}</title>
+  <title>${escapeHtml(projectName)}</title>
   <style>${styles}</style>
 </head>
 <body>
@@ -1635,8 +1647,8 @@ export function generatePrintHtml(
   // Title page
   html += `
   <div class="title-page">
-    <h1>${projectName}</h1>
-    <p>Стиль цитирования: ${citationStyle.toUpperCase()}</p>
+    <h1>${escapeHtml(projectName)}</h1>
+    <p>Стиль цитирования: ${escapeHtml(citationStyle.toUpperCase())}</p>
     <p>Дата: ${new Date().toLocaleDateString("ru-RU")}</p>
   </div>
 `;
@@ -1648,7 +1660,7 @@ export function generatePrintHtml(
     <ul style="list-style: none; padding: 0;">
 `;
   documents.forEach((doc, idx) => {
-    html += `      <li>${idx + 1}. ${doc.title}</li>\n`;
+    html += `      <li>${idx + 1}. ${escapeHtml(doc.title)}</li>\n`;
   });
   if (bibliography.length > 0) {
     html += `      <li>Список литературы</li>\n`;
@@ -1664,7 +1676,7 @@ export function generatePrintHtml(
     documents.forEach((doc, idx) => {
       html += `
     <div class="chapter">
-      <h1>${idx + 1}. ${doc.title}</h1>
+      <h1>${idx + 1}. ${escapeHtml(doc.title)}</h1>
       ${doc.content || ""}
     </div>
 `;
@@ -1678,7 +1690,7 @@ export function generatePrintHtml(
     <h1 style="text-align: center;">СПИСОК ЛИТЕРАТУРЫ</h1>
 `;
     bibliography.forEach((item) => {
-      html += `    <div class="bib-item">${item.number}. ${item.formatted}</div>\n`;
+      html += `    <div class="bib-item">${item.number}. ${escapeHtml(item.formatted)}</div>\n`;
     });
     html += `  </div>
 `;
@@ -1793,8 +1805,8 @@ export function exportBibliographyToPdf(
 </head>
 <body>
   <h1>СПИСОК ЛИТЕРАТУРЫ</h1>
-  <p class="subtitle">Проект: ${projectName}<br>Стиль: ${citationStyle.toUpperCase()} | Дата: ${new Date().toLocaleDateString("ru-RU")}</p>
-  ${bibliography.map((item) => `<div class="bib-item">${item.number}. ${item.formatted}</div>`).join("\n")}
+  <p class="subtitle">Проект: ${escapeHtml(projectName)}<br>Стиль: ${escapeHtml(citationStyle.toUpperCase())} | Дата: ${new Date().toLocaleDateString("ru-RU")}</p>
+  ${bibliography.map((item) => `<div class="bib-item">${item.number}. ${escapeHtml(item.formatted)}</div>`).join("\n")}
 </body>
 </html>`;
 

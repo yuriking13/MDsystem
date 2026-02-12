@@ -102,4 +102,6 @@ jobs:
             sleep 5
             curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1 || sleep 5
             curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1 || sleep 5
-            curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1 && echo "HEALTH OK" && echo "DEPLOY OK"
+            curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1 || { echo "HEALTH CHECK FAILED after 15s"; journalctl -u thesis-api --no-pager -n 30; exit 1; }
+            echo "HEALTH OK"
+            echo "DEPLOY OK"

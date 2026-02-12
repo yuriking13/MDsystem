@@ -733,7 +733,9 @@ export async function adminRoutes(app: FastifyInstance) {
     "/api/admin/errors/:errorId/resolve",
     { preHandler: [requireAdmin] },
     async (req: any) => {
-      const { errorId } = req.params;
+      const { errorId } = z
+        .object({ errorId: z.string().uuid() })
+        .parse(req.params);
       const body = z
         .object({
           notes: z.string().optional(),
@@ -992,7 +994,9 @@ export async function adminRoutes(app: FastifyInstance) {
     "/api/admin/users/:userId/block",
     { preHandler: [requireAdmin] },
     async (req: any) => {
-      const { userId } = req.params;
+      const { userId } = z
+        .object({ userId: z.string().uuid() })
+        .parse(req.params);
       const body = z
         .object({ blocked: z.boolean(), reason: z.string().optional() })
         .parse(req.body);
@@ -1029,7 +1033,9 @@ export async function adminRoutes(app: FastifyInstance) {
     "/api/admin/users/:userId",
     { preHandler: [requireAdmin] },
     async (req: any) => {
-      const { userId } = req.params;
+      const { userId } = z
+        .object({ userId: z.string().uuid() })
+        .parse(req.params);
       // Validate confirm flag
       z.object({ confirm: z.literal(true) }).parse(req.body);
 
@@ -1365,7 +1371,7 @@ export async function adminRoutes(app: FastifyInstance) {
   // ===== Client-side Error Logging =====
   app.post(
     "/api/errors/client",
-    { preHandler: [rateLimits.api] },
+    { preHandler: [rateLimits.clientError] },
     async (req) => {
       const body = z
         .object({
