@@ -9,6 +9,7 @@ import { pool } from "../pg.js";
 import {
   isStorageConfigured,
   validateFileType,
+  validateFileMagicBytes,
   generateStoragePath,
   uploadFile,
   downloadFile,
@@ -188,6 +189,14 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       }
 
       const buffer = Buffer.concat(chunks);
+
+      // Validate magic bytes match declared MIME type
+      const magicBytesCheck = await validateFileMagicBytes(buffer, mimetype);
+      if (!magicBytesCheck.valid) {
+        return reply.badRequest(
+          `File content does not match declared type ${mimetype}. Detected: ${magicBytesCheck.detectedType}`,
+        );
+      }
 
       // Generate storage path and upload
       const storagePath = generateStoragePath(projectId, validation.ext!);

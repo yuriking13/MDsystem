@@ -4,6 +4,9 @@ import { pool } from "../../pg.js";
 import crypto from "crypto";
 import { verifyPassword } from "../../lib/password.js";
 import { rateLimits } from "../../plugins/rate-limit.js";
+import { createLogger } from "../../utils/logger.js";
+
+const log = createLogger("admin");
 import {
   generateAdminToken,
   hashAdminToken,
@@ -51,7 +54,11 @@ async function logAdminAction(
       ],
     );
   } catch (err) {
-    console.error("Failed to log admin action:", err);
+    log.error(
+      "Failed to log admin action",
+      err instanceof Error ? err : undefined,
+      { action },
+    );
   }
 }
 
@@ -83,7 +90,11 @@ async function logSystemError(
       ],
     );
   } catch (err) {
-    console.error("Failed to log system error:", err);
+    log.error(
+      "Failed to log system error",
+      err instanceof Error ? err : undefined,
+      { errorType },
+    );
   }
 }
 

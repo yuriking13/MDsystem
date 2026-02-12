@@ -1,6 +1,9 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../../pg.js";
+import { createLogger } from "../../utils/logger.js";
+
+const log = createLogger("citation-graph");
 import {
   formatCitation,
   type CitationStyle,
@@ -663,7 +666,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
         return { citation: { ...res.rows[0], sub_number: subNumber } };
       } catch (err) {
-        console.error("Add citation error:", err);
+        log.error("Add citation error", err instanceof Error ? err : undefined);
         return reply.code(400).send({ error: "Failed to add citation" });
       }
     },
@@ -1885,19 +1888,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Debug: Log first article's reference_pmids to verify data structure
       if (articlesRes.rows.length > 0) {
         const firstArticle = articlesRes.rows[0];
-        console.log(`[CitationGraph] First article PMID: ${firstArticle.pmid}`);
-        console.log(
-          `[CitationGraph] reference_pmids type: ${typeof firstArticle.reference_pmids}`,
-        );
-        console.log(
-          `[CitationGraph] reference_pmids isArray: ${Array.isArray(firstArticle.reference_pmids)}`,
-        );
-        console.log(
-          `[CitationGraph] reference_pmids value: ${JSON.stringify(firstArticle.reference_pmids)?.slice(0, 200)}`,
-        );
-        console.log(
-          `[CitationGraph] references_fetched_at: ${firstArticle.references_fetched_at}`,
-        );
+        log.debug("First article reference data", {
+          pmid: firstArticle.pmid,
+          referencePmidsType: typeof firstArticle.reference_pmids,
+          referencePmidsIsArray: String(
+            Array.isArray(firstArticle.reference_pmids),
+          ),
+          referencePmidsValue: JSON.stringify(
+            firstArticle.reference_pmids,
+          )?.slice(0, 200),
+          referencesFetchedAt: String(firstArticle.references_fetched_at),
+        });
       }
 
       // Создаём узлы из статей проекта (Уровень 1)
@@ -2125,9 +2126,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
         }
 
-        console.log(
-          `[CitationGraph] Depth ${depth}: collected ${level2Pmids.size} external reference PMIDs + ${level2Dois.size} DOIs (sorted by ${sortBy})`,
-        );
+        log.debug("Depth level 2 collection", {
+          depth,
+          externalRefPmids: level2Pmids.size,
+          dois: level2Dois.size,
+          sortBy,
+        });
       }
 
       // Уровень 0 (cited_by) загружаем при depth >= 3
@@ -2206,9 +2210,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             }
           }
         }
-        console.log(
-          `[CitationGraph] Depth ${depth}: collected ${level0Pmids.size} citing article PMIDs (sorted by ${sortBy})`,
-        );
+        log.debug("Depth level 0 collection", {
+          depth,
+          citingPmids: level0Pmids.size,
+          sortBy,
+        });
       }
 
       // Загружаем статьи уровня 2 (references) - сначала ищем в БД
@@ -2342,9 +2348,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           graphCacheByPmid.set(row.pmid, row);
         }
 
-        console.log(
-          `[CitationGraph] Level 2 placeholders: ${level2NotInDbArr.length}, found in graph_cache: ${graphCacheByPmid.size}`,
-        );
+        log.debug("Level 2 placeholders", {
+          placeholders: level2NotInDbArr.length,
+          foundInGraphCache: graphCacheByPmid.size,
+        });
 
         for (const pmid of level2NotInDb) {
           if (!canAddMore()) break; // Проверяем лимит
@@ -2502,9 +2509,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           doiToId.set(doi, nodeId);
         }
 
-        console.log(
-          `[CitationGraph] DOI level 2: ${level2DoiRes.rows.length} from DB, ${level2DoiNotInDb.size} placeholders`,
-        );
+        log.debug("DOI level 2 stats", {
+          fromDb: level2DoiRes.rows.length,
+          placeholders: level2DoiNotInDb.size,
+        });
 
         // Добавляем DOI статьи в level2Articles для обработки связей
         level2Articles = [...level2Articles, ...level2DoiRes.rows];
@@ -2514,9 +2522,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const level0InDb = new Map<string, any>(); // pmid -> article data
       const level0NotInDb = new Set<string>(); // PMIDs не в БД
 
-      console.log(
-        `[CitationGraph] Level 0 check: depth=${depth}, level0Pmids.size=${level0Pmids.size}, canAddMore=${canAddMore()}`,
-      );
+      log.debug("Level 0 check", {
+        depth,
+        level0PmidsSize: level0Pmids.size,
+        canAddMore: String(canAddMore()),
+      });
 
       if (depth >= 3 && level0Pmids.size > 0 && canAddMore()) {
         // Ограничиваем количество PMIDs для загрузки
@@ -2643,9 +2653,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           graphCacheL0ByPmid.set(row.pmid, row);
         }
 
-        console.log(
-          `[CitationGraph] Level 0 placeholders: ${level0NotInDbArr.length}, found in graph_cache: ${graphCacheL0ByPmid.size}`,
-        );
+        log.debug("Level 0 placeholders", {
+          placeholders: level0NotInDbArr.length,
+          foundInGraphCache: graphCacheL0ByPmid.size,
+        });
 
         for (const pmid of level0NotInDb) {
           if (!canAddMore()) break; // Проверяем лимит
@@ -2692,9 +2703,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const level3InDb = new Map<string, any>();
       const level3NotInDb = new Set<string>();
 
-      console.log(
-        `[CitationGraph] Level 3 check: depth=${depth}, level2Articles.length=${level2Articles.length}, canAddMore=${canAddMore()}`,
-      );
+      log.debug("Level 3 check", {
+        depth,
+        level2ArticlesLength: level2Articles.length,
+        canAddMore: String(canAddMore()),
+      });
 
       // Level 3 работает с лимитами для производительности
       if (depth >= 3 && level2Articles.length > 0 && canAddMore()) {
@@ -2833,9 +2846,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             graphCacheL3ByPmid.set(row.pmid, row);
           }
 
-          console.log(
-            `[CitationGraph] Level 3 placeholders: ${level3NotInDbArr.length}, found in graph_cache: ${graphCacheL3ByPmid.size}`,
-          );
+          log.debug("Level 3 placeholders", {
+            placeholders: level3NotInDbArr.length,
+            foundInGraphCache: graphCacheL3ByPmid.size,
+          });
 
           for (const pmid of level3NotInDb) {
             if (!canAddMore()) break; // Проверяем лимит
@@ -3007,19 +3021,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Log debug info
-      console.log(
-        `[CitationGraph] Project has ${projectPmids.size} articles with PMIDs, ${doiToId.size} with DOIs`,
-      );
-      console.log(
-        `[CitationGraph] Found ${articlesWithRefs} articles with reference_pmids (${totalRefPmids} total refs)`,
-      );
-      console.log(
-        `[CitationGraph] Found ${totalRefDois} DOI references from Crossref`,
-      );
-      console.log(
-        `[CitationGraph] Matched ${matchedInternalRefs} PMID refs + ${matchedDoiRefs} DOI refs = ${matchedInternalRefs + matchedDoiRefs} internal links`,
-      );
-      console.log(`[CitationGraph] Created ${links.length} links`);
+      log.debug("Citation graph link stats", {
+        projectPmids: projectPmids.size,
+        doisTracked: doiToId.size,
+        articlesWithRefs,
+        totalRefPmids,
+        totalRefDois,
+        matchedInternalRefs,
+        matchedDoiRefs,
+        totalInternalLinks: matchedInternalRefs + matchedDoiRefs,
+        linksCreated: links.length,
+      });
 
       // Добавляем связи на основе references из Crossref (для всех статей уровня 1)
       for (const article of articlesRes.rows) {
@@ -3079,9 +3091,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         level3: nodes.filter((n) => n.graphLevel === 3).length, // Связанные
       };
 
-      console.log(
-        `[CitationGraph] Final levelCounts: L0=${levelCounts.level0}, L1=${levelCounts.level1}, L2=${levelCounts.level2}, L3=${levelCounts.level3}, links=${links.length}`,
-      );
+      log.debug("Final level counts", {
+        level0: levelCounts.level0,
+        level1: levelCounts.level1,
+        level2: levelCounts.level2,
+        level3: levelCounts.level3,
+        links: links.length,
+      });
 
       // Note: totalRefPmids and articlesWithRefs are now calculated above in the link creation loop
 
@@ -3134,7 +3150,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }
         } catch (err) {
           // не падаем, если PubMed недоступен/лимит
-          console.error("Citation graph enrichment (PubMed) error:", err);
+          log.error(
+            "Citation graph enrichment (PubMed) error",
+            err instanceof Error ? err : undefined,
+          );
         }
       }
 
@@ -3151,9 +3170,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const uniquePlaceholderDois = placeholderDois.slice(0, 100); // Лимит для скорости
       if (uniquePlaceholderDois.length > 0) {
-        console.log(
-          `[CitationGraph] Enriching ${uniquePlaceholderDois.length} DOI placeholders from Crossref`,
-        );
+        log.debug("Enriching DOI placeholders from Crossref", {
+          count: uniquePlaceholderDois.length,
+        });
 
         // Загружаем метаданные из Crossref батчами
         for (const { nodeId, doi } of uniquePlaceholderDois) {
@@ -3215,11 +3234,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             }
           } catch (err) {
             // Игнорируем ошибки для отдельных DOI
-            console.error(`Crossref enrichment error for ${doi}:`, err);
+            log.error(
+              "Crossref enrichment error",
+              err instanceof Error ? err : undefined,
+              { doi },
+            );
           }
         }
 
-        console.log(`[CitationGraph] DOI enrichment completed`);
+        log.debug("DOI enrichment completed");
       }
 
       // Применяем фильтр годов ко ВСЕМ узлам (включая placeholder)
@@ -3244,9 +3267,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
         // Удаляем отфильтрованные узлы и их связи
         if (nodesToRemove.size > 0) {
-          console.log(
-            `[CitationGraph] Year filter removed ${nodesToRemove.size} external nodes`,
-          );
+          log.debug("Year filter removed external nodes", {
+            removedCount: nodesToRemove.size,
+          });
 
           // Фильтруем узлы
           const filteredNodes = nodes.filter((n) => !nodesToRemove.has(n.id));
@@ -3281,9 +3304,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           }));
 
         clusters = createClusters(nodesForClustering, clusterBy);
-        console.log(
-          `[CitationGraph] Created ${clusters.length} clusters (method: ${clusterBy})`,
-        );
+        log.debug("Created clusters", {
+          count: clusters.length,
+          method: clusterBy,
+        });
       }
 
       const result = {
@@ -3387,7 +3411,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       return { shouldCreate: false };
     } catch (e) {
-      console.error("Error checking auto-version:", e);
+      log.error(
+        "Error checking auto-version",
+        e instanceof Error ? e : undefined,
+      );
       return { shouldCreate: false };
     }
   }
@@ -3952,7 +3979,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           });
         }
       } catch (error) {
-        console.error("Error in recommendations:", error);
+        log.error(
+          "Error in recommendations",
+          error instanceof Error ? error : undefined,
+        );
         // Возвращаем базовые рекомендации даже при ошибке
         const basicRes = await pool.query(
           `SELECT a.id, a.title_en, a.pmid, a.year, a.references_fetched_at

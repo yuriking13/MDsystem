@@ -30,7 +30,7 @@ import metricsPlugin from "./plugins/metrics.js";
 import { startWorkers, stopWorkers } from "./worker/index.js";
 import { registerWebSocket, getConnectionStats } from "./websocket.js";
 import { initCache, getCacheBackend, closeCache } from "./lib/redis.js";
-import { getRateLimitStats } from "./plugins/rate-limit.js";
+import { getRateLimitStats, rateLimits } from "./plugins/rate-limit.js";
 import { requireAdminAccess } from "./utils/require-admin.js";
 
 const app = Fastify({
@@ -114,6 +114,15 @@ await app.register(multipart, {
 
 // WebSocket для real-time синхронизации
 await registerWebSocket(app);
+
+// Global API rate limiting (1000 req/min per IP)
+// More specific limits (login, register, AI) are applied per-route and take precedence
+app.addHook("onRequest", async (req, reply) => {
+  // Apply global rate limit to all /api/* routes
+  if (req.url.startsWith("/api")) {
+    await rateLimits.api(req, reply);
+  }
+});
 
 await authRoutes(app);
 await passwordResetRoutes(app);

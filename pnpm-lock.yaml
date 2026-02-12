@@ -100,6 +100,9 @@ importers:
       fastify-plugin:
         specifier: ^4.5.1
         version: 4.5.1
+      file-type:
+        specifier: ^21.3.0
+        version: 21.3.0
       ioredis:
         specifier: ^5.9.1
         version: 5.9.1
@@ -236,6 +239,9 @@ importers:
       docx:
         specifier: ^9.5.1
         version: 9.5.1
+      dompurify:
+        specifier: ^3.3.1
+        version: 3.3.1
       file-saver:
         specifier: ^2.0.5
         version: 2.0.5
@@ -303,6 +309,9 @@ importers:
       "@testing-library/user-event":
         specifier: ^14.6.1
         version: 14.6.1(@testing-library/dom@10.4.1)
+      "@types/dompurify":
+        specifier: ^3.2.0
+        version: 3.2.0
       "@types/file-saver":
         specifier: ^2.0.7
         version: 2.0.7
@@ -838,6 +847,12 @@ packages:
         integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==,
       }
     engines: { node: ">=18" }
+
+  "@borewit/text-codec@0.2.1":
+    resolution:
+      {
+        integrity: sha512-k7vvKPbf7J2fZ5klGRD9AeKfUvojuZIQ3BT5u7Jfv+puwXkUBUT5PVyMDfJZpy30CBDXGMgw7fguK/lpOMBvgw==,
+      }
 
   "@csstools/color-helpers@5.1.0":
     resolution:
@@ -2807,6 +2822,19 @@ packages:
         integrity: sha512-fHsC4oDVzvMU9btg+IUmu/eqPquapjJ341qaNI7cCeSCKjjE6XJEN6WcONLAVId2OZUwML0IX1Jgl+6gJxU9Jw==,
       }
 
+  "@tokenizer/inflate@0.4.1":
+    resolution:
+      {
+        integrity: sha512-2mAv+8pkG6GIZiF1kNg1jAjh27IDxEPKwdGul3snfztFerfPGI1LjDezZp3i7BElXompqEtPmoPx6c2wgtWsOA==,
+      }
+    engines: { node: ">=18" }
+
+  "@tokenizer/token@0.3.0":
+    resolution:
+      {
+        integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==,
+      }
+
   "@tweenjs/tween.js@25.0.0":
     resolution:
       {
@@ -2860,6 +2888,13 @@ packages:
       {
         integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==,
       }
+
+  "@types/dompurify@3.2.0":
+    resolution:
+      {
+        integrity: sha512-Fgg31wv9QbLDA0SpTOXO3MaxySc4DKGLi8sna4/Utjo4r3ZRPdCt4UQee8BWr+Q5z21yifghREPJGYaEOEIACg==,
+      }
+    deprecated: This is a stub types definition. dompurify provides its own type definitions, so you do not need this installed.
 
   "@types/estree@1.0.8":
     resolution:
@@ -2975,6 +3010,12 @@ packages:
     resolution:
       {
         integrity: sha512-8WzXq62EXFhJ7QsH3Ocb/iKQ/Ty9ZVWnVzoTKc9tyyFRRF3a74Tk2+TLFgaFFw364Ere+npzHKEJ6ga2LzIL7w==,
+      }
+
+  "@types/trusted-types@2.0.7":
+    resolution:
+      {
+        integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==,
       }
 
   "@types/use-sync-external-store@0.0.6":
@@ -4247,6 +4288,12 @@ packages:
         integrity: sha512-7ZgogeTnjuHbo+ct10G9Ffp0mif17idi0IyWNVA/wcwcm7NPOD/WEHVP3n7n3MhXqxoIYm8d6MuZohYWIZ4T3w==,
       }
 
+  dompurify@3.3.1:
+    resolution:
+      {
+        integrity: sha512-qkdCKzLNtrgPFP1Vo+98FRzJnBRGe4ffyCea9IwHB1fyxPOeNTHpLKYGd4Uk9xvNoH0ZoOjwZxNptyMwqrId1Q==,
+      }
+
   dotenv@16.6.1:
     resolution:
       {
@@ -4749,6 +4796,13 @@ packages:
       {
         integrity: sha512-P9bmyZ3h/PRG+Nzga+rbdI4OEpNDzAVyy74uVO9ATgzLK6VtAsYybF/+TOCvrc0MO793d6+42lLyZTw7/ArVzA==,
       }
+
+  file-type@21.3.0:
+    resolution:
+      {
+        integrity: sha512-8kPJMIGz1Yt/aPEwOsrR97ZyZaD1Iqm8PClb1nYFclUCkBi0Ma5IsYNQzvSFS9ib51lWyIw5mIT9rWzI/xjpzA==,
+      }
+    engines: { node: ">=20" }
 
   fill-range@7.1.1:
     resolution:
@@ -7511,6 +7565,13 @@ packages:
         integrity: sha512-l63NF9y/cLROq/yqKXSLtcMeeyOfnSQlfMSlzFt/K73oIaD8DGaQWd7Z34X9GPiKqP5rbSh84Hl4bOlLcjiSrQ==,
       }
 
+  strtok3@10.3.4:
+    resolution:
+      {
+        integrity: sha512-KIy5nylvC5le1OdaaoCJ07L+8iQzJHGH6pWDuzS+d07Cu7n1MZ2x26P8ZKIWfbK02+XIL8Mp4RkWeqdUCrDMfg==,
+      }
+    engines: { node: ">=18" }
+
   superagent@10.3.0:
     resolution:
       {
@@ -7722,6 +7783,13 @@ packages:
       }
     engines: { node: ">=0.6" }
 
+  token-types@6.1.2:
+    resolution:
+      {
+        integrity: sha512-dRXchy+C0IgK8WPC6xvCHFRIWYUbqqdEIKPaKo/AcTUNzwLTK6AH7RjdLWsEZcAN/TBdtfUw3PYEgPr5VPr6ww==,
+      }
+    engines: { node: ">=14.16" }
+
   tough-cookie@5.1.2:
     resolution:
       {
@@ -7831,6 +7899,13 @@ packages:
       {
         integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==,
       }
+
+  uint8array-extras@1.5.0:
+    resolution:
+      {
+        integrity: sha512-rvKSBiC5zqCCiDZ9kAOszZcDvdAHwwIKJG33Ykj43OKcWsnmcBRL09YTU4nOeHZ8Y2a7l1MgTd08SBe9A8Qj6A==,
+      }
+    engines: { node: ">=18" }
 
   unbox-primitive@1.1.0:
     resolution:
@@ -8893,6 +8968,8 @@ snapshots:
       "@babel/helper-validator-identifier": 7.28.5
 
   "@bcoe/v8-coverage@1.0.2": {}
+
+  "@borewit/text-codec@0.2.1": {}
 
   "@csstools/color-helpers@5.1.0": {}
 
@@ -10127,6 +10204,15 @@ snapshots:
       "@tiptap/extensions": 3.14.0(@tiptap/core@3.14.0(@tiptap/pm@3.14.0))(@tiptap/pm@3.14.0)
       "@tiptap/pm": 3.14.0
 
+  "@tokenizer/inflate@0.4.1":
+    dependencies:
+      debug: 4.4.3
+      token-types: 6.1.2
+    transitivePeerDependencies:
+      - supports-color
+
+  "@tokenizer/token@0.3.0": {}
+
   "@tweenjs/tween.js@25.0.0": {}
 
   "@types/aria-query@5.0.4": {}
@@ -10160,6 +10246,10 @@ snapshots:
   "@types/cookiejar@2.1.5": {}
 
   "@types/deep-eql@4.0.2": {}
+
+  "@types/dompurify@3.2.0":
+    dependencies:
+      dompurify: 3.3.1
 
   "@types/estree@1.0.8": {}
 
@@ -10226,6 +10316,9 @@ snapshots:
     dependencies:
       "@types/methods": 1.1.4
       "@types/superagent": 8.1.9
+
+  "@types/trusted-types@2.0.7":
+    optional: true
 
   "@types/use-sync-external-store@0.0.6": {}
 
@@ -11031,6 +11124,10 @@ snapshots:
 
   dom-accessibility-api@0.6.3: {}
 
+  dompurify@3.3.1:
+    optionalDependencies:
+      "@types/trusted-types": 2.0.7
+
   dotenv@16.6.1: {}
 
   duck@0.1.12:
@@ -11461,6 +11558,15 @@ snapshots:
       flat-cache: 4.0.1
 
   file-saver@2.0.5: {}
+
+  file-type@21.3.0:
+    dependencies:
+      "@tokenizer/inflate": 0.4.1
+      strtok3: 10.3.4
+      token-types: 6.1.2
+      uint8array-extras: 1.5.0
+    transitivePeerDependencies:
+      - supports-color
 
   fill-range@7.1.1:
     dependencies:
@@ -13173,6 +13279,10 @@ snapshots:
 
   strnum@2.1.2: {}
 
+  strtok3@10.3.4:
+    dependencies:
+      "@tokenizer/token": 0.3.0
+
   superagent@10.3.0:
     dependencies:
       component-emitter: 1.3.1
@@ -13278,6 +13388,12 @@ snapshots:
 
   toidentifier@1.0.1: {}
 
+  token-types@6.1.2:
+    dependencies:
+      "@borewit/text-codec": 0.2.1
+      "@tokenizer/token": 0.3.0
+      ieee754: 1.2.1
+
   tough-cookie@5.1.2:
     dependencies:
       tldts: 6.1.86
@@ -13358,6 +13474,8 @@ snapshots:
   typescript@5.9.3: {}
 
   uc.micro@2.1.0: {}
+
+  uint8array-extras@1.5.0: {}
 
   unbox-primitive@1.1.0:
     dependencies:

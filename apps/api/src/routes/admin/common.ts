@@ -1,6 +1,9 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import { pool } from "../../pg.js";
 import crypto from "crypto";
+import { createLogger } from "../../utils/logger.js";
+
+const log = createLogger("admin-common");
 
 /**
  * Generate secure admin token
@@ -61,7 +64,11 @@ export async function logAdminAction(
       ],
     );
   } catch (err) {
-    console.error("Failed to log admin action:", err);
+    log.error(
+      "Failed to log admin action",
+      err instanceof Error ? err : undefined,
+      { action },
+    );
   }
 }
 
@@ -95,7 +102,11 @@ export async function logSystemError(
       ],
     );
   } catch (err) {
-    console.error("Failed to log system error:", err);
+    log.error(
+      "Failed to log system error",
+      err instanceof Error ? err : undefined,
+      { errorType },
+    );
   }
 }
 

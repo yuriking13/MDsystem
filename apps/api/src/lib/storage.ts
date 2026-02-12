@@ -224,3 +224,64 @@ export function formatFileSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
+
+/**
+ * Validate file content by checking magic bytes against declared MIME type.
+ * Returns { valid: true } if magic bytes match the declared type,
+ * or { valid: false, detectedType } if there's a mismatch.
+ * For unrecognizable file types (e.g. plain text), allows them through
+ * since magic byte detection doesn't cover all formats.
+ */
+export async function validateFileMagicBytes(
+  buffer: Buffer,
+  declaredMimeType: string,
+): Promise<{ valid: boolean; detectedType?: string }> {
+  const { fileTypeFromBuffer } = await import("file-type");
+  const detected = await fileTypeFromBuffer(buffer);
+
+  // If file-type can't detect the type, allow it through
+  // (covers formats like .doc, .xls, plain text, etc.)
+  if (!detected) {
+    return { valid: true };
+  }
+
+  // Map detected MIME to our allowed types for comparison
+  // Some MIME types have multiple valid representations
+  const mimeAliases: Record<string, string[]> = {
+    "application/pdf": ["application/pdf"],
+    "image/jpeg": ["image/jpeg"],
+    "image/png": ["image/png"],
+    "image/gif": ["image/gif"],
+    "image/webp": ["image/webp"],
+    "video/mp4": ["video/mp4"],
+    "video/webm": ["video/webm"],
+    "audio/mpeg": ["audio/mpeg"],
+    "audio/wav": ["audio/wav", "audio/x-wav"],
+    "audio/ogg": ["audio/ogg", "audio/opus"],
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [
+      "application/zip",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ],
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [
+      "application/zip",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ],
+    "application/msword": ["application/msword", "application/x-cfb"],
+    "application/vnd.ms-excel": [
+      "application/vnd.ms-excel",
+      "application/x-cfb",
+    ],
+  };
+
+  const allowedDetected = mimeAliases[declaredMimeType];
+  if (allowedDetected?.includes(detected.mime)) {
+    return { valid: true };
+  }
+
+  // If declared type is not in our alias map but detected matches declared, allow
+  if (detected.mime === declaredMimeType) {
+    return { valid: true };
+  }
+
+  return { valid: false, detectedType: detected.mime };
+}

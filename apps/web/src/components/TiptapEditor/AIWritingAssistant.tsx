@@ -9,6 +9,7 @@
  */
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import type { Editor } from "@tiptap/react";
+import DOMPurify from "dompurify";
 import {
   apiAIImproveText,
   apiAIGenerateTable,
@@ -70,53 +71,28 @@ function extractDOIsFromText(text: string): string[] {
 }
 
 function sanitizeSvg(svgCode: string): string {
-  if (!svgCode || typeof window === "undefined" || typeof DOMParser === "undefined") {
+  if (!svgCode || typeof window === "undefined") {
     return "";
   }
 
   try {
+    const clean = DOMPurify.sanitize(svgCode, {
+      USE_PROFILES: { svg: true, svgFilters: true },
+      ADD_TAGS: ["use"],
+      FORBID_TAGS: ["script", "foreignObject"],
+      FORBID_ATTR: ["onclick", "onerror", "onload", "xlink:href"],
+    });
+
+    // Verify the result is a valid SVG element
     const parser = new DOMParser();
-    const doc = parser.parseFromString(svgCode, "image/svg+xml");
+    const doc = parser.parseFromString(clean, "image/svg+xml");
     const root = doc.documentElement;
 
     if (!root || root.tagName.toLowerCase() !== "svg") {
       return "";
     }
 
-    const blockedTags = [
-      "script",
-      "foreignObject",
-      "iframe",
-      "object",
-      "embed",
-      "link",
-      "meta",
-    ];
-
-    blockedTags.forEach((tag) => {
-      doc.querySelectorAll(tag).forEach((el) => el.remove());
-    });
-
-    doc.querySelectorAll("*").forEach((el) => {
-      for (const attr of [...el.attributes]) {
-        const name = attr.name.toLowerCase();
-        const value = attr.value.trim().toLowerCase();
-
-        if (name.startsWith("on")) {
-          el.removeAttribute(attr.name);
-          continue;
-        }
-
-        if (
-          (name === "href" || name === "xlink:href") &&
-          value.startsWith("javascript:")
-        ) {
-          el.removeAttribute(attr.name);
-        }
-      }
-    });
-
-    return new XMLSerializer().serializeToString(root);
+    return clean;
   } catch {
     return "";
   }
@@ -1090,7 +1066,11 @@ export default function AIWritingAssistant({
         )}
 
         <div className="ai-illustration-preview">
-          <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(illustrationResult.svgCode) }} />
+          <div
+            dangerouslySetInnerHTML={{
+              __html: sanitizeSvg(illustrationResult.svgCode),
+            }}
+          />
         </div>
 
         {illustrationResult.figureCaption && (
