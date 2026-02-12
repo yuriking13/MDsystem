@@ -98,10 +98,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
     location.pathname.startsWith("/reset-password") ||
     location.pathname.startsWith("/admin");
 
-  if (hideSidebar) {
-    return <>{children || <Outlet />}</>;
-  }
-
   // Determine if animated background should be shown
   // Excluded: citation graph tab, document editor page
   const isDocumentEditor = location.pathname.match(
@@ -113,10 +109,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
     searchParams.get("tab") === "graph";
   const showAnimatedBg = !isDocumentEditor && !isGraphTab;
   const isFixedLayout = isDocumentEditor || isGraphTab;
+  const shouldLockLayout = !hideSidebar && isFixedLayout;
 
   // Lock body scroll for fixed layouts (editor, graph)
   useEffect(() => {
-    if (isFixedLayout) {
+    if (shouldLockLayout) {
       document.documentElement.classList.add("layout-fixed");
       document.body.classList.add("layout-fixed");
     } else {
@@ -127,7 +124,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
       document.documentElement.classList.remove("layout-fixed");
       document.body.classList.remove("layout-fixed");
     };
-  }, [isFixedLayout]);
+  }, [shouldLockLayout]);
+
+  if (hideSidebar) {
+    return <>{children || <Outlet />}</>;
+  }
 
   return (
     <ProjectContext.Provider
