@@ -3,6 +3,8 @@ import websocketPlugin from "@fastify/websocket";
 import type { WebSocket } from "ws";
 import { createLogger } from "./utils/logger.js";
 import { checkProjectAccessPool } from "./utils/project-access.js";
+import crypto from "crypto";
+import { z } from "zod";
 
 const log = createLogger("WebSocket");
 
@@ -41,7 +43,13 @@ interface WSParams {
 }
 
 interface WSQuery {
-  token?: string;
+  ticket?: string;
+}
+
+interface WsTicketRecord {
+  userId: string;
+  projectId: string;
+  expiresAt: number;
 }
 
 // Хранилище соединений по projectId
@@ -49,6 +57,43 @@ const projectConnections = new Map<string, Set<AppWebSocket>>();
 
 // Хранилище соединений по userId для персональных уведомлений
 const userConnections = new Map<string, Set<AppWebSocket>>();
+
+// Одноразовые короткоживущие tickets для WS handshake
+const wsTickets = new Map<string, WsTicketRecord>();
+const WS_TICKET_TTL_MS = 60 * 1000;
+
+function cleanupExpiredTickets() {
+  const now = Date.now();
+  for (const [ticket, record] of wsTickets.entries()) {
+    if (record.expiresAt <= now) {
+      wsTickets.delete(ticket);
+    }
+  }
+}
+
+function issueWsTicket(userId: string, projectId: string): string {
+  cleanupExpiredTickets();
+  const ticket = crypto.randomBytes(24).toString("base64url");
+  wsTickets.set(ticket, {
+    userId,
+    projectId,
+    expiresAt: Date.now() + WS_TICKET_TTL_MS,
+  });
+  return ticket;
+}
+
+function consumeWsTicket(ticket: string): WsTicketRecord | null {
+  cleanupExpiredTickets();
+  const record = wsTickets.get(ticket);
+  if (!record) {
+    return null;
+  }
+  wsTickets.delete(ticket);
+  if (record.expiresAt <= Date.now()) {
+    return null;
+  }
+  return record;
+}
 
 /**
  * Отправить событие всем подключённым клиентам проекта
@@ -192,6 +237,42 @@ export const wsEvents = {
 export async function registerWebSocket(app: FastifyInstance) {
   await app.register(websocketPlugin);
 
+  // Выдача короткоживущего ticket для безопасного WS-подключения
+  app.post(
+    "/api/ws-ticket",
+    { preHandler: [app.auth] },
+    async (req: FastifyRequest<{ Body: { projectId?: string } }>, reply) => {
+      const parsed = z
+        .object({
+          projectId: z.string().uuid(),
+        })
+        .safeParse(req.body);
+
+      if (!parsed.success) {
+        return reply.code(400).send({
+          error: "BadRequest",
+          message: "Invalid projectId",
+        });
+      }
+
+      const userId = req.user.sub;
+      const { projectId } = parsed.data;
+      const access = await checkProjectAccessPool(projectId, userId);
+      if (!access.ok) {
+        return reply.code(404).send({
+          error: "NotFound",
+          message: "Project not found",
+        });
+      }
+
+      const ticket = issueWsTicket(userId, projectId);
+      return {
+        ticket,
+        expiresInMs: WS_TICKET_TTL_MS,
+      };
+    },
+  );
+
   // WebSocket endpoint для подписки на проект
   app.get(
     "/ws/project/:projectId",
@@ -201,32 +282,23 @@ export async function registerWebSocket(app: FastifyInstance) {
       req: FastifyRequest<{ Params: WSParams; Querystring: WSQuery }>,
     ) => {
       const { projectId } = req.params;
-      const { token } = req.query;
+      const { ticket } = req.query;
 
       // WebSocket connection is allowed only for authenticated project members.
-      if (!token) {
+      if (!ticket) {
         socket.close(4001, "Authentication required");
         return;
       }
 
-      // Верификация access токена через Fastify JWT
-      let userId: string | null = null;
-      try {
-        // Используем встроенный jwt.verify из @fastify/jwt
-        const decoded = app.jwt.verify(token) as {
-          sub?: string;
-          type?: "access" | "refresh";
-        };
-        if (!decoded.sub || decoded.type === "refresh") {
-          socket.close(4001, "Access token required");
-          return;
-        }
-        userId = decoded.sub;
-      } catch (err) {
-        log.warn("Token verification failed", {
-          error: err instanceof Error ? err.message : String(err),
-        });
-        socket.close(4001, "Invalid token");
+      const wsTicket = consumeWsTicket(ticket);
+      if (!wsTicket) {
+        socket.close(4001, "Invalid ticket");
+        return;
+      }
+
+      const userId = wsTicket.userId;
+      if (wsTicket.projectId !== projectId) {
+        socket.close(4001, "Invalid ticket scope");
         return;
       }
 
