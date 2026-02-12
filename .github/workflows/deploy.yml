@@ -52,19 +52,37 @@ jobs:
 
             # Generate SQL diff in all modes (dry-run/checklist material)
             echo "Generating Prisma schema diff (dry-run)..."
-            pnpm --filter api exec prisma migrate diff \
-              --from-url "$DATABASE_URL" \
-              --to-schema-datamodel prisma/schema.prisma \
-              --script > /tmp/prisma-diff.sql
+            DIFF_FILE="/tmp/prisma-diff.sql"
+            DIFF_ERR_FILE="/tmp/prisma-diff.err"
+            : > "$DIFF_FILE"
+            : > "$DIFF_ERR_FILE"
 
-            if [ ! -s /tmp/prisma-diff.sql ]; then
-              echo "No Prisma schema diff detected."
+            if pnpm --filter api exec prisma migrate diff \
+              --from-url "$DATABASE_URL" \
+              --to-schema-datamodel /root/MDsystem/apps/api/prisma/schema.prisma \
+              --script > "$DIFF_FILE" 2> "$DIFF_ERR_FILE"; then
+              if [ ! -s "$DIFF_FILE" ]; then
+                echo "No Prisma schema diff detected."
+              else
+                echo "Prisma schema diff generated at $DIFF_FILE"
+              fi
             else
-              echo "Prisma schema diff generated at /tmp/prisma-diff.sql"
+              echo "WARNING: prisma migrate diff failed."
+              if [ -s "$DIFF_ERR_FILE" ]; then
+                sed 's/^/prisma-diff: /' "$DIFF_ERR_FILE" || true
+              fi
+              # Keep auto-apply mode strict: if we cannot diff, we cannot safely db push.
+              if [ "$ENABLE_PRISMA_DB_PUSH" = "true" ]; then
+                echo "ERROR: Cannot run prisma db push when schema diff fails."
+                exit 5
+              fi
+              # In manual DB mode we continue and rely on explicit SQL runbook steps.
+              echo "Continuing in manual DB mode because ENABLE_PRISMA_DB_PUSH is false."
+              : > "$DIFF_FILE"
             fi
 
             # Fail-fast if potentially destructive SQL is detected and override is not explicit.
-            if grep -Eiq 'DROP[[:space:]]+TABLE|DROP[[:space:]]+COLUMN|TRUNCATE[[:space:]]+TABLE|ALTER[[:space:]]+TABLE.*DROP[[:space:]]+CONSTRAINT' /tmp/prisma-diff.sql; then
+            if grep -Eiq 'DROP[[:space:]]+TABLE|DROP[[:space:]]+COLUMN|TRUNCATE[[:space:]]+TABLE|ALTER[[:space:]]+TABLE.*DROP[[:space:]]+CONSTRAINT' "$DIFF_FILE"; then
               echo "Potentially destructive schema changes detected in Prisma diff."
               if [ "$ALLOW_DESTRUCTIVE_DB_PUSH" != "true" ]; then
                 echo "ERROR: ALLOW_DESTRUCTIVE_DB_PUSH=true is required after manual review."
