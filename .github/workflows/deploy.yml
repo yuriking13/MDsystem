@@ -56,14 +56,13 @@ jobs:
             DIFF_ERR_FILE="/tmp/prisma-diff.err"
             rm -f "$DIFF_FILE" "$DIFF_ERR_FILE"
 
-            # Avoid shell-specific `set -e` behavior around conditional commands.
-            set +e
+            # Use `|| DIFF_EXIT=$?` pattern — `set +e` does NOT work with
+            # appleboy/ssh-action script_stop:true which overrides shell errexit.
+            DIFF_EXIT=0
             pnpm --filter api exec prisma migrate diff \
               --from-url "$DATABASE_URL" \
               --to-schema-datamodel /root/MDsystem/apps/api/prisma/schema.prisma \
-              --script > "$DIFF_FILE" 2> "$DIFF_ERR_FILE"
-            DIFF_EXIT=$?
-            set -e
+              --script > "$DIFF_FILE" 2> "$DIFF_ERR_FILE" || DIFF_EXIT=$?
 
             if [ "$DIFF_EXIT" -eq 0 ]; then
               if [ ! -s "$DIFF_FILE" ]; then
