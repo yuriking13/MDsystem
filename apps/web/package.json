@@ -11,7 +11,7 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "c8 --all --include=\"src/components/ArticleCard.tsx\" --include=\"src/components/ArticleAISidebar.tsx\" --include=\"src/lib/logger.ts\" --include=\"src/lib/exportWord.ts\" --exclude=\"src/**/*.test.{ts,tsx}\" --reporter=text --reporter=json --reporter=html --check-coverage --lines 10 --functions 10 --branches 10 --statements 10 vitest run"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -65,9 +65,8 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
-    "@vitest/coverage-istanbul": "^4.0.18",
     "autoprefixer": "^10.4.24",
-    "babel-plugin-istanbul": "^7.0.1",
+    "c8": "^10.1.3",
     "eslint": "^9.39.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.0.1",
