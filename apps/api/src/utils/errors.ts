@@ -13,7 +13,6 @@ import { ZodError } from "zod";
 import {
   AppError as TypedAppError,
   formatErrorResponse,
-  isOperationalError,
   ValidationError,
   NotFoundError,
   AuthenticationError,
@@ -50,8 +49,8 @@ export const Errors = {
  */
 function formatZodError(error: ZodError): string {
   return error.issues
-    .map(issue => `${issue.path.join('.')}: ${issue.message}`)
-    .join('; ');
+    .map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+    .join("; ");
 }
 
 /**
@@ -59,11 +58,7 @@ function formatZodError(error: ZodError): string {
  */
 export function setupErrorHandler(app: FastifyInstance) {
   app.setErrorHandler(
-    (
-      error: FastifyError,
-      request: FastifyRequest,
-      reply: FastifyReply,
-    ) => {
+    (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
       // Логируем ошибку с контекстом
       const logContext = {
         requestId: request.id,
@@ -84,18 +79,18 @@ export function setupErrorHandler(app: FastifyInstance) {
           { ...logContext, validationErrors: error.issues },
           "Validation error",
         );
-        
+
         const validationError = new ValidationError(
           formatZodError(error),
           error.issues,
         );
-        
+
         const response = formatErrorResponse(
           validationError,
           request.id,
           process.env.NODE_ENV !== "production",
         );
-        
+
         return reply.code(400).send(response);
       }
 
@@ -130,12 +125,12 @@ export function setupErrorHandler(app: FastifyInstance) {
 
       // Для неизвестных ошибок создаём InternalServerError
       const wrappedError =
-        statusCode >= 500
-          ? new InternalServerError(error.message)
-          : error;
+        statusCode >= 500 ? new InternalServerError(error.message) : error;
 
       const response = formatErrorResponse(
-        wrappedError instanceof Error ? wrappedError : new Error(String(wrappedError)),
+        wrappedError instanceof Error
+          ? wrappedError
+          : new Error(String(wrappedError)),
         request.id,
         process.env.NODE_ENV !== "production",
       );
@@ -176,16 +171,16 @@ export function logError(
   logger: { error: (obj: object, msg: string) => void },
   context: string,
   error: unknown,
-  additionalData?: Record<string, unknown>
+  additionalData?: Record<string, unknown>,
 ): void {
   const err = error instanceof Error ? error : new Error(String(error));
   logger.error(
-    { 
-      err, 
+    {
+      err,
       context,
-      ...additionalData 
-    }, 
-    `Error in ${context}: ${err.message}`
+      ...additionalData,
+    },
+    `Error in ${context}: ${err.message}`,
   );
 }
 
@@ -199,7 +194,7 @@ export async function safeAsync<T>(
     context: string;
     fallback?: T;
     rethrow?: boolean;
-  }
+  },
 ): Promise<T | undefined> {
   try {
     return await operation();

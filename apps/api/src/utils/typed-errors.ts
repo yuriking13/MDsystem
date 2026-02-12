@@ -5,7 +5,7 @@
 
 export class AppError extends Error {
   public readonly statusCode: number;
-  public readonly code: string;
+  public code: string;
   public readonly isOperational: boolean;
   public readonly details?: unknown;
 
@@ -177,7 +177,9 @@ export class ServiceUnavailableError extends AppError {
 
 export class CircuitBreakerOpenError extends ServiceUnavailableError {
   constructor(service: string) {
-    super(`Service '${service}' is temporarily unavailable (circuit breaker open)`);
+    super(
+      `Service '${service}' is temporarily unavailable (circuit breaker open)`,
+    );
     this.code = "CIRCUIT_BREAKER_OPEN";
   }
 }

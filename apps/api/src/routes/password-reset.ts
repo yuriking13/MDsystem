@@ -12,12 +12,7 @@ import { hashPassword } from "../lib/password.js";
 import { rateLimits } from "../plugins/rate-limit.js";
 import crypto from "crypto";
 import { createLogger } from "../utils/logger.js";
-import {
-  ValidationError,
-  NotFoundError,
-  RateLimitError,
-  InvalidTokenError,
-} from "../utils/typed-errors.js";
+import { ValidationError, InvalidTokenError } from "../utils/typed-errors.js";
 
 const log = createLogger("password-reset");
 
@@ -72,9 +67,7 @@ function validatePasswordStrength(password: string): {
     "qwerty123",
     "admin123",
   ];
-  if (
-    commonPasswords.some((weak) => password.toLowerCase().includes(weak))
-  ) {
+  if (commonPasswords.some((weak) => password.toLowerCase().includes(weak))) {
     return { valid: false, message: "Password is too common" };
   }
 
@@ -89,17 +82,14 @@ export async function passwordResetRoutes(app: FastifyInstance) {
   app.post(
     "/api/auth/forgot-password",
     { preHandler: [rateLimits.passwordReset] },
-    async (req, reply) => {
+    async (req, _reply) => {
       const schema = z.object({
         email: z.string().email("Invalid email format"),
       });
 
       const result = schema.safeParse(req.body);
       if (!result.success) {
-        throw new ValidationError(
-          "Invalid email",
-          result.error.issues,
-        );
+        throw new ValidationError("Invalid email", result.error.issues);
       }
 
       const { email } = result.data;
@@ -116,8 +106,7 @@ export async function passwordResetRoutes(app: FastifyInstance) {
         log.info("Password reset requested for non-existent email", { email });
         return {
           success: true,
-          message:
-            "If the email exists, a password reset link has been sent",
+          message: "If the email exists, a password reset link has been sent",
         };
       }
 
@@ -130,8 +119,7 @@ export async function passwordResetRoutes(app: FastifyInstance) {
         });
         return {
           success: true,
-          message:
-            "If the email exists, a password reset link has been sent",
+          message: "If the email exists, a password reset link has been sent",
         };
       }
 
@@ -180,8 +168,7 @@ export async function passwordResetRoutes(app: FastifyInstance) {
 
         return {
           success: true,
-          message:
-            "If the email exists, a password reset link has been sent",
+          message: "If the email exists, a password reset link has been sent",
         };
       } catch (err) {
         await client.query("ROLLBACK");
@@ -197,17 +184,14 @@ export async function passwordResetRoutes(app: FastifyInstance) {
    * POST /api/auth/verify-reset-token
    * Проверка валидности reset token (перед отображением формы)
    */
-  app.post("/api/auth/verify-reset-token", async (req, reply) => {
+  app.post("/api/auth/verify-reset-token", async (req, _reply) => {
     const schema = z.object({
       token: z.string().min(1, "Reset token is required"),
     });
 
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      throw new ValidationError(
-        "Invalid token",
-        result.error.issues,
-      );
+      throw new ValidationError("Invalid token", result.error.issues);
     }
 
     const { token } = result.data;
@@ -255,7 +239,7 @@ export async function passwordResetRoutes(app: FastifyInstance) {
   app.post(
     "/api/auth/reset-password",
     { preHandler: [rateLimits.passwordReset] },
-    async (req, reply) => {
+    async (req, _reply) => {
       const schema = z.object({
         token: z.string().min(1, "Reset token is required"),
         password: z.string().min(8, "Password must be at least 8 characters"),
@@ -263,10 +247,7 @@ export async function passwordResetRoutes(app: FastifyInstance) {
 
       const result = schema.safeParse(req.body);
       if (!result.success) {
-        throw new ValidationError(
-          "Invalid input",
-          result.error.issues,
-        );
+        throw new ValidationError("Invalid input", result.error.issues);
       }
 
       const { token, password } = result.data;
