@@ -218,6 +218,37 @@ export async function registerWebSocket(app: FastifyInstance) {
         return;
       }
 
+      // Require authentication for WebSocket connections
+      if (!userId) {
+        log.warn("WebSocket connection without auth token", { projectId });
+        socket.close(4001, "Authentication required");
+        return;
+      }
+
+      // Verify user has access to the project
+      try {
+        const { pool: pgPool } = await import("./pg.js");
+        const accessCheck = await pgPool.query(
+          `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
+          [projectId, userId],
+        );
+        if (accessCheck.rowCount === 0) {
+          log.warn("WebSocket access denied - not a project member", {
+            projectId,
+            userId,
+          });
+          socket.close(4003, "Access denied");
+          return;
+        }
+      } catch (err) {
+        log.error("WebSocket project access check failed", err, {
+          projectId,
+          userId,
+        });
+        socket.close(4003, "Access check failed");
+        return;
+      }
+
       // Сохраняем userId на сокете для фильтрации
       socket.__userId = userId;
       socket.__projectId = projectId;

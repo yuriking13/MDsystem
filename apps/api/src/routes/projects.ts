@@ -269,9 +269,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           `DELETE FROM boss.job WHERE data->>'projectId' = $1`,
           [projectId]
         );
-      } catch (err) {
-        // Игнорируем если boss схема не существует
-        console.log('[project-delete] Boss schema cleanup skipped:', err instanceof Error ? err.message : err);
+      } catch {
+        // Ignore if boss schema doesn't exist
       }
 
       // 3. Удаляем проект - всё остальное удалится каскадно через FK
