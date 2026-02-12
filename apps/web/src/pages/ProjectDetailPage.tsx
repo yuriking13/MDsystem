@@ -129,21 +129,29 @@ type Tab =
 
 // Helper function to generate HTML table from table data
 function generateTableHtml(tableData: TableData, title?: string): string {
+  const escapeHtml = (value: string): string =>
+    value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+
   let html = "";
   if (title) {
-    html += `<p><strong>${title}</strong></p>\n`;
+    html += `<p><strong>${escapeHtml(title)}</strong></p>\n`;
   }
   html +=
     '<table border="1" style="border-collapse: collapse; width: 100%;">\n';
   html += "<thead><tr>";
   for (const header of tableData.headers) {
-    html += `<th style="padding: 8px; background: #f5f5f5;">${header}</th>`;
+    html += `<th style="padding: 8px; background: #f5f5f5;">${escapeHtml(header)}</th>`;
   }
   html += "</tr></thead>\n<tbody>\n";
   for (const row of tableData.rows) {
     html += "<tr>";
     for (const cell of row) {
-      html += `<td style="padding: 8px;">${cell}</td>`;
+      html += `<td style="padding: 8px;">${escapeHtml(cell)}</td>`;
     }
     html += "</tr>\n";
   }

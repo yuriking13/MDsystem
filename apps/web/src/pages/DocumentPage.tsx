@@ -1035,13 +1035,21 @@ export default function DocumentPage() {
   // Build table HTML from statistic data (used to refresh document tables from Statistics)
   const buildTableHtmlFromStatistic = useCallback(
     (tableData: TableData, statisticId?: string | null) => {
+      const escapeHtml = (value: string): string =>
+        value
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+
       const cols = Math.max(
         tableData.headers?.length || 0,
         ...(tableData.rows || []).map((r) => r.length),
       );
       let html = '<table class="tiptap-table"';
       if (statisticId) {
-        html += ` data-statistic-id="${statisticId}"`;
+        html += ` data-statistic-id="${escapeHtml(statisticId)}"`;
       }
       html += ">";
 
@@ -1057,7 +1065,7 @@ export default function DocumentPage() {
       html += "<tr>";
       for (let c = 0; c < cols; c++) {
         const text = safeHeaders[c] ?? "";
-        html += `<th><p>${text}</p></th>`;
+        html += `<th><p>${escapeHtml(text)}</p></th>`;
       }
       html += "</tr>";
 
@@ -1065,7 +1073,7 @@ export default function DocumentPage() {
         html += "<tr>";
         for (let c = 0; c < cols; c++) {
           const text = row[c] ?? "";
-          html += `<td><p>${text}</p></td>`;
+          html += `<td><p>${escapeHtml(text)}</p></td>`;
         }
         html += "</tr>";
       });

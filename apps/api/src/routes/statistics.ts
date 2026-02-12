@@ -27,30 +27,85 @@ const StatIdSchemaAny = z.object({
   statId: z.string().min(1),
 });
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
+const JsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(JsonValueSchema),
+    z.record(JsonValueSchema),
+  ]),
+);
+
+const JsonObjectSchema = z.record(JsonValueSchema);
+
+const MAX_TABLE_COLUMNS = 100;
+const MAX_TABLE_ROWS = 2000;
+const MAX_TABLE_CELL_LENGTH = 4000;
+
+const TableCellSchema = z
+  .union([z.string(), z.number(), z.boolean(), z.null(), z.undefined()])
+  .transform((value) => (value == null ? "" : String(value)))
+  .pipe(z.string().max(MAX_TABLE_CELL_LENGTH));
+
+const TableDataSchema = z
+  .object({
+    headers: z.array(TableCellSchema).max(MAX_TABLE_COLUMNS),
+    rows: z
+      .array(z.array(TableCellSchema).max(MAX_TABLE_COLUMNS))
+      .max(MAX_TABLE_ROWS),
+  })
+  .strict();
+
 const CreateStatisticSchema = z.object({
-  type: z.enum(['chart', 'table']),
+  type: z.enum(["chart", "table"]),
   title: z.string().min(1).max(500),
   description: z.string().max(2000).optional(),
-  config: z.record(z.any()),
-  tableData: z.record(z.any()).optional(),
-  dataClassification: z.object({
-    variableType: z.enum(['quantitative', 'qualitative']),
-    subType: z.enum(['continuous', 'discrete', 'nominal', 'dichotomous', 'ordinal']),
-    isNormalDistribution: z.boolean().optional(),
-  }).optional(),
+  config: JsonObjectSchema,
+  tableData: TableDataSchema.optional(),
+  dataClassification: z
+    .object({
+      variableType: z.enum(["quantitative", "qualitative"]),
+      subType: z.enum([
+        "continuous",
+        "discrete",
+        "nominal",
+        "dichotomous",
+        "ordinal",
+      ]),
+      isNormalDistribution: z.boolean().optional(),
+    })
+    .optional(),
   chartType: z.string().max(50).optional(),
 });
 
 const UpdateStatisticSchema = z.object({
   title: z.string().min(1).max(500).optional(),
   description: z.string().max(2000).optional(),
-  config: z.record(z.any()).optional(),
-  tableData: z.record(z.any()).optional(),
-  dataClassification: z.object({
-    variableType: z.enum(['quantitative', 'qualitative']),
-    subType: z.enum(['continuous', 'discrete', 'nominal', 'dichotomous', 'ordinal']),
-    isNormalDistribution: z.boolean().optional(),
-  }).optional(),
+  config: JsonObjectSchema.optional(),
+  tableData: TableDataSchema.optional(),
+  dataClassification: z
+    .object({
+      variableType: z.enum(["quantitative", "qualitative"]),
+      subType: z.enum([
+        "continuous",
+        "discrete",
+        "nominal",
+        "dichotomous",
+        "ordinal",
+      ]),
+      isNormalDistribution: z.boolean().optional(),
+    })
+    .optional(),
   chartType: z.string().max(50).optional(),
   orderIndex: z.number().optional(),
   version: z.number().optional(), // Optimistic locking - клиент отправляет версию для проверки
@@ -64,19 +119,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = getUserId(request);
       const parsed = ProjectIdSchema.safeParse(request.params);
-      
+
       if (!parsed.success) {
-        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "Invalid project ID" });
       }
 
       // Check access
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [parsed.data.id, userId]
+        [parsed.data.id, userId],
       );
 
       if (access.rowCount === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Project not found" });
       }
 
       // Try cache first
@@ -94,16 +153,16 @@ const plugin: FastifyPluginAsync = async (fastify) => {
          FROM project_statistics
          WHERE project_id = $1
          ORDER BY order_index, created_at DESC`,
-        [parsed.data.id]
+        [parsed.data.id],
       );
 
       const result = { statistics: res.rows };
-      
+
       // Cache the result
       await cacheSet(cacheKey, result, TTL.SHORT);
 
       return result;
-    }
+    },
   );
 
   // GET /api/projects/:id/statistics/:statId - get single statistic
@@ -115,13 +174,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const parsed = StatIdSchema.safeParse(request.params);
 
       if (!parsed.success) {
-        return reply.code(400).send({ error: "BadRequest", message: "Invalid IDs" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "Invalid IDs" });
       }
 
       // Check access
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [parsed.data.id, userId]
+        [parsed.data.id, userId],
       );
 
       if (access.rows.length === 0) {
@@ -132,15 +193,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const res = await pool.query(
         `SELECT * FROM project_statistics 
          WHERE id = $1 AND project_id = $2`,
-        [parsed.data.statId, parsed.data.id]
+        [parsed.data.statId, parsed.data.id],
       );
 
       if (res.rows.length === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Statistic not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Statistic not found" });
       }
 
       return { statistic: res.rows[0] };
-    }
+    },
   );
 
   // POST /api/projects/:id/statistics - create statistic item
@@ -150,32 +213,48 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = getUserId(request);
       const paramsP = ProjectIdSchema.safeParse(request.params);
-      
+
       if (!paramsP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "Invalid project ID" });
       }
 
       const bodyP = CreateStatisticSchema.safeParse(request.body);
       if (!bodyP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: bodyP.error.message });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: bodyP.error.message });
       }
 
       // Check edit access
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [paramsP.data.id, userId]
+        [paramsP.data.id, userId],
       );
 
       if (access.rowCount === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Project not found" });
       }
 
       const role = access.rows[0].role;
       if (role !== "owner" && role !== "editor") {
-        return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
+        return reply
+          .code(403)
+          .send({ error: "Forbidden", message: "No edit access" });
       }
 
-      const { type, title, description, config, tableData, dataClassification, chartType } = bodyP.data;
+      const {
+        type,
+        title,
+        description,
+        config,
+        tableData,
+        dataClassification,
+        chartType,
+      } = bodyP.data;
 
       const res = await pool.query(
         `INSERT INTO project_statistics 
@@ -193,8 +272,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           tableData ? JSON.stringify(tableData) : null,
           dataClassification ? JSON.stringify(dataClassification) : null,
           chartType || null,
-          userId
-        ]
+          userId,
+        ],
       );
 
       // WebSocket: уведомляем о создании
@@ -204,7 +283,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       await invalidateStatistics(paramsP.data.id);
 
       return { statistic: res.rows[0] };
-    }
+    },
   );
 
   // PATCH /api/projects/:id/statistics/:statId - update statistic item
@@ -215,29 +294,37 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = getUserId(request);
       const paramsP = StatIdSchema.safeParse(request.params);
-      
+
       if (!paramsP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: "Invalid params" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "Invalid params" });
       }
 
       const bodyP = UpdateStatisticSchema.safeParse(request.body);
       if (!bodyP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: bodyP.error.message });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: bodyP.error.message });
       }
 
       // Check edit access
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [paramsP.data.id, userId]
+        [paramsP.data.id, userId],
       );
 
       if (access.rowCount === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Project not found" });
       }
 
       const role = access.rows[0].role;
       if (role !== "owner" && role !== "editor") {
-        return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
+        return reply
+          .code(403)
+          .send({ error: "Forbidden", message: "No edit access" });
       }
 
       const updates: string[] = [];
@@ -274,7 +361,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       if (updates.length === 0) {
-        return reply.code(400).send({ error: "BadRequest", message: "No fields to update" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "No fields to update" });
       }
 
       // Увеличиваем версию при каждом обновлении
@@ -299,7 +388,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
          RETURNING id, type, title, description, config, table_data, 
                    data_classification, chart_type, order_index, created_at, updated_at,
                    COALESCE(version, 1) as version`,
-        values
+        values,
       );
 
       if (res.rowCount === 0) {
@@ -308,23 +397,28 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           const exists = await pool.query(
             `SELECT COALESCE(version, 1) as version FROM project_statistics 
              WHERE id = $1 AND project_id = $2`,
-            [paramsP.data.statId, paramsP.data.id]
+            [paramsP.data.statId, paramsP.data.id],
           );
-          
+
           if (exists.rowCount === 0) {
-            return reply.code(404).send({ error: "NotFound", message: "Statistic not found" });
+            return reply
+              .code(404)
+              .send({ error: "NotFound", message: "Statistic not found" });
           }
-          
+
           // Запись есть, но версия другая — конфликт
-          return reply.code(409).send({ 
-            error: "VersionConflict", 
-            message: "Данные были изменены другим пользователем. Обновите страницу.",
+          return reply.code(409).send({
+            error: "VersionConflict",
+            message:
+              "Данные были изменены другим пользователем. Обновите страницу.",
             currentVersion: exists.rows[0].version,
             yourVersion: clientVersion,
           });
         }
-        
-        return reply.code(404).send({ error: "NotFound", message: "Statistic not found" });
+
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Statistic not found" });
       }
 
       // WebSocket: уведомляем об обновлении
@@ -334,7 +428,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       await invalidateStatistic(paramsP.data.id, paramsP.data.statId);
 
       return { statistic: res.rows[0] };
-    }
+    },
   );
 
   // DELETE /api/projects/:id/statistics/:statId - delete statistic item
@@ -346,45 +440,53 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const userId = getUserId(request);
       // Используем StatIdSchemaAny чтобы можно было удалять записи с любым ID (включая поврежденные)
       const paramsP = StatIdSchemaAny.safeParse(request.params);
-      
+
       if (!paramsP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: "Invalid params" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "Invalid params" });
       }
 
       // Check edit access
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [paramsP.data.id, userId]
+        [paramsP.data.id, userId],
       );
 
       if (access.rowCount === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Project not found" });
       }
 
       const role = access.rows[0].role;
       if (role !== "owner" && role !== "editor") {
-        return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
+        return reply
+          .code(403)
+          .send({ error: "Forbidden", message: "No edit access" });
       }
 
       // Проверяем, используется ли статистика в документах
       const usageCheck = await pool.query(
         `SELECT used_in_documents FROM project_statistics 
          WHERE id = $1 AND project_id = $2`,
-        [paramsP.data.statId, paramsP.data.id]
+        [paramsP.data.statId, paramsP.data.id],
       );
 
       if (usageCheck.rowCount === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Statistic not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Statistic not found" });
       }
 
       const usedInDocs = usageCheck.rows[0].used_in_documents || [];
-      
+
       // Проверяем force флаг в query параметрах
-      const force = (request.query as any)?.force === 'true';
-      
+      const force = (request.query as any)?.force === "true";
+
       if (usedInDocs.length > 0 && !force) {
-        return reply.code(409).send({ 
-          error: "Conflict", 
+        return reply.code(409).send({
+          error: "Conflict",
           message: `Статистика используется в ${usedInDocs.length} документе(ах). Удалите её из документов или используйте force=true`,
           usedInDocuments: usedInDocs,
         });
@@ -392,7 +494,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       await pool.query(
         `DELETE FROM project_statistics WHERE id = $1 AND project_id = $2`,
-        [paramsP.data.statId, paramsP.data.id]
+        [paramsP.data.statId, paramsP.data.id],
       );
 
       // WebSocket: уведомляем об удалении
@@ -402,7 +504,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       await invalidateStatistics(paramsP.data.id);
 
       return { ok: true };
-    }
+    },
   );
 
   // POST /api/projects/:id/statistics/:statId/use - mark statistic as used in document
@@ -412,9 +514,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = getUserId(request);
       const paramsP = StatIdSchema.safeParse(request.params);
-      
+
       if (!paramsP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: "Invalid params" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "Invalid params" });
       }
 
       const bodySchema = z.object({
@@ -423,17 +527,21 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const bodyP = bodySchema.safeParse(request.body);
       if (!bodyP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: bodyP.error.message });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: bodyP.error.message });
       }
 
       // Check access
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [paramsP.data.id, userId]
+        [paramsP.data.id, userId],
       );
 
       if (access.rowCount === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Project not found" });
       }
 
       await pool.query(
@@ -444,11 +552,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
          )
          WHERE id = $2 AND project_id = $3
          AND NOT ($1::text = ANY(COALESCE(used_in_documents, ARRAY[]::text[])))`,
-        [bodyP.data.documentId, paramsP.data.statId, paramsP.data.id]
+        [bodyP.data.documentId, paramsP.data.statId, paramsP.data.id],
       );
 
       return { ok: true };
-    }
+    },
   );
 
   // DELETE /api/projects/:id/statistics/:statId/use - remove document link from statistic
@@ -458,9 +566,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = getUserId(request);
       const paramsP = StatIdSchema.safeParse(request.params);
-      
+
       if (!paramsP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: "Invalid params" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "Invalid params" });
       }
 
       const bodySchema = z.object({
@@ -469,17 +579,21 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const bodyP = bodySchema.safeParse(request.body);
       if (!bodyP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: bodyP.error.message });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: bodyP.error.message });
       }
 
       // Check access
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [paramsP.data.id, userId]
+        [paramsP.data.id, userId],
       );
 
       if (access.rowCount === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Project not found" });
       }
 
       await pool.query(
@@ -489,11 +603,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
            $1::text
          )
          WHERE id = $2 AND project_id = $3`,
-        [bodyP.data.documentId, paramsP.data.statId, paramsP.data.id]
+        [bodyP.data.documentId, paramsP.data.statId, paramsP.data.id],
       );
 
       return { ok: true };
-    }
+    },
   );
 
   // POST /api/projects/:id/statistics/sync - sync statistics from document content
@@ -504,54 +618,73 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = getUserId(request);
       const paramsP = ProjectIdSchema.safeParse(request.params);
-      
+
       if (!paramsP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "Invalid project ID" });
       }
 
       const bodySchema = z.object({
         documentId: z.string().uuid(),
-        tables: z.array(z.object({
-          id: z.string(),
-          title: z.string().optional(),
-          tableData: z.record(z.any()),
-        })),
-        charts: z.array(z.object({
-          id: z.string(),
-          title: z.string().optional(),
-          config: z.record(z.any()),
-          tableData: z.record(z.any()).optional(),
-        })),
+        tables: z
+          .array(
+            z.object({
+              id: z.string(),
+              title: z.string().optional(),
+              tableData: TableDataSchema,
+            }),
+          )
+          .max(500),
+        charts: z
+          .array(
+            z.object({
+              id: z.string(),
+              title: z.string().optional(),
+              config: JsonObjectSchema,
+              tableData: TableDataSchema.optional(),
+            }),
+          )
+          .max(500),
       });
 
       const bodyP = bodySchema.safeParse(request.body);
       if (!bodyP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: bodyP.error.message });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: bodyP.error.message });
       }
 
       // Check edit access
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [paramsP.data.id, userId]
+        [paramsP.data.id, userId],
       );
 
       if (access.rowCount === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Project not found" });
       }
 
       const role = access.rows[0].role;
       if (role !== "owner" && role !== "editor") {
-        return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
+        return reply
+          .code(403)
+          .send({ error: "Forbidden", message: "No edit access" });
       }
 
       const { documentId, tables, charts } = bodyP.data;
-      const allItemIds = [...tables.map(t => t.id), ...charts.map(c => c.id)];
+      const allItemIds = [
+        ...tables.map((t) => t.id),
+        ...charts.map((c) => c.id),
+      ];
 
       // Get existing statistics linked to this document
       const existingRes = await pool.query(
         `SELECT id FROM project_statistics 
          WHERE project_id = $1 AND $2 = ANY(COALESCE(used_in_documents, ARRAY[]::text[]))`,
-        [paramsP.data.id, documentId]
+        [paramsP.data.id, documentId],
       );
       const existingIds = new Set(existingRes.rows.map((r: any) => r.id));
 
@@ -565,7 +698,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                $1::text
              )
              WHERE id = $2 AND project_id = $3`,
-            [documentId, existingId, paramsP.data.id]
+            [documentId, existingId, paramsP.data.id],
           );
         }
       }
@@ -577,7 +710,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         // Check if statistic with this ID already exists
         const existsRes = await pool.query(
           `SELECT id FROM project_statistics WHERE id = $1 AND project_id = $2`,
-          [table.id, paramsP.data.id]
+          [table.id, paramsP.data.id],
         );
 
         if (existsRes.rowCount === 0) {
@@ -590,12 +723,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             [
               table.id,
               paramsP.data.id,
-              table.title || 'Таблица из документа',
+              table.title || "Таблица из документа",
               JSON.stringify(table.tableData),
               JSON.stringify({}),
               documentId,
-              userId
-            ]
+              userId,
+            ],
           );
           createdStats.push(insertRes.rows[0]);
         } else {
@@ -608,7 +741,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
              )
              WHERE id = $2 AND project_id = $3
              AND NOT ($1::text = ANY(COALESCE(used_in_documents, ARRAY[]::text[])))`,
-            [documentId, table.id, paramsP.data.id]
+            [documentId, table.id, paramsP.data.id],
           );
         }
       }
@@ -617,7 +750,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       for (const chart of charts) {
         const existsRes = await pool.query(
           `SELECT id FROM project_statistics WHERE id = $1 AND project_id = $2`,
-          [chart.id, paramsP.data.id]
+          [chart.id, paramsP.data.id],
         );
 
         if (existsRes.rowCount === 0) {
@@ -630,12 +763,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             [
               chart.id,
               paramsP.data.id,
-              chart.title || 'График из документа',
+              chart.title || "График из документа",
               JSON.stringify(chart.config),
               chart.tableData ? JSON.stringify(chart.tableData) : null,
               documentId,
-              userId
-            ]
+              userId,
+            ],
           );
           createdStats.push(insertRes.rows[0]);
         } else {
@@ -648,17 +781,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
              )
              WHERE id = $2 AND project_id = $3
              AND NOT ($1::text = ANY(COALESCE(used_in_documents, ARRAY[]::text[])))`,
-            [documentId, chart.id, paramsP.data.id]
+            [documentId, chart.id, paramsP.data.id],
           );
         }
       }
 
-      return { 
+      return {
         ok: true,
         created: createdStats.length,
-        statistics: createdStats
+        statistics: createdStats,
       };
-    }
+    },
   );
 
   // POST /api/projects/:id/statistics/cleanup - удалить "битые" статистики без данных
@@ -668,24 +801,30 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     async (request, reply) => {
       const userId = getUserId(request);
       const paramsP = ProjectIdSchema.safeParse(request.params);
-      
+
       if (!paramsP.success) {
-        return reply.code(400).send({ error: "BadRequest", message: "Invalid project ID" });
+        return reply
+          .code(400)
+          .send({ error: "BadRequest", message: "Invalid project ID" });
       }
 
       // Check edit access
       const access = await pool.query(
         `SELECT role FROM project_members WHERE project_id = $1 AND user_id = $2`,
-        [paramsP.data.id, userId]
+        [paramsP.data.id, userId],
       );
 
       if (access.rowCount === 0) {
-        return reply.code(404).send({ error: "NotFound", message: "Project not found" });
+        return reply
+          .code(404)
+          .send({ error: "NotFound", message: "Project not found" });
       }
 
       const role = access.rows[0].role;
       if (role !== "owner" && role !== "editor") {
-        return reply.code(403).send({ error: "Forbidden", message: "No edit access" });
+        return reply
+          .code(403)
+          .send({ error: "Forbidden", message: "No edit access" });
       }
 
       // Удаляем статистики без данных или с пустыми данными
@@ -703,15 +842,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
            )
          )
          RETURNING id, title`,
-        [paramsP.data.id]
+        [paramsP.data.id],
       );
 
-      return { 
+      return {
         ok: true,
         deleted: deleteRes.rowCount || 0,
-        deletedItems: deleteRes.rows
+        deletedItems: deleteRes.rows,
       };
-    }
+    },
   );
 };
 
