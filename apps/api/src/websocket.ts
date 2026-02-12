@@ -238,40 +238,36 @@ export async function registerWebSocket(app: FastifyInstance) {
   await app.register(websocketPlugin);
 
   // Выдача короткоживущего ticket для безопасного WS-подключения
-  app.post(
-    "/api/ws-ticket",
-    { preHandler: [app.auth] },
-    async (req: FastifyRequest<{ Body: { projectId?: string } }>, reply) => {
-      const parsed = z
-        .object({
-          projectId: z.string().uuid(),
-        })
-        .safeParse(req.body);
+  app.post("/api/ws-ticket", { preHandler: [app.auth] }, async (req, reply) => {
+    const parsed = z
+      .object({
+        projectId: z.string().uuid(),
+      })
+      .safeParse(req.body);
 
-      if (!parsed.success) {
-        return reply.code(400).send({
-          error: "BadRequest",
-          message: "Invalid projectId",
-        });
-      }
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: "BadRequest",
+        message: "Invalid projectId",
+      });
+    }
 
-      const userId = req.user.sub;
-      const { projectId } = parsed.data;
-      const access = await checkProjectAccessPool(projectId, userId);
-      if (!access.ok) {
-        return reply.code(404).send({
-          error: "NotFound",
-          message: "Project not found",
-        });
-      }
+    const userId = req.user.sub;
+    const { projectId } = parsed.data;
+    const access = await checkProjectAccessPool(projectId, userId);
+    if (!access.ok) {
+      return reply.code(404).send({
+        error: "NotFound",
+        message: "Project not found",
+      });
+    }
 
-      const ticket = issueWsTicket(userId, projectId);
-      return {
-        ticket,
-        expiresInMs: WS_TICKET_TTL_MS,
-      };
-    },
-  );
+    const ticket = issueWsTicket(userId, projectId);
+    return {
+      ticket,
+      expiresInMs: WS_TICKET_TTL_MS,
+    };
+  });
 
   // WebSocket endpoint для подписки на проект
   app.get(
