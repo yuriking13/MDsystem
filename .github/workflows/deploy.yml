@@ -54,20 +54,25 @@ jobs:
             echo "Generating Prisma schema diff (dry-run)..."
             DIFF_FILE="/tmp/prisma-diff.sql"
             DIFF_ERR_FILE="/tmp/prisma-diff.err"
-            : > "$DIFF_FILE"
-            : > "$DIFF_ERR_FILE"
+            rm -f "$DIFF_FILE" "$DIFF_ERR_FILE"
 
-            if pnpm --filter api exec prisma migrate diff \
+            # Avoid shell-specific `set -e` behavior around conditional commands.
+            set +e
+            pnpm --filter api exec prisma migrate diff \
               --from-url "$DATABASE_URL" \
               --to-schema-datamodel /root/MDsystem/apps/api/prisma/schema.prisma \
-              --script > "$DIFF_FILE" 2> "$DIFF_ERR_FILE"; then
+              --script > "$DIFF_FILE" 2> "$DIFF_ERR_FILE"
+            DIFF_EXIT=$?
+            set -e
+
+            if [ "$DIFF_EXIT" -eq 0 ]; then
               if [ ! -s "$DIFF_FILE" ]; then
                 echo "No Prisma schema diff detected."
               else
                 echo "Prisma schema diff generated at $DIFF_FILE"
               fi
             else
-              echo "WARNING: prisma migrate diff failed."
+              echo "WARNING: prisma migrate diff failed with exit code $DIFF_EXIT."
               if [ -s "$DIFF_ERR_FILE" ]; then
                 sed 's/^/prisma-diff: /' "$DIFF_ERR_FILE" || true
               fi
