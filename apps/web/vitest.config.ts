@@ -12,13 +12,24 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
-      include: ["src/**/*.{ts,tsx}"],
+      include: [
+        "src/components/ArticleCard.tsx",
+        "src/components/ArticleAISidebar.tsx",
+        "src/lib/logger.ts",
+        "src/lib/exportWord.ts",
+      ],
       exclude: [
         "src/**/*.test.{ts,tsx}",
         "src/**/*.d.ts",
         "src/main.tsx",
         "src/vite-env.d.ts",
       ],
+      thresholds: {
+        lines: 10,
+        statements: 10,
+        functions: 10,
+        branches: 10,
+      },
     },
     testTimeout: 10000,
   },

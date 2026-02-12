@@ -40,8 +40,8 @@ export type CitationStyleConfig = {
   marginBottom: number;
   marginLeft: number;
   marginRight: number;
-  textAlign: 'left' | 'center' | 'right' | 'justify';
-  pageNumberPosition: 'center-top' | 'right-top' | 'center-bottom';
+  textAlign: "left" | "center" | "right" | "justify";
+  pageNumberPosition: "center-top" | "right-top" | "center-bottom";
 };
 
 const STYLE_CONFIGS: Record<string, CitationStyleConfig> = {
@@ -53,8 +53,8 @@ const STYLE_CONFIGS: Record<string, CitationStyleConfig> = {
     marginBottom: 20,
     marginLeft: 25,
     marginRight: 10,
-    textAlign: 'justify',
-    pageNumberPosition: 'center-top',
+    textAlign: "justify",
+    pageNumberPosition: "center-top",
   },
   vancouver: {
     fontSize: 12,
@@ -64,8 +64,8 @@ const STYLE_CONFIGS: Record<string, CitationStyleConfig> = {
     marginBottom: 25,
     marginLeft: 25,
     marginRight: 25,
-    textAlign: 'left',
-    pageNumberPosition: 'right-top',
+    textAlign: "left",
+    pageNumberPosition: "right-top",
   },
   apa: {
     fontSize: 12,
@@ -75,8 +75,8 @@ const STYLE_CONFIGS: Record<string, CitationStyleConfig> = {
     marginBottom: 25.4,
     marginLeft: 25.4,
     marginRight: 25.4,
-    textAlign: 'left',
-    pageNumberPosition: 'right-top',
+    textAlign: "left",
+    pageNumberPosition: "right-top",
   },
 };
 
@@ -91,34 +91,46 @@ function cmToTwip(cm: number): number {
 /**
  * Конвертировать HTML таблицу в docx Table
  */
-function htmlTableToDocxTable(tableEl: Element, styleConfig: CitationStyleConfig): Table {
+function htmlTableToDocxTable(
+  tableEl: Element,
+  styleConfig: CitationStyleConfig,
+): Table {
   const rows: TableRow[] = [];
-  const tableRows = tableEl.querySelectorAll('tr');
-  
+  const tableRows = tableEl.querySelectorAll("tr");
+
   // Определяем количество колонок
   let maxCols = 0;
-  tableRows.forEach(row => {
+  tableRows.forEach((row) => {
     let colCount = 0;
-    row.querySelectorAll('th, td').forEach(cell => {
-      const colspan = parseInt((cell as HTMLElement).getAttribute('colspan') || '1', 10);
+    row.querySelectorAll("th, td").forEach((cell) => {
+      const colspan = parseInt(
+        (cell as HTMLElement).getAttribute("colspan") || "1",
+        10,
+      );
       colCount += colspan;
     });
     maxCols = Math.max(maxCols, colCount);
   });
-  
+
   if (maxCols === 0) maxCols = 1;
   const colWidth = Math.floor(9000 / maxCols); // Примерная ширина в twips
-  
+
   tableRows.forEach((row, rowIdx) => {
     const cells: TableCell[] = [];
-    const cellElements = row.querySelectorAll('th, td');
-    
-    cellElements.forEach(cellEl => {
-      const isHeader = cellEl.tagName.toLowerCase() === 'th';
-      const colspan = parseInt((cellEl as HTMLElement).getAttribute('colspan') || '1', 10);
-      const rowspan = parseInt((cellEl as HTMLElement).getAttribute('rowspan') || '1', 10);
-      const text = cellEl.textContent || '';
-      
+    const cellElements = row.querySelectorAll("th, td");
+
+    cellElements.forEach((cellEl) => {
+      const isHeader = cellEl.tagName.toLowerCase() === "th";
+      const colspan = parseInt(
+        (cellEl as HTMLElement).getAttribute("colspan") || "1",
+        10,
+      );
+      const rowspan = parseInt(
+        (cellEl as HTMLElement).getAttribute("rowspan") || "1",
+        10,
+      );
+      const text = cellEl.textContent || "";
+
       const cellChildren: Paragraph[] = [
         new Paragraph({
           children: [
@@ -131,25 +143,25 @@ function htmlTableToDocxTable(tableEl: Element, styleConfig: CitationStyleConfig
           alignment: AlignmentType.LEFT,
         }),
       ];
-      
+
       cells.push(
         new TableCell({
           children: cellChildren,
           width: { size: colWidth * colspan, type: WidthType.DXA },
           columnSpan: colspan > 1 ? colspan : undefined,
           rowSpan: rowspan > 1 ? rowspan : undefined,
-          shading: isHeader ? { fill: 'f3f4f6' } : undefined,
+          shading: isHeader ? { fill: "f3f4f6" } : undefined,
           verticalAlign: VerticalAlign.CENTER,
           borders: {
-            top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-            bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-            left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-            right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+            top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
           },
-        })
+        }),
       );
     });
-    
+
     // Добавляем пустые ячейки если нужно
     while (cells.length < maxCols) {
       cells.push(
@@ -157,18 +169,18 @@ function htmlTableToDocxTable(tableEl: Element, styleConfig: CitationStyleConfig
           children: [new Paragraph({ children: [] })],
           width: { size: colWidth, type: WidthType.DXA },
           borders: {
-            top: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-            bottom: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-            left: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
-            right: { style: BorderStyle.SINGLE, size: 1, color: '000000' },
+            top: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            bottom: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            left: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
+            right: { style: BorderStyle.SINGLE, size: 1, color: "000000" },
           },
-        })
+        }),
       );
     }
-    
+
     rows.push(new TableRow({ children: cells }));
   });
-  
+
   return new Table({
     rows,
     width: { size: 100, type: WidthType.PERCENTAGE },
@@ -178,28 +190,32 @@ function htmlTableToDocxTable(tableEl: Element, styleConfig: CitationStyleConfig
 /**
  * Конвертировать data URL в буфер для изображения
  */
-function dataUrlToBuffer(dataUrl: string): { buffer: Buffer | Uint8Array; type: 'png' | 'jpg' | 'gif' | 'bmp' } | null {
+function dataUrlToBuffer(
+  dataUrl: string,
+): { buffer: Buffer | Uint8Array; type: "png" | "jpg" | "gif" | "bmp" } | null {
   try {
-    const matches = dataUrl.match(/^data:image\/(png|jpeg|jpg|gif|webp|bmp);base64,(.+)$/);
+    const matches = dataUrl.match(
+      /^data:image\/(png|jpeg|jpg|gif|webp|bmp);base64,(.+)$/,
+    );
     if (!matches) return null;
-    
+
     let type = matches[1];
     // Normalize jpeg to jpg for docx library compatibility
-    if (type === 'jpeg') type = 'jpg';
+    if (type === "jpeg") type = "jpg";
     // webp is not supported, skip
-    if (type === 'webp') return null;
-    
+    if (type === "webp") return null;
+
     const base64 = matches[2];
     const binaryString = atob(base64);
     const bytes = new Uint8Array(binaryString.length);
-    
+
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    
-    return { buffer: bytes, type: type as 'png' | 'jpg' | 'gif' | 'bmp' };
+
+    return { buffer: bytes, type: type as "png" | "jpg" | "gif" | "bmp" };
   } catch (e) {
-    console.error('Error converting data URL to buffer:', e);
+    console.error("Error converting data URL to buffer:", e);
     return null;
   }
 }
@@ -208,22 +224,23 @@ function dataUrlToBuffer(dataUrl: string): { buffer: Buffer | Uint8Array; type: 
 function calculateBoxplotStats(values: number[]) {
   const sorted = [...values].sort((a, b) => a - b);
   const n = sorted.length;
-  
+
   const min = sorted[0];
   const max = sorted[n - 1];
-  const median = n % 2 === 0 
-    ? (sorted[n/2 - 1] + sorted[n/2]) / 2 
-    : sorted[Math.floor(n/2)];
-  
+  const median =
+    n % 2 === 0
+      ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2
+      : sorted[Math.floor(n / 2)];
+
   const q1Index = Math.floor(n / 4);
-  const q3Index = Math.floor(3 * n / 4);
+  const q3Index = Math.floor((3 * n) / 4);
   const q1 = sorted[q1Index];
   const q3 = sorted[q3Index];
   const iqr = q3 - q1;
-  
+
   const lowerWhisker = Math.max(min, q1 - 1.5 * iqr);
   const upperWhisker = Math.min(max, q3 + 1.5 * iqr);
-  
+
   return { min: lowerWhisker, q1, median, q3, max: upperWhisker };
 }
 
@@ -231,150 +248,186 @@ function calculateBoxplotStats(values: number[]) {
  * Рендерить график используя Chart.js в офф-скрин canvas
  */
 async function renderChartFromData(
-  tableData: any, 
+  tableData: any,
   config: any,
   width = 600,
-  height = 400
+  height = 400,
 ): Promise<string | null> {
-  if (typeof window === 'undefined' || !tableData || !config) {
-    console.log('[renderChartFromData] Skipping: no window or data', { hasWindow: typeof window !== 'undefined', hasTableData: !!tableData, hasConfig: !!config });
+  if (typeof window === "undefined" || !tableData || !config) {
+    console.log("[renderChartFromData] Skipping: no window or data", {
+      hasWindow: typeof window !== "undefined",
+      hasTableData: !!tableData,
+      hasConfig: !!config,
+    });
     return null;
   }
-  
+
   try {
-    console.log('[renderChartFromData] Starting chart render', { type: config.type, title: config.title });
-    
+    console.log("[renderChartFromData] Starting chart render", {
+      type: config.type,
+      title: config.title,
+    });
+
     // Динамически импортируем Chart.js
-    const { Chart, registerables } = await import('chart.js');
+    const { Chart, registerables } = await import("chart.js");
     Chart.register(...registerables);
-    
+
     // Для boxplot пытаемся загрузить плагин
-    if (config.type === 'boxplot') {
+    if (config.type === "boxplot") {
       try {
-        const boxplotPlugin = await import('@sgratzl/chartjs-chart-boxplot');
-        Chart.register(boxplotPlugin.BoxPlotController, boxplotPlugin.BoxAndWiskers);
+        const boxplotPlugin = await import("@sgratzl/chartjs-chart-boxplot");
+        Chart.register(
+          boxplotPlugin.BoxPlotController,
+          boxplotPlugin.BoxAndWiskers,
+        );
       } catch (e) {
-        console.warn('[renderChartFromData] Boxplot plugin not available, using fallback');
+        console.warn(
+          "[renderChartFromData] Boxplot plugin not available, using fallback",
+        );
       }
     }
-    
+
     // Создаём офф-скрин canvas
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     // Используем visibility:hidden вместо display:none для корректного рендеринга
-    canvas.style.position = 'absolute';
-    canvas.style.left = '-9999px';
-    canvas.style.top = '-9999px';
-    canvas.style.visibility = 'hidden';
+    canvas.style.position = "absolute";
+    canvas.style.left = "-9999px";
+    canvas.style.top = "-9999px";
+    canvas.style.visibility = "hidden";
     document.body.appendChild(canvas);
-    
-    const ctx = canvas.getContext('2d');
+
+    const ctx = canvas.getContext("2d");
     if (!ctx) {
-      console.error('[renderChartFromData] Failed to get 2d context');
+      console.error("[renderChartFromData] Failed to get 2d context");
       document.body.removeChild(canvas);
       return null;
     }
-    
+
     // Подготовка данных для Chart.js
-    let chartType = config.type || 'bar';
+    let chartType = config.type || "bar";
     const colors = config.colors || [
-      'rgba(75, 116, 255, 0.8)',
-      'rgba(74, 222, 128, 0.8)',
-      'rgba(255, 107, 107, 0.8)',
-      'rgba(251, 191, 36, 0.8)',
-      'rgba(168, 85, 247, 0.8)',
+      "rgba(75, 116, 255, 0.8)",
+      "rgba(74, 222, 128, 0.8)",
+      "rgba(255, 107, 107, 0.8)",
+      "rgba(251, 191, 36, 0.8)",
+      "rgba(168, 85, 247, 0.8)",
     ];
-    
+
     // Извлекаем данные из tableData
     const headers = tableData.headers || [];
     const rows = tableData.rows || [];
-    
-    console.log('[renderChartFromData] Data:', { headers, rowCount: rows.length });
-    
+
+    console.log("[renderChartFromData] Data:", {
+      headers,
+      rowCount: rows.length,
+    });
+
     if (rows.length === 0) {
-      console.warn('[renderChartFromData] No rows in table data');
+      console.warn("[renderChartFromData] No rows in table data");
       document.body.removeChild(canvas);
       return null;
     }
-    
+
     const labelColumn = config.labelColumn ?? 0;
     const dataColumns = config.dataColumns || [1];
-    
+
     let chartData: any;
     let chartConfig: any;
-    
+
     // Специальная обработка для boxplot
-    if (chartType === 'boxplot') {
-      const validDataColumns = dataColumns.filter((colIdx: number) => colIdx >= 0 && colIdx < headers.length);
-      
+    if (chartType === "boxplot") {
+      const validDataColumns = dataColumns.filter(
+        (colIdx: number) => colIdx >= 0 && colIdx < headers.length,
+      );
+
       // Собираем данные для boxplot
       const datasets = validDataColumns.map((colIdx: number, i: number) => {
         const values = rows
           .map((row: string[]) => {
-            const val = String(row[colIdx] || '').replace(/[,\s]/g, '');
+            const val = String(row[colIdx] || "").replace(/[,\s]/g, "");
             return parseFloat(val);
           })
           .filter((v: number) => !isNaN(v));
-        
+
         return {
           label: headers[colIdx] || `Данные ${i + 1}`,
           data: [values], // boxplot expects array of arrays
           backgroundColor: colors[i % colors.length],
-          borderColor: 'rgba(255, 255, 255, 0.5)',
+          borderColor: "rgba(255, 255, 255, 0.5)",
           borderWidth: 1,
         };
       });
-      
+
       chartData = {
-        labels: validDataColumns.map((i: number) => headers[i] || `Колонка ${i + 1}`),
+        labels: validDataColumns.map(
+          (i: number) => headers[i] || `Колонка ${i + 1}`,
+        ),
         datasets,
       };
-      
+
       chartConfig = {
-        type: 'boxplot',
+        type: "boxplot",
         data: chartData,
         options: {
           responsive: false,
           maintainAspectRatio: false,
           animation: false,
-          indexAxis: 'y', // horizontal boxplot
+          indexAxis: "y", // horizontal boxplot
           plugins: {
-            legend: { display: true, position: 'top', labels: { color: '#1e293b' } },
-            title: { display: !!config.title, text: config.title || '', color: '#1e293b', font: { size: 14 } }
+            legend: {
+              display: true,
+              position: "top",
+              labels: { color: "#1e293b" },
+            },
+            title: {
+              display: !!config.title,
+              text: config.title || "",
+              color: "#1e293b",
+              font: { size: 14 },
+            },
           },
           scales: {
-            x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
-            y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
-          }
-        }
+            x: {
+              ticks: { color: "#64748b" },
+              grid: { color: "rgba(0,0,0,0.1)" },
+            },
+            y: {
+              ticks: { color: "#64748b" },
+              grid: { color: "rgba(0,0,0,0.1)" },
+            },
+          },
+        },
       };
     } else {
       // Стандартная обработка для других типов
-      const labels = rows.map((row: string[]) => row[labelColumn] || '');
+      const labels = rows.map((row: string[]) => row[labelColumn] || "");
       const datasets = dataColumns.map((colIdx: number, i: number) => {
         const data = rows.map((row: string[]) => {
-          const val = String(row[colIdx] || '').replace(/[,\s]/g, '');
+          const val = String(row[colIdx] || "").replace(/[,\s]/g, "");
           return parseFloat(val) || 0;
         });
-        
+
         return {
           label: headers[colIdx] || `Данные ${i + 1}`,
           data,
-          backgroundColor: chartType === 'pie' || chartType === 'doughnut' 
-            ? colors.slice(0, data.length)
-            : colors[i % colors.length],
-          borderColor: 'rgba(255, 255, 255, 0.2)',
+          backgroundColor:
+            chartType === "pie" || chartType === "doughnut"
+              ? colors.slice(0, data.length)
+              : colors[i % colors.length],
+          borderColor: "rgba(255, 255, 255, 0.2)",
           borderWidth: 1,
         };
       });
-      
+
       chartData = { labels, datasets };
-      
+
       // Нормализуем тип графика для Chart.js
-      if (chartType === 'histogram' || chartType === 'stacked') chartType = 'bar';
-      if (chartType === 'scatter') chartType = 'scatter';
-      
+      if (chartType === "histogram" || chartType === "stacked")
+        chartType = "bar";
+      if (chartType === "scatter") chartType = "scatter";
+
       chartConfig = {
         type: chartType,
         data: chartData,
@@ -383,43 +436,72 @@ async function renderChartFromData(
           maintainAspectRatio: false,
           animation: false,
           plugins: {
-            legend: { display: true, position: 'top', labels: { color: '#1e293b' } },
-            title: { display: !!config.title, text: config.title || '', color: '#1e293b', font: { size: 14 } }
+            legend: {
+              display: true,
+              position: "top",
+              labels: { color: "#1e293b" },
+            },
+            title: {
+              display: !!config.title,
+              text: config.title || "",
+              color: "#1e293b",
+              font: { size: 14 },
+            },
           },
-          scales: chartType !== 'pie' && chartType !== 'doughnut' ? {
-            x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
-            y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
-          } : undefined
-        }
+          scales:
+            chartType !== "pie" && chartType !== "doughnut"
+              ? {
+                  x: {
+                    ticks: { color: "#64748b" },
+                    grid: { color: "rgba(0,0,0,0.1)" },
+                  },
+                  y: {
+                    ticks: { color: "#64748b" },
+                    grid: { color: "rgba(0,0,0,0.1)" },
+                  },
+                }
+              : undefined,
+        },
       };
-      
+
       // Для stacked bar chart
-      if (config.type === 'stacked') {
+      if (config.type === "stacked") {
         chartConfig.options.scales = {
-          x: { stacked: true, ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } },
-          y: { stacked: true, ticks: { color: '#64748b' }, grid: { color: 'rgba(0,0,0,0.1)' } }
+          x: {
+            stacked: true,
+            ticks: { color: "#64748b" },
+            grid: { color: "rgba(0,0,0,0.1)" },
+          },
+          y: {
+            stacked: true,
+            ticks: { color: "#64748b" },
+            grid: { color: "rgba(0,0,0,0.1)" },
+          },
         };
       }
     }
-    
+
     // Рендерим график
     const chart = new Chart(ctx, chartConfig);
-    
+
     // Ждём рендеринга (увеличенное время для сложных графиков)
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
     // Получаем изображение
-    const dataUrl = canvas.toDataURL('image/png');
-    
-    console.log('[renderChartFromData] Chart rendered successfully, dataUrl length:', dataUrl.length);
-    
+    const dataUrl = canvas.toDataURL("image/png");
+
+    console.log(
+      "[renderChartFromData] Chart rendered successfully, dataUrl length:",
+      dataUrl.length,
+    );
+
     // Очистка
     chart.destroy();
     document.body.removeChild(canvas);
-    
+
     return dataUrl;
   } catch (e) {
-    console.error('[renderChartFromData] Error rendering chart:', e);
+    console.error("[renderChartFromData] Error rendering chart:", e);
     return null;
   }
 }
@@ -429,27 +511,29 @@ async function renderChartFromData(
  */
 export function captureChartsFromDOM(): Map<string, string> {
   const chartImages = new Map<string, string>();
-  
-  if (typeof window === 'undefined') return chartImages;
-  
+
+  if (typeof window === "undefined") return chartImages;
+
   // Ищем все графики в текущем DOM
-  const chartNodes = document.querySelectorAll('[data-chart-id], .chart-node-wrapper[data-chart-id]');
-  
+  const chartNodes = document.querySelectorAll(
+    "[data-chart-id], .chart-node-wrapper[data-chart-id]",
+  );
+
   for (const chartNode of Array.from(chartNodes)) {
-    const chartId = chartNode.getAttribute('data-chart-id');
+    const chartId = chartNode.getAttribute("data-chart-id");
     if (!chartId) continue;
-    
-    const canvas = chartNode.querySelector('canvas');
+
+    const canvas = chartNode.querySelector("canvas");
     if (canvas && canvas instanceof HTMLCanvasElement) {
       try {
-        const dataUrl = canvas.toDataURL('image/png');
+        const dataUrl = canvas.toDataURL("image/png");
         chartImages.set(chartId, dataUrl);
       } catch (e) {
-        console.error('Error capturing chart:', chartId, e);
+        console.error("Error capturing chart:", chartId, e);
       }
     }
   }
-  
+
   return chartImages;
 }
 
@@ -460,260 +544,304 @@ export function captureChartsFromDOM(): Map<string, string> {
  * @param includeDataTables - включать ли таблицы с исходными данными графиков (для создания графиков в Word)
  */
 export async function prepareHtmlForExport(
-  html: string, 
+  html: string,
   chartImages?: Map<string, string>,
-  includeDataTables: boolean = false
+  includeDataTables: boolean = false,
 ): Promise<string> {
-  if (typeof window === 'undefined' || !html) return html;
-  
+  if (typeof window === "undefined" || !html) return html;
+
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  
+  const doc = parser.parseFromString(html, "text/html");
+
   // Находим все chart nodes - ищем все возможные варианты
-  const chartNodes = doc.querySelectorAll('.chart-node, [data-chart-id], [data-type="chart-node"], .chart-node-wrapper');
-  
-  console.log('[prepareHtmlForExport] Found chart nodes:', chartNodes.length);
-  
+  const chartNodes = doc.querySelectorAll(
+    '.chart-node, [data-chart-id], [data-type="chart-node"], .chart-node-wrapper',
+  );
+
+  console.log("[prepareHtmlForExport] Found chart nodes:", chartNodes.length);
+
   for (const chartNode of Array.from(chartNodes)) {
-    const chartId = chartNode.getAttribute('data-chart-id');
-    console.log('[prepareHtmlForExport] Processing chart:', chartId, 'tag:', chartNode.tagName, 'class:', chartNode.className);
-    
+    const chartId = chartNode.getAttribute("data-chart-id");
+    console.log(
+      "[prepareHtmlForExport] Processing chart:",
+      chartId,
+      "tag:",
+      chartNode.tagName,
+      "class:",
+      chartNode.className,
+    );
+
     // Получаем данные графика из атрибутов (проверяем и сам узел и вложенные элементы)
-    let tableDataStr = chartNode.getAttribute('data-table-data');
-    let configStr = chartNode.getAttribute('data-config');
-    let title = chartNode.getAttribute('data-title');
-    
+    let tableDataStr = chartNode.getAttribute("data-table-data");
+    let configStr = chartNode.getAttribute("data-config");
+    let title = chartNode.getAttribute("data-title");
+
     // Если атрибуты не найдены на самом узле, ищем во вложенном элементе
     if (!tableDataStr || !configStr) {
-      const innerNode = chartNode.querySelector('[data-table-data]');
+      const innerNode = chartNode.querySelector("[data-table-data]");
       if (innerNode) {
-        tableDataStr = tableDataStr || innerNode.getAttribute('data-table-data');
-        configStr = configStr || innerNode.getAttribute('data-config');
-        title = title || innerNode.getAttribute('data-title');
+        tableDataStr =
+          tableDataStr || innerNode.getAttribute("data-table-data");
+        configStr = configStr || innerNode.getAttribute("data-config");
+        title = title || innerNode.getAttribute("data-title");
       }
     }
-    
+
     // Получаем заголовок
     if (!title) {
-      title = chartNode.querySelector('.chart-node-title')?.textContent ||
-              chartNode.querySelector('[class*="title"]')?.textContent ||
-              'График';
+      title =
+        chartNode.querySelector(".chart-node-title")?.textContent ||
+        chartNode.querySelector('[class*="title"]')?.textContent ||
+        "График";
     }
-    
-    console.log('[prepareHtmlForExport] Chart data:', { 
-      hasTableData: !!tableDataStr, 
-      hasConfig: !!configStr, 
+
+    console.log("[prepareHtmlForExport] Chart data:", {
+      hasTableData: !!tableDataStr,
+      hasConfig: !!configStr,
       title,
       tableDataLength: tableDataStr?.length,
-      configLength: configStr?.length
+      configLength: configStr?.length,
     });
-    
+
     let dataUrl: string | null = null;
     let tableData: { headers?: string[]; rows?: string[][] } | null = null;
     let config: { type?: string } | null = null;
-    
+
     // Parse table data if available
     if (tableDataStr) {
       try {
         tableData = JSON.parse(tableDataStr);
       } catch (e) {
-        console.error('[prepareHtmlForExport] Error parsing tableData:', e);
+        console.error("[prepareHtmlForExport] Error parsing tableData:", e);
       }
     }
-    
+
     if (configStr) {
       try {
         config = JSON.parse(configStr);
       } catch (e) {
-        console.error('[prepareHtmlForExport] Error parsing config:', e);
+        console.error("[prepareHtmlForExport] Error parsing config:", e);
       }
     }
-    
+
     // 1. Используем предзахваченное изображение (приоритет)
     if (chartId && chartImages?.has(chartId)) {
       dataUrl = chartImages.get(chartId) || null;
-      console.log('[prepareHtmlForExport] Using pre-captured image for chart:', chartId);
+      console.log(
+        "[prepareHtmlForExport] Using pre-captured image for chart:",
+        chartId,
+      );
     }
-    
+
     // 2. Проверяем есть ли уже canvas в DOM
     if (!dataUrl) {
-      const canvas = chartNode.querySelector('canvas');
+      const canvas = chartNode.querySelector("canvas");
       if (canvas && canvas instanceof HTMLCanvasElement) {
         try {
-          dataUrl = canvas.toDataURL('image/png');
-          console.log('[prepareHtmlForExport] Captured from canvas');
+          dataUrl = canvas.toDataURL("image/png");
+          console.log("[prepareHtmlForExport] Captured from canvas");
         } catch (e) {
-          console.error('[prepareHtmlForExport] Error converting chart canvas to image:', e);
+          console.error(
+            "[prepareHtmlForExport] Error converting chart canvas to image:",
+            e,
+          );
         }
       }
     }
-    
+
     // 3. Рендерим график из данных если нет изображения
     if (!dataUrl && tableData && config) {
       try {
-        console.log('[prepareHtmlForExport] Rendering chart from data:', config.type);
+        console.log(
+          "[prepareHtmlForExport] Rendering chart from data:",
+          config.type,
+        );
         dataUrl = await renderChartFromData(tableData, config);
-        console.log('[prepareHtmlForExport] Rendered chart, dataUrl:', dataUrl ? 'success' : 'failed');
+        console.log(
+          "[prepareHtmlForExport] Rendered chart, dataUrl:",
+          dataUrl ? "success" : "failed",
+        );
       } catch (e) {
-        console.error('[prepareHtmlForExport] Error rendering chart data:', e);
+        console.error("[prepareHtmlForExport] Error rendering chart data:", e);
       }
     }
-    
+
     if (dataUrl) {
       // Заменяем chartNode на изображение с подписью и опционально таблицей данных
-      const container = doc.createElement('div');
-      container.style.margin = '1em 0';
-      container.style.pageBreakInside = 'avoid';
-      
-      const figure = doc.createElement('figure');
-      figure.style.textAlign = 'center';
-      figure.style.margin = '0';
-      
-      const img = doc.createElement('img');
+      const container = doc.createElement("div");
+      container.style.margin = "1em 0";
+      container.style.pageBreakInside = "avoid";
+
+      const figure = doc.createElement("figure");
+      figure.style.textAlign = "center";
+      figure.style.margin = "0";
+
+      const img = doc.createElement("img");
       img.src = dataUrl;
-      img.style.maxWidth = '100%';
-      img.style.height = 'auto';
-      img.setAttribute('data-chart-image', 'true');
-      
-      const caption = doc.createElement('figcaption');
+      img.style.maxWidth = "100%";
+      img.style.height = "auto";
+      img.setAttribute("data-chart-image", "true");
+
+      const caption = doc.createElement("figcaption");
       caption.textContent = title;
-      caption.style.fontSize = '0.9em';
-      caption.style.color = '#64748b';
-      caption.style.marginTop = '0.5em';
-      
+      caption.style.fontSize = "0.9em";
+      caption.style.color = "#64748b";
+      caption.style.marginTop = "0.5em";
+
       figure.appendChild(img);
       figure.appendChild(caption);
       container.appendChild(figure);
-      
+
       // Добавляем таблицу с исходными данными для возможности создания графика в Word
-      if (includeDataTables && tableData && tableData.headers && tableData.rows) {
-        const dataTableWrapper = doc.createElement('div');
-        dataTableWrapper.style.marginTop = '1em';
-        dataTableWrapper.style.fontSize = '0.85em';
-        
-        const dataTableTitle = doc.createElement('p');
-        dataTableTitle.style.fontStyle = 'italic';
-        dataTableTitle.style.color = '#64748b';
-        dataTableTitle.style.marginBottom = '0.5em';
+      if (
+        includeDataTables &&
+        tableData &&
+        tableData.headers &&
+        tableData.rows
+      ) {
+        const dataTableWrapper = doc.createElement("div");
+        dataTableWrapper.style.marginTop = "1em";
+        dataTableWrapper.style.fontSize = "0.85em";
+
+        const dataTableTitle = doc.createElement("p");
+        dataTableTitle.style.fontStyle = "italic";
+        dataTableTitle.style.color = "#64748b";
+        dataTableTitle.style.marginBottom = "0.5em";
         dataTableTitle.textContent = `Исходные данные для графика "${title}":`;
         dataTableWrapper.appendChild(dataTableTitle);
-        
-        const dataTable = doc.createElement('table');
-        dataTable.setAttribute('data-chart-source-data', 'true');
-        dataTable.style.borderCollapse = 'collapse';
-        dataTable.style.width = '100%';
-        dataTable.style.marginBottom = '1em';
-        
+
+        const dataTable = doc.createElement("table");
+        dataTable.setAttribute("data-chart-source-data", "true");
+        dataTable.style.borderCollapse = "collapse";
+        dataTable.style.width = "100%";
+        dataTable.style.marginBottom = "1em";
+
         // Header row
-        const thead = doc.createElement('thead');
-        const headerRow = doc.createElement('tr');
+        const thead = doc.createElement("thead");
+        const headerRow = doc.createElement("tr");
         for (const header of tableData.headers) {
-          const th = doc.createElement('th');
+          const th = doc.createElement("th");
           th.textContent = header;
-          th.style.border = '1px solid #94a3b8';
-          th.style.padding = '6px 10px';
-          th.style.background = '#f1f5f9';
-          th.style.fontWeight = 'bold';
+          th.style.border = "1px solid #94a3b8";
+          th.style.padding = "6px 10px";
+          th.style.background = "#f1f5f9";
+          th.style.fontWeight = "bold";
           headerRow.appendChild(th);
         }
         thead.appendChild(headerRow);
         dataTable.appendChild(thead);
-        
+
         // Data rows
-        const tbody = doc.createElement('tbody');
+        const tbody = doc.createElement("tbody");
         for (const row of tableData.rows) {
-          const tr = doc.createElement('tr');
+          const tr = doc.createElement("tr");
           for (const cell of row) {
-            const td = doc.createElement('td');
+            const td = doc.createElement("td");
             td.textContent = cell;
-            td.style.border = '1px solid #94a3b8';
-            td.style.padding = '6px 10px';
+            td.style.border = "1px solid #94a3b8";
+            td.style.padding = "6px 10px";
             tr.appendChild(td);
           }
           tbody.appendChild(tr);
         }
         dataTable.appendChild(tbody);
-        
+
         dataTableWrapper.appendChild(dataTable);
-        
-        const hint = doc.createElement('p');
-        hint.style.fontSize = '0.8em';
-        hint.style.color = '#94a3b8';
-        hint.style.fontStyle = 'italic';
-        hint.textContent = '💡 Для создания редактируемого графика: выделите таблицу выше → Вставка → Диаграмма в Microsoft Word';
+
+        const hint = doc.createElement("p");
+        hint.style.fontSize = "0.8em";
+        hint.style.color = "#94a3b8";
+        hint.style.fontStyle = "italic";
+        hint.textContent =
+          "💡 Для создания редактируемого графика: выделите таблицу выше → Вставка → Диаграмма в Microsoft Word";
         dataTableWrapper.appendChild(hint);
-        
+
         container.appendChild(dataTableWrapper);
       }
-      
+
       chartNode.replaceWith(container);
-      console.log('[prepareHtmlForExport] Replaced chart with image' + (includeDataTables ? ' and data table' : ''));
+      console.log(
+        "[prepareHtmlForExport] Replaced chart with image" +
+          (includeDataTables ? " and data table" : ""),
+      );
     } else {
       // Нет данных для графика - оставляем placeholder с названием
-      const placeholder = doc.createElement('div');
-      placeholder.style.textAlign = 'center';
-      placeholder.style.padding = '20px';
-      placeholder.style.background = '#f8fafc';
-      placeholder.style.border = '1px dashed #cbd5e1';
-      placeholder.style.borderRadius = '4px';
-      placeholder.style.margin = '1em 0';
-      placeholder.innerHTML = `<em style="color: #64748b">[${title}]</em>`;
-      
+      const placeholder = doc.createElement("div");
+      placeholder.style.textAlign = "center";
+      placeholder.style.padding = "20px";
+      placeholder.style.background = "#f8fafc";
+      placeholder.style.border = "1px dashed #cbd5e1";
+      placeholder.style.borderRadius = "4px";
+      placeholder.style.margin = "1em 0";
+
+      const placeholderText = doc.createElement("em");
+      placeholderText.style.color = "#64748b";
+      // textContent исключает HTML-инъекцию в placeholder подписи графика
+      placeholderText.textContent = `[${title || "График"}]`;
+      placeholder.appendChild(placeholderText);
+
       chartNode.replaceWith(placeholder);
-      console.log('[prepareHtmlForExport] Replaced chart with placeholder');
+      console.log("[prepareHtmlForExport] Replaced chart with placeholder");
     }
   }
-  
+
   return doc.body.innerHTML;
 }
 
 /**
  * Конвертировать HTML контент в элементы Word (параграфы, таблицы, изображения)
  */
-function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Paragraph | Table)[] {
+function htmlToDocxElements(
+  html: string,
+  styleConfig: CitationStyleConfig,
+): (Paragraph | Table)[] {
   const elements: (Paragraph | Table)[] = [];
-  
+
   // Простой парсер HTML
   const parser = new DOMParser();
   const doc = parser.parseFromString(html || "<p></p>", "text/html");
-  
+
   const processNode = (node: Node): TextRun[] => {
     const runs: TextRun[] = [];
-    
+
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent || "";
-      if (text.trim() || text.includes(' ')) {
-        runs.push(new TextRun({ 
-          text,
-          size: styleConfig.fontSize * 2, // docx uses half-points
-        }));
+      if (text.trim() || text.includes(" ")) {
+        runs.push(
+          new TextRun({
+            text,
+            size: styleConfig.fontSize * 2, // docx uses half-points
+          }),
+        );
       }
     } else if (node.nodeType === Node.ELEMENT_NODE) {
       const el = node as Element;
       const tagName = el.tagName.toLowerCase();
-      
+
       // Handle citations [1], [2], etc.
-      if (el.classList.contains('citation-ref')) {
-        const citationText = el.textContent || '';
-        runs.push(new TextRun({
-          text: citationText,
-          size: styleConfig.fontSize * 2,
-          color: '2563EB', // Blue color for citations
-        }));
+      if (el.classList.contains("citation-ref")) {
+        const citationText = el.textContent || "";
+        runs.push(
+          new TextRun({
+            text: citationText,
+            size: styleConfig.fontSize * 2,
+            color: "2563EB", // Blue color for citations
+          }),
+        );
         return runs;
       }
-      
+
       // Рекурсивно обрабатываем детей
       const childRuns: TextRun[] = [];
       el.childNodes.forEach((child) => {
         childRuns.push(...processNode(child));
       });
-      
+
       // Применяем форматирование в зависимости от тега
       if (tagName === "strong" || tagName === "b") {
         childRuns.forEach((run) => {
           const runData = {
-            text: (run as any).text || '',
+            text: (run as any).text || "",
             bold: true,
             size: styleConfig.fontSize * 2,
           };
@@ -722,7 +850,7 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
       } else if (tagName === "em" || tagName === "i") {
         childRuns.forEach((run) => {
           const runData = {
-            text: (run as any).text || '',
+            text: (run as any).text || "",
             italics: true,
             size: styleConfig.fontSize * 2,
           };
@@ -731,7 +859,7 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
       } else if (tagName === "u") {
         childRuns.forEach((run) => {
           const runData = {
-            text: (run as any).text || '',
+            text: (run as any).text || "",
             underline: {},
             size: styleConfig.fontSize * 2,
           };
@@ -740,7 +868,7 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
       } else if (tagName === "s" || tagName === "strike") {
         childRuns.forEach((run) => {
           const runData = {
-            text: (run as any).text || '',
+            text: (run as any).text || "",
             strike: true,
             size: styleConfig.fontSize * 2,
           };
@@ -750,50 +878,59 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
         runs.push(...childRuns);
       }
     }
-    
+
     return runs;
   };
-  
-  const getAlignment = (el: Element): typeof AlignmentType[keyof typeof AlignmentType] | undefined => {
-    const style = (el as HTMLElement).style?.textAlign || (el as HTMLElement).getAttribute('data-text-align');
-    if (style === 'center') return AlignmentType.CENTER;
-    if (style === 'right') return AlignmentType.RIGHT;
-    if (style === 'justify') return AlignmentType.JUSTIFIED;
-    if (style === 'left') return AlignmentType.LEFT;
+
+  const getAlignment = (
+    el: Element,
+  ): (typeof AlignmentType)[keyof typeof AlignmentType] | undefined => {
+    const style =
+      (el as HTMLElement).style?.textAlign ||
+      (el as HTMLElement).getAttribute("data-text-align");
+    if (style === "center") return AlignmentType.CENTER;
+    if (style === "right") return AlignmentType.RIGHT;
+    if (style === "justify") return AlignmentType.JUSTIFIED;
+    if (style === "left") return AlignmentType.LEFT;
     // Default based on style config
-    const alignMap: Record<string, typeof AlignmentType[keyof typeof AlignmentType]> = {
-      'left': AlignmentType.LEFT,
-      'center': AlignmentType.CENTER,
-      'right': AlignmentType.RIGHT,
-      'justify': AlignmentType.JUSTIFIED,
+    const alignMap: Record<
+      string,
+      (typeof AlignmentType)[keyof typeof AlignmentType]
+    > = {
+      left: AlignmentType.LEFT,
+      center: AlignmentType.CENTER,
+      right: AlignmentType.RIGHT,
+      justify: AlignmentType.JUSTIFIED,
     };
     return alignMap[styleConfig.textAlign];
   };
-  
+
   // Обработка всех элементов по порядку, включая таблицы и изображения
   const processBodyChildren = () => {
     const body = doc.body;
-    
+
     // Проходим по всем дочерним элементам в порядке их появления
     const walk = (parent: Element) => {
       const children = Array.from(parent.children);
-      
+
       for (const child of children) {
         const tagName = child.tagName.toLowerCase();
-        
+
         // Обработка таблиц
-        if (tagName === 'table') {
+        if (tagName === "table") {
           const table = htmlTableToDocxTable(child, styleConfig);
           elements.push(table);
           // Добавляем пустой параграф после таблицы
-          elements.push(new Paragraph({ children: [], spacing: { after: 200 } }));
+          elements.push(
+            new Paragraph({ children: [], spacing: { after: 200 } }),
+          );
           continue;
         }
-        
+
         // Обработка изображений
-        if (tagName === 'img') {
-          const src = child.getAttribute('src');
-          if (src && src.startsWith('data:image')) {
+        if (tagName === "img") {
+          const src = child.getAttribute("src");
+          if (src && src.startsWith("data:image")) {
             const imageData = dataUrlToBuffer(src);
             if (imageData) {
               try {
@@ -805,33 +942,43 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
                   },
                   type: imageData.type,
                 });
-                elements.push(new Paragraph({
-                  children: [imageRun],
-                  alignment: AlignmentType.CENTER,
-                  spacing: { before: 200, after: 200 },
-                }));
+                elements.push(
+                  new Paragraph({
+                    children: [imageRun],
+                    alignment: AlignmentType.CENTER,
+                    spacing: { before: 200, after: 200 },
+                  }),
+                );
               } catch (e) {
-                console.error('Error adding image to docx:', e);
+                console.error("Error adding image to docx:", e);
                 // Добавляем placeholder текст если изображение не удалось вставить
-                elements.push(new Paragraph({
-                  children: [new TextRun({ text: '[Изображение]', italics: true, color: '666666' })],
-                  alignment: AlignmentType.CENTER,
-                }));
+                elements.push(
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: "[Изображение]",
+                        italics: true,
+                        color: "666666",
+                      }),
+                    ],
+                    alignment: AlignmentType.CENTER,
+                  }),
+                );
               }
             }
           }
           continue;
         }
-        
+
         // Обработка figure (изображения с подписью, включая графики)
-        if (tagName === 'figure') {
-          const img = child.querySelector('img');
-          const figcaption = child.querySelector('figcaption');
-          const caption = figcaption?.textContent || '';
-          
+        if (tagName === "figure") {
+          const img = child.querySelector("img");
+          const figcaption = child.querySelector("figcaption");
+          const caption = figcaption?.textContent || "";
+
           if (img) {
-            const src = img.getAttribute('src');
-            if (src && src.startsWith('data:image')) {
+            const src = img.getAttribute("src");
+            if (src && src.startsWith("data:image")) {
               const imageData = dataUrlToBuffer(src);
               if (imageData) {
                 try {
@@ -843,97 +990,132 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
                     },
                     type: imageData.type,
                   });
-                  elements.push(new Paragraph({
-                    children: [imageRun],
-                    alignment: AlignmentType.CENTER,
-                    spacing: { before: 200, after: 100 },
-                  }));
-                  
+                  elements.push(
+                    new Paragraph({
+                      children: [imageRun],
+                      alignment: AlignmentType.CENTER,
+                      spacing: { before: 200, after: 100 },
+                    }),
+                  );
+
                   // Добавляем подпись к графику
                   if (caption) {
-                    elements.push(new Paragraph({
-                      children: [new TextRun({ 
-                        text: caption, 
-                        italics: true, 
-                        size: styleConfig.fontSize * 2 - 2,
-                        color: '64748b' 
-                      })],
-                      alignment: AlignmentType.CENTER,
-                      spacing: { after: 200 },
-                    }));
+                    elements.push(
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: caption,
+                            italics: true,
+                            size: styleConfig.fontSize * 2 - 2,
+                            color: "64748b",
+                          }),
+                        ],
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 200 },
+                      }),
+                    );
                   }
                 } catch (e) {
-                  console.error('Error adding figure image to docx:', e);
-                  elements.push(new Paragraph({
-                    children: [new TextRun({ text: `[${caption || 'Изображение'}]`, italics: true, color: '666666' })],
-                    alignment: AlignmentType.CENTER,
-                  }));
+                  console.error("Error adding figure image to docx:", e);
+                  elements.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `[${caption || "Изображение"}]`,
+                          italics: true,
+                          color: "666666",
+                        }),
+                      ],
+                      alignment: AlignmentType.CENTER,
+                    }),
+                  );
                 }
               }
             }
           } else {
             // Figure без изображения - выводим текст
-            const text = child.textContent || '';
+            const text = child.textContent || "";
             if (text) {
-              elements.push(new Paragraph({
-                children: [new TextRun({ text, italics: true, color: '666666' })],
-                alignment: AlignmentType.CENTER,
-                spacing: { before: 200, after: 200 },
-              }));
+              elements.push(
+                new Paragraph({
+                  children: [
+                    new TextRun({ text, italics: true, color: "666666" }),
+                  ],
+                  alignment: AlignmentType.CENTER,
+                  spacing: { before: 200, after: 200 },
+                }),
+              );
             }
           }
           continue;
         }
-        
+
         // Обработка div-ов с графиками
-        if (tagName === 'div' && (child.classList.contains('chart-node') || child.hasAttribute('data-chart-id'))) {
+        if (
+          tagName === "div" &&
+          (child.classList.contains("chart-node") ||
+            child.hasAttribute("data-chart-id"))
+        ) {
           // Ищем canvas внутри и пытаемся получить изображение
-          const canvas = child.querySelector('canvas');
-          const title = child.querySelector('.chart-node-title')?.textContent || 'График';
-          
+          const canvas = child.querySelector("canvas");
+          const title =
+            child.querySelector(".chart-node-title")?.textContent || "График";
+
           // Добавляем placeholder с названием графика
-          elements.push(new Paragraph({
-            children: [new TextRun({ text: `[${title}]`, italics: true, color: '666666' })],
-            alignment: AlignmentType.CENTER,
-            spacing: { before: 200, after: 200 },
-          }));
+          elements.push(
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: `[${title}]`,
+                  italics: true,
+                  color: "666666",
+                }),
+              ],
+              alignment: AlignmentType.CENTER,
+              spacing: { before: 200, after: 200 },
+            }),
+          );
           continue;
         }
-        
+
         // Обработка параграфов и заголовков
-        if (['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(tagName)) {
+        if (["p", "h1", "h2", "h3", "h4", "h5", "h6"].includes(tagName)) {
           const runs = processNode(child);
-          
-          let heading: (typeof HeadingLevel)[keyof typeof HeadingLevel] | undefined;
+
+          let heading:
+            | (typeof HeadingLevel)[keyof typeof HeadingLevel]
+            | undefined;
           if (tagName === "h1") heading = HeadingLevel.HEADING_1;
           if (tagName === "h2") heading = HeadingLevel.HEADING_2;
           if (tagName === "h3") heading = HeadingLevel.HEADING_3;
-          
-          const hasIndent = child.classList.contains('indent');
-          
+
+          const hasIndent = child.classList.contains("indent");
+
           elements.push(
             new Paragraph({
-              children: runs.length > 0 ? runs : [new TextRun({ text: '' })],
+              children: runs.length > 0 ? runs : [new TextRun({ text: "" })],
               heading,
               alignment: getAlignment(child),
               spacing: {
                 line: styleConfig.lineSpacing * 240,
                 after: 120,
               },
-              indent: hasIndent ? {
-                firstLine: cmToTwip(styleConfig.paragraphIndent),
-              } : undefined,
-            })
+              indent: hasIndent
+                ? {
+                    firstLine: cmToTwip(styleConfig.paragraphIndent),
+                  }
+                : undefined,
+            }),
           );
           continue;
         }
-        
+
         // Обработка списков
-        if (tagName === 'ul' || tagName === 'ol') {
-          const items = child.querySelectorAll('li');
+        if (tagName === "ul" || tagName === "ol") {
+          const items = child.querySelectorAll("li");
           items.forEach((item, idx) => {
             const runs = processNode(item);
-            const bullet = tagName === 'ul' ? '• ' : `${idx + 1}. `;
+            const bullet = tagName === "ul" ? "• " : `${idx + 1}. `;
             elements.push(
               new Paragraph({
                 children: [
@@ -942,32 +1124,32 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
                 ],
                 spacing: { line: styleConfig.lineSpacing * 240, after: 60 },
                 indent: { left: cmToTwip(0.5) },
-              })
+              }),
             );
           });
           continue;
         }
-        
+
         // Обработка blockquote
-        if (tagName === 'blockquote') {
+        if (tagName === "blockquote") {
           const runs = processNode(child);
           elements.push(
             new Paragraph({
               children: runs,
               spacing: { line: styleConfig.lineSpacing * 240, after: 120 },
               indent: { left: cmToTwip(1), right: cmToTwip(1) },
-              shading: { fill: 'f5f5f5' },
-            })
+              shading: { fill: "f5f5f5" },
+            }),
           );
           continue;
         }
-        
+
         // Обработка вложенных div
-        if (tagName === 'div') {
+        if (tagName === "div") {
           walk(child);
           continue;
         }
-        
+
         // Для остальных элементов пробуем обработать как текст
         const runs = processNode(child);
         if (runs.length > 0) {
@@ -976,29 +1158,32 @@ function htmlToDocxElements(html: string, styleConfig: CitationStyleConfig): (Pa
               children: runs,
               alignment: getAlignment(child),
               spacing: { line: styleConfig.lineSpacing * 240, after: 120 },
-            })
+            }),
           );
         }
       }
     };
-    
+
     walk(body);
   };
-  
+
   processBodyChildren();
-  
+
   // Если ничего не обработано, добавляем пустой параграф
   if (elements.length === 0) {
     elements.push(new Paragraph({ children: [] }));
   }
-  
+
   return elements;
 }
 
 /**
  * Конвертировать HTML контент в параграфы Word (обратная совместимость)
  */
-function htmlToDocxParagraphs(html: string, styleConfig: CitationStyleConfig): Paragraph[] {
+function htmlToDocxParagraphs(
+  html: string,
+  styleConfig: CitationStyleConfig,
+): Paragraph[] {
   const elements = htmlToDocxElements(html, styleConfig);
   // Возвращаем только параграфы для обратной совместимости
   return elements.filter((el): el is Paragraph => el instanceof Paragraph);
@@ -1012,75 +1197,95 @@ export async function exportToWord(
   documents: ExportDocument[],
   bibliography: ExportBibItem[],
   citationStyle: string,
-  mergedContent?: string
+  mergedContent?: string,
 ): Promise<void> {
   const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
   const sections: (Paragraph | Table)[] = [];
-  
+
   // Титульная страница
   sections.push(
     new Paragraph({
       children: [new TextRun({ text: projectName, bold: true, size: 48 })],
       alignment: AlignmentType.CENTER,
       spacing: { before: 3000 },
-    })
+    }),
   );
-  
+
   sections.push(
     new Paragraph({
-      children: [new TextRun({ 
-        text: `Стиль цитирования: ${citationStyle.toUpperCase()}`, 
-        size: 24,
-      })],
+      children: [
+        new TextRun({
+          text: `Стиль цитирования: ${citationStyle.toUpperCase()}`,
+          size: 24,
+        }),
+      ],
       alignment: AlignmentType.CENTER,
       spacing: { before: 500 },
-    })
+    }),
   );
-  
+
   sections.push(
     new Paragraph({
-      children: [new TextRun({ 
-        text: `Дата экспорта: ${new Date().toLocaleDateString("ru-RU")}`, 
-        size: 24,
-      })],
+      children: [
+        new TextRun({
+          text: `Дата экспорта: ${new Date().toLocaleDateString("ru-RU")}`,
+          size: 24,
+        }),
+      ],
       alignment: AlignmentType.CENTER,
       spacing: { before: 200 },
-    })
+    }),
   );
-  
+
   // Разрыв страницы
   sections.push(new Paragraph({ children: [new PageBreak()] }));
-  
+
   // Оглавление (простое)
   sections.push(
     new Paragraph({
-      children: [new TextRun({ text: "СОДЕРЖАНИЕ", bold: true, size: styleConfig.fontSize * 2 })],
+      children: [
+        new TextRun({
+          text: "СОДЕРЖАНИЕ",
+          bold: true,
+          size: styleConfig.fontSize * 2,
+        }),
+      ],
       heading: HeadingLevel.HEADING_1,
       alignment: AlignmentType.CENTER,
-    })
+    }),
   );
-  
+
   documents.forEach((doc, idx) => {
     sections.push(
       new Paragraph({
-        children: [new TextRun({ text: `${idx + 1}. ${doc.title}`, size: styleConfig.fontSize * 2 })],
+        children: [
+          new TextRun({
+            text: `${idx + 1}. ${doc.title}`,
+            size: styleConfig.fontSize * 2,
+          }),
+        ],
         spacing: { before: 100 },
-      })
+      }),
     );
   });
-  
+
   if (bibliography.length > 0) {
     sections.push(
       new Paragraph({
-        children: [new TextRun({ text: "Список литературы", size: styleConfig.fontSize * 2 })],
+        children: [
+          new TextRun({
+            text: "Список литературы",
+            size: styleConfig.fontSize * 2,
+          }),
+        ],
         spacing: { before: 100 },
-      })
+      }),
     );
   }
-  
+
   // Разрыв страницы
   sections.push(new Paragraph({ children: [new PageBreak()] }));
-  
+
   // Документы (главы)
   if (mergedContent) {
     // Экспорт объединённого документа с общей нумерацией цитат
@@ -1092,52 +1297,69 @@ export async function exportToWord(
       // Заголовок главы
       sections.push(
         new Paragraph({
-          children: [new TextRun({ text: `${idx + 1}. ${doc.title}`, bold: true, size: styleConfig.fontSize * 2 })],
+          children: [
+            new TextRun({
+              text: `${idx + 1}. ${doc.title}`,
+              bold: true,
+              size: styleConfig.fontSize * 2,
+            }),
+          ],
           heading: HeadingLevel.HEADING_1,
           spacing: { before: 400, after: 200 },
-        })
+        }),
       );
-      
+
       // Содержимое (теперь с поддержкой таблиц и изображений)
       if (doc.content) {
         const contentElements = htmlToDocxElements(doc.content, styleConfig);
         sections.push(...contentElements);
       }
-      
+
       // Разрыв страницы после главы (кроме последней)
       if (idx < documents.length - 1) {
         sections.push(new Paragraph({ children: [new PageBreak()] }));
       }
     });
   }
-  
+
   // Список литературы
   if (bibliography.length > 0) {
     sections.push(new Paragraph({ children: [new PageBreak()] }));
-    
+
     sections.push(
       new Paragraph({
-        children: [new TextRun({ text: "СПИСОК ЛИТЕРАТУРЫ", bold: true, size: styleConfig.fontSize * 2 })],
+        children: [
+          new TextRun({
+            text: "СПИСОК ЛИТЕРАТУРЫ",
+            bold: true,
+            size: styleConfig.fontSize * 2,
+          }),
+        ],
         heading: HeadingLevel.HEADING_1,
         alignment: AlignmentType.CENTER,
         spacing: { after: 400 },
-      })
+      }),
     );
-    
+
     bibliography.forEach((item) => {
       sections.push(
         new Paragraph({
-          children: [new TextRun({ text: `${item.number}. ${item.formatted}`, size: styleConfig.fontSize * 2 })],
+          children: [
+            new TextRun({
+              text: `${item.number}. ${item.formatted}`,
+              size: styleConfig.fontSize * 2,
+            }),
+          ],
           spacing: { before: 100 },
           alignment: AlignmentType.JUSTIFIED,
           indent: {
             hanging: cmToTwip(1), // Hanging indent for bibliography
           },
-        })
+        }),
       );
     });
   }
-  
+
   // Создаём документ
   const doc = new Document({
     sections: [
@@ -1154,25 +1376,30 @@ export async function exportToWord(
         },
         headers: {
           default: new Header({
-            children: styleConfig.pageNumberPosition.includes('top') ? [
-              new Paragraph({
-                children: [new TextRun({ children: [PageNumber.CURRENT] })],
-                alignment: styleConfig.pageNumberPosition === 'center-top' 
-                  ? AlignmentType.CENTER 
-                  : AlignmentType.RIGHT,
-              }),
-            ] : [],
+            children: styleConfig.pageNumberPosition.includes("top")
+              ? [
+                  new Paragraph({
+                    children: [new TextRun({ children: [PageNumber.CURRENT] })],
+                    alignment:
+                      styleConfig.pageNumberPosition === "center-top"
+                        ? AlignmentType.CENTER
+                        : AlignmentType.RIGHT,
+                  }),
+                ]
+              : [],
           }),
         },
         children: sections,
       },
     ],
   });
-  
+
   // Генерируем и скачиваем
   const blob = await Packer.toBlob(doc);
-  const baseFilename = projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_");
-  const filename = mergedContent 
+  const baseFilename = projectName
+    .replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "")
+    .replace(/\s+/g, "_");
+  const filename = mergedContent
     ? `${baseFilename}_объединённый.docx`
     : `${baseFilename}_главы.docx`;
   saveAs(blob, filename);
@@ -1184,59 +1411,74 @@ export async function exportToWord(
 export async function exportBibliographyToWord(
   projectName: string,
   bibliography: ExportBibItem[],
-  citationStyle: string
+  citationStyle: string,
 ): Promise<void> {
   const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
   const sections: Paragraph[] = [];
-  
+
   // Заголовок
   sections.push(
     new Paragraph({
-      children: [new TextRun({ text: "СПИСОК ЛИТЕРАТУРЫ", bold: true, size: styleConfig.fontSize * 2 })],
+      children: [
+        new TextRun({
+          text: "СПИСОК ЛИТЕРАТУРЫ",
+          bold: true,
+          size: styleConfig.fontSize * 2,
+        }),
+      ],
       heading: HeadingLevel.HEADING_1,
       alignment: AlignmentType.CENTER,
       spacing: { after: 400 },
-    })
+    }),
   );
-  
+
   sections.push(
     new Paragraph({
-      children: [new TextRun({ 
-        text: `Проект: ${projectName}`, 
-        size: styleConfig.fontSize * 2,
-        italics: true,
-      })],
+      children: [
+        new TextRun({
+          text: `Проект: ${projectName}`,
+          size: styleConfig.fontSize * 2,
+          italics: true,
+        }),
+      ],
       alignment: AlignmentType.CENTER,
       spacing: { after: 200 },
-    })
+    }),
   );
-  
+
   sections.push(
     new Paragraph({
-      children: [new TextRun({ 
-        text: `Стиль: ${citationStyle.toUpperCase()} | Дата: ${new Date().toLocaleDateString("ru-RU")}`, 
-        size: 20,
-        color: '64748b',
-      })],
+      children: [
+        new TextRun({
+          text: `Стиль: ${citationStyle.toUpperCase()} | Дата: ${new Date().toLocaleDateString("ru-RU")}`,
+          size: 20,
+          color: "64748b",
+        }),
+      ],
       alignment: AlignmentType.CENTER,
       spacing: { after: 400 },
-    })
+    }),
   );
-  
+
   // Список литературы
   bibliography.forEach((item) => {
     sections.push(
       new Paragraph({
-        children: [new TextRun({ text: `${item.number}. ${item.formatted}`, size: styleConfig.fontSize * 2 })],
+        children: [
+          new TextRun({
+            text: `${item.number}. ${item.formatted}`,
+            size: styleConfig.fontSize * 2,
+          }),
+        ],
         spacing: { before: 120, after: 60 },
         alignment: AlignmentType.JUSTIFIED,
         indent: {
           hanging: cmToTwip(1),
         },
-      })
+      }),
     );
   });
-  
+
   // Создаём документ
   const doc = new Document({
     sections: [
@@ -1255,7 +1497,7 @@ export async function exportBibliographyToWord(
       },
     ],
   });
-  
+
   // Генерируем и скачиваем
   const blob = await Packer.toBlob(doc);
   const filename = `${projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_")}_bibliography.docx`;
@@ -1268,19 +1510,19 @@ export async function exportBibliographyToWord(
 export function exportBibliographyToTxt(
   projectName: string,
   bibliography: ExportBibItem[],
-  citationStyle: string
+  citationStyle: string,
 ): void {
   let content = `СПИСОК ЛИТЕРАТУРЫ\n`;
   content += `Проект: ${projectName}\n`;
   content += `Стиль: ${citationStyle.toUpperCase()}\n`;
   content += `Дата: ${new Date().toLocaleDateString("ru-RU")}\n`;
-  content += `\n${'='.repeat(60)}\n\n`;
-  
+  content += `\n${"=".repeat(60)}\n\n`;
+
   bibliography.forEach((item) => {
     content += `${item.number}. ${item.formatted}\n\n`;
   });
-  
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+
+  const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
   const filename = `${projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_")}_bibliography.txt`;
   saveAs(blob, filename);
 }
@@ -1293,10 +1535,10 @@ export function generatePrintHtml(
   documents: ExportDocument[],
   bibliography: ExportBibItem[],
   citationStyle: string,
-  mergedContent?: string
+  mergedContent?: string,
 ): string {
   const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
-  
+
   const styles = `
     @page {
       size: A4;
@@ -1379,7 +1621,7 @@ export function generatePrintHtml(
       body { padding: 0; }
     }
   `;
-  
+
   let html = `<!DOCTYPE html>
 <html>
 <head>
@@ -1423,7 +1665,7 @@ export function generatePrintHtml(
       html += `
     <div class="chapter">
       <h1>${idx + 1}. ${doc.title}</h1>
-      ${doc.content || ''}
+      ${doc.content || ""}
     </div>
 `;
     });
@@ -1443,7 +1685,7 @@ export function generatePrintHtml(
   }
 
   html += `</body></html>`;
-  
+
   return html;
 }
 
@@ -1456,28 +1698,36 @@ export function exportToPdf(
   documents: ExportDocument[],
   bibliography: ExportBibItem[],
   citationStyle: string,
-  mergedContent?: string
+  mergedContent?: string,
 ): void {
-  const html = generatePrintHtml(projectName, documents, bibliography, citationStyle, mergedContent);
-  
+  const html = generatePrintHtml(
+    projectName,
+    documents,
+    bibliography,
+    citationStyle,
+    mergedContent,
+  );
+
   // Открываем новое окно с документом
-  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  const printWindow = window.open("", "_blank", "width=800,height=600");
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();
-    
+
     // Устанавливаем заголовок окна
-    const baseFilename = projectName.replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "").replace(/\s+/g, "_");
-    const filename = mergedContent 
+    const baseFilename = projectName
+      .replace(/[^a-zA-Zа-яА-Я0-9\s]/g, "")
+      .replace(/\s+/g, "_");
+    const filename = mergedContent
       ? `${baseFilename}_объединённый`
       : `${baseFilename}_главы`;
     printWindow.document.title = filename;
-    
+
     // Ждём полной загрузки и открываем диалог печати
     printWindow.onload = () => {
       setTimeout(() => {
         // Добавляем подсказку для пользователя
-        const hint = printWindow.document.createElement('div');
+        const hint = printWindow.document.createElement("div");
         hint.innerHTML = `
           <div style="position: fixed; top: 0; left: 0; right: 0; background: #1e40af; color: white; padding: 10px; text-align: center; z-index: 10000; font-family: sans-serif;">
             💡 Для сохранения как PDF: выберите "Сохранить как PDF" в качестве принтера
@@ -1486,11 +1736,16 @@ export function exportToPdf(
             </button>
           </div>
         `;
-        printWindow.document.body.insertBefore(hint, printWindow.document.body.firstChild);
+        printWindow.document.body.insertBefore(
+          hint,
+          printWindow.document.body.firstChild,
+        );
       }, 300);
     };
   } else {
-    alert('Не удалось открыть окно для печати. Проверьте блокировщик всплывающих окон.');
+    alert(
+      "Не удалось открыть окно для печати. Проверьте блокировщик всплывающих окон.",
+    );
   }
 }
 
@@ -1500,10 +1755,10 @@ export function exportToPdf(
 export function exportBibliographyToPdf(
   projectName: string,
   bibliography: ExportBibItem[],
-  citationStyle: string
+  citationStyle: string,
 ): void {
   const styleConfig = STYLE_CONFIGS[citationStyle] || STYLE_CONFIGS.gost;
-  
+
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -1539,20 +1794,20 @@ export function exportBibliographyToPdf(
 <body>
   <h1>СПИСОК ЛИТЕРАТУРЫ</h1>
   <p class="subtitle">Проект: ${projectName}<br>Стиль: ${citationStyle.toUpperCase()} | Дата: ${new Date().toLocaleDateString("ru-RU")}</p>
-  ${bibliography.map(item => `<div class="bib-item">${item.number}. ${item.formatted}</div>`).join('\n')}
+  ${bibliography.map((item) => `<div class="bib-item">${item.number}. ${item.formatted}</div>`).join("\n")}
 </body>
 </html>`;
 
-  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  const printWindow = window.open("", "_blank", "width=800,height=600");
   if (printWindow) {
     printWindow.document.write(html);
     printWindow.document.close();
     printWindow.document.title = `${projectName}_bibliography`;
-    
+
     printWindow.onload = () => {
       setTimeout(() => {
-        const hint = printWindow.document.createElement('div');
-        hint.className = 'no-print';
+        const hint = printWindow.document.createElement("div");
+        hint.className = "no-print";
         hint.innerHTML = `
           <div style="position: fixed; top: 0; left: 0; right: 0; background: #1e40af; color: white; padding: 10px; text-align: center; z-index: 10000; font-family: sans-serif;">
             💡 Для сохранения как PDF: выберите "Сохранить как PDF" в качестве принтера
@@ -1561,10 +1816,15 @@ export function exportBibliographyToPdf(
             </button>
           </div>
         `;
-        printWindow.document.body.insertBefore(hint, printWindow.document.body.firstChild);
+        printWindow.document.body.insertBefore(
+          hint,
+          printWindow.document.body.firstChild,
+        );
       }, 300);
     };
   } else {
-    alert('Не удалось открыть окно для печати. Проверьте блокировщик всплывающих окон.');
+    alert(
+      "Не удалось открыть окно для печати. Проверьте блокировщик всплывающих окон.",
+    );
   }
 }
