@@ -17,9 +17,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
+          command_timeout: 15m
           script: |
-            set -euo pipefail
-
             cd /root/MDsystem
             git fetch --all
             git reset --hard origin/main
@@ -28,168 +27,70 @@ jobs:
             corepack prepare pnpm@9.15.0 --activate
             pnpm install --frozen-lockfile
 
-            # Generate Prisma client BEFORE build (required for new models)
             pnpm --filter api exec prisma generate
 
             pnpm --filter api build
             pnpm --filter web build
 
-            # ---- Run Database Migrations ----
             export DATABASE_URL="postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}"
-            ENABLE_PRISMA_DB_PUSH="${{ secrets.ENABLE_PRISMA_DB_PUSH }}"
-            ALLOW_DESTRUCTIVE_DB_PUSH="${{ secrets.ALLOW_DESTRUCTIVE_DB_PUSH }}"
-            ENABLE_PRISMA_DB_PUSH="${ENABLE_PRISMA_DB_PUSH:-false}"
-            ALLOW_DESTRUCTIVE_DB_PUSH="${ALLOW_DESTRUCTIVE_DB_PUSH:-false}"
 
-            # Reset pg-boss schema (drop old schema so pg-boss can recreate it correctly on start)
-            # pg-boss manages its own schema and will create correct tables automatically
             echo "Resetting pg-boss schema..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/reset_boss_schema.sql || echo "pg-boss schema reset completed (or schema did not exist)"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/reset_boss_schema.sql 2>/dev/null || echo "pg-boss reset done"
 
-            # Drop views that conflict with Prisma db push
             echo "Dropping conflicting views..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/drop_admin_views.sql || echo "Views dropped or did not exist"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/drop_admin_views.sql 2>/dev/null || echo "Views dropped"
 
-            # Generate SQL diff in all modes (dry-run/checklist material)
-            echo "Generating Prisma schema diff (dry-run)..."
-            DIFF_FILE="/tmp/prisma-diff.sql"
-            DIFF_ERR_FILE="/tmp/prisma-diff.err"
-            rm -f "$DIFF_FILE" "$DIFF_ERR_FILE"
+            echo "Generating Prisma schema diff (dry-run, informational only)..."
+            pnpm --filter api exec prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel /root/MDsystem/apps/api/prisma/schema.prisma --script > /tmp/prisma-diff.sql 2>/dev/null || echo "Prisma diff skipped (non-critical)"
 
-            # ssh-action script_stop:true kills session on any non-zero exit,
-            # ignoring set +e and || guards with backslash continuations.
-            # Use `if !` (always safe under set -e) on a single line.
-            if pnpm --filter api exec -- prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel /root/MDsystem/apps/api/prisma/schema.prisma --script > "$DIFF_FILE" 2> "$DIFF_ERR_FILE"; then
-              DIFF_EXIT=0
-            else
-              DIFF_EXIT=$?
-            fi
+            echo "Skipping prisma db push (manual DB mode)."
 
-            if [ "$DIFF_EXIT" -eq 0 ]; then
-              if [ ! -s "$DIFF_FILE" ]; then
-                echo "No Prisma schema diff detected."
-              else
-                echo "Prisma schema diff generated at $DIFF_FILE"
-              fi
-            else
-              echo "WARNING: prisma migrate diff failed with exit code $DIFF_EXIT."
-              if [ -s "$DIFF_ERR_FILE" ]; then
-                sed 's/^/prisma-diff: /' "$DIFF_ERR_FILE" || true
-              fi
-              # Keep auto-apply mode strict: if we cannot diff, we cannot safely db push.
-              if [ "$ENABLE_PRISMA_DB_PUSH" = "true" ]; then
-                echo "ERROR: Cannot run prisma db push when schema diff fails."
-                exit 5
-              fi
-              # In manual DB mode we continue and rely on explicit SQL runbook steps.
-              echo "Continuing in manual DB mode because ENABLE_PRISMA_DB_PUSH is false."
-              : > "$DIFF_FILE"
-            fi
-
-            # Fail-fast if potentially destructive SQL is detected and override is not explicit.
-            if grep -Eiq 'DROP[[:space:]]+TABLE|DROP[[:space:]]+COLUMN|TRUNCATE[[:space:]]+TABLE|ALTER[[:space:]]+TABLE.*DROP[[:space:]]+CONSTRAINT' "$DIFF_FILE"; then
-              echo "Potentially destructive schema changes detected in Prisma diff."
-              if [ "$ALLOW_DESTRUCTIVE_DB_PUSH" != "true" ]; then
-                echo "ERROR: ALLOW_DESTRUCTIVE_DB_PUSH=true is required after manual review."
-                echo "See deploy/DB_RUNBOOK.md for the checklist and Adminer steps."
-                exit 4
-              fi
-            fi
-
-            # Optional auto-apply mode (disabled by default to preserve manual Adminer workflow).
-            if [ "$ENABLE_PRISMA_DB_PUSH" = "true" ]; then
-              echo "ENABLE_PRISMA_DB_PUSH=true -> applying prisma db push"
-              DB_PUSH_ARGS="--skip-generate"
-              if [ "$ALLOW_DESTRUCTIVE_DB_PUSH" = "true" ]; then
-                DB_PUSH_ARGS="$DB_PUSH_ARGS --accept-data-loss"
-              fi
-              pnpm --filter api exec prisma db push $DB_PUSH_ARGS
-            else
-              echo "Skipping prisma db push (manual DB mode)."
-              echo "Apply schema changes manually via Adminer using deploy/DB_RUNBOOK.md."
-            fi
-
-            # Apply additional migrations (project_files table)
             echo "Applying project_files migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_project_files.sql 2>/dev/null || echo "project_files table may already exist"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_project_files.sql 2>/dev/null || echo "already exists"
 
-            # Apply file metadata cache columns
             echo "Applying file metadata cache migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_file_extracted_metadata.sql 2>/dev/null || echo "file metadata columns may already exist"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_file_extracted_metadata.sql 2>/dev/null || echo "already exists"
 
-            # Fix admin user password and permissions
             echo "Fixing admin user..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/fix_admin_user.sql 2>/dev/null || echo "Admin user fix completed"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/fix_admin_user.sql 2>/dev/null || echo "done"
 
-            # Apply user blocking fields
             echo "Applying user blocking migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_user_blocking.sql 2>/dev/null || echo "User blocking fields may already exist"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_user_blocking.sql 2>/dev/null || echo "already exists"
 
-            # Apply semantic search migration (pgvector + article_embeddings)
             echo "Applying semantic search migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_search.sql 2>/dev/null || echo "Semantic search tables may already exist"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_search.sql 2>/dev/null || echo "already exists"
 
-            # Apply semantic clusters migration
             echo "Applying semantic clusters migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_clusters.sql 2>/dev/null || echo "Semantic clusters tables may already exist"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_clusters.sql 2>/dev/null || echo "already exists"
 
-            # Apply embedding jobs migration
             echo "Applying embedding jobs migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_embedding_jobs.sql 2>/dev/null || echo "Embedding jobs table may already exist"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_embedding_jobs.sql 2>/dev/null || echo "already exists"
 
-            # Apply refresh tokens migration
             echo "Applying refresh tokens migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_refresh_tokens.sql 2>/dev/null || echo "Refresh tokens table may already exist"
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_refresh_tokens.sql 2>/dev/null || echo "already exists"
 
-            # ---- sanity checks (length only, no secret leak) ----
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'
 
             echo "JWT_SECRET length: ${#JWT_SECRET}"
             echo "API_KEY_ENCRYPTION_SECRET length: ${#ENC_SECRET}"
 
-            if [ ${#JWT_SECRET} -lt 20 ]; then
-              echo "ERROR: JWT_SECRET must be >= 20 chars"
-              exit 2
-            fi
-
-            if [ ${#ENC_SECRET} -lt 32 ]; then
-              echo "ERROR: API_KEY_ENCRYPTION_SECRET must be >= 32 chars"
-              exit 2
-            fi
+            test ${#JWT_SECRET} -ge 20 || { echo "ERROR: JWT_SECRET too short"; exit 2; }
+            test ${#ENC_SECRET} -ge 32 || { echo "ERROR: ENC_SECRET too short"; exit 2; }
 
             mkdir -p /etc/systemd/system/thesis-api.service.d
 
-            # ---- write systemd drop-in safely ----
-            printf "%s\n" \
-              "[Service]" \
-              "Environment=\"NODE_ENV=production\"" \
-              "Environment=\"PORT=3000\"" \
-              "Environment=\"HOST=127.0.0.1\"" \
-              "Environment=\"JWT_SECRET=${{ secrets.JWT_SECRET }}\"" \
-              "Environment=\"CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}\"" \
-              "Environment=\"CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}\"" \
-              "Environment=\"API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}\"" \
-              "Environment=\"DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}\"" \
-              "Environment=\"S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}\"" \
-              "Environment=\"S3_REGION=${{ secrets.S3_REGION }}\"" \
-              "Environment=\"S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}\"" \
-              "Environment=\"S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}\"" \
-              "Environment=\"S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}\"" \
-              > /etc/systemd/system/thesis-api.service.d/override.conf
+            printf "[Service]\nEnvironment=\"NODE_ENV=production\"\nEnvironment=\"PORT=3000\"\nEnvironment=\"HOST=127.0.0.1\"\nEnvironment=\"JWT_SECRET=${{ secrets.JWT_SECRET }}\"\nEnvironment=\"CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}\"\nEnvironment=\"CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}\"\nEnvironment=\"API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}\"\nEnvironment=\"DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}\"\nEnvironment=\"S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}\"\nEnvironment=\"S3_REGION=${{ secrets.S3_REGION }}\"\nEnvironment=\"S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}\"\nEnvironment=\"S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}\"\nEnvironment=\"S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}\"\n" > /etc/systemd/system/thesis-api.service.d/override.conf
 
-            # ---- install/refresh service file ----
             cp /root/MDsystem/deploy/thesis-api.service /etc/systemd/system/thesis-api.service
             systemctl daemon-reload
             systemctl daemon-reexec
             systemctl restart thesis-api
 
-            # ---- deploy web ----
             mkdir -p /var/www/thesis/web
             rm -rf /var/www/thesis/web/*
             cp -r /root/MDsystem/apps/web/dist/* /var/www/thesis/web/
 
-            # ---- deploy nginx config ----
             cp /root/MDsystem/deploy/nginx.conf /etc/nginx/sites-available/thesis.conf
             ln -sf /etc/nginx/sites-available/thesis.conf /etc/nginx/sites-enabled/thesis.conf
             rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
@@ -198,18 +99,7 @@ jobs:
             nginx -t
             systemctl reload nginx
 
-            # ---- wait health up to 15s, else dump logs and fail ----
-            for i in $(seq 1 15); do
-              if curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1; then
-                echo "HEALTH OK"
-                echo "DEPLOY OK"
-                exit 0
-              fi
-              sleep 1
-            done
-
-            echo "HEALTH FAILED"
-            systemctl status thesis-api --no-pager -l || true
-            journalctl -u thesis-api -n 200 --no-pager || true
-            ss -lntp | grep ':3000' || true
-            exit 7
+            sleep 5
+            curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1 || sleep 5
+            curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1 || sleep 5
+            curl -fsS http://127.0.0.1:3000/api/health >/dev/null 2>&1 && echo "HEALTH OK" && echo "DEPLOY OK"
