@@ -296,6 +296,46 @@
   padding: 4px 12px;
 }
 
+.tiptap-loading--error {
+  color: #ef4444;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.tiptap-error-reload-btn {
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tiptap-comment-modal {
+  max-width: 400px;
+}
+
+.tiptap-comment-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tiptap-comment-hint {
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.tiptap-comment-textarea {
+  resize: vertical;
+}
+
+.tiptap-comment-add-icon {
+  margin-right: 4px;
+}
+
 .editor-status-progress {
   width: 80px;
   height: 6px;

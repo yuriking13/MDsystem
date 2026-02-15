@@ -290,6 +290,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const editorInitTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
       null,
     );
+    const editorWrapperRef = useRef<HTMLDivElement | null>(null);
     const styleConfig = STYLE_CONFIGS[currentStyle] || STYLE_CONFIGS.gost;
 
     // Custom page settings (can override style defaults)
@@ -321,6 +322,28 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         textAlign: config.textAlign,
       });
     }, [citationStyle]);
+
+    useEffect(() => {
+      const wrapper = editorWrapperRef.current;
+      if (!wrapper) return;
+      wrapper.style.setProperty(
+        "--editor-font-size",
+        `${pageSettings.fontSize}pt`,
+      );
+      wrapper.style.setProperty(
+        "--editor-line-height",
+        `${pageSettings.lineHeight}`,
+      );
+      wrapper.style.setProperty(
+        "--editor-paragraph-indent",
+        pageSettings.paragraphIndent,
+      );
+      wrapper.style.setProperty(
+        "--editor-font-family",
+        pageSettings.fontFamily,
+      );
+      wrapper.style.setProperty("--editor-text-align", pageSettings.textAlign);
+    }, [pageSettings]);
 
     // Создаём расширения по одному с проверкой
     const extensions = useMemo(() => {
@@ -1538,27 +1561,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     // Show error state
     if (editorError) {
       return (
-        <div
-          className="tiptap-loading"
-          style={{
-            color: "#ef4444",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
+        <div className="tiptap-loading tiptap-loading--error">
           <div>⚠️ {editorError}</div>
           <button
             onClick={() => window.location.reload()}
-            style={{
-              padding: "8px 16px",
-              background: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-            }}
+            className="tiptap-error-reload-btn"
           >
             Обновить страницу
           </button>
@@ -1624,17 +1631,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
     };
 
-    // CSS variables for styling based on page settings
-    const styleVars = {
-      "--editor-font-size": `${pageSettings.fontSize}pt`,
-      "--editor-line-height": pageSettings.lineHeight,
-      "--editor-paragraph-indent": pageSettings.paragraphIndent,
-      "--editor-font-family": pageSettings.fontFamily,
-      "--editor-text-align": pageSettings.textAlign,
-    } as React.CSSProperties;
-
     return (
-      <div className="tiptap-editor-wrapper" style={styleVars}>
+      <div ref={editorWrapperRef} className="tiptap-editor-wrapper">
         {editable && (
           <TiptapToolbar
             editor={editor}
@@ -1727,19 +1725,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             onClick={() => setShowCommentModal(false)}
           >
             <div
-              className="modal-content"
               onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: 400 }}
+              className="modal-content tiptap-comment-modal"
             >
               <div className="modal-header">
-                <h3
-                  className="modal-title"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
+                <h3 className="modal-title tiptap-comment-title">
                   <IconChatBubbleQuote className="w-5 h-5" size="md" />
                   Добавить комментарий
                 </h3>
@@ -1751,16 +1741,15 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
                 </button>
               </div>
               <div className="modal-body">
-                <p className="muted" style={{ fontSize: 12, marginBottom: 12 }}>
+                <p className="muted tiptap-comment-hint">
                   Комментарий будет добавлен к выделенному тексту
                 </p>
                 <textarea
-                  className="form-input form-textarea"
+                  className="form-input form-textarea tiptap-comment-textarea"
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Введите комментарий..."
                   rows={4}
-                  style={{ resize: "vertical" }}
                   autoFocus
                 />
               </div>
@@ -1794,9 +1783,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
                   }}
                 >
                   <IconPlus
-                    className="w-3.5 h-3.5"
+                    className="w-3.5 h-3.5 tiptap-comment-add-icon"
                     size="sm"
-                    style={{ marginRight: 4 }}
                   />
                   Добавить комментарий
                 </button>
