@@ -5833,6 +5833,114 @@ input:focus::placeholder {
   box-shadow: -8px 0 32px rgba(0, 0, 0, 0.1);
 }
 
+.article-convert-modal {
+  max-width: 500px;
+  padding: 24px;
+}
+
+.article-convert-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.article-convert-icon {
+  color: var(--accent);
+}
+
+.article-convert-title {
+  margin: 0;
+}
+
+.article-convert-description {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+.article-convert-title-field {
+  margin-bottom: 16px;
+}
+
+.article-convert-bib-option {
+  align-items: center;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.article-convert-bib-checkbox {
+  width: auto;
+}
+
+.article-convert-bib-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.article-convert-summary {
+  font-size: 12px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.article-convert-summary-list {
+  margin: 8px 0 0 0;
+  padding-left: 20px;
+}
+
+.article-convert-action-btn {
+  flex: 1;
+}
+
+.article-convert-btn-icon {
+  margin-right: 6px;
+}
+
+.article-search-all-modal {
+  max-width: 450px;
+  padding: 24px;
+}
+
+.article-search-all-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.article-search-all-icon {
+  color: #fbbf24;
+}
+
+.article-search-all-title {
+  margin: 0;
+}
+
+.article-search-all-description {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.article-search-all-warning {
+  margin-bottom: 24px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.article-search-all-action-btn {
+  flex: 1;
+}
+
+.article-search-all-btn-icon {
+  margin-right: 6px;
+}
+
 @keyframes slideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
@@ -6125,6 +6233,11 @@ input:focus::placeholder {
 .rabbit-link-btn.translate:hover {
   border-color: #38bdf8;
   color: #38bdf8;
+}
+
+.rabbit-link-btn--document {
+  background: var(--accent-secondary);
+  color: var(--text-primary);
 }
 
 .rabbit-link-btn:disabled {

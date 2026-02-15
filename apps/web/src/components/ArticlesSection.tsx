@@ -2662,13 +2662,9 @@ export default function ArticlesSection({
                 )}
                 {canEdit && (
                   <button
-                    className="rabbit-link-btn"
+                    className="rabbit-link-btn rabbit-link-btn--document"
                     onClick={openConvertModal}
                     type="button"
-                    style={{
-                      background: "var(--accent-secondary)",
-                      color: "var(--text-primary)",
-                    }}
                     title="Добавить как документ проекта"
                   >
                     <svg
@@ -2799,21 +2795,12 @@ export default function ArticlesSection({
           onClick={() => setShowConvertModal(false)}
         >
           <div
-            className="rabbit-sidebar"
+            className="rabbit-sidebar article-convert-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: 500, padding: 24 }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 16,
-              }}
-            >
+            <div className="article-convert-header">
               <svg
-                className="icon-lg"
-                style={{ color: "var(--accent)" }}
+                className="icon-lg article-convert-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2825,21 +2812,14 @@ export default function ArticlesSection({
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <h3 style={{ margin: 0 }}>Добавить как документ</h3>
+              <h3 className="article-convert-title">Добавить как документ</h3>
             </div>
 
-            <p
-              style={{
-                marginBottom: 16,
-                color: "var(--text-secondary)",
-                lineHeight: 1.6,
-                fontSize: 14,
-              }}
-            >
+            <p className="article-convert-description">
               Статья будет добавлена как новый редактируемый документ проекта.
             </p>
 
-            <label className="stack" style={{ marginBottom: 16 }}>
+            <label className="stack article-convert-title-field">
               <span>Название документа</span>
               <input
                 type="text"
@@ -2851,23 +2831,16 @@ export default function ArticlesSection({
 
             {/* Опция импорта библиографии */}
             {selectedArticle.extracted_bibliography && (
-              <label
-                className="row gap"
-                style={{
-                  alignItems: "center",
-                  marginBottom: 16,
-                  cursor: "pointer",
-                }}
-              >
+              <label className="row gap article-convert-bib-option">
                 <input
                   type="checkbox"
                   checked={convertIncludeBibliography}
                   onChange={(e) =>
                     setConvertIncludeBibliography(e.target.checked)
                   }
-                  style={{ width: "auto" }}
+                  className="article-convert-bib-checkbox"
                 />
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="article-convert-bib-label">
                   <svg
                     className="icon-sm"
                     fill="none"
@@ -2886,18 +2859,9 @@ export default function ArticlesSection({
               </label>
             )}
 
-            <div
-              className="muted"
-              style={{
-                fontSize: 12,
-                padding: 12,
-                background: "var(--bg-secondary)",
-                borderRadius: 8,
-                marginBottom: 24,
-              }}
-            >
+            <div className="muted article-convert-summary">
               <strong>Будет создано:</strong>
-              <ul style={{ margin: "8px 0 0 0", paddingLeft: 20 }}>
+              <ul className="article-convert-summary-list">
                 <li>Документ с метаданными статьи</li>
                 <li>Заготовка для основного текста</li>
                 {convertIncludeBibliography && (
@@ -2908,19 +2872,17 @@ export default function ArticlesSection({
 
             <div className="row gap">
               <button
-                className="btn"
                 onClick={handleConvertToDocument}
                 disabled={convertingToDoc || !convertDocTitle.trim()}
                 type="button"
-                style={{ flex: 1 }}
+                className="btn article-convert-action-btn"
               >
                 {convertingToDoc ? (
                   <>Создаём...</>
                 ) : (
                   <>
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 6 }}
+                      className="icon-sm article-convert-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -2937,10 +2899,9 @@ export default function ArticlesSection({
                 )}
               </button>
               <button
-                className="btn secondary"
                 onClick={() => setShowConvertModal(false)}
                 type="button"
-                style={{ flex: 1 }}
+                className="btn secondary article-convert-action-btn"
               >
                 Отмена
               </button>
@@ -2956,21 +2917,12 @@ export default function ArticlesSection({
           onClick={() => setShowAllArticlesConfirm(false)}
         >
           <div
-            className="rabbit-sidebar"
+            className="rabbit-sidebar article-search-all-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: 450, padding: 24 }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 16,
-              }}
-            >
+            <div className="article-search-all-header">
               <svg
-                className="icon-lg"
-                style={{ color: "#fbbf24" }}
+                className="icon-lg article-search-all-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2982,47 +2934,33 @@ export default function ArticlesSection({
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 />
               </svg>
-              <h3 style={{ margin: 0 }}>Загрузка всех статей</h3>
+              <h3 className="article-search-all-title">Загрузка всех статей</h3>
             </div>
 
-            <p
-              style={{
-                marginBottom: 16,
-                color: "var(--text-secondary)",
-                lineHeight: 1.6,
-              }}
-            >
+            <p className="article-search-all-description">
               По запросу <strong>"{searchQuery}"</strong> найдено примерно{" "}
               <strong>{allArticlesCount?.toLocaleString("ru-RU")}</strong>{" "}
               статей.
             </p>
 
-            <p
-              style={{
-                marginBottom: 24,
-                color: "var(--text-muted)",
-                fontSize: 13,
-              }}
-            >
+            <p className="article-search-all-warning">
               Загрузка большого количества статей может занять значительное
               время. Вы уверены, что хотите загрузить все?
             </p>
 
             <div className="row gap">
               <button
-                className="btn"
                 onClick={handleConfirmSearchAll}
                 disabled={searching}
                 type="button"
-                style={{ flex: 1 }}
+                className="btn article-search-all-action-btn"
               >
                 {searching ? (
                   <>Загрузка...</>
                 ) : (
                   <>
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 6 }}
+                      className="icon-sm article-search-all-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -3039,13 +2977,12 @@ export default function ArticlesSection({
                 )}
               </button>
               <button
-                className="btn secondary"
                 onClick={() => {
                   setShowAllArticlesConfirm(false);
                   setAllArticlesCount(null);
                 }}
                 type="button"
-                style={{ flex: 1 }}
+                className="btn secondary article-search-all-action-btn"
               >
                 Отмена
               </button>
