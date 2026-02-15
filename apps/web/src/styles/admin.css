@@ -1090,10 +1090,22 @@
 }
 
 .admin-calendar-cell.has-activity {
-  background: rgba(75, 116, 255, calc(0.1 + var(--activity-intensity, 0) * 0.2));
+  background: rgba(75, 116, 255, var(--activity-alpha, 0.1));
   border-color: rgba(75, 116, 255, 0.2);
   cursor: pointer;
 }
+
+.admin-calendar-cell--intensity-0 { --activity-alpha: 0.10; }
+.admin-calendar-cell--intensity-1 { --activity-alpha: 0.12; }
+.admin-calendar-cell--intensity-2 { --activity-alpha: 0.14; }
+.admin-calendar-cell--intensity-3 { --activity-alpha: 0.16; }
+.admin-calendar-cell--intensity-4 { --activity-alpha: 0.18; }
+.admin-calendar-cell--intensity-5 { --activity-alpha: 0.20; }
+.admin-calendar-cell--intensity-6 { --activity-alpha: 0.22; }
+.admin-calendar-cell--intensity-7 { --activity-alpha: 0.24; }
+.admin-calendar-cell--intensity-8 { --activity-alpha: 0.26; }
+.admin-calendar-cell--intensity-9 { --activity-alpha: 0.28; }
+.admin-calendar-cell--intensity-10 { --activity-alpha: 0.30; }
 
 .admin-calendar-cell.has-activity:hover {
   border-color: var(--accent);

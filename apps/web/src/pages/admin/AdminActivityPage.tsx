@@ -204,19 +204,13 @@ export default function AdminActivityPage() {
 
       const minutes = dayData ? parseFloat(dayData.total_minutes || "0") : 0;
       const intensity = Math.min(minutes / 60, 1); // Max intensity at 60+ minutes
+      const intensityLevel = Math.round(intensity * 10);
 
       currentWeek.push(
         <div
           key={day}
-          className={`admin-calendar-cell ${hasActivity ? "has-activity" : ""} ${isSelected ? "selected" : ""}`}
+          className={`admin-calendar-cell ${hasActivity ? "has-activity" : ""} ${hasActivity ? `admin-calendar-cell--intensity-${intensityLevel}` : ""} ${isSelected ? "selected" : ""}`}
           onClick={() => hasActivity && setSelectedDate(dateStr)}
-          style={
-            hasActivity
-              ? ({
-                  "--activity-intensity": intensity,
-                } as React.CSSProperties)
-              : undefined
-          }
         >
           <span className="admin-calendar-day">{day}</span>
           {hasActivity && (
