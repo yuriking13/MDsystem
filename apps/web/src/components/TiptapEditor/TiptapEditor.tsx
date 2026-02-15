@@ -553,6 +553,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       if (!editor || !editor.view) return;
       const viewDom = editor.view.dom;
       const EDGE_ZONE = 6; // px from bottom edge to trigger resize
+      const editorResizeCursorClass = "tiptap-row-resize-cursor";
+      const bodyResizeStateClass = "tiptap-row-resize-active";
       let activeRow: HTMLTableRowElement | null = null;
       let dragging = false;
       let startY = 0;
@@ -582,13 +584,13 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               rect.bottom - event.clientY <= EDGE_ZONE &&
               rect.bottom - event.clientY >= 0
             ) {
-              viewDom.style.cursor = "row-resize";
+              viewDom.classList.add(editorResizeCursorClass);
               return;
             }
           }
         }
         if (!dragging) {
-          viewDom.style.cursor = "";
+          viewDom.classList.remove(editorResizeCursorClass);
         }
       };
 
@@ -596,9 +598,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         if (!dragging || !activeRow) return;
         const finalHeight = applyRowHeight(activeRow, event.clientY);
         dragging = false;
-        document.body.style.cursor = "";
-        document.body.style.userSelect = "";
-        viewDom.style.cursor = "";
+        document.body.classList.remove(bodyResizeStateClass);
+        viewDom.classList.remove(editorResizeCursorClass);
         const row = activeRow;
         activeRow = null;
         document.removeEventListener("mousemove", onMouseMove);
@@ -674,8 +675,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         dragging = true;
         startY = event.clientY;
         startHeight = rect.height;
-        document.body.style.cursor = "row-resize";
-        document.body.style.userSelect = "none";
+        document.body.classList.add(bodyResizeStateClass);
         document.addEventListener("mousemove", onMouseMove);
         document.addEventListener("mouseup", onMouseUp);
       };
@@ -685,6 +685,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       return () => {
         viewDom.removeEventListener("mousedown", onMouseDown);
         viewDom.removeEventListener("mousemove", onMouseMove);
+        viewDom.classList.remove(editorResizeCursorClass);
+        document.body.classList.remove(bodyResizeStateClass);
         document.removeEventListener("mousemove", onMouseMove);
         document.removeEventListener("mouseup", onMouseUp);
       };

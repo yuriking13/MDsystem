@@ -542,6 +542,15 @@
   flex-direction: column;
 }
 
+.tiptap-row-resize-cursor {
+  cursor: row-resize !important;
+}
+
+body.tiptap-row-resize-active {
+  cursor: row-resize !important;
+  user-select: none !important;
+}
+
 .tiptap-editor .tiptap {
   outline: none;
   flex: 1;
