@@ -1569,16 +1569,8 @@ export default function ProjectDetailPage() {
           : "container project-detail-container"
       }
     >
-      {error && (
-        <div className="alert" style={{ marginBottom: 12 }}>
-          {error}
-        </div>
-      )}
-      {ok && (
-        <div className="ok" style={{ marginBottom: 12 }}>
-          {ok}
-        </div>
-      )}
+      {error && <div className="alert project-status-message">{error}</div>}
+      {ok && <div className="ok project-status-message">{ok}</div>}
 
       {/* Tab Content */}
       <div className="tab-content">
@@ -1614,8 +1606,7 @@ export default function ProjectDetailPage() {
             {showCreateDoc && (
               <form
                 onSubmit={handleCreateDocument}
-                className="search-form-card"
-                style={{ margin: 0 }}
+                className="search-form-card documents-create-form"
               >
                 <div className="stack">
                   <label className="stack">
@@ -1771,8 +1762,7 @@ export default function ProjectDetailPage() {
                         type="button"
                       >
                         <svg
-                          className="icon-sm"
-                          style={{ marginRight: 4 }}
+                          className="icon-sm statistics-btn-icon"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth={1.5}

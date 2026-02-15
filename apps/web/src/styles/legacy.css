@@ -2867,6 +2867,14 @@ input:focus::placeholder {
   padding: 0 clamp(16px, 3.8vw, 60px) 16px;
 }
 
+.project-status-message {
+  margin-bottom: 12px;
+}
+
+.documents-create-form {
+  margin: 0;
+}
+
 .documents-header {
   display: flex;
   align-items: center;
