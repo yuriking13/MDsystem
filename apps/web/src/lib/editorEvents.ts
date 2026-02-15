@@ -36,7 +36,7 @@ class EditorEventEmitter {
       handlers.forEach((handler) => {
         try {
           handler(data);
-        } catch (error) {
+        } catch {
           // Silent fail to not break other handlers
         }
       });

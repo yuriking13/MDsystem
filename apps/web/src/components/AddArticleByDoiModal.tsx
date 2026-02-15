@@ -36,7 +36,7 @@ export default function AddArticleByDoiModal({
       alert(result.message);
       onSuccess();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       const errMsg = getErrorMessage(err);
 
       if (errMsg.includes("404")) {
@@ -65,8 +65,18 @@ export default function AddArticleByDoiModal({
         <div className="modal-header">
           <h2 className="modal-title">Добавить статью по DOI</h2>
           <button className="modal-close" onClick={onClose} disabled={loading}>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -84,15 +94,25 @@ export default function AddArticleByDoiModal({
                 disabled={loading}
                 autoFocus
               />
-              <small style={{ color: "var(--color-text-tertiary)", marginTop: "4px", display: "block", fontSize: "0.75rem" }}>
-                Введите полный DOI статьи. Данные будут загружены из базы Crossref.
+              <small
+                style={{
+                  color: "var(--color-text-tertiary)",
+                  marginTop: "4px",
+                  display: "block",
+                  fontSize: "0.75rem",
+                }}
+              >
+                Введите полный DOI статьи. Данные будут загружены из базы
+                Crossref.
               </small>
             </label>
 
             <label className="form-label">
               <span className="form-label-text">Статус в проекте</span>
               <div style={{ display: "flex", gap: "12px" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <label
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                >
                   <input
                     type="radio"
                     value="candidate"
@@ -102,7 +122,9 @@ export default function AddArticleByDoiModal({
                   />
                   Кандидат
                 </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <label
+                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
+                >
                   <input
                     type="radio"
                     value="selected"
@@ -115,11 +137,7 @@ export default function AddArticleByDoiModal({
               </div>
             </label>
 
-            {error && (
-              <div className="alert-error">
-                {error}
-              </div>
-            )}
+            {error && <div className="alert-error">{error}</div>}
           </div>
 
           <div className="modal-footer">
