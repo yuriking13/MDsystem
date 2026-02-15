@@ -19,11 +19,15 @@ class EditorEventEmitter {
     if (!this.handlers.has(event)) {
       this.handlers.set(event, new Set());
     }
-    this.handlers.get(event)!.add(handler as EventHandler);
+    const eventHandlers = this.handlers.get(event);
+    if (!eventHandlers) {
+      return () => undefined;
+    }
+    eventHandlers.add(handler as EventHandler);
 
     // Return unsubscribe function
     return () => {
-      this.handlers.get(event)?.delete(handler as EventHandler);
+      eventHandlers.delete(handler as EventHandler);
     };
   }
 
