@@ -3836,11 +3836,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -3852,10 +3851,9 @@ export default function ProjectDetailPage() {
                 <h4>Команда проекта</h4>
                 {isOwner && !showInvite && (
                   <button
-                    className="btn"
+                    className="btn settings-invite-btn"
                     onClick={() => setShowInvite(true)}
                     type="button"
-                    style={{ marginLeft: "auto", fontSize: 13 }}
                   >
                     + Пригласить
                   </button>
@@ -3865,8 +3863,7 @@ export default function ProjectDetailPage() {
                 {showInvite && (
                   <form
                     onSubmit={handleInvite}
-                    className="card"
-                    style={{ marginBottom: 16 }}
+                    className="card settings-invite-form"
                   >
                     <div className="stack">
                       <label className="stack">
@@ -3922,7 +3919,7 @@ export default function ProjectDetailPage() {
                   </div>
                   {members.map((m) => (
                     <div className="trow" key={m.user_id}>
-                      <div className="mono" style={{ fontSize: 13 }}>
+                      <div className="mono settings-member-email">
                         {m.email} {m.user_id === user?.id && "(вы)"}
                       </div>
                       <div>
@@ -3936,12 +3933,11 @@ export default function ProjectDetailPage() {
                       <div>
                         {isOwner && m.role !== "owner" && (
                           <button
-                            className="btn secondary"
+                            className="btn secondary settings-member-remove-btn"
                             onClick={() =>
                               handleRemoveMember(m.user_id, m.email)
                             }
                             type="button"
-                            style={{ fontSize: 12, padding: "6px 10px" }}
                           >
                             Удалить
                           </button>
@@ -3957,11 +3953,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -3998,11 +3993,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4061,11 +4055,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4139,11 +4132,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4248,11 +4240,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4339,8 +4330,7 @@ export default function ProjectDetailPage() {
                   ) : (
                     <>
                       <svg
-                        className="icon-sm"
-                        style={{ marginRight: 6 }}
+                        className="icon-sm settings-save-icon"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={1.5}

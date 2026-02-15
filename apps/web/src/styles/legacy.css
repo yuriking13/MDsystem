@@ -3145,8 +3145,30 @@ input:focus::placeholder {
   font-size: 15px;
 }
 
+.settings-card-header-icon {
+  color: var(--accent);
+}
+
 .settings-card-body {
   padding: 20px;
+}
+
+.settings-invite-btn {
+  margin-left: auto;
+  font-size: 13px;
+}
+
+.settings-invite-form {
+  margin-bottom: 16px;
+}
+
+.settings-member-email {
+  font-size: 13px;
+}
+
+.settings-member-remove-btn {
+  font-size: 12px;
+  padding: 6px 10px;
 }
 
 .settings-hint {
@@ -3226,6 +3248,10 @@ input:focus::placeholder {
 .settings-save-btn {
   padding: 14px 28px;
   font-size: 14px;
+}
+
+.settings-save-icon {
+  margin-right: 6px;
 }
 
 /* Research types grid */
