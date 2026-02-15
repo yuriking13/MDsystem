@@ -139,11 +139,9 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
         const el = r.getElement();
         if (el) {
           if (idx === rowIdx) {
-            el.style.outline = "2px solid #3b82f6";
-            el.style.outlineOffset = "-2px";
+            el.classList.add("tabulator-row-selected-outline");
           } else {
-            el.style.outline = "";
-            el.style.outlineOffset = "";
+            el.classList.remove("tabulator-row-selected-outline");
           }
         }
       });
@@ -215,7 +213,7 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
         rows.forEach((_: any, idx: number) => {
           const el = rows[idx].getElement();
           if (el) {
-            el.style.cursor = "pointer";
+            el.classList.add("tabulator-row-clickable");
           }
         });
       });
