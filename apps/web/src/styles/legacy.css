@@ -5528,6 +5528,23 @@ input:focus::placeholder {
 }
 
 @media (max-width: 768px) {
+  .documents-header,
+  .files-header,
+  .statistics-header {
+    align-items: stretch;
+  }
+
+  .documents-header .btn,
+  .files-header .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .files-header .row.gap {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .documents-grid,
   .files-grid {
     grid-template-columns: 1fr;
@@ -5563,6 +5580,11 @@ input:focus::placeholder {
 
   .statistics-controls {
     width: 100%;
+  }
+
+  .statistics-controls .btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .view-toggle {
