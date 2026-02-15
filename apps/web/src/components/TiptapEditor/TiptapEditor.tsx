@@ -719,10 +719,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         const total = widths.reduce((sum, w) => sum + w, 0);
         if (!total || total <= containerWidth + 1) return null;
         const scale = containerWidth / total;
-        let scaled = widths.map((w) =>
+        const scaled = widths.map((w) =>
           Math.max(minWidth, Math.round(w * scale)),
         );
-        let scaledTotal = scaled.reduce((sum, w) => sum + w, 0);
+        const scaledTotal = scaled.reduce((sum, w) => sum + w, 0);
 
         if (scaledTotal > containerWidth) {
           let over = scaledTotal - containerWidth;
