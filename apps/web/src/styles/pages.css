@@ -889,6 +889,42 @@
   background: rgba(251, 191, 36, 0.1);
 }
 
+.docs-color-blue {
+  color: #3b82f6;
+}
+
+.docs-color-emerald {
+  color: #10b981;
+}
+
+.docs-color-violet {
+  color: #8b5cf6;
+}
+
+.docs-color-amber {
+  color: #f59e0b;
+}
+
+.docs-color-green {
+  color: #22c55e;
+}
+
+.docs-color-yellow {
+  color: #eab308;
+}
+
+.docs-color-red {
+  color: #ef4444;
+}
+
+.docs-color-orange {
+  color: #f97316;
+}
+
+.docs-color-pink {
+  color: #ec4899;
+}
+
 @media (max-width: 1024px) {
   .docs-layout {
     flex-direction: column;

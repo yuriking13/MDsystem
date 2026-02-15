@@ -274,7 +274,7 @@ function OverviewSection() {
               stroke="currentColor"
               strokeWidth={1.5}
               viewBox="0 0 24 24"
-              style={{ color: "#3b82f6" }}
+              className="docs-color-blue"
             >
               <path
                 strokeLinecap="round"
@@ -299,7 +299,7 @@ function OverviewSection() {
               stroke="currentColor"
               strokeWidth={1.5}
               viewBox="0 0 24 24"
-              style={{ color: "#10b981" }}
+              className="docs-color-emerald"
             >
               <path
                 strokeLinecap="round"
@@ -324,7 +324,7 @@ function OverviewSection() {
               stroke="currentColor"
               strokeWidth={1.5}
               viewBox="0 0 24 24"
-              style={{ color: "#8b5cf6" }}
+              className="docs-color-violet"
             >
               <path
                 strokeLinecap="round"
@@ -349,7 +349,7 @@ function OverviewSection() {
               stroke="currentColor"
               strokeWidth={1.5}
               viewBox="0 0 24 24"
-              style={{ color: "#f59e0b" }}
+              className="docs-color-amber"
             >
               <path
                 strokeLinecap="round"
@@ -691,31 +691,31 @@ function GraphSection() {
       <h3 className="docs-section-heading">Цвета узлов</h3>
       <ul>
         <li>
-          <span style={{ color: "#22c55e" }}>■</span> <strong>Зелёный</strong> —
+          <span className="docs-color-green">■</span> <strong>Зелёный</strong> —
           отобранные статьи
         </li>
         <li>
-          <span style={{ color: "#3b82f6" }}>■</span> <strong>Синий</strong> —
+          <span className="docs-color-blue">■</span> <strong>Синий</strong> —
           PubMed (кандидаты)
         </li>
         <li>
-          <span style={{ color: "#eab308" }}>■</span> <strong>Жёлтый</strong> —
+          <span className="docs-color-yellow">■</span> <strong>Жёлтый</strong> —
           DOAJ
         </li>
         <li>
-          <span style={{ color: "#8b5cf6" }}>■</span>{" "}
+          <span className="docs-color-violet">■</span>{" "}
           <strong>Фиолетовый</strong> — Wiley
         </li>
         <li>
-          <span style={{ color: "#ef4444" }}>■</span> <strong>Красный</strong> —
+          <span className="docs-color-red">■</span> <strong>Красный</strong> —
           исключённые
         </li>
         <li>
-          <span style={{ color: "#f97316" }}>■</span> <strong>Оранжевый</strong>{" "}
-          — ссылки (references)
+          <span className="docs-color-orange">■</span>{" "}
+          <strong>Оранжевый</strong> — ссылки (references)
         </li>
         <li>
-          <span style={{ color: "#ec4899" }}>■</span> <strong>Розовый</strong> —
+          <span className="docs-color-pink">■</span> <strong>Розовый</strong> —
           статьи, цитирующие ваши работы
         </li>
       </ul>
