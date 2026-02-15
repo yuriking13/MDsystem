@@ -312,6 +312,29 @@
   @apply resize-none;
 }
 
+.add-article-doi-modal {
+  max-width: 500px;
+}
+
+.add-article-doi-help {
+  color: var(--text-muted);
+  margin-top: 4px;
+  display: block;
+  font-size: 0.75rem;
+}
+
+.add-article-doi-status-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.add-article-doi-status-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* =============================================================================
    Loading & Empty States
    ============================================================================= */

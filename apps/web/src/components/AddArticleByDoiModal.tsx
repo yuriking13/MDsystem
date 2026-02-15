@@ -58,9 +58,8 @@ export default function AddArticleByDoiModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="modal-content"
+        className="modal-content add-article-doi-modal"
         onClick={(e) => e.stopPropagation()}
-        style={{ maxWidth: "500px" }}
       >
         <div className="modal-header">
           <h2 className="modal-title">Добавить статью по DOI</h2>
@@ -94,14 +93,7 @@ export default function AddArticleByDoiModal({
                 disabled={loading}
                 autoFocus
               />
-              <small
-                style={{
-                  color: "var(--color-text-tertiary)",
-                  marginTop: "4px",
-                  display: "block",
-                  fontSize: "0.75rem",
-                }}
-              >
+              <small className="add-article-doi-help">
                 Введите полный DOI статьи. Данные будут загружены из базы
                 Crossref.
               </small>
@@ -109,10 +101,8 @@ export default function AddArticleByDoiModal({
 
             <label className="form-label">
               <span className="form-label-text">Статус в проекте</span>
-              <div style={{ display: "flex", gap: "12px" }}>
-                <label
-                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
-                >
+              <div className="add-article-doi-status-options">
+                <label className="add-article-doi-status-option">
                   <input
                     type="radio"
                     value="candidate"
@@ -122,9 +112,7 @@ export default function AddArticleByDoiModal({
                   />
                   Кандидат
                 </label>
-                <label
-                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
-                >
+                <label className="add-article-doi-status-option">
                   <input
                     type="radio"
                     value="selected"
