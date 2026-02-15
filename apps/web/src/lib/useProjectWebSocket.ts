@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { apiFetch } from "./api";
 
+type WSPayloadRecord = Record<string, unknown>;
+
 // Типы событий
 export type WSEventType =
   | "statistic:created"
@@ -17,19 +19,22 @@ export type WSEventType =
 export interface WSEvent {
   type: WSEventType;
   projectId?: string;
-  payload?: Record<string, any>;
+  payload?: WSPayloadRecord;
   timestamp: number;
   userId?: string;
 }
 
 export type WSEventHandler = (event: WSEvent) => void;
 
-interface UseProjectWebSocketOptions {
+interface UseProjectWebSocketOptions<
+  TStatistic extends WSPayloadRecord = WSPayloadRecord,
+  TDocument extends WSPayloadRecord = WSPayloadRecord,
+> {
   projectId: string | undefined;
-  onStatisticCreated?: (statistic: any) => void;
-  onStatisticUpdated?: (statistic: any) => void;
+  onStatisticCreated?: (statistic: TStatistic) => void;
+  onStatisticUpdated?: (statistic: TStatistic) => void;
   onStatisticDeleted?: (statisticId: string) => void;
-  onDocumentUpdated?: (document: any) => void;
+  onDocumentUpdated?: (document: TDocument) => void;
   onDocumentDeleted?: (documentId: string) => void;
   onEvent?: WSEventHandler; // Общий обработчик всех событий
   enabled?: boolean;
@@ -41,10 +46,24 @@ interface UseProjectWebSocketReturn {
   reconnect: () => void;
 }
 
+function asPayloadRecord(value: unknown): WSPayloadRecord | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  return value as WSPayloadRecord;
+}
+
+function asPayloadString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
 /**
  * React Hook для подписки на real-time события проекта через WebSocket
  */
-export function useProjectWebSocket({
+export function useProjectWebSocket<
+  TStatistic extends WSPayloadRecord = WSPayloadRecord,
+  TDocument extends WSPayloadRecord = WSPayloadRecord,
+>({
   projectId,
   onStatisticCreated,
   onStatisticUpdated,
@@ -53,7 +72,10 @@ export function useProjectWebSocket({
   onDocumentDeleted,
   onEvent,
   enabled = true,
-}: UseProjectWebSocketOptions): UseProjectWebSocketReturn {
+}: UseProjectWebSocketOptions<
+  TStatistic,
+  TDocument
+>): UseProjectWebSocketReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [lastEvent, setLastEvent] = useState<WSEvent | null>(null);
 
@@ -122,7 +144,6 @@ export function useProjectWebSocket({
         wsRef.current = ws;
 
         ws.onopen = () => {
-          console.log("[WS] Connected to project:", projectId);
           setIsConnected(true);
           reconnectAttemptsRef.current = 0;
 
@@ -144,45 +165,59 @@ export function useProjectWebSocket({
 
             // Вызываем специфичные обработчики
             switch (data.type) {
-              case "statistic:created":
-                callbacksRef.current.onStatisticCreated?.(
-                  data.payload?.statistic,
-                );
+              case "statistic:created": {
+                const statistic = asPayloadRecord(data.payload?.statistic);
+                if (statistic) {
+                  callbacksRef.current.onStatisticCreated?.(
+                    statistic as TStatistic,
+                  );
+                }
                 break;
-              case "statistic:updated":
-                callbacksRef.current.onStatisticUpdated?.(
-                  data.payload?.statistic,
-                );
+              }
+              case "statistic:updated": {
+                const statistic = asPayloadRecord(data.payload?.statistic);
+                if (statistic) {
+                  callbacksRef.current.onStatisticUpdated?.(
+                    statistic as TStatistic,
+                  );
+                }
                 break;
-              case "statistic:deleted":
-                callbacksRef.current.onStatisticDeleted?.(
-                  data.payload?.statisticId,
-                );
+              }
+              case "statistic:deleted": {
+                const statisticId = asPayloadString(data.payload?.statisticId);
+                if (statisticId) {
+                  callbacksRef.current.onStatisticDeleted?.(statisticId);
+                }
                 break;
-              case "document:updated":
-                callbacksRef.current.onDocumentUpdated?.(
-                  data.payload?.document,
-                );
+              }
+              case "document:updated": {
+                const document = asPayloadRecord(data.payload?.document);
+                if (document) {
+                  callbacksRef.current.onDocumentUpdated?.(
+                    document as TDocument,
+                  );
+                }
                 break;
-              case "document:deleted":
-                callbacksRef.current.onDocumentDeleted?.(
-                  data.payload?.documentId,
-                );
+              }
+              case "document:deleted": {
+                const documentId = asPayloadString(data.payload?.documentId);
+                if (documentId) {
+                  callbacksRef.current.onDocumentDeleted?.(documentId);
+                }
                 break;
+              }
               case "connected":
-                console.log("[WS] Server acknowledged connection");
                 break;
               case "pong":
                 // Ping-pong для keepalive
                 break;
             }
-          } catch (err) {
-            console.error("[WS] Failed to parse message:", err);
+          } catch {
+            // Ignore invalid websocket payloads
           }
         };
 
         ws.onclose = (event) => {
-          console.log("[WS] Disconnected:", event.code, event.reason);
           setIsConnected(false);
 
           // Очищаем ping interval
@@ -198,7 +233,6 @@ export function useProjectWebSocket({
               1000 * Math.pow(2, reconnectAttemptsRef.current),
               30000,
             );
-            console.log(`[WS] Reconnecting in ${delay}ms...`);
 
             reconnectTimeoutRef.current = setTimeout(() => {
               reconnectAttemptsRef.current++;
@@ -207,11 +241,10 @@ export function useProjectWebSocket({
           }
         };
 
-        ws.onerror = (error) => {
-          console.error("[WS] Error:", error);
+        ws.onerror = () => {
+          // handled by onclose + retry logic
         };
-      } catch (error) {
-        console.error("[WS] Failed to initialize connection:", error);
+      } catch {
         setIsConnected(false);
       }
     };
