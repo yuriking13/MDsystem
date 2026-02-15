@@ -188,26 +188,18 @@ export default function DocumentationPage() {
 
   return (
     <div className="container docs-page">
-      <div className="row space docs-page-header" style={{ marginBottom: 24 }}>
+      <div className="row space docs-page-header">
         <div className="row gap">
           <Link to="/projects" className="btn secondary">
             ← К проектам
           </Link>
-          <h1
-            style={{
-              margin: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-            }}
-          >
+          <h1 className="docs-page-title">
             <svg
-              className="icon-lg"
+              className="icon-lg docs-icon-accent"
               fill="none"
               stroke="currentColor"
               strokeWidth={1.5}
               viewBox="0 0 24 24"
-              style={{ color: "var(--accent)" }}
             >
               <path
                 strokeLinecap="round"
@@ -223,39 +215,15 @@ export default function DocumentationPage() {
       <div className="docs-layout">
         {/* Sidebar */}
         <div className="docs-sidebar">
-          <div
-            className="card docs-sidebar-card"
-            style={{ position: "sticky", top: 20 }}
-          >
-            <nav className="docs-nav" style={{ padding: 8 }}>
+          <div className="card docs-sidebar-card">
+            <nav className="docs-nav">
               {DOC_SECTIONS.map((section) => (
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
                   className={`doc-nav-item ${activeSection === section.id ? "active" : ""}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "none",
-                    background:
-                      activeSection === section.id
-                        ? "rgba(75, 116, 255, 0.15)"
-                        : "transparent",
-                    color:
-                      activeSection === section.id
-                        ? "var(--accent)"
-                        : "var(--text-primary)",
-                    borderRadius: 8,
-                    cursor: "pointer",
-                    fontSize: 14,
-                    textAlign: "left",
-                    marginBottom: 4,
-                  }}
                 >
-                  <span style={{ width: 20, height: 20 }}>{section.icon}</span>
+                  <span className="doc-nav-item-icon">{section.icon}</span>
                   {section.title}
                 </button>
               ))}
@@ -265,7 +233,7 @@ export default function DocumentationPage() {
 
         {/* Content */}
         <div className="docs-content">
-          <div className="card docs-content-card" style={{ padding: 32 }}>
+          <div className="card docs-content-card">
             {activeSection === "overview" && <OverviewSection />}
             {activeSection === "articles" && <ArticlesSection />}
             {activeSection === "documents" && <DocumentsSection />}
@@ -296,26 +264,9 @@ function OverviewSection() {
 
       <h3>Ключевые возможности</h3>
 
-      <div
-        className="features-grid docs-features-grid"
-        style={{ marginTop: 16 }}
-      >
-        <div
-          className="feature-card docs-feature-card"
-          style={{
-            padding: 16,
-            background: "var(--bg-secondary)",
-            borderRadius: 12,
-          }}
-        >
-          <h4
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 8,
-            }}
-          >
+      <div className="features-grid docs-features-grid docs-features-grid-spaced">
+        <div className="feature-card docs-feature-card">
+          <h4 className="docs-feature-title">
             <svg
               width={20}
               height={20}
@@ -333,30 +284,14 @@ function OverviewSection() {
             </svg>
             Поиск статей
           </h4>
-          <p
-            style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}
-          >
+          <p className="docs-feature-text">
             Поиск в PubMed, DOAJ, Wiley с фильтрацией по типу публикации, году,
             доступности текста
           </p>
         </div>
 
-        <div
-          className="feature-card docs-feature-card"
-          style={{
-            padding: 16,
-            background: "var(--bg-secondary)",
-            borderRadius: 12,
-          }}
-        >
-          <h4
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 8,
-            }}
-          >
+        <div className="feature-card docs-feature-card">
+          <h4 className="docs-feature-title">
             <svg
               width={20}
               height={20}
@@ -374,30 +309,14 @@ function OverviewSection() {
             </svg>
             Автоматическая библиография
           </h4>
-          <p
-            style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}
-          >
+          <p className="docs-feature-text">
             Цитирование статей в документах с автоматическим формированием
             списка литературы в ГОСТ, APA, Vancouver
           </p>
         </div>
 
-        <div
-          className="feature-card docs-feature-card"
-          style={{
-            padding: 16,
-            background: "var(--bg-secondary)",
-            borderRadius: 12,
-          }}
-        >
-          <h4
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 8,
-            }}
-          >
+        <div className="feature-card docs-feature-card">
+          <h4 className="docs-feature-title">
             <svg
               width={20}
               height={20}
@@ -415,30 +334,14 @@ function OverviewSection() {
             </svg>
             Граф цитирований
           </h4>
-          <p
-            style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}
-          >
+          <p className="docs-feature-text">
             Визуализация связей между статьями, поиск релевантных публикаций
             через AI-ассистента
           </p>
         </div>
 
-        <div
-          className="feature-card docs-feature-card"
-          style={{
-            padding: 16,
-            background: "var(--bg-secondary)",
-            borderRadius: 12,
-          }}
-        >
-          <h4
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginBottom: 8,
-            }}
-          >
+        <div className="feature-card docs-feature-card">
+          <h4 className="docs-feature-title">
             <svg
               width={20}
               height={20}
@@ -456,17 +359,15 @@ function OverviewSection() {
             </svg>
             Статистика и графики
           </h4>
-          <p
-            style={{ margin: 0, fontSize: 13, color: "var(--text-secondary)" }}
-          >
+          <p className="docs-feature-text">
             Создание таблиц и графиков с возможностью вставки в документы и
             экспорта
           </p>
         </div>
       </div>
 
-      <h3 style={{ marginTop: 32 }}>Быстрый старт</h3>
-      <ol style={{ lineHeight: 1.8, paddingLeft: 20 }}>
+      <h3 className="docs-section-heading-lg">Быстрый старт</h3>
+      <ol className="docs-numbered-list">
         <li>Создайте новый проект на странице «Проекты»</li>
         <li>Перейдите в раздел «База статей» и выполните поиск</li>
         <li>Отберите нужные статьи для работы</li>
@@ -520,20 +421,12 @@ function ArticlesSection() {
         </li>
       </ul>
 
-      <div
-        className="doc-tip"
-        style={{
-          padding: 16,
-          background: "rgba(59, 130, 246, 0.1)",
-          borderRadius: 8,
-          marginTop: 16,
-        }}
-      >
+      <div className="doc-tip doc-tip--info">
         <strong>Совет:</strong> Используйте «Мультипоиск» для одновременного
         выполнения нескольких запросов с одинаковыми фильтрами.
       </div>
 
-      <h3 style={{ marginTop: 24 }}>Статусы статей</h3>
+      <h3 className="docs-section-heading">Статусы статей</h3>
       <ul>
         <li>
           <strong>Кандидаты</strong> — новые найденные статьи, требующие
@@ -551,7 +444,7 @@ function ArticlesSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>Дополнительные функции</h3>
+      <h3 className="docs-section-heading">Дополнительные функции</h3>
       <ul>
         <li>
           <strong>Перевод</strong> — автоматический перевод заголовков и
@@ -571,7 +464,7 @@ function ArticlesSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>Формирование библиографии</h3>
+      <h3 className="docs-section-heading">Формирование библиографии</h3>
       <p>
         Список литературы формируется автоматически из статей, которые вы
         цитируете в документах. При вставке цитаты в документ статья получает
@@ -602,7 +495,7 @@ function DocumentsSection() {
         экспортируемого файла.
       </p>
 
-      <h3 style={{ marginTop: 24 }}>Редактор документов</h3>
+      <h3 className="docs-section-heading">Редактор документов</h3>
       <p>Редактор поддерживает:</p>
       <ul>
         <li>
@@ -627,28 +520,28 @@ function DocumentsSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>Вставка цитат</h3>
+      <h3 className="docs-section-heading">Вставка цитат</h3>
       <p>
         Нажмите кнопку «Цитата» в панели инструментов. Откроется окно выбора
         статьи из отобранных в вашем проекте. После выбора в текст вставится
         ссылка [N], а статья добавится в список литературы.
       </p>
 
-      <h3 style={{ marginTop: 24 }}>Импорт статистики</h3>
+      <h3 className="docs-section-heading">Импорт статистики</h3>
       <p>
         Кнопка «Статистика» позволяет вставить в документ таблицу или график из
         раздела «Статистика». При экспорте в Word таблицы сохраняют
         форматирование.
       </p>
 
-      <h3 style={{ marginTop: 24 }}>Нумерация таблиц и рисунков</h3>
+      <h3 className="docs-section-heading">Нумерация таблиц и рисунков</h3>
       <p>
         Таблицы и рисунки автоматически нумеруются в порядке добавления в
         документ. Заголовок таблицы отображается над ней («Таблица 1 —
         Название»), а подпись к рисунку — под ним («Рисунок 1 — Название»).
       </p>
 
-      <h3 style={{ marginTop: 24 }}>Экспорт</h3>
+      <h3 className="docs-section-heading">Экспорт</h3>
       <ul>
         <li>
           <strong>Word (главы)</strong> — выберите конкретные главы для экспорта
@@ -696,14 +589,14 @@ function FilesSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>Вставка в документы</h3>
+      <h3 className="docs-section-heading">Вставка в документы</h3>
       <p>
         Загруженные изображения можно вставлять в документы через кнопку «Файл»
         в панели инструментов редактора. При выборе изображения оно
         автоматически получит подпись «Рисунок N — Название».
       </p>
 
-      <h3 style={{ marginTop: 24 }}>Просмотр и скачивание</h3>
+      <h3 className="docs-section-heading">Просмотр и скачивание</h3>
       <p>
         Кликните на файл для предпросмотра (доступен для изображений, видео,
         аудио и PDF). Используйте кнопку скачивания для загрузки файла на
@@ -729,7 +622,7 @@ function StatisticsSection() {
         в табличной форме, затем выберите тип визуализации.
       </p>
 
-      <h3 style={{ marginTop: 24 }}>Типы графиков</h3>
+      <h3 className="docs-section-heading">Типы графиков</h3>
       <ul>
         <li>
           <strong>Столбчатая диаграмма</strong> — сравнение значений между
@@ -755,13 +648,13 @@ function StatisticsSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>Настройка графиков</h3>
+      <h3 className="docs-section-heading">Настройка графиков</h3>
       <p>
         В редакторе можно настроить заголовок, подписи осей, выбрать колонки для
         визуализации и цветовую схему. Изменения сохраняются автоматически.
       </p>
 
-      <h3 style={{ marginTop: 24 }}>Вставка в документы</h3>
+      <h3 className="docs-section-heading">Вставка в документы</h3>
       <p>
         Используйте кнопку «Статистика» в редакторе документа для выбора и
         вставки таблицы или графика. При экспорте в Word таблицы сохраняют
@@ -795,7 +688,7 @@ function GraphSection() {
         </li>
       </ol>
 
-      <h3 style={{ marginTop: 24 }}>Цвета узлов</h3>
+      <h3 className="docs-section-heading">Цвета узлов</h3>
       <ul>
         <li>
           <span style={{ color: "#22c55e" }}>■</span> <strong>Зелёный</strong> —
@@ -827,7 +720,7 @@ function GraphSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>AI-ассистент</h3>
+      <h3 className="docs-section-heading">AI-ассистент</h3>
       <p>
         Нажмите кнопку «AI» для открытия панели поиска. Опишите, какие статьи вы
         ищете, и AI найдёт подходящие публикации среди связанных работ. Примеры
@@ -839,21 +732,13 @@ function GraphSection() {
         <li>«РКИ за последние 5 лет»</li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>Добавление статей</h3>
+      <h3 className="docs-section-heading">Добавление статей</h3>
       <p>
         Кликните на интересующий узел для просмотра деталей. Используйте кнопки
         «В Кандидаты» или «В Отобранные» для добавления статьи в проект.
       </p>
 
-      <div
-        className="doc-tip"
-        style={{
-          padding: 16,
-          background: "rgba(251, 191, 36, 0.1)",
-          borderRadius: 8,
-          marginTop: 16,
-        }}
-      >
+      <div className="doc-tip doc-tip--warning">
         <strong>Кнопка P-value:</strong> Если среди связанных статей есть
         публикации со значимыми результатами, вы можете добавить их все одним
         кликом по кнопке «+ Добавить все» рядом со счётчиком P-value.
@@ -888,13 +773,13 @@ function TeamSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>Приглашение участников</h3>
+      <h3 className="docs-section-heading">Приглашение участников</h3>
       <p>
         Введите email коллеги и выберите роль. Если пользователь ещё не
         зарегистрирован, он получит приглашение при первом входе в систему.
       </p>
 
-      <h3 style={{ marginTop: 24 }}>Real-time синхронизация</h3>
+      <h3 className="docs-section-heading">Real-time синхронизация</h3>
       <p>
         Изменения в проекте синхронизируются в реальном времени через WebSocket.
         Вы увидите зелёный индикатор «Live» когда соединение активно.
@@ -935,7 +820,7 @@ function SettingsSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>Протокол исследования</h3>
+      <h3 className="docs-section-heading">Протокол исследования</h3>
       <p>Выберите стандарт отчётности для проверки структуры работы:</p>
       <ul>
         <li>
@@ -952,7 +837,7 @@ function SettingsSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>Стиль библиографии</h3>
+      <h3 className="docs-section-heading">Стиль библиографии</h3>
       <ul>
         <li>
           <strong>ГОСТ Р 7.0.5-2008</strong> — российский стандарт, шрифт 14pt,
@@ -967,7 +852,7 @@ function SettingsSection() {
         </li>
       </ul>
 
-      <h3 style={{ marginTop: 24 }}>AI-анализ</h3>
+      <h3 className="docs-section-heading">AI-анализ</h3>
       <p>Включите AI-функции для автоматической проверки:</p>
       <ul>
         <li>
@@ -1005,7 +890,7 @@ function ApiKeysSection() {
         <li>Проверки соответствия протоколу исследования</li>
       </ul>
 
-      <h4 style={{ marginTop: 16 }}>Как получить ключ OpenRouter:</h4>
+      <h4 className="docs-subsection-heading">Как получить ключ OpenRouter:</h4>
       <ol>
         <li>
           Зарегистрируйтесь на{" "}
@@ -1022,20 +907,12 @@ function ApiKeysSection() {
         <li>Скопируйте ключ и вставьте в настройках платформы</li>
       </ol>
 
-      <div
-        className="doc-tip"
-        style={{
-          padding: 16,
-          background: "rgba(59, 130, 246, 0.1)",
-          borderRadius: 8,
-          marginTop: 16,
-        }}
-      >
+      <div className="doc-tip doc-tip--info">
         <strong>Безопасность:</strong> Ключи хранятся в зашифрованном виде и
         используются только для запросов от вашего аккаунта.
       </div>
 
-      <h3 style={{ marginTop: 24 }}>Другие API ключи</h3>
+      <h3 className="docs-section-heading">Другие API ключи</h3>
       <p>
         В будущих версиях будет добавлена поддержка дополнительных сервисов для
         работы с научными базами данных.
