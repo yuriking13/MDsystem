@@ -21,11 +21,23 @@
   contain: layout style;
 }
 
+.app-mobile-topbar {
+  display: none;
+}
+
+.app-sidebar-overlay {
+  display: none;
+}
+
 .app-main-fixed {
   height: 100%;
   max-height: 100vh;
   min-height: 0;
   overflow: hidden;
+}
+
+.app-main-fixed .app-mobile-topbar {
+  display: none !important;
 }
 
 /* Lock entire page for fixed layouts (editor, graph) */
@@ -849,6 +861,92 @@ html.layout-fixed #root {
    ============================================================================= */
 
 @media (max-width: 768px) {
+  .app-mobile-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 35;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 10px 16px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(10, 22, 40, 0.9);
+    border-bottom: 1px solid rgba(56, 89, 138, 0.3);
+  }
+
+  .light-theme .app-mobile-topbar,
+  [data-theme="light"] .app-mobile-topbar {
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom-color: rgba(224, 214, 202, 0.9);
+  }
+
+  .app-mobile-topbar-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #f8fafc;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .light-theme .app-mobile-topbar-title,
+  [data-theme="light"] .app-mobile-topbar-title {
+    color: #2d1f10;
+  }
+
+  .app-mobile-nav-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(56, 89, 138, 0.35);
+    background: rgba(22, 34, 54, 0.9);
+    color: #e2e8f0;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+  }
+
+  .app-mobile-nav-toggle svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .app-mobile-nav-toggle:hover {
+    background: rgba(30, 48, 80, 0.95);
+    border-color: rgba(56, 89, 138, 0.55);
+    color: #ffffff;
+  }
+
+  .light-theme .app-mobile-nav-toggle,
+  [data-theme="light"] .app-mobile-nav-toggle {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(224, 214, 202, 0.95);
+    color: #6b5744;
+  }
+
+  .light-theme .app-mobile-nav-toggle:hover,
+  [data-theme="light"] .app-mobile-nav-toggle:hover {
+    background: rgba(255, 248, 236, 1);
+    color: #2d1f10;
+  }
+
+  .app-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: block;
+    border: 0;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+  }
+
   .app-sidebar {
     @apply fixed left-0 top-0 z-50;
     @apply -translate-x-full;

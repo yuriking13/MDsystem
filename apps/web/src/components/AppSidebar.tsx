@@ -45,6 +45,8 @@ interface AppSidebarProps {
   projectName?: string;
   projectRole?: string;
   projectUpdatedAt?: string;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 export default function AppSidebar({
@@ -52,6 +54,8 @@ export default function AppSidebar({
   projectName,
   projectRole,
   projectUpdatedAt,
+  mobileOpen = false,
+  onCloseMobile,
 }: AppSidebarProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -250,6 +254,7 @@ export default function AppSidebar({
     } else if (item.path) {
       navigate(item.path);
     }
+    onCloseMobile?.();
   };
 
   const navItems = isInProject ? projectNavItems : mainNavItems;
@@ -259,6 +264,7 @@ export default function AppSidebar({
       className={cn(
         "app-sidebar",
         collapsed && "app-sidebar--collapsed",
+        mobileOpen && "app-sidebar--open",
         className,
       )}
     >
@@ -292,7 +298,10 @@ export default function AppSidebar({
         <div className="sidebar-project">
           <button
             className="sidebar-back-btn"
-            onClick={() => navigate("/projects")}
+            onClick={() => {
+              navigate("/projects");
+              onCloseMobile?.();
+            }}
             title="Назад к проектам"
           >
             <ArrowLeftIcon className="w-4 h-4" />
@@ -382,6 +391,7 @@ export default function AppSidebar({
                                 } else if (currentTab !== "articles") {
                                   goToProjectTab("articles");
                                 }
+                                onCloseMobile?.();
                               }}
                               className={cn(
                                 "sidebar-submenu-item",
@@ -493,7 +503,10 @@ export default function AppSidebar({
         {user && (
           <button
             className="sidebar-user"
-            onClick={() => navigate("/settings")}
+            onClick={() => {
+              navigate("/settings");
+              onCloseMobile?.();
+            }}
             title="Перейти в настройки"
             type="button"
           >
@@ -511,7 +524,10 @@ export default function AppSidebar({
         {/* Logout */}
         <button
           className="sidebar-footer-btn sidebar-logout-btn"
-          onClick={handleLogout}
+          onClick={() => {
+            handleLogout();
+            onCloseMobile?.();
+          }}
           title="Выйти"
         >
           <ArrowRightOnRectangleIcon className="sidebar-footer-icon" />

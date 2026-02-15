@@ -175,10 +175,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container">
+    <div className="container settings-account-page">
       {/* Header Card */}
       <div className="card" style={{ marginBottom: 20 }}>
-        <div className="row space">
+        <div className="row space settings-account-header">
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <svg
               className="icon-lg"
@@ -207,7 +207,7 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-          <div className="row gap">
+          <div className="row gap settings-account-header-actions">
             <button
               className="btn secondary"
               onClick={() => nav("/projects")}
@@ -270,14 +270,7 @@ export default function SettingsPage() {
           <h4 style={{ margin: 0 }}>Профиль</h4>
         </div>
         <div className="settings-card-body">
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "120px 1fr",
-              gap: "12px 20px",
-              alignItems: "center",
-            }}
-          >
+          <div className="settings-profile-grid">
             <div className="muted" style={{ fontSize: 13 }}>
               User ID
             </div>
@@ -312,15 +305,8 @@ export default function SettingsPage() {
           <h4 style={{ margin: 0 }}>Справка</h4>
         </div>
         <div className="settings-card-body">
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-                flexWrap: "wrap",
-              }}
-            >
+          <div className="settings-help-content">
+            <div className="settings-help-actions">
               <button
                 className="btn secondary"
                 onClick={() => nav("/docs")}
@@ -434,10 +420,11 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="settings-provider-list">
             {list.map(({ p, has, meta }) => (
               <div
                 key={p}
+                className="settings-provider-item"
                 style={{
                   padding: 16,
                   background: "var(--bg-glass-light)",
@@ -449,6 +436,7 @@ export default function SettingsPage() {
                 }}
               >
                 <div
+                  className="settings-provider-header"
                   style={{
                     display: "flex",
                     alignItems: "flex-start",
@@ -473,8 +461,9 @@ export default function SettingsPage() {
                   >
                     {meta?.icon}
                   </div>
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div
+                      className="settings-provider-title-row"
                       style={{
                         display: "flex",
                         alignItems: "center",
@@ -521,8 +510,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <div className="settings-provider-actions">
                   <input
+                    className="settings-provider-input"
                     type="password"
                     placeholder={
                       has ? "Обновить ключ..." : "Вставьте API ключ..."

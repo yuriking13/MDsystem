@@ -1564,6 +1564,76 @@ input:focus::placeholder {
   overflow: hidden;
 }
 
+@media (max-width: 1200px) {
+  .citations-panel-fixed {
+    width: 240px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .document-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .document-header .doc-title-input {
+    margin-left: 0;
+    max-width: none;
+    width: 100%;
+  }
+
+  .document-content {
+    flex-direction: column;
+    overflow: auto;
+  }
+
+  .document-editor-wrapper {
+    order: 1;
+  }
+
+  .document-editor-container {
+    height: calc(100vh - 260px);
+    min-height: 420px;
+  }
+
+  .citations-panel-fixed {
+    order: 2;
+    width: 100%;
+    max-height: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .document-content {
+    gap: 12px;
+  }
+
+  .document-editor-container {
+    height: calc(100vh - 220px);
+    min-height: 340px;
+    border-radius: 12px;
+  }
+
+  .editor-toolbar-fixed {
+    gap: 4px;
+    padding: 8px 10px;
+  }
+
+  .editor-toolbar-fixed .citation-btn,
+  .editor-toolbar-fixed .import-stats-btn {
+    font-size: 11px;
+    padding: 0 8px;
+  }
+
+  .editor-scroll-area.scroll-mode {
+    padding: 12px;
+  }
+
+  .editor-scroll-area.pages-mode {
+    padding: 16px 8px;
+  }
+}
+
 .document-editor-wrapper {
   flex: 1;
   min-width: 0;

@@ -527,3 +527,170 @@
     transform: scale(1);
   }
 }
+
+/* =============================================================================
+   Settings Account Page (responsive hardening)
+   ============================================================================= */
+
+.settings-account-page {
+  max-width: 1200px;
+}
+
+.settings-account-header {
+  gap: 12px;
+}
+
+.settings-account-header-actions {
+  flex-wrap: wrap;
+}
+
+.settings-profile-grid {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 12px 20px;
+  align-items: center;
+}
+
+.settings-help-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-help-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.settings-provider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-provider-item {
+  min-width: 0;
+}
+
+.settings-provider-header {
+  min-width: 0;
+}
+
+.settings-provider-title-row {
+  flex-wrap: wrap;
+}
+
+.settings-provider-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.settings-provider-input {
+  flex: 1;
+  min-width: 220px;
+}
+
+/* =============================================================================
+   Documentation Page (responsive hardening)
+   ============================================================================= */
+
+.docs-page {
+  max-width: 1200px;
+}
+
+.docs-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.docs-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.docs-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.docs-content-card {
+  min-width: 0;
+}
+
+.docs-features-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.docs-feature-card {
+  min-width: 0;
+}
+
+@media (max-width: 1024px) {
+  .docs-layout {
+    flex-direction: column;
+  }
+
+  .docs-sidebar {
+    width: 100%;
+  }
+
+  .docs-sidebar-card {
+    position: static !important;
+    top: auto !important;
+  }
+
+  .docs-features-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-account-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .settings-profile-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .settings-provider-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .settings-provider-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-provider-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .settings-provider-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .docs-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .docs-page-header .row.gap {
+    flex-wrap: wrap;
+  }
+
+  .docs-content-card {
+    padding: 20px !important;
+  }
+}

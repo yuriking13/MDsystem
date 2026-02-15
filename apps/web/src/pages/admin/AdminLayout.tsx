@@ -27,6 +27,11 @@ export default function AdminLayout() {
   const { admin, logout } = useAdminAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname]);
 
   const sidebarItems: SidebarItem[] = [
     { path: "/admin", label: "Дашборд", icon: <IconChartBar /> },
@@ -51,8 +56,19 @@ export default function AdminLayout() {
 
   return (
     <div className="admin-layout">
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          className="admin-sidebar-overlay"
+          aria-label="Закрыть навигацию"
+          onClick={() => setMobileSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`admin-sidebar ${sidebarOpen ? "open" : "collapsed"}`}>
+      <aside
+        className={`admin-sidebar ${sidebarOpen ? "open" : "collapsed"} ${mobileSidebarOpen ? "mobile-open" : ""}`}
+      >
         <div className="admin-sidebar-header">
           <div className="admin-logo">
             <IconShield size="lg" className="admin-logo-icon" />
@@ -94,6 +110,7 @@ export default function AdminLayout() {
               to={item.path}
               className={`admin-nav-item ${isActive(item.path) ? "active" : ""}`}
               title={!sidebarOpen ? item.label : undefined}
+              onClick={() => setMobileSidebarOpen(false)}
             >
               <span className="admin-nav-icon">{item.icon}</span>
               {sidebarOpen && (
@@ -112,7 +129,11 @@ export default function AdminLayout() {
         </nav>
 
         <div className="admin-sidebar-footer">
-          <Link to="/projects" className="admin-nav-item admin-back-to-app">
+          <Link
+            to="/projects"
+            className="admin-nav-item admin-back-to-app"
+            onClick={() => setMobileSidebarOpen(false)}
+          >
             <span className="admin-nav-icon">
               <IconArrowLeft />
             </span>
@@ -128,7 +149,14 @@ export default function AdminLayout() {
                 <span className="admin-user-role">Администратор</span>
               </div>
             )}
-            <button className="admin-logout-btn" onClick={logout} title="Выйти">
+            <button
+              className="admin-logout-btn"
+              onClick={() => {
+                setMobileSidebarOpen(false);
+                logout();
+              }}
+              title="Выйти"
+            >
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -149,6 +177,29 @@ export default function AdminLayout() {
 
       {/* Main Content */}
       <main className="admin-main">
+        <div className="admin-mobile-topbar">
+          <button
+            type="button"
+            className="admin-mobile-nav-toggle"
+            onClick={() => setMobileSidebarOpen((prev) => !prev)}
+            aria-label="Открыть навигацию"
+            aria-expanded={mobileSidebarOpen}
+          >
+            <svg
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <span className="admin-mobile-title">Admin Panel</span>
+        </div>
         <Outlet />
       </main>
     </div>

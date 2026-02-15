@@ -74,6 +74,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { token } = useAuth();
   const location = useLocation();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [projectInfo, setProjectInfoState] =
     useState<ProjectInfo>(defaultProjectInfo);
   const [articleCounts, setArticleCounts] =
@@ -124,6 +125,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
     };
   }, [shouldLockLayout]);
 
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileSidebarOpen]);
+
   if (hideSidebar) {
     return <>{children || <Outlet />}</>;
   }
@@ -148,8 +164,39 @@ export default function AppLayout({ children }: AppLayoutProps) {
           projectName={projectInfo.name || undefined}
           projectRole={projectInfo.role || undefined}
           projectUpdatedAt={projectInfo.updatedAt || undefined}
+          mobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
         />
+        {mobileSidebarOpen && (
+          <button
+            className="app-sidebar-overlay"
+            type="button"
+            onClick={() => setMobileSidebarOpen(false)}
+            aria-label="Закрыть навигацию"
+          />
+        )}
         <main className={`app-main${isFixedLayout ? " app-main-fixed" : ""}`}>
+          <div className="app-mobile-topbar">
+            <button
+              type="button"
+              className="app-mobile-nav-toggle"
+              onClick={() => setMobileSidebarOpen((prev) => !prev)}
+              aria-label="Открыть навигацию"
+              aria-expanded={mobileSidebarOpen}
+            >
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+            <span className="app-mobile-topbar-title">
+              {projectInfo.name || "Scientiaiter"}
+            </span>
+          </div>
           {children || <Outlet />}
         </main>
       </div>
