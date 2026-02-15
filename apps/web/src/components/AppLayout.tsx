@@ -178,6 +178,24 @@ export default function AppLayout({ children }: AppLayoutProps) {
           mobileOpen={mobileSidebarOpen}
           onCloseMobile={() => setMobileSidebarOpen(false)}
         />
+        {isFixedLayout && (
+          <button
+            type="button"
+            className="app-mobile-fab-toggle"
+            onClick={() => setMobileSidebarOpen((prev) => !prev)}
+            aria-label="Открыть навигацию"
+            aria-expanded={mobileSidebarOpen}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        )}
         {mobileSidebarOpen && (
           <button
             className="app-sidebar-overlay"
@@ -187,27 +205,29 @@ export default function AppLayout({ children }: AppLayoutProps) {
           />
         )}
         <main className={`app-main${isFixedLayout ? " app-main-fixed" : ""}`}>
-          <div className="app-mobile-topbar">
-            <button
-              type="button"
-              className="app-mobile-nav-toggle"
-              onClick={() => setMobileSidebarOpen((prev) => !prev)}
-              aria-label="Открыть навигацию"
-              aria-expanded={mobileSidebarOpen}
-            >
-              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
-              </svg>
-            </button>
-            <span className="app-mobile-topbar-title">
-              {projectInfo.name || "Scientiaiter"}
-            </span>
-          </div>
+          {!isFixedLayout && (
+            <div className="app-mobile-topbar">
+              <button
+                type="button"
+                className="app-mobile-nav-toggle"
+                onClick={() => setMobileSidebarOpen((prev) => !prev)}
+                aria-label="Открыть навигацию"
+                aria-expanded={mobileSidebarOpen}
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+              <span className="app-mobile-topbar-title">
+                {projectInfo.name || "Scientiaiter"}
+              </span>
+            </div>
+          )}
           {children || <Outlet />}
         </main>
       </div>
