@@ -4941,6 +4941,74 @@ input:focus::placeholder {
   }
 }
 
+.document-file-modal {
+  max-width: 800px;
+}
+
+.document-file-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.document-file-search-wrap {
+  margin-bottom: 16px;
+}
+
+.document-file-search-input-wrap {
+  position: relative;
+}
+
+.document-file-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.document-file-search-input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-glass-light);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.document-file-filter-row {
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.document-file-filter-btn {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.document-file-state {
+  text-align: center;
+  padding: 40px;
+}
+
+.document-file-empty-icon {
+  color: var(--text-muted);
+  margin: 0 auto 12px;
+}
+
+.document-file-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  max-height: 450px;
+  overflow: auto;
+  padding: 4px;
+}
+
 /* Clickable citation number */
 .citation-number.clickable {
   cursor: pointer;

@@ -2179,19 +2179,11 @@ export default function DocumentPage() {
       {showFileModal && (
         <div className="modal-backdrop" onClick={() => setShowFileModal(false)}>
           <div
-            className="modal-content"
-            style={{ maxWidth: 800 }}
+            className="modal-content document-file-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h3
-                className="modal-title"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+              <h3 className="modal-title document-file-modal-title">
                 <IconFolder className="w-5 h-5" />
                 Вставить файл из проекта
               </h3>
@@ -2205,54 +2197,27 @@ export default function DocumentPage() {
             </div>
             <div className="modal-body">
               {/* Поиск по названию файла */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ position: "relative" }}>
-                  <IconSearch
-                    className="w-5 h-5"
-                    style={{
-                      position: "absolute",
-                      left: 12,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      color: "var(--text-muted)",
-                      pointerEvents: "none",
-                    }}
-                  />
+              <div className="document-file-search-wrap">
+                <div className="document-file-search-input-wrap">
+                  <IconSearch className="w-5 h-5 document-file-search-icon" />
                   <input
                     type="text"
                     placeholder="Поиск по названию файла..."
                     value={fileSearch}
                     onChange={(e) => setFileSearch(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px 10px 40px",
-                      borderRadius: 8,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-glass-light)",
-                      color: "var(--text-primary)",
-                      fontSize: 14,
-                    }}
+                    className="document-file-search-input"
                   />
                 </div>
               </div>
 
               {/* Фильтр по типу */}
-              <div
-                className="row gap"
-                style={{ marginBottom: 16, flexWrap: "wrap" }}
-              >
+              <div className="row gap document-file-filter-row">
                 {(["all", "image", "video", "audio", "document"] as const).map(
                   (cat) => (
                     <button
                       key={cat}
-                      className={`btn ${fileFilter === cat ? "" : "secondary"}`}
+                      className={`btn document-file-filter-btn ${fileFilter === cat ? "" : "secondary"}`}
                       onClick={() => setFileFilter(cat)}
-                      style={{
-                        fontSize: 12,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
                       type="button"
                     >
                       {cat === "all" && (
@@ -2291,18 +2256,12 @@ export default function DocumentPage() {
               </div>
 
               {loadingFiles ? (
-                <div style={{ textAlign: "center", padding: 40 }}>
+                <div className="document-file-state">
                   <div className="muted">Загрузка файлов...</div>
                 </div>
               ) : filteredFiles.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 40 }}>
-                  <IconFolder
-                    className="w-12 h-12"
-                    style={{
-                      color: "var(--text-muted)",
-                      margin: "0 auto 12px",
-                    }}
-                  />
+                <div className="document-file-state">
+                  <IconFolder className="w-12 h-12 document-file-empty-icon" />
                   <div className="muted">
                     {projectFiles.length === 0
                       ? 'Нет загруженных файлов. Загрузите файлы во вкладке "Файлы" проекта.'
@@ -2312,17 +2271,7 @@ export default function DocumentPage() {
                   </div>
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(140px, 1fr))",
-                    gap: 12,
-                    maxHeight: 450,
-                    overflow: "auto",
-                    padding: 4,
-                  }}
-                >
+                <div className="document-file-grid">
                   {projectId &&
                     filteredFiles.map((file) => (
                       <FilePickerItem
