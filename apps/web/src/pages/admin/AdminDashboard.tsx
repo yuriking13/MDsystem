@@ -105,6 +105,10 @@ function MiniBarChart({
         {last7.map((item, i) => {
           const height =
             maxCount > 0 ? (parseInt(item.count) / maxCount) * 100 : 0;
+          const heightClass = `admin-mini-chart-bar--h${Math.max(
+            1,
+            Math.min(20, Math.round(Math.max(height, 5) / 5)),
+          )}`;
           const day = new Date(item.date).toLocaleDateString("ru-RU", {
             weekday: "short",
           });
@@ -114,10 +118,7 @@ function MiniBarChart({
               className="admin-mini-chart-bar-wrapper"
               title={`${day}: ${item.count}`}
             >
-              <div
-                className="admin-mini-chart-bar"
-                style={{ height: `${Math.max(height, 5)}%` }}
-              />
+              <div className={`admin-mini-chart-bar ${heightClass}`} />
               <span className="admin-mini-chart-day">{day}</span>
             </div>
           );
@@ -429,9 +430,11 @@ export default function AdminDashboard() {
                             </span>
                           </div>
                           <div className="admin-storage-bar">
-                            <div
-                              className="admin-storage-fill"
-                              style={{ width: `${percentage}%` }}
+                            <progress
+                              className="admin-storage-progress"
+                              value={percentage}
+                              max={100}
+                              aria-label={`Заполненность хранилища категории ${cat.category}`}
                             />
                           </div>
                         </div>
