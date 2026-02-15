@@ -938,6 +938,70 @@
   --graph-legend-pvalue: #fbd6e6;
 }
 
+.graph-sidebar-logo-icon {
+  color: white;
+}
+
+.graph-sidebar-count-muted {
+  font-size: 11px;
+  color: rgba(148, 163, 184, 0.6);
+}
+
+.graph-sidebar-count-success {
+  font-size: 11px;
+  color: rgba(34, 197, 94, 0.8);
+}
+
+.graph-sidebar-year-separator {
+  color: rgba(148, 163, 184, 0.5);
+}
+
+.graph-sidebar-spin {
+  animation: graph-sidebar-spin 1s linear infinite;
+}
+
+@keyframes graph-sidebar-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.graph-sidebar-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--graph-sidebar-legend-color, #64748b);
+  box-shadow: 0 0 8px var(--graph-sidebar-legend-shadow, rgba(100, 116, 139, 0.5));
+}
+
+.graph-sidebar-legend-dot--selected {
+  --graph-sidebar-legend-color: #22c55e;
+  --graph-sidebar-legend-shadow: rgba(34, 197, 94, 0.4);
+}
+
+.graph-sidebar-legend-dot--pubmed {
+  --graph-sidebar-legend-color: #3b82f6;
+  --graph-sidebar-legend-shadow: rgba(59, 130, 246, 0.4);
+}
+
+.graph-sidebar-legend-dot--doaj {
+  --graph-sidebar-legend-color: #eab308;
+  --graph-sidebar-legend-shadow: rgba(234, 179, 8, 0.4);
+}
+
+.graph-sidebar-legend-dot--wiley {
+  --graph-sidebar-legend-color: #8b5cf6;
+  --graph-sidebar-legend-shadow: rgba(139, 92, 246, 0.4);
+}
+
+.graph-sidebar-legend-dot--excluded {
+  --graph-sidebar-legend-color: #ef4444;
+  --graph-sidebar-legend-shadow: rgba(239, 68, 68, 0.4);
+}
+
 /* Node Details Panel */
 .node-details-panel {
   width: 320px;

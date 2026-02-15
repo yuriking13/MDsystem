@@ -455,6 +455,64 @@ export default function GraphSidebar({
     marginLeft: "auto",
   };
 
+  const collapsedLogoSectionStyle: React.CSSProperties = {
+    ...logoSectionStyle,
+    justifyContent: "center",
+    padding: "12px",
+  };
+
+  const logoButtonStyle: React.CSSProperties = {
+    ...logoStyle,
+    cursor: "pointer",
+    border: "none",
+  };
+
+  const actionButtonWrapStyle: React.CSSProperties = {
+    padding: "12px 16px",
+  };
+
+  const colorLegendStyle: React.CSSProperties = {
+    padding: "16px",
+    borderTop: "1px solid rgba(148, 163, 184, 0.1)",
+    background: "rgba(0, 0, 0, 0.2)",
+  };
+
+  const colorLegendTitleStyle: React.CSSProperties = {
+    fontSize: "11px",
+    color: "rgba(148, 163, 184, 0.7)",
+    marginBottom: "10px",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  };
+
+  const colorLegendListStyle: React.CSSProperties = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+  };
+
+  const colorLegendItemStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  };
+
+  const colorLegendLabelStyle: React.CSSProperties = {
+    fontSize: "11px",
+    color: "rgba(255, 255, 255, 0.7)",
+  };
+
+  const colorLegendItems = [
+    { label: "Отобранные", dotClassName: "graph-sidebar-legend-dot--selected" },
+    { label: "PubMed", dotClassName: "graph-sidebar-legend-dot--pubmed" },
+    { label: "DOAJ", dotClassName: "graph-sidebar-legend-dot--doaj" },
+    { label: "Wiley", dotClassName: "graph-sidebar-legend-dot--wiley" },
+    {
+      label: "Исключённые",
+      dotClassName: "graph-sidebar-legend-dot--excluded",
+    },
+  ];
+
   const toggleSourceCheckbox = (source: "pubmed" | "doaj" | "wiley") => {
     if (selectedSources.includes(source)) {
       onSourcesChange(selectedSources.filter((s) => s !== source));
@@ -466,18 +524,9 @@ export default function GraphSidebar({
   if (collapsed) {
     return (
       <div style={sidebarStyle}>
-        <div
-          style={{
-            ...logoSectionStyle,
-            justifyContent: "center",
-            padding: "12px",
-          }}
-        >
-          <button
-            onClick={onToggleCollapse}
-            style={{ ...logoStyle, cursor: "pointer", border: "none" }}
-          >
-            <IconGraph size="sm" style={{ color: "white" }} />
+        <div style={collapsedLogoSectionStyle}>
+          <button onClick={onToggleCollapse} style={logoButtonStyle}>
+            <IconGraph size="sm" className="graph-sidebar-logo-icon" />
           </button>
         </div>
       </div>
@@ -488,11 +537,8 @@ export default function GraphSidebar({
     <div style={sidebarStyle}>
       {/* Logo Section */}
       <div style={logoSectionStyle}>
-        <button
-          onClick={onToggleCollapse}
-          style={{ ...logoStyle, cursor: "pointer", border: "none" }}
-        >
-          <IconGraph size="sm" style={{ color: "white" }} />
+        <button onClick={onToggleCollapse} style={logoButtonStyle}>
+          <IconGraph size="sm" className="graph-sidebar-logo-icon" />
         </button>
         <div>
           <div style={titleStyle}>Visual Explorer</div>
@@ -557,9 +603,7 @@ export default function GraphSidebar({
             </div>
             <span style={labelStyle}>Все статьи</span>
             {levelCounts && (
-              <span
-                style={{ fontSize: "11px", color: "rgba(148, 163, 184, 0.6)" }}
-              >
+              <span className="graph-sidebar-count-muted">
                 {(levelCounts.level1 || 0) + (levelCounts.level2 || 0)}
               </span>
             )}
@@ -573,9 +617,7 @@ export default function GraphSidebar({
             </div>
             <span style={labelStyle}>Отобранные</span>
             {levelCounts && (
-              <span
-                style={{ fontSize: "11px", color: "rgba(34, 197, 94, 0.8)" }}
-              >
+              <span className="graph-sidebar-count-success">
                 {levelCounts.level1 || 0}
               </span>
             )}
@@ -688,7 +730,7 @@ export default function GraphSidebar({
               onBlur={onApplyYearFilter}
               style={inputStyle}
             />
-            <span style={{ color: "rgba(148, 163, 184, 0.5)" }}>—</span>
+            <span className="graph-sidebar-year-separator">—</span>
             <input
               type="number"
               placeholder="До"
@@ -719,7 +761,7 @@ export default function GraphSidebar({
         </CollapsibleSection>
 
         {/* Action Button */}
-        <div style={{ padding: "12px 16px" }}>
+        <div style={actionButtonWrapStyle}>
           <button
             style={actionButtonStyle(true)}
             onClick={onFetchReferences}
@@ -727,9 +769,7 @@ export default function GraphSidebar({
           >
             <IconRefresh
               size="sm"
-              style={{
-                animation: fetchingRefs ? "spin 1s linear infinite" : "none",
-              }}
+              className={fetchingRefs ? "graph-sidebar-spin" : undefined}
             />
             {fetchingRefs ? "Загрузка..." : "Обновить связи"}
           </button>
@@ -773,68 +813,28 @@ export default function GraphSidebar({
             <IconSparkles size="sm" />
             <span>Рекомендации</span>
             {(recommendationsCount || 0) > 0 && (
-              <span style={badgeStyle}>{recommendationsCount}</span>
+              <span style={badgeStyle} className="graph-sidebar-badge">
+                {recommendationsCount}
+              </span>
             )}
           </button>
         )}
       </div>
 
       {/* Color Legend */}
-      <div
-        style={{
-          padding: "16px",
-          borderTop: "1px solid rgba(148, 163, 184, 0.1)",
-          background: "rgba(0, 0, 0, 0.2)",
-        }}
-      >
-        <div
-          style={{
-            fontSize: "11px",
-            color: "rgba(148, 163, 184, 0.7)",
-            marginBottom: "10px",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-          }}
-        >
-          Цветовая легенда
-        </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {[
-            { color: "#22c55e", label: "Отобранные" },
-            { color: "#3b82f6", label: "PubMed" },
-            { color: "#eab308", label: "DOAJ" },
-            { color: "#8b5cf6", label: "Wiley" },
-            { color: "#ef4444", label: "Исключённые" },
-          ].map((item) => (
-            <div
-              key={item.label}
-              style={{ display: "flex", alignItems: "center", gap: "6px" }}
-            >
+      <div style={colorLegendStyle}>
+        <div style={colorLegendTitleStyle}>Цветовая легенда</div>
+        <div style={colorLegendListStyle}>
+          {colorLegendItems.map((item) => (
+            <div key={item.label} style={colorLegendItemStyle}>
               <div
-                style={{
-                  width: "10px",
-                  height: "10px",
-                  borderRadius: "50%",
-                  background: item.color,
-                  boxShadow: `0 0 8px ${item.color}60`,
-                }}
+                className={`graph-sidebar-legend-dot ${item.dotClassName}`}
               />
-              <span
-                style={{ fontSize: "11px", color: "rgba(255, 255, 255, 0.7)" }}
-              >
-                {item.label}
-              </span>
+              <span style={colorLegendLabelStyle}>{item.label}</span>
             </div>
           ))}
         </div>
       </div>
-
-      <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }
