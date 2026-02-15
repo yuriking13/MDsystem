@@ -806,7 +806,7 @@ export default function AIWritingAssistant({
                     ref={fileInputRef}
                     type="file"
                     accept=".txt,.html,.htm"
-                    style={{ display: "none" }}
+                    className="ai-hidden-file-input"
                     onChange={handleFileUpload}
                   />
                 </div>

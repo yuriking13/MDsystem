@@ -2769,6 +2769,10 @@
   flex-wrap: wrap;
 }
 
+.ai-hidden-file-input {
+  display: none;
+}
+
 .ai-doi-or {
   font-size: 11px;
   color: var(--text-secondary, #94a3b8);
