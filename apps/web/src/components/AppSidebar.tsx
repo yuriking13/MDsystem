@@ -433,11 +433,10 @@ export default function AppSidebar({
       <div className="sidebar-footer">
         {/* Theme Switcher */}
         <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-            padding: collapsed ? "0 4px" : "0 6px",
-          }}
+          className={cn(
+            "sidebar-theme-switcher-wrap",
+            collapsed && "sidebar-theme-switcher-wrap--collapsed",
+          )}
         >
           <fieldset
             className="theme-switcher"

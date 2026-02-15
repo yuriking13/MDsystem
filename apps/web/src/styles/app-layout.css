@@ -626,6 +626,15 @@ html.layout-fixed #root {
   border-top: 1px solid hsla(var(--glass-hue2), 20%, 30%, 0.25);
 }
 
+.sidebar-theme-switcher-wrap {
+  @apply flex justify-center;
+  padding: 0 6px;
+}
+
+.sidebar-theme-switcher-wrap--collapsed {
+  padding: 0 4px;
+}
+
 .sidebar-footer-btn {
   @apply flex items-center gap-2.5 w-full px-3 py-2 rounded-lg;
   @apply text-neutral-400 hover:text-white;
