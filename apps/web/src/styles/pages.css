@@ -623,6 +623,12 @@
   flex-shrink: 0;
 }
 
+.docs-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .docs-content {
   flex: 1;
   min-width: 0;
@@ -649,6 +655,16 @@
 
   .docs-sidebar {
     width: 100%;
+  }
+
+  .docs-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .docs-nav .doc-nav-item {
+    margin-bottom: 0 !important;
   }
 
   .docs-sidebar-card {
@@ -699,6 +715,10 @@
 
   .docs-page-header .row.gap {
     flex-wrap: wrap;
+  }
+
+  .docs-nav {
+    grid-template-columns: 1fr;
   }
 
   .docs-content-card {

@@ -227,7 +227,7 @@ export default function DocumentationPage() {
             className="card docs-sidebar-card"
             style={{ position: "sticky", top: 20 }}
           >
-            <nav style={{ padding: 8 }}>
+            <nav className="docs-nav" style={{ padding: 8 }}>
               {DOC_SECTIONS.map((section) => (
                 <button
                   key={section.id}
