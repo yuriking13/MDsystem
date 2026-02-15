@@ -484,39 +484,32 @@ export default function ChartFromTable({
   height,
   theme = "light",
 }: Props) {
+  const chartContainerStyle: React.CSSProperties = {
+    width: width || "100%",
+    height: height || 300,
+  };
+
+  const chartErrorStyle: React.CSSProperties = {
+    ...chartContainerStyle,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#ff6b6b",
+  };
+
+  const renderChartError = (message: string) => (
+    <div style={chartErrorStyle}>
+      <div>{message}</div>
+    </div>
+  );
+
   // Проверка наличия данных
   if (!tableData || !tableData.headers || !tableData.rows) {
-    return (
-      <div
-        style={{
-          width: width || "100%",
-          height: height || 300,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#ff6b6b",
-        }}
-      >
-        <div>⚠️ Ошибка: данные таблицы отсутствуют</div>
-      </div>
-    );
+    return renderChartError("⚠️ Ошибка: данные таблицы отсутствуют");
   }
 
   if (!config || !config.type) {
-    return (
-      <div
-        style={{
-          width: width || "100%",
-          height: height || 300,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#ff6b6b",
-        }}
-      >
-        <div>⚠️ Ошибка: конфигурация графика отсутствует</div>
-      </div>
-    );
+    return renderChartError("⚠️ Ошибка: конфигурация графика отсутствует");
   }
 
   const {
@@ -539,20 +532,7 @@ export default function ChartFromTable({
 
   // Проверка валидности индексов колонок
   if (!dataColumns || dataColumns.length === 0) {
-    return (
-      <div
-        style={{
-          width: width || "100%",
-          height: height || 300,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#ff6b6b",
-        }}
-      >
-        <div>⚠️ Ошибка: не выбраны колонки данных</div>
-      </div>
-    );
+    return renderChartError("⚠️ Ошибка: не выбраны колонки данных");
   }
 
   // Базовые опции для всех графиков с кастомными цветами
@@ -605,10 +585,7 @@ export default function ChartFromTable({
     },
   };
 
-  const style = {
-    width: width || "100%",
-    height: height || 300,
-  };
+  const style = chartContainerStyle;
 
   // Обработка разных типов графиков
   if (type === "histogram") {
@@ -618,20 +595,7 @@ export default function ChartFromTable({
       firstDataColumn === undefined ||
       firstDataColumn >= tableData.headers.length
     ) {
-      return (
-        <div
-          style={{
-            width: width || "100%",
-            height: height || 300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#ff6b6b",
-          }}
-        >
-          <div>⚠️ Ошибка: неверный индекс колонки данных</div>
-        </div>
-      );
+      return renderChartError("⚠️ Ошибка: неверный индекс колонки данных");
     }
 
     const values = tableData.rows
@@ -722,20 +686,7 @@ export default function ChartFromTable({
     );
 
     if (validDataColumns.length === 0) {
-      return (
-        <div
-          style={{
-            width: width || "100%",
-            height: height || 300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#ff6b6b",
-          }}
-        >
-          <div>⚠️ Ошибка: нет валидных колонок для boxplot</div>
-        </div>
-      );
+      return renderChartError("⚠️ Ошибка: нет валидных колонок для boxplot");
     }
 
     // Используем обычный Bar с визуализацией статистики, т.к. boxplot требует специальной библиотеки
@@ -840,19 +791,8 @@ export default function ChartFromTable({
       yCol < 0 ||
       yCol >= tableData.headers.length
     ) {
-      return (
-        <div
-          style={{
-            width: width || "100%",
-            height: height || 300,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#ff6b6b",
-          }}
-        >
-          <div>⚠️ Ошибка: неверные индексы колонок для scatter plot</div>
-        </div>
+      return renderChartError(
+        "⚠️ Ошибка: неверные индексы колонок для scatter plot",
       );
     }
 
@@ -917,20 +857,7 @@ export default function ChartFromTable({
   );
 
   if (validDataColumns.length === 0) {
-    return (
-      <div
-        style={{
-          width: width || "100%",
-          height: height || 300,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          color: "#ff6b6b",
-        }}
-      >
-        <div>⚠️ Ошибка: нет валидных колонок данных</div>
-      </div>
-    );
+    return renderChartError("⚠️ Ошибка: нет валидных колонок данных");
   }
 
   const datasets = validDataColumns.map((colIdx, i) => {
