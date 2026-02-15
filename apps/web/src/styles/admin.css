@@ -2232,5 +2232,52 @@
     width: 100%;
     flex-wrap: wrap;
   }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 9px 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-main,
+  .admin-sidebar.collapsed + .admin-main {
+    padding: 12px;
+  }
+
+  .admin-mobile-topbar {
+    margin: -12px -12px 12px -12px;
+  }
+
+  .admin-page-header h1 {
+    font-size: 22px;
+    line-height: 1.2;
+    flex-wrap: wrap;
+  }
+
+  .admin-table-wrapper {
+    margin: 0 -8px;
+    padding: 0 8px 4px;
+  }
+
+  .admin-table th,
+  .admin-table td {
+    padding: 8px 9px;
+    font-size: 12px;
+  }
+
+  .admin-search-form {
+    width: 100%;
+  }
+
+  .admin-search-input-wrapper {
+    width: 100%;
+  }
+
+  .admin-filter-group select,
+  .admin-filter-group input {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
