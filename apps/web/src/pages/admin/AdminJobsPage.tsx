@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetJobs,
@@ -66,7 +66,7 @@ export default function AdminJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadJobs() {
+  const loadJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -84,14 +84,14 @@ export default function AdminJobsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, statusFilter]);
 
   useEffect(() => {
     loadJobs();
     // Auto-refresh every 30 seconds
     const interval = setInterval(loadJobs, 30000);
     return () => clearInterval(interval);
-  }, [page, statusFilter]);
+  }, [loadJobs]);
 
   async function handleCancel(jobId: string) {
     if (!confirm("Отменить эту задачу?")) return;

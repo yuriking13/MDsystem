@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { getErrorMessage } from "../../lib/errorUtils";
 import {
@@ -56,14 +56,15 @@ function UsersList() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiAdminGetUsers(page, 20, search || undefined);
+      const data = await apiAdminGetUsers(page, 20, appliedSearch || undefined);
       setUsers(data.users);
       setTotal(data.total);
       setTotalPages(data.totalPages);
@@ -72,16 +73,16 @@ function UsersList() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, appliedSearch]);
 
   useEffect(() => {
     loadUsers();
-  }, [page, search]);
+  }, [loadUsers]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setPage(1);
-    loadUsers();
+    setAppliedSearch(search.trim());
   }
 
   async function toggleAdmin(userId: string, currentIsAdmin: boolean) {
@@ -284,7 +285,7 @@ function UserDetail() {
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     if (!userId) return;
     setLoading(true);
     try {
@@ -295,11 +296,11 @@ function UserDetail() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [userId]);
 
   useEffect(() => {
     load();
-  }, [userId]);
+  }, [load]);
 
   async function handleBlock() {
     if (!userId || !data) return;
@@ -387,7 +388,7 @@ function UserDetail() {
   }
 
   const { user, projects, recentActivity, sessions } = data;
-  const isBlocked = (user as any).is_blocked;
+  const isBlocked = Boolean(user.is_blocked);
 
   // Group activity by date
   const activityByDate: Record<

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getErrorMessage } from "../../lib/errorUtils";
 import {
@@ -39,6 +39,7 @@ export default function AdminProjectsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [sortBy, setSortBy] = useState<
     "created_at" | "updated_at" | "name" | "documents_count" | "articles_count"
   >("created_at");
@@ -46,14 +47,14 @@ export default function AdminProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadProjects() {
+  const loadProjects = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await apiAdminGetProjects({
         page,
         limit: 20,
-        search: search || undefined,
+        search: appliedSearch || undefined,
         sortBy,
         sortOrder,
       });
@@ -65,16 +66,16 @@ export default function AdminProjectsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, appliedSearch, sortBy, sortOrder]);
 
   useEffect(() => {
     loadProjects();
-  }, [page, sortBy, sortOrder]);
+  }, [loadProjects]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setPage(1);
-    loadProjects();
+    setAppliedSearch(search.trim());
   }
 
   async function handleDelete(project: AdminProject) {

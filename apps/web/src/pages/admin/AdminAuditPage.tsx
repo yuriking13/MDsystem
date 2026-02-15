@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "../../lib/errorUtils";
 import { apiAdminGetAudit, type AuditLogItem } from "../../lib/adminApi";
 import {
@@ -36,7 +36,7 @@ export default function AdminAuditPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadLogs() {
+  const loadLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -53,11 +53,11 @@ export default function AdminAuditPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [actionFilter, page]);
 
   useEffect(() => {
     loadLogs();
-  }, [page, actionFilter]);
+  }, [loadLogs]);
 
   return (
     <div className="admin-page">

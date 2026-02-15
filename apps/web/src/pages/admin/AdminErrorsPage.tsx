@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetErrors,
@@ -182,7 +182,7 @@ export default function AdminErrorsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedError, setSelectedError] = useState<ErrorLogItem | null>(null);
 
-  async function loadErrors() {
+  const loadErrors = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -201,18 +201,16 @@ export default function AdminErrorsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, resolvedFilter, typeFilter]);
 
   useEffect(() => {
     loadErrors();
-  }, [page, resolvedFilter, typeFilter]);
+  }, [loadErrors]);
 
   function handleErrorResolved() {
     setSelectedError(null);
     loadErrors();
   }
-
-  const unresolvedCount = errors.filter((e) => !e.resolved).length;
 
   return (
     <div className="admin-page">
@@ -248,7 +246,7 @@ export default function AdminErrorsPage() {
           <select
             value={resolvedFilter}
             onChange={(e) => {
-              setResolvedFilter(e.target.value as any);
+              setResolvedFilter(e.target.value as "true" | "false" | "all");
               setPage(1);
             }}
           >
