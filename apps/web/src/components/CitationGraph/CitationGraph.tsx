@@ -2078,14 +2078,266 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
+  const graphLoadingMessageStyle: React.CSSProperties = {
+    padding: 40,
+    textAlign: "center",
+  };
+  const graphLoadingSpinnerStyle: React.CSSProperties = {
+    margin: "0 auto 16px",
+    width: 32,
+    height: 32,
+  };
+  const graphErrorAlertStyle: React.CSSProperties = { margin: 20 };
+  const graphMainAreaStyle: React.CSSProperties = {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+  };
+  const graphHeaderTitleWrapStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginRight: 8,
+  };
+  const graphHeaderTitleStyle: React.CSSProperties = {
+    fontWeight: 600,
+    fontSize: 14,
+  };
+  const graphYearRangeStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  };
+  const graphYearFromInputStyle: React.CSSProperties = { width: 70 };
+  const graphYearToInputStyle: React.CSSProperties = { width: 60 };
+  const graphYearSeparatorStyle: React.CSSProperties = {
+    color: "var(--text-muted)",
+    fontSize: 11,
+  };
+  const graphLangToggleStyle: React.CSSProperties = { padding: 0 };
+  const graphLangButtonStyle: React.CSSProperties = {
+    padding: "4px 8px",
+    fontSize: 11,
+  };
+  const graphHeaderSpacerStyle: React.CSSProperties = { flex: 1 };
+  const graphHeaderActionButtonStyle: React.CSSProperties = {
+    padding: "5px 10px",
+    fontSize: 11,
+    display: "flex",
+    alignItems: "center",
+  };
+  const graphHeaderActionButtonWithGapStyle: React.CSSProperties = {
+    ...graphHeaderActionButtonStyle,
+    gap: 4,
+  };
+  const graphHeaderActionLabelStyle: React.CSSProperties = { marginLeft: 4 };
+  const graphHeaderBadgeBaseStyle: React.CSSProperties = {
+    color: "white",
+    borderRadius: 10,
+    padding: "1px 5px",
+    fontSize: 9,
+    fontWeight: 600,
+  };
+  const graphExportDropdownWrapStyle: React.CSSProperties = {
+    position: "relative",
+  };
+  const graphExportMenuStyle: React.CSSProperties = {
+    display: "none",
+    position: "absolute",
+    right: 0,
+    top: "100%",
+    marginTop: 4,
+    background: "var(--bg-secondary)",
+    border: "1px solid var(--border-glass)",
+    borderRadius: 8,
+    padding: 4,
+    minWidth: 140,
+    zIndex: 1000,
+    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+  };
+  const graphExportMenuItemStyle: React.CSSProperties = {
+    display: "block",
+    width: "100%",
+    padding: "6px 10px",
+    textAlign: "left",
+    background: "none",
+    border: "none",
+    color: "inherit",
+    cursor: "pointer",
+    fontSize: 12,
+    borderRadius: 4,
+  };
+  const graphAdvancedPanelStyle: React.CSSProperties = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 16,
+    padding: "12px 20px",
+    borderBottom: "1px solid var(--border-glass)",
+    alignItems: "center",
+    background:
+      "linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05))",
+  };
+  const graphAdvancedLimitButtonStyle: React.CSSProperties = {
+    padding: "4px 10px",
+    fontSize: 10,
+    marginLeft: 8,
+    whiteSpace: "nowrap",
+  };
+  const graphClusteringLabelStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    fontSize: 12,
+    cursor: "pointer",
+  };
+  const graphClusteringSelectStyle: React.CSSProperties = {
+    padding: "4px 8px",
+    fontSize: 11,
+    border: "1px solid var(--border-glass)",
+    borderRadius: 6,
+    background: "var(--bg-secondary)",
+    color: "var(--text-primary)",
+  };
+  const graphLoadMoreButtonStyle: React.CSSProperties = {
+    padding: "6px 12px",
+    fontSize: 11,
+  };
+  const graphLoadMoreIconStyle: React.CSSProperties = { marginRight: 4 };
+  const graphLimitsInfoStyle: React.CSSProperties = {
+    marginLeft: "auto",
+    fontSize: 11,
+    color: "var(--text-muted)",
+  };
+  const graphUnlimitedInfoStyle: React.CSSProperties = {
+    marginLeft: "auto",
+    fontSize: 11,
+    color: "var(--text-success)",
+    fontWeight: 600,
+  };
+  const graphProgressPanelStyle: React.CSSProperties = {
+    padding: "16px 20px",
+    background:
+      "linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))",
+    borderBottom: "1px solid var(--border-glass)",
+  };
+  const graphProgressHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 10,
+  };
+  const graphProgressTitleWrapStyle: React.CSSProperties = { flex: 1 };
+  const graphProgressTitleStyle: React.CSSProperties = {
+    fontWeight: 600,
+    fontSize: 13,
+    color: "var(--text-primary)",
+  };
+  const graphProgressPhaseStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+    marginTop: 2,
+  };
+  const graphProgressTimeStyle: React.CSSProperties = {
+    fontSize: 12,
+    color: "var(--text-muted)",
+  };
+  const graphProgressCancelButtonStyle: React.CSSProperties = {
+    padding: "4px 8px",
+    fontSize: 11,
+  };
+  const graphProgressTrackStyle: React.CSSProperties = {
+    height: 6,
+    background: "rgba(255,255,255,0.1)",
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: 10,
+  };
+  const graphProgressFooterStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: 11,
+    color: "var(--text-muted)",
+  };
+  const graphProgressHintStyle: React.CSSProperties = {
+    marginTop: 10,
+    fontSize: 11,
+    color: "#fbbf24",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+  };
+  const graphProgressStaleHintStyle: React.CSSProperties = { color: "#f97316" };
+  const graphRefsMessageStyle: React.CSSProperties = {
+    margin: "8px 20px",
+    padding: 12,
+    fontSize: 13,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    background: "rgba(59, 130, 246, 0.15)",
+    borderRadius: 8,
+    border: "1px solid rgba(59, 130, 246, 0.3)",
+  };
+  const graphImportMessageStyle: React.CSSProperties = {
+    margin: "8px 20px",
+    padding: 12,
+    fontSize: 13,
+  };
+
+  const getGraphContainerStyle = (
+    fullscreen: boolean,
+  ): React.CSSProperties => ({
+    display: "flex",
+    flexDirection: "row",
+    height: fullscreen ? "100vh" : "100%",
+    width: fullscreen ? "100vw" : "100%",
+    position: fullscreen ? "fixed" : "relative",
+    top: fullscreen ? 0 : "auto",
+    left: fullscreen ? 0 : "auto",
+    zIndex: fullscreen ? 9999 : "auto",
+    overflow: "hidden",
+  });
+  const getGraphHeaderBadgeStyle = (
+    background: string,
+  ): React.CSSProperties => ({
+    ...graphHeaderBadgeBaseStyle,
+    background,
+  });
+  const getGraphAdvancedSliderStyle = (
+    unlimited: boolean,
+  ): React.CSSProperties => ({
+    width: 120,
+    cursor: unlimited ? "not-allowed" : "pointer",
+    opacity: unlimited ? 0.5 : 1,
+  });
+  const getGraphProgressFillStyle = (
+    progress: number,
+  ): React.CSSProperties => ({
+    height: "100%",
+    width: `${progress}%`,
+    background: "linear-gradient(90deg, #3b82f6, #8b5cf6)",
+    borderRadius: 3,
+    transition: "width 0.3s ease",
+  });
+
+  const handleGraphExportItemMouseEnter = (
+    e: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    e.currentTarget.style.background = "var(--bg-hover)";
+  };
+
+  const handleGraphExportItemMouseLeave = (
+    e: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    e.currentTarget.style.background = "none";
+  };
+
   if (loading) {
     return (
       <div className="graph-container">
-        <div className="muted" style={{ padding: 40, textAlign: "center" }}>
-          <div
-            className="loading-spinner"
-            style={{ margin: "0 auto 16px", width: 32, height: 32 }}
-          />
+        <div className="muted" style={graphLoadingMessageStyle}>
+          <div className="loading-spinner" style={graphLoadingSpinnerStyle} />
           Загрузка графа цитирований...
         </div>
       </div>
@@ -2095,7 +2347,7 @@ export default function CitationGraph({ projectId }: Props) {
   if (error) {
     return (
       <div className="graph-container">
-        <div className="alert" style={{ margin: 20 }}>
+        <div className="alert" style={graphErrorAlertStyle}>
           {error}
         </div>
       </div>
@@ -2106,40 +2358,16 @@ export default function CitationGraph({ projectId }: Props) {
     <div
       className={`graph-container graph-fixed-height ${isFullscreen ? "graph-fullscreen" : ""}`}
       ref={containerRef}
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        height: isFullscreen ? "100vh" : "100%",
-        width: isFullscreen ? "100vw" : "100%",
-        position: isFullscreen ? "fixed" : "relative",
-        top: isFullscreen ? 0 : "auto",
-        left: isFullscreen ? 0 : "auto",
-        zIndex: isFullscreen ? 9999 : "auto",
-        overflow: "hidden",
-      }}
+      style={getGraphContainerStyle(isFullscreen)}
     >
       {/* Main Content Area */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      <div style={graphMainAreaStyle}>
         {/* Compact Header Panel with Dropdowns - horizontal layout */}
         <div className="graph-header-filters">
           {/* Title */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginRight: 8,
-            }}
-          >
+          <div style={graphHeaderTitleWrapStyle}>
             <IconGraph size="md" className="text-accent" />
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Граф</span>
+            <span style={graphHeaderTitleStyle}>Граф</span>
           </div>
 
           {/* Depth Dropdown */}
@@ -2187,7 +2415,7 @@ export default function CitationGraph({ projectId }: Props) {
           </select>
 
           {/* Year Range */}
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <div style={graphYearRangeStyle}>
             <input
               type="number"
               placeholder="Год от"
@@ -2200,9 +2428,9 @@ export default function CitationGraph({ projectId }: Props) {
                 if (val !== yearFrom) setYearFrom(val);
               }}
               className="graph-compact-input"
-              style={{ width: 70 }}
+              style={graphYearFromInputStyle}
             />
-            <span style={{ color: "var(--text-muted)", fontSize: 11 }}>—</span>
+            <span style={graphYearSeparatorStyle}>—</span>
             <input
               type="number"
               placeholder="До"
@@ -2213,7 +2441,7 @@ export default function CitationGraph({ projectId }: Props) {
                 if (val !== yearTo) setYearTo(val);
               }}
               className="graph-compact-input"
-              style={{ width: 60 }}
+              style={graphYearToInputStyle}
             />
           </div>
 
@@ -2242,35 +2470,30 @@ export default function CitationGraph({ projectId }: Props) {
           </select>
 
           {/* Lang Toggle */}
-          <div className="lang-toggle" style={{ padding: 0 }}>
+          <div className="lang-toggle" style={graphLangToggleStyle}>
             <button
               className={globalLang === "en" ? "active" : ""}
               onClick={() => setGlobalLang("en")}
-              style={{ padding: "4px 8px", fontSize: 11 }}
+              style={graphLangButtonStyle}
             >
               EN
             </button>
             <button
               className={globalLang === "ru" ? "active" : ""}
               onClick={() => setGlobalLang("ru")}
-              style={{ padding: "4px 8px", fontSize: 11 }}
+              style={graphLangButtonStyle}
             >
               RU
             </button>
           </div>
 
           {/* Spacer */}
-          <div style={{ flex: 1 }} />
+          <div style={graphHeaderSpacerStyle} />
 
           {/* Actions */}
           <button
             className="btn secondary"
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-            }}
+            style={graphHeaderActionButtonStyle}
             onClick={handleFetchReferences}
             disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
           >
@@ -2278,7 +2501,7 @@ export default function CitationGraph({ projectId }: Props) {
               size="sm"
               className={fetchingRefs ? "animate-spin" : ""}
             />
-            <span style={{ marginLeft: 4 }}>
+            <span style={graphHeaderActionLabelStyle}>
               {fetchingRefs ? "..." : "Связи"}
             </span>
           </button>
@@ -2286,29 +2509,14 @@ export default function CitationGraph({ projectId }: Props) {
           {/* Рекомендации */}
           <button
             className="btn secondary"
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            style={graphHeaderActionButtonWithGapStyle}
             onClick={loadRecommendations}
             disabled={loadingRecommendations}
             title="Рекомендации по улучшению графа"
           >
             <IconSparkles size="sm" />
             {recommendations.length > 0 && (
-              <span
-                style={{
-                  background: "var(--accent)",
-                  color: "white",
-                  borderRadius: 10,
-                  padding: "1px 5px",
-                  fontSize: 9,
-                  fontWeight: 600,
-                }}
-              >
+              <span style={getGraphHeaderBadgeStyle("var(--accent)")}>
                 {recommendations.length}
               </span>
             )}
@@ -2317,13 +2525,7 @@ export default function CitationGraph({ projectId }: Props) {
           {/* Семантический поиск */}
           <button
             className={showSemanticSearch ? "btn primary" : "btn secondary"}
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            style={graphHeaderActionButtonWithGapStyle}
             onClick={() => {
               setShowSemanticSearch(!showSemanticSearch);
               if (!showSemanticSearch) {
@@ -2342,13 +2544,7 @@ export default function CitationGraph({ projectId }: Props) {
             className={
               showMethodologyClusters ? "btn primary" : "btn secondary"
             }
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            style={graphHeaderActionButtonWithGapStyle}
             onClick={() => {
               if (
                 !showMethodologyClusters &&
@@ -2371,13 +2567,7 @@ export default function CitationGraph({ projectId }: Props) {
             className={
               showSemanticClustersPanel ? "btn primary" : "btn secondary"
             }
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            style={graphHeaderActionButtonWithGapStyle}
             onClick={() => {
               if (!showSemanticClustersPanel && semanticClusters.length === 0) {
                 loadSemanticClusters();
@@ -2390,16 +2580,7 @@ export default function CitationGraph({ projectId }: Props) {
             <IconGraph size="sm" />
             <span>{loadingSemanticClusters ? "..." : "Кластеры"}</span>
             {semanticClusters.length > 0 && (
-              <span
-                style={{
-                  background: "var(--accent-secondary)",
-                  color: "white",
-                  borderRadius: 10,
-                  padding: "1px 5px",
-                  fontSize: 9,
-                  fontWeight: 600,
-                }}
-              >
+              <span style={getGraphHeaderBadgeStyle("var(--accent-secondary)")}>
                 {semanticClusters.length}
               </span>
             )}
@@ -2408,13 +2589,7 @@ export default function CitationGraph({ projectId }: Props) {
           {/* Gap Analysis */}
           <button
             className={showGapAnalysis ? "btn primary" : "btn secondary"}
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            style={graphHeaderActionButtonWithGapStyle}
             onClick={() => {
               if (!showGapAnalysis && gapAnalysisResults.length === 0) {
                 handleGapAnalysis();
@@ -2428,23 +2603,14 @@ export default function CitationGraph({ projectId }: Props) {
             <IconLinkChain size="sm" />
             <span>{loadingGapAnalysis ? "..." : "Gaps"}</span>
             {gapAnalysisResults.length > 0 && (
-              <span
-                style={{
-                  background: "#f59e0b",
-                  color: "white",
-                  borderRadius: 10,
-                  padding: "1px 5px",
-                  fontSize: 9,
-                  fontWeight: 600,
-                }}
-              >
+              <span style={getGraphHeaderBadgeStyle("#f59e0b")}>
                 {gapAnalysisResults.length}
               </span>
             )}
           </button>
 
           {/* Экспорт */}
-          <div className="dropdown" style={{ position: "relative" }}>
+          <div className="dropdown" style={graphExportDropdownWrapStyle}>
             <button
               className="graph-compact-btn"
               title="Экспорт графа"
@@ -2457,111 +2623,36 @@ export default function CitationGraph({ projectId }: Props) {
             >
               <IconDownload size="sm" />
             </button>
-            <div
-              style={{
-                display: "none",
-                position: "absolute",
-                right: 0,
-                top: "100%",
-                marginTop: 4,
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--border-glass)",
-                borderRadius: 8,
-                padding: 4,
-                minWidth: 140,
-                zIndex: 1000,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-              }}
-            >
+            <div style={graphExportMenuStyle}>
               <button
                 onClick={() => handleExport("json")}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "6px 10px",
-                  textAlign: "left",
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  borderRadius: 4,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "none")
-                }
+                style={graphExportMenuItemStyle}
+                onMouseEnter={handleGraphExportItemMouseEnter}
+                onMouseLeave={handleGraphExportItemMouseLeave}
               >
                 JSON
               </button>
               <button
                 onClick={() => handleExport("graphml")}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "6px 10px",
-                  textAlign: "left",
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  borderRadius: 4,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "none")
-                }
+                style={graphExportMenuItemStyle}
+                onMouseEnter={handleGraphExportItemMouseEnter}
+                onMouseLeave={handleGraphExportItemMouseLeave}
               >
                 GraphML
               </button>
               <button
                 onClick={() => handleExport("cytoscape")}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "6px 10px",
-                  textAlign: "left",
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  borderRadius: 4,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "none")
-                }
+                style={graphExportMenuItemStyle}
+                onMouseEnter={handleGraphExportItemMouseEnter}
+                onMouseLeave={handleGraphExportItemMouseLeave}
               >
                 Cytoscape
               </button>
               <button
                 onClick={() => handleExport("gexf")}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "6px 10px",
-                  textAlign: "left",
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  borderRadius: 4,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "none")
-                }
+                style={graphExportMenuItemStyle}
+                onMouseEnter={handleGraphExportItemMouseEnter}
+                onMouseLeave={handleGraphExportItemMouseLeave}
               >
                 GEXF (Gephi)
               </button>
@@ -2590,7 +2681,7 @@ export default function CitationGraph({ projectId }: Props) {
               showAIAssistant ? "graph-compact-btn-active" : "graph-compact-btn"
             }
             title="AI Ассистент"
-            style={{ display: "flex", alignItems: "center", gap: 4 }}
+            style={graphHeaderActionButtonWithGapStyle}
           >
             <IconSparkles size="sm" />
             AI
@@ -2599,19 +2690,7 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Advanced Settings Panel */}
         {showAdvancedSettings && (
-          <div
-            className="graph-filters"
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 16,
-              padding: "12px 20px",
-              borderBottom: "1px solid var(--border-glass)",
-              alignItems: "center",
-              background:
-                "linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05))",
-            }}
-          >
+          <div className="graph-filters" style={graphAdvancedPanelStyle}>
             {/* Max Nodes Slider */}
             <div className="graph-filter-group">
               <div className="graph-filter-label">
@@ -2631,22 +2710,13 @@ export default function CitationGraph({ projectId }: Props) {
                   setUnlimitedNodes(false);
                 }}
                 disabled={unlimitedNodes}
-                style={{
-                  width: 120,
-                  cursor: unlimitedNodes ? "not-allowed" : "pointer",
-                  opacity: unlimitedNodes ? 0.5 : 1,
-                }}
+                style={getGraphAdvancedSliderStyle(unlimitedNodes)}
                 title="Максимальное количество узлов в графе"
               />
               <button
                 onClick={() => setUnlimitedNodes(!unlimitedNodes)}
                 className={unlimitedNodes ? "btn primary" : "btn secondary"}
-                style={{
-                  padding: "4px 10px",
-                  fontSize: 10,
-                  marginLeft: 8,
-                  whiteSpace: "nowrap",
-                }}
+                style={graphAdvancedLimitButtonStyle}
                 title="Без ограничений"
               >
                 ∞
@@ -2673,22 +2743,13 @@ export default function CitationGraph({ projectId }: Props) {
                   setUnlimitedLinks(false);
                 }}
                 disabled={unlimitedLinks}
-                style={{
-                  width: 120,
-                  cursor: unlimitedLinks ? "not-allowed" : "pointer",
-                  opacity: unlimitedLinks ? 0.5 : 1,
-                }}
+                style={getGraphAdvancedSliderStyle(unlimitedLinks)}
                 title="Максимум связей на каждый узел"
               />
               <button
                 onClick={() => setUnlimitedLinks(!unlimitedLinks)}
                 className={unlimitedLinks ? "btn primary" : "btn secondary"}
-                style={{
-                  padding: "4px 10px",
-                  fontSize: 10,
-                  marginLeft: 8,
-                  whiteSpace: "nowrap",
-                }}
+                style={graphAdvancedLimitButtonStyle}
                 title="Без ограничений"
               >
                 ∞
@@ -2697,15 +2758,7 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Clustering Toggle */}
             <div className="graph-filter-group">
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 12,
-                  cursor: "pointer",
-                }}
-              >
+              <label style={graphClusteringLabelStyle}>
                 <input
                   type="checkbox"
                   checked={enableClustering}
@@ -2720,14 +2773,7 @@ export default function CitationGraph({ projectId }: Props) {
                   onChange={(e) =>
                     setClusterBy(e.target.value as typeof clusterBy)
                   }
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: 11,
-                    border: "1px solid var(--border-glass)",
-                    borderRadius: 6,
-                    background: "var(--bg-secondary)",
-                    color: "var(--text-primary)",
-                  }}
+                  style={graphClusteringSelectStyle}
                 >
                   <option value="auto">Авто</option>
                   <option value="year">По годам</option>
@@ -2740,14 +2786,14 @@ export default function CitationGraph({ projectId }: Props) {
             {canLoadMore && !unlimitedNodes && maxNodes < 5000 && (
               <button
                 className="btn secondary"
-                style={{ padding: "6px 12px", fontSize: 11 }}
+                style={graphLoadMoreButtonStyle}
                 onClick={handleLoadMore}
                 title="Загрузить больше связанных статей"
               >
                 <IconPlus
                   size="sm"
                   className="icon-sm"
-                  style={{ marginRight: 4 }}
+                  style={graphLoadMoreIconStyle}
                 />
                 Загрузить больше (+1000)
               </button>
@@ -2755,26 +2801,13 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Current Limits Info */}
             {currentLimits && !unlimitedNodes && !unlimitedLinks && (
-              <div
-                style={{
-                  marginLeft: "auto",
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                }}
-              >
+              <div style={graphLimitsInfoStyle}>
                 Текущие лимиты: {currentLimits.maxExtraNodes} узлов,{" "}
                 {currentLimits.maxLinksPerNode} связей/узел
               </div>
             )}
             {(unlimitedNodes || unlimitedLinks) && (
-              <div
-                style={{
-                  marginLeft: "auto",
-                  fontSize: 11,
-                  color: "var(--text-success)",
-                  fontWeight: 600,
-                }}
-              >
+              <div style={graphUnlimitedInfoStyle}>
                 ∞ Без ограничений{" "}
                 {unlimitedNodes && unlimitedLinks
                   ? ""
@@ -2788,54 +2821,28 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Progress Bar */}
         {fetchJobStatus?.isRunning && (
-          <div
-            style={{
-              padding: "16px 20px",
-              background:
-                "linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))",
-              borderBottom: "1px solid var(--border-glass)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 10,
-              }}
-            >
+          <div style={graphProgressPanelStyle}>
+            <div style={graphProgressHeaderStyle}>
               <div className="loading-spinner" />
-              <div style={{ flex: 1 }}>
-                <span
-                  style={{
-                    fontWeight: 600,
-                    fontSize: 13,
-                    color: "var(--text-primary)",
-                  }}
-                >
+              <div style={graphProgressTitleWrapStyle}>
+                <span style={graphProgressTitleStyle}>
                   Загрузка связей (PubMed + Crossref)...
                 </span>
                 {fetchJobStatus.currentPhase && (
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      marginTop: 2,
-                    }}
-                  >
+                  <div style={graphProgressPhaseStyle}>
                     {fetchJobStatus.currentPhase}
                     {fetchJobStatus.phaseProgress &&
                       ` — ${fetchJobStatus.phaseProgress}`}
                   </div>
                 )}
               </div>
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              <span style={graphProgressTimeStyle}>
                 {formatTime(fetchJobStatus.elapsedSeconds)}
               </span>
               <button
                 onClick={handleCancelFetch}
                 className="btn secondary"
-                style={{ padding: "4px 8px", fontSize: 11 }}
+                style={graphProgressCancelButtonStyle}
                 title="Отменить загрузку"
               >
                 ✕ Отмена
@@ -2844,33 +2851,12 @@ export default function CitationGraph({ projectId }: Props) {
 
             <div
               className="progress-bar-animated"
-              style={{
-                height: 6,
-                background: "rgba(255,255,255,0.1)",
-                borderRadius: 3,
-                overflow: "hidden",
-                marginBottom: 10,
-              }}
+              style={graphProgressTrackStyle}
             >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${fetchJobStatus.progress}%`,
-                  background: "linear-gradient(90deg, #3b82f6, #8b5cf6)",
-                  borderRadius: 3,
-                  transition: "width 0.3s ease",
-                }}
-              />
+              <div style={getGraphProgressFillStyle(fetchJobStatus.progress)} />
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: 11,
-                color: "var(--text-muted)",
-              }}
-            >
+            <div style={graphProgressFooterStyle}>
               <span>
                 Статей: {fetchJobStatus.processedArticles || 0} /{" "}
                 {fetchJobStatus.totalArticles || "?"}
@@ -2878,22 +2864,13 @@ export default function CitationGraph({ projectId }: Props) {
               <span>{fetchJobStatus.progress}% завершено</span>
             </div>
 
-            <div
-              style={{
-                marginTop: 10,
-                fontSize: 11,
-                color: "#fbbf24",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
+            <div style={graphProgressHintStyle}>
               <IconInfoCircle size="sm" />
               <span>
                 Загрузка выполняется в фоне. Граф обновится автоматически.
                 {fetchJobStatus.secondsSinceProgress != null &&
                   fetchJobStatus.secondsSinceProgress > 30 && (
-                    <span style={{ color: "#f97316" }}>
+                    <span style={graphProgressStaleHintStyle}>
                       {" "}
                       (нет обновлений {fetchJobStatus.secondsSinceProgress} сек
                       — возможно, сервер PubMed медленно отвечает)
@@ -2905,20 +2882,7 @@ export default function CitationGraph({ projectId }: Props) {
         )}
 
         {refsMessage && (
-          <div
-            className="info"
-            style={{
-              margin: "8px 20px",
-              padding: 12,
-              fontSize: 13,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "rgba(59, 130, 246, 0.15)",
-              borderRadius: 8,
-              border: "1px solid rgba(59, 130, 246, 0.3)",
-            }}
-          >
+          <div className="info" style={graphRefsMessageStyle}>
             {refsMessage.startsWith("crossref:") ? (
               <>
                 <IconLinkChain size="sm" className="text-blue-400" />
@@ -2937,10 +2901,7 @@ export default function CitationGraph({ projectId }: Props) {
         )}
 
         {importMessage && (
-          <div
-            className="ok"
-            style={{ margin: "8px 20px", padding: 12, fontSize: 13 }}
-          >
+          <div className="ok" style={graphImportMessageStyle}>
             {importMessage}
           </div>
         )}
