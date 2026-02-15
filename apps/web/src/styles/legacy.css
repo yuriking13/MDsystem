@@ -1239,18 +1239,7 @@ input:focus::placeholder {
 
 /* ===== FUTURISTIC ARTICLES ===== */
 
-/* New card-based grid layout */
-.articles-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 16px;
-}
-
-@media (max-width: 768px) {
-  .articles-grid {
-    grid-template-columns: 1fr;
-  }
-}
+/* Grid layout moved to articles-section.css */
 
 /* Legacy table layout (kept for compatibility) */
 .articles-table {
