@@ -495,10 +495,34 @@
     --articles-content-gutter: 16px;
   }
 
+  .articles-header {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .articles-header-right {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .articles-toolbar-btn {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
   .articles-grid {
     grid-template-columns: 1fr;
     padding: 12px 0;
     @apply gap-2;
+  }
+}
+
+@media (max-width: 640px) {
+  .articles-header-title {
+    font-size: 14px;
+    line-height: 1.35;
+    flex-wrap: wrap;
   }
 }
 
