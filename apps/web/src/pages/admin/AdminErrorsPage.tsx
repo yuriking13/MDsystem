@@ -37,6 +37,9 @@ function ErrorDetailModal({
 }: ErrorDetailModalProps) {
   const [notes, setNotes] = useState("");
   const [resolving, setResolving] = useState(false);
+  const resolvedAtLabel = error.resolved_at
+    ? formatDate(error.resolved_at)
+    : "—";
 
   async function handleResolve() {
     setResolving(true);
@@ -111,7 +114,7 @@ function ErrorDetailModal({
               </div>
             )}
 
-            {error.request_body && (
+            {error.request_body != null && (
               <div className="admin-error-detail-item full-width">
                 <span className="admin-error-detail-label">Request body</span>
                 <pre className="admin-error-body">
@@ -124,7 +127,7 @@ function ErrorDetailModal({
               <>
                 <div className="admin-error-detail-item">
                   <span className="admin-error-detail-label">Решено</span>
-                  <span>{formatDate(error.resolved_at!)}</span>
+                  <span>{resolvedAtLabel}</span>
                 </div>
                 <div className="admin-error-detail-item">
                   <span className="admin-error-detail-label">Кем решено</span>

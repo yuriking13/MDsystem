@@ -25,6 +25,16 @@ const ACTION_LABELS: Record<string, string> = {
   resolve_error: "Решение ошибки",
 };
 
+function formatAuditDetails(details: AuditLogItem["details"]): string {
+  if (!details || typeof details !== "object") {
+    return "—";
+  }
+  const detailsObject = details as Record<string, unknown>;
+  return Object.keys(detailsObject).length > 0
+    ? JSON.stringify(detailsObject).slice(0, 50)
+    : "—";
+}
+
 export default function AdminAuditPage() {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -151,9 +161,7 @@ export default function AdminAuditPage() {
                       {!log.target_type && "—"}
                     </td>
                     <td className="admin-table-detail">
-                      {log.details && Object.keys(log.details).length > 0
-                        ? JSON.stringify(log.details).slice(0, 50)
-                        : "—"}
+                      {formatAuditDetails(log.details)}
                     </td>
                     <td className="mono">{log.ip_address || "—"}</td>
                   </tr>

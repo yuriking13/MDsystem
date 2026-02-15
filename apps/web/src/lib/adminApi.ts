@@ -113,7 +113,7 @@ export type ActivityItem = {
   email: string;
   session_id: string;
   action_type: string;
-  action_detail: any;
+  action_detail: unknown;
   ip_address: string;
   user_agent: string;
   created_at: string;
@@ -162,7 +162,7 @@ export type ErrorLogItem = {
   user_email: string | null;
   request_path: string | null;
   request_method: string | null;
-  request_body: any;
+  request_body: unknown;
   ip_address: string;
   created_at: string;
   resolved: boolean;
@@ -186,7 +186,7 @@ export type AuditLogItem = {
   action: string;
   target_type: string | null;
   target_id: string | null;
-  details: any;
+  details: unknown;
   ip_address: string;
   created_at: string;
 };
