@@ -361,6 +361,26 @@
   color: var(--text-primary, #e2e8f0);
 }
 
+.editor-outline-empty-icon {
+  color: var(--text-muted);
+}
+
+.editor-outline-empty-title {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.editor-outline-empty-subtitle {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.editor-outline-count-badge {
+  color: var(--text-muted);
+  background: var(--border-glass);
+}
+
 /* Main area with outline + editor + bibliography */
 .tiptap-main-area {
   display: flex;
@@ -1471,6 +1491,45 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.bibliography-count-badge {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+}
+
+.bibliography-controls-wrap {
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.bibliography-search-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.bibliography-view-toggle {
+  border: 1px solid var(--border-glass);
+}
+
+.bibliography-view-toggle-inactive {
+  background: var(--bg-secondary);
+}
+
+.bibliography-view-toggle-with-divider {
+  border-left: 1px solid var(--border-glass);
+}
+
+.bibliography-divide {
+  --tw-divide-opacity: 1;
+  border-color: var(--border-glass);
+}
+
+.bibliography-source-group {
+  border-color: var(--border-glass);
+}
+
+.bibliography-source-item {
+  background: var(--bg-secondary);
 }
 
 .bib-view-toggle {
