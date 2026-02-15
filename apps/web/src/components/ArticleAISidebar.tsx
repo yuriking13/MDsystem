@@ -150,11 +150,15 @@ export default function ArticleAISidebar({
           totalAnalyzed: result.totalAnalyzed,
         };
         setInternalMessages((prev) => [...prev, assistantMessage]);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errMessage =
+          err instanceof Error
+            ? err.message
+            : "Не удалось получить ответ от AI";
         const errorMessage: AIMessage = {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: `Ошибка: ${err.message || "Не удалось получить ответ от AI"}`,
+          content: `Ошибка: ${errMessage}`,
           timestamp: new Date(),
           status: "error",
         };
@@ -612,15 +616,14 @@ export default function ArticleAISidebar({
                           {onAddToSelected && (
                             <button
                               className="article-ai-add-all-btn"
-                              onClick={() =>
-                                onAddToSelected(
-                                  msg
-                                    .suggestedArticles!.filter(
-                                      (a) => a.status === "candidate",
-                                    )
-                                    .map((a) => a.id),
+                              onClick={() => {
+                                const candidateIds = (
+                                  msg.suggestedArticles ?? []
                                 )
-                              }
+                                  .filter((a) => a.status === "candidate")
+                                  .map((a) => a.id);
+                                onAddToSelected(candidateIds);
+                              }}
                               type="button"
                               title="Добавить все рекомендованные в отобранные"
                             >
