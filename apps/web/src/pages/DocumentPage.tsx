@@ -417,13 +417,15 @@ export default function DocumentPage() {
   // Загрузка документа и проекта
   useEffect(() => {
     if (!projectId || !docId) return;
+    const currentProjectId = projectId;
+    const currentDocId = docId;
 
     async function load() {
       setLoading(true);
       try {
         const [docRes, projRes] = await Promise.all([
-          apiGetDocument(projectId!, docId!),
-          apiGetProject(projectId!),
+          apiGetDocument(currentProjectId, currentDocId),
+          apiGetProject(currentProjectId),
         ]);
         setDoc(docRes.document);
         setProject(projRes.project);
@@ -2584,14 +2586,15 @@ export default function DocumentPage() {
                     padding: 4,
                   }}
                 >
-                  {filteredFiles.map((file) => (
-                    <FilePickerItem
-                      key={file.id}
-                      file={file}
-                      projectId={projectId!}
-                      onSelect={() => handleInsertFile(file)}
-                    />
-                  ))}
+                  {projectId &&
+                    filteredFiles.map((file) => (
+                      <FilePickerItem
+                        key={file.id}
+                        file={file}
+                        projectId={projectId}
+                        onSelect={() => handleInsertFile(file)}
+                      />
+                    ))}
                 </div>
               )}
             </div>

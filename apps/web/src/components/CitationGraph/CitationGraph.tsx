@@ -1892,10 +1892,17 @@ export default function CitationGraph({ projectId }: Props) {
     setAiAddingArticles(true);
     try {
       // Собираем PMIDs и DOIs из найденных статей
-      const pmids = aiFoundArticles.filter((a) => a.pmid).map((a) => a.pmid!);
+      const pmids = aiFoundArticles
+        .map((a) => a.pmid)
+        .filter(
+          (pmid): pmid is string => typeof pmid === "string" && pmid.length > 0,
+        );
       const dois = aiFoundArticles
-        .filter((a) => !a.pmid && a.doi)
-        .map((a) => a.doi!);
+        .filter((a) => !a.pmid)
+        .map((a) => a.doi)
+        .filter(
+          (doi): doi is string => typeof doi === "string" && doi.length > 0,
+        );
 
       const res = await apiImportFromGraph(projectId, {
         pmids,
@@ -1969,10 +1976,17 @@ export default function CitationGraph({ projectId }: Props) {
 
     setAiAddingArticles(true);
     try {
-      const pmids = articlesToAdd.filter((a) => a.pmid).map((a) => a.pmid!);
+      const pmids = articlesToAdd
+        .map((a) => a.pmid)
+        .filter(
+          (pmid): pmid is string => typeof pmid === "string" && pmid.length > 0,
+        );
       const dois = articlesToAdd
-        .filter((a) => !a.pmid && a.doi)
-        .map((a) => a.doi!);
+        .filter((a) => !a.pmid)
+        .map((a) => a.doi)
+        .filter(
+          (doi): doi is string => typeof doi === "string" && doi.length > 0,
+        );
 
       const res = await apiImportFromGraph(projectId, { pmids, dois, status });
 
@@ -2027,10 +2041,17 @@ export default function CitationGraph({ projectId }: Props) {
         return;
       }
 
-      const pmids = articlesToAdd.filter((n) => n.pmid).map((n) => n.pmid!);
+      const pmids = articlesToAdd
+        .map((n) => n.pmid)
+        .filter(
+          (pmid): pmid is string => typeof pmid === "string" && pmid.length > 0,
+        );
       const dois = articlesToAdd
-        .filter((n) => !n.pmid && n.doi)
-        .map((n) => n.doi!);
+        .filter((n) => !n.pmid)
+        .map((n) => n.doi)
+        .filter(
+          (doi): doi is string => typeof doi === "string" && doi.length > 0,
+        );
 
       const res = await apiImportFromGraph(projectId, {
         pmids,

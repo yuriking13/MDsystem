@@ -3702,7 +3702,7 @@ export default function ProjectDetailPage() {
                   const usedInDocIds = stat.used_in_documents || [];
                   const usedInDocuments = usedInDocIds
                     .map((docId) => documents.find((d) => d.id === docId))
-                    .filter(Boolean);
+                    .filter((doc): doc is Document => Boolean(doc));
 
                   return (
                     <div
@@ -3770,19 +3770,19 @@ export default function ProjectDetailPage() {
                             </h4>
                             {usedInDocuments.length > 0 ? (
                               <div className="stat-card-documents">
-                                {usedInDocuments.map((doc, i) => (
+                                {usedInDocuments.map((doc) => (
                                   <span
-                                    key={doc!.id}
+                                    key={doc.id}
                                     className="stat-card-document"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       nav(
-                                        `/projects/${id}/documents/${doc!.id}`,
+                                        `/projects/${id}/documents/${doc.id}`,
                                       );
                                     }}
                                     title="Открыть документ"
                                   >
-                                    📄 {doc!.title}
+                                    📄 {doc.title}
                                   </span>
                                 ))}
                               </div>
@@ -4034,9 +4034,9 @@ export default function ProjectDetailPage() {
             )}
 
             {/* Модальное окно создания новой статистики */}
-            {showCreateStatistic && (
+            {showCreateStatistic && id && (
               <CreateStatisticModal
-                projectId={id!}
+                projectId={id}
                 onClose={() => setShowCreateStatistic(false)}
                 onCreated={(newStat) => {
                   setStatistics([...statistics, newStat]);

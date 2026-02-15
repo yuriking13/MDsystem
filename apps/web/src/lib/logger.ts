@@ -43,36 +43,43 @@ export function createLogger(context: string) {
     debug: (message: string, data?: unknown) => {
       if (!shouldLog("debug")) return;
       if (data !== undefined) {
-        console.debug(formatMessage("debug", context, message), data);
+        globalThis.console.debug(
+          formatMessage("debug", context, message),
+          data,
+        );
       } else {
-        console.debug(formatMessage("debug", context, message));
+        globalThis.console.debug(formatMessage("debug", context, message));
       }
     },
 
     info: (message: string, data?: unknown) => {
       if (!shouldLog("info")) return;
       if (data !== undefined) {
-        console.info(formatMessage("info", context, message), data);
+        globalThis.console.info(formatMessage("info", context, message), data);
       } else {
-        console.info(formatMessage("info", context, message));
+        globalThis.console.info(formatMessage("info", context, message));
       }
     },
 
     warn: (message: string, data?: unknown) => {
       if (!shouldLog("warn")) return;
       if (data !== undefined) {
-        console.warn(formatMessage("warn", context, message), data);
+        globalThis.console.warn(formatMessage("warn", context, message), data);
       } else {
-        console.warn(formatMessage("warn", context, message));
+        globalThis.console.warn(formatMessage("warn", context, message));
       }
     },
 
     error: (message: string, error?: unknown, data?: unknown) => {
       if (!shouldLog("error")) return;
       if (error !== undefined) {
-        console.error(formatMessage("error", context, message), error, data);
+        globalThis.console.error(
+          formatMessage("error", context, message),
+          error,
+          data,
+        );
       } else {
-        console.error(formatMessage("error", context, message));
+        globalThis.console.error(formatMessage("error", context, message));
       }
     },
   };
