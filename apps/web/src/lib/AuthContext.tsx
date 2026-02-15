@@ -1,4 +1,5 @@
 import React, {
+  useCallback,
   createContext,
   useContext,
   useEffect,
@@ -28,7 +29,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function refreshMe() {
+  const logout = useCallback(() => {
+    clearToken();
+    setTokenState(null);
+    setUser(null);
+  }, []);
+
+  const refreshMe = useCallback(async () => {
     const t = getToken();
     if (!t) {
       setUser(null);
@@ -36,19 +43,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const me = await apiMe();
     setUser(me.user);
-  }
+  }, []);
 
-  async function loginWithToken(t: string, refreshToken?: string | null) {
-    setAuthTokens(t, refreshToken);
-    setTokenState(t);
-    await refreshMe();
-  }
-
-  function logout() {
-    clearToken();
-    setTokenState(null);
-    setUser(null);
-  }
+  const loginWithToken = useCallback(
+    async (t: string, refreshToken?: string | null) => {
+      setAuthTokens(t, refreshToken);
+      setTokenState(t);
+      await refreshMe();
+    },
+    [refreshMe],
+  );
 
   useEffect(() => {
     const t = getToken();
@@ -60,8 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshMe()
       .catch(() => logout())
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [logout, refreshMe]);
 
   useEffect(() => {
     const syncAuthState = () => {
@@ -79,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AuthState>(
     () => ({ token, user, loading, loginWithToken, logout, refreshMe }),
-    [token, user, loading],
+    [token, user, loading, loginWithToken, logout, refreshMe],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

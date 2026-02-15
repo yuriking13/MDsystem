@@ -238,7 +238,6 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     }, 50);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleAddRow = () => {
