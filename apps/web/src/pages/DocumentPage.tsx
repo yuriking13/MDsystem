@@ -101,43 +101,20 @@ function FilePickerItem({
   const renderIcon = () => {
     if (loadingThumb) {
       return (
-        <div
-          style={{
-            width: "100%",
-            height: 80,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.2)",
-            borderRadius: 6,
-          }}
-        >
-          <IconRefresh
-            className="w-6 h-6 animate-spin"
-            style={{ color: "var(--text-muted)" }}
-          />
+        <div className="file-picker-thumb file-picker-thumb--loading">
+          <IconRefresh className="w-6 h-6 animate-spin file-picker-icon-muted" />
         </div>
       );
     }
 
     if (thumbnailUrl && file.category === "image") {
       return (
-        <div
-          style={{
-            width: "100%",
-            height: 80,
-            borderRadius: 6,
-            overflow: "hidden",
-            background: "rgba(0,0,0,0.2)",
-          }}
-        >
+        <div className="file-picker-thumb file-picker-thumb--image">
           <img
             src={thumbnailUrl}
             alt={file.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
+            className="file-picker-thumb-media"
+            onError={() => setThumbnailUrl(null)}
           />
         </div>
       );
@@ -145,35 +122,15 @@ function FilePickerItem({
 
     if (thumbnailUrl && file.category === "video") {
       return (
-        <div
-          style={{
-            width: "100%",
-            height: 80,
-            borderRadius: 6,
-            overflow: "hidden",
-            background: "rgba(0,0,0,0.4)",
-            position: "relative",
-          }}
-        >
+        <div className="file-picker-thumb file-picker-thumb--video">
           <video
             src={thumbnailUrl}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            className="file-picker-thumb-media"
             muted
             preload="metadata"
           />
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <IconPlay
-              className="w-8 h-8"
-              style={{ color: "white", opacity: 0.9 }}
-            />
+          <div className="file-picker-video-overlay">
+            <IconPlay className="w-8 h-8 file-picker-icon-white" />
           </div>
         </div>
       );
@@ -181,87 +138,33 @@ function FilePickerItem({
 
     // Default icons for non-media files
     return (
-      <div
-        style={{
-          width: "100%",
-          height: 80,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(0,0,0,0.1)",
-          borderRadius: 6,
-        }}
-      >
+      <div className="file-picker-thumb file-picker-thumb--fallback">
         {file.category === "audio" && (
-          <IconMusicalNote
-            className="w-10 h-10"
-            style={{ color: "var(--accent)" }}
-          />
+          <IconMusicalNote className="w-10 h-10 file-picker-icon-accent" />
         )}
         {file.category === "document" && (
-          <IconDocument
-            className="w-10 h-10"
-            style={{ color: "var(--accent)" }}
-          />
+          <IconDocument className="w-10 h-10 file-picker-icon-accent" />
         )}
         {file.category === "other" && (
-          <IconDocumentPdf
-            className="w-10 h-10"
-            style={{ color: "var(--text-muted)" }}
-          />
+          <IconDocumentPdf className="w-10 h-10 file-picker-icon-muted" />
         )}
         {file.category === "image" && !thumbnailUrl && (
-          <IconPhoto className="w-10 h-10" style={{ color: "var(--accent)" }} />
+          <IconPhoto className="w-10 h-10 file-picker-icon-accent" />
         )}
         {file.category === "video" && !thumbnailUrl && (
-          <IconFilm className="w-10 h-10" style={{ color: "var(--accent)" }} />
+          <IconFilm className="w-10 h-10 file-picker-icon-accent" />
         )}
       </div>
     );
   };
 
   return (
-    <div
-      className="file-picker-item"
-      onClick={onSelect}
-      style={{
-        padding: 10,
-        background: "var(--bg-glass-light)",
-        border: "1px solid var(--border-glass)",
-        borderRadius: 8,
-        cursor: "pointer",
-        textAlign: "center",
-        transition: "all 0.2s",
-      }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.borderColor = "var(--accent)";
-        e.currentTarget.style.background = "rgba(75,116,255,0.1)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.borderColor = "var(--border-glass)";
-        e.currentTarget.style.background = "var(--bg-glass-light)";
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
-    >
+    <div className="file-picker-item" onClick={onSelect}>
       {renderIcon()}
-      <div
-        style={{
-          fontSize: 11,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          marginTop: 8,
-          marginBottom: 2,
-          fontWeight: 500,
-        }}
-        title={file.name}
-      >
+      <div className="file-picker-name" title={file.name}>
         {file.name}
       </div>
-      <div className="muted" style={{ fontSize: 10 }}>
-        {file.sizeFormatted}
-      </div>
+      <div className="muted file-picker-size">{file.sizeFormatted}</div>
     </div>
   );
 }
