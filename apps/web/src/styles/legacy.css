@@ -2437,8 +2437,35 @@ input:focus::placeholder {
 
 /* Statistic edit modal */
 .statistic-edit-modal {
+  max-width: 1000px;
   max-height: 90vh;
   overflow-y: auto;
+}
+
+.create-statistic-modal {
+  max-width: 1000px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.chart-creator-modal {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.statistic-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statistic-modal-tabs {
+  margin-bottom: 16px;
+}
+
+.statistic-modal-alert {
+  margin-bottom: 12px;
 }
 
 /* Выделение ячеек таблицы */

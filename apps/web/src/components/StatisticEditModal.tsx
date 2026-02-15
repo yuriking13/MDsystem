@@ -383,15 +383,11 @@ export default function StatisticEditModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="modal-content"
-        style={{ maxWidth: 1000 }}
+        className="modal-content statistic-edit-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
-          <h3
-            className="modal-title"
-            style={{ display: "flex", alignItems: "center", gap: 8 }}
-          >
+          <h3 className="modal-title statistic-modal-title">
             {statistic.type === "chart" ? <ChartBarIcon /> : <TableIcon />}
             Редактировать {statistic.type === "chart" ? "график" : "таблицу"}
           </h3>
@@ -401,7 +397,7 @@ export default function StatisticEditModal({
         </div>
         <div className="modal-body">
           {/* Tabs */}
-          <div className="tabs" style={{ marginBottom: 16 }}>
+          <div className="tabs statistic-modal-tabs">
             <button
               className={`tab ${activeTab === "chart" ? "active" : ""}`}
               onClick={() => setActiveTab("chart")}

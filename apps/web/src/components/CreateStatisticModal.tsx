@@ -384,15 +384,11 @@ export default function CreateStatisticModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="modal-content"
-        style={{ maxWidth: 1000 }}
+        className="modal-content create-statistic-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
-          <h3
-            className="modal-title"
-            style={{ display: "flex", alignItems: "center", gap: 8 }}
-          >
+          <h3 className="modal-title statistic-modal-title">
             <PlusIcon />
             Создать таблицу и график
           </h3>
@@ -401,14 +397,10 @@ export default function CreateStatisticModal({
           </button>
         </div>
         <div className="modal-body">
-          {error && (
-            <div className="alert" style={{ marginBottom: 12 }}>
-              {error}
-            </div>
-          )}
+          {error && <div className="alert statistic-modal-alert">{error}</div>}
 
           {/* Tabs */}
-          <div className="tabs" style={{ marginBottom: 16 }}>
+          <div className="tabs statistic-modal-tabs">
             <button
               className={`tab ${activeTab === "table" ? "active" : ""}`}
               onClick={() => setActiveTab("table")}

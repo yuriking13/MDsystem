@@ -1160,8 +1160,7 @@ export function ChartCreatorModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
-        className="modal-content"
-        style={{ maxWidth: 900 }}
+        className="modal-content chart-creator-modal"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
