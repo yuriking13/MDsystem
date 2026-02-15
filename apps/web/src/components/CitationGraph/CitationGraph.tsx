@@ -434,7 +434,6 @@ export default function CitationGraph({ projectId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphAreaRef = useRef<HTMLDivElement>(null);
   // ForceGraph2D ref - тип any необходим из-за отсутствия типов в библиотеке
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const graphRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
