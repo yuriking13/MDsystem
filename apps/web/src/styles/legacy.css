@@ -5621,6 +5621,24 @@ input:focus::placeholder {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .chart-types-selector {
+    padding: 14px;
+  }
+
+  .chart-type-card {
+    padding: 12px 8px;
+  }
+
+  .chart-type-icon {
+    font-size: 22px;
+  }
+
+  .chart-type-icon .chart-icon,
+  .chart-type-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+
   .settings-page .row.space,
   .settings-page .row.gap {
     flex-wrap: wrap;
