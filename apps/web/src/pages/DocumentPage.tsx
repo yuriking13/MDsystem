@@ -1833,15 +1833,7 @@ export default function DocumentPage() {
   }
 
   return (
-    <div
-      className="document-page-container"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        overflow: "hidden",
-      }}
-    >
+    <div className="document-page-container">
       <EditorHeader
         title={title}
         onTitleChange={setTitle}
@@ -1855,69 +1847,27 @@ export default function DocumentPage() {
         isVersionHistoryOpen={showVersionHistory}
       />
 
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      <div className="document-page-main">
         {showVersionHistory && (
-          <div
-            className="version-history-panel"
-            style={{
-              padding: 16,
-              background: "var(--bg-secondary)",
-              borderRadius: 8,
-              border: "1px solid var(--border-color)",
-              flexShrink: 0,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+          <div className="version-history-panel">
+            <div className="version-history-header">
+              <h3 className="version-history-title">
                 <IconClock className="icon-md" />
                 История версий документа
               </h3>
               <button
-                className="btn secondary"
+                className="btn secondary version-history-close-btn"
                 onClick={() => setShowVersionHistory(false)}
-                style={{ padding: "4px 8px" }}
+                type="button"
               >
                 <IconClose className="icon-sm" />
               </button>
             </div>
 
             {/* Create manual version */}
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                marginBottom: 16,
-                alignItems: "flex-end",
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <label
-                  className="muted"
-                  style={{ fontSize: 11, display: "block", marginBottom: 4 }}
-                >
+            <div className="version-history-create-row">
+              <div className="version-history-note-group">
+                <label className="muted version-history-note-label">
                   Комментарий к версии (необязательно)
                 </label>
                 <input
@@ -1925,140 +1875,96 @@ export default function DocumentPage() {
                   value={versionNote}
                   onChange={(e) => setVersionNote(e.target.value)}
                   placeholder="Например: Добавлены графики исследования"
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                  }}
+                  className="version-history-note-input"
                 />
               </div>
               <button
-                className="btn"
+                className="btn version-history-create-btn"
                 onClick={createManualVersion}
                 disabled={creatingVersion}
-                style={{ whiteSpace: "nowrap" }}
+                type="button"
               >
-                <IconPlus className="icon-sm" style={{ marginRight: 4 }} />
+                <IconPlus className="icon-sm version-history-btn-icon" />
                 {creatingVersion ? "Сохранение..." : "Сохранить версию"}
               </button>
             </div>
 
             {/* Versions list */}
             {loadingVersions ? (
-              <div
-                className="muted"
-                style={{ textAlign: "center", padding: 20 }}
-              >
+              <div className="muted version-history-state">
                 Загрузка истории версий...
               </div>
             ) : versions.length === 0 ? (
-              <div
-                className="muted"
-                style={{ textAlign: "center", padding: 20 }}
-              >
+              <div className="muted version-history-state">
                 Нет сохранённых версий. Версии создаются автоматически при
                 значительных изменениях или вручную.
               </div>
             ) : (
-              <div style={{ maxHeight: 300, overflowY: "auto" }}>
-                {versions.map((v) => (
-                  <div
-                    key={v.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "10px 12px",
-                      borderBottom: "1px solid var(--border-color)",
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <span style={{ fontWeight: 500 }}>
-                          Версия {v.version_number}
-                        </span>
-                        <span
-                          className="id-badge"
-                          style={{
-                            fontSize: 10,
-                            padding: "2px 6px",
-                            background:
-                              v.version_type === "manual"
-                                ? "rgba(75, 116, 255, 0.2)"
-                                : v.version_type === "exit"
-                                  ? "rgba(251, 191, 36, 0.2)"
-                                  : "rgba(100, 116, 139, 0.2)",
-                            color:
-                              v.version_type === "manual"
-                                ? "#4b74ff"
-                                : v.version_type === "exit"
-                                  ? "#fbbf24"
-                                  : "#64748b",
-                          }}
-                        >
-                          {v.version_type === "manual"
-                            ? "Ручная"
-                            : v.version_type === "exit"
-                              ? "При выходе"
-                              : "Авто"}
-                        </span>
+              <div className="version-history-list">
+                {versions.map((v) => {
+                  const versionType =
+                    v.version_type === "manual"
+                      ? "manual"
+                      : v.version_type === "exit"
+                        ? "exit"
+                        : "auto";
+                  return (
+                    <div key={v.id} className="version-history-item">
+                      <div>
+                        <div className="version-history-item-header">
+                          <span className="version-history-item-number">
+                            Версия {v.version_number}
+                          </span>
+                          <span
+                            className={`id-badge version-history-type-badge version-history-type-badge--${versionType}`}
+                          >
+                            {versionType === "manual"
+                              ? "Ручная"
+                              : versionType === "exit"
+                                ? "При выходе"
+                                : "Авто"}
+                          </span>
+                        </div>
+                        <div className="muted version-history-meta-primary">
+                          {new Date(v.created_at).toLocaleString("ru-RU")}
+                          {v.version_note && <span> — {v.version_note}</span>}
+                        </div>
+                        <div className="muted version-history-meta-secondary">
+                          {v.content_length
+                            ? `${Math.round(v.content_length / 1000)}K символов`
+                            : ""}
+                          {v.created_by_email && ` • ${v.created_by_email}`}
+                        </div>
                       </div>
-                      <div
-                        className="muted"
-                        style={{ fontSize: 11, marginTop: 4 }}
+                      <button
+                        className="btn secondary version-history-restore-btn"
+                        onClick={() => restoreVersion(v.id)}
+                        disabled={!!restoringVersion}
+                        title="Восстановить эту версию"
+                        type="button"
                       >
-                        {new Date(v.created_at).toLocaleString("ru-RU")}
-                        {v.version_note && <span> — {v.version_note}</span>}
-                      </div>
-                      <div
-                        className="muted"
-                        style={{ fontSize: 10, marginTop: 2 }}
-                      >
-                        {v.content_length
-                          ? `${Math.round(v.content_length / 1000)}K символов`
-                          : ""}
-                        {v.created_by_email && ` • ${v.created_by_email}`}
-                      </div>
+                        {restoringVersion === v.id ? (
+                          "Восстановление..."
+                        ) : (
+                          <>
+                            <IconUndo className="icon-sm version-history-btn-icon" />
+                            Восстановить
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <button
-                      className="btn secondary"
-                      onClick={() => restoreVersion(v.id)}
-                      disabled={!!restoringVersion}
-                      style={{ padding: "6px 12px", fontSize: 12 }}
-                      title="Восстановить эту версию"
-                    >
-                      {restoringVersion === v.id ? (
-                        "Восстановление..."
-                      ) : (
-                        <>
-                          <IconUndo
-                            className="icon-sm"
-                            style={{ marginRight: 4 }}
-                          />
-                          Восстановить
-                        </>
-                      )}
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
 
         {error && (
-          <div className="alert" style={{ marginBottom: 12, flexShrink: 0 }}>
-            {error}
-          </div>
+          <div className="alert document-page-error-alert">{error}</div>
         )}
 
-        <div style={{ flex: 1, minHeight: 0 }}>
+        <div className="document-editor-layout">
           <EditorLayoutWrapper
             headings={headings}
             onNavigateToHeading={handleNavigateHeading}

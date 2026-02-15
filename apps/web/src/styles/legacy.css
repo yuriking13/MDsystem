@@ -1530,6 +1530,149 @@ input:focus::placeholder {
   background: var(--bg-primary);
 }
 
+.document-page-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.document-page-error-alert {
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.document-editor-layout {
+  flex: 1;
+  min-height: 0;
+}
+
+.version-history-panel {
+  padding: 16px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.version-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.version-history-title {
+  margin: 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.version-history-close-btn {
+  padding: 4px 8px;
+}
+
+.version-history-create-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: flex-end;
+}
+
+.version-history-note-group {
+  flex: 1;
+}
+
+.version-history-note-label {
+  font-size: 11px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.version-history-note-input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.version-history-create-btn {
+  white-space: nowrap;
+}
+
+.version-history-state {
+  text-align: center;
+  padding: 20px;
+}
+
+.version-history-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.version-history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.version-history-item:last-child {
+  border-bottom: none;
+}
+
+.version-history-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.version-history-item-number {
+  font-weight: 500;
+}
+
+.version-history-type-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.version-history-type-badge--manual {
+  background: rgba(75, 116, 255, 0.2);
+  color: #4b74ff;
+}
+
+.version-history-type-badge--exit {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fbbf24;
+}
+
+.version-history-type-badge--auto {
+  background: rgba(100, 116, 139, 0.2);
+  color: #64748b;
+}
+
+.version-history-meta-primary {
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.version-history-meta-secondary {
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.version-history-restore-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.version-history-btn-icon {
+  margin-right: 4px;
+}
+
 .document-header {
   display: flex;
   justify-content: space-between;
