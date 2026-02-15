@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-  NavLink,
   useLocation,
   useParams,
   useNavigate,
@@ -21,7 +20,6 @@ import {
   IconFolderOpen as FolderOpenIcon,
   IconChartBar as ChartBarIcon,
   IconShare as ShareIcon,
-  IconUsers as UserGroupIcon,
   IconArrowLeft as ArrowLeftIcon,
   IconClipboard as ClipboardDocumentListIcon,
   IconCheckCircle as CheckCircleIcon,
@@ -247,14 +245,16 @@ export default function AppSidebar({
     logout();
   };
 
-  const handleNavClick = (item: NavItem) => {
+  const handleNavClick = (item: NavItem, closeOnNavigate = true) => {
     if (item.tab) {
       // Update URL search params for project tabs
       goToProjectTab(item.tab);
     } else if (item.path) {
       navigate(item.path);
     }
-    onCloseMobile?.();
+    if (closeOnNavigate) {
+      onCloseMobile?.();
+    }
   };
 
   const navItems = isInProject ? projectNavItems : mainNavItems;
@@ -344,7 +344,7 @@ export default function AppSidebar({
               <li key={item.id}>
                 <button
                   onClick={() => {
-                    handleNavClick(item);
+                    handleNavClick(item, !isArticlesItem);
                     if (isArticlesItem) {
                       setArticlesSubMenuOpen(!articlesSubMenuOpen);
                     }
