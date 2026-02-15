@@ -1,5 +1,5 @@
 /**
- * MDsystem Design System
+ * Scientiaiter Design System
  * Utilities used across the application
  */
 

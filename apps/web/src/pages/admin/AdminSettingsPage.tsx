@@ -177,8 +177,8 @@ export default function AdminSettingsPage() {
           </div>
           <div className="admin-card-content">
             <p className="admin-settings-description">
-              MDsystem обеспечивает минимальный доступ администраторов к файлам
-              проектов пользователей для защиты их интеллектуальной
+              Scientiaiter обеспечивает минимальный доступ администраторов к
+              файлам проектов пользователей для защиты их интеллектуальной
               собственности.
             </p>
 

@@ -68,21 +68,8 @@ html.layout-fixed #root {
 .app-sidebar {
   @apply relative flex flex-col h-screen sticky top-0;
   
-  /* Glass background — 75% transparent (25% opaque) */
-  background: 
-    linear-gradient(
-      195deg, 
-      hsla(var(--glass-hue1), 50%, 12%, 0.15), 
-      hsla(var(--glass-hue1), 50%, 12%, 0) 50%
-    ), 
-    linear-gradient(
-      15deg, 
-      hsla(var(--glass-hue2), 50%, 12%, 0.12), 
-      hsla(var(--glass-hue2), 50%, 12%, 0) 50%
-    ), 
-    linear-gradient(
-      hsla(220, 25%, 6%, 0.25)
-    );
+  /* Solid background — single color, no gradient */
+  background: hsla(220, 25%, 8%, 0.85);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   
@@ -96,18 +83,16 @@ html.layout-fixed #root {
 }
 
 /* =============================================================================
-   Neon Shine & Glow Elements
+   Neon Shine & Glow Elements (disabled — removed from markup)
    ============================================================================= */
 
-/* --- Shine: thin bright border lines --- */
+/* --- Shine: hidden --- */
 .sidebar-shine {
-  pointer-events: none;
-  position: absolute;
-  z-index: 10;
-  border: 1px solid transparent;
-  display: block;
-  animation: sidebarGlow 1s var(--glass-ease) both;
-  clip-path: inset(-1px);
+  display: none;
+}
+
+.sidebar-glow {
+  display: none;
 }
 
 .sidebar-shine--top {
@@ -417,27 +402,11 @@ html.layout-fixed #root {
 }
 
 /* =============================================================================
-   Inner border glow on sidebar right edge
+   Inner border glow on sidebar right edge (disabled)
    ============================================================================= */
 
 .app-sidebar::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 1px;
-  z-index: 11;
-  background: linear-gradient(
-    to bottom,
-    hsla(var(--glass-hue1), 60%, 70%, 0) 0%,
-    hsla(var(--glass-hue1), 60%, 70%, 0.4) 20%,
-    hsla(var(--glass-hue1), 60%, 70%, 0.1) 40%,
-    hsla(var(--glass-hue2), 60%, 70%, 0.1) 60%,
-    hsla(var(--glass-hue2), 60%, 70%, 0.4) 80%,
-    hsla(var(--glass-hue2), 60%, 70%, 0) 100%
-  );
-  pointer-events: none;
+  display: none;
 }
 
 .app-sidebar--collapsed {
@@ -703,21 +672,8 @@ html.layout-fixed #root {
   --glass-hue1: 35;
   --glass-hue2: 25;
   
-  /* Glass background — 75% transparent (25% opaque) */
-  background: 
-    linear-gradient(
-      195deg, 
-      hsla(var(--glass-hue1), 30%, 85%, 0.12), 
-      hsla(var(--glass-hue1), 30%, 95%, 0) 50%
-    ), 
-    linear-gradient(
-      15deg, 
-      hsla(var(--glass-hue2), 30%, 85%, 0.1), 
-      hsla(var(--glass-hue2), 30%, 95%, 0) 50%
-    ), 
-    linear-gradient(
-      hsla(0, 0%, 100%, 0.25)
-    );
+  /* Solid background — single color, no gradient */
+  background: hsla(30, 20%, 95%, 0.85);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-right-color: hsla(var(--glass-hue2), 20%, 60%, 0.2);
@@ -728,15 +684,7 @@ html.layout-fixed #root {
 
 .light-theme .app-sidebar::before,
 [data-theme="light"] .app-sidebar::before {
-  background: linear-gradient(
-    to bottom,
-    hsla(var(--glass-hue1), 40%, 50%, 0) 0%,
-    hsla(var(--glass-hue1), 40%, 50%, 0.2) 20%,
-    hsla(var(--glass-hue1), 40%, 50%, 0.05) 40%,
-    hsla(var(--glass-hue2), 40%, 50%, 0.05) 60%,
-    hsla(var(--glass-hue2), 40%, 50%, 0.2) 80%,
-    hsla(var(--glass-hue2), 40%, 50%, 0) 100%
-  );
+  display: none;
 }
 
 .light-theme .sidebar-shine,

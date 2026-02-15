@@ -49,10 +49,10 @@ export default function RegisterPage() {
             <a href="/" className="auth-logo">
               <img
                 src="/logo.svg"
-                alt="MDsystem Logo"
+                alt="Scientiaiter Logo"
                 className="auth-logo-icon w-6 h-6"
               />
-              MDsystem
+              Scientiaiter
             </a>
 
             <div className="auth-features-list">
@@ -218,7 +218,7 @@ export default function RegisterPage() {
       </div>
 
       <footer className="auth-footer">
-        <span>© 2024-2026 MDsystem. Все права защищены.</span>
+        <span>© 2024-2026 Scientiaiter. Все права защищены.</span>
       </footer>
     </section>
   );

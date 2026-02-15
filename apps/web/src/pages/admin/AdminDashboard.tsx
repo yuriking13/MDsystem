@@ -183,7 +183,7 @@ export default function AdminDashboard() {
       <div className="admin-page-header">
         <div>
           <h1>Дашборд</h1>
-          <p className="admin-page-subtitle">Обзор системы MDsystem</p>
+          <p className="admin-page-subtitle">Обзор системы Scientiaiter</p>
         </div>
         <button className="btn secondary" onClick={loadData} disabled={loading}>
           <IconRefresh className={loading ? "spin" : ""} />

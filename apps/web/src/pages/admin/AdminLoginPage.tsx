@@ -53,7 +53,7 @@ export default function AdminLoginPage() {
               <IconShield size="lg" />
             </div>
             <h1>Панель администратора</h1>
-            <p className="admin-login-subtitle">MDsystem Admin</p>
+            <p className="admin-login-subtitle">Scientiaiter Admin</p>
           </div>
 
           {error && (

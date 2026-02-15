@@ -56,7 +56,7 @@ export default function AdminLayout() {
         <div className="admin-sidebar-header">
           <div className="admin-logo">
             <IconShield size="lg" className="admin-logo-icon" />
-            {sidebarOpen && <span>MDsystem Admin</span>}
+            {sidebarOpen && <span>Scientiaiter Admin</span>}
           </div>
           <button
             className="admin-sidebar-toggle"

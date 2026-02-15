@@ -262,14 +262,6 @@ export default function AppSidebar({
         className,
       )}
     >
-      {/* Neon Glass Glow Elements */}
-      <span className="sidebar-shine sidebar-shine--top" />
-      <span className="sidebar-shine sidebar-shine--bottom" />
-      <span className="sidebar-glow sidebar-glow--top" />
-      <span className="sidebar-glow sidebar-glow--bottom" />
-      <span className="sidebar-glow sidebar-glow--bright sidebar-glow--top" />
-      <span className="sidebar-glow sidebar-glow--bright sidebar-glow--bottom" />
-
       {/* Collapse Button - Center of right edge */}
       <button
         className="sidebar-collapse-toggle"
@@ -287,9 +279,11 @@ export default function AppSidebar({
       <div className="sidebar-header">
         <div className="sidebar-logo">
           <div className="sidebar-logo-icon">
-            <img src="/logo.svg" alt="MDsystem Logo" className="w-5 h-5" />
+            <img src="/logo.svg" alt="Scientiaiter Logo" className="w-5 h-5" />
           </div>
-          {!collapsed && <span className="sidebar-logo-text">MDsystem</span>}
+          {!collapsed && (
+            <span className="sidebar-logo-text">Scientiaiter</span>
+          )}
         </div>
       </div>
 
