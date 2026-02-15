@@ -2250,7 +2250,7 @@ export default function ProjectDetailPage() {
                       ref={fileInputRef}
                       type="file"
                       onChange={handleFileUpload}
-                      style={{ display: "none" }}
+                      className="file-upload-input-hidden"
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.svg,.webp"
                     />
                     <button
@@ -2260,8 +2260,7 @@ export default function ProjectDetailPage() {
                       type="button"
                     >
                       <svg
-                        className="w-4 h-4"
-                        style={{ marginRight: 6 }}
+                        className="w-4 h-4 files-upload-icon"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={1.5}
@@ -2304,17 +2303,9 @@ export default function ProjectDetailPage() {
             </div>
 
             {!storageConfigured && (
-              <div
-                className="card"
-                style={{ marginBottom: 16, padding: 40, textAlign: "center" }}
-              >
+              <div className="card storage-not-configured-card">
                 <svg
-                  style={{
-                    width: 48,
-                    height: 48,
-                    margin: "0 auto 16px",
-                    opacity: 0.5,
-                  }}
+                  className="storage-not-configured-svg"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={1}
@@ -2326,8 +2317,10 @@ export default function ProjectDetailPage() {
                     d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"
                   />
                 </svg>
-                <h3 style={{ margin: "0 0 8px 0" }}>Хранилище не настроено</h3>
-                <p className="muted" style={{ margin: 0 }}>
+                <h3 className="storage-not-configured-title">
+                  Хранилище не настроено
+                </h3>
+                <p className="muted storage-not-configured-text">
                   Для загрузки файлов необходимо настроить подключение к Yandex
                   Object Storage.
                   <br />
@@ -2339,22 +2332,13 @@ export default function ProjectDetailPage() {
             {storageConfigured && (
               <>
                 {/* Фильтр по категориям (video/audio temporarily disabled) */}
-                <div
-                  className="row gap"
-                  style={{ marginBottom: 16, flexWrap: "wrap" }}
-                >
+                <div className="row gap files-category-row">
                   {(["all", "document", "image"] as const).map((cat) => (
                     <button
                       key={cat}
-                      className={`btn ${filesCategory === cat ? "" : "secondary"}`}
+                      className={`btn files-category-btn ${filesCategory === cat ? "" : "secondary"}`}
                       onClick={() => setFilesCategory(cat)}
                       type="button"
-                      style={{
-                        fontSize: 13,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
                     >
                       {cat === "all" && (
                         <>
@@ -2415,21 +2399,13 @@ export default function ProjectDetailPage() {
                 </div>
 
                 {loadingFiles ? (
-                  <div style={{ textAlign: "center", padding: 40 }}>
+                  <div className="files-loading-state">
                     <div className="muted">Загрузка файлов...</div>
                   </div>
                 ) : files.length === 0 ? (
-                  <div
-                    className="card"
-                    style={{ textAlign: "center", padding: 40 }}
-                  >
+                  <div className="card files-empty-card">
                     <svg
-                      style={{
-                        width: 48,
-                        height: 48,
-                        margin: "0 auto 16px",
-                        opacity: 0.5,
-                      }}
+                      className="files-empty-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1}
@@ -2441,8 +2417,8 @@ export default function ProjectDetailPage() {
                         d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
                       />
                     </svg>
-                    <h3 style={{ margin: "0 0 8px 0" }}>Нет файлов</h3>
-                    <p className="muted" style={{ margin: 0 }}>
+                    <h3 className="files-empty-title">Нет файлов</h3>
+                    <p className="muted files-empty-text">
                       {canEdit
                         ? "Загрузите файлы с помощью кнопки выше"
                         : "В этом проекте пока нет файлов"}
@@ -2463,13 +2439,12 @@ export default function ProjectDetailPage() {
                       return (
                         <div
                           key={file.id}
-                          className={`file-card card ${canPreview ? "clickable" : ""}`}
+                          className={`file-card card ${canPreview ? "clickable file-card--previewable" : "file-card--static"}`}
                           onClick={
                             canPreview
                               ? () => handlePreviewFile(file)
                               : undefined
                           }
-                          style={{ cursor: canPreview ? "pointer" : "default" }}
                         >
                           {/* Превью для изображений */}
                           {isImage && (
