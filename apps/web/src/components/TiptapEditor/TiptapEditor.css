@@ -284,6 +284,62 @@
   border-bottom: 1px solid var(--accent, #3b82f6);
 }
 
+.editor-header-save-status {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.editor-layout-main {
+  background: var(--bg-primary);
+}
+
+.editor-layout-toggle-row {
+  padding: 4px 12px;
+}
+
+.editor-status-progress {
+  width: 80px;
+  height: 6px;
+  border: none;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(56, 89, 138, 0.3);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.editor-status-progress::-webkit-progress-bar {
+  background: rgba(56, 89, 138, 0.3);
+  border-radius: 999px;
+}
+
+.editor-status-progress::-webkit-progress-value {
+  border-radius: 999px;
+}
+
+.editor-status-progress::-moz-progress-bar {
+  border-radius: 999px;
+}
+
+.editor-status-progress--goal::-webkit-progress-value,
+.editor-status-progress--goal::-moz-progress-bar {
+  background: #22c55e;
+}
+
+.editor-status-progress--high::-webkit-progress-value,
+.editor-status-progress--high::-moz-progress-bar {
+  background: #3b82f6;
+}
+
+.editor-status-progress--mid::-webkit-progress-value,
+.editor-status-progress--mid::-moz-progress-bar {
+  background: #f59e0b;
+}
+
+.editor-status-progress--low::-webkit-progress-value,
+.editor-status-progress--low::-moz-progress-bar {
+  background: #a3a3a3;
+}
+
 /* ---- Editor layout sidebar (glass theme) ---- */
 .editor-sidebar {
   display: flex;
