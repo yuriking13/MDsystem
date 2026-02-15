@@ -193,6 +193,7 @@ export default function CitationGraph({ projectId }: Props) {
 
   // Модальное окно "Как это работает"
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // Новые настройки графа
   const [sortBy, setSortBy] = useState<
@@ -433,6 +434,7 @@ export default function CitationGraph({ projectId }: Props) {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const graphAreaRef = useRef<HTMLDivElement>(null);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
   // ForceGraph2D ref - тип any необходим из-за отсутствия типов в библиотеке
   const graphRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
@@ -573,6 +575,24 @@ export default function CitationGraph({ projectId }: Props) {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  useEffect(() => {
+    if (!showExportMenu) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        exportDropdownRef.current &&
+        !exportDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowExportMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showExportMenu]);
+
   // Экспорт графа
   const handleExport = async (
     format: "json" | "graphml" | "cytoscape" | "gexf",
@@ -590,6 +610,8 @@ export default function CitationGraph({ projectId }: Props) {
     } catch (err) {
       console.error("Export failed:", err);
       alert(`Ошибка экспорта: ${getErrorMessage(err)}`);
+    } finally {
+      setShowExportMenu(false);
     }
   };
 
@@ -2143,7 +2165,6 @@ export default function CitationGraph({ projectId }: Props) {
     position: "relative",
   };
   const graphExportMenuStyle: React.CSSProperties = {
-    display: "none",
     position: "absolute",
     right: 0,
     top: "100%",
@@ -3686,18 +3707,10 @@ export default function CitationGraph({ projectId }: Props) {
     ...helpLegendDotBaseStyle,
     background: color,
   });
-
-  const handleGraphExportItemMouseEnter = (
-    e: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    e.currentTarget.style.background = "var(--bg-hover)";
-  };
-
-  const handleGraphExportItemMouseLeave = (
-    e: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    e.currentTarget.style.background = "none";
-  };
+  const getGraphExportMenuStyle = (isOpen: boolean): React.CSSProperties => ({
+    ...graphExportMenuStyle,
+    display: isOpen ? "block" : "none",
+  });
 
   if (loading) {
     return (
@@ -3976,49 +3989,44 @@ export default function CitationGraph({ projectId }: Props) {
           </button>
 
           {/* Экспорт */}
-          <div className="dropdown" style={graphExportDropdownWrapStyle}>
+          <div
+            className="dropdown"
+            style={graphExportDropdownWrapStyle}
+            ref={exportDropdownRef}
+          >
             <button
               className="graph-compact-btn"
               title="Экспорт графа"
-              onClick={(e) => {
-                const menu = e.currentTarget.nextElementSibling as HTMLElement;
-                if (menu)
-                  menu.style.display =
-                    menu.style.display === "none" ? "block" : "none";
-              }}
+              onClick={() => setShowExportMenu((prev) => !prev)}
             >
               <IconDownload size="sm" />
             </button>
-            <div style={graphExportMenuStyle}>
+            <div style={getGraphExportMenuStyle(showExportMenu)}>
               <button
                 onClick={() => handleExport("json")}
+                className="graph-export-menu-item"
                 style={graphExportMenuItemStyle}
-                onMouseEnter={handleGraphExportItemMouseEnter}
-                onMouseLeave={handleGraphExportItemMouseLeave}
               >
                 JSON
               </button>
               <button
                 onClick={() => handleExport("graphml")}
+                className="graph-export-menu-item"
                 style={graphExportMenuItemStyle}
-                onMouseEnter={handleGraphExportItemMouseEnter}
-                onMouseLeave={handleGraphExportItemMouseLeave}
               >
                 GraphML
               </button>
               <button
                 onClick={() => handleExport("cytoscape")}
+                className="graph-export-menu-item"
                 style={graphExportMenuItemStyle}
-                onMouseEnter={handleGraphExportItemMouseEnter}
-                onMouseLeave={handleGraphExportItemMouseLeave}
               >
                 Cytoscape
               </button>
               <button
                 onClick={() => handleExport("gexf")}
+                className="graph-export-menu-item"
                 style={graphExportMenuItemStyle}
-                onMouseEnter={handleGraphExportItemMouseEnter}
-                onMouseLeave={handleGraphExportItemMouseLeave}
               >
                 GEXF (Gephi)
               </button>

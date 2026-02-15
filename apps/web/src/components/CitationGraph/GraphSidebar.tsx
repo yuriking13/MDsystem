@@ -94,7 +94,6 @@ function CollapsibleSection({
     justifyContent: "space-between",
     width: "100%",
     padding: "12px 16px",
-    background: "transparent",
     border: "none",
     cursor: "pointer",
     transition: "background 0.15s ease",
@@ -135,13 +134,8 @@ function CollapsibleSection({
     <div style={sectionStyle}>
       <button
         onClick={() => setIsOpen(!isOpen)}
+        className="graph-sidebar-collapsible-header"
         style={headerStyle}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(148, 163, 184, 0.05)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-        }}
       >
         <div style={titleContainerStyle}>
           <span style={iconWrapperStyle}>{icon}</span>

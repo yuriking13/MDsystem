@@ -597,6 +597,10 @@
   background: var(--graph-grid-dot);
 }
 
+.graph-export-menu-item:hover {
+  background: var(--bg-hover);
+}
+
 /* Graph Toolbar */
 .graph-toolbar {
   position: absolute;
@@ -958,6 +962,10 @@
 
 .graph-sidebar-spin {
   animation: graph-sidebar-spin 1s linear infinite;
+}
+
+.graph-sidebar-collapsible-header:hover {
+  background: rgba(148, 163, 184, 0.05);
 }
 
 @keyframes graph-sidebar-spin {
