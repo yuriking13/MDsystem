@@ -425,10 +425,21 @@ export default function ArticlesSection({
 
       // Правая стрелка: центр между правым краем карточек и правым краем viewport
       const rightGapCenter = (gridRect.right + viewportWidth) / 2;
+      const leftPosition = leftGapCenter;
+      const rightPosition = viewportWidth - rightGapCenter;
+
+      document.documentElement.style.setProperty(
+        "--articles-nav-arrow-left",
+        `${leftPosition}px`,
+      );
+      document.documentElement.style.setProperty(
+        "--articles-nav-arrow-right",
+        `${rightPosition}px`,
+      );
 
       setArrowPositions({
-        left: leftGapCenter,
-        right: viewportWidth - rightGapCenter,
+        left: leftPosition,
+        right: rightPosition,
       });
     }
 
@@ -462,6 +473,12 @@ export default function ArticlesSection({
       window.removeEventListener("resize", calculateArrowPositions);
       observer.disconnect();
       resizeObserver.disconnect();
+      document.documentElement.style.removeProperty(
+        "--articles-nav-arrow-left",
+      );
+      document.documentElement.style.removeProperty(
+        "--articles-nav-arrow-right",
+      );
     };
   }, []);
 
@@ -2282,32 +2299,24 @@ export default function ArticlesSection({
               <>
                 {prevStatus && (
                   <button
-                    className="articles-nav-arrow"
+                    className="articles-nav-arrow articles-nav-arrow--left"
                     onClick={() =>
                       setViewStatus(prevStatus as typeof viewStatus)
                     }
                     title={statusLabels[prevStatus]}
                     type="button"
-                    style={{
-                      left: arrowPositions.left,
-                      transform: "translate(-50%, -50%)",
-                    }}
                   >
                     ‹
                   </button>
                 )}
                 {nextStatus && (
                   <button
-                    className="articles-nav-arrow"
+                    className="articles-nav-arrow articles-nav-arrow--right"
                     onClick={() =>
                       setViewStatus(nextStatus as typeof viewStatus)
                     }
                     title={statusLabels[nextStatus]}
                     type="button"
-                    style={{
-                      right: arrowPositions.right,
-                      transform: "translate(50%, -50%)",
-                    }}
                   >
                     ›
                   </button>

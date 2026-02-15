@@ -1300,6 +1300,16 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+.articles-nav-arrow--left {
+  left: var(--articles-nav-arrow-left, 50%);
+  transform: translate(-50%, -50%);
+}
+
+.articles-nav-arrow--right {
+  right: var(--articles-nav-arrow-right, 50%);
+  transform: translate(50%, -50%);
+}
+
 .articles-nav-arrow:hover {
   color: rgba(255, 255, 255, 0.7);
   text-shadow: 0 0 12px rgba(255, 255, 255, 0.15);
