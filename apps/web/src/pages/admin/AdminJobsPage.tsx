@@ -135,18 +135,16 @@ export default function AdminJobsPage() {
           {summary.map((s) => (
             <div
               key={s.status}
-              className={`admin-job-summary-item admin-job-${s.status}`}
+              className={`admin-job-summary-item admin-clickable admin-job-${s.status}`}
               onClick={() => setStatusFilter(s.status)}
-              style={{ cursor: "pointer" }}
             >
               <span className="admin-job-summary-count">{s.count}</span>
               <span className="admin-job-summary-status">{s.status}</span>
             </div>
           ))}
           <div
-            className="admin-job-summary-item"
+            className="admin-job-summary-item admin-clickable"
             onClick={() => setStatusFilter("all")}
-            style={{ cursor: "pointer" }}
           >
             <span className="admin-job-summary-count">
               {summary.reduce((sum, s) => sum + s.count, 0)}
