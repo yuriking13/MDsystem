@@ -2455,6 +2455,327 @@ export default function CitationGraph({ projectId }: Props) {
   const semanticCoreHintDashStyle: React.CSSProperties = {
     color: "rgba(236, 72, 153, 0.8)",
   };
+  const methodologyPanelStyle: React.CSSProperties = {
+    padding: "12px 20px",
+    borderBottom: "1px solid var(--border-glass)",
+    background:
+      "linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05))",
+  };
+  const methodologyHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  };
+  const methodologyTitleStyle: React.CSSProperties = { fontWeight: 600 };
+  const methodologyResetButtonStyle: React.CSSProperties = {
+    fontSize: 10,
+    padding: "2px 6px",
+    marginLeft: "auto",
+  };
+  const methodologyListStyle: React.CSSProperties = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+  };
+  const methodologyPercentStyle: React.CSSProperties = {
+    fontSize: 9,
+    color: "var(--text-muted)",
+  };
+  const semanticClustersPanelStyle: React.CSSProperties = {
+    padding: "12px 20px",
+    borderBottom: "1px solid var(--border-glass)",
+    background:
+      "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(34, 197, 94, 0.05))",
+  };
+  const semanticClustersHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 12,
+  };
+  const semanticClustersTitleStyle: React.CSSProperties = { fontWeight: 600 };
+  const semanticClustersSubtitleStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  };
+  const semanticClustersActionsStyle: React.CSSProperties = {
+    marginLeft: "auto",
+    display: "flex",
+    gap: 8,
+  };
+  const semanticClustersActionButtonStyle: React.CSSProperties = {
+    fontSize: 10,
+    padding: "2px 6px",
+  };
+  const semanticClustersDeleteButtonStyle: React.CSSProperties = {
+    ...semanticClustersActionButtonStyle,
+    color: "#ef4444",
+  };
+  const semanticClusterSettingsStyle: React.CSSProperties = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 16,
+    marginBottom: 12,
+    padding: 12,
+    background: "var(--bg-secondary)",
+    borderRadius: 8,
+  };
+  const semanticClusterSettingGroupStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+  };
+  const semanticClusterSettingLabelStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  };
+  const semanticClusterSettingInputStyle: React.CSSProperties = {
+    width: 50,
+    padding: "4px 6px",
+    borderRadius: 4,
+    border: "1px solid var(--border-glass)",
+    background: "var(--bg-primary)",
+    color: "inherit",
+    fontSize: 11,
+  };
+  const semanticClusterSimilarityRangeStyle: React.CSSProperties = {
+    width: 60,
+  };
+  const semanticClusterSimilarityValueStyle: React.CSSProperties = {
+    fontSize: 11,
+  };
+  const semanticClusterCheckboxLabelStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    fontSize: 11,
+    cursor: "pointer",
+  };
+  const semanticClusterListStyle: React.CSSProperties = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 8,
+  };
+  const semanticClusterDetailsButtonBaseStyle: React.CSSProperties = {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    border: "none",
+    color: "inherit",
+    cursor: "pointer",
+    fontSize: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+  const semanticClusterHeaderRowStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    width: "100%",
+    paddingRight: 20,
+  };
+  const semanticClusterDotBaseStyle: React.CSSProperties = {
+    width: 10,
+    height: 10,
+    borderRadius: "50%",
+    flexShrink: 0,
+  };
+  const semanticClusterNameStyle: React.CSSProperties = {
+    fontWeight: 600,
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  };
+  const semanticClusterCountBaseStyle: React.CSSProperties = {
+    padding: "2px 6px",
+    borderRadius: 10,
+    fontSize: 10,
+    fontWeight: 600,
+  };
+  const semanticClusterCentralTitleBaseStyle: React.CSSProperties = {
+    fontSize: 9,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+    width: "100%",
+  };
+  const semanticClusterKeywordsBaseStyle: React.CSSProperties = {
+    fontSize: 9,
+  };
+  const semanticClusterEmptyHintStyle: React.CSSProperties = {
+    textAlign: "center",
+    padding: 16,
+    color: "var(--text-muted)",
+    fontSize: 12,
+  };
+  const semanticClusterEmptyWarningStyle: React.CSSProperties = {
+    marginBottom: 8,
+    color: "#f59e0b",
+  };
+  const gapPanelStyle: React.CSSProperties = {
+    padding: "10px 16px",
+    borderBottom: "1px solid var(--border-glass)",
+    background:
+      "linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(239, 68, 68, 0.05))",
+  };
+  const gapHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+  };
+  const gapTitleWrapStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+  };
+  const gapTitleStyle: React.CSSProperties = {
+    fontWeight: 600,
+    fontSize: 13,
+  };
+  const gapSubtitleStyle: React.CSSProperties = {
+    fontSize: 10,
+    color: "var(--text-muted)",
+  };
+  const gapFiltersWrapStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginLeft: "auto",
+    background: "var(--bg-secondary)",
+    padding: "6px 10px",
+    borderRadius: 8,
+  };
+  const gapFilterLabelStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  };
+  const gapFilterSelectStyle: React.CSSProperties = {
+    padding: "4px 8px",
+    fontSize: 12,
+    borderRadius: 4,
+    border: "1px solid var(--border-color)",
+    background: "var(--bg-primary)",
+    color: "inherit",
+    cursor: "pointer",
+    minWidth: 70,
+  };
+  const gapLimitSelectStyle: React.CSSProperties = {
+    ...gapFilterSelectStyle,
+    minWidth: 55,
+  };
+  const gapSeparatorStyle: React.CSSProperties = {
+    color: "var(--text-muted)",
+  };
+  const gapLimitLabelStyle: React.CSSProperties = {
+    ...gapFilterLabelStyle,
+    marginLeft: 4,
+  };
+  const gapAnalyzeButtonBaseStyle: React.CSSProperties = {
+    fontSize: 12,
+    padding: "6px 16px",
+    color: "#fff",
+    border: "none",
+    borderRadius: 6,
+    transition: "all 0.2s ease",
+    fontWeight: 500,
+    whiteSpace: "nowrap",
+  };
+  const gapResultsWrapStyle: React.CSSProperties = {
+    maxHeight: 200,
+    overflowY: "auto",
+    marginTop: 12,
+  };
+  const gapResultCardStyle: React.CSSProperties = {
+    padding: 10,
+    marginBottom: 8,
+    background: "var(--bg-secondary)",
+    borderRadius: 6,
+    fontSize: 11,
+  };
+  const gapResultHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  };
+  const gapReasonStyle: React.CSSProperties = {
+    fontSize: 9,
+    color: "var(--text-muted)",
+    maxWidth: "60%",
+  };
+  const gapPairStyle: React.CSSProperties = { display: "flex", gap: 8 };
+  const gapArticleColStyle: React.CSSProperties = {
+    flex: 1,
+    cursor: "pointer",
+  };
+  const gapArticleTitleStyle: React.CSSProperties = {
+    fontWeight: 500,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  };
+  const gapArticleYearStyle: React.CSSProperties = {
+    fontSize: 9,
+    color: "var(--text-muted)",
+  };
+  const gapArrowStyle: React.CSSProperties = {
+    color: "#f59e0b",
+    padding: "0 8px",
+  };
+  const gapEmptyStyle: React.CSSProperties = {
+    textAlign: "center",
+    padding: 16,
+    color: "var(--text-muted)",
+    fontSize: 12,
+  };
+  const statsLinkValueStyle: React.CSSProperties = { color: "#10b981" };
+  const pvalueStatItemStyle: React.CSSProperties = { marginLeft: "auto" };
+  const pvalueButtonStyle: React.CSSProperties = {
+    padding: "4px 10px",
+    fontSize: 11,
+    marginLeft: 8,
+    background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+    border: "none",
+    color: "#1e293b",
+    fontWeight: 600,
+  };
+  const noReferencesWarningStyle: React.CSSProperties = {
+    padding: "12px 20px",
+    background: "rgba(251, 191, 36, 0.1)",
+    borderBottom: "1px solid var(--border-glass)",
+    fontSize: 12,
+    color: "#fbbf24",
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  };
+  const graphMainSplitStyle: React.CSSProperties = {
+    flex: 1,
+    display: "flex",
+    overflow: "hidden",
+    minHeight: 0,
+  };
+  const graphAreaStyle: React.CSSProperties = {
+    flex: 1,
+    overflow: "hidden",
+    position: "relative",
+    minHeight: 0,
+  };
+  const graphEmptyStateStyle: React.CSSProperties = {
+    padding: 60,
+    textAlign: "center",
+  };
+  const graphCanvasFillStyle: React.CSSProperties = {
+    width: "100%",
+    height: "100%",
+  };
 
   const getGraphContainerStyle = (
     fullscreen: boolean,
@@ -2534,6 +2855,101 @@ export default function CitationGraph({ projectId }: Props) {
     background: `rgba(16, 185, 129, ${similarity})`,
     borderRadius: 4,
     fontSize: 10,
+    fontWeight: 600,
+  });
+  const getMethodologyChipStyle = (selected: boolean): React.CSSProperties => ({
+    padding: "6px 10px",
+    borderRadius: 6,
+    border: selected
+      ? "2px solid var(--accent)"
+      : "1px solid var(--border-glass)",
+    background: selected ? "var(--accent)" : "var(--bg-secondary)",
+    color: selected ? "white" : "inherit",
+    cursor: "pointer",
+    fontSize: 11,
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+  });
+  const getMethodologyCountBadgeStyle = (
+    selected: boolean,
+  ): React.CSSProperties => ({
+    background: selected ? "rgba(255,255,255,0.2)" : "var(--bg-tertiary)",
+    padding: "1px 5px",
+    borderRadius: 8,
+    fontSize: 10,
+    fontWeight: 600,
+  });
+  const getSemanticClusterCardStyle = (
+    selected: boolean,
+    color: string,
+  ): React.CSSProperties => ({
+    padding: "8px 12px",
+    borderRadius: 8,
+    border: selected ? `2px solid ${color}` : "1px solid var(--border-glass)",
+    background: selected ? color : "var(--bg-secondary)",
+    color: selected ? "white" : "inherit",
+    cursor: "pointer",
+    fontSize: 11,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    gap: 4,
+    minWidth: 150,
+    position: "relative",
+  });
+  const getSemanticClusterDetailsButtonStyle = (
+    selected: boolean,
+  ): React.CSSProperties => ({
+    ...semanticClusterDetailsButtonBaseStyle,
+    background: selected ? "rgba(255,255,255,0.2)" : "var(--bg-tertiary)",
+  });
+  const getSemanticClusterDotStyle = (color: string): React.CSSProperties => ({
+    ...semanticClusterDotBaseStyle,
+    background: color,
+  });
+  const getSemanticClusterCountBadgeStyle = (
+    selected: boolean,
+    color: string,
+  ): React.CSSProperties => ({
+    ...semanticClusterCountBaseStyle,
+    background: selected ? "rgba(255,255,255,0.2)" : `${color}30`,
+    color: selected ? "white" : color,
+  });
+  const getSemanticClusterCentralTitleStyle = (
+    selected: boolean,
+  ): React.CSSProperties => ({
+    ...semanticClusterCentralTitleBaseStyle,
+    color: selected ? "rgba(255,255,255,0.8)" : "var(--text-muted)",
+  });
+  const getSemanticClusterKeywordsStyle = (
+    selected: boolean,
+  ): React.CSSProperties => ({
+    ...semanticClusterKeywordsBaseStyle,
+    color: selected ? "rgba(255,255,255,0.7)" : "var(--text-muted)",
+  });
+  const getGapAnalyzeButtonStyle = (
+    loadingState: boolean,
+  ): React.CSSProperties => ({
+    ...gapAnalyzeButtonBaseStyle,
+    background: loadingState
+      ? "var(--bg-tertiary)"
+      : "linear-gradient(135deg, #f59e0b, #ef4444)",
+    cursor: loadingState ? "wait" : "pointer",
+    boxShadow: loadingState ? "none" : "0 2px 8px rgba(245, 158, 11, 0.3)",
+  });
+  const getGapSimilarityStyle = (similarity: number): React.CSSProperties => ({
+    background: `rgba(245, 158, 11, ${similarity})`,
+    padding: "2px 8px",
+    borderRadius: 10,
+    fontWeight: 600,
+    fontSize: 10,
+  });
+  const getLegendDotStyle = (background: string): React.CSSProperties => ({
+    background,
+  });
+  const getLegendValueStyle = (color: string): React.CSSProperties => ({
+    color,
     fontWeight: 600,
   });
 
@@ -3360,37 +3776,22 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Methodology Clusters Panel */}
         {showMethodologyClusters && methodologyClusters.length > 0 && (
-          <div
-            className="graph-filters"
-            style={{
-              padding: "12px 20px",
-              borderBottom: "1px solid var(--border-glass)",
-              background:
-                "linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05))",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
+          <div className="graph-filters" style={methodologyPanelStyle}>
+            <div style={methodologyHeaderStyle}>
               <IconChartBar size="sm" />
-              <span style={{ fontWeight: 600 }}>
+              <span style={methodologyTitleStyle}>
                 Кластеризация по методологиям
               </span>
               <button
                 className="btn secondary"
-                style={{ fontSize: 10, padding: "2px 6px", marginLeft: "auto" }}
+                style={methodologyResetButtonStyle}
                 onClick={() => filterByMethodology(null)}
               >
                 Сбросить фильтр
               </button>
             </div>
 
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <div style={methodologyListStyle}>
               {methodologyClusters
                 .filter((c) => c.count > 0)
                 .sort((a, b) => b.count - a.count)
@@ -3404,44 +3805,19 @@ export default function CitationGraph({ projectId }: Props) {
                           : cluster.type,
                       )
                     }
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: 6,
-                      border:
-                        methodologyFilter === cluster.type
-                          ? "2px solid var(--accent)"
-                          : "1px solid var(--border-glass)",
-                      background:
-                        methodologyFilter === cluster.type
-                          ? "var(--accent)"
-                          : "var(--bg-secondary)",
-                      color:
-                        methodologyFilter === cluster.type
-                          ? "white"
-                          : "inherit",
-                      cursor: "pointer",
-                      fontSize: 11,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
+                    style={getMethodologyChipStyle(
+                      methodologyFilter === cluster.type,
+                    )}
                   >
                     <span>{cluster.name}</span>
                     <span
-                      style={{
-                        background:
-                          methodologyFilter === cluster.type
-                            ? "rgba(255,255,255,0.2)"
-                            : "var(--bg-tertiary)",
-                        padding: "1px 5px",
-                        borderRadius: 8,
-                        fontSize: 10,
-                        fontWeight: 600,
-                      }}
+                      style={getMethodologyCountBadgeStyle(
+                        methodologyFilter === cluster.type,
+                      )}
                     >
                       {cluster.count}
                     </span>
-                    <span style={{ fontSize: 9, color: "var(--text-muted)" }}>
+                    <span style={methodologyPercentStyle}>
                       ({cluster.percentage.toFixed(0)}%)
                     </span>
                   </button>
@@ -3452,33 +3828,20 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Semantic Clusters Panel */}
         {showSemanticClustersPanel && (
-          <div
-            className="graph-filters"
-            style={{
-              padding: "12px 20px",
-              borderBottom: "1px solid var(--border-glass)",
-              background:
-                "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(34, 197, 94, 0.05))",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
+          <div className="graph-filters" style={semanticClustersPanelStyle}>
+            <div style={semanticClustersHeaderStyle}>
               <IconGraph size="sm" />
-              <span style={{ fontWeight: 600 }}>🔮 Семантические кластеры</span>
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              <span style={semanticClustersTitleStyle}>
+                🔮 Семантические кластеры
+              </span>
+              <span style={semanticClustersSubtitleStyle}>
                 (группировка по смыслу)
               </span>
-              <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <div style={semanticClustersActionsStyle}>
                 {semanticClusters.length > 0 && (
                   <button
                     className="btn secondary"
-                    style={{ fontSize: 10, padding: "2px 6px" }}
+                    style={semanticClustersActionButtonStyle}
                     onClick={() => filterBySemanticCluster(null)}
                   >
                     Сбросить
@@ -3486,7 +3849,7 @@ export default function CitationGraph({ projectId }: Props) {
                 )}
                 <button
                   className="btn secondary"
-                  style={{ fontSize: 10, padding: "2px 6px" }}
+                  style={semanticClustersActionButtonStyle}
                   onClick={handleCreateSemanticClusters}
                   disabled={creatingSemanticClusters}
                 >
@@ -3499,11 +3862,7 @@ export default function CitationGraph({ projectId }: Props) {
                 {semanticClusters.length > 0 && (
                   <button
                     className="btn secondary"
-                    style={{
-                      fontSize: 10,
-                      padding: "2px 6px",
-                      color: "#ef4444",
-                    }}
+                    style={semanticClustersDeleteButtonStyle}
                     onClick={handleDeleteSemanticClusters}
                   >
                     Удалить
@@ -3514,19 +3873,9 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Настройки кластеризации */}
             {semanticClusters.length === 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 16,
-                  marginBottom: 12,
-                  padding: 12,
-                  background: "var(--bg-secondary)",
-                  borderRadius: 8,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              <div style={semanticClusterSettingsStyle}>
+                <div style={semanticClusterSettingGroupStyle}>
+                  <label style={semanticClusterSettingLabelStyle}>
                     Кластеров:
                   </label>
                   <input
@@ -3540,19 +3889,11 @@ export default function CitationGraph({ projectId }: Props) {
                         numClusters: parseInt(e.target.value) || 5,
                       }))
                     }
-                    style={{
-                      width: 50,
-                      padding: "4px 6px",
-                      borderRadius: 4,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-primary)",
-                      color: "inherit",
-                      fontSize: 11,
-                    }}
+                    style={semanticClusterSettingInputStyle}
                   />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                <div style={semanticClusterSettingGroupStyle}>
+                  <label style={semanticClusterSettingLabelStyle}>
                     Мин. размер:
                   </label>
                   <input
@@ -3566,19 +3907,11 @@ export default function CitationGraph({ projectId }: Props) {
                         minClusterSize: parseInt(e.target.value) || 3,
                       }))
                     }
-                    style={{
-                      width: 50,
-                      padding: "4px 6px",
-                      borderRadius: 4,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-primary)",
-                      color: "inherit",
-                      fontSize: 11,
-                    }}
+                    style={semanticClusterSettingInputStyle}
                   />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                <div style={semanticClusterSettingGroupStyle}>
+                  <label style={semanticClusterSettingLabelStyle}>
                     Порог схожести:
                   </label>
                   <input
@@ -3593,24 +3926,16 @@ export default function CitationGraph({ projectId }: Props) {
                         similarityThreshold: parseFloat(e.target.value),
                       }))
                     }
-                    style={{ width: 60 }}
+                    style={semanticClusterSimilarityRangeStyle}
                   />
-                  <span style={{ fontSize: 11 }}>
+                  <span style={semanticClusterSimilarityValueStyle}>
                     {(
                       semanticClusterSettings.similarityThreshold * 100
                     ).toFixed(0)}
                     %
                   </span>
                 </div>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
-                >
+                <label style={semanticClusterCheckboxLabelStyle}>
                   <input
                     type="checkbox"
                     checked={semanticClusterSettings.generateNames}
@@ -3628,7 +3953,7 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Список кластеров */}
             {semanticClusters.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <div style={semanticClusterListStyle}>
                 {semanticClusters.map((cluster) => (
                   <div
                     key={cluster.id}
@@ -3644,30 +3969,10 @@ export default function CitationGraph({ projectId }: Props) {
                       openClusterDetails(cluster);
                     }}
                     title="Клик: фильтр | Двойной клик: детали"
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border:
-                        selectedSemanticCluster === cluster.id
-                          ? `2px solid ${cluster.color}`
-                          : "1px solid var(--border-glass)",
-                      background:
-                        selectedSemanticCluster === cluster.id
-                          ? cluster.color
-                          : "var(--bg-secondary)",
-                      color:
-                        selectedSemanticCluster === cluster.id
-                          ? "white"
-                          : "inherit",
-                      cursor: "pointer",
-                      fontSize: 11,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      gap: 4,
-                      minWidth: 150,
-                      position: "relative",
-                    }}
+                    style={getSemanticClusterCardStyle(
+                      selectedSemanticCluster === cluster.id,
+                      cluster.color,
+                    )}
                   >
                     {/* Кнопка деталей */}
                     <button
@@ -3675,90 +3980,32 @@ export default function CitationGraph({ projectId }: Props) {
                         e.stopPropagation();
                         openClusterDetails(cluster);
                       }}
-                      style={{
-                        position: "absolute",
-                        top: 4,
-                        right: 4,
-                        width: 18,
-                        height: 18,
-                        borderRadius: 4,
-                        border: "none",
-                        background:
-                          selectedSemanticCluster === cluster.id
-                            ? "rgba(255,255,255,0.2)"
-                            : "var(--bg-tertiary)",
-                        color: "inherit",
-                        cursor: "pointer",
-                        fontSize: 10,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                      style={getSemanticClusterDetailsButtonStyle(
+                        selectedSemanticCluster === cluster.id,
+                      )}
                       title="Подробнее о кластере"
                     >
                       ⓘ
                     </button>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        width: "100%",
-                        paddingRight: 20,
-                      }}
-                    >
-                      <span
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          background: cluster.color,
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span
-                        style={{
-                          fontWeight: 600,
-                          flex: 1,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                    <div style={semanticClusterHeaderRowStyle}>
+                      <span style={getSemanticClusterDotStyle(cluster.color)} />
+                      <span style={semanticClusterNameStyle}>
                         {cluster.name}
                       </span>
                       <span
-                        style={{
-                          background:
-                            selectedSemanticCluster === cluster.id
-                              ? "rgba(255,255,255,0.2)"
-                              : cluster.color + "30",
-                          color:
-                            selectedSemanticCluster === cluster.id
-                              ? "white"
-                              : cluster.color,
-                          padding: "2px 6px",
-                          borderRadius: 10,
-                          fontSize: 10,
-                          fontWeight: 600,
-                        }}
+                        style={getSemanticClusterCountBadgeStyle(
+                          selectedSemanticCluster === cluster.id,
+                          cluster.color,
+                        )}
                       >
                         {cluster.articleCount}
                       </span>
                     </div>
                     {cluster.centralArticleTitle && (
                       <div
-                        style={{
-                          fontSize: 9,
-                          color:
-                            selectedSemanticCluster === cluster.id
-                              ? "rgba(255,255,255,0.8)"
-                              : "var(--text-muted)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          width: "100%",
-                        }}
+                        style={getSemanticClusterCentralTitleStyle(
+                          selectedSemanticCluster === cluster.id,
+                        )}
                         title={cluster.centralArticleTitle}
                       >
                         ⭐ {cluster.centralArticleTitle.slice(0, 40)}...
@@ -3766,13 +4013,9 @@ export default function CitationGraph({ projectId }: Props) {
                     )}
                     {cluster.keywords.length > 0 && (
                       <div
-                        style={{
-                          fontSize: 9,
-                          color:
-                            selectedSemanticCluster === cluster.id
-                              ? "rgba(255,255,255,0.7)"
-                              : "var(--text-muted)",
-                        }}
+                        style={getSemanticClusterKeywordsStyle(
+                          selectedSemanticCluster === cluster.id,
+                        )}
                       >
                         {cluster.keywords.slice(0, 3).join(", ")}
                       </div>
@@ -3784,17 +4027,10 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Подсказка про embeddings */}
             {semanticClusters.length === 0 && !creatingSemanticClusters && (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: 16,
-                  color: "var(--text-muted)",
-                  fontSize: 12,
-                }}
-              >
+              <div style={semanticClusterEmptyHintStyle}>
                 {embeddingStats && embeddingStats.withEmbeddings < 10 ? (
                   <>
-                    <div style={{ marginBottom: 8, color: "#f59e0b" }}>
+                    <div style={semanticClusterEmptyWarningStyle}>
                       ⚠️ Недостаточно embeddings для кластеризации
                     </div>
                     <div>
@@ -3818,48 +4054,19 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Gap Analysis Panel */}
         {showGapAnalysis && (
-          <div
-            className="graph-filters"
-            style={{
-              padding: "10px 16px",
-              borderBottom: "1px solid var(--border-glass)",
-              background:
-                "linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(239, 68, 68, 0.05))",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="graph-filters" style={gapPanelStyle}>
+            <div style={gapHeaderStyle}>
+              <div style={gapTitleWrapStyle}>
                 <IconLinkChain size="sm" />
-                <span style={{ fontWeight: 600, fontSize: 13 }}>
-                  🔍 Анализ пробелов
-                </span>
-                <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                <span style={gapTitleStyle}>🔍 Анализ пробелов</span>
+                <span style={gapSubtitleStyle}>
                   (похожие статьи без цитирований)
                 </span>
               </div>
 
               {/* Фильтры - компактная версия */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginLeft: "auto",
-                  background: "var(--bg-secondary)",
-                  padding: "6px 10px",
-                  borderRadius: 8,
-                }}
-              >
-                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  Годы:
-                </span>
+              <div style={gapFiltersWrapStyle}>
+                <span style={gapFilterLabelStyle}>Годы:</span>
                 <select
                   value={gapYearFrom || ""}
                   onChange={(e) =>
@@ -3867,16 +4074,7 @@ export default function CitationGraph({ projectId }: Props) {
                       e.target.value ? parseInt(e.target.value, 10) : undefined,
                     )
                   }
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: 12,
-                    borderRadius: 4,
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-primary)",
-                    color: "inherit",
-                    cursor: "pointer",
-                    minWidth: 70,
-                  }}
+                  style={gapFilterSelectStyle}
                 >
                   <option value="">с...</option>
                   {Array.from(
@@ -3890,7 +4088,7 @@ export default function CitationGraph({ projectId }: Props) {
                       </option>
                     ))}
                 </select>
-                <span style={{ color: "var(--text-muted)" }}>—</span>
+                <span style={gapSeparatorStyle}>—</span>
                 <select
                   value={gapYearTo || ""}
                   onChange={(e) =>
@@ -3898,16 +4096,7 @@ export default function CitationGraph({ projectId }: Props) {
                       e.target.value ? parseInt(e.target.value, 10) : undefined,
                     )
                   }
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: 12,
-                    borderRadius: 4,
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-primary)",
-                    color: "inherit",
-                    cursor: "pointer",
-                    minWidth: 70,
-                  }}
+                  style={gapFilterSelectStyle}
                 >
                   <option value="">по...</option>
                   {Array.from(
@@ -3922,28 +4111,11 @@ export default function CitationGraph({ projectId }: Props) {
                     ))}
                 </select>
 
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: "var(--text-muted)",
-                    marginLeft: 4,
-                  }}
-                >
-                  Лимит:
-                </span>
+                <span style={gapLimitLabelStyle}>Лимит:</span>
                 <select
                   value={gapLimit}
                   onChange={(e) => setGapLimit(parseInt(e.target.value, 10))}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: 12,
-                    borderRadius: 4,
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-primary)",
-                    color: "inherit",
-                    cursor: "pointer",
-                    minWidth: 55,
-                  }}
+                  style={gapLimitSelectStyle}
                 >
                   <option value={20}>20</option>
                   <option value={50}>50</option>
@@ -3956,111 +4128,43 @@ export default function CitationGraph({ projectId }: Props) {
               <button
                 onClick={handleGapAnalysis}
                 disabled={loadingGapAnalysis}
-                style={{
-                  fontSize: 12,
-                  padding: "6px 16px",
-                  background: loadingGapAnalysis
-                    ? "var(--bg-tertiary)"
-                    : "linear-gradient(135deg, #f59e0b, #ef4444)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: loadingGapAnalysis ? "wait" : "pointer",
-                  transition: "all 0.2s ease",
-                  boxShadow: loadingGapAnalysis
-                    ? "none"
-                    : "0 2px 8px rgba(245, 158, 11, 0.3)",
-                  fontWeight: 500,
-                  whiteSpace: "nowrap",
-                }}
+                style={getGapAnalyzeButtonStyle(loadingGapAnalysis)}
               >
                 {loadingGapAnalysis ? "⏳ Поиск..." : "🔍 Найти пробелы"}
               </button>
             </div>
 
             {gapAnalysisResults.length > 0 ? (
-              <div style={{ maxHeight: 200, overflowY: "auto", marginTop: 12 }}>
+              <div style={gapResultsWrapStyle}>
                 {gapAnalysisResults.map((gap, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: 10,
-                      marginBottom: 8,
-                      background: "var(--bg-secondary)",
-                      borderRadius: 6,
-                      fontSize: 11,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 6,
-                      }}
-                    >
-                      <span
-                        style={{
-                          background: `rgba(245, 158, 11, ${gap.similarity})`,
-                          padding: "2px 8px",
-                          borderRadius: 10,
-                          fontWeight: 600,
-                          fontSize: 10,
-                        }}
-                      >
+                  <div key={idx} style={gapResultCardStyle}>
+                    <div style={gapResultHeaderStyle}>
+                      <span style={getGapSimilarityStyle(gap.similarity)}>
                         {(gap.similarity * 100).toFixed(0)}% схожесть
                       </span>
-                      <span
-                        style={{
-                          fontSize: 9,
-                          color: "var(--text-muted)",
-                          maxWidth: "60%",
-                        }}
-                      >
-                        {gap.reason}
-                      </span>
+                      <span style={gapReasonStyle}>{gap.reason}</span>
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div style={gapPairStyle}>
                       <div
-                        style={{ flex: 1, cursor: "pointer" }}
+                        style={gapArticleColStyle}
                         onClick={() => highlightSemanticResult(gap.article1.id)}
                       >
-                        <div
-                          style={{
-                            fontWeight: 500,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
+                        <div style={gapArticleTitleStyle}>
                           {gap.article1.title?.slice(0, 50)}...
                         </div>
-                        <div
-                          style={{ fontSize: 9, color: "var(--text-muted)" }}
-                        >
+                        <div style={gapArticleYearStyle}>
                           {gap.article1.year || "N/A"}
                         </div>
                       </div>
-                      <div style={{ color: "#f59e0b", padding: "0 8px" }}>
-                        ↔
-                      </div>
+                      <div style={gapArrowStyle}>↔</div>
                       <div
-                        style={{ flex: 1, cursor: "pointer" }}
+                        style={gapArticleColStyle}
                         onClick={() => highlightSemanticResult(gap.article2.id)}
                       >
-                        <div
-                          style={{
-                            fontWeight: 500,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
+                        <div style={gapArticleTitleStyle}>
                           {gap.article2.title?.slice(0, 50)}...
                         </div>
-                        <div
-                          style={{ fontSize: 9, color: "var(--text-muted)" }}
-                        >
+                        <div style={gapArticleYearStyle}>
                           {gap.article2.year || "N/A"}
                         </div>
                       </div>
@@ -4069,14 +4173,7 @@ export default function CitationGraph({ projectId }: Props) {
                 ))}
               </div>
             ) : (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: 16,
-                  color: "var(--text-muted)",
-                  fontSize: 12,
-                }}
-              >
+              <div style={gapEmptyStyle}>
                 {loadingGapAnalysis
                   ? "Анализируем связи..."
                   : "Не найдено статей с высокой схожестью без цитирований"}
@@ -4095,7 +4192,7 @@ export default function CitationGraph({ projectId }: Props) {
           <div className="graph-stat-item">
             <IconLink size="sm" />
             <span>Связей:</span>
-            <span className="graph-stat-value" style={{ color: "#10b981" }}>
+            <span className="graph-stat-value" style={statsLinkValueStyle}>
               {stats.totalLinks}
             </span>
           </div>
@@ -4107,10 +4204,10 @@ export default function CitationGraph({ projectId }: Props) {
                   <div className="graph-stat-item">
                     <span
                       className="legend-dot"
-                      style={{ background: "#ec4899" }}
+                      style={getLegendDotStyle("#ec4899")}
                     ></span>
                     <span>Цитируют:</span>
-                    <span style={{ color: "#ec4899", fontWeight: 600 }}>
+                    <span style={getLegendValueStyle("#ec4899")}>
                       {stats.levelCounts.level0}
                     </span>
                   </div>
@@ -4118,10 +4215,10 @@ export default function CitationGraph({ projectId }: Props) {
               <div className="graph-stat-item">
                 <span
                   className="legend-dot"
-                  style={{ background: "#3b82f6" }}
+                  style={getLegendDotStyle("#3b82f6")}
                 ></span>
                 <span>В проекте:</span>
-                <span style={{ color: "#3b82f6", fontWeight: 600 }}>
+                <span style={getLegendValueStyle("#3b82f6")}>
                   {stats.levelCounts.level1}
                 </span>
               </div>
@@ -4129,10 +4226,10 @@ export default function CitationGraph({ projectId }: Props) {
                 <div className="graph-stat-item">
                   <span
                     className="legend-dot"
-                    style={{ background: "#f97316" }}
+                    style={getLegendDotStyle("#f97316")}
                   ></span>
                   <span>Ссылки:</span>
-                  <span style={{ color: "#f97316", fontWeight: 600 }}>
+                  <span style={getLegendValueStyle("#f97316")}>
                     {stats.levelCounts.level2}
                   </span>
                 </div>
@@ -4143,10 +4240,10 @@ export default function CitationGraph({ projectId }: Props) {
                   <div className="graph-stat-item">
                     <span
                       className="legend-dot"
-                      style={{ background: "#06b6d4" }}
+                      style={getLegendDotStyle("#06b6d4")}
                     ></span>
                     <span>Связанные:</span>
-                    <span style={{ color: "#06b6d4", fontWeight: 600 }}>
+                    <span style={getLegendValueStyle("#06b6d4")}>
                       {stats.levelCounts.level3}
                     </span>
                   </div>
@@ -4156,26 +4253,18 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* P-value статьи - кнопка добавления */}
           {pValueArticlesCount > 0 && (
-            <div className="graph-stat-item" style={{ marginLeft: "auto" }}>
+            <div className="graph-stat-item" style={pvalueStatItemStyle}>
               <span
                 className="legend-dot"
-                style={{ background: "#fbbf24" }}
+                style={getLegendDotStyle("#fbbf24")}
               ></span>
               <span>С P-value:</span>
-              <span style={{ color: "#fbbf24", fontWeight: 600 }}>
+              <span style={getLegendValueStyle("#fbbf24")}>
                 {pValueArticlesCount}
               </span>
               <button
                 className="btn secondary"
-                style={{
-                  padding: "4px 10px",
-                  fontSize: 11,
-                  marginLeft: 8,
-                  background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
-                  border: "none",
-                  color: "#1e293b",
-                  fontWeight: 600,
-                }}
+                style={pvalueButtonStyle}
                 onClick={handleAddAllWithPValue}
                 disabled={addingPValueArticles}
                 title="Добавить все статьи с P-value в проект как кандидаты"
@@ -4190,18 +4279,7 @@ export default function CitationGraph({ projectId }: Props) {
         {depth >= 2 &&
           stats.availableReferences === 0 &&
           stats.availableCiting === 0 && (
-            <div
-              style={{
-                padding: "12px 20px",
-                background: "rgba(251, 191, 36, 0.1)",
-                borderBottom: "1px solid var(--border-glass)",
-                fontSize: 12,
-                color: "#fbbf24",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
+            <div style={noReferencesWarningStyle}>
               <IconExclamation size="sm" />
               Данные о ссылках не загружены. Нажмите "Обновить связи" для
               загрузки.
@@ -4209,31 +4287,21 @@ export default function CitationGraph({ projectId }: Props) {
           )}
 
         {/* Main Area: Graph + AI Panel side by side */}
-        <div
-          style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}
-        >
+        <div style={graphMainSplitStyle}>
           {/* Graph Area */}
           <div
             ref={graphAreaRef}
             onMouseMove={handleGraphMouseMove}
             onMouseLeave={clearHoverCard}
-            style={{
-              flex: 1,
-              overflow: "hidden",
-              position: "relative",
-              minHeight: 0,
-            }}
+            style={graphAreaStyle}
           >
             {!data || data.nodes.length === 0 ? (
-              <div
-                className="muted"
-                style={{ padding: 60, textAlign: "center" }}
-              >
+              <div className="muted" style={graphEmptyStateStyle}>
                 <IconChartBar size="lg" className="icon-lg" />
                 <p>Нет данных для графа с текущими фильтрами.</p>
               </div>
             ) : (
-              <div style={{ width: "100%", height: "100%" }}>
+              <div style={graphCanvasFillStyle}>
                 <ForceGraph2D
                   ref={graphRef}
                   graphData={
