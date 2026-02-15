@@ -3282,14 +3282,7 @@ export default function ProjectDetailPage() {
           <div className="statistics-page">
             <div className="statistics-header">
               <div>
-                <h5
-                  className="statistics-header-title"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
+                <h5 className="statistics-header-title statistics-header-title-row">
                   Статистика проекта
                   {/* WebSocket индикатор */}
                   <span
@@ -3298,22 +3291,13 @@ export default function ProjectDetailPage() {
                         ? "Real-time синхронизация активна"
                         : "Нет real-time соединения"
                     }
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      backgroundColor: wsConnected ? "#4ade80" : "#6b7280",
-                      animation: wsConnected ? "pulse 2s infinite" : "none",
-                    }}
+                    className={`statistics-ws-indicator ${wsConnected ? "statistics-ws-indicator--online" : ""}`}
                   />
                 </h5>
-                <div className="muted" style={{ fontSize: 13 }}>
+                <div className="muted statistics-header-subtitle">
                   Графики и таблицы из документов проекта
                   {wsConnected && (
-                    <span style={{ color: "#4ade80", marginLeft: 8 }}>
-                      • Live
-                    </span>
+                    <span className="statistics-live-badge">• Live</span>
                   )}
                 </div>
               </div>
@@ -3325,8 +3309,7 @@ export default function ProjectDetailPage() {
                     type="button"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -3346,8 +3329,7 @@ export default function ProjectDetailPage() {
                     type="button"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -3369,8 +3351,7 @@ export default function ProjectDetailPage() {
                   type="button"
                 >
                   <svg
-                    className="icon-sm"
-                    style={{ marginRight: 4 }}
+                    className="icon-sm statistics-btn-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
@@ -3408,8 +3389,7 @@ export default function ProjectDetailPage() {
                   title="Удалить статистики без данных"
                 >
                   <svg
-                    className="icon-sm"
-                    style={{ marginRight: 4 }}
+                    className="icon-sm statistics-btn-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
@@ -3429,14 +3409,13 @@ export default function ProjectDetailPage() {
             {/* Быстрое создание - кнопка открывает модал */}
             <div className="chart-types-selector">
               <div className="chart-types-header">
-                <h4 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h4 className="chart-types-title-row">
                   <svg
-                    className="icon-md"
+                    className="icon-md chart-types-title-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
                     viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
                   >
                     <path
                       strokeLinecap="round"
@@ -3450,15 +3429,14 @@ export default function ProjectDetailPage() {
                   Создайте таблицу с данными, затем визуализируйте её
                 </span>
               </div>
-              <div className="row gap" style={{ marginTop: 12 }}>
+              <div className="row gap chart-types-actions-row">
                 <button
                   className="btn"
                   onClick={() => setShowCreateStatistic(true)}
                   type="button"
                 >
                   <svg
-                    className="icon-sm"
-                    style={{ marginRight: 4 }}
+                    className="icon-sm statistics-btn-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
@@ -3473,7 +3451,7 @@ export default function ProjectDetailPage() {
                   Создать таблицу/график
                 </button>
               </div>
-              <div className="chart-types-grid" style={{ marginTop: 16 }}>
+              <div className="chart-types-grid chart-types-grid-spaced">
                 {(
                   [
                     "bar",
