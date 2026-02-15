@@ -388,31 +388,11 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
         </div>
 
         {/* Row height controls */}
-        <div
-          style={{
-            marginBottom: "12px",
-            display: "flex",
-            gap: "12px",
-            alignItems: "center",
-            flexWrap: "wrap",
-            padding: "8px 12px",
-            background: "rgba(59, 130, 246, 0.05)",
-            borderRadius: "8px",
-            border: "1px solid rgba(59, 130, 246, 0.15)",
-          }}
-        >
-          <span style={{ fontSize: "13px", fontWeight: 500, color: "#64748b" }}>
-            Высота строки:
-          </span>
+        <div className="tabulator-row-height-controls">
+          <span className="tabulator-row-height-label">Высота строки:</span>
           {selectedRowIdx !== null ? (
             <>
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#3b82f6",
-                  fontWeight: 600,
-                }}
-              >
+              <span className="tabulator-row-height-selected-label">
                 Строка {selectedRowIdx + 1}
               </span>
               <input
@@ -422,30 +402,24 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
                 step="5"
                 value={selectedRowHeight}
                 onChange={(e) => handleRowHeightChange(Number(e.target.value))}
-                style={{
-                  padding: "4px 8px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  width: "80px",
-                }}
+                className="tabulator-row-height-input"
               />
-              <span style={{ fontSize: "11px", color: "#94a3b8" }}>px</span>
+              <span className="tabulator-row-height-unit">px</span>
               <input
                 type="range"
                 min="10"
                 max="300"
                 value={selectedRowHeight}
                 onChange={(e) => handleRowHeightChange(Number(e.target.value))}
-                style={{ width: "120px" }}
+                className="tabulator-row-height-range"
               />
             </>
           ) : (
-            <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+            <span className="tabulator-row-height-hint">
               Кликните на строку для выбора
             </span>
           )}
-          <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
+          <div className="tabulator-row-height-actions">
             <Button size="xs" color="gray" onClick={handleSetAllRowHeights}>
               Всем строкам
             </Button>
@@ -456,13 +430,7 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
         </div>
 
         <div className="tabulator-container" ref={containerRef} />
-        <p
-          style={{
-            fontSize: "11px",
-            color: "#94a3b8",
-            marginTop: "8px",
-          }}
-        >
+        <p className="tabulator-row-height-footnote">
           💡 Кликните на строку чтобы выбрать её и изменить высоту.
           Перетаскивайте границы колонок для изменения ширины.
         </p>
