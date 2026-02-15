@@ -1192,19 +1192,50 @@
     position: absolute;
     top: 0;
     bottom: 0;
-    z-index: 20;
+    z-index: 26;
+  }
+
+  .graph-control-panel:not(.collapsed) {
+    width: min(84vw, 300px);
+  }
+
+  .node-details-panel {
+    width: min(88vw, 320px);
   }
   
   .graph-control-panel {
     left: 0;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35);
   }
   
   .node-details-panel {
     right: 0;
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
   }
   
   .graph-toolbar {
     flex-wrap: wrap;
     max-width: calc(100% - 32px);
+  }
+}
+
+@media (max-width: 640px) {
+  .graph-toolbar {
+    gap: 6px;
+    padding: 8px;
+    max-width: calc(100% - 16px);
+  }
+
+  .toolbar-button {
+    padding: 6px 8px;
+  }
+
+  .toolbar-search {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .toolbar-search-input {
+    width: 100%;
   }
 }
