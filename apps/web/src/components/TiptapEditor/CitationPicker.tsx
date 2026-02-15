@@ -91,19 +91,18 @@ export default function CitationPicker({
     }
   };
 
-  // Get source badge color
-  const getSourceColor = (source: string): string => {
+  const getSourceClassName = (source: string): string => {
     switch (source?.toLowerCase()) {
       case "pubmed":
-        return "#2563eb";
+        return "citation-source--pubmed";
       case "doaj":
-        return "#f59e0b";
+        return "citation-source--doaj";
       case "wiley":
-        return "#8b5cf6";
+        return "citation-source--wiley";
       case "crossref":
-        return "#10b981";
+        return "citation-source--crossref";
       default:
-        return "#64748b";
+        return "citation-source--default";
     }
   };
 
@@ -286,18 +285,10 @@ export default function CitationPicker({
               {availableSources.map((source) => (
                 <button
                   key={source}
-                  className={`citation-filter-btn ${sourceFilter === source ? "active" : ""}`}
+                  className={`citation-filter-btn ${getSourceClassName(source)} ${
+                    sourceFilter === source ? "active" : ""
+                  }`}
                   onClick={() => setSourceFilter(source as SourceFilter)}
-                  style={{
-                    borderColor:
-                      sourceFilter === source
-                        ? getSourceColor(source)
-                        : undefined,
-                    color:
-                      sourceFilter === source
-                        ? getSourceColor(source)
-                        : undefined,
-                  }}
                 >
                   {getSourceName(source)}
                 </button>
@@ -375,8 +366,9 @@ export default function CitationPicker({
                 </div>
                 <div className="citation-article-side">
                   <span
-                    className="citation-source-badge"
-                    style={{ backgroundColor: getSourceColor(article.source) }}
+                    className={`citation-source-badge ${getSourceClassName(
+                      article.source,
+                    )}`}
                   >
                     {getSourceName(article.source)}
                   </span>

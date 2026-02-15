@@ -1728,6 +1728,30 @@
   color: #4b74ff;
 }
 
+.citation-filter-btn.citation-source--pubmed.active {
+  background: rgba(37, 99, 235, 0.14);
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.citation-filter-btn.citation-source--doaj.active {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.citation-filter-btn.citation-source--wiley.active {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.citation-filter-btn.citation-source--crossref.active {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: #10b981;
+  color: #10b981;
+}
+
 /* Results info */
 .citation-results-info {
   padding: 8px 20px;
@@ -1835,6 +1859,26 @@
   font-size: 10px;
   font-weight: 600;
   color: white;
+}
+
+.citation-source-badge.citation-source--pubmed {
+  background-color: #2563eb;
+}
+
+.citation-source-badge.citation-source--doaj {
+  background-color: #f59e0b;
+}
+
+.citation-source-badge.citation-source--wiley {
+  background-color: #8b5cf6;
+}
+
+.citation-source-badge.citation-source--crossref {
+  background-color: #10b981;
+}
+
+.citation-source-badge.citation-source--default {
+  background-color: #64748b;
 }
 
 .citation-stats-badge {
