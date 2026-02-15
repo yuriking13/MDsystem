@@ -2284,6 +2284,177 @@ export default function CitationGraph({ projectId }: Props) {
     padding: 12,
     fontSize: 13,
   };
+  const semanticPanelStyle: React.CSSProperties = {
+    padding: "12px 20px",
+    borderBottom: "1px solid var(--border-glass)",
+    background:
+      "linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
+  };
+  const semanticHeaderSectionStyle: React.CSSProperties = { marginBottom: 12 };
+  const semanticHeaderTitleRowStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  };
+  const semanticHeaderTitleStyle: React.CSSProperties = { fontWeight: 600 };
+  const semanticHeaderMetaStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  };
+  const semanticActionsRowStyle: React.CSSProperties = {
+    marginBottom: 8,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  };
+  const semanticGenerateButtonStyle: React.CSSProperties = {
+    fontSize: 11,
+    padding: "4px 10px",
+  };
+  const semanticImportCheckboxStyle: React.CSSProperties = {
+    cursor: "inherit",
+    margin: 0,
+  };
+  const semanticImportAvailableStyle: React.CSSProperties = {
+    fontSize: 9,
+    color: "var(--text-muted)",
+    marginLeft: 3,
+  };
+  const semanticCancelEmbeddingButtonStyle: React.CSSProperties = {
+    fontSize: 11,
+    padding: "4px 8px",
+    background: "var(--bg-error)",
+    color: "white",
+  };
+  const semanticEmbeddingProgressTrackStyle: React.CSSProperties = {
+    flex: 1,
+    height: 6,
+    background: "var(--bg-tertiary)",
+    borderRadius: 3,
+    overflow: "hidden",
+  };
+  const semanticSearchControlsStyle: React.CSSProperties = {
+    display: "flex",
+    gap: 8,
+    alignItems: "center",
+  };
+  const semanticSearchInputStyle: React.CSSProperties = {
+    flex: 1,
+    padding: "8px 12px",
+    borderRadius: 6,
+    border: "1px solid var(--border-glass)",
+    background: "var(--bg-primary)",
+    color: "inherit",
+    fontSize: 13,
+  };
+  const semanticThresholdWrapStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 4,
+  };
+  const semanticThresholdLabelStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  };
+  const semanticThresholdRangeStyle: React.CSSProperties = { width: 60 };
+  const semanticThresholdValueStyle: React.CSSProperties = {
+    fontSize: 11,
+    minWidth: 30,
+  };
+  const semanticSearchButtonStyle: React.CSSProperties = {
+    padding: "8px 16px",
+  };
+  const semanticResultsWrapStyle: React.CSSProperties = {
+    marginTop: 12,
+    maxHeight: 200,
+    overflowY: "auto",
+  };
+  const semanticResultsTitleStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+    marginBottom: 6,
+  };
+  const semanticResultRowStyle: React.CSSProperties = {
+    padding: "6px 8px",
+    marginBottom: 4,
+    background: "var(--bg-secondary)",
+    borderRadius: 4,
+    cursor: "pointer",
+    fontSize: 12,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  };
+  const semanticResultTitleStyle: React.CSSProperties = {
+    flex: 1,
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  };
+  const semanticCoreSectionStyle: React.CSSProperties = {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTop: "1px solid var(--border-glass)",
+  };
+  const semanticCoreHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  };
+  const semanticCoreTitleGroupStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  };
+  const semanticCoreTitleStyle: React.CSSProperties = {
+    fontWeight: 600,
+    fontSize: 13,
+  };
+  const semanticCoreSubtitleStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  };
+  const semanticCoreToggleStyle: React.CSSProperties = { fontSize: 11 };
+  const semanticCoreControlsStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+  };
+  const semanticCoreThresholdGroupStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+  };
+  const semanticCoreThresholdLabelStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+  };
+  const semanticCoreThresholdRangeStyle: React.CSSProperties = { width: 80 };
+  const semanticCoreThresholdValueStyle: React.CSSProperties = {
+    fontSize: 11,
+    minWidth: 35,
+  };
+  const semanticCoreRefreshButtonStyle: React.CSSProperties = {
+    fontSize: 11,
+    padding: "4px 12px",
+  };
+  const semanticCoreEdgeCountStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--accent-secondary)",
+  };
+  const semanticCoreHintStyle: React.CSSProperties = {
+    marginTop: 8,
+    padding: 8,
+    background: "rgba(236, 72, 153, 0.1)",
+    borderRadius: 6,
+    fontSize: 11,
+  };
+  const semanticCoreHintDashStyle: React.CSSProperties = {
+    color: "rgba(236, 72, 153, 0.8)",
+  };
 
   const getGraphContainerStyle = (
     fullscreen: boolean,
@@ -2319,6 +2490,51 @@ export default function CitationGraph({ projectId }: Props) {
     background: "linear-gradient(90deg, #3b82f6, #8b5cf6)",
     borderRadius: 3,
     transition: "width 0.3s ease",
+  });
+  const getSemanticImportLabelStyle = (
+    importMissing: boolean,
+    disabled: boolean,
+  ): React.CSSProperties => ({
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+    fontSize: 11,
+    color: importMissing ? "var(--text-primary)" : "var(--text-muted)",
+    cursor: disabled ? "not-allowed" : "pointer",
+    padding: "3px 8px",
+    borderRadius: 4,
+    background: importMissing ? "rgba(16, 185, 129, 0.1)" : "transparent",
+    border: `1px solid ${importMissing ? "rgba(16, 185, 129, 0.3)" : "var(--border-color)"}`,
+    transition: "all 0.2s",
+  });
+  const getSemanticEmbeddingMessageStyle = (
+    message: string,
+  ): React.CSSProperties => ({
+    fontSize: 11,
+    color: message.startsWith("✓")
+      ? "#10b981"
+      : message.startsWith("Ошибка")
+        ? "#ef4444"
+        : "var(--text-muted)",
+  });
+  const getSemanticEmbeddingProgressFillStyle = (
+    total: number,
+    processed: number,
+  ): React.CSSProperties => ({
+    height: "100%",
+    width: `${total > 0 ? Math.round((processed / total) * 100) : 0}%`,
+    background: "linear-gradient(90deg, #10b981, #3b82f6)",
+    transition: "width 0.3s ease",
+  });
+  const getSemanticResultScoreStyle = (
+    similarity: number,
+  ): React.CSSProperties => ({
+    marginLeft: 8,
+    padding: "2px 6px",
+    background: `rgba(16, 185, 129, ${similarity})`,
+    borderRadius: 4,
+    fontSize: 10,
+    fontWeight: 600,
   });
 
   const handleGraphExportItemMouseEnter = (
@@ -2908,28 +3124,15 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Semantic Search Panel */}
         {showSemanticSearch && (
-          <div
-            className="graph-filters"
-            style={{
-              padding: "12px 20px",
-              borderBottom: "1px solid var(--border-glass)",
-              background:
-                "linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
-            }}
-          >
-            <div style={{ marginBottom: 12 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 8,
-                }}
-              >
+          <div className="graph-filters" style={semanticPanelStyle}>
+            <div style={semanticHeaderSectionStyle}>
+              <div style={semanticHeaderTitleRowStyle}>
                 <IconSearch size="sm" />
-                <span style={{ fontWeight: 600 }}>Семантический поиск</span>
+                <span style={semanticHeaderTitleStyle}>
+                  Семантический поиск
+                </span>
                 {embeddingStats && (
-                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  <span style={semanticHeaderMetaStyle}>
                     ({embeddingStats.withEmbeddings}/
                     {embeddingStats.totalArticles} статей с embeddings,
                     {embeddingStats.completionRate.toFixed(0)}%)
@@ -2938,19 +3141,11 @@ export default function CitationGraph({ projectId }: Props) {
               </div>
 
               {embeddingStats && embeddingStats.withoutEmbeddings > 0 && (
-                <div
-                  style={{
-                    marginBottom: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    flexWrap: "wrap",
-                  }}
-                >
+                <div style={semanticActionsRowStyle}>
                   {/* Кнопка генерации */}
                   <button
                     className="btn secondary"
-                    style={{ fontSize: 11, padding: "4px 10px" }}
+                    style={semanticGenerateButtonStyle}
                     onClick={handleGenerateEmbeddings}
                     disabled={generatingEmbeddings}
                   >
@@ -2965,25 +3160,10 @@ export default function CitationGraph({ projectId }: Props) {
                   {missingArticlesStats &&
                     missingArticlesStats.totalMissing > 0 && (
                       <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 5,
-                          fontSize: 11,
-                          color: importMissingArticles
-                            ? "var(--text-primary)"
-                            : "var(--text-muted)",
-                          cursor: generatingEmbeddings
-                            ? "not-allowed"
-                            : "pointer",
-                          padding: "3px 8px",
-                          borderRadius: 4,
-                          background: importMissingArticles
-                            ? "rgba(16, 185, 129, 0.1)"
-                            : "transparent",
-                          border: `1px solid ${importMissingArticles ? "rgba(16, 185, 129, 0.3)" : "var(--border-color)"}`,
-                          transition: "all 0.2s",
-                        }}
+                        style={getSemanticImportLabelStyle(
+                          importMissingArticles,
+                          generatingEmbeddings,
+                        )}
                         title={`Импортировать топ-${missingArticlesStats.importLimit || 1000} цитирующих статей из PubMed (всего доступно: ${(missingArticlesStats.totalAvailable || missingArticlesStats.totalMissing).toLocaleString()}). Ранжируются по частоте цитирования ваших статей. Ретракции исключаются.`}
                       >
                         <input
@@ -2993,7 +3173,7 @@ export default function CitationGraph({ projectId }: Props) {
                             setImportMissingArticles(e.target.checked)
                           }
                           disabled={generatingEmbeddings}
-                          style={{ cursor: "inherit", margin: 0 }}
+                          style={semanticImportCheckboxStyle}
                         />
                         <span>
                           +{missingArticlesStats.totalMissing.toLocaleString()}{" "}
@@ -3001,13 +3181,7 @@ export default function CitationGraph({ projectId }: Props) {
                           {missingArticlesStats.totalAvailable &&
                             missingArticlesStats.totalAvailable >
                               missingArticlesStats.totalMissing && (
-                              <span
-                                style={{
-                                  fontSize: 9,
-                                  color: "var(--text-muted)",
-                                  marginLeft: 3,
-                                }}
-                              >
+                              <span style={semanticImportAvailableStyle}>
                                 из{" "}
                                 {missingArticlesStats.totalAvailable.toLocaleString()}
                               </span>
@@ -3018,12 +3192,7 @@ export default function CitationGraph({ projectId }: Props) {
                   {generatingEmbeddings && embeddingJob?.jobId && (
                     <button
                       className="btn"
-                      style={{
-                        fontSize: 11,
-                        padding: "4px 8px",
-                        background: "var(--bg-error)",
-                        color: "white",
-                      }}
+                      style={semanticCancelEmbeddingButtonStyle}
                       onClick={handleCancelEmbeddings}
                     >
                       Отменить
@@ -3031,36 +3200,18 @@ export default function CitationGraph({ projectId }: Props) {
                   )}
                   {embeddingMessage && (
                     <span
-                      style={{
-                        fontSize: 11,
-                        color: embeddingMessage.startsWith("✓")
-                          ? "#10b981"
-                          : embeddingMessage.startsWith("Ошибка")
-                            ? "#ef4444"
-                            : "var(--text-muted)",
-                      }}
+                      style={getSemanticEmbeddingMessageStyle(embeddingMessage)}
                     >
                       {embeddingMessage}
                     </span>
                   )}
                   {generatingEmbeddings && embeddingJob && (
-                    <div
-                      style={{
-                        flex: 1,
-                        height: 6,
-                        background: "var(--bg-tertiary)",
-                        borderRadius: 3,
-                        overflow: "hidden",
-                      }}
-                    >
+                    <div style={semanticEmbeddingProgressTrackStyle}>
                       <div
-                        style={{
-                          height: "100%",
-                          width: `${embeddingJob.total > 0 ? Math.round((embeddingJob.processed / embeddingJob.total) * 100) : 0}%`,
-                          background:
-                            "linear-gradient(90deg, #10b981, #3b82f6)",
-                          transition: "width 0.3s ease",
-                        }}
+                        style={getSemanticEmbeddingProgressFillStyle(
+                          embeddingJob.total,
+                          embeddingJob.processed,
+                        )}
                       />
                     </div>
                   )}
@@ -3068,27 +3219,17 @@ export default function CitationGraph({ projectId }: Props) {
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={semanticSearchControlsStyle}>
               <input
                 type="text"
                 value={semanticQuery}
                 onChange={(e) => setSemanticQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSemanticSearch()}
                 placeholder="Введите запрос для поиска похожих статей..."
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  borderRadius: 6,
-                  border: "1px solid var(--border-glass)",
-                  background: "var(--bg-primary)",
-                  color: "inherit",
-                  fontSize: 13,
-                }}
+                style={semanticSearchInputStyle}
               />
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  Порог:
-                </label>
+              <div style={semanticThresholdWrapStyle}>
+                <label style={semanticThresholdLabelStyle}>Порог:</label>
                 <input
                   type="range"
                   min={0.3}
@@ -3098,9 +3239,9 @@ export default function CitationGraph({ projectId }: Props) {
                   onChange={(e) =>
                     setSemanticThreshold(parseFloat(e.target.value))
                   }
-                  style={{ width: 60 }}
+                  style={semanticThresholdRangeStyle}
                 />
-                <span style={{ fontSize: 11, minWidth: 30 }}>
+                <span style={semanticThresholdValueStyle}>
                   {semanticThreshold.toFixed(2)}
                 </span>
               </div>
@@ -3108,58 +3249,28 @@ export default function CitationGraph({ projectId }: Props) {
                 className="btn primary"
                 onClick={handleSemanticSearch}
                 disabled={semanticSearching || !semanticQuery.trim()}
-                style={{ padding: "8px 16px" }}
+                style={semanticSearchButtonStyle}
               >
                 {semanticSearching ? "..." : "Найти"}
               </button>
             </div>
 
             {semanticResults.length > 0 && (
-              <div style={{ marginTop: 12, maxHeight: 200, overflowY: "auto" }}>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "var(--text-muted)",
-                    marginBottom: 6,
-                  }}
-                >
+              <div style={semanticResultsWrapStyle}>
+                <div style={semanticResultsTitleStyle}>
                   Найдено {semanticResults.length} похожих статей:
                 </div>
                 {semanticResults.map((result) => (
                   <div
                     key={result.id}
                     onClick={() => highlightSemanticResult(result.id)}
-                    style={{
-                      padding: "6px 8px",
-                      marginBottom: 4,
-                      background: "var(--bg-secondary)",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 12,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
+                    style={semanticResultRowStyle}
                   >
-                    <span
-                      style={{
-                        flex: 1,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <span style={semanticResultTitleStyle}>
                       {result.titleEn || result.title}
                     </span>
                     <span
-                      style={{
-                        marginLeft: 8,
-                        padding: "2px 6px",
-                        background: `rgba(16, 185, 129, ${result.similarity})`,
-                        borderRadius: 4,
-                        fontSize: 10,
-                        fontWeight: 600,
-                      }}
+                      style={getSemanticResultScoreStyle(result.similarity)}
                     >
                       {(result.similarity * 100).toFixed(0)}%
                     </span>
@@ -3170,32 +3281,20 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Визуализация семантического ядра */}
             {embeddingStats && embeddingStats.withEmbeddings > 10 && (
-              <div
-                style={{
-                  marginTop: 16,
-                  paddingTop: 16,
-                  borderTop: "1px solid var(--border-glass)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 12,
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 8 }}
-                  >
-                    <span style={{ fontWeight: 600, fontSize: 13 }}>
+              <div style={semanticCoreSectionStyle}>
+                <div style={semanticCoreHeaderStyle}>
+                  <div style={semanticCoreTitleGroupStyle}>
+                    <span style={semanticCoreTitleStyle}>
                       🔗 Семантическое ядро
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                    <span style={semanticCoreSubtitleStyle}>
                       (связи по смыслу)
                     </span>
                   </div>
-                  <label className="toggle-switch" style={{ fontSize: 11 }}>
+                  <label
+                    className="toggle-switch"
+                    style={semanticCoreToggleStyle}
+                  >
                     <input
                       type="checkbox"
                       checked={showSemanticEdges}
@@ -3211,15 +3310,9 @@ export default function CitationGraph({ projectId }: Props) {
                 </div>
 
                 {showSemanticEdges && (
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 12 }}
-                  >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                    >
-                      <label
-                        style={{ fontSize: 11, color: "var(--text-muted)" }}
-                      >
+                  <div style={semanticCoreControlsStyle}>
+                    <div style={semanticCoreThresholdGroupStyle}>
+                      <label style={semanticCoreThresholdLabelStyle}>
                         Порог схожести:
                       </label>
                       <input
@@ -3231,27 +3324,22 @@ export default function CitationGraph({ projectId }: Props) {
                         onChange={(e) =>
                           setSemanticEdgeThreshold(parseFloat(e.target.value))
                         }
-                        style={{ width: 80 }}
+                        style={semanticCoreThresholdRangeStyle}
                       />
-                      <span style={{ fontSize: 11, minWidth: 35 }}>
+                      <span style={semanticCoreThresholdValueStyle}>
                         {(semanticEdgeThreshold * 100).toFixed(0)}%
                       </span>
                     </div>
                     <button
                       className="btn secondary"
-                      style={{ fontSize: 11, padding: "4px 12px" }}
+                      style={semanticCoreRefreshButtonStyle}
                       onClick={loadSemanticEdges}
                       disabled={loadingSemanticEdges}
                     >
                       {loadingSemanticEdges ? "Загрузка..." : "Обновить"}
                     </button>
                     {semanticEdges.length > 0 && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "var(--accent-secondary)",
-                        }}
-                      >
+                      <span style={semanticCoreEdgeCountStyle}>
                         {semanticEdges.length} связей
                       </span>
                     )}
@@ -3259,18 +3347,8 @@ export default function CitationGraph({ projectId }: Props) {
                 )}
 
                 {showSemanticEdges && semanticEdges.length > 0 && (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      padding: 8,
-                      background: "rgba(236, 72, 153, 0.1)",
-                      borderRadius: 6,
-                      fontSize: 11,
-                    }}
-                  >
-                    <span style={{ color: "rgba(236, 72, 153, 0.8)" }}>
-                      — — —
-                    </span>{" "}
+                  <div style={semanticCoreHintStyle}>
+                    <span style={semanticCoreHintDashStyle}>— — —</span>{" "}
                     Пунктирные розовые линии = семантическая близость (статьи
                     про похожие темы, но без прямого цитирования)
                   </div>
