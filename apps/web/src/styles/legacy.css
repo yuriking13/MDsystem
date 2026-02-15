@@ -6478,6 +6478,105 @@ input:focus::placeholder {
   margin-right: 6px;
 }
 
+.chapter-export-modal {
+  max-width: 500px;
+}
+
+.chapter-export-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chapter-export-actions {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.chapter-export-toggle-btn {
+  font-size: 12px;
+}
+
+.chapter-export-list {
+  max-height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chapter-select-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.chapter-select-item--selected {
+  background: rgba(75, 116, 255, 0.1);
+  border-color: var(--accent);
+}
+
+.chapter-select-checkbox {
+  width: 18px;
+  height: 18px;
+}
+
+.chapter-select-title {
+  font-weight: 500;
+}
+
+.chapter-select-meta {
+  font-size: 11px;
+}
+
+.chapter-export-option {
+  padding: 12px 20px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.chapter-export-option-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.chapter-export-option-checkbox {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+}
+
+.chapter-export-option-title {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.chapter-export-option-icon {
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.chapter-export-option-help {
+  font-size: 11px;
+  margin-top: 4px;
+}
+
+.chapter-export-footer {
+  justify-content: space-between;
+}
+
+.chapter-export-count {
+  font-size: 12px;
+}
+
 @media (max-width: 640px) {
   .file-import-metadata-row {
     flex-direction: column;
@@ -6495,6 +6594,22 @@ input:focus::placeholder {
 
   .file-import-footer-actions {
     flex: 1 1 100%;
+  }
+
+  .chapter-export-actions {
+    flex-wrap: wrap;
+  }
+
+  .chapter-export-toggle-btn {
+    flex: 1 1 calc(50% - 4px);
+  }
+
+  .chapter-export-footer {
+    gap: 8px;
+  }
+
+  .chapter-export-count {
+    width: 100%;
   }
 }
 

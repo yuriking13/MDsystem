@@ -4369,19 +4369,11 @@ export default function ProjectDetailPage() {
           onClick={() => setShowChapterSelectModal(false)}
         >
           <div
-            className="modal-content"
+            className="modal-content chapter-export-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: 500 }}
           >
             <div className="modal-header">
-              <h3
-                className="modal-title"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+              <h3 className="modal-title chapter-export-title">
                 <svg
                   className="icon-md"
                   fill="none"
@@ -4418,55 +4410,31 @@ export default function ProjectDetailPage() {
               </button>
             </div>
             <div className="modal-body">
-              <div style={{ marginBottom: 12, display: "flex", gap: 8 }}>
+              <div className="chapter-export-actions">
                 <button
-                  className="btn secondary"
+                  className="btn secondary chapter-export-toggle-btn"
                   onClick={() =>
                     setSelectedChaptersForExport(
                       new Set(documents.map((d) => d.id)),
                     )
                   }
                   type="button"
-                  style={{ fontSize: 12 }}
                 >
                   Выбрать все
                 </button>
                 <button
-                  className="btn secondary"
+                  className="btn secondary chapter-export-toggle-btn"
                   onClick={() => setSelectedChaptersForExport(new Set())}
                   type="button"
-                  style={{ fontSize: 12 }}
                 >
                   Снять все
                 </button>
               </div>
-              <div
-                style={{
-                  maxHeight: 300,
-                  overflowY: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                }}
-              >
+              <div className="chapter-export-list">
                 {documents.map((doc, idx) => (
                   <label
                     key={doc.id}
-                    className="chapter-select-item"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "10px 12px",
-                      background: selectedChaptersForExport.has(doc.id)
-                        ? "rgba(75, 116, 255, 0.1)"
-                        : "var(--bg-secondary)",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      border: selectedChaptersForExport.has(doc.id)
-                        ? "1px solid var(--accent)"
-                        : "1px solid transparent",
-                    }}
+                    className={`chapter-select-item ${selectedChaptersForExport.has(doc.id) ? "chapter-select-item--selected" : ""}`}
                   >
                     <input
                       type="checkbox"
@@ -4480,13 +4448,13 @@ export default function ProjectDetailPage() {
                         }
                         setSelectedChaptersForExport(newSet);
                       }}
-                      style={{ width: 18, height: 18 }}
+                      className="chapter-select-checkbox"
                     />
                     <div>
-                      <div style={{ fontWeight: 500 }}>
+                      <div className="chapter-select-title">
                         {idx + 1}. {doc.title}
                       </div>
-                      <div className="muted" style={{ fontSize: 11 }}>
+                      <div className="muted chapter-select-meta">
                         {doc.content
                           ? `${doc.content.length} символов`
                           : "Пусто"}
@@ -4497,32 +4465,18 @@ export default function ProjectDetailPage() {
               </div>
             </div>
             {/* Опция включения данных графиков */}
-            <div
-              style={{
-                padding: "12px 20px",
-                borderTop: "1px solid var(--border-color)",
-                background: "var(--bg-secondary)",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 10,
-                  cursor: "pointer",
-                }}
-              >
+            <div className="chapter-export-option">
+              <label className="chapter-export-option-label">
                 <input
                   type="checkbox"
                   checked={includeChartDataTables}
                   onChange={(e) => setIncludeChartDataTables(e.target.checked)}
-                  style={{ width: 18, height: 18, marginTop: 2 }}
+                  className="chapter-export-option-checkbox"
                 />
                 <div>
-                  <div style={{ fontWeight: 500, fontSize: 13 }}>
+                  <div className="chapter-export-option-title">
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4, verticalAlign: "middle" }}
+                      className="icon-sm chapter-export-option-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -4536,7 +4490,7 @@ export default function ProjectDetailPage() {
                     </svg>
                     Включить данные графиков
                   </div>
-                  <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
+                  <div className="muted chapter-export-option-help">
                     Добавляет таблицы с исходными данными под каждым графиком.
                     Используйте их для создания редактируемых графиков в Word.
                   </div>
@@ -4544,13 +4498,8 @@ export default function ProjectDetailPage() {
               </label>
             </div>
 
-            <div
-              className="modal-footer"
-              style={{
-                justifyContent: "space-between",
-              }}
-            >
-              <span className="muted" style={{ fontSize: 12 }}>
+            <div className="modal-footer chapter-export-footer">
+              <span className="muted chapter-export-count">
                 Выбрано: {selectedChaptersForExport.size} из {documents.length}
               </span>
               <div className="row gap">
@@ -4568,8 +4517,7 @@ export default function ProjectDetailPage() {
                   type="button"
                 >
                   <svg
-                    className="icon-sm"
-                    style={{ marginRight: 4 }}
+                    className="icon-sm statistics-btn-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
