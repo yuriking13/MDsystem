@@ -1153,6 +1153,25 @@
   border-bottom: 1px solid rgba(59, 130, 246, 0.2);
 }
 
+.bulk-action-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.bulk-action-icon {
+  margin-right: 4px;
+  display: inline;
+  vertical-align: middle;
+}
+
+.bulk-action-ai-btn--with-progress {
+  min-width: 180px;
+}
+
+.bulk-action-spinner {
+  margin-right: 6px;
+}
+
 .light-theme .bulk-actions,
 [data-theme="light"] .bulk-actions {
   background-color: rgba(200, 125, 42, 0.05);

@@ -2033,19 +2033,13 @@ export default function ArticlesSection({
         <div className="bulk-actions">
           <div className="row gap">
             <button
-              className="btn secondary"
+              className="btn secondary bulk-action-btn"
               onClick={() => handleBulkStatus("selected")}
               title="Добавить выбранные в отобранные"
               type="button"
-              style={{ padding: "4px 10px", fontSize: 12 }}
             >
               <svg
-                className="icon-sm"
-                style={{
-                  marginRight: 4,
-                  display: "inline",
-                  verticalAlign: "middle",
-                }}
+                className="icon-sm bulk-action-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2060,19 +2054,13 @@ export default function ArticlesSection({
               Отобрать
             </button>
             <button
-              className="btn secondary"
+              className="btn secondary bulk-action-btn"
               onClick={() => handleBulkStatus("excluded")}
               title="Исключить выбранные"
               type="button"
-              style={{ padding: "4px 10px", fontSize: 12 }}
             >
               <svg
-                className="icon-sm"
-                style={{
-                  marginRight: 4,
-                  display: "inline",
-                  verticalAlign: "middle",
-                }}
+                className="icon-sm bulk-action-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2087,20 +2075,14 @@ export default function ArticlesSection({
               Исключить
             </button>
             <button
-              className="btn secondary"
+              className="btn secondary bulk-action-btn"
               onClick={handleBulkTranslate}
               disabled={translating}
               title="Перевести выбранные"
               type="button"
-              style={{ padding: "4px 10px", fontSize: 12 }}
             >
               <svg
-                className="icon-sm"
-                style={{
-                  marginRight: 4,
-                  display: "inline",
-                  verticalAlign: "middle",
-                }}
+                className="icon-sm bulk-action-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2115,20 +2097,14 @@ export default function ArticlesSection({
               Перевести
             </button>
             <button
-              className="btn secondary"
+              className="btn secondary bulk-action-btn"
               onClick={handleEnrich}
               disabled={enriching}
               title="Обогатить данные через Crossref (DOI)"
               type="button"
-              style={{ padding: "4px 10px", fontSize: 12 }}
             >
               <svg
-                className="icon-sm"
-                style={{
-                  marginRight: 4,
-                  display: "inline",
-                  verticalAlign: "middle",
-                }}
+                className="icon-sm bulk-action-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2143,32 +2119,26 @@ export default function ArticlesSection({
               Crossref
             </button>
             <button
-              className="btn secondary"
+              className={`btn secondary bulk-action-btn bulk-action-ai-btn ${
+                detectingStats && aiStatsProgress
+                  ? "bulk-action-ai-btn--with-progress"
+                  : ""
+              }`}
               onClick={handleAIDetectStats}
               disabled={detectingStats}
               title="AI детекция статистики (OpenRouter)"
               type="button"
-              style={{
-                padding: "4px 10px",
-                fontSize: 12,
-                minWidth: aiStatsProgress ? 180 : undefined,
-              }}
             >
               {detectingStats && aiStatsProgress ? (
                 <>
-                  <span className="spinner-small" style={{ marginRight: 6 }} />
+                  <span className="spinner-small bulk-action-spinner" />
                   {aiStatsProgress.percent}% ({aiStatsProgress.analyzed}/
                   {aiStatsProgress.total})
                 </>
               ) : (
                 <>
                   <svg
-                    className="icon-sm"
-                    style={{
-                      marginRight: 4,
-                      display: "inline",
-                      verticalAlign: "middle",
-                    }}
+                    className="icon-sm bulk-action-icon"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -2186,19 +2156,13 @@ export default function ArticlesSection({
             </button>
             {viewStatus !== "candidate" && viewStatus !== "deleted" && (
               <button
-                className="btn secondary"
+                className="btn secondary bulk-action-btn"
                 onClick={() => handleBulkStatus("candidate")}
                 title="Вернуть в кандидаты"
                 type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
               >
                 <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
+                  className="icon-sm bulk-action-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -2215,19 +2179,13 @@ export default function ArticlesSection({
             )}
             {viewStatus !== "deleted" && (
               <button
-                className="btn secondary"
+                className="btn secondary bulk-action-btn"
                 onClick={() => handleBulkStatus("deleted")}
                 title="Удалить в корзину"
                 type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
               >
                 <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
+                  className="icon-sm bulk-action-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -2244,19 +2202,13 @@ export default function ArticlesSection({
             )}
             {viewStatus === "deleted" && (
               <button
-                className="btn secondary"
+                className="btn secondary bulk-action-btn"
                 onClick={() => handleBulkStatus("candidate")}
                 title="Восстановить из корзины"
                 type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
               >
                 <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
+                  className="icon-sm bulk-action-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
