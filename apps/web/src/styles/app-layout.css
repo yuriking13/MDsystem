@@ -29,6 +29,10 @@
   display: none;
 }
 
+body.sidebar-modal-open {
+  overflow: hidden;
+}
+
 .app-main-fixed {
   height: 100%;
   max-height: 100vh;

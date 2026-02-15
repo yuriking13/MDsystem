@@ -33,6 +33,26 @@ export default function AdminLayout() {
     setMobileSidebarOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileSidebarOpen]);
+
+  useEffect(() => {
+    if (mobileSidebarOpen) {
+      document.body.classList.add("sidebar-modal-open");
+    } else {
+      document.body.classList.remove("sidebar-modal-open");
+    }
+    return () => document.body.classList.remove("sidebar-modal-open");
+  }, [mobileSidebarOpen]);
+
   const sidebarItems: SidebarItem[] = [
     { path: "/admin", label: "Дашборд", icon: <IconChartBar /> },
     { path: "/admin/users", label: "Пользователи", icon: <IconUsers /> },

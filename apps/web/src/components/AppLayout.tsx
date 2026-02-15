@@ -140,6 +140,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [mobileSidebarOpen]);
 
+  useEffect(() => {
+    if (mobileSidebarOpen) {
+      document.body.classList.add("sidebar-modal-open");
+    } else {
+      document.body.classList.remove("sidebar-modal-open");
+    }
+    return () => {
+      document.body.classList.remove("sidebar-modal-open");
+    };
+  }, [mobileSidebarOpen]);
+
   if (hideSidebar) {
     return <>{children || <Outlet />}</>;
   }
