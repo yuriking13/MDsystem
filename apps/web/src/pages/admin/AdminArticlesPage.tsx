@@ -11,7 +11,6 @@ import {
   IconRefresh,
   IconTrash,
   IconCheckCircle,
-  IconFilter,
 } from "../../components/FlowbiteIcons";
 
 function formatDate(date: string): string {

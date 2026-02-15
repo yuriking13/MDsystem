@@ -15,7 +15,6 @@ import {
   IconCalendar,
   IconUsers,
   IconChartBar,
-  IconRefresh,
   IconArrowLeft,
   IconArrowRight,
   IconFilter,
