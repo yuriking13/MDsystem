@@ -2803,35 +2803,27 @@ export default function ProjectDetailPage() {
                       <img
                         src={previewUrl}
                         alt={previewFile.name}
-                        style={{
-                          maxWidth: "100%",
-                          maxHeight: "70vh",
-                          objectFit: "contain",
-                        }}
+                        className="file-preview-media-image"
                       />
                     )}
                     {previewFile.category === "video" && (
                       <video
                         src={previewUrl}
                         controls
-                        style={{ maxWidth: "100%", maxHeight: "70vh" }}
+                        className="file-preview-media-video"
                       />
                     )}
                     {previewFile.category === "audio" && (
                       <audio
                         src={previewUrl}
                         controls
-                        style={{ width: "100%" }}
+                        className="file-preview-media-audio"
                       />
                     )}
                     {previewFile.mimeType === "application/pdf" && (
                       <iframe
                         src={previewUrl}
-                        style={{
-                          width: "100%",
-                          height: "70vh",
-                          border: "none",
-                        }}
+                        className="file-preview-pdf"
                         title={previewFile.name}
                       />
                     )}
@@ -2846,8 +2838,7 @@ export default function ProjectDetailPage() {
                       type="button"
                     >
                       <svg
-                        className="w-4 h-4"
-                        style={{ marginRight: 6 }}
+                        className="w-4 h-4 file-preview-download-icon"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={1.5}
@@ -2873,15 +2864,11 @@ export default function ProjectDetailPage() {
                 onClick={() => setFileImportModal(null)}
               >
                 <div
-                  className="modal-content"
+                  className="modal-content file-import-modal"
                   onClick={(e) => e.stopPropagation()}
-                  style={{ maxWidth: 700, maxHeight: "90vh", overflow: "auto" }}
                 >
                   <div className="modal-header">
-                    <h3
-                      className="modal-title"
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
+                    <h3 className="modal-title file-import-title">
                       <svg
                         className="w-5 h-5"
                         fill="none"
@@ -2918,30 +2905,19 @@ export default function ProjectDetailPage() {
                     </button>
                   </div>
                   <div className="modal-body">
-                    <div
-                      className="row space"
-                      style={{ fontSize: 13, marginBottom: 16 }}
-                    >
+                    <div className="row space file-import-file-row">
                       <span className="muted">
                         Файл: <strong>{fileImportModal.fileName}</strong>
                       </span>
                       {fileImportModal.cached && (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            padding: "2px 8px",
-                            background: "var(--bg-tertiary)",
-                            borderRadius: 4,
-                            color: "var(--text-muted)",
-                          }}
-                        >
+                        <span className="file-import-cached-badge">
                           ⚡ Из кэша
                         </span>
                       )}
                     </div>
 
                     {/* Заголовок */}
-                    <label className="stack" style={{ marginBottom: 12 }}>
+                    <label className="stack file-import-field">
                       <span>Заголовок статьи *</span>
                       <input
                         type="text"
@@ -2955,7 +2931,7 @@ export default function ProjectDetailPage() {
                     </label>
 
                     {/* Авторы */}
-                    <label className="stack" style={{ marginBottom: 12 }}>
+                    <label className="stack file-import-field">
                       <span>Авторы</span>
                       <input
                         type="text"
@@ -2975,9 +2951,9 @@ export default function ProjectDetailPage() {
                       />
                     </label>
 
-                    <div className="row gap" style={{ marginBottom: 12 }}>
+                    <div className="row gap file-import-metadata-row">
                       {/* Год */}
-                      <label className="stack" style={{ flex: 1 }}>
+                      <label className="stack file-import-field--flex-1">
                         <span>Год</span>
                         <input
                           type="number"
@@ -2995,7 +2971,7 @@ export default function ProjectDetailPage() {
                       </label>
 
                       {/* DOI */}
-                      <label className="stack" style={{ flex: 2 }}>
+                      <label className="stack file-import-field--flex-2">
                         <span>DOI</span>
                         <input
                           type="text"
@@ -3009,7 +2985,7 @@ export default function ProjectDetailPage() {
                     </div>
 
                     {/* Журнал */}
-                    <label className="stack" style={{ marginBottom: 12 }}>
+                    <label className="stack file-import-field">
                       <span>Журнал</span>
                       <input
                         type="text"
@@ -3024,9 +3000,9 @@ export default function ProjectDetailPage() {
                       />
                     </label>
 
-                    <div className="row gap" style={{ marginBottom: 12 }}>
+                    <div className="row gap file-import-metadata-row">
                       {/* Том */}
-                      <label className="stack" style={{ flex: 1 }}>
+                      <label className="stack file-import-field--flex-1">
                         <span>Том</span>
                         <input
                           type="text"
@@ -3042,7 +3018,7 @@ export default function ProjectDetailPage() {
                       </label>
 
                       {/* Выпуск */}
-                      <label className="stack" style={{ flex: 1 }}>
+                      <label className="stack file-import-field--flex-1">
                         <span>Выпуск</span>
                         <input
                           type="text"
@@ -3058,7 +3034,7 @@ export default function ProjectDetailPage() {
                       </label>
 
                       {/* Страницы */}
-                      <label className="stack" style={{ flex: 1 }}>
+                      <label className="stack file-import-field--flex-1">
                         <span>Страницы</span>
                         <input
                           type="text"
@@ -3075,7 +3051,7 @@ export default function ProjectDetailPage() {
                     </div>
 
                     {/* Аннотация */}
-                    <label className="stack" style={{ marginBottom: 12 }}>
+                    <label className="stack file-import-field">
                       <span>Аннотация</span>
                       <textarea
                         value={fileImportModal.metadata.abstract || ""}
@@ -3087,26 +3063,18 @@ export default function ProjectDetailPage() {
                         }
                         placeholder="Текст аннотации..."
                         rows={4}
-                        style={{ resize: "vertical" }}
+                        className="file-import-abstract"
                       />
                     </label>
 
                     {/* Библиография */}
                     {fileImportModal.metadata.bibliography &&
                       fileImportModal.metadata.bibliography.length > 0 && (
-                        <div style={{ marginBottom: 16 }}>
-                          <div
-                            className="row space"
-                            style={{ marginBottom: 8 }}
-                          >
-                            <span style={{ fontWeight: 500 }}>
+                        <div className="file-import-bibliography">
+                          <div className="row space file-import-bibliography-header">
+                            <span className="file-import-bibliography-title">
                               <svg
-                                className="w-4 h-4"
-                                style={{
-                                  display: "inline",
-                                  marginRight: 6,
-                                  verticalAlign: "middle",
-                                }}
+                                className="w-4 h-4 file-import-bibliography-icon"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth={1.5}
@@ -3123,31 +3091,15 @@ export default function ProjectDetailPage() {
                               ссылок)
                             </span>
                           </div>
-                          <div
-                            style={{
-                              maxHeight: 150,
-                              overflow: "auto",
-                              border: "1px solid var(--border)",
-                              borderRadius: 8,
-                              padding: 12,
-                              fontSize: 12,
-                            }}
-                          >
+                          <div className="file-import-bibliography-list">
                             {fileImportModal.metadata.bibliography
                               .slice(0, 10)
                               .map((ref, idx) => (
                                 <div
                                   key={idx}
-                                  style={{
-                                    marginBottom: 8,
-                                    paddingBottom: 8,
-                                    borderBottom:
-                                      idx < 9
-                                        ? "1px solid var(--border)"
-                                        : "none",
-                                  }}
+                                  className="file-import-bibliography-item"
                                 >
-                                  <div style={{ fontWeight: 500 }}>
+                                  <div className="file-import-bibliography-item-title">
                                     {idx + 1}. {ref.title || "Без названия"}
                                   </div>
                                   {ref.authors && (
@@ -3171,10 +3123,7 @@ export default function ProjectDetailPage() {
                               </div>
                             )}
                           </div>
-                          <div
-                            className="muted"
-                            style={{ fontSize: 11, marginTop: 8 }}
-                          >
+                          <div className="muted file-import-bibliography-note">
                             ℹ️ Библиография будет сохранена вместе со статьёй
                           </div>
                         </div>
@@ -3183,37 +3132,22 @@ export default function ProjectDetailPage() {
                     {/* Статус импорта */}
                     {/* Note: "Документ проекта" option temporarily disabled */}
                     {
-                      <div style={{ marginBottom: 16 }}>
-                        <span
-                          style={{
-                            fontWeight: 500,
-                            marginBottom: 8,
-                            display: "block",
-                          }}
-                        >
+                      <div className="file-import-status-block">
+                        <span className="file-import-status-title">
                           Добавить в:
                         </span>
                         <div className="row gap">
-                          <label
-                            className="row gap"
-                            style={{ alignItems: "center", cursor: "pointer" }}
-                          >
+                          <label className="row gap file-import-status-option">
                             <input
                               type="radio"
                               name="importStatus"
                               checked={importStatus === "selected"}
                               onChange={() => setImportStatus("selected")}
-                              style={{ width: "auto" }}
+                              className="file-import-status-input"
                             />
                             <span>
                               <svg
-                                className="w-4 h-4"
-                                style={{
-                                  display: "inline",
-                                  marginRight: 4,
-                                  verticalAlign: "middle",
-                                  color: "#4ade80",
-                                }}
+                                className="w-4 h-4 file-import-status-icon file-import-status-icon--selected"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth={1.5}
@@ -3228,26 +3162,17 @@ export default function ProjectDetailPage() {
                               Отобранные
                             </span>
                           </label>
-                          <label
-                            className="row gap"
-                            style={{ alignItems: "center", cursor: "pointer" }}
-                          >
+                          <label className="row gap file-import-status-option">
                             <input
                               type="radio"
                               name="importStatus"
                               checked={importStatus === "candidate"}
                               onChange={() => setImportStatus("candidate")}
-                              style={{ width: "auto" }}
+                              className="file-import-status-input"
                             />
                             <span>
                               <svg
-                                className="w-4 h-4"
-                                style={{
-                                  display: "inline",
-                                  marginRight: 4,
-                                  verticalAlign: "middle",
-                                  color: "#fbbf24",
-                                }}
+                                className="w-4 h-4 file-import-status-icon file-import-status-icon--candidate"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth={1.5}
@@ -3266,21 +3191,13 @@ export default function ProjectDetailPage() {
                       </div>
                     }
 
-                    <div
-                      className="muted"
-                      style={{
-                        fontSize: 11,
-                        padding: 12,
-                        background: "var(--bg-secondary)",
-                        borderRadius: 8,
-                      }}
-                    >
+                    <div className="muted file-import-warning-note">
                       <strong>ℹ️ Важно:</strong> При удалении файла из проекта
                       статья останется в базе статей.
                     </div>
                   </div>
                   <div className="modal-footer">
-                    <div className="row gap" style={{ flex: 1 }}>
+                    <div className="row gap file-import-footer-actions">
                       {fileImportModal.cached && (
                         <button
                           className="btn secondary"
@@ -3298,8 +3215,7 @@ export default function ProjectDetailPage() {
                           title="Повторно проанализировать файл с помощью AI"
                         >
                           <svg
-                            className="w-4 h-4"
-                            style={{ marginRight: 4 }}
+                            className="w-4 h-4 file-import-action-icon"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth={1.5}
@@ -3335,8 +3251,7 @@ export default function ProjectDetailPage() {
                       ) : (
                         <>
                           <svg
-                            className="w-4 h-4"
-                            style={{ marginRight: 6 }}
+                            className="w-4 h-4 file-import-submit-icon"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth={1.5}

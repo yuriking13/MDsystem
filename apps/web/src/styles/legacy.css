@@ -6036,6 +6036,27 @@ input:focus::placeholder {
   border-radius: 0.5625rem;
 }
 
+.file-preview-media-image {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+
+.file-preview-media-video {
+  max-width: 100%;
+  max-height: 70vh;
+}
+
+.file-preview-media-audio {
+  width: 100%;
+}
+
+.file-preview-pdf {
+  width: 100%;
+  height: 70vh;
+  border: none;
+}
+
 .file-preview-modal .modal-footer {
   justify-content: space-between;
   flex-wrap: wrap;
@@ -6046,6 +6067,175 @@ input:focus::placeholder {
   align-items: center;
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.file-preview-download-icon {
+  margin-right: 6px;
+}
+
+.file-import-modal {
+  max-width: 700px;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.file-import-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-import-file-row {
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+.file-import-cached-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+
+.file-import-field {
+  margin-bottom: 12px;
+}
+
+.file-import-field--flex-1 {
+  flex: 1;
+}
+
+.file-import-field--flex-2 {
+  flex: 2;
+}
+
+.file-import-metadata-row {
+  margin-bottom: 12px;
+}
+
+.file-import-abstract {
+  resize: vertical;
+}
+
+.file-import-bibliography {
+  margin-bottom: 16px;
+}
+
+.file-import-bibliography-header {
+  margin-bottom: 8px;
+}
+
+.file-import-bibliography-title {
+  font-weight: 500;
+}
+
+.file-import-bibliography-icon {
+  display: inline;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.file-import-bibliography-list {
+  max-height: 150px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 12px;
+}
+
+.file-import-bibliography-item {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.file-import-bibliography-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.file-import-bibliography-item-title {
+  font-weight: 500;
+}
+
+.file-import-bibliography-note {
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+.file-import-status-block {
+  margin-bottom: 16px;
+}
+
+.file-import-status-title {
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.file-import-status-option {
+  align-items: center;
+  cursor: pointer;
+}
+
+.file-import-status-input {
+  width: auto;
+}
+
+.file-import-status-icon {
+  display: inline;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+.file-import-status-icon--selected {
+  color: #4ade80;
+}
+
+.file-import-status-icon--candidate {
+  color: #fbbf24;
+}
+
+.file-import-warning-note {
+  font-size: 11px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.file-import-footer-actions {
+  flex: 1;
+}
+
+.file-import-action-icon {
+  margin-right: 4px;
+}
+
+.file-import-submit-icon {
+  margin-right: 6px;
+}
+
+@media (max-width: 640px) {
+  .file-import-metadata-row {
+    flex-direction: column;
+  }
+
+  .file-import-field--flex-1,
+  .file-import-field--flex-2 {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .file-import-modal .modal-footer {
+    gap: 8px;
+  }
+
+  .file-import-footer-actions {
+    flex: 1 1 100%;
+  }
 }
 
 /* ===== FUTURISTIC AUTH PAGES ===== */
