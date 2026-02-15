@@ -768,6 +768,176 @@
   color: var(--graph-legend-count);
 }
 
+.graph-legend-container {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 10;
+}
+
+.graph-legend-panel {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(30, 41, 59, 0.95) 0%,
+      rgba(15, 23, 42, 0.95) 100%
+    );
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.graph-legend-panel--horizontal {
+  padding: 10px 16px;
+}
+
+.graph-legend-panel--vertical {
+  padding: 12px;
+}
+
+.graph-legend-items {
+  display: flex;
+}
+
+.graph-legend-items--horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.graph-legend-items--vertical {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.graph-legend-items--compact {
+  gap: 12px;
+}
+
+.graph-legend-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  opacity: 1;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.graph-legend-item-btn--interactive {
+  cursor: pointer;
+}
+
+.graph-legend-item-btn--static {
+  cursor: default;
+}
+
+.graph-legend-item-btn--interactive:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.graph-legend-item-btn--hidden {
+  opacity: 0.4;
+}
+
+.graph-legend-item-btn--hidden .graph-legend-item-label {
+  text-decoration: line-through;
+}
+
+.graph-legend-item-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--legend-item-color, #64748b);
+  box-shadow: 0 0 8px var(--legend-item-color, #64748b);
+  flex-shrink: 0;
+}
+
+.graph-legend-item-dot--compact {
+  width: 10px;
+  height: 10px;
+}
+
+.graph-legend-item-label {
+  color: rgba(226, 232, 240, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.graph-legend-item-label--compact {
+  font-size: 12px;
+}
+
+.graph-legend-item-count {
+  color: rgba(148, 163, 184, 0.8);
+  font-size: 12px;
+}
+
+.graph-legend-item-count--compact {
+  font-size: 11px;
+}
+
+.graph-legend-item-btn--selected {
+  --legend-item-color: var(--graph-legend-selected, #22c55e);
+}
+
+.graph-legend-item-btn--candidate {
+  --legend-item-color: var(--graph-legend-candidate, #3b82f6);
+}
+
+.graph-legend-item-btn--excluded {
+  --legend-item-color: var(--graph-legend-excluded, #ef4444);
+}
+
+.graph-legend-item-btn--citing {
+  --legend-item-color: var(--graph-legend-citing, #ec4899);
+}
+
+.graph-legend-item-btn--reference {
+  --legend-item-color: var(--graph-legend-reference, #f97316);
+}
+
+.graph-legend-item-btn--related {
+  --legend-item-color: var(--graph-legend-related, #06b6d4);
+}
+
+.graph-legend-item-btn--pvalue {
+  --legend-item-color: var(--graph-legend-pvalue, #fbbf24);
+}
+
+.graph-legend-theme-dark {
+  --graph-legend-selected: #22c55e;
+  --graph-legend-candidate: #3b82f6;
+  --graph-legend-excluded: #ef4444;
+  --graph-legend-citing: #ec4899;
+  --graph-legend-reference: #f97316;
+  --graph-legend-related: #06b6d4;
+  --graph-legend-pvalue: #fbbf24;
+}
+
+.graph-legend-theme-light {
+  --graph-legend-selected: #c6ddcd;
+  --graph-legend-candidate: #acdbeb;
+  --graph-legend-excluded: #fabaae;
+  --graph-legend-citing: #fc9dbf;
+  --graph-legend-reference: #f9d7b2;
+  --graph-legend-related: #c7dbda;
+  --graph-legend-pvalue: #fbd6e6;
+}
+
 /* Node Details Panel */
 .node-details-panel {
   width: 320px;
