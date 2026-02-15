@@ -187,7 +187,7 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
           resizable: true,
           minWidth: 50,
         },
-      });
+      }) as any;
 
       table.on("tableBuilt", () => {
         // Apply initial row heights

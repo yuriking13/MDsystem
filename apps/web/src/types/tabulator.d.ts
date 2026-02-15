@@ -1,3 +1,4 @@
-declare module 'tabulator-tables' {
-  export const TabulatorFull: any;
+declare module "tabulator-tables" {
+  export type TabulatorConstructor = new (...args: unknown[]) => unknown;
+  export const TabulatorFull: TabulatorConstructor;
 }
