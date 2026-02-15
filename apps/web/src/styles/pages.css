@@ -34,6 +34,17 @@
   min-height: 0;
 }
 
+.project-detail-container {
+  max-width: 1100px;
+}
+
+@media (max-width: 768px) {
+  .project-detail-container {
+    margin-top: 16px;
+    margin-bottom: 16px;
+  }
+}
+
 /* Project Page Header */
 .project-page-header {
   @apply mb-6;

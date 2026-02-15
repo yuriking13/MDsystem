@@ -1563,8 +1563,11 @@ export default function ProjectDetailPage() {
 
   return (
     <div
-      className={isGraphTab ? "project-detail-fullwidth" : "container"}
-      style={isGraphTab ? undefined : { maxWidth: 1100 }}
+      className={
+        isGraphTab
+          ? "project-detail-fullwidth"
+          : "container project-detail-container"
+      }
     >
       {error && (
         <div className="alert" style={{ marginBottom: 12 }}>
