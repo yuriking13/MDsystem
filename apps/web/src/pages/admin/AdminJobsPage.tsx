@@ -230,12 +230,12 @@ export default function AdminJobsPage() {
                       <td>{getStatusBadge(job.status)}</td>
                       <td>
                         <div className="admin-progress-cell">
-                          <div className="admin-progress-bar">
-                            <div
-                              className="admin-progress-fill"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
+                          <progress
+                            className="admin-progress-track"
+                            value={progress}
+                            max={100}
+                            aria-label={`Прогресс задачи ${job.id}`}
+                          />
                           <span className="admin-progress-text">
                             {job.fetched_pmids}/{job.total_pmids_to_fetch}
                           </span>

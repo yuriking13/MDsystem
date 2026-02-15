@@ -558,9 +558,11 @@ function UserDetail() {
                         {formatShortDate(date)}
                       </span>
                       <div className="admin-activity-bar-wrapper">
-                        <div
-                          className="admin-activity-bar"
-                          style={{ width: `${Math.min(info.total * 2, 100)}%` }}
+                        <progress
+                          className="admin-activity-progress"
+                          value={Math.min(info.total * 2, 100)}
+                          max={100}
+                          aria-label={`Активность за ${date}`}
                         />
                       </div>
                       <span className="admin-activity-count">
