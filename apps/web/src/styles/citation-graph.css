@@ -797,6 +797,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  background-color: var(--node-level-color, #6b7280);
 }
 
 .node-level-badge {
@@ -804,6 +805,43 @@
   font-weight: 500;
   padding: 2px 8px;
   border-radius: 12px;
+  background-color: var(--node-level-bg, rgba(107, 114, 128, 0.15));
+  color: var(--node-level-color, #6b7280);
+}
+
+.node-level--citing {
+  --node-level-color: #ec4899;
+  --node-level-bg: rgba(236, 72, 153, 0.15);
+}
+
+.node-level--selected {
+  --node-level-color: #22c55e;
+  --node-level-bg: rgba(34, 197, 94, 0.15);
+}
+
+.node-level--candidate {
+  --node-level-color: #3b82f6;
+  --node-level-bg: rgba(59, 130, 246, 0.15);
+}
+
+.node-level--reference {
+  --node-level-color: #f97316;
+  --node-level-bg: rgba(249, 115, 22, 0.15);
+}
+
+.node-level--excluded {
+  --node-level-color: #ef4444;
+  --node-level-bg: rgba(239, 68, 68, 0.15);
+}
+
+.node-level--related {
+  --node-level-color: #06b6d4;
+  --node-level-bg: rgba(6, 182, 212, 0.15);
+}
+
+.node-level--unknown {
+  --node-level-color: #6b7280;
+  --node-level-bg: rgba(107, 114, 128, 0.15);
 }
 
 .node-source-badge {

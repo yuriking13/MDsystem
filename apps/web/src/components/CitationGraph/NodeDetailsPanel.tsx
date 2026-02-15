@@ -60,16 +60,16 @@ interface EnrichedNodeData {
   citedByCount: number;
 }
 
-function getLevelColor(level: number): string {
-  const colors: Record<number, string> = {
-    0: "#ec4899", // citing - pink
-    1: "#22c55e", // selected - green
-    2: "#3b82f6", // candidate - blue
-    3: "#f97316", // reference - orange
-    4: "#ef4444", // excluded - red
-    5: "#06b6d4", // related - cyan
+function getLevelClass(level: number): string {
+  const classes: Record<number, string> = {
+    0: "node-level--citing",
+    1: "node-level--selected",
+    2: "node-level--candidate",
+    3: "node-level--reference",
+    4: "node-level--excluded",
+    5: "node-level--related",
   };
-  return colors[level] || "#6b7280";
+  return classes[level] || "node-level--unknown";
 }
 
 function getLevelName(level: number): string {
@@ -234,6 +234,7 @@ export default function NodeDetailsPanel({
   };
 
   const level = node.graphLevel ?? 1;
+  const levelClassName = getLevelClass(level);
   const hasRussian = !!(displayData.title_ru || displayData.abstract_ru);
   const showAddButtons = level === 0 || level === 2 || level === 3;
 
@@ -248,15 +249,16 @@ export default function NodeDetailsPanel({
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700/50">
         <div className="flex items-center gap-2">
           <span
-            className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: getLevelColor(level) }}
+            className={cn(
+              "w-2 h-2 rounded-full node-level-dot",
+              levelClassName,
+            )}
           />
           <span
-            className="text-xs font-medium px-2 py-0.5 rounded-full"
-            style={{
-              backgroundColor: `${getLevelColor(level)}20`,
-              color: getLevelColor(level),
-            }}
+            className={cn(
+              "text-xs font-medium px-2 py-0.5 rounded-full node-level-badge",
+              levelClassName,
+            )}
           >
             {getLevelName(level)}
           </span>
