@@ -80,7 +80,13 @@ const TEXT_AVAILABILITY = [
 /**
  * Real-time elapsed timer component for search progress
  */
-function SearchElapsedTimer({ startTime, isRunning }: { startTime: number; isRunning: boolean }) {
+function SearchElapsedTimer({
+  startTime,
+  isRunning,
+}: {
+  startTime: number;
+  isRunning: boolean;
+}) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -103,7 +109,9 @@ function SearchElapsedTimer({ startTime, isRunning }: { startTime: number; isRun
 
   return (
     <span>
-      {minutes > 0 ? `${minutes} мин. ${remainingSeconds} сек.` : `${seconds} сек.`}
+      {minutes > 0
+        ? `${minutes} мин. ${remainingSeconds} сек.`
+        : `${seconds} сек.`}
     </span>
   );
 }
@@ -267,56 +275,68 @@ export default function ArticlesSection({
   const [yearToFilter, setYearToFilter] = useState<number | null>(null);
 
   // ============ WebSocket for search progress ============
-  const handleSearchProgressEvent = useCallback(
-    (event: any) => {
-      if (event.type !== "search:progress") return;
-      const data = event.payload as SearchProgressEvent;
+  const handleSearchProgressEvent = useCallback((event: any) => {
+    if (event.type !== "search:progress") return;
+    const data = event.payload as SearchProgressEvent;
 
-      const elapsed = Date.now() - searchStartTimeRef.current;
+    const elapsed = Date.now() - searchStartTimeRef.current;
 
-      const stageLabels: Record<string, string> = {
-        searching: "Отправляем запрос в базы данных...",
-        searching_source: `Поиск в ${(data.source || "").toUpperCase()}...`,
-        search_complete: `Найдено ${data.collected || 0} статей (${data.totalFound || 0} всего в базах)`,
-        relevance_filter: `AI-проверка релевантности: ${data.processed || 0}/${data.total || 0}...`,
-        relevance_filter_done: `Проверка завершена: оставлено ${data.kept || 0} из ${data.total || 0} (${data.removed || 0} отфильтровано)`,
-        saving: `Сохраняем в базу: ${data.saved || 0}/${data.total || 0}...`,
-        saved: `Сохранено ${data.added || 0} статей`,
-        enriching: `Обогащение метаданными Crossref...`,
-        translating: `Перевод статей: ${data.translated || 0}/${data.total || 0}...`,
-        detecting_stats: `Анализ статистики: ${data.analyzed || 0}/${data.total || 0} (найдена в ${data.found || 0})...`,
-        complete: data.message || "Готово!",
-      };
+    const stageLabels: Record<string, string> = {
+      searching: "Отправляем запрос в базы данных...",
+      searching_source: `Поиск в ${(data.source || "").toUpperCase()}...`,
+      search_complete: `Найдено ${data.collected || 0} статей (${data.totalFound || 0} всего в базах)`,
+      relevance_filter: `AI-проверка релевантности: ${data.processed || 0}/${data.total || 0}...`,
+      relevance_filter_done: `Проверка завершена: оставлено ${data.kept || 0} из ${data.total || 0} (${data.removed || 0} отфильтровано)`,
+      saving: `Сохраняем в базу: ${data.saved || 0}/${data.total || 0}...`,
+      saved: `Сохранено ${data.added || 0} статей`,
+      enriching: `Обогащение метаданными Crossref...`,
+      translating: `Перевод статей: ${data.translated || 0}/${data.total || 0}...`,
+      detecting_stats: `Анализ статистики: ${data.analyzed || 0}/${data.total || 0} (найдена в ${data.found || 0})...`,
+      complete: data.message || "Готово!",
+    };
 
-      // Estimate remaining time based on progress
-      let estimatedTotalMs: number | undefined;
-      if (data.stage === "relevance_filter" && data.processed && data.total && data.processed > 0) {
-        const rate = elapsed / data.processed;
-        estimatedTotalMs = rate * data.total;
-      } else if (data.stage === "saving" && data.saved && data.total && data.saved > 0) {
-        const rate = elapsed / data.saved;
-        estimatedTotalMs = rate * data.total;
-      } else if (data.stage === "translating" && data.translated && data.total && data.translated > 0) {
-        const rate = elapsed / data.translated;
-        estimatedTotalMs = rate * data.total;
-      }
+    // Estimate remaining time based on progress
+    let estimatedTotalMs: number | undefined;
+    if (
+      data.stage === "relevance_filter" &&
+      data.processed &&
+      data.total &&
+      data.processed > 0
+    ) {
+      const rate = elapsed / data.processed;
+      estimatedTotalMs = rate * data.total;
+    } else if (
+      data.stage === "saving" &&
+      data.saved &&
+      data.total &&
+      data.saved > 0
+    ) {
+      const rate = elapsed / data.saved;
+      estimatedTotalMs = rate * data.total;
+    } else if (
+      data.stage === "translating" &&
+      data.translated &&
+      data.total &&
+      data.translated > 0
+    ) {
+      const rate = elapsed / data.translated;
+      estimatedTotalMs = rate * data.total;
+    }
 
-      setSearchProgress({
-        stage: data.stage,
-        stageLabel: stageLabels[data.stage] || data.stage,
-        totalFound: data.totalFound,
-        collected: data.collected,
-        relevanceKept: data.kept,
-        relevanceRemoved: data.removed,
-        saved: data.saved || data.added,
-        translated: data.translated,
-        statsFound: data.found,
-        elapsedMs: elapsed,
-        estimatedTotalMs,
-      });
-    },
-    [],
-  );
+    setSearchProgress({
+      stage: data.stage,
+      stageLabel: stageLabels[data.stage] || data.stage,
+      totalFound: data.totalFound,
+      collected: data.collected,
+      relevanceKept: data.kept,
+      relevanceRemoved: data.removed,
+      saved: data.saved || data.added,
+      translated: data.translated,
+      statsFound: data.found,
+      elapsedMs: elapsed,
+      estimatedTotalMs,
+    });
+  }, []);
 
   useProjectWebSocket({
     projectId,
@@ -1353,23 +1373,14 @@ export default function ArticlesSection({
         </div>
       </div>
 
-      {error && (
-        <div className="alert" style={{ marginBottom: 12 }}>
-          {error}
-        </div>
-      )}
-      {ok && (
-        <div className="ok" style={{ marginBottom: 12 }}>
-          {ok}
-        </div>
-      )}
+      {error && <div className="alert articles-status-message">{error}</div>}
+      {ok && <div className="ok articles-status-message">{ok}</div>}
 
       {/* Форма поиска */}
       {showSearch && (
         <form
           onSubmit={multiQueries.length > 0 ? handleMultiSearch : handleSearch}
-          className="card search-form-card"
-          style={{ marginBottom: 16 }}
+          className="card search-form-card articles-search-form"
         >
           {/* Header */}
           <div className="search-form-header">
@@ -1387,16 +1398,18 @@ export default function ArticlesSection({
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <h3 style={{ margin: 0 }}>Поиск научных статей</h3>
+              <h3 className="search-form-title-heading">
+                Поиск научных статей
+              </h3>
             </div>
-            <label className="row gap" style={{ alignItems: "center" }}>
+            <label className="row gap search-multisearch-toggle">
               <input
                 type="checkbox"
                 checked={showMultiSearch}
                 onChange={(e) => setShowMultiSearch(e.target.checked)}
                 className="search-checkbox"
               />
-              <span className="muted" style={{ fontSize: 12 }}>
+              <span className="muted search-multisearch-label">
                 Мультипоиск
               </span>
             </label>
@@ -1445,37 +1458,20 @@ export default function ArticlesSection({
           <div className="stack">
             {/* Мультипоиск - список запросов */}
             {showMultiSearch && multiQueries.length > 0 && (
-              <div style={{ marginBottom: 12 }}>
-                <span className="muted" style={{ fontSize: 12 }}>
+              <div className="multi-query-list">
+                <span className="muted multi-query-list-title">
                   Запросы для мультипоиска:
                 </span>
-                <div
-                  style={{
-                    marginTop: 8,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                  }}
-                >
+                <div className="multi-query-items">
                   {multiQueries.map((q, idx) => (
-                    <div
-                      key={q.id}
-                      className="row gap"
-                      style={{
-                        alignItems: "center",
-                        background: "rgba(0,0,0,0.2)",
-                        padding: "8px 12px",
-                        borderRadius: 8,
-                      }}
-                    >
-                      <span style={{ flex: 1, fontSize: 13 }}>
+                    <div key={q.id} className="row gap multi-query-item">
+                      <span className="multi-query-item-text">
                         <span className="muted">{idx + 1}.</span> {q.query}
                       </span>
                       <button
                         type="button"
                         onClick={() => removeMultiQuery(q.id)}
-                        className="btn secondary"
-                        style={{ padding: "2px 8px", fontSize: 12 }}
+                        className="btn secondary multi-query-remove-btn"
                       >
                         ✕
                       </button>
@@ -1485,8 +1481,8 @@ export default function ArticlesSection({
               </div>
             )}
 
-            <div className="row gap" style={{ alignItems: "flex-end" }}>
-              <label className="stack" style={{ flex: 1 }}>
+            <div className="row gap search-query-row">
+              <label className="stack search-query-field">
                 <span>
                   Поисковый запрос {multiQueries.length > 0 ? "" : "*"}
                 </span>
@@ -1499,12 +1495,12 @@ export default function ArticlesSection({
               </label>
 
               {/* Поле поиска PubMed */}
-              <label className="stack" style={{ minWidth: 180 }}>
+              <label className="stack search-field-filter">
                 <span>Искать в поле:</span>
                 <select
                   value={searchField}
                   onChange={(e) => setSearchField(e.target.value)}
-                  style={{ padding: "8px 12px" }}
+                  className="search-field-select"
                 >
                   {PUBMED_SEARCH_FIELDS.map((field) => (
                     <option key={field.value} value={field.value}>
@@ -1518,9 +1514,8 @@ export default function ArticlesSection({
                 <button
                   type="button"
                   onClick={addMultiQuery}
-                  className="btn secondary"
                   disabled={!searchQuery.trim()}
-                  style={{ padding: "10px 16px" }}
+                  className="btn secondary search-add-query-btn"
                   title="Добавить запрос в список"
                 >
                   + Добавить
@@ -1531,31 +1526,24 @@ export default function ArticlesSection({
             {/* Период публикации */}
             <div>
               <span className="muted">Период публикации:</span>
-              <div
-                className="row gap"
-                style={{ flexWrap: "wrap", marginTop: 6 }}
-              >
+              <div className="row gap search-option-list">
                 {DATE_PRESETS.map((preset) => (
-                  <label
-                    key={preset.id}
-                    className="row gap"
-                    style={{ alignItems: "center" }}
-                  >
+                  <label key={preset.id} className="row gap search-option-item">
                     <input
                       type="radio"
                       name="datePreset"
                       checked={datePreset === preset.id}
                       onChange={() => setDatePreset(preset.id)}
-                      style={{ width: "auto" }}
+                      className="search-option-input"
                     />
-                    <span style={{ fontSize: 13 }}>{preset.label}</span>
+                    <span className="search-option-label">{preset.label}</span>
                   </label>
                 ))}
               </div>
 
               {datePreset === "custom" && (
-                <div className="row gap" style={{ marginTop: 8 }}>
-                  <label className="stack" style={{ flex: 1 }}>
+                <div className="row gap search-custom-years">
+                  <label className="stack search-custom-year-field">
                     <span>Год от</span>
                     <input
                       type="number"
@@ -1567,7 +1555,7 @@ export default function ArticlesSection({
                       max={2100}
                     />
                   </label>
-                  <label className="stack" style={{ flex: 1 }}>
+                  <label className="stack search-custom-year-field">
                     <span>Год до</span>
                     <input
                       type="number"
@@ -1584,24 +1572,17 @@ export default function ArticlesSection({
             {/* Доступность текста */}
             <div>
               <span className="muted">Доступность текста:</span>
-              <div
-                className="row gap"
-                style={{ flexWrap: "wrap", marginTop: 6 }}
-              >
+              <div className="row gap search-option-list">
                 {TEXT_AVAILABILITY.map((opt) => (
-                  <label
-                    key={opt.id}
-                    className="row gap"
-                    style={{ alignItems: "center" }}
-                  >
+                  <label key={opt.id} className="row gap search-option-item">
                     <input
                       type="radio"
                       name="textAvailability"
                       checked={textAvailability === opt.id}
                       onChange={() => setTextAvailability(opt.id)}
-                      style={{ width: "auto" }}
+                      className="search-option-input"
                     />
-                    <span style={{ fontSize: 13 }}>{opt.label}</span>
+                    <span className="search-option-label">{opt.label}</span>
                   </label>
                 ))}
               </div>
@@ -1609,61 +1590,51 @@ export default function ArticlesSection({
 
             {/* Тип публикации */}
             <div>
-              <div
-                className="row gap"
-                style={{ alignItems: "center", marginBottom: 6 }}
-              >
+              <div className="row gap pub-types-header">
                 <span className="muted">Тип публикации:</span>
                 {pubTypes.length > 1 && (
-                  <div className="row gap" style={{ marginLeft: 12 }}>
-                    <label className="row gap" style={{ alignItems: "center" }}>
+                  <div className="row gap pub-types-logic">
+                    <label className="row gap search-option-item">
                       <input
                         type="radio"
                         name="pubTypesLogic"
                         checked={pubTypesLogic === "or"}
                         onChange={() => setPubTypesLogic("or")}
-                        style={{ width: "auto" }}
+                        className="search-option-input"
                       />
-                      <span style={{ fontSize: 12 }}>ИЛИ</span>
+                      <span className="search-option-sub-label">ИЛИ</span>
                     </label>
-                    <label className="row gap" style={{ alignItems: "center" }}>
+                    <label className="row gap search-option-item">
                       <input
                         type="radio"
                         name="pubTypesLogic"
                         checked={pubTypesLogic === "and"}
                         onChange={() => setPubTypesLogic("and")}
-                        style={{ width: "auto" }}
+                        className="search-option-input"
                       />
-                      <span style={{ fontSize: 12 }}>И</span>
+                      <span className="search-option-sub-label">И</span>
                     </label>
                   </div>
                 )}
               </div>
-              <div className="row gap" style={{ flexWrap: "wrap" }}>
+              <div className="row gap search-option-list">
                 {PUBLICATION_TYPES.map((pt) => (
-                  <label
-                    key={pt.id}
-                    className="row gap"
-                    style={{ alignItems: "center" }}
-                  >
+                  <label key={pt.id} className="row gap search-option-item">
                     <input
                       type="checkbox"
                       checked={pubTypes.includes(pt.id)}
                       onChange={() => togglePubType(pt.id)}
-                      style={{ width: "auto" }}
+                      className="search-option-input"
                     />
-                    <span style={{ fontSize: 13 }}>{pt.label}</span>
+                    <span className="search-option-label">{pt.label}</span>
                   </label>
                 ))}
               </div>
             </div>
 
             {/* Дополнительные опции */}
-            <div
-              className="row gap"
-              style={{ flexWrap: "wrap", alignItems: "center" }}
-            >
-              <label className="stack" style={{ minWidth: 180 }}>
+            <div className="row gap search-extra-options">
+              <label className="stack search-max-results-field">
                 <span>Макс. результатов на источник</span>
                 <select
                   value={maxResults}
@@ -1675,7 +1646,7 @@ export default function ArticlesSection({
                       setMaxResults(Number(val));
                     }
                   }}
-                  style={{ padding: "10px 12px", borderRadius: 10 }}
+                  className="search-max-results-select"
                   title="Лимит применяется к каждому выбранному источнику отдельно"
                 >
                   <option value={10}>10</option>
@@ -1687,17 +1658,14 @@ export default function ArticlesSection({
                 </select>
               </label>
 
-              <label
-                className="row gap"
-                style={{ alignItems: "center", marginTop: 20 }}
-              >
+              <label className="row gap search-translate-option">
                 <input
                   type="checkbox"
                   checked={translateAfterSearch}
                   onChange={(e) => setTranslateAfterSearch(e.target.checked)}
-                  style={{ width: "auto" }}
+                  className="search-option-input"
                 />
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="search-translate-option-label">
                   <svg
                     className="icon-sm"
                     fill="none"
@@ -1745,68 +1713,108 @@ export default function ArticlesSection({
 
       {/* Search Progress Panel */}
       {searching && searchProgress && (
-        <div className="search-progress-panel" style={{
-          background: "var(--bg-secondary, #f8f9fa)",
-          border: "1px solid var(--border-color, #e2e8f0)",
-          borderRadius: "12px",
-          padding: "16px 20px",
-          marginBottom: "16px",
-          animation: "fadeIn 0.3s ease",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
-            <div className="search-progress-spinner" style={{
-              width: "20px",
-              height: "20px",
-              border: "3px solid var(--border-color, #e2e8f0)",
-              borderTopColor: "var(--accent-color, #3b82f6)",
-              borderRadius: "50%",
-              animation: searchProgress.stage === "complete" ? "none" : "spin 1s linear infinite",
-            }} />
-            <span style={{ fontWeight: 600, fontSize: "14px" }}>
+        <div className="search-progress-panel">
+          <div className="search-progress-header">
+            <div
+              className={`search-progress-spinner ${
+                searchProgress.stage === "complete"
+                  ? "search-progress-spinner--stopped"
+                  : ""
+              }`}
+            />
+            <span className="search-progress-stage-label">
               {searchProgress.stageLabel}
             </span>
           </div>
 
           {/* Progress stages timeline */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", color: "var(--text-muted, #94a3b8)" }}>
+          <div className="search-progress-timeline">
             {searchProgress.totalFound !== undefined && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>Найдено в базах: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.totalFound}</strong> статей, собрано <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.collected || 0}</strong></span>
+              <div className="search-progress-timeline-item">
+                <span className="search-progress-check">&#10003;</span>
+                <span>
+                  Найдено в базах:{" "}
+                  <strong className="search-progress-value">
+                    {searchProgress.totalFound}
+                  </strong>{" "}
+                  статей, собрано{" "}
+                  <strong className="search-progress-value">
+                    {searchProgress.collected || 0}
+                  </strong>
+                </span>
               </div>
             )}
             {searchProgress.relevanceKept !== undefined && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>AI-проверка: оставлено <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.relevanceKept}</strong>, отфильтровано <strong style={{ color: "var(--warning-color, #f59e0b)" }}>{searchProgress.relevanceRemoved || 0}</strong></span>
+              <div className="search-progress-timeline-item">
+                <span className="search-progress-check">&#10003;</span>
+                <span>
+                  AI-проверка: оставлено{" "}
+                  <strong className="search-progress-value">
+                    {searchProgress.relevanceKept}
+                  </strong>
+                  , отфильтровано{" "}
+                  <strong className="search-progress-value-warning">
+                    {searchProgress.relevanceRemoved || 0}
+                  </strong>
+                </span>
               </div>
             )}
             {searchProgress.saved !== undefined && searchProgress.saved > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>Сохранено в базу: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.saved}</strong> статей</span>
+              <div className="search-progress-timeline-item">
+                <span className="search-progress-check">&#10003;</span>
+                <span>
+                  Сохранено в базу:{" "}
+                  <strong className="search-progress-value">
+                    {searchProgress.saved}
+                  </strong>{" "}
+                  статей
+                </span>
               </div>
             )}
-            {searchProgress.translated !== undefined && searchProgress.translated > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>Переведено: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.translated}</strong></span>
-              </div>
-            )}
-            {searchProgress.statsFound !== undefined && searchProgress.statsFound > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>Статистика найдена в: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.statsFound}</strong></span>
-              </div>
-            )}
+            {searchProgress.translated !== undefined &&
+              searchProgress.translated > 0 && (
+                <div className="search-progress-timeline-item">
+                  <span className="search-progress-check">&#10003;</span>
+                  <span>
+                    Переведено:{" "}
+                    <strong className="search-progress-value">
+                      {searchProgress.translated}
+                    </strong>
+                  </span>
+                </div>
+              )}
+            {searchProgress.statsFound !== undefined &&
+              searchProgress.statsFound > 0 && (
+                <div className="search-progress-timeline-item">
+                  <span className="search-progress-check">&#10003;</span>
+                  <span>
+                    Статистика найдена в:{" "}
+                    <strong className="search-progress-value">
+                      {searchProgress.statsFound}
+                    </strong>
+                  </span>
+                </div>
+              )}
           </div>
 
           {/* Timer */}
-          <div style={{ marginTop: "8px", fontSize: "11px", color: "var(--text-muted, #94a3b8)", display: "flex", justifyContent: "space-between" }}>
-            <SearchElapsedTimer startTime={searchStartTimeRef.current} isRunning={searchProgress.stage !== "complete"} />
-            {searchProgress.estimatedTotalMs && searchProgress.stage !== "complete" && (
-              <span>~{Math.ceil((searchProgress.estimatedTotalMs - searchProgress.elapsedMs) / 1000)} сек. осталось</span>
-            )}
+          <div className="search-progress-footer">
+            <SearchElapsedTimer
+              startTime={searchStartTimeRef.current}
+              isRunning={searchProgress.stage !== "complete"}
+            />
+            {searchProgress.estimatedTotalMs &&
+              searchProgress.stage !== "complete" && (
+                <span>
+                  ~
+                  {Math.ceil(
+                    (searchProgress.estimatedTotalMs -
+                      searchProgress.elapsedMs) /
+                      1000,
+                  )}{" "}
+                  сек. осталось
+                </span>
+              )}
           </div>
         </div>
       )}
@@ -3132,7 +3140,10 @@ export default function ArticlesSection({
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "center" });
             el.classList.add("article-highlight-flash");
-            setTimeout(() => el.classList.remove("article-highlight-flash"), 2000);
+            setTimeout(
+              () => el.classList.remove("article-highlight-flash"),
+              2000,
+            );
           }
         }}
       />

@@ -742,6 +742,209 @@
   border-radius: 0.375rem;
 }
 
+.articles-status-message {
+  margin-bottom: 12px;
+}
+
+.articles-search-form {
+  margin-bottom: 16px;
+}
+
+.search-form-title-heading {
+  margin: 0;
+}
+
+.search-multisearch-toggle {
+  align-items: center;
+}
+
+.search-multisearch-label {
+  font-size: 12px;
+}
+
+.multi-query-list {
+  margin-bottom: 12px;
+}
+
+.multi-query-list-title {
+  font-size: 12px;
+}
+
+.multi-query-items {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.multi-query-item {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.multi-query-item-text {
+  flex: 1;
+  font-size: 13px;
+}
+
+.multi-query-remove-btn {
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.search-query-row {
+  align-items: flex-end;
+}
+
+.search-query-field {
+  flex: 1;
+}
+
+.search-field-filter {
+  min-width: 180px;
+}
+
+.search-field-select {
+  padding: 8px 12px;
+}
+
+.search-add-query-btn {
+  padding: 10px 16px;
+}
+
+.search-option-list {
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.search-option-item {
+  align-items: center;
+}
+
+.search-option-input {
+  width: auto;
+}
+
+.search-option-label {
+  font-size: 13px;
+}
+
+.search-option-sub-label {
+  font-size: 12px;
+}
+
+.search-custom-years {
+  margin-top: 8px;
+}
+
+.search-custom-year-field {
+  flex: 1;
+}
+
+.pub-types-header {
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.pub-types-logic {
+  margin-left: 12px;
+}
+
+.search-extra-options {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-max-results-field {
+  min-width: 180px;
+}
+
+.search-max-results-select {
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.search-translate-option {
+  align-items: center;
+  margin-top: 20px;
+}
+
+.search-translate-option-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.search-progress-panel {
+  background: var(--bg-secondary, #f8f9fa);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  animation: fadeIn 0.3s ease;
+}
+
+.search-progress-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.search-progress-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--border-color, #e2e8f0);
+  border-top-color: var(--accent-color, #3b82f6);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.search-progress-spinner--stopped {
+  animation: none;
+}
+
+.search-progress-stage-label {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.search-progress-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+}
+
+.search-progress-timeline-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.search-progress-check {
+  color: var(--success-color, #10b981);
+}
+
+.search-progress-value {
+  color: var(--text-primary, #1e293b);
+}
+
+.search-progress-value-warning {
+  color: var(--warning-color, #f59e0b);
+}
+
+.search-progress-footer {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted, #94a3b8);
+  display: flex;
+  justify-content: space-between;
+}
+
 /* =============================================================================
    Unified Filters Container
    ============================================================================= */
