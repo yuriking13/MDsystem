@@ -3387,7 +3387,7 @@ export default function ProjectDetailPage() {
                   return (
                     <div
                       key={type}
-                      className={`chart-type-card ${isCreating ? "creating" : ""}`}
+                      className={`chart-type-card ${isCreating ? "creating" : ""} ${creatingChartType && !isCreating ? "chart-type-card--dimmed" : ""} ${isCreating || creatingChartType ? "chart-type-card--busy" : ""}`}
                       title={`Создать ${info?.name || type}: ${info?.description || ""}`}
                       onClick={async () => {
                         if (!id || isCreating || creatingChartType) return;
@@ -3407,11 +3407,6 @@ export default function ProjectDetailPage() {
                         } finally {
                           setCreatingChartType(null);
                         }
-                      }}
-                      style={{
-                        cursor:
-                          isCreating || creatingChartType ? "wait" : "pointer",
-                        opacity: creatingChartType && !isCreating ? 0.5 : 1,
                       }}
                     >
                       <span className="chart-type-icon">
@@ -3434,12 +3429,11 @@ export default function ProjectDetailPage() {
               <div className="statistics-empty">
                 <div className="statistics-empty-icon">
                   <svg
-                    className="icon-lg"
+                    className="icon-lg statistics-empty-main-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
                     viewBox="0 0 24 24"
-                    style={{ width: 48, height: 48, opacity: 0.5 }}
                   >
                     <path
                       strokeLinecap="round"
@@ -3456,15 +3450,14 @@ export default function ProjectDetailPage() {
                 </p>
                 {documents.length > 0 && (
                   <button
-                    className="btn"
+                    className="btn statistics-empty-open-doc-btn"
                     onClick={() =>
                       nav(`/projects/${id}/documents/${documents[0].id}`)
                     }
-                    style={{ marginTop: 16 }}
+                    type="button"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -3503,24 +3496,10 @@ export default function ProjectDetailPage() {
                   return (
                     <div
                       key={stat.id}
-                      className="stat-card"
-                      style={
-                        !isValidId
-                          ? { border: "2px solid #ff6b6b", opacity: 0.7 }
-                          : undefined
-                      }
+                      className={`stat-card ${!isValidId ? "stat-card--invalid" : ""}`}
                     >
                       {!isValidId && (
-                        <div
-                          style={{
-                            padding: "8px 12px",
-                            background: "#ff6b6b",
-                            color: "white",
-                            fontSize: "12px",
-                            borderRadius: "4px 4px 0 0",
-                            marginBottom: "8px",
-                          }}
-                        >
+                        <div className="stat-invalid-banner">
                           ⚠️ Поврежденная запись: невалидный ID. Редактирование
                           недоступно, но можно удалить.
                         </div>
@@ -3620,10 +3599,7 @@ export default function ProjectDetailPage() {
                         {!showAsTable &&
                           tableData &&
                           (!stat.config || !stat.config.type) && (
-                            <div
-                              className="stat-no-data"
-                              style={{ color: "#ff6b6b" }}
-                            >
+                            <div className="stat-no-data stat-no-data--error">
                               ⚠️ Конфигурация графика отсутствует или повреждена
                             </div>
                           )}
@@ -3686,8 +3662,7 @@ export default function ProjectDetailPage() {
                           disabled={!isValidId}
                         >
                           <svg
-                            className="icon-sm"
-                            style={{ marginRight: 4 }}
+                            className="icon-sm statistics-btn-icon"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth={1.5}
@@ -3766,8 +3741,7 @@ export default function ProjectDetailPage() {
                           title="Копировать график/таблицу"
                         >
                           <svg
-                            className="icon-sm"
-                            style={{ marginRight: 4 }}
+                            className="icon-sm statistics-btn-icon"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth={1.5}
