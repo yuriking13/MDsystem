@@ -13,7 +13,6 @@ import {
   IconTrash as TrashIcon,
   IconArrowRight as ArrowRightIcon,
   IconCalendar as CalendarIcon,
-  IconUsers as UserGroupIcon,
   IconClose as XMarkIcon,
 } from "../components/FlowbiteIcons";
 import { cn } from "../design-system/utils/cn";
