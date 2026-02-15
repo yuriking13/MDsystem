@@ -2563,13 +2563,7 @@ input:focus::placeholder {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 0 60px 16px 60px;
-}
-
-@media (max-width: 900px) {
-  .documents-page {
-    padding: 0 16px 12px 16px;
-  }
+  padding: 0 clamp(16px, 3.8vw, 60px) 16px;
 }
 
 .documents-header {
@@ -2596,7 +2590,7 @@ input:focus::placeholder {
 
 .documents-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 16px;
 }
 
@@ -2777,7 +2771,7 @@ input:focus::placeholder {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 12px 60px 16px 60px;
+  padding: 12px clamp(16px, 3.8vw, 60px) 16px;
 }
 
 .settings-page-title {
@@ -2791,12 +2785,6 @@ input:focus::placeholder {
 .light-theme .settings-page-title,
 [data-theme="light"] .settings-page-title {
   color: #2D1F10;
-}
-
-@media (max-width: 900px) {
-  .settings-page {
-    padding: 12px 16px;
-  }
 }
 
 .settings-card {
@@ -3278,13 +3266,7 @@ input:focus::placeholder {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding: 16px 60px;
-}
-
-@media (max-width: 900px) {
-  .statistics-page {
-    padding: 12px 16px;
-  }
+  padding: 16px clamp(16px, 3.8vw, 60px);
 }
 
 .statistics-header {
@@ -5355,7 +5337,7 @@ input:focus::placeholder {
 
 .files-page {
   min-height: 400px;
-  padding: 0 60px 16px 60px;
+  padding: 0 clamp(16px, 3.8vw, 60px) 16px;
 }
 
 .files-header {
@@ -5378,15 +5360,9 @@ input:focus::placeholder {
   color: #2D1F10;
 }
 
-@media (max-width: 900px) {
-  .files-page {
-    padding: 12px 16px;
-  }
-}
-
 .files-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 16px;
 }
 
