@@ -1818,22 +1818,14 @@ export default function ProjectDetailPage() {
 
             {/* Библиография и экспорт */}
             <div className="bibliography-export-card">
-              <div className="row space" style={{ marginBottom: 12 }}>
-                <h4
-                  style={{
-                    margin: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
+              <div className="row space bibliography-header-row">
+                <h4 className="bibliography-title-row">
                   <svg
-                    className="icon-md"
+                    className="icon-md bibliography-title-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
                     viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
                   >
                     <path
                       strokeLinecap="round"
@@ -1847,14 +1839,11 @@ export default function ProjectDetailPage() {
               </div>
 
               {/* Экспорт документа */}
-              <div style={{ marginBottom: 16 }}>
-                <div
-                  className="muted"
-                  style={{ fontSize: 11, marginBottom: 8 }}
-                >
+              <div className="bibliography-export-section">
+                <div className="muted bibliography-section-label">
                   Экспорт документа проекта
                 </div>
-                <div className="row gap" style={{ flexWrap: "wrap" }}>
+                <div className="row gap bibliography-actions-row">
                   <button
                     className="btn"
                     onClick={() => {
@@ -1868,8 +1857,7 @@ export default function ProjectDetailPage() {
                     title="Выбрать главы для экспорта"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -1891,8 +1879,7 @@ export default function ProjectDetailPage() {
                     title="Объединённый документ с общим списком литературы"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -1964,8 +1951,7 @@ export default function ProjectDetailPage() {
                     title="Печать в PDF"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -1986,8 +1972,7 @@ export default function ProjectDetailPage() {
                     type="button"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2005,22 +1990,11 @@ export default function ProjectDetailPage() {
               </div>
 
               {/* Библиография */}
-              <div
-                style={{
-                  borderTop: "1px solid rgba(255,255,255,0.1)",
-                  paddingTop: 16,
-                }}
-              >
-                <div
-                  className="muted"
-                  style={{ fontSize: 11, marginBottom: 8 }}
-                >
+              <div className="bibliography-divider">
+                <div className="muted bibliography-section-label">
                   Список литературы
                 </div>
-                <div
-                  className="row gap"
-                  style={{ marginBottom: 12, flexWrap: "wrap" }}
-                >
+                <div className="row gap bibliography-actions-row">
                   <button
                     className="btn secondary"
                     onClick={() => refreshBibliography(false)}
@@ -2029,8 +2003,7 @@ export default function ProjectDetailPage() {
                     title="Обновить список литературы"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2073,8 +2046,7 @@ export default function ProjectDetailPage() {
                     title="Экспорт только списка литературы в Word"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2114,8 +2086,7 @@ export default function ProjectDetailPage() {
                     title="Экспорт только списка литературы в PDF"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2151,8 +2122,7 @@ export default function ProjectDetailPage() {
                     title="Экспорт только списка литературы в TXT"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2168,29 +2138,19 @@ export default function ProjectDetailPage() {
                   </button>
                 </div>
 
-                <div style={{ marginTop: 12 }}>
-                  <div className="row space" style={{ marginBottom: 8 }}>
-                    <div className="row gap" style={{ alignItems: "center" }}>
+                <div className="bibliography-meta-wrap">
+                  <div className="row space bibliography-meta-row">
+                    <div className="row gap bibliography-meta-info">
                       <span className="muted">
                         Всего источников: {bibliography.length}
                       </span>
                       {(updatingBibliography || loadingBib) && (
-                        <span
-                          className="muted"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            fontSize: 11,
-                            color: "#3b82f6",
-                          }}
-                        >
+                        <span className="muted bibliography-updating-badge">
                           <svg
-                            className="icon-sm loading-spinner"
+                            className="icon-sm loading-spinner bibliography-updating-spinner"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
-                            style={{ width: 12, height: 12 }}
                           >
                             <path
                               strokeLinecap="round"
@@ -2205,10 +2165,7 @@ export default function ProjectDetailPage() {
                       {bibliographyLastUpdated > 0 &&
                         !updatingBibliography &&
                         !loadingBib && (
-                          <span
-                            className="muted"
-                            style={{ fontSize: 10, opacity: 0.6 }}
-                          >
+                          <span className="muted bibliography-updated-at">
                             обновлено{" "}
                             {new Date(
                               bibliographyLastUpdated,
@@ -2220,15 +2177,13 @@ export default function ProjectDetailPage() {
                         )}
                     </div>
                     <button
-                      className="btn secondary"
+                      className="btn secondary bibliography-copy-btn"
                       onClick={handleCopyBibliography}
                       disabled={bibliography.length === 0}
-                      style={{ padding: "4px 10px", fontSize: 12 }}
                       type="button"
                     >
                       <svg
-                        className="icon-sm"
-                        style={{ marginRight: 4 }}
+                        className="icon-sm statistics-btn-icon"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={1.5}
@@ -2245,30 +2200,13 @@ export default function ProjectDetailPage() {
                   </div>
 
                   {loadingBib && bibliography.length === 0 ? (
-                    <div
-                      className="muted"
-                      style={{ textAlign: "center", padding: 24 }}
-                    >
+                    <div className="muted bibliography-loading-state">
                       Загрузка списка литературы...
                     </div>
                   ) : bibliography.length === 0 ? (
-                    <div
-                      className="empty-state-bibliography"
-                      style={{
-                        textAlign: "center",
-                        padding: "24px 16px",
-                        background: "rgba(255,255,255,0.03)",
-                        borderRadius: 8,
-                      }}
-                    >
+                    <div className="empty-state-bibliography">
                       <svg
-                        className="icon-lg"
-                        style={{
-                          width: 32,
-                          height: 32,
-                          margin: "0 auto 8px",
-                          opacity: 0.3,
-                        }}
+                        className="icon-lg empty-state-bibliography-icon"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -2280,7 +2218,7 @@ export default function ProjectDetailPage() {
                           d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                         />
                       </svg>
-                      <div className="muted" style={{ fontSize: 13 }}>
+                      <div className="muted empty-state-bibliography-text">
                         Нет цитат. Добавьте цитаты в документы проекта.
                       </div>
                     </div>
