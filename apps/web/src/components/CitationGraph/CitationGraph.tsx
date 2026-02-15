@@ -2776,6 +2776,536 @@ export default function CitationGraph({ projectId }: Props) {
     width: "100%",
     height: "100%",
   };
+  const graphFloatingControlsStyle: React.CSSProperties = {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
+    display: "flex",
+    gap: 8,
+    zIndex: 10,
+  };
+  const aiPanelHeaderStyle: React.CSSProperties = {
+    padding: "10px 12px",
+    borderBottom: "1px solid var(--border-glass)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    background:
+      "linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))",
+    flexShrink: 0,
+  };
+  const aiPanelHeaderTitleWrapStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  };
+  const aiPanelHeaderTitleStyle: React.CSSProperties = {
+    fontWeight: 600,
+    fontSize: 13,
+  };
+  const aiPanelCollapseButtonStyle: React.CSSProperties = {
+    background: "transparent",
+    border: "none",
+    color: "var(--text-secondary)",
+    cursor: "pointer",
+    padding: 4,
+    display: "flex",
+    alignItems: "center",
+  };
+  const aiHistoryWrapStyle: React.CSSProperties = {
+    flex: 1,
+    overflowY: "auto",
+    padding: 12,
+    display: "flex",
+    flexDirection: "column",
+    gap: 10,
+  };
+  const aiEmptyStateStyle: React.CSSProperties = {
+    textAlign: "center",
+    color: "var(--text-secondary)",
+    padding: 16,
+    fontSize: 12,
+  };
+  const aiEmptySearchIconStyle: React.CSSProperties = {
+    margin: "0 auto 12px",
+    opacity: 0.5,
+  };
+  const aiEmptyTitleStyle: React.CSSProperties = {
+    marginBottom: 8,
+    fontWeight: 500,
+  };
+  const aiEmptyDescriptionStyle: React.CSSProperties = {
+    fontSize: 11,
+    marginBottom: 10,
+    opacity: 0.9,
+  };
+  const aiExamplesWrapStyle: React.CSSProperties = {
+    fontSize: 11,
+    opacity: 0.8,
+    textAlign: "left",
+    paddingLeft: 12,
+  };
+  const aiExampleTextStyle: React.CSSProperties = {
+    fontStyle: "italic",
+    marginBottom: 4,
+  };
+  const aiExampleTextLastStyle: React.CSSProperties = {
+    fontStyle: "italic",
+  };
+  const aiDepthWarningStyle: React.CSSProperties = {
+    marginTop: 12,
+    padding: "8px 10px",
+    background: "rgba(251, 191, 36, 0.15)",
+    borderRadius: 6,
+    fontSize: 10,
+    color: "#fbbf24",
+  };
+  const aiLoadingMessageStyle: React.CSSProperties = {
+    padding: "10px 12px",
+    borderRadius: 10,
+    background: "var(--bg-secondary)",
+    alignSelf: "flex-start",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+  };
+  const aiLoadingSpinnerStyle: React.CSSProperties = {
+    width: 14,
+    height: 14,
+  };
+  const aiLoadingTextStyle: React.CSSProperties = {
+    fontSize: 12,
+    color: "var(--text-secondary)",
+  };
+  const aiFoundArticlesWrapStyle: React.CSSProperties = {
+    padding: 12,
+    background: "rgba(0, 255, 255, 0.1)",
+    borderRadius: 10,
+    border: "1px solid rgba(0, 255, 255, 0.3)",
+  };
+  const aiFoundArticlesHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  };
+  const aiFoundArticlesTitleStyle: React.CSSProperties = {
+    fontWeight: 600,
+    fontSize: 12,
+    color: "#00ffff",
+  };
+  const aiFoundArticlesSelectedCountStyle: React.CSSProperties = {
+    color: "#4ade80",
+    marginLeft: 6,
+  };
+  const aiFoundHeaderActionsStyle: React.CSSProperties = {
+    display: "flex",
+    gap: 4,
+  };
+  const aiFoundActionButtonBaseStyle: React.CSSProperties = {
+    padding: "4px 8px",
+    borderRadius: 4,
+    border: "none",
+    fontSize: 10,
+    cursor: "pointer",
+  };
+  const aiFoundListStyle: React.CSSProperties = {
+    maxHeight: 200,
+    overflowY: "auto",
+    marginBottom: 10,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  };
+  const aiFoundItemInnerStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 8,
+  };
+  const aiFoundItemCheckboxStyleBase: React.CSSProperties = {
+    fontSize: 14,
+    flexShrink: 0,
+    marginTop: 1,
+  };
+  const aiFoundItemContentStyle: React.CSSProperties = {
+    flex: 1,
+    minWidth: 0,
+  };
+  const aiFoundItemTitleStyle: React.CSSProperties = {
+    fontWeight: 500,
+    fontSize: 11,
+    lineHeight: 1.3,
+  };
+  const aiFoundItemMetaStyle: React.CSSProperties = {
+    fontSize: 10,
+    color: "var(--text-secondary)",
+    marginTop: 4,
+    display: "flex",
+    gap: 8,
+  };
+  const aiFoundItemReasonStyle: React.CSSProperties = {
+    fontSize: 10,
+    color: "#00ffff",
+    marginTop: 4,
+    fontStyle: "italic",
+  };
+  const aiFoundRemainderStyle: React.CSSProperties = {
+    fontSize: 10,
+    color: "var(--text-muted)",
+    textAlign: "center",
+    padding: 4,
+  };
+  const aiFoundButtonsRowStyle: React.CSSProperties = {
+    display: "flex",
+    gap: 6,
+  };
+  const aiFoundAddButtonBaseStyle: React.CSSProperties = {
+    flex: 1,
+    padding: "10px 12px",
+    borderRadius: 6,
+    border: "none",
+    color: "white",
+    fontWeight: 600,
+    fontSize: 11,
+  };
+  const aiInputPanelStyle: React.CSSProperties = {
+    padding: 12,
+    borderTop: "1px solid var(--border-glass)",
+    background: "var(--bg-secondary)",
+    flexShrink: 0,
+  };
+  const aiInputErrorStyle: React.CSSProperties = {
+    marginBottom: 8,
+    padding: "8px 10px",
+    background: "rgba(239, 68, 68, 0.1)",
+    borderRadius: 6,
+    fontSize: 11,
+    color: "#ef4444",
+  };
+  const aiInputRowStyle: React.CSSProperties = {
+    display: "flex",
+    gap: 6,
+  };
+  const aiMessageInputStyle: React.CSSProperties = {
+    flex: 1,
+    padding: "10px 12px",
+    borderRadius: 8,
+    border: "1px solid var(--border-glass)",
+    background: "var(--bg-primary)",
+    color: "var(--text-primary)",
+    fontSize: 12,
+  };
+  const recommendationsModalStyle: React.CSSProperties = {
+    maxWidth: 700,
+  };
+  const recommendationsTitleStyle: React.CSSProperties = {
+    marginTop: 0,
+    marginBottom: 20,
+    fontSize: 18,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  };
+  const recommendationsSparkleIconStyle: React.CSSProperties = {
+    color: "#f59e0b",
+  };
+  const recommendationsEmptyStateStyle: React.CSSProperties = {
+    padding: 40,
+    textAlign: "center",
+    color: "var(--text-muted)",
+  };
+  const recommendationsEmptyIconStyle: React.CSSProperties = {
+    opacity: 0.5,
+    marginBottom: 12,
+  };
+  const recommendationsListStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  };
+  const recommendationCardBodyStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 12,
+  };
+  const recommendationTextWrapStyle: React.CSSProperties = {
+    flex: 1,
+  };
+  const recommendationTitleStyle: React.CSSProperties = {
+    fontWeight: 600,
+    marginBottom: 6,
+  };
+  const recommendationDescriptionStyle: React.CSSProperties = {
+    fontSize: 13,
+    color: "var(--text-muted)",
+    marginBottom: 10,
+  };
+  const recommendationActionButtonStyle: React.CSSProperties = {
+    fontSize: 12,
+    padding: "6px 12px",
+  };
+  const recommendationActionIconSpacingStyle: React.CSSProperties = {
+    marginLeft: 6,
+  };
+  const clusterDetailModalStyle: React.CSSProperties = {
+    maxWidth: 700,
+    maxHeight: "80vh",
+    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+  };
+  const clusterDetailHeaderStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+  };
+  const clusterDetailColorDotBaseStyle: React.CSSProperties = {
+    width: 24,
+    height: 24,
+    borderRadius: "50%",
+    flexShrink: 0,
+  };
+  const clusterDetailTitleStyle: React.CSSProperties = {
+    margin: 0,
+    fontSize: 18,
+  };
+  const clusterDetailMetaStyle: React.CSSProperties = {
+    fontSize: 12,
+    color: "var(--text-muted)",
+    marginTop: 4,
+  };
+  const clusterDetailKeywordsSectionStyle: React.CSSProperties = {
+    marginBottom: 16,
+  };
+  const clusterDetailKeywordsLabelStyle: React.CSSProperties = {
+    fontSize: 12,
+    color: "var(--text-muted)",
+    marginBottom: 6,
+  };
+  const clusterDetailKeywordsWrapStyle: React.CSSProperties = {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 6,
+  };
+  const clusterDetailCentralCardBaseStyle: React.CSSProperties = {
+    marginBottom: 16,
+    padding: 12,
+    background: "var(--bg-tertiary)",
+    borderRadius: 8,
+  };
+  const clusterDetailCentralLabelStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+    marginBottom: 4,
+  };
+  const clusterDetailCentralTitleStyle: React.CSSProperties = {
+    fontSize: 13,
+    fontWeight: 500,
+  };
+  const clusterDetailListHeaderStyle: React.CSSProperties = {
+    fontSize: 12,
+    color: "var(--text-muted)",
+    marginBottom: 8,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+  };
+  const clusterDetailListHeaderActionsStyle: React.CSSProperties = {
+    display: "flex",
+    gap: 8,
+  };
+  const clusterDetailHeaderButtonStyle: React.CSSProperties = {
+    padding: "4px 8px",
+    fontSize: 11,
+    borderRadius: 4,
+    border: "1px solid var(--border-glass)",
+    background: "var(--bg-secondary)",
+    color: "var(--text-secondary)",
+    cursor: "pointer",
+  };
+  const clusterDetailListContainerStyle: React.CSSProperties = {
+    flex: 1,
+    overflow: "auto",
+    border: "1px solid var(--border-glass)",
+    borderRadius: 8,
+  };
+  const clusterDetailLoadingStyle: React.CSSProperties = {
+    padding: 20,
+    textAlign: "center",
+    color: "var(--text-muted)",
+  };
+  const clusterDetailItemCheckboxStyle: React.CSSProperties = {
+    width: 16,
+    height: 16,
+    marginTop: 4,
+    cursor: "pointer",
+    accentColor: "#3b82f6",
+  };
+  const clusterDetailItemIndexBaseStyle: React.CSSProperties = {
+    minWidth: 24,
+    height: 24,
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 10,
+    fontWeight: 600,
+    flexShrink: 0,
+  };
+  const clusterDetailItemContentStyle: React.CSSProperties = {
+    flex: 1,
+    minWidth: 0,
+  };
+  const clusterDetailItemTitleRowStyle: React.CSSProperties = {
+    fontSize: 13,
+    fontWeight: 500,
+    marginBottom: 4,
+    lineHeight: 1.4,
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 8,
+  };
+  const clusterDetailItemTitleTextStyle: React.CSSProperties = {
+    flex: 1,
+  };
+  const clusterDetailStatusBadgeBaseStyle: React.CSSProperties = {
+    fontSize: 9,
+    padding: "2px 6px",
+    borderRadius: 4,
+    fontWeight: 600,
+    textTransform: "uppercase",
+    flexShrink: 0,
+  };
+  const clusterDetailAuthorsStyle: React.CSSProperties = {
+    fontSize: 11,
+    color: "var(--text-muted)",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  };
+  const clusterDetailYearStyle: React.CSSProperties = {
+    fontSize: 10,
+    color: "var(--text-muted)",
+    background: "var(--bg-secondary)",
+    padding: "2px 6px",
+    borderRadius: 4,
+    marginTop: 4,
+    display: "inline-block",
+  };
+  const clusterDetailSelectedActionsStyle: React.CSSProperties = {
+    marginTop: 12,
+    padding: 12,
+    background: "rgba(59, 130, 246, 0.1)",
+    borderRadius: 8,
+    border: "1px solid rgba(59, 130, 246, 0.3)",
+  };
+  const clusterDetailSelectedMetaStyle: React.CSSProperties = {
+    fontSize: 12,
+    color: "var(--text-secondary)",
+    marginBottom: 10,
+  };
+  const clusterDetailSelectedButtonsStyle: React.CSSProperties = {
+    display: "flex",
+    gap: 8,
+  };
+  const clusterDetailSelectedButtonBaseStyle: React.CSSProperties = {
+    flex: 1,
+    padding: "8px 12px",
+    borderRadius: 6,
+    border: "none",
+    color: "white",
+    fontSize: 12,
+    fontWeight: 500,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+  };
+  const clusterDetailFooterActionsStyle: React.CSSProperties = {
+    marginTop: 16,
+    display: "flex",
+    gap: 10,
+  };
+  const clusterDetailCloseButtonStyle: React.CSSProperties = {
+    padding: "10px 16px",
+    borderRadius: 8,
+    border: "1px solid var(--border-glass)",
+    background: "var(--bg-secondary)",
+    color: "var(--text-primary)",
+    cursor: "pointer",
+    fontSize: 13,
+  };
+  const helpModalStyle: React.CSSProperties = {
+    maxWidth: 600,
+  };
+  const helpTitleStyle: React.CSSProperties = {
+    marginTop: 0,
+    marginBottom: 20,
+    fontSize: 18,
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+  };
+  const helpContentStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+    fontSize: 14,
+    lineHeight: 1.6,
+  };
+  const helpSectionHeadingStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    color: "var(--text-primary)",
+  };
+  const helpSectionParagraphStyle: React.CSSProperties = {
+    margin: "6px 0 0",
+    color: "var(--text-secondary)",
+  };
+  const helpColorLegendWrapStyle: React.CSSProperties = {
+    marginTop: 8,
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    color: "var(--text-secondary)",
+  };
+  const helpLegendItemRowStyle: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+  };
+  const helpLegendDotBaseStyle: React.CSSProperties = {
+    width: 12,
+    height: 12,
+    borderRadius: "50%",
+    flexShrink: 0,
+  };
+  const helpActionsListStyle: React.CSSProperties = {
+    marginTop: 6,
+    color: "var(--text-secondary)",
+  };
+  const helpActionRowStyle: React.CSSProperties = {
+    margin: "4px 0",
+  };
+  const helpDividerSectionStyle: React.CSSProperties = {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTop: "1px solid var(--border-glass)",
+  };
+  const helpCloseButtonStyle: React.CSSProperties = {
+    marginTop: 24,
+    width: "100%",
+    padding: "12px",
+    background: "var(--accent)",
+    color: "white",
+    border: "none",
+    borderRadius: 8,
+    fontSize: 14,
+    fontWeight: 500,
+    cursor: "pointer",
+  };
 
   const getGraphContainerStyle = (
     fullscreen: boolean,
@@ -2951,6 +3481,210 @@ export default function CitationGraph({ projectId }: Props) {
   const getLegendValueStyle = (color: string): React.CSSProperties => ({
     color,
     fontWeight: 600,
+  });
+  const getGraphHoverCardStyle = (
+    x: number,
+    y: number,
+  ): React.CSSProperties => ({
+    left: x,
+    top: y,
+  });
+  const getAiMessageBubbleStyle = (
+    role: "user" | "assistant",
+  ): React.CSSProperties => ({
+    padding: "10px 12px",
+    borderRadius: 10,
+    background:
+      role === "user"
+        ? "linear-gradient(135deg, #3b82f6, #2563eb)"
+        : "var(--bg-secondary)",
+    color: role === "user" ? "white" : "var(--text-primary)",
+    alignSelf: role === "user" ? "flex-end" : "flex-start",
+    maxWidth: "90%",
+    fontSize: 12,
+    lineHeight: 1.4,
+    whiteSpace: "pre-wrap",
+  });
+  const getAiSelectAllButtonStyle = (
+    allSelected: boolean,
+  ): React.CSSProperties => ({
+    ...aiFoundActionButtonBaseStyle,
+    background: allSelected
+      ? "rgba(74, 222, 128, 0.3)"
+      : "rgba(255,255,255,0.1)",
+    color: allSelected ? "#4ade80" : "var(--text-secondary)",
+  });
+  const getAiClearHighlightButtonStyle = (): React.CSSProperties => ({
+    ...aiFoundActionButtonBaseStyle,
+    background: "rgba(255,255,255,0.1)",
+    color: "var(--text-secondary)",
+  });
+  const getAiFoundItemStyle = (selected: boolean): React.CSSProperties => ({
+    padding: "8px 10px",
+    background: selected ? "rgba(74, 222, 128, 0.15)" : "var(--bg-primary)",
+    borderRadius: 6,
+    borderLeft: `3px solid ${selected ? "#4ade80" : "#00ffff"}`,
+    cursor: "pointer",
+    transition: "all 0.15s ease",
+  });
+  const getAiFoundItemCheckboxStyle = (
+    selected: boolean,
+  ): React.CSSProperties => ({
+    ...aiFoundItemCheckboxStyleBase,
+    color: selected ? "#4ade80" : "var(--text-secondary)",
+  });
+  const getAiAddButtonStyle = (
+    variant: "candidate" | "selected",
+    loadingState: boolean,
+  ): React.CSSProperties => ({
+    ...aiFoundAddButtonBaseStyle,
+    background: loadingState
+      ? "var(--bg-secondary)"
+      : variant === "candidate"
+        ? "linear-gradient(135deg, #3b82f6, #2563eb)"
+        : "linear-gradient(135deg, #22c55e, #16a34a)",
+    cursor: loadingState ? "not-allowed" : "pointer",
+  });
+  const getAiSendButtonStyle = (
+    loadingState: boolean,
+  ): React.CSSProperties => ({
+    padding: "10px 12px",
+    borderRadius: 8,
+    border: "none",
+    background: loadingState
+      ? "var(--bg-secondary)"
+      : "linear-gradient(135deg, #8b5cf6, #6366f1)",
+    color: "white",
+    cursor: loadingState ? "not-allowed" : "pointer",
+  });
+  const getRecommendationCardStyle = (
+    priority: "high" | "medium" | "low",
+  ): React.CSSProperties => ({
+    background:
+      priority === "high"
+        ? "rgba(239, 68, 68, 0.1)"
+        : priority === "medium"
+          ? "rgba(249, 115, 22, 0.1)"
+          : "rgba(59, 130, 246, 0.1)",
+    border: `1px solid ${
+      priority === "high"
+        ? "rgba(239, 68, 68, 0.3)"
+        : priority === "medium"
+          ? "rgba(249, 115, 22, 0.3)"
+          : "rgba(59, 130, 246, 0.3)"
+    }`,
+    borderRadius: 8,
+    padding: 16,
+  });
+  const getRecommendationPriorityBadgeStyle = (
+    priority: "high" | "medium" | "low",
+  ): React.CSSProperties => ({
+    background:
+      priority === "high"
+        ? "#ef4444"
+        : priority === "medium"
+          ? "#f97316"
+          : "#3b82f6",
+    color: "white",
+    borderRadius: 6,
+    padding: "4px 8px",
+    fontSize: 10,
+    fontWeight: 600,
+    textTransform: "uppercase",
+    flexShrink: 0,
+  });
+  const getRecommendationPriorityLabel = (
+    priority: "high" | "medium" | "low",
+  ): string => {
+    if (priority === "high") return "Важно";
+    if (priority === "medium") return "Средне";
+    return "Низко";
+  };
+  const getClusterDetailColorDotStyle = (
+    color: string,
+  ): React.CSSProperties => ({
+    ...clusterDetailColorDotBaseStyle,
+    background: color,
+  });
+  const getClusterKeywordStyle = (color: string): React.CSSProperties => ({
+    background: color + "20",
+    color,
+    padding: "4px 10px",
+    borderRadius: 12,
+    fontSize: 11,
+    fontWeight: 500,
+  });
+  const getClusterCentralCardStyle = (color: string): React.CSSProperties => ({
+    ...clusterDetailCentralCardBaseStyle,
+    borderLeft: `4px solid ${color}`,
+  });
+  const getClusterItemRowStyle = (
+    selected: boolean,
+    isLast: boolean,
+  ): React.CSSProperties => ({
+    padding: "10px 14px",
+    borderBottom: isLast ? "none" : "1px solid var(--border-glass)",
+    cursor: "pointer",
+    transition: "background 0.15s",
+    display: "flex",
+    alignItems: "flex-start",
+    gap: 10,
+    background: selected ? "rgba(59, 130, 246, 0.1)" : "transparent",
+  });
+  const getClusterItemIndexStyle = (
+    isCentral: boolean,
+    color: string,
+  ): React.CSSProperties => ({
+    ...clusterDetailItemIndexBaseStyle,
+    background: isCentral ? color : "var(--bg-secondary)",
+    color: isCentral ? "white" : "var(--text-muted)",
+  });
+  const getClusterStatusBadgeStyle = (status: string): React.CSSProperties => ({
+    ...clusterDetailStatusBadgeBaseStyle,
+    background:
+      status === "selected"
+        ? "rgba(34, 197, 94, 0.2)"
+        : status === "excluded"
+          ? "rgba(239, 68, 68, 0.2)"
+          : "rgba(59, 130, 246, 0.2)",
+    color:
+      status === "selected"
+        ? "#22c55e"
+        : status === "excluded"
+          ? "#ef4444"
+          : "#3b82f6",
+  });
+  const getClusterStatusLabel = (status: string): string => {
+    if (status === "selected") return "Отобрана";
+    if (status === "excluded") return "Исключена";
+    return "Кандидат";
+  };
+  const getClusterSelectedActionButtonStyle = (
+    variant: "selected" | "candidate",
+    loadingState: boolean,
+  ): React.CSSProperties => ({
+    ...clusterDetailSelectedButtonBaseStyle,
+    background: variant === "selected" ? "#22c55e" : "#3b82f6",
+    cursor: loadingState ? "wait" : "pointer",
+    opacity: loadingState ? 0.6 : 1,
+  });
+  const getClusterFilterButtonStyle = (color: string): React.CSSProperties => ({
+    flex: 1,
+    padding: "10px 16px",
+    borderRadius: 8,
+    border: "none",
+    background: color,
+    color: "white",
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 500,
+  });
+  const getHelpIconStyle = (color: string): React.CSSProperties => ({
+    color,
+  });
+  const getHelpLegendDotStyle = (color: string): React.CSSProperties => ({
+    ...helpLegendDotBaseStyle,
+    background: color,
   });
 
   const handleGraphExportItemMouseEnter = (
@@ -4470,16 +5204,7 @@ export default function CitationGraph({ projectId }: Props) {
                 />
 
                 {/* Floating controls overlay */}
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 16,
-                    right: 16,
-                    display: "flex",
-                    gap: 8,
-                    zIndex: 10,
-                  }}
-                >
+                <div style={graphFloatingControlsStyle}>
                   {/* Animation toggle */}
                   <button
                     onClick={toggleAnimation}
@@ -4538,10 +5263,10 @@ export default function CitationGraph({ projectId }: Props) {
               !selectedNodeForDisplay && (
                 <div
                   className="graph-hover-card"
-                  style={{
-                    left: hoverCardPosition.x,
-                    top: hoverCardPosition.y,
-                  }}
+                  style={getGraphHoverCardStyle(
+                    hoverCardPosition.x,
+                    hoverCardPosition.y,
+                  )}
                 >
                   <ArticleCard
                     article={hoverCardArticle}
@@ -4561,35 +5286,14 @@ export default function CitationGraph({ projectId }: Props) {
           {showAIAssistant && (
             <div className="ai-panel-sidebar">
               {/* AI Panel Header */}
-              <div
-                style={{
-                  padding: "10px 12px",
-                  borderBottom: "1px solid var(--border-glass)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  background:
-                    "linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))",
-                  flexShrink: 0,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={aiPanelHeaderStyle}>
+                <div style={aiPanelHeaderTitleWrapStyle}>
                   <IconSparkles size="md" className="text-purple-400" />
-                  <span style={{ fontWeight: 600, fontSize: 13 }}>
-                    AI Ассистент
-                  </span>
+                  <span style={aiPanelHeaderTitleStyle}>AI Ассистент</span>
                 </div>
                 <button
                   onClick={() => setShowAIAssistant(false)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--text-secondary)",
-                    cursor: "pointer",
-                    padding: 4,
-                    display: "flex",
-                    alignItems: "center",
-                  }}
+                  style={aiPanelCollapseButtonStyle}
                   title="Свернуть"
                 >
                   <IconChevronRight size="sm" />
@@ -4597,81 +5301,42 @@ export default function CitationGraph({ projectId }: Props) {
               </div>
 
               {/* Chat History */}
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  padding: 12,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
+              <div style={aiHistoryWrapStyle}>
                 {aiHistory.length === 0 && (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      color: "var(--text-secondary)",
-                      padding: 16,
-                      fontSize: 12,
-                    }}
-                  >
+                  <div style={aiEmptyStateStyle}>
                     <IconSearch
                       size="lg"
                       className="icon-lg"
-                      style={{
-                        margin: "0 auto 12px",
-                        opacity: 0.5,
-                      }}
+                      style={aiEmptySearchIconStyle}
                     />
-                    <p style={{ marginBottom: 8, fontWeight: 500 }}>
-                      Поиск в графе
-                    </p>
-                    <p style={{ fontSize: 11, marginBottom: 10, opacity: 0.9 }}>
+                    <p style={aiEmptyTitleStyle}>Поиск в графе</p>
+                    <p style={aiEmptyDescriptionStyle}>
                       AI найдёт статьи среди ссылок и цитирующих работ
                     </p>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        opacity: 0.8,
-                        textAlign: "left",
-                        paddingLeft: 12,
-                      }}
-                    >
-                      <p style={{ fontStyle: "italic", marginBottom: 4 }}>
-                        💡 «Найди мета-анализы»
-                      </p>
-                      <p style={{ fontStyle: "italic", marginBottom: 4 }}>
+                    <div style={aiExamplesWrapStyle}>
+                      <p style={aiExampleTextStyle}>💡 «Найди мета-анализы»</p>
+                      <p style={aiExampleTextStyle}>
                         💡 «РКИ за последние 5 лет»
                       </p>
                       {semanticClusters.length > 0 && (
-                        <p style={{ fontStyle: "italic", marginBottom: 4 }}>
+                        <p style={aiExampleTextStyle}>
                           💡 «Статьи из кластера про...»
                         </p>
                       )}
                       {gapAnalysisResults.length > 0 && (
-                        <p style={{ fontStyle: "italic" }}>
+                        <p style={aiExampleTextLastStyle}>
                           💡 «Статьи для закрытия gap...»
                         </p>
                       )}
                       {semanticClusters.length === 0 &&
                         gapAnalysisResults.length === 0 && (
-                          <p style={{ fontStyle: "italic" }}>
+                          <p style={aiExampleTextLastStyle}>
                             💡 «Статьи про лечение»
                           </p>
                         )}
                     </div>
                     {depth < 2 && (
-                      <div
-                        style={{
-                          marginTop: 12,
-                          padding: "8px 10px",
-                          background: "rgba(251, 191, 36, 0.15)",
-                          borderRadius: 6,
-                          fontSize: 10,
-                          color: "#fbbf24",
-                        }}
-                      >
+                      <div style={aiDepthWarningStyle}>
                         ⚠️ Для поиска нужно загрузить связи: выберите «+Ссылки»
                         или «+Цитирующие»
                       </div>
@@ -4680,103 +5345,39 @@ export default function CitationGraph({ projectId }: Props) {
                 )}
 
                 {aiHistory.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      background:
-                        msg.role === "user"
-                          ? "linear-gradient(135deg, #3b82f6, #2563eb)"
-                          : "var(--bg-secondary)",
-                      color:
-                        msg.role === "user" ? "white" : "var(--text-primary)",
-                      alignSelf:
-                        msg.role === "user" ? "flex-end" : "flex-start",
-                      maxWidth: "90%",
-                      fontSize: 12,
-                      lineHeight: 1.4,
-                      whiteSpace: "pre-wrap",
-                    }}
-                  >
+                  <div key={idx} style={getAiMessageBubbleStyle(msg.role)}>
                     {msg.content}
                   </div>
                 ))}
 
                 {aiLoading && (
-                  <div
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      background: "var(--bg-secondary)",
-                      alignSelf: "flex-start",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
+                  <div style={aiLoadingMessageStyle}>
                     <span
                       className="loading-spinner"
-                      style={{ width: 14, height: 14 }}
+                      style={aiLoadingSpinnerStyle}
                     />
-                    <span
-                      style={{ fontSize: 12, color: "var(--text-secondary)" }}
-                    >
-                      Думаю...
-                    </span>
+                    <span style={aiLoadingTextStyle}>Думаю...</span>
                   </div>
                 )}
 
                 {/* Found Articles from Graph */}
                 {aiFoundArticles.length > 0 && (
-                  <div
-                    style={{
-                      padding: 12,
-                      background: "rgba(0, 255, 255, 0.1)",
-                      borderRadius: 10,
-                      border: "1px solid rgba(0, 255, 255, 0.3)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 10,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          fontSize: 12,
-                          color: "#00ffff",
-                        }}
-                      >
+                  <div style={aiFoundArticlesWrapStyle}>
+                    <div style={aiFoundArticlesHeaderStyle}>
+                      <div style={aiFoundArticlesTitleStyle}>
                         🔍 Найдено: {aiFoundArticles.length}
                         {aiSelectedForAdd.size > 0 && (
-                          <span style={{ color: "#4ade80", marginLeft: 6 }}>
+                          <span style={aiFoundArticlesSelectedCountStyle}>
                             (выбрано: {aiSelectedForAdd.size})
                           </span>
                         )}
                       </div>
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div style={aiFoundHeaderActionsStyle}>
                         <button
                           onClick={toggleSelectAll}
-                          style={{
-                            padding: "4px 8px",
-                            borderRadius: 4,
-                            border: "none",
-                            background:
-                              aiSelectedForAdd.size === aiFoundArticles.length
-                                ? "rgba(74, 222, 128, 0.3)"
-                                : "rgba(255,255,255,0.1)",
-                            color:
-                              aiSelectedForAdd.size === aiFoundArticles.length
-                                ? "#4ade80"
-                                : "var(--text-secondary)",
-                            fontSize: 10,
-                            cursor: "pointer",
-                          }}
+                          style={getAiSelectAllButtonStyle(
+                            aiSelectedForAdd.size === aiFoundArticles.length,
+                          )}
                           title={
                             aiSelectedForAdd.size === aiFoundArticles.length
                               ? "Снять все"
@@ -4789,15 +5390,7 @@ export default function CitationGraph({ projectId }: Props) {
                         </button>
                         <button
                           onClick={handleAIClearHighlight}
-                          style={{
-                            padding: "4px 8px",
-                            borderRadius: 4,
-                            border: "none",
-                            background: "rgba(255,255,255,0.1)",
-                            color: "var(--text-secondary)",
-                            fontSize: 10,
-                            cursor: "pointer",
-                          }}
+                          style={getAiClearHighlightButtonStyle()}
                           title="Сбросить подсветку"
                         >
                           ✕
@@ -4806,60 +5399,23 @@ export default function CitationGraph({ projectId }: Props) {
                     </div>
 
                     {/* Article List (scrollable) */}
-                    <div
-                      style={{
-                        maxHeight: 200,
-                        overflowY: "auto",
-                        marginBottom: 10,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 6,
-                      }}
-                    >
+                    <div style={aiFoundListStyle}>
                       {aiFoundArticles.slice(0, 20).map((article, idx) => {
                         const isSelected = aiSelectedForAdd.has(article.id);
                         return (
                           <div
                             key={article.id}
                             onClick={() => toggleArticleSelection(article.id)}
-                            style={{
-                              padding: "8px 10px",
-                              background: isSelected
-                                ? "rgba(74, 222, 128, 0.15)"
-                                : "var(--bg-primary)",
-                              borderRadius: 6,
-                              borderLeft: `3px solid ${isSelected ? "#4ade80" : "#00ffff"}`,
-                              cursor: "pointer",
-                              transition: "all 0.15s ease",
-                            }}
+                            style={getAiFoundItemStyle(isSelected)}
                           >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                gap: 8,
-                              }}
-                            >
+                            <div style={aiFoundItemInnerStyle}>
                               <span
-                                style={{
-                                  fontSize: 14,
-                                  color: isSelected
-                                    ? "#4ade80"
-                                    : "var(--text-secondary)",
-                                  flexShrink: 0,
-                                  marginTop: 1,
-                                }}
+                                style={getAiFoundItemCheckboxStyle(isSelected)}
                               >
                                 {isSelected ? "☑" : "☐"}
                               </span>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div
-                                  style={{
-                                    fontWeight: 500,
-                                    fontSize: 11,
-                                    lineHeight: 1.3,
-                                  }}
-                                >
+                              <div style={aiFoundItemContentStyle}>
+                                <div style={aiFoundItemTitleStyle}>
                                   {idx + 1}.{" "}
                                   {article.title?.substring(0, 70) ||
                                     article.id}
@@ -4867,15 +5423,7 @@ export default function CitationGraph({ projectId }: Props) {
                                     ? "..."
                                     : ""}
                                 </div>
-                                <div
-                                  style={{
-                                    fontSize: 10,
-                                    color: "var(--text-secondary)",
-                                    marginTop: 4,
-                                    display: "flex",
-                                    gap: 8,
-                                  }}
-                                >
+                                <div style={aiFoundItemMetaStyle}>
                                   {article.year && (
                                     <span>📅 {article.year}</span>
                                   )}
@@ -4884,14 +5432,7 @@ export default function CitationGraph({ projectId }: Props) {
                                   ) : null}
                                 </div>
                                 {article.reason && (
-                                  <div
-                                    style={{
-                                      fontSize: 10,
-                                      color: "#00ffff",
-                                      marginTop: 4,
-                                      fontStyle: "italic",
-                                    }}
-                                  >
+                                  <div style={aiFoundItemReasonStyle}>
                                     💡 {article.reason.substring(0, 80)}
                                     {article.reason.length > 80 ? "..." : ""}
                                   </div>
@@ -4902,37 +5443,21 @@ export default function CitationGraph({ projectId }: Props) {
                         );
                       })}
                       {aiFoundArticles.length > 20 && (
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: "var(--text-muted)",
-                            textAlign: "center",
-                            padding: 4,
-                          }}
-                        >
+                        <div style={aiFoundRemainderStyle}>
                           ... и ещё {aiFoundArticles.length - 20} статей
                         </div>
                       )}
                     </div>
 
                     {/* Action Buttons */}
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div style={aiFoundButtonsRowStyle}>
                       <button
                         onClick={() => handleAIAddSelectedArticles("candidate")}
                         disabled={aiAddingArticles}
-                        style={{
-                          flex: 1,
-                          padding: "10px 12px",
-                          borderRadius: 6,
-                          border: "none",
-                          background: aiAddingArticles
-                            ? "var(--bg-secondary)"
-                            : "linear-gradient(135deg, #3b82f6, #2563eb)",
-                          color: "white",
-                          fontWeight: 600,
-                          fontSize: 11,
-                          cursor: aiAddingArticles ? "not-allowed" : "pointer",
-                        }}
+                        style={getAiAddButtonStyle(
+                          "candidate",
+                          aiAddingArticles,
+                        )}
                         title={
                           aiSelectedForAdd.size > 0
                             ? `Добавить ${aiSelectedForAdd.size} выбранных в Кандидаты`
@@ -4948,19 +5473,10 @@ export default function CitationGraph({ projectId }: Props) {
                       <button
                         onClick={() => handleAIAddSelectedArticles("selected")}
                         disabled={aiAddingArticles}
-                        style={{
-                          flex: 1,
-                          padding: "10px 12px",
-                          borderRadius: 6,
-                          border: "none",
-                          background: aiAddingArticles
-                            ? "var(--bg-secondary)"
-                            : "linear-gradient(135deg, #22c55e, #16a34a)",
-                          color: "white",
-                          fontWeight: 600,
-                          fontSize: 11,
-                          cursor: aiAddingArticles ? "not-allowed" : "pointer",
-                        }}
+                        style={getAiAddButtonStyle(
+                          "selected",
+                          aiAddingArticles,
+                        )}
                         title={
                           aiSelectedForAdd.size > 0
                             ? `Добавить ${aiSelectedForAdd.size} выбранных в Отобранные`
@@ -4979,29 +5495,9 @@ export default function CitationGraph({ projectId }: Props) {
               </div>
 
               {/* Input */}
-              <div
-                style={{
-                  padding: 12,
-                  borderTop: "1px solid var(--border-glass)",
-                  background: "var(--bg-secondary)",
-                  flexShrink: 0,
-                }}
-              >
-                {aiError && (
-                  <div
-                    style={{
-                      marginBottom: 8,
-                      padding: "8px 10px",
-                      background: "rgba(239, 68, 68, 0.1)",
-                      borderRadius: 6,
-                      fontSize: 11,
-                      color: "#ef4444",
-                    }}
-                  >
-                    {aiError}
-                  </div>
-                )}
-                <div style={{ display: "flex", gap: 6 }}>
+              <div style={aiInputPanelStyle}>
+                {aiError && <div style={aiInputErrorStyle}>{aiError}</div>}
+                <div style={aiInputRowStyle}>
                   <input
                     type="text"
                     value={aiMessage}
@@ -5011,29 +5507,12 @@ export default function CitationGraph({ projectId }: Props) {
                     }
                     placeholder="Искать в графе..."
                     disabled={aiLoading}
-                    style={{
-                      flex: 1,
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-primary)",
-                      color: "var(--text-primary)",
-                      fontSize: 12,
-                    }}
+                    style={aiMessageInputStyle}
                   />
                   <button
                     onClick={handleAISend}
                     disabled={aiLoading || !aiMessage.trim()}
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      border: "none",
-                      background: aiLoading
-                        ? "var(--bg-secondary)"
-                        : "linear-gradient(135deg, #8b5cf6, #6366f1)",
-                      color: "white",
-                      cursor: aiLoading ? "not-allowed" : "pointer",
-                    }}
+                    style={getAiSendButtonStyle(aiLoading)}
                   >
                     <IconSend size="sm" />
                   </button>
@@ -5078,7 +5557,7 @@ export default function CitationGraph({ projectId }: Props) {
             <div
               className="node-info-modal"
               onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: 700 }}
+              style={recommendationsModalStyle}
             >
               <button
                 className="node-info-modal-close"
@@ -5087,115 +5566,56 @@ export default function CitationGraph({ projectId }: Props) {
                 <IconClose size="md" />
               </button>
 
-              <h3
-                style={{
-                  marginTop: 0,
-                  marginBottom: 20,
-                  fontSize: 18,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <span style={{ color: "#f59e0b" }}>
+              <h3 style={recommendationsTitleStyle}>
+                <span style={recommendationsSparkleIconStyle}>
                   <IconSparkles size="md" />
                 </span>
                 Рекомендации по улучшению графа
               </h3>
 
               {recommendations.length === 0 ? (
-                <div
-                  style={{
-                    padding: 40,
-                    textAlign: "center",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  <div style={{ opacity: 0.5, marginBottom: 12 }}>
+                <div style={recommendationsEmptyStateStyle}>
+                  <div style={recommendationsEmptyIconStyle}>
                     <IconCheckBadge size="lg" />
                   </div>
                   <p>Отлично! Граф в хорошем состоянии, рекомендаций нет.</p>
                 </div>
               ) : (
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
-                >
+                <div style={recommendationsListStyle}>
                   {recommendations.map((rec, i) => (
                     <div
                       key={i}
-                      style={{
-                        background:
-                          rec.priority === "high"
-                            ? "rgba(239, 68, 68, 0.1)"
-                            : rec.priority === "medium"
-                              ? "rgba(249, 115, 22, 0.1)"
-                              : "rgba(59, 130, 246, 0.1)",
-                        border: `1px solid ${
-                          rec.priority === "high"
-                            ? "rgba(239, 68, 68, 0.3)"
-                            : rec.priority === "medium"
-                              ? "rgba(249, 115, 22, 0.3)"
-                              : "rgba(59, 130, 246, 0.3)"
-                        }`,
-                        borderRadius: 8,
-                        padding: 16,
-                      }}
+                      style={getRecommendationCardStyle(rec.priority)}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 12,
-                        }}
-                      >
+                      <div style={recommendationCardBodyStyle}>
                         <div
-                          style={{
-                            background:
-                              rec.priority === "high"
-                                ? "#ef4444"
-                                : rec.priority === "medium"
-                                  ? "#f97316"
-                                  : "#3b82f6",
-                            color: "white",
-                            borderRadius: 6,
-                            padding: "4px 8px",
-                            fontSize: 10,
-                            fontWeight: 600,
-                            textTransform: "uppercase",
-                            flexShrink: 0,
-                          }}
+                          style={getRecommendationPriorityBadgeStyle(
+                            rec.priority,
+                          )}
                         >
-                          {rec.priority === "high"
-                            ? "Важно"
-                            : rec.priority === "medium"
-                              ? "Средне"
-                              : "Низко"}
+                          {getRecommendationPriorityLabel(rec.priority)}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                        <div style={recommendationTextWrapStyle}>
+                          <div style={recommendationTitleStyle}>
                             {rec.title}
                           </div>
-                          <div
-                            style={{
-                              fontSize: 13,
-                              color: "var(--text-muted)",
-                              marginBottom: 10,
-                            }}
-                          >
+                          <div style={recommendationDescriptionStyle}>
                             {rec.description}
                           </div>
                           {rec.action &&
                             rec.action.type === "fetch_references" && (
                               <button
                                 className="btn secondary"
-                                style={{ fontSize: 12, padding: "6px 12px" }}
+                                style={recommendationActionButtonStyle}
                                 onClick={() => {
                                   setShowRecommendations(false);
                                   handleFetchReferences();
                                 }}
                               >
                                 <IconRefresh size="sm" />
-                                <span style={{ marginLeft: 6 }}>
+                                <span
+                                  style={recommendationActionIconSpacingStyle}
+                                >
                                   Загрузить ссылки ({rec.action.count})
                                 </span>
                               </button>
@@ -5219,13 +5639,7 @@ export default function CitationGraph({ projectId }: Props) {
             <div
               className="node-info-modal"
               onClick={(e) => e.stopPropagation()}
-              style={{
-                maxWidth: 700,
-                maxHeight: "80vh",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-              }}
+              style={clusterDetailModalStyle}
             >
               <button
                 className="node-info-modal-close"
@@ -5234,34 +5648,17 @@ export default function CitationGraph({ projectId }: Props) {
                 <IconClose size="md" />
               </button>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginBottom: 16,
-                }}
-              >
+              <div style={clusterDetailHeaderStyle}>
                 <div
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    background: clusterDetailModal.cluster.color,
-                    flexShrink: 0,
-                  }}
+                  style={getClusterDetailColorDotStyle(
+                    clusterDetailModal.cluster.color,
+                  )}
                 />
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>
+                  <h3 style={clusterDetailTitleStyle}>
                     {clusterDetailModal.cluster.name}
                   </h3>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-muted)",
-                      marginTop: 4,
-                    }}
-                  >
+                  <div style={clusterDetailMetaStyle}>
                     {clusterDetailModal.cluster.articleCount} статей в кластере
                   </div>
                 </div>
@@ -5269,29 +5666,18 @@ export default function CitationGraph({ projectId }: Props) {
 
               {/* Keywords */}
               {clusterDetailModal.cluster.keywords.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-muted)",
-                      marginBottom: 6,
-                    }}
-                  >
+                <div style={clusterDetailKeywordsSectionStyle}>
+                  <div style={clusterDetailKeywordsLabelStyle}>
                     Ключевые слова:
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <div style={clusterDetailKeywordsWrapStyle}>
                     {clusterDetailModal.cluster.keywords.map(
                       (kw: string, i: number) => (
                         <span
                           key={i}
-                          style={{
-                            background: clusterDetailModal.cluster.color + "20",
-                            color: clusterDetailModal.cluster.color,
-                            padding: "4px 10px",
-                            borderRadius: 12,
-                            fontSize: 11,
-                            fontWeight: 500,
-                          }}
+                          style={getClusterKeywordStyle(
+                            clusterDetailModal.cluster.color,
+                          )}
                         >
                           {kw}
                         </span>
@@ -5304,90 +5690,42 @@ export default function CitationGraph({ projectId }: Props) {
               {/* Central Article */}
               {clusterDetailModal.cluster.centralArticleTitle && (
                 <div
-                  style={{
-                    marginBottom: 16,
-                    padding: 12,
-                    background: "var(--bg-tertiary)",
-                    borderRadius: 8,
-                    borderLeft: `4px solid ${clusterDetailModal.cluster.color}`,
-                  }}
+                  style={getClusterCentralCardStyle(
+                    clusterDetailModal.cluster.color,
+                  )}
                 >
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      marginBottom: 4,
-                    }}
-                  >
+                  <div style={clusterDetailCentralLabelStyle}>
                     ⭐ Центральная статья кластера:
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>
+                  <div style={clusterDetailCentralTitleStyle}>
                     {clusterDetailModal.cluster.centralArticleTitle}
                   </div>
                 </div>
               )}
 
               {/* Articles List */}
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-muted)",
-                  marginBottom: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
+              <div style={clusterDetailListHeaderStyle}>
                 <span>Все статьи кластера:</span>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div style={clusterDetailListHeaderActionsStyle}>
                   <button
                     onClick={selectAllClusterArticles}
-                    style={{
-                      padding: "4px 8px",
-                      fontSize: 11,
-                      borderRadius: 4,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-secondary)",
-                      color: "var(--text-secondary)",
-                      cursor: "pointer",
-                    }}
+                    style={clusterDetailHeaderButtonStyle}
                   >
                     Выбрать все
                   </button>
                   {selectedClusterArticles.size > 0 && (
                     <button
                       onClick={deselectAllClusterArticles}
-                      style={{
-                        padding: "4px 8px",
-                        fontSize: 11,
-                        borderRadius: 4,
-                        border: "1px solid var(--border-glass)",
-                        background: "var(--bg-secondary)",
-                        color: "var(--text-secondary)",
-                        cursor: "pointer",
-                      }}
+                      style={clusterDetailHeaderButtonStyle}
                     >
                       Снять выбор ({selectedClusterArticles.size})
                     </button>
                   )}
                 </div>
               </div>
-              <div
-                style={{
-                  flex: 1,
-                  overflow: "auto",
-                  border: "1px solid var(--border-glass)",
-                  borderRadius: 8,
-                }}
-              >
+              <div style={clusterDetailListContainerStyle}>
                 {loadingClusterDetails ? (
-                  <div
-                    style={{
-                      padding: 20,
-                      textAlign: "center",
-                      color: "var(--text-muted)",
-                    }}
-                  >
+                  <div style={clusterDetailLoadingStyle}>
                     Загрузка статей...
                   </div>
                 ) : (
@@ -5408,35 +5746,16 @@ export default function CitationGraph({ projectId }: Props) {
                         article.id,
                       );
                       const articleStatus = article.status || "candidate";
+                      const isCentralArticle =
+                        article.id ===
+                        clusterDetailModal.cluster.centralArticleId;
                       return (
                         <div
                           key={article.id}
-                          style={{
-                            padding: "10px 14px",
-                            borderBottom:
-                              idx < clusterDetailModal.articles.length - 1
-                                ? "1px solid var(--border-glass)"
-                                : "none",
-                            cursor: "pointer",
-                            transition: "background 0.15s",
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 10,
-                            background: isSelected
-                              ? "rgba(59, 130, 246, 0.1)"
-                              : "transparent",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.background =
-                                "var(--bg-tertiary)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.background = "transparent";
-                            }
-                          }}
+                          style={getClusterItemRowStyle(
+                            isSelected,
+                            idx >= clusterDetailModal.articles.length - 1,
+                          )}
                         >
                           {/* Checkbox */}
                           <input
@@ -5446,13 +5765,7 @@ export default function CitationGraph({ projectId }: Props) {
                               toggleClusterArticleSelection(article.id)
                             }
                             onClick={(e) => e.stopPropagation()}
-                            style={{
-                              width: 16,
-                              height: 16,
-                              marginTop: 4,
-                              cursor: "pointer",
-                              accentColor: "#3b82f6",
-                            }}
+                            style={clusterDetailItemCheckboxStyle}
                           />
                           <span
                             onClick={() => {
@@ -5473,32 +5786,12 @@ export default function CitationGraph({ projectId }: Props) {
                                 setSelectedNodeForDisplay(node);
                               }
                             }}
-                            style={{
-                              minWidth: 24,
-                              height: 24,
-                              borderRadius: "50%",
-                              background:
-                                article.id ===
-                                clusterDetailModal.cluster.centralArticleId
-                                  ? clusterDetailModal.cluster.color
-                                  : "var(--bg-secondary)",
-                              color:
-                                article.id ===
-                                clusterDetailModal.cluster.centralArticleId
-                                  ? "white"
-                                  : "var(--text-muted)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 10,
-                              fontWeight: 600,
-                              flexShrink: 0,
-                            }}
+                            style={getClusterItemIndexStyle(
+                              isCentralArticle,
+                              clusterDetailModal.cluster.color,
+                            )}
                           >
-                            {article.id ===
-                            clusterDetailModal.cluster.centralArticleId
-                              ? "⭐"
-                              : idx + 1}
+                            {isCentralArticle ? "⭐" : idx + 1}
                           </span>
                           <div
                             onClick={() => {
@@ -5519,75 +5812,28 @@ export default function CitationGraph({ projectId }: Props) {
                                 setSelectedNodeForDisplay(node);
                               }
                             }}
-                            style={{ flex: 1, minWidth: 0 }}
+                            style={clusterDetailItemContentStyle}
                           >
-                            <div
-                              style={{
-                                fontSize: 13,
-                                fontWeight: 500,
-                                marginBottom: 4,
-                                lineHeight: 1.4,
-                                display: "flex",
-                                alignItems: "flex-start",
-                                gap: 8,
-                              }}
-                            >
-                              <span style={{ flex: 1 }}>{article.title}</span>
+                            <div style={clusterDetailItemTitleRowStyle}>
+                              <span style={clusterDetailItemTitleTextStyle}>
+                                {article.title}
+                              </span>
                               {/* Status badge */}
                               <span
-                                style={{
-                                  fontSize: 9,
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                  fontWeight: 600,
-                                  textTransform: "uppercase",
-                                  flexShrink: 0,
-                                  background:
-                                    articleStatus === "selected"
-                                      ? "rgba(34, 197, 94, 0.2)"
-                                      : articleStatus === "excluded"
-                                        ? "rgba(239, 68, 68, 0.2)"
-                                        : "rgba(59, 130, 246, 0.2)",
-                                  color:
-                                    articleStatus === "selected"
-                                      ? "#22c55e"
-                                      : articleStatus === "excluded"
-                                        ? "#ef4444"
-                                        : "#3b82f6",
-                                }}
+                                style={getClusterStatusBadgeStyle(
+                                  articleStatus,
+                                )}
                               >
-                                {articleStatus === "selected"
-                                  ? "Отобрана"
-                                  : articleStatus === "excluded"
-                                    ? "Исключена"
-                                    : "Кандидат"}
+                                {getClusterStatusLabel(articleStatus)}
                               </span>
                             </div>
                             {article.authors && (
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  color: "var(--text-muted)",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
+                              <div style={clusterDetailAuthorsStyle}>
                                 {article.authors}
                               </div>
                             )}
                             {article.year && (
-                              <span
-                                style={{
-                                  fontSize: 10,
-                                  color: "var(--text-muted)",
-                                  background: "var(--bg-secondary)",
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                  marginTop: 4,
-                                  display: "inline-block",
-                                }}
-                              >
+                              <span style={clusterDetailYearStyle}>
                                 {article.year}
                               </span>
                             )}
@@ -5601,45 +5847,19 @@ export default function CitationGraph({ projectId }: Props) {
 
               {/* Actions for selected articles */}
               {selectedClusterArticles.size > 0 && (
-                <div
-                  style={{
-                    marginTop: 12,
-                    padding: 12,
-                    background: "rgba(59, 130, 246, 0.1)",
-                    borderRadius: 8,
-                    border: "1px solid rgba(59, 130, 246, 0.3)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-secondary)",
-                      marginBottom: 10,
-                    }}
-                  >
+                <div style={clusterDetailSelectedActionsStyle}>
+                  <div style={clusterDetailSelectedMetaStyle}>
                     Выбрано статей:{" "}
                     <strong>{selectedClusterArticles.size}</strong>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={clusterDetailSelectedButtonsStyle}>
                     <button
                       onClick={() => handleAddClusterArticles("selected")}
                       disabled={addingFromCluster}
-                      style={{
-                        flex: 1,
-                        padding: "8px 12px",
-                        borderRadius: 6,
-                        border: "none",
-                        background: "#22c55e",
-                        color: "white",
-                        cursor: addingFromCluster ? "wait" : "pointer",
-                        fontSize: 12,
-                        fontWeight: 500,
-                        opacity: addingFromCluster ? 0.6 : 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                      }}
+                      style={getClusterSelectedActionButtonStyle(
+                        "selected",
+                        addingFromCluster,
+                      )}
                     >
                       {addingFromCluster ? (
                         <>Добавляем...</>
@@ -5652,22 +5872,10 @@ export default function CitationGraph({ projectId }: Props) {
                     <button
                       onClick={() => handleAddClusterArticles("candidate")}
                       disabled={addingFromCluster}
-                      style={{
-                        flex: 1,
-                        padding: "8px 12px",
-                        borderRadius: 6,
-                        border: "none",
-                        background: "#3b82f6",
-                        color: "white",
-                        cursor: addingFromCluster ? "wait" : "pointer",
-                        fontSize: 12,
-                        fontWeight: 500,
-                        opacity: addingFromCluster ? 0.6 : 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                      }}
+                      style={getClusterSelectedActionButtonStyle(
+                        "candidate",
+                        addingFromCluster,
+                      )}
                     >
                       {addingFromCluster ? (
                         <>Добавляем...</>
@@ -5682,38 +5890,22 @@ export default function CitationGraph({ projectId }: Props) {
               )}
 
               {/* Actions */}
-              <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
+              <div style={clusterDetailFooterActionsStyle}>
                 <button
                   onClick={() => {
                     // Filter graph to show only this cluster
                     filterBySemanticCluster(clusterDetailModal.cluster.id);
                     setClusterDetailModal(null);
                   }}
-                  style={{
-                    flex: 1,
-                    padding: "10px 16px",
-                    borderRadius: 8,
-                    border: "none",
-                    background: clusterDetailModal.cluster.color,
-                    color: "white",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: 500,
-                  }}
+                  style={getClusterFilterButtonStyle(
+                    clusterDetailModal.cluster.color,
+                  )}
                 >
                   Показать только этот кластер
                 </button>
                 <button
                   onClick={() => setClusterDetailModal(null)}
-                  style={{
-                    padding: "10px 16px",
-                    borderRadius: 8,
-                    border: "1px solid var(--border-glass)",
-                    background: "var(--bg-secondary)",
-                    color: "var(--text-primary)",
-                    cursor: "pointer",
-                    fontSize: 13,
-                  }}
+                  style={clusterDetailCloseButtonStyle}
                 >
                   Закрыть
                 </button>
@@ -5731,7 +5923,7 @@ export default function CitationGraph({ projectId }: Props) {
             <div
               className="node-info-modal"
               onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: 600 }}
+              style={helpModalStyle}
             >
               <button
                 className="node-info-modal-close"
@@ -5740,244 +5932,111 @@ export default function CitationGraph({ projectId }: Props) {
                 <IconClose className="icon-md" />
               </button>
 
-              <h3
-                style={{
-                  marginTop: 0,
-                  marginBottom: 20,
-                  fontSize: 18,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <IconInfoCircle size="md" style={{ color: "#3b82f6" }} />
+              <h3 style={helpTitleStyle}>
+                <IconInfoCircle size="md" style={getHelpIconStyle("#3b82f6")} />
                 Как работает граф цитирований
               </h3>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 16,
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                }}
-              >
+              <div style={helpContentStyle}>
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconCircleStack size="sm" style={{ color: "#3b82f6" }} />
+                  <div style={helpSectionHeadingStyle}>
+                    <IconCircleStack
+                      size="sm"
+                      style={getHelpIconStyle("#3b82f6")}
+                    />
                     <strong>Узлы (статьи)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p style={helpSectionParagraphStyle}>
                     Каждый узел — это статья. Размер узла зависит от количества
                     цитирований: чем больше цитирований, тем крупнее узел.
                   </p>
                 </div>
 
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconArrowRight size="sm" style={{ color: "#3b82f6" }} />
+                  <div style={helpSectionHeadingStyle}>
+                    <IconArrowRight
+                      size="sm"
+                      style={getHelpIconStyle("#3b82f6")}
+                    />
                     <strong>Стрелки (связи)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p style={helpSectionParagraphStyle}>
                     Стрелки показывают направление цитирования: от цитирующей
                     статьи к цитируемой.
                   </p>
                 </div>
 
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconAdjustments size="sm" style={{ color: "#3b82f6" }} />
+                  <div style={helpSectionHeadingStyle}>
+                    <IconAdjustments
+                      size="sm"
+                      style={getHelpIconStyle("#3b82f6")}
+                    />
                     <strong>Цвета узлов</strong>
                   </div>
-                  <div
-                    style={{
-                      marginTop: 8,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 6,
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#22c55e",
-                          flexShrink: 0,
-                        }}
-                      ></span>
+                  <div style={helpColorLegendWrapStyle}>
+                    <div style={helpLegendItemRowStyle}>
+                      <span style={getHelpLegendDotStyle("#22c55e")}></span>
                       <span>Зелёный — отобранные статьи</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#3b82f6",
-                          flexShrink: 0,
-                        }}
-                      ></span>
+                    <div style={helpLegendItemRowStyle}>
+                      <span style={getHelpLegendDotStyle("#3b82f6")}></span>
                       <span>Синий — PubMed (кандидаты)</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#eab308",
-                          flexShrink: 0,
-                        }}
-                      ></span>
+                    <div style={helpLegendItemRowStyle}>
+                      <span style={getHelpLegendDotStyle("#eab308")}></span>
                       <span>Жёлтый — DOAJ (кандидаты)</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#8b5cf6",
-                          flexShrink: 0,
-                        }}
-                      ></span>
+                    <div style={helpLegendItemRowStyle}>
+                      <span style={getHelpLegendDotStyle("#8b5cf6")}></span>
                       <span>Фиолетовый — Wiley (кандидаты)</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#ef4444",
-                          flexShrink: 0,
-                        }}
-                      ></span>
+                    <div style={helpLegendItemRowStyle}>
+                      <span style={getHelpLegendDotStyle("#ef4444")}></span>
                       <span>Красный — исключённые</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#f97316",
-                          flexShrink: 0,
-                        }}
-                      ></span>
+                    <div style={helpLegendItemRowStyle}>
+                      <span style={getHelpLegendDotStyle("#f97316")}></span>
                       <span>Оранжевый — ссылки (references)</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#ec4899",
-                          flexShrink: 0,
-                        }}
-                      ></span>
+                    <div style={helpLegendItemRowStyle}>
+                      <span style={getHelpLegendDotStyle("#ec4899")}></span>
                       <span>Розовый — статьи, цитирующие вашу базу</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconPlay size="sm" style={{ color: "#3b82f6" }} />
+                  <div style={helpSectionHeadingStyle}>
+                    <IconPlay size="sm" style={getHelpIconStyle("#3b82f6")} />
                     <strong>Действия</strong>
                   </div>
-                  <div style={{ marginTop: 6, color: "var(--text-secondary)" }}>
-                    <p style={{ margin: "4px 0" }}>
+                  <div style={helpActionsListStyle}>
+                    <p style={helpActionRowStyle}>
                       • <strong>Клик</strong> — показать информацию о статье
                     </p>
-                    <p style={{ margin: "4px 0" }}>
+                    <p style={helpActionRowStyle}>
                       • <strong>Alt + клик</strong> — открыть статью в
                       PubMed/DOI
                     </p>
-                    <p style={{ margin: "4px 0" }}>
+                    <p style={helpActionRowStyle}>
                       • <strong>Перетаскивание</strong> — перемещать узлы
                     </p>
-                    <p style={{ margin: "4px 0" }}>
+                    <p style={helpActionRowStyle}>
                       • <strong>Колёсико мыши</strong> — масштабирование
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconRefresh size="sm" style={{ color: "#3b82f6" }} />
+                  <div style={helpSectionHeadingStyle}>
+                    <IconRefresh
+                      size="sm"
+                      style={getHelpIconStyle("#3b82f6")}
+                    />
                     <strong>Загрузка связей</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p style={helpSectionParagraphStyle}>
                     Нажмите «Обновить связи» для загрузки информации о ссылках и
                     цитированиях. Для PubMed статей данные берутся из PubMed
                     API, для DOAJ/Wiley — из Crossref по DOI. Это позволяет
@@ -5986,30 +6045,12 @@ export default function CitationGraph({ projectId }: Props) {
                 </div>
 
                 {/* Семантический поиск */}
-                <div
-                  style={{
-                    marginTop: 16,
-                    paddingTop: 16,
-                    borderTop: "1px solid var(--border-glass)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconSearch size="sm" style={{ color: "#10b981" }} />
+                <div style={helpDividerSectionStyle}>
+                  <div style={helpSectionHeadingStyle}>
+                    <IconSearch size="sm" style={getHelpIconStyle("#10b981")} />
                     <strong>Семантический поиск (Сем.)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p style={helpSectionParagraphStyle}>
                     Поиск статей по смыслу с помощью AI-эмбеддингов. Находит
                     похожие статьи даже без прямых цитирований. Сначала создайте
                     эмбеддинги для статей, затем используйте поиск.
@@ -6018,23 +6059,11 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Семантические кластеры */}
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconGraph size="sm" style={{ color: "#6366f1" }} />
+                  <div style={helpSectionHeadingStyle}>
+                    <IconGraph size="sm" style={getHelpIconStyle("#6366f1")} />
                     <strong>Семантические кластеры (Кластеры)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p style={helpSectionParagraphStyle}>
                     Автоматическая группировка статей по тематике с помощью
                     K-Means кластеризации эмбеддингов. Каждый кластер получает
                     название, цвет и центральную (наиболее типичную) статью.
@@ -6044,23 +6073,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Gap Analysis */}
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconExclamation size="sm" style={{ color: "#f59e0b" }} />
+                  <div style={helpSectionHeadingStyle}>
+                    <IconExclamation
+                      size="sm"
+                      style={getHelpIconStyle("#f59e0b")}
+                    />
                     <strong>Анализ пробелов (Gaps)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p style={helpSectionParagraphStyle}>
                     Находит "мосты" между кластерами — статьи, которые
                     семантически близки к нескольким тематическим группам.
                     Помогает выявить междисциплинарные работы и потенциальные
@@ -6070,23 +6090,11 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Методологический фильтр */}
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconFilter size="sm" style={{ color: "#ec4899" }} />
+                  <div style={helpSectionHeadingStyle}>
+                    <IconFilter size="sm" style={getHelpIconStyle("#ec4899")} />
                     <strong>Методологический фильтр (Метод.)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p style={helpSectionParagraphStyle}>
                     Фильтрация статей по типу исследования: мета-анализы, РКИ
                     (рандомизированные контролируемые исследования),
                     систематические обзоры, когортные исследования и другие. Тип
@@ -6096,23 +6104,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* AI рекомендации */}
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconSparkles size="sm" style={{ color: "#8b5cf6" }} />
+                  <div style={helpSectionHeadingStyle}>
+                    <IconSparkles
+                      size="sm"
+                      style={getHelpIconStyle("#8b5cf6")}
+                    />
                     <strong>AI-помощник</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p style={helpSectionParagraphStyle}>
                     Умный поиск статей с помощью нейросетей. Опишите, что ищете,
                     и AI найдёт релевантные статьи в вашем графе, а также
                     предложит рекомендации по улучшению обзора.
@@ -6122,18 +6121,7 @@ export default function CitationGraph({ projectId }: Props) {
 
               <button
                 onClick={() => setShowHelpModal(false)}
-                style={{
-                  marginTop: 24,
-                  width: "100%",
-                  padding: "12px",
-                  background: "var(--accent)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                }}
+                style={helpCloseButtonStyle}
               >
                 Понятно
               </button>
