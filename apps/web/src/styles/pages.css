@@ -597,11 +597,17 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .settings-provider-input {
   flex: 1;
+  width: 100%;
   min-width: 220px;
+}
+
+.settings-provider-actions .btn {
+  white-space: nowrap;
 }
 
 /* =============================================================================
@@ -674,6 +680,11 @@
 
   .docs-features-grid {
     grid-template-columns: 1fr;
+  }
+
+  .settings-provider-actions .btn {
+    flex: 1 1 170px;
+    justify-content: center;
   }
 }
 
