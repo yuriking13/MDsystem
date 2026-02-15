@@ -2019,8 +2019,7 @@ export default function DocumentPage() {
           onClick={() => setShowImportModal(false)}
         >
           <div
-            className="modal-content"
-            style={{ maxWidth: 800 }}
+            className="modal-content document-import-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
@@ -2033,18 +2032,15 @@ export default function DocumentPage() {
               </button>
             </div>
             <div className="modal-body">
-              <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
+              <p className="muted document-import-hint">
                 Выберите что вставить: таблицу с данными или график
               </p>
 
-              <div style={{ maxHeight: 500, overflow: "auto" }}>
+              <div className="document-import-scroll">
                 {loadingStats ? (
                   <div className="muted">Загрузка...</div>
                 ) : statistics.length === 0 ? (
-                  <div
-                    className="muted"
-                    style={{ textAlign: "center", padding: 40 }}
-                  >
+                  <div className="muted document-import-empty">
                     Нет доступных данных.
                     <br />
                     Создайте их в разделе Статистика проекта.
@@ -2061,81 +2057,33 @@ export default function DocumentPage() {
                         <div
                           key={stat.id}
                           className="import-stat-item-expanded"
-                          style={{
-                            background: "rgba(0,0,0,0.2)",
-                            borderRadius: 12,
-                            padding: 16,
-                            marginBottom: 16,
-                          }}
                         >
-                          <div
-                            className="import-stat-header"
-                            style={{ marginBottom: 12 }}
-                          >
-                            <div
-                              className="import-stat-title"
-                              style={{ fontSize: 15, fontWeight: 600 }}
-                            >
+                          <div className="import-stat-header import-stat-header-spaced">
+                            <div className="import-stat-title import-stat-title-strong">
                               {stat.title || "Без названия"}
                             </div>
                             {stat.description && (
-                              <div
-                                className="import-stat-desc muted"
-                                style={{ fontSize: 12, marginTop: 4 }}
-                              >
+                              <div className="import-stat-desc muted import-stat-desc-muted">
                                 {stat.description}
                               </div>
                             )}
                           </div>
 
-                          <div
-                            className="row gap"
-                            style={{ alignItems: "flex-start" }}
-                          >
+                          <div className="row gap import-stat-content-row">
                             {/* Таблица */}
                             {tableData && (
-                              <div
-                                style={{
-                                  flex: 1,
-                                  background: "white",
-                                  borderRadius: 8,
-                                  padding: 12,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: 11,
-                                    color: "#64748b",
-                                    marginBottom: 8,
-                                  }}
-                                >
+                              <div className="import-stat-table-card">
+                                <div className="import-stat-preview-label">
                                   Таблица ({tableData.rows?.length || 0} строк)
                                 </div>
-                                <div
-                                  style={{
-                                    maxHeight: 150,
-                                    overflow: "auto",
-                                    fontSize: 11,
-                                  }}
-                                >
-                                  <table
-                                    style={{
-                                      width: "100%",
-                                      borderCollapse: "collapse",
-                                      color: "#1e293b",
-                                    }}
-                                  >
+                                <div className="import-stat-table-scroll">
+                                  <table className="import-stat-preview-table">
                                     <thead>
                                       <tr>
                                         {tableData.headers?.map((h, i) => (
                                           <th
                                             key={i}
-                                            style={{
-                                              border: "1px solid #d1d5db",
-                                              padding: "4px 8px",
-                                              background: "#f3f4f6",
-                                              fontWeight: 600,
-                                            }}
+                                            className="import-stat-preview-th"
                                           >
                                             {h}
                                           </th>
@@ -2150,10 +2098,7 @@ export default function DocumentPage() {
                                             {row.map((cell, j) => (
                                               <td
                                                 key={j}
-                                                style={{
-                                                  border: "1px solid #d1d5db",
-                                                  padding: "4px 8px",
-                                                }}
+                                                className="import-stat-preview-td"
                                               >
                                                 {cell}
                                               </td>
@@ -2166,11 +2111,7 @@ export default function DocumentPage() {
                                             colSpan={
                                               tableData.headers?.length || 1
                                             }
-                                            style={{
-                                              textAlign: "center",
-                                              color: "#64748b",
-                                              padding: 4,
-                                            }}
+                                            className="import-stat-preview-more"
                                           >
                                             ... ещё{" "}
                                             {(tableData.rows?.length || 0) - 5}{" "}
@@ -2182,9 +2123,9 @@ export default function DocumentPage() {
                                   </table>
                                 </div>
                                 <button
-                                  className="btn secondary"
-                                  style={{ marginTop: 12, width: "100%" }}
+                                  className="btn secondary import-stat-action-btn"
                                   onClick={() => handleInsertTable(stat)}
+                                  type="button"
                                 >
                                   📋 Вставить таблицу
                                 </button>
@@ -2193,24 +2134,11 @@ export default function DocumentPage() {
 
                             {/* График */}
                             {stat.config && tableData && (
-                              <div
-                                style={{
-                                  flex: 1,
-                                  background: "rgba(0,0,0,0.3)",
-                                  borderRadius: 8,
-                                  padding: 12,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: 11,
-                                    color: "#64748b",
-                                    marginBottom: 8,
-                                  }}
-                                >
+                              <div className="import-stat-chart-card">
+                                <div className="import-stat-preview-label">
                                   {chartInfo?.name || "График"}
                                 </div>
-                                <div style={{ height: 150 }}>
+                                <div className="import-stat-chart-preview">
                                   <ChartFromTable
                                     tableData={tableData}
                                     config={stat.config as any}
@@ -2218,9 +2146,9 @@ export default function DocumentPage() {
                                   />
                                 </div>
                                 <button
-                                  className="btn"
-                                  style={{ marginTop: 12, width: "100%" }}
+                                  className="btn import-stat-action-btn"
                                   onClick={() => handleInsertStatistic(stat)}
+                                  type="button"
                                 >
                                   📊 Вставить график
                                 </button>
