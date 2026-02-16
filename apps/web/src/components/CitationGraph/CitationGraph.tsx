@@ -2212,37 +2212,6 @@ export default function CitationGraph({ projectId }: Props) {
   const semanticClusterKeywordsBaseStyle: React.CSSProperties = {
     fontSize: 9,
   };
-  const gapAnalyzeButtonBaseStyle: React.CSSProperties = {
-    fontSize: 12,
-    padding: "6px 16px",
-    color: "#fff",
-    border: "none",
-    borderRadius: 6,
-    transition: "all 0.2s ease",
-    fontWeight: 500,
-    whiteSpace: "nowrap",
-  };
-  const aiFoundActionButtonBaseStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    borderRadius: 4,
-    border: "none",
-    fontSize: 10,
-    cursor: "pointer",
-  };
-  const aiFoundItemCheckboxStyleBase: React.CSSProperties = {
-    fontSize: 14,
-    flexShrink: 0,
-    marginTop: 1,
-  };
-  const aiFoundAddButtonBaseStyle: React.CSSProperties = {
-    flex: 1,
-    padding: "10px 12px",
-    borderRadius: 6,
-    border: "none",
-    color: "white",
-    fontWeight: 600,
-    fontSize: 11,
-  };
   const clusterDetailColorDotBaseStyle: React.CSSProperties = {
     width: 24,
     height: 24,
@@ -2312,32 +2281,20 @@ export default function CitationGraph({ projectId }: Props) {
     borderRadius: 3,
     transition: "width 0.3s ease",
   });
-  const getSemanticImportLabelStyle = (
+  const getSemanticImportLabelClassName = (
     importMissing: boolean,
     disabled: boolean,
-  ): React.CSSProperties => ({
-    display: "flex",
-    alignItems: "center",
-    gap: 5,
-    fontSize: 11,
-    color: importMissing ? "var(--text-primary)" : "var(--text-muted)",
-    cursor: disabled ? "not-allowed" : "pointer",
-    padding: "3px 8px",
-    borderRadius: 4,
-    background: importMissing ? "rgba(16, 185, 129, 0.1)" : "transparent",
-    border: `1px solid ${importMissing ? "rgba(16, 185, 129, 0.3)" : "var(--border-color)"}`,
-    transition: "all 0.2s",
-  });
-  const getSemanticEmbeddingMessageStyle = (
-    message: string,
-  ): React.CSSProperties => ({
-    fontSize: 11,
-    color: message.startsWith("✓")
-      ? "#10b981"
-      : message.startsWith("Ошибка")
-        ? "#ef4444"
-        : "var(--text-muted)",
-  });
+  ): string =>
+    `graph-semantic-import-label${importMissing ? " graph-semantic-import-label--active" : ""}${disabled ? " graph-semantic-import-label--disabled" : ""}`;
+  const getSemanticEmbeddingMessageClassName = (message: string): string => {
+    if (message.startsWith("✓")) {
+      return "graph-semantic-embedding-message graph-semantic-embedding-message--success";
+    }
+    if (message.startsWith("Ошибка")) {
+      return "graph-semantic-embedding-message graph-semantic-embedding-message--error";
+    }
+    return "graph-semantic-embedding-message graph-semantic-embedding-message--muted";
+  };
   const getSemanticEmbeddingProgressFillStyle = (
     total: number,
     processed: number,
@@ -2409,16 +2366,8 @@ export default function CitationGraph({ projectId }: Props) {
     ...semanticClusterKeywordsBaseStyle,
     color: selected ? "rgba(255,255,255,0.7)" : "var(--text-muted)",
   });
-  const getGapAnalyzeButtonStyle = (
-    loadingState: boolean,
-  ): React.CSSProperties => ({
-    ...gapAnalyzeButtonBaseStyle,
-    background: loadingState
-      ? "var(--bg-tertiary)"
-      : "linear-gradient(135deg, #f59e0b, #ef4444)",
-    cursor: loadingState ? "wait" : "pointer",
-    boxShadow: loadingState ? "none" : "0 2px 8px rgba(245, 158, 11, 0.3)",
-  });
+  const getGapAnalyzeButtonClassName = (loadingState: boolean): string =>
+    `graph-gap-analyze-button${loadingState ? " graph-gap-analyze-button--loading" : ""}`;
   const getGapSimilarityStyle = (similarity: number): React.CSSProperties => ({
     background: `rgba(245, 158, 11, ${similarity})`,
     padding: "2px 8px",
@@ -2437,110 +2386,28 @@ export default function CitationGraph({ projectId }: Props) {
     left: x,
     top: y,
   });
-  const getAiMessageBubbleStyle = (
-    role: "user" | "assistant",
-  ): React.CSSProperties => ({
-    padding: "10px 12px",
-    borderRadius: 10,
-    background:
-      role === "user"
-        ? "linear-gradient(135deg, #3b82f6, #2563eb)"
-        : "var(--bg-secondary)",
-    color: role === "user" ? "white" : "var(--text-primary)",
-    alignSelf: role === "user" ? "flex-end" : "flex-start",
-    maxWidth: "90%",
-    fontSize: 12,
-    lineHeight: 1.4,
-    whiteSpace: "pre-wrap",
-  });
-  const getAiSelectAllButtonStyle = (
-    allSelected: boolean,
-  ): React.CSSProperties => ({
-    ...aiFoundActionButtonBaseStyle,
-    background: allSelected
-      ? "rgba(74, 222, 128, 0.3)"
-      : "rgba(255,255,255,0.1)",
-    color: allSelected ? "#4ade80" : "var(--text-secondary)",
-  });
-  const getAiClearHighlightButtonStyle = (): React.CSSProperties => ({
-    ...aiFoundActionButtonBaseStyle,
-    background: "rgba(255,255,255,0.1)",
-    color: "var(--text-secondary)",
-  });
-  const getAiFoundItemStyle = (selected: boolean): React.CSSProperties => ({
-    padding: "8px 10px",
-    background: selected ? "rgba(74, 222, 128, 0.15)" : "var(--bg-primary)",
-    borderRadius: 6,
-    borderLeft: `3px solid ${selected ? "#4ade80" : "#00ffff"}`,
-    cursor: "pointer",
-    transition: "all 0.15s ease",
-  });
-  const getAiFoundItemCheckboxStyle = (
-    selected: boolean,
-  ): React.CSSProperties => ({
-    ...aiFoundItemCheckboxStyleBase,
-    color: selected ? "#4ade80" : "var(--text-secondary)",
-  });
-  const getAiAddButtonStyle = (
+  const getAiMessageBubbleClassName = (role: "user" | "assistant"): string =>
+    `ai-message-bubble ai-message-bubble--${role}`;
+  const getAiSelectAllButtonClassName = (allSelected: boolean): string =>
+    `ai-found-action-button ${allSelected ? "ai-found-action-button--all-selected" : "ai-found-action-button--default"}`;
+  const getAiFoundItemClassName = (selected: boolean): string =>
+    `ai-found-item${selected ? " ai-found-item--selected" : ""}`;
+  const getAiFoundItemCheckboxClassName = (selected: boolean): string =>
+    `ai-found-item-checkbox${selected ? " ai-found-item-checkbox--selected" : ""}`;
+  const getAiAddButtonClassName = (
     variant: "candidate" | "selected",
     loadingState: boolean,
-  ): React.CSSProperties => ({
-    ...aiFoundAddButtonBaseStyle,
-    background: loadingState
-      ? "var(--bg-secondary)"
-      : variant === "candidate"
-        ? "linear-gradient(135deg, #3b82f6, #2563eb)"
-        : "linear-gradient(135deg, #22c55e, #16a34a)",
-    cursor: loadingState ? "not-allowed" : "pointer",
-  });
-  const getAiSendButtonStyle = (
-    loadingState: boolean,
-  ): React.CSSProperties => ({
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "none",
-    background: loadingState
-      ? "var(--bg-secondary)"
-      : "linear-gradient(135deg, #8b5cf6, #6366f1)",
-    color: "white",
-    cursor: loadingState ? "not-allowed" : "pointer",
-  });
-  const getRecommendationCardStyle = (
+  ): string =>
+    `ai-add-button ai-add-button--${variant}${loadingState ? " ai-add-button--loading" : ""}`;
+  const getAiSendButtonClassName = (loadingState: boolean): string =>
+    `ai-send-button${loadingState ? " ai-send-button--loading" : ""}`;
+  const getRecommendationCardClassName = (
     priority: "high" | "medium" | "low",
-  ): React.CSSProperties => ({
-    background:
-      priority === "high"
-        ? "rgba(239, 68, 68, 0.1)"
-        : priority === "medium"
-          ? "rgba(249, 115, 22, 0.1)"
-          : "rgba(59, 130, 246, 0.1)",
-    border: `1px solid ${
-      priority === "high"
-        ? "rgba(239, 68, 68, 0.3)"
-        : priority === "medium"
-          ? "rgba(249, 115, 22, 0.3)"
-          : "rgba(59, 130, 246, 0.3)"
-    }`,
-    borderRadius: 8,
-    padding: 16,
-  });
-  const getRecommendationPriorityBadgeStyle = (
+  ): string => `recommendation-card recommendation-card--${priority}`;
+  const getRecommendationPriorityBadgeClassName = (
     priority: "high" | "medium" | "low",
-  ): React.CSSProperties => ({
-    background:
-      priority === "high"
-        ? "#ef4444"
-        : priority === "medium"
-          ? "#f97316"
-          : "#3b82f6",
-    color: "white",
-    borderRadius: 6,
-    padding: "4px 8px",
-    fontSize: 10,
-    fontWeight: 600,
-    textTransform: "uppercase",
-    flexShrink: 0,
-  });
+  ): string =>
+    `recommendation-priority-badge recommendation-priority-badge--${priority}`;
   const getRecommendationPriorityLabel = (
     priority: "high" | "medium" | "low",
   ): string => {
@@ -3243,7 +3110,7 @@ export default function CitationGraph({ projectId }: Props) {
                   {missingArticlesStats &&
                     missingArticlesStats.totalMissing > 0 && (
                       <label
-                        style={getSemanticImportLabelStyle(
+                        className={getSemanticImportLabelClassName(
                           importMissingArticles,
                           generatingEmbeddings,
                         )}
@@ -3282,7 +3149,9 @@ export default function CitationGraph({ projectId }: Props) {
                   )}
                   {embeddingMessage && (
                     <span
-                      style={getSemanticEmbeddingMessageStyle(embeddingMessage)}
+                      className={getSemanticEmbeddingMessageClassName(
+                        embeddingMessage,
+                      )}
                     >
                       {embeddingMessage}
                     </span>
@@ -3785,7 +3654,7 @@ export default function CitationGraph({ projectId }: Props) {
               <button
                 onClick={handleGapAnalysis}
                 disabled={loadingGapAnalysis}
-                style={getGapAnalyzeButtonStyle(loadingGapAnalysis)}
+                className={getGapAnalyzeButtonClassName(loadingGapAnalysis)}
               >
                 {loadingGapAnalysis ? "⏳ Поиск..." : "🔍 Найти пробелы"}
               </button>
@@ -4277,7 +4146,10 @@ export default function CitationGraph({ projectId }: Props) {
                 )}
 
                 {aiHistory.map((msg, idx) => (
-                  <div key={idx} style={getAiMessageBubbleStyle(msg.role)}>
+                  <div
+                    key={idx}
+                    className={getAiMessageBubbleClassName(msg.role)}
+                  >
                     {msg.content}
                   </div>
                 ))}
@@ -4304,7 +4176,7 @@ export default function CitationGraph({ projectId }: Props) {
                       <div className="ai-found-header-actions">
                         <button
                           onClick={toggleSelectAll}
-                          style={getAiSelectAllButtonStyle(
+                          className={getAiSelectAllButtonClassName(
                             aiSelectedForAdd.size === aiFoundArticles.length,
                           )}
                           title={
@@ -4319,7 +4191,7 @@ export default function CitationGraph({ projectId }: Props) {
                         </button>
                         <button
                           onClick={handleAIClearHighlight}
-                          style={getAiClearHighlightButtonStyle()}
+                          className="ai-found-action-button ai-found-action-button--default"
                           title="Сбросить подсветку"
                         >
                           ✕
@@ -4335,11 +4207,13 @@ export default function CitationGraph({ projectId }: Props) {
                           <div
                             key={article.id}
                             onClick={() => toggleArticleSelection(article.id)}
-                            style={getAiFoundItemStyle(isSelected)}
+                            className={getAiFoundItemClassName(isSelected)}
                           >
                             <div className="ai-found-item-inner">
                               <span
-                                style={getAiFoundItemCheckboxStyle(isSelected)}
+                                className={getAiFoundItemCheckboxClassName(
+                                  isSelected,
+                                )}
                               >
                                 {isSelected ? "☑" : "☐"}
                               </span>
@@ -4383,7 +4257,7 @@ export default function CitationGraph({ projectId }: Props) {
                       <button
                         onClick={() => handleAIAddSelectedArticles("candidate")}
                         disabled={aiAddingArticles}
-                        style={getAiAddButtonStyle(
+                        className={getAiAddButtonClassName(
                           "candidate",
                           aiAddingArticles,
                         )}
@@ -4402,7 +4276,7 @@ export default function CitationGraph({ projectId }: Props) {
                       <button
                         onClick={() => handleAIAddSelectedArticles("selected")}
                         disabled={aiAddingArticles}
-                        style={getAiAddButtonStyle(
+                        className={getAiAddButtonClassName(
                           "selected",
                           aiAddingArticles,
                         )}
@@ -4441,7 +4315,7 @@ export default function CitationGraph({ projectId }: Props) {
                   <button
                     onClick={handleAISend}
                     disabled={aiLoading || !aiMessage.trim()}
-                    style={getAiSendButtonStyle(aiLoading)}
+                    className={getAiSendButtonClassName(aiLoading)}
                   >
                     <IconSend size="sm" />
                   </button>
@@ -4513,11 +4387,11 @@ export default function CitationGraph({ projectId }: Props) {
                   {recommendations.map((rec, i) => (
                     <div
                       key={i}
-                      style={getRecommendationCardStyle(rec.priority)}
+                      className={getRecommendationCardClassName(rec.priority)}
                     >
                       <div className="recommendation-card-body">
                         <div
-                          style={getRecommendationPriorityBadgeStyle(
+                          className={getRecommendationPriorityBadgeClassName(
                             rec.priority,
                           )}
                         >
