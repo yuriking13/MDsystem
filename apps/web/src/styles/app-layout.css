@@ -947,6 +947,8 @@ html.layout-fixed #root {
     font-size: 14px;
     font-weight: 600;
     color: #f8fafc;
+    flex: 1;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
