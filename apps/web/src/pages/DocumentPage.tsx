@@ -70,6 +70,7 @@ import {
 import ChartFromTable, {
   CHART_TYPE_INFO,
   ChartCreatorModal,
+  type ChartConfig,
   type ChartType,
   type TableData,
 } from "../components/ChartFromTable";
@@ -502,13 +503,13 @@ export default function DocumentPage() {
       tables: Array<{
         id: string;
         title?: string;
-        tableData: Record<string, any>;
+        tableData: TableData;
       }>;
       charts: Array<{
         id: string;
         title?: string;
-        config: Record<string, any>;
-        tableData?: Record<string, any>;
+        config: Record<string, unknown>;
+        tableData?: TableData;
       }>;
     } => {
       // Защита от undefined/null контента
@@ -522,13 +523,13 @@ export default function DocumentPage() {
       const tables: Array<{
         id: string;
         title?: string;
-        tableData: Record<string, any>;
+        tableData: TableData;
       }> = [];
       const charts: Array<{
         id: string;
         title?: string;
-        config: Record<string, any>;
-        tableData?: Record<string, any>;
+        config: Record<string, unknown>;
+        tableData?: TableData;
       }> = [];
 
       // Find tables - only those with valid statistic IDs
@@ -575,14 +576,30 @@ export default function DocumentPage() {
           chartEl.getAttribute("data-config");
 
         if (chartId) {
-          let config: Record<string, any> = {};
-          let tableData: Record<string, any> | undefined;
+          let config: Record<string, unknown> = {};
+          let tableData: TableData | undefined;
 
           if (chartDataStr) {
             try {
-              const parsed = JSON.parse(chartDataStr.replace(/&#39;/g, "'"));
-              config = parsed.config || parsed;
-              tableData = parsed.tableData;
+              const parsedUnknown: unknown = JSON.parse(
+                chartDataStr.replace(/&#39;/g, "'"),
+              );
+              if (parsedUnknown && typeof parsedUnknown === "object") {
+                const parsed = parsedUnknown as {
+                  config?: Record<string, unknown>;
+                  tableData?: TableData;
+                };
+                config =
+                  parsed.config || (parsedUnknown as Record<string, unknown>);
+
+                if (
+                  parsed.tableData &&
+                  Array.isArray(parsed.tableData.headers) &&
+                  Array.isArray(parsed.tableData.rows)
+                ) {
+                  tableData = parsed.tableData;
+                }
+              }
             } catch {
               // ignore parse errors
             }
@@ -711,10 +728,10 @@ export default function DocumentPage() {
         if (tables.length > 0 || charts.length > 0) {
           // Push updated table data back to Statistics so external views stay in sync
           const tableUpdates = tables
-            .filter((t) => t.id && Array.isArray((t.tableData as any)?.headers))
+            .filter((t) => t.id && Array.isArray(t.tableData?.headers))
             .map(async (t) => {
               try {
-                const td = t.tableData as TableData;
+                const td = t.tableData;
                 const headers = td.headers || [];
                 const cols = Math.max(
                   headers.length,
@@ -729,10 +746,14 @@ export default function DocumentPage() {
                 const yColumn = dataColumns[1] ?? dataColumns[0] ?? 0;
 
                 const existingStat = statistics.find((s) => s.id === t.id);
-                const baseConfig =
-                  (existingStat?.config as Record<string, any>) || {};
+                const baseConfig = (existingStat?.config || {}) as Record<
+                  string,
+                  unknown
+                >;
                 const chartType =
-                  baseConfig.type || existingStat?.chart_type || "bar";
+                  typeof baseConfig.type === "string"
+                    ? baseConfig.type
+                    : existingStat?.chart_type || "bar";
 
                 await apiUpdateStatistic(projectId, t.id, {
                   tableData: td,
@@ -1597,7 +1618,7 @@ export default function DocumentPage() {
 
   // Автосохранение новой таблицы в Статистику
   const handleTableCreated = useCallback(
-    async (tableData: { rows: number; cols: number; data: any[][] }) => {
+    async (tableData: { rows: number; cols: number; data: unknown[][] }) => {
       if (!projectId || !docId) return undefined;
 
       // Подготовим данные и дефолтную конфигурацию графика, чтобы карточка в статистике сразу была рабочей
@@ -2141,7 +2162,9 @@ export default function DocumentPage() {
                                 <div className="import-stat-chart-preview">
                                   <ChartFromTable
                                     tableData={tableData}
-                                    config={stat.config as any}
+                                    config={
+                                      stat.config as unknown as ChartConfig
+                                    }
                                     height={150}
                                   />
                                 </div>
