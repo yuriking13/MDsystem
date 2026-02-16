@@ -166,11 +166,8 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter api exec prisma generate
 
-      - name: Build API
-        run: pnpm --filter api build
-
-      - name: Build WEB
-        run: pnpm --filter web build
+      - name: Build workspace
+        run: pnpm build
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
