@@ -387,7 +387,7 @@ export async function detectStatsCombined(args: {
       stats: regexStats,
       aiStats,
     };
-  } catch (aiError) {
+  } catch {
     // AI недоступен - используем расширенный regex как fallback
     // AI detection failed, using enhanced regex fallback
 
@@ -456,7 +456,7 @@ export async function detectStatsParallel(args: {
       }
 
       const article = queue.shift();
-      if (!article || !article.abstract) break;
+      if (!article?.abstract) break;
 
       const promise = (async () => {
         try {
@@ -469,7 +469,7 @@ export async function detectStatsParallel(args: {
           results.set(article.id, result);
           analyzed++;
 
-          if (result.hasStats || (result.aiStats && result.aiStats.hasStats)) {
+          if (result.hasStats || result.aiStats?.hasStats) {
             found++;
           }
         } catch {

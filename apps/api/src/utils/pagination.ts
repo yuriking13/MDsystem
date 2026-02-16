@@ -89,18 +89,14 @@ export function createPaginationMeta(
 /**
  * Создание cursor из значений полей сортировки
  */
-export function encodeCursor(
-  values: Record<string, unknown>,
-): string {
+export function encodeCursor(values: Record<string, unknown>): string {
   return Buffer.from(JSON.stringify(values)).toString("base64url");
 }
 
 /**
  * Декодирование cursor
  */
-export function decodeCursor(
-  cursor: string,
-): Record<string, unknown> | null {
+export function decodeCursor(cursor: string): Record<string, unknown> | null {
   try {
     const json = Buffer.from(cursor, "base64url").toString("utf-8");
     return JSON.parse(json);
@@ -120,7 +116,7 @@ export function buildCursorWhereClause(
   sortOrder: "asc" | "desc",
   idField = "id",
 ): { where: string; values: unknown[] } | null {
-  if (!cursor || !cursor[sortBy]) {
+  if (!cursor?.[sortBy]) {
     return null;
   }
 
@@ -187,10 +183,7 @@ export async function paginateQuery<T>(
   const { page, limit } = params;
   const offset = calculateOffset(page, limit);
 
-  const [data, total] = await Promise.all([
-    queryFn(offset, limit),
-    countFn(),
-  ]);
+  const [data, total] = await Promise.all([queryFn(offset, limit), countFn()]);
 
   return {
     data,

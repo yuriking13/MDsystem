@@ -121,7 +121,10 @@ const exportPlugin: FastifyPluginAsync = async (fastify) => {
       const dedupeKeyToNumber = new Map<string, number>();
 
       dedupeKeyOrder.forEach((dedupeKey, index) => {
-        const article = dedupeKeyToArticle.get(dedupeKey)!;
+        const article = dedupeKeyToArticle.get(dedupeKey);
+        if (!article) {
+          return;
+        }
         const globalNumber = index + 1;
         dedupeKeyToNumber.set(dedupeKey, globalNumber);
 
@@ -321,8 +324,11 @@ const exportPlugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Создаём библиографию из уникальных источников
-      const bibliography = dedupeKeyOrder.map((dedupeKey, index) => {
-        const article = dedupeKeyToArticle.get(dedupeKey)!;
+      const bibliography = dedupeKeyOrder.flatMap((dedupeKey, index) => {
+        const article = dedupeKeyToArticle.get(dedupeKey);
+        if (!article) {
+          return [];
+        }
 
         const bibArticle: BibliographyArticle = {
           title_en: article.title_en as string,
@@ -337,12 +343,17 @@ const exportPlugin: FastifyPluginAsync = async (fastify) => {
           pmid: article.pmid as string,
         };
 
-        return {
-          number: index + 1,
-          articleId: article.id as string,
-          formatted: formatCitation(bibArticle, citationStyle as CitationStyle),
-          raw: bibArticle,
-        };
+        return [
+          {
+            number: index + 1,
+            articleId: article.id as string,
+            formatted: formatCitation(
+              bibArticle,
+              citationStyle as CitationStyle,
+            ),
+            raw: bibArticle,
+          },
+        ];
       });
 
       return { citationStyle, bibliography };

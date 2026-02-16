@@ -130,7 +130,6 @@ setInterval(
     if (removed > 10) {
       // Используем process.env напрямую чтобы избежать циклического импорта
       if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console
         console.log(`[embedding-cache] Cleaned up ${removed} expired entries`);
       }
     }
