@@ -148,6 +148,66 @@
   outline: none;
 }
 
+.toolbar-select--font-size {
+  width: 52px;
+}
+
+.toolbar-select--font-family {
+  width: 100px;
+}
+
+.toolbar-font-option--default {
+  font-family: inherit;
+}
+
+.toolbar-font-option--times {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.toolbar-font-option--arial {
+  font-family: Arial, sans-serif;
+}
+
+.toolbar-font-option--georgia {
+  font-family: Georgia, serif;
+}
+
+.toolbar-font-option--verdana {
+  font-family: Verdana, sans-serif;
+}
+
+.toolbar-font-option--roboto {
+  font-family: Roboto, sans-serif;
+}
+
+.toolbar-font-option--open-sans {
+  font-family: "Open Sans", sans-serif;
+}
+
+.toolbar-font-option--lato {
+  font-family: Lato, sans-serif;
+}
+
+.toolbar-font-option--montserrat {
+  font-family: Montserrat, sans-serif;
+}
+
+.toolbar-font-option--pt-sans {
+  font-family: "PT Sans", sans-serif;
+}
+
+.toolbar-font-option--pt-serif {
+  font-family: "PT Serif", serif;
+}
+
+.toolbar-font-option--courier {
+  font-family: "Courier New", monospace;
+}
+
+.toolbar-menu-wrap {
+  position: relative;
+}
+
 /* Toolbar dropdown (glass theme) */
 .toolbar-dropdown {
   position: absolute;
@@ -202,6 +262,72 @@
   background: rgba(59, 130, 246, 0.15);
 }
 
+.toolbar-dropdown-item--row-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-dropdown-item--locked {
+  opacity: 0.5;
+}
+
+.toolbar-dropdown--table-color {
+  min-width: 180px;
+}
+
+.toolbar-dropdown-item--color-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-cell-color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-block;
+}
+
+.toolbar-cell-color-swatch--none {
+  background: #fff;
+}
+
+.toolbar-cell-color-swatch--blue {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.toolbar-cell-color-swatch--green {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.toolbar-cell-color-swatch--yellow {
+  background: rgba(234, 179, 8, 0.15);
+}
+
+.toolbar-cell-color-swatch--red {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.toolbar-cell-color-swatch--purple {
+  background: rgba(168, 85, 247, 0.15);
+}
+
+.toolbar-cell-color-swatch--gray {
+  background: rgba(100, 116, 139, 0.15);
+}
+
+.toolbar-align-controls {
+  display: flex;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.toolbar-align-btn {
+  flex: 1;
+}
+
 /* Dropdown section label */
 .toolbar-dropdown-label {
   font-size: 10px;
@@ -229,6 +355,13 @@
 }
 .toolbar-style-badge:hover {
   background: rgba(59, 130, 246, 0.2);
+}
+
+.toolbar-tail {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ---- Editor header (glass theme) ---- */

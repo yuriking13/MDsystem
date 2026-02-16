@@ -68,7 +68,6 @@ const WEB_STYLE_PROP_ALLOWLIST = new Set([
   "apps/web/src/components/CreateStatisticModal.tsx",
   "apps/web/src/components/FlowbiteIcons.tsx",
   "apps/web/src/components/StatisticEditModal.tsx",
-  "apps/web/src/components/TiptapEditor/TiptapToolbar.tsx",
 ]);
 
 const webStylePropCheck = {
