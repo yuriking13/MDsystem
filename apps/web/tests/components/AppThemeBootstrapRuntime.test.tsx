@@ -914,6 +914,37 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
+  it.each([
+    ["light", "/projects/p1", "Project Detail Page"],
+    ["light", "/projects/p1/documents/d1", "Document Page"],
+    ["dark", "/projects/p1", "Project Detail Page"],
+    ["dark", "/projects/p1/documents/d1", "Document Page"],
+  ] as const)(
+    "applies %s theme bootstrap on authenticated deep route %s",
+    async (persistedTheme, route, expectedPageText) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = "auth-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(document.documentElement.getAttribute("data-theme")).toBe(
+          persistedTheme,
+        );
+        expect(screen.getByText("App Layout")).toBeInTheDocument();
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+    },
+  );
+
   it("renders document editor page inside authenticated app layout", async () => {
     const storage = createThemeStorage("light");
     vi.stubGlobal("localStorage", storage);
