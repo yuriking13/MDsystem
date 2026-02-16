@@ -50,6 +50,7 @@ import { useProjectWebSocket } from "../lib/useProjectWebSocket";
 import { useAuth } from "../lib/AuthContext";
 import {
   CHART_TYPE_INFO,
+  type ChartConfig,
   type ChartType,
   type TableData,
 } from "../components/ChartFromTable";
@@ -983,7 +984,7 @@ export default function ProjectDetailPage() {
   // Обновить метаданные в модальном окне
   function updateImportMetadata(
     field: keyof ExtractedArticleMetadata,
-    value: any,
+    value: unknown,
   ) {
     if (!fileImportModal) return;
     setFileImportModal({
@@ -1148,8 +1149,10 @@ export default function ProjectDetailPage() {
             await apiDeleteStatistic(id, statId, true); // force=true
             setStatistics(statistics.filter((s) => s.id !== statId));
             setOk("Элемент удалён принудительно");
-          } catch (forceErr: any) {
-            setError(forceErr?.message || "Ошибка принудительного удаления");
+          } catch (forceErr) {
+            setError(
+              getErrorMessage(forceErr) || "Ошибка принудительного удаления",
+            );
           }
         }
       } else {
@@ -1163,8 +1166,8 @@ export default function ProjectDetailPage() {
     updates: {
       title?: string;
       description?: string;
-      config?: Record<string, any>;
-      tableData?: Record<string, any>;
+      config?: Record<string, unknown>;
+      tableData?: Record<string, unknown>;
       dataClassification?: DataClassification;
       chartType?: string;
     },
@@ -3589,7 +3592,7 @@ export default function ProjectDetailPage() {
                           stat.config.type && (
                             <ChartFromTable
                               tableData={tableData}
-                              config={stat.config as any}
+                              config={stat.config as unknown as ChartConfig}
                               height={180}
                               theme="dark"
                             />
@@ -3880,7 +3883,15 @@ export default function ProjectDetailPage() {
                         <span>Роль</span>
                         <select
                           value={inviteRole}
-                          onChange={(e) => setInviteRole(e.target.value as any)}
+                          onChange={(e) => {
+                            const nextRole = e.target.value;
+                            if (
+                              nextRole === "viewer" ||
+                              nextRole === "editor"
+                            ) {
+                              setInviteRole(nextRole);
+                            }
+                          }}
                         >
                           <option value="viewer">
                             Читатель (только просмотр)
