@@ -424,6 +424,50 @@ describe("AppLayout mobile sidebar behavior", () => {
   );
 
   it.each([
+    "articles",
+    "documents",
+    "files",
+    "statistics",
+    "settings",
+    "graph",
+  ])(
+    "hides app shell for unauthenticated /projects/:id?tab=%s across width matrix",
+    (tab) => {
+      mockAuthState.token = null;
+      mockAuthState.user = null;
+
+      for (const width of targetViewportWidths) {
+        setViewportWidth(width);
+        const { unmount } = renderAppLayout(`/projects/p1?tab=${tab}`);
+
+        expect(screen.getByText("Project details page")).toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Открыть навигацию" }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Закрыть навигацию" }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Закрыть меню навигации" }),
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+        expect(document.querySelector(".animated-bg")).toBeNull();
+        expect(document.querySelector(".app-layout-fixed")).toBeNull();
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
+
+        unmount();
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
+      }
+    },
+  );
+
+  it.each([
     ["articles", false],
     ["documents", false],
     ["files", false],
