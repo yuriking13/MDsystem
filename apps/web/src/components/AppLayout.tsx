@@ -113,6 +113,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const showAnimatedBg = !isDocumentEditor && !isGraphTab;
   const isFixedLayout = isDocumentEditor || isGraphTab;
   const shouldLockLayout = !hideSidebar && isFixedLayout;
+  const canUseMobileSidebar = isMobileViewport;
+
+  const toggleMobileSidebar = () => {
+    if (!canUseMobileSidebar) return;
+    setMobileSidebarOpen((prev) => !prev);
+  };
+
+  const closeMobileSidebar = () => {
+    setMobileSidebarOpen(false);
+  };
 
   // Lock body scroll for fixed layouts (editor, graph)
   useEffect(() => {
@@ -197,13 +207,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
           projectUpdatedAt={projectInfo.updatedAt || undefined}
           mobileOpen={mobileSidebarOpen}
           mobileViewport={isMobileViewport}
-          onCloseMobile={() => setMobileSidebarOpen(false)}
+          onCloseMobile={closeMobileSidebar}
         />
         {isFixedLayout && (
           <button
             type="button"
             className="app-mobile-fab-toggle"
-            onClick={() => setMobileSidebarOpen((prev) => !prev)}
+            onClick={toggleMobileSidebar}
             aria-label="Открыть навигацию"
             aria-expanded={mobileSidebarOpen}
           >
@@ -221,7 +231,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <button
             className="app-sidebar-overlay"
             type="button"
-            onClick={() => setMobileSidebarOpen(false)}
+            onClick={closeMobileSidebar}
             aria-label="Закрыть навигацию"
           />
         )}
@@ -231,7 +241,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <button
                 type="button"
                 className="app-mobile-nav-toggle"
-                onClick={() => setMobileSidebarOpen((prev) => !prev)}
+                onClick={toggleMobileSidebar}
                 aria-label="Открыть навигацию"
                 aria-expanded={mobileSidebarOpen}
               >
