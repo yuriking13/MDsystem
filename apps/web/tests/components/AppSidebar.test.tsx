@@ -516,4 +516,34 @@ describe("AppSidebar mobile collapse behavior", () => {
     );
     expect(document.body.classList.contains("light-theme")).toBe(false);
   });
+
+  it("applies persisted light theme and clears stale dark classes on mount", () => {
+    document.documentElement.classList.add("light-theme");
+    document.body.classList.add("light-theme");
+    document.documentElement.classList.add("dark");
+    document.body.classList.add("dark");
+
+    const mockedStorage = {
+      getItem: vi.fn((key: string) => (key === "theme" ? "light" : null)),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    } as unknown as Storage;
+    vi.stubGlobal("localStorage", mockedStorage);
+    renderSidebar({ mobileViewport: false });
+
+    return waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        true,
+      );
+      expect(document.body.classList.contains("light-theme")).toBe(true);
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+      expect(document.body.classList.contains("dark")).toBe(false);
+      expect(mockedStorage.getItem).toHaveBeenCalledWith("theme");
+      vi.unstubAllGlobals();
+    });
+  });
 });
