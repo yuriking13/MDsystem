@@ -1,6 +1,7 @@
 import { Plugin } from "prosemirror-state";
 import TableRow from "@tiptap/extension-table-row";
 import type { CommandProps } from "@tiptap/react";
+import { getInlineStyleValue } from "./inlineStyleUtils";
 
 const createRowId = () =>
   `row-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -14,7 +15,7 @@ export const CustomTableRow = TableRow.extend({
         parseHTML: (element) => {
           // Parse from data-attribute first (more reliable), then fallback to style
           const dataHeight = element.getAttribute("data-row-height");
-          const styleHeight = element.style.height;
+          const styleHeight = getInlineStyleValue(element, "height");
           const rawHeight = dataHeight || styleHeight;
           if (!rawHeight) return null;
           const parsed = parseInt(rawHeight, 10);

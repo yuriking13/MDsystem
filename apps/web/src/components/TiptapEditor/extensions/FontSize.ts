@@ -1,4 +1,5 @@
 import { Extension } from "@tiptap/react";
+import { getInlineStyleValue } from "./inlineStyleUtils";
 
 export interface FontSizeOptions {
   types: string[];
@@ -21,7 +22,7 @@ export const FontSize = Extension.create<FontSizeOptions>({
           fontSize: {
             default: null,
             parseHTML: (element: HTMLElement) =>
-              element.style.fontSize?.replace(/['"]+/g, ""),
+              getInlineStyleValue(element, "font-size")?.replace(/['"]+/g, ""),
             renderHTML: (attributes: { fontSize?: string }) => {
               if (!attributes.fontSize) {
                 return {};
