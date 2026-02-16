@@ -200,38 +200,46 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(document.querySelector(".animated-bg")).not.toBeNull();
   });
 
-  it("shows project name in mobile topbar when project context provides one", async () => {
-    setViewportWidth(390);
-    renderAppLayout("/projects/p1/context-title");
+  it.each([360, 390, 768])(
+    "shows project name in mobile topbar when project context provides one at %ipx",
+    async (width) => {
+      setViewportWidth(width);
+      renderAppLayout("/projects/p1/context-title");
 
-    expect(screen.getByText("Project context title page")).toBeInTheDocument();
-    await waitFor(() => {
       expect(
-        document.querySelector(".app-mobile-topbar-title")?.textContent,
-      ).toBe("Проект Альфа");
-    });
-  });
+        screen.getByText("Project context title page"),
+      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Альфа");
+      });
+    },
+  );
 
-  it("resets mobile topbar title to app default outside project routes", async () => {
-    const user = userEvent.setup();
-    setViewportWidth(390);
-    renderAppLayout("/projects/p1/context-title");
+  it.each([360, 390, 768])(
+    "resets mobile topbar title to app default outside project routes at %ipx",
+    async (width) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/projects/p1/context-title");
 
-    await waitFor(() => {
-      expect(
-        document.querySelector(".app-mobile-topbar-title")?.textContent,
-      ).toBe("Проект Альфа");
-    });
+      await waitFor(() => {
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Альфа");
+      });
 
-    await user.click(screen.getByText("Go settings"));
+      await user.click(screen.getByText("Go settings"));
 
-    await waitFor(() => {
-      expect(screen.getByText("Settings page")).toBeInTheDocument();
-      expect(
-        document.querySelector(".app-mobile-topbar-title")?.textContent,
-      ).toBe("Scientiaiter");
-    });
-  });
+      await waitFor(() => {
+        expect(screen.getByText("Settings page")).toBeInTheDocument();
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Scientiaiter");
+      });
+    },
+  );
 
   it.each([360, 390, 768])(
     "shows mobile navigation trigger on app shell routes at %ipx",
