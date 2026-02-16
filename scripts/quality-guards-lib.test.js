@@ -278,3 +278,74 @@ test("runQualityGuards requires matching property for 100dvh fallback", () => {
   assert.equal(viewportViolation.violations[0].line, 2);
   assert.match(viewportViolation.violations[0].snippet, /min-height:\s*100vh/);
 });
+
+test("runQualityGuards blocks numeric innerWidth breakpoints in layout files", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/components/AppLayout.tsx"),
+    [
+      "export function AppLayout() {",
+      "  const isMobile = window.innerWidth <= 768;",
+      "  return isMobile ? null : null;",
+      "}",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/pages/admin/AdminLayout.tsx"),
+    [
+      "export function AdminLayout() {",
+      "  const isMobile = window.innerWidth <= 900;",
+      "  return isMobile ? null : null;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutBreakpointViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-mobile-breakpoint-literals",
+  );
+  assert.ok(layoutBreakpointViolation);
+  assert.equal(layoutBreakpointViolation.violations.length, 2);
+});
+
+test("runQualityGuards accepts shared responsive helpers in layout files", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/components/AppLayout.tsx"),
+    [
+      "import { isAppMobileViewport } from '../lib/responsive';",
+      "export function AppLayout() {",
+      "  const isMobile = isAppMobileViewport(window.innerWidth);",
+      "  return isMobile ? null : null;",
+      "}",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/pages/admin/AdminLayout.tsx"),
+    [
+      "import { isAdminMobileViewport } from '../../lib/responsive';",
+      "export function AdminLayout() {",
+      "  const isMobile = isAdminMobileViewport(window.innerWidth);",
+      "  return isMobile ? null : null;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutBreakpointViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-mobile-breakpoint-literals",
+  );
+  assert.equal(layoutBreakpointViolation, undefined);
+});

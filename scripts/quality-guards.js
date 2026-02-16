@@ -58,6 +58,16 @@ function main() {
         "\n[quality-guards] Tip: after any `height|min-height|max-height: 100vh`, add the same property with `100dvh` on the next line.",
       );
     }
+
+    if (
+      allViolations.some(
+        ({ check }) => check.name === "web-layout-mobile-breakpoint-literals",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: in AppLayout/AdminLayout use helpers from `apps/web/src/lib/responsive.ts` instead of numeric `window.innerWidth` literals.",
+      );
+    }
   }
 
   process.exit(1);

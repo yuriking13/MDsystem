@@ -184,3 +184,29 @@ test("quality-guards check mode passes when 100vh fallback is present", () => {
     /Tip: after any `height\|min-height\|max-height: 100vh`, add the same property with `100dvh` on the next line/,
   );
 });
+
+test("quality-guards check mode reports layout breakpoint literal remediation tip", () => {
+  const workspaceRoot = createTempWorkspace();
+  const appLayoutPath = path.join(
+    workspaceRoot,
+    "apps/web/src/components/AppLayout.tsx",
+  );
+  const adminLayoutPath = path.join(
+    workspaceRoot,
+    "apps/web/src/pages/admin/AdminLayout.tsx",
+  );
+
+  writeFile(appLayoutPath, "const mobile = window.innerWidth <= 768;");
+  writeFile(adminLayoutPath, "const mobile = window.innerWidth <= 900;");
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: in AppLayout\/AdminLayout use helpers from `apps\/web\/src\/lib\/responsive\.ts` instead of numeric `window\.innerWidth` literals/,
+  );
+});

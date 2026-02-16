@@ -72,6 +72,12 @@ const webCssViewportFallbackCheck = {
     "CSS declarations using 100vh for height/min-height/max-height must be followed by a 100dvh fallback",
 };
 
+const webLayoutMobileBreakpointLiteralCheck = {
+  name: "web-layout-mobile-breakpoint-literals",
+  description:
+    "AppLayout/AdminLayout should not use numeric window.innerWidth breakpoints directly; use shared responsive helpers/constants",
+};
+
 function walkFiles(rootDir, extensions) {
   const output = [];
   const queue = [rootDir];
@@ -251,6 +257,35 @@ function collectWebCssViewportFallbackViolations(workspaceRoot, fileCache) {
   return violations;
 }
 
+function collectWebLayoutMobileBreakpointLiteralViolations(workspaceRoot) {
+  const layoutFiles = [
+    path.join(workspaceRoot, "apps/web/src/components/AppLayout.tsx"),
+    path.join(workspaceRoot, "apps/web/src/pages/admin/AdminLayout.tsx"),
+  ];
+  const violations = [];
+
+  for (const filePath of layoutFiles) {
+    if (!fs.existsSync(filePath)) {
+      continue;
+    }
+
+    const source = fs.readFileSync(filePath, "utf8");
+    const matcher = /innerWidth\s*[<>]=?\s*\d+/g;
+    let match = matcher.exec(source);
+
+    while (match) {
+      violations.push({
+        file: path.relative(workspaceRoot, filePath).replaceAll(path.sep, "/"),
+        line: lineForIndex(source, match.index),
+        snippet: match[0],
+      });
+      match = matcher.exec(source);
+    }
+  }
+
+  return violations;
+}
+
 function cleanupWebJsMirrors(workspaceRoot) {
   const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
@@ -314,6 +349,15 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webLayoutMobileBreakpointLiteralViolations =
+    collectWebLayoutMobileBreakpointLiteralViolations(workspaceRoot);
+  if (webLayoutMobileBreakpointLiteralViolations.length > 0) {
+    allViolations.push({
+      check: webLayoutMobileBreakpointLiteralCheck,
+      violations: webLayoutMobileBreakpointLiteralViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
@@ -323,6 +367,7 @@ module.exports = {
   webJsSourceCheck,
   webStylePropCheck,
   webCssViewportFallbackCheck,
+  webLayoutMobileBreakpointLiteralCheck,
   runQualityGuards,
   lineForIndex,
 };

@@ -37,6 +37,7 @@ The repository enforces strict quality gates for TypeScript and UI code:
 - `style={...}` usage is disallowed in `apps/web/src` (class-based styling only);
 - no direct DOM style mutations (`.style.*` / `setAttribute("style", ...)`) in web source.
 - any `height|min-height|max-height: 100vh` declaration in web CSS must be followed by a `100dvh` fallback line.
+- `AppLayout` and `AdminLayout` must use shared responsive helpers (`apps/web/src/lib/responsive.ts`) instead of numeric `window.innerWidth` breakpoints.
 
 Run all checks from the workspace root:
 
