@@ -2232,7 +2232,7 @@ input:focus::placeholder {
   border: 1px solid var(--border-glass-light);
   border-radius: 12px;
   padding: 8px;
-  min-width: 180px;
+  min-width: min(180px, calc(100vw - 24px));
   z-index: 1000;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
@@ -3314,7 +3314,7 @@ input:focus::placeholder {
 
 .page-settings-style-btn {
   flex: 1;
-  min-width: 150px;
+  min-width: min(150px, 100%);
 }
 
 .page-settings-style-card {
@@ -5933,7 +5933,7 @@ input:focus::placeholder {
   border: 1px solid var(--border-glass);
   border-radius: 8px;
   padding: 4px;
-  min-width: 140px;
+  min-width: min(140px, calc(100vw - 24px));
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   display: none;
