@@ -5,6 +5,12 @@ import { describe, expect, it } from "vitest";
 const appSource = readFileSync(resolve(process.cwd(), "src/App.tsx"), "utf8");
 
 describe("App theme bootstrap contract", () => {
+  it("keeps theme bootstrap effect mount-only", () => {
+    expect(appSource).toMatch(
+      /useEffect\(\(\)\s*=>\s*\{[\s\S]*?\}\s*,\s*\[\s*\]\s*\);/,
+    );
+  });
+
   it("keeps localStorage theme lookup during app mount", () => {
     expect(appSource).toMatch(
       /useEffect\(\(\)\s*=>\s*\{[\s\S]*?const savedTheme = localStorage\.getItem\("theme"\);/,
@@ -27,5 +33,10 @@ describe("App theme bootstrap contract", () => {
     expect(appSource).toMatch(
       /<Route path="\/docs" element={<DocumentationPage \/>} \/>/,
     );
+  });
+
+  it("keeps non-light themes routed through dark fallback branch", () => {
+    expect(appSource).toMatch(/if\s*\(savedTheme === "light"\)\s*\{/);
+    expect(appSource).not.toMatch(/savedTheme === "dark"/);
   });
 });
