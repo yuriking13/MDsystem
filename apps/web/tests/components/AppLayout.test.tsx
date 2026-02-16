@@ -205,6 +205,60 @@ function ProjectContextDataPersistencePage() {
   );
 }
 
+function ProjectContextCleanupSourcePage() {
+  const { setProjectInfo, clearProjectInfo } = useProjectContext();
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    setProjectInfo({
+      name: "Проект Эпсилон",
+      role: "editor",
+      updatedAt: "2026-02-16T03:00:00.000Z",
+    });
+  }, [setProjectInfo]);
+
+  useEffect(() => {
+    return () => {
+      clearProjectInfo();
+    };
+  }, [clearProjectInfo]);
+
+  return (
+    <div>
+      <div>Project context cleanup source page</div>
+      <Link to="/projects/p1/context-cleanup-target">Go cleanup target</Link>
+    </div>
+  );
+}
+
+function ProjectContextCleanupTargetPage() {
+  const { setProjectInfo } = useProjectContext();
+  const [counter, setCounter] = useState(0);
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    setProjectInfo({
+      name: "Проект Зета",
+      role: "viewer",
+      updatedAt: "2026-02-16T04:00:00.000Z",
+    });
+  }, [setProjectInfo]);
+
+  return (
+    <div>
+      <div>Project context cleanup target page</div>
+      <div data-testid="context-cleanup-target-counter">{String(counter)}</div>
+      <button type="button" onClick={() => setCounter((prev) => prev + 1)}>
+        Bump cleanup target local state
+      </button>
+    </div>
+  );
+}
+
 function renderAppLayout(initialPath = "/projects") {
   return render(
     <MemoryRouter
@@ -241,6 +295,14 @@ function renderAppLayout(initialPath = "/projects") {
           <Route
             path="/projects/p1/context-data-persistence"
             element={<ProjectContextDataPersistencePage />}
+          />
+          <Route
+            path="/projects/p1/context-cleanup-source"
+            element={<ProjectContextCleanupSourcePage />}
+          />
+          <Route
+            path="/projects/p1/context-cleanup-target"
+            element={<ProjectContextCleanupTargetPage />}
           />
           <Route path="/projects/:id" element={<ProjectDetailsContextPage />} />
           <Route
@@ -403,6 +465,40 @@ describe("AppLayout mobile sidebar behavior", () => {
       expect(screen.getByTestId("context-data-status")).toHaveTextContent(
         "excluded",
       );
+    });
+  });
+
+  it("keeps destination project context when previous route cleanup runs", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderAppLayout("/projects/p1/context-cleanup-source");
+
+    await waitFor(() => {
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Проект Эпсилон");
+    });
+
+    await user.click(screen.getByText("Go cleanup target"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Project context cleanup target page"),
+      ).toBeInTheDocument();
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Проект Зета");
+    });
+
+    await user.click(screen.getByText("Bump cleanup target local state"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("context-cleanup-target-counter"),
+      ).toHaveTextContent("1");
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Проект Зета");
     });
   });
 
