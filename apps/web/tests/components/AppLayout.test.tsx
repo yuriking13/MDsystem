@@ -154,6 +154,57 @@ function ProjectContextPersistencePage() {
   );
 }
 
+function ProjectContextDataPersistencePage() {
+  const {
+    setProjectInfo,
+    setArticleCounts,
+    setArticleViewStatus,
+    clearProjectInfo,
+    articleCounts,
+    articleViewStatus,
+  } = useProjectContext();
+  const [counter, setCounter] = useState(0);
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    setProjectInfo({
+      name: "Проект Дельта",
+      role: "owner",
+      updatedAt: "2026-02-16T02:00:00.000Z",
+    });
+    setArticleCounts({
+      candidate: 2,
+      selected: 9,
+      excluded: 1,
+      deleted: 0,
+      total: 12,
+    });
+    setArticleViewStatus("excluded");
+  }, [setArticleCounts, setArticleViewStatus, setProjectInfo]);
+
+  useEffect(() => {
+    return () => {
+      clearProjectInfo();
+    };
+  }, [clearProjectInfo]);
+
+  return (
+    <div>
+      <div>Project context data persistence page</div>
+      <div data-testid="context-data-counter">{String(counter)}</div>
+      <div data-testid="context-data-selected">
+        {String(articleCounts.selected)}
+      </div>
+      <div data-testid="context-data-status">{articleViewStatus}</div>
+      <button type="button" onClick={() => setCounter((prev) => prev + 1)}>
+        Bump data context local state
+      </button>
+    </div>
+  );
+}
+
 function renderAppLayout(initialPath = "/projects") {
   return render(
     <MemoryRouter
@@ -186,6 +237,10 @@ function renderAppLayout(initialPath = "/projects") {
           <Route
             path="/projects/p1/context-persistence"
             element={<ProjectContextPersistencePage />}
+          />
+          <Route
+            path="/projects/p1/context-data-persistence"
+            element={<ProjectContextDataPersistencePage />}
           />
           <Route path="/projects/:id" element={<ProjectDetailsContextPage />} />
           <Route
@@ -315,6 +370,39 @@ describe("AppLayout mobile sidebar behavior", () => {
       expect(
         document.querySelector(".app-mobile-topbar-title")?.textContent,
       ).toBe("Проект Гамма");
+    });
+  });
+
+  it("keeps project context counts and status stable across local rerenders", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderAppLayout("/projects/p1/context-data-persistence");
+
+    await waitFor(() => {
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Проект Дельта");
+      expect(screen.getByTestId("context-data-selected")).toHaveTextContent(
+        "9",
+      );
+      expect(screen.getByTestId("context-data-status")).toHaveTextContent(
+        "excluded",
+      );
+    });
+
+    await user.click(screen.getByText("Bump data context local state"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("context-data-counter")).toHaveTextContent("1");
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Проект Дельта");
+      expect(screen.getByTestId("context-data-selected")).toHaveTextContent(
+        "9",
+      );
+      expect(screen.getByTestId("context-data-status")).toHaveTextContent(
+        "excluded",
+      );
     });
   });
 
