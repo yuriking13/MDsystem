@@ -5,6 +5,7 @@
   "scripts": {
     "preinstall": "node scripts/enforce-pnpm.js",
     "quality:guards": "node scripts/quality-guards.js",
+    "quality:guards:check": "node scripts/quality-guards.js --check",
     "quality:guards:test": "node --test scripts/quality-guards-lib.test.js",
     "dev": "pnpm -r dev",
     "build": "pnpm run quality:guards && pnpm -r build",

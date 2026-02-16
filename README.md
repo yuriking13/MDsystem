@@ -46,3 +46,4 @@ Run all checks from the workspace root:
 The guard script can also be run directly:
 
 - `pnpm run quality:guards`
+- `pnpm run quality:guards:check` (strict check mode, no auto-clean)

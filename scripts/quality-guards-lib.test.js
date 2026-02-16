@@ -70,3 +70,23 @@ test("runQualityGuards removes web js mirrors when auto clean is enabled", () =>
     false,
   );
 });
+
+test("runQualityGuards reports web js mirrors in check-only mode", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  const tsxPath = path.join(workspaceRoot, "apps/web/src/pages/Home.tsx");
+  const jsMirrorPath = path.join(workspaceRoot, "apps/web/src/pages/Home.js");
+  writeFile(tsxPath, "export const Home = () => null;");
+  writeFile(jsMirrorPath, "export const Home = () => null;");
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  assert.equal(result.removedWebJsMirrors.length, 0);
+  assert.equal(fs.existsSync(jsMirrorPath), true);
+  assert.ok(
+    result.allViolations.some((entry) => entry.check.name === "web-js-mirrors"),
+  );
+});

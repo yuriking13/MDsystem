@@ -1,9 +1,10 @@
 const { runQualityGuards } = require("./quality-guards-lib.js");
 
 function main() {
+  const checkOnly = process.argv.includes("--check");
   const { removedWebJsMirrors, allViolations } = runQualityGuards({
     workspaceRoot: process.cwd(),
-    autoCleanWebJsMirrors: true,
+    autoCleanWebJsMirrors: !checkOnly,
   });
 
   if (removedWebJsMirrors.length > 0) {
