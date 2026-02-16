@@ -459,4 +459,54 @@ describe("DocumentationPage menu + submenu", () => {
     );
     checkSingleActiveTab();
   });
+
+  it("keeps unique and paired tab/panel ids across every docs section", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const sectionTitles = [
+      "Обзор платформы",
+      "База статей",
+      "Документы",
+      "Файлы",
+      "Статистика",
+      "Граф цитирований",
+      "Команда",
+      "Настройки проекта",
+      "API ключи",
+    ];
+
+    for (const sectionTitle of sectionTitles) {
+      await user.click(screen.getByRole("button", { name: sectionTitle }));
+
+      const tabs = screen.getAllByRole("tab");
+      const tabIds = tabs.map((tab) => tab.id);
+      const controlsIds = tabs.map((tab) => tab.getAttribute("aria-controls"));
+      const uniqueTabIds = new Set(tabIds);
+      const uniqueControlsIds = new Set(controlsIds);
+
+      expect(uniqueTabIds.size).toBe(tabIds.length);
+      expect(uniqueControlsIds.size).toBe(controlsIds.length);
+
+      for (const tab of tabs) {
+        const controlsId = tab.getAttribute("aria-controls");
+        expect(controlsId).toBeTruthy();
+        expect(controlsId).toBe(
+          `docs-panel-${tab.id.replace("docs-tab-", "")}`,
+        );
+      }
+
+      const activeTab = tabs.find(
+        (tab) => tab.getAttribute("aria-selected") === "true",
+      );
+      expect(activeTab).toBeDefined();
+
+      const panel = screen.getByRole("tabpanel");
+      expect(panel).toHaveAttribute(
+        "id",
+        activeTab?.getAttribute("aria-controls"),
+      );
+      expect(panel).toHaveAttribute("aria-labelledby", activeTab?.id);
+    }
+  });
 });
