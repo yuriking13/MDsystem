@@ -7,6 +7,10 @@ const sidebarSource = readFileSync(
   resolve(process.cwd(), "src/components/AppSidebar.tsx"),
   "utf8",
 );
+const docsSource = readFileSync(
+  resolve(process.cwd(), "src/pages/DocumentationPage.tsx"),
+  "utf8",
+);
 
 describe("manual smoke checklist contract", () => {
   it("keeps auth and core app routes from smoke checklist", () => {
@@ -98,5 +102,13 @@ describe("manual smoke checklist contract", () => {
     expect(sidebarSource).toMatch(
       /requestAnimationFrame\(\(\)\s*=>\s*\{[\s\S]*?requestAnimationFrame\(\(\)\s*=>\s*\{[\s\S]*?document\.documentElement\.classList\.remove\("no-transitions"\);/,
     );
+  });
+
+  it("keeps documentation page menu + submenu interaction shell", () => {
+    expect(docsSource).toContain("const DOC_SECTIONS");
+    expect(docsSource).toContain('className="docs-subnav"');
+    expect(docsSource).toContain('role="tablist"');
+    expect(docsSource).toContain('role="tab"');
+    expect(docsSource).toContain('role="tabpanel"');
   });
 });
