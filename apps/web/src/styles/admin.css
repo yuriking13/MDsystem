@@ -27,6 +27,7 @@
   left: 0;
   height: 100vh;
   height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
   z-index: 100;
 }
 
