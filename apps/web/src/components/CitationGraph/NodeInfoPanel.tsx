@@ -3,6 +3,7 @@ import {
   apiGetArticleByPmid,
   apiTranslateText,
   apiImportFromGraph,
+  type GraphNode,
 } from "../../lib/api";
 import { getErrorMessage } from "../../lib/errorUtils";
 import {
@@ -24,7 +25,7 @@ function getPValueLabel(quality: number): string {
 }
 
 type Props = {
-  node: any;
+  node: GraphNode;
   projectId: string;
   onRefresh?: () => void;
   globalLang?: "en" | "ru";
