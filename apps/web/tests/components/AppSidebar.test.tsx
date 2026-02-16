@@ -498,4 +498,22 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(lightRadio?.checked).toBe(false);
     expect(darkRadio?.checked).toBe(true);
   });
+
+  it("cleans stale opposite theme classes when syncing persisted theme", () => {
+    document.documentElement.classList.add("light-theme");
+    document.body.classList.add("light-theme");
+    document.documentElement.classList.add("dark");
+    document.body.classList.add("dark");
+
+    localStorage.setItem("theme", "dark");
+    renderSidebar({ mobileViewport: false });
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.body.classList.contains("dark")).toBe(true);
+    expect(document.documentElement.classList.contains("light-theme")).toBe(
+      false,
+    );
+    expect(document.body.classList.contains("light-theme")).toBe(false);
+  });
 });
