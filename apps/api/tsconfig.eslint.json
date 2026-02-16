@@ -3,6 +3,13 @@
   "compilerOptions": {
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "test-optimizations.ts"],
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "test-optimizations.ts",
+    "run-migration.ts",
+    "test-recommendations.ts",
+    "vitest.config.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }
