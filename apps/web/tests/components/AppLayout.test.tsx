@@ -48,6 +48,8 @@ function renderAppLayout(initialPath = "/projects") {
               <div>
                 <div>Projects page</div>
                 <Link to="/settings">Go settings</Link>
+                <Link to="/login">Go login</Link>
+                <Link to="/admin">Go admin</Link>
               </div>
             }
           />
@@ -295,6 +297,46 @@ describe("AppLayout mobile sidebar behavior", () => {
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(
         false,
       );
+    });
+  });
+
+  it("closes mobile sidebar when navigating to login route", async () => {
+    const user = userEvent.setup();
+    renderAppLayout();
+
+    await user.click(screen.getByLabelText("Открыть навигацию"));
+    expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+
+    await user.click(screen.getByText("Go login"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Login page")).toBeInTheDocument();
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+      expect(
+        screen.queryByRole("button", { name: "Открыть навигацию" }),
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  it("closes mobile sidebar when navigating to admin route", async () => {
+    const user = userEvent.setup();
+    renderAppLayout();
+
+    await user.click(screen.getByLabelText("Открыть навигацию"));
+    expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+
+    await user.click(screen.getByText("Go admin"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin route content")).toBeInTheDocument();
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+      expect(
+        screen.queryByRole("button", { name: "Открыть навигацию" }),
+      ).not.toBeInTheDocument();
     });
   });
 
