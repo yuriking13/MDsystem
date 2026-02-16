@@ -2282,6 +2282,11 @@
     color: var(--text-primary);
     font-size: 14px;
     font-weight: 600;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .admin-mobile-nav-toggle {
