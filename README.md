@@ -46,6 +46,7 @@ Run all checks from the workspace root:
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
+- Responsive matrix regression tests: `pnpm test:responsive`
 - Coverage: `pnpm test:coverage`
 - Build: `pnpm build`
 
@@ -83,3 +84,8 @@ Automated responsive regression coverage for this matrix lives in:
 - `apps/web/tests/styles/legacyResponsiveSafeguards.test.ts`
 - `apps/web/tests/styles/layoutResponsiveShell.test.ts`
 - `apps/web/tests/styles/docsAndGraphResponsive.test.ts`
+
+Quick run for this focused suite:
+
+- Workspace root: `pnpm test:responsive`
+- Web app only: `pnpm --filter web run test:responsive`

@@ -17,6 +17,7 @@
     "lint:fix": "pnpm run quality:repo && pnpm -r run lint:fix",
     "typecheck": "pnpm run quality:repo && pnpm -r run typecheck",
     "test": "pnpm run quality:repo && pnpm -r run test",
+    "test:responsive": "pnpm run quality:repo && pnpm --filter web run test:responsive",
     "test:coverage": "pnpm run quality:repo && pnpm -r run test:coverage",
     "prepare": "husky || true",
     "db:cleanup": "cd apps/api && node -e \"require('child_process').execSync('psql ' + process.env.DATABASE_URL + ' -f prisma/migrations/cleanup_invalid_statistics.sql', {stdio: 'inherit'})\""
