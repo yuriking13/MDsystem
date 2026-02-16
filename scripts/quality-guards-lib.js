@@ -226,7 +226,10 @@ function collectWebCssViewportFallbackViolations(workspaceRoot, fileCache) {
       let nextLineIndex = i + 1;
       while (
         nextLineIndex < lines.length &&
-        lines[nextLineIndex].trim().length === 0
+        (lines[nextLineIndex].trim().length === 0 ||
+          lines[nextLineIndex].trim().startsWith("/*") ||
+          lines[nextLineIndex].trim().startsWith("*") ||
+          lines[nextLineIndex].trim().startsWith("*/"))
       ) {
         nextLineIndex += 1;
       }

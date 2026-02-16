@@ -164,6 +164,12 @@ test("runQualityGuards blocks 100vh declarations without 100dvh fallback", () =>
       "  height: 100dvh;",
       "}",
       "",
+      ".ok-with-comment {",
+      "  min-height: 100vh;",
+      "  /* dynamic viewport fallback */",
+      "  min-height: 100dvh;",
+      "}",
+      "",
       ".bad {",
       "  max-height: 100vh !important;",
       "}",
@@ -180,6 +186,6 @@ test("runQualityGuards blocks 100vh declarations without 100dvh fallback", () =>
   );
   assert.ok(viewportViolation);
   assert.equal(viewportViolation.violations.length, 1);
-  assert.equal(viewportViolation.violations[0].line, 7);
+  assert.equal(viewportViolation.violations[0].line, 13);
   assert.match(viewportViolation.violations[0].snippet, /max-height:\s*100vh/);
 });
