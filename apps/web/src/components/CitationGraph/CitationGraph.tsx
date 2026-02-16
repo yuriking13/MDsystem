@@ -182,6 +182,48 @@ type FetchJobStatus = {
   cancelReason?: string;
 };
 
+const GRAPH_HOVER_CARD_CLASS_PREFIX = "graph-hover-card-pos-";
+const graphHoverCardRuleCache = new Map<string, string>();
+let graphHoverCardStyleSheet: CSSStyleSheet | null = null;
+
+const ensureGraphHoverCardStyleSheet = (): CSSStyleSheet | null => {
+  if (graphHoverCardStyleSheet) return graphHoverCardStyleSheet;
+  if (typeof document === "undefined") return null;
+
+  const styleEl = document.createElement("style");
+  styleEl.id = "graph-hover-card-rules";
+  document.head.appendChild(styleEl);
+  graphHoverCardStyleSheet = styleEl.sheet as CSSStyleSheet | null;
+  return graphHoverCardStyleSheet;
+};
+
+const ensureGraphHoverCardPositionClass = (
+  left: number,
+  top: number,
+): string => {
+  const roundedLeft = Math.round(left);
+  const roundedTop = Math.round(top);
+  const key = `${roundedLeft}:${roundedTop}`;
+  const cachedClassName = graphHoverCardRuleCache.get(key);
+  if (cachedClassName) return cachedClassName;
+
+  const hash = key.split("").reduce((acc, char) => {
+    return (acc * 31 + char.charCodeAt(0)) % 2147483647;
+  }, 23);
+  const className = `${GRAPH_HOVER_CARD_CLASS_PREFIX}${hash.toString(36)}`;
+  const styleSheet = ensureGraphHoverCardStyleSheet();
+
+  if (styleSheet) {
+    styleSheet.insertRule(
+      `.${className}{left:${roundedLeft}px;top:${roundedTop}px;}`,
+      styleSheet.cssRules.length,
+    );
+  }
+
+  graphHoverCardRuleCache.set(key, className);
+  return className;
+};
+
 export default function CitationGraph({ projectId }: Props) {
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -2248,16 +2290,8 @@ export default function CitationGraph({ projectId }: Props) {
     `legend-dot ${LEGEND_DOT_COLOR_CLASS_MAP[background] ?? "legend-dot--blue"}`;
   const getLegendValueClassName = (color: string): string =>
     `legend-value ${LEGEND_VALUE_COLOR_CLASS_MAP[color] ?? "legend-value--blue"}`;
-  const getGraphHoverCardClassName = (
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-  ): string => {
-    const horizontal = width > 0 && x > width / 2 ? "right" : "left";
-    const vertical = height > 0 && y > height / 2 ? "bottom" : "top";
-    return `graph-hover-card graph-hover-card--${vertical}-${horizontal}`;
-  };
+  const getGraphHoverCardClassName = (x: number, y: number): string =>
+    `graph-hover-card ${ensureGraphHoverCardPositionClass(x, y)}`;
   const getAiMessageBubbleClassName = (role: "user" | "assistant"): string =>
     `ai-message-bubble ai-message-bubble--${role}`;
   const getAiSelectAllButtonClassName = (allSelected: boolean): string =>
@@ -3895,8 +3929,6 @@ export default function CitationGraph({ projectId }: Props) {
                   className={getGraphHoverCardClassName(
                     hoverCardPosition.x,
                     hoverCardPosition.y,
-                    containerRef.current?.clientWidth ?? 0,
-                    containerRef.current?.clientHeight ?? 0,
                   )}
                 >
                   <ArticleCard

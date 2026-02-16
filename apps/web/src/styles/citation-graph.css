@@ -1760,26 +1760,6 @@
   pointer-events: none;
 }
 
-.graph-hover-card--top-left {
-  top: 16px;
-  left: 16px;
-}
-
-.graph-hover-card--top-right {
-  top: 16px;
-  right: 16px;
-}
-
-.graph-hover-card--bottom-left {
-  bottom: 16px;
-  left: 16px;
-}
-
-.graph-hover-card--bottom-right {
-  bottom: 16px;
-  right: 16px;
-}
-
 .graph-hover-card .article-card {
   margin: 0;
 }
