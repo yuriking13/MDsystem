@@ -7,7 +7,12 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { useEditor, EditorContent, type CommandProps } from "@tiptap/react";
+import {
+  useEditor,
+  EditorContent,
+  type CommandProps,
+  type Editor as TiptapEditorInstance,
+} from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
@@ -55,6 +60,7 @@ import AIWritingAssistant from "./AIWritingAssistant";
 import type { ProjectStatistic, DataClassification } from "../../lib/api";
 import type { TableData, ChartConfig } from "../ChartFromTable";
 import { IconChatBubbleQuote, IconClose, IconPlus } from "../FlowbiteIcons";
+import type { Node as ProseMirrorNode } from "prosemirror-model";
 import "./TiptapEditor.css";
 
 import type { CitationStyle } from "../../lib/api";
@@ -68,6 +74,43 @@ type ParagraphCommandSet = {
   toggleIndent: () => boolean;
   setIndent: (indent: boolean) => boolean;
 };
+
+type EditorExtension = NonNullable<
+  NonNullable<Parameters<typeof useEditor>[0]>["extensions"]
+>[number];
+
+type MarginUpdateCommandChain = {
+  updateMargins: (margins: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+  }) => MarginUpdateCommandChain;
+  run: () => boolean;
+};
+
+type CitationEditorCommands = {
+  removeCitationById: (citationId: string) => boolean;
+};
+
+type CommentCommandChain = {
+  focus: () => CommentCommandChain;
+  setComment: (attrs: CommentAttrs) => CommentCommandChain;
+  run: () => boolean;
+};
+
+declare global {
+  interface Window {
+    __editorInsertCitation?: (citationAttrs: CitationAttrs) => void;
+    __editorInsertChart?: (chart: ChartData) => void;
+    __editorInsertTable?: (
+      table: { headers: string[]; rows: string[][] },
+      title?: string,
+      statisticId?: string,
+    ) => void;
+    __editorCreateTable?: (rows: number, cols: number) => Promise<void>;
+  }
+}
 
 // Custom Paragraph extension with indent support
 const CustomParagraph = Paragraph.extend({
@@ -362,7 +405,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     // Создаём расширения по одному с проверкой
     const extensions = useMemo(() => {
-      const extList: any[] = [];
+      const extList: EditorExtension[] = [];
 
       // StarterKit
       try {
@@ -490,7 +533,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     // Deduplicate extensions by name to avoid TipTap warnings
     const uniqueExtensions = useMemo(() => {
       const seen = new Set<string>();
-      const result: any[] = [];
+      const result: EditorExtension[] = [];
 
       for (const ext of extensions) {
         // Skip null/undefined
@@ -625,19 +668,24 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           const rowId = row.getAttribute("data-row-id");
           let foundAndUpdated = false;
           let targetPos: number | null = null;
-          let targetAttrs: Record<string, any> = {};
+          let targetAttrs: Record<string, unknown> = {};
           let hasTargetAttrs = false;
 
           if (rowId) {
-            editor.state.doc.descendants((node: any, pos: number) => {
-              if (node.type.name === "tableRow" && node.attrs.rowId === rowId) {
-                targetPos = pos;
-                targetAttrs = node.attrs as Record<string, any>;
-                hasTargetAttrs = true;
-                return false;
-              }
-              return true;
-            });
+            editor.state.doc.descendants(
+              (node: ProseMirrorNode, pos: number) => {
+                if (
+                  node.type.name === "tableRow" &&
+                  node.attrs.rowId === rowId
+                ) {
+                  targetPos = pos;
+                  targetAttrs = node.attrs as Record<string, unknown>;
+                  hasTargetAttrs = true;
+                  return false;
+                }
+                return true;
+              },
+            );
           }
 
           if (targetPos !== null && hasTargetAttrs) {
@@ -807,32 +855,37 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               let rowIndex = 0;
               let tr = editor.state.tr;
 
-              node.forEach((rowNode: any, rowOffset: number) => {
+              node.forEach((rowNode: ProseMirrorNode, rowOffset: number) => {
                 if (rowIndex > 0) return;
                 const rowPos = tablePos + 1 + rowOffset;
-                rowNode.forEach((cellNode: any, cellOffset: number) => {
-                  const colspan = cellNode.attrs?.colspan || 1;
-                  const nextWidths = widths.slice(colIndex, colIndex + colspan);
-                  while (nextWidths.length < colspan) {
-                    nextWidths.push(minWidth);
-                  }
-                  colIndex += colspan;
-
-                  const current = cellNode.attrs?.colwidth;
-                  const same =
-                    Array.isArray(current) &&
-                    current.length === nextWidths.length &&
-                    current.every(
-                      (val: number, idx: number) => val === nextWidths[idx],
+                rowNode.forEach(
+                  (cellNode: ProseMirrorNode, cellOffset: number) => {
+                    const colspan = cellNode.attrs?.colspan || 1;
+                    const nextWidths = widths.slice(
+                      colIndex,
+                      colIndex + colspan,
                     );
-                  if (same) return;
+                    while (nextWidths.length < colspan) {
+                      nextWidths.push(minWidth);
+                    }
+                    colIndex += colspan;
 
-                  const cellPos = rowPos + 1 + cellOffset;
-                  tr = tr.setNodeMarkup(cellPos, undefined, {
-                    ...cellNode.attrs,
-                    colwidth: nextWidths,
-                  });
-                });
+                    const current = cellNode.attrs?.colwidth;
+                    const same =
+                      Array.isArray(current) &&
+                      current.length === nextWidths.length &&
+                      current.every(
+                        (val: number, idx: number) => val === nextWidths[idx],
+                      );
+                    if (same) return;
+
+                    const cellPos = rowPos + 1 + cellOffset;
+                    tr = tr.setNodeMarkup(cellPos, undefined, {
+                      ...cellNode.attrs,
+                      colwidth: nextWidths,
+                    });
+                  },
+                );
                 rowIndex += 1;
               });
 
@@ -1005,7 +1058,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       const colWidths: number[] = [];
       const rowHeights: Array<number | null> = [];
 
-      node.forEach((rowNode: any) => {
+      node.forEach((rowNode: ProseMirrorNode) => {
         if (rowNode?.type?.name === "tableRow") {
           const rowArr: string[] = [];
           const rowHeight = rowNode.attrs?.rowHeight;
@@ -1016,7 +1069,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               ? Math.round(rowHeight)
               : null,
           );
-          rowNode.forEach((cellNode: any, colIdx: number) => {
+          rowNode.forEach((cellNode: ProseMirrorNode, colIdx: number) => {
             if (
               cellNode?.type?.name === "tableCell" ||
               cellNode?.type?.name === "tableHeader"
@@ -1127,13 +1180,13 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     // Extract headings from document for outline
     const updateHeadings = useCallback(
-      (editorInstance: any) => {
+      (editorInstance: TiptapEditorInstance | null) => {
         if (!editorInstance) return;
 
         const doc = editorInstance.state.doc;
         const newHeadings: EditorHeading[] = [];
 
-        doc.descendants((node: any, pos: number) => {
+        doc.descendants((node: ProseMirrorNode, pos: number) => {
           if (node?.type?.name === "heading") {
             const id = `heading-${pos}`;
             newHeadings.push({
@@ -1204,7 +1257,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         },
         removeCitationById: (citationId: string) => {
           if (editor && !editor.isDestroyed) {
-            return (editor.commands as any).removeCitationById(citationId);
+            const commands =
+              editor.commands as unknown as CitationEditorCommands;
+            return commands.removeCitationById(citationId);
           }
           return false;
         },
@@ -1341,17 +1396,17 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       );
 
       // Backward compatibility: also set window functions during migration
-      (window as any).__editorInsertCitation = insertCitation;
-      (window as any).__editorInsertChart = insertChart;
-      (window as any).__editorInsertTable = insertTable;
+      window.__editorInsertCitation = insertCitation;
+      window.__editorInsertChart = insertChart;
+      window.__editorInsertTable = insertTable;
 
       return () => {
         unsubCitation();
         unsubChart();
         unsubTable();
-        delete (window as any).__editorInsertCitation;
-        delete (window as any).__editorInsertChart;
-        delete (window as any).__editorInsertTable;
+        delete window.__editorInsertCitation;
+        delete window.__editorInsertChart;
+        delete window.__editorInsertTable;
       };
     }, [editor]);
 
@@ -1416,7 +1471,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       if (!editor) return;
 
       try {
-        (editor.chain() as any)
+        const marginChain =
+          editor.chain() as unknown as MarginUpdateCommandChain;
+        marginChain
           .updateMargins({
             top: styleConfig.marginTop,
             bottom: styleConfig.marginBottom,
@@ -1495,10 +1552,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               const tableRows: string[][] = [];
               let tableCols = 0;
 
-              node.forEach((rowNode: any) => {
+              node.forEach((rowNode: ProseMirrorNode) => {
                 if (rowNode?.type?.name === "tableRow") {
                   const rowData: string[] = [];
-                  rowNode.forEach((cellNode: any) => {
+                  rowNode.forEach((cellNode: ProseMirrorNode) => {
                     if (
                       cellNode?.type?.name === "tableCell" ||
                       cellNode?.type?.name === "tableHeader"
@@ -1535,11 +1592,11 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       );
 
       // Backward compatibility
-      (window as any).__editorCreateTable = createTableHandler;
+      window.__editorCreateTable = createTableHandler;
 
       return () => {
         unsubCreateTable();
-        delete (window as any).__editorCreateTable;
+        delete window.__editorCreateTable;
       };
     }, [editor, onTableCreated]);
 
@@ -1601,7 +1658,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       // Update editor margins via PaginationPlus
       if (editor) {
         try {
-          (editor.chain() as any)
+          const marginChain =
+            editor.chain() as unknown as MarginUpdateCommandChain;
+          marginChain
             .updateMargins({
               top: settings.marginTop,
               bottom: settings.marginBottom,
@@ -1634,7 +1693,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
       if (editor) {
         try {
-          (editor.chain() as any)
+          const marginChain =
+            editor.chain() as unknown as MarginUpdateCommandChain;
+          marginChain
             .updateMargins({
               top: config.marginTop,
               bottom: config.marginBottom,
@@ -1791,9 +1852,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
                       resolved: false,
                     };
 
-                    (editor.chain().focus() as any)
-                      .setComment(commentAttrs)
-                      .run();
+                    const commentChain = editor
+                      .chain()
+                      .focus() as unknown as CommentCommandChain;
+                    commentChain.setComment(commentAttrs).run();
 
                     setCommentText("");
                     setShowCommentModal(false);
