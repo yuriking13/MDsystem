@@ -533,6 +533,17 @@ describe("AppLayout mobile sidebar behavior", () => {
       expect(document.body.classList.contains("layout-fixed")).toBe(
         shouldLockLayout,
       );
+      if (shouldLockLayout) {
+        expect(document.querySelector(".app-mobile-topbar")).toBeNull();
+        expect(document.querySelector(".app-mobile-fab-toggle")).not.toBeNull();
+        expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
+        expect(document.querySelector(".animated-bg")).toBeNull();
+      } else {
+        expect(document.querySelector(".app-mobile-topbar")).not.toBeNull();
+        expect(document.querySelector(".app-mobile-fab-toggle")).toBeNull();
+        expect(document.querySelector(".app-layout-fixed")).toBeNull();
+        expect(document.querySelector(".animated-bg")).not.toBeNull();
+      }
     },
   );
 
@@ -561,6 +572,19 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(document.body.classList.contains("layout-fixed")).toBe(
           shouldLockLayout,
         );
+        if (shouldLockLayout) {
+          expect(document.querySelector(".app-mobile-topbar")).toBeNull();
+          expect(
+            document.querySelector(".app-mobile-fab-toggle"),
+          ).not.toBeNull();
+          expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
+          expect(document.querySelector(".animated-bg")).toBeNull();
+        } else {
+          expect(document.querySelector(".app-mobile-topbar")).not.toBeNull();
+          expect(document.querySelector(".app-mobile-fab-toggle")).toBeNull();
+          expect(document.querySelector(".app-layout-fixed")).toBeNull();
+          expect(document.querySelector(".animated-bg")).not.toBeNull();
+        }
 
         const toggleButton = screen.getByRole("button", {
           name: "Открыть навигацию",
@@ -603,6 +627,10 @@ describe("AppLayout mobile sidebar behavior", () => {
 
         unmount();
         document.body.classList.remove("sidebar-modal-open");
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
       }
     },
   );
