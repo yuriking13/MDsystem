@@ -823,7 +823,11 @@ export default function DocumentationPage(): React.JSX.Element {
   }, [activeSection, activeTopicId]);
 
   useEffect(() => {
-    if (!pendingFocusTopicId || pendingFocusTopicId !== activeTopicId) return;
+    if (!pendingFocusTopicId) return;
+    if (pendingFocusTopicId !== activeTopicId) {
+      setPendingFocusTopicId(null);
+      return;
+    }
 
     const tab = document.getElementById(
       `docs-tab-${pendingFocusTopicId}`,
@@ -919,6 +923,7 @@ export default function DocumentationPage(): React.JSX.Element {
                 <button
                   key={section.id}
                   onClick={() => {
+                    setPendingFocusTopicId(null);
                     setActiveSectionId(section.id);
                     setActiveTopicId(section.topics[0].id);
                   }}
@@ -944,7 +949,10 @@ export default function DocumentationPage(): React.JSX.Element {
                   <button
                     key={topic.id}
                     className={`docs-subnav-item ${activeTopic.id === topic.id ? "active" : ""}`}
-                    onClick={() => setActiveTopicId(topic.id)}
+                    onClick={() => {
+                      setPendingFocusTopicId(null);
+                      setActiveTopicId(topic.id);
+                    }}
                     onKeyDown={(event) =>
                       handleTopicTabKeyDown(event, topicIndex)
                     }

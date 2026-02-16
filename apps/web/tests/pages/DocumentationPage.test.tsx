@@ -362,4 +362,28 @@ describe("DocumentationPage menu + submenu", () => {
     expect(lastTab).toHaveAttribute("aria-selected", "true");
     expect(lastTab).toHaveFocus();
   });
+
+  it("does not retain stale keyboard focus target after section switch", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    await user.click(screen.getByRole("button", { name: "Настройки проекта" }));
+
+    const firstSettingsTab = screen.getByRole("tab", {
+      name: "Тип и подтип исследования",
+    });
+    firstSettingsTab.focus();
+    await user.keyboard("{ArrowDown}");
+
+    const apiSection = screen.getByRole("button", { name: "API ключи" });
+    await user.click(apiSection);
+
+    expect(apiSection).toHaveFocus();
+    expect(
+      screen.getByRole("tab", { name: "Какие провайдеры доступны" }),
+    ).toHaveAttribute("aria-selected", "true");
+    expect(
+      screen.getByRole("heading", { level: 2, name: "API ключи" }),
+    ).toBeInTheDocument();
+  });
 });
