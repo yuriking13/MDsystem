@@ -125,7 +125,7 @@ function main() {
       )
     ) {
       console.error(
-        "\n[quality-guards] Tip: keep `apps/web/tests/config/responsiveSuiteTargets.json` as a unique non-empty array of .ts/.tsx target paths.",
+        "\n[quality-guards] Tip: keep `apps/web/tests/config/responsiveSuiteTargets.json` as a unique non-empty array of .ts/.tsx target paths and retain required responsive core targets in canonical order.",
       );
     }
 

@@ -1323,18 +1323,20 @@ test("runQualityGuards reports invalid responsive target config entries", () => 
       violation.snippet.includes("invalid-target-type:index-6"),
     ),
   );
+  assert.ok(
+    configViolation.violations.some((violation) =>
+      violation.snippet.includes("missing-required-config-target:"),
+    ),
+  );
 });
 
 test("runQualityGuards accepts valid responsive target config entries", () => {
   const workspaceRoot = createWorkspaceFixture();
+  const responsiveTargets = getDefaultResponsiveTargets();
 
   writeFile(
     path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
-    JSON.stringify(
-      ["tests/config/one.test.ts", "tests/config/two.test.tsx"],
-      null,
-      2,
-    ),
+    JSON.stringify(responsiveTargets, null, 2),
   );
 
   const result = runQualityGuards({
@@ -1346,6 +1348,65 @@ test("runQualityGuards accepts valid responsive target config entries", () => {
     (entry) => entry.check.name === "web-responsive-target-config",
   );
   assert.equal(configViolation, undefined);
+});
+
+test("runQualityGuards reports missing required responsive targets in config", () => {
+  const workspaceRoot = createWorkspaceFixture();
+  const responsiveTargets = getDefaultResponsiveTargets();
+  const trimmedTargets = responsiveTargets.slice(0, responsiveTargets.length - 1);
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(trimmedTargets, null, 2),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const configViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-target-config",
+  );
+  assert.ok(configViolation);
+  assert.ok(
+    configViolation.violations.some((violation) =>
+      violation.snippet.includes("missing-required-config-target:"),
+    ),
+  );
+});
+
+test("runQualityGuards reports required responsive target order mismatch in config", () => {
+  const workspaceRoot = createWorkspaceFixture();
+  const responsiveTargets = getDefaultResponsiveTargets();
+  const targetAIndex = responsiveTargets.indexOf("tests/utils/responsiveMatrix.test.ts");
+  const targetBIndex = responsiveTargets.indexOf("tests/utils/viewport.test.ts");
+  const reorderedTargets = [...responsiveTargets];
+
+  if (targetAIndex !== -1 && targetBIndex !== -1) {
+    reorderedTargets[targetAIndex] = responsiveTargets[targetBIndex];
+    reorderedTargets[targetBIndex] = responsiveTargets[targetAIndex];
+  }
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(reorderedTargets, null, 2),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const configViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-target-config",
+  );
+  assert.ok(configViolation);
+  assert.ok(
+    configViolation.violations.some((violation) =>
+      violation.snippet.includes("required-target-order-mismatch:"),
+    ),
+  );
 });
 
 test("runQualityGuards ignores missing responsive manual matrix config file", () => {

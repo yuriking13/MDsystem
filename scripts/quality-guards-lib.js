@@ -111,7 +111,7 @@ const webLayoutTestRouteMatrixCoverageCheck = {
 const webResponsiveTargetConfigCheck = {
   name: "web-responsive-target-config",
   description:
-    "apps/web/tests/config/responsiveSuiteTargets.json must be valid JSON array of unique non-empty .ts/.tsx paths",
+    "apps/web/tests/config/responsiveSuiteTargets.json must be a valid unique .ts/.tsx target list and retain required responsive suite core targets",
 };
 
 const webResponsiveManualMatrixConfigCheck = {
@@ -817,6 +817,7 @@ function collectWebResponsiveTargetConfigViolations(workspaceRoot) {
 
   const violations = [];
   const seenTargets = new Set();
+  const validTrimmedTargets = [];
   for (let index = 0; index < parsedConfig.length; index += 1) {
     const target = parsedConfig[index];
     if (typeof target !== "string") {
@@ -865,6 +866,47 @@ function collectWebResponsiveTargetConfigViolations(workspaceRoot) {
     }
 
     seenTargets.add(trimmedTarget);
+    validTrimmedTargets.push(trimmedTarget);
+  }
+
+  for (const requiredTarget of DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS) {
+    if (!seenTargets.has(requiredTarget)) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: `missing-required-config-target:${requiredTarget}`,
+      });
+    }
+  }
+
+  const hasMissingRequiredTargets = violations.some((violation) =>
+    violation.snippet.startsWith("missing-required-config-target:"),
+  );
+  if (!hasMissingRequiredTargets) {
+    let lastIndex = -1;
+    let mismatchIndex = -1;
+    for (
+      let requiredIndex = 0;
+      requiredIndex < DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS.length;
+      requiredIndex += 1
+    ) {
+      const requiredTarget =
+        DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS[requiredIndex];
+      const currentIndex = validTrimmedTargets.indexOf(requiredTarget);
+      if (currentIndex <= lastIndex) {
+        mismatchIndex = requiredIndex;
+        break;
+      }
+      lastIndex = currentIndex;
+    }
+
+    if (mismatchIndex !== -1) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: `required-target-order-mismatch:index-${mismatchIndex + 1}`,
+      });
+    }
   }
 
   return violations;

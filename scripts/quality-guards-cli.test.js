@@ -555,6 +555,27 @@ test("quality-guards check mode reports responsive target config remediation tip
   );
 });
 
+test("quality-guards check mode reports responsive target config tip when required targets are missing", () => {
+  const workspaceRoot = createTempWorkspace();
+  const responsiveTargets = getDefaultResponsiveTargets().slice(0, 5);
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(responsiveTargets, null, 2),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep `apps\/web\/tests\/config\/responsiveSuiteTargets\.json` as a unique non-empty array of \.ts\/\.tsx target paths/,
+  );
+});
+
 test("quality-guards check mode reports responsive suite tip when config-runner script has no config file", () => {
   const workspaceRoot = createTempWorkspace();
   const webPackagePath = path.join(workspaceRoot, "apps/web/package.json");
