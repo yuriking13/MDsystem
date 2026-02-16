@@ -108,6 +108,17 @@ type GraphData = {
   links: GraphLink[];
 };
 
+type GraphLinkWithSemantic = GraphLink & {
+  isSemantic?: boolean;
+  similarity?: number;
+};
+
+type GraphAIDebugPayload = {
+  receivedArticles?: number;
+  externalArticles?: number;
+  articlesForAICount?: number;
+};
+
 type FilterType = "all" | "selected" | "excluded";
 type DepthType = 1 | 2 | 3;
 
@@ -321,13 +332,7 @@ export default function CitationGraph({ projectId }: Props) {
   // Детали кластера (модальное окно)
   const [clusterDetailModal, setClusterDetailModal] = useState<{
     cluster: SemanticCluster;
-    articles: Array<{
-      id: string;
-      title: string;
-      year: number | null;
-      authors: string | null;
-      status?: string;
-    }>;
+    articles: ClusterArticleDetail[];
   } | null>(null);
   const [loadingClusterDetails, setLoadingClusterDetails] = useState(false);
   // Выбранные статьи в кластере для массовых действий
@@ -435,7 +440,6 @@ export default function CitationGraph({ projectId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphAreaRef = useRef<HTMLDivElement>(null);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
-  // ForceGraph2D ref - тип any необходим из-за отсутствия типов в библиотеке
   const graphRef = useRef<any>(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
@@ -895,15 +899,7 @@ export default function CitationGraph({ projectId }: Props) {
           }
           return null;
         })
-        .filter(Boolean) as Array<{
-        id: string;
-        title: string;
-        year: number | null;
-        authors: string | null;
-        status: string;
-        pmid: string | null;
-        doi: string | null;
-      }>;
+        .filter((article): article is ClusterArticleDetail => article !== null);
 
       // Сортируем: центральная статья первая
       articles.sort((a, b) => {
@@ -937,7 +933,7 @@ export default function CitationGraph({ projectId }: Props) {
   // Выбрать все статьи кластера
   const selectAllClusterArticles = () => {
     if (!clusterDetailModal) return;
-    const allIds = clusterDetailModal.articles.map((a: any) => a.id);
+    const allIds = clusterDetailModal.articles.map((article) => article.id);
     setSelectedClusterArticles(new Set(allIds));
   };
 
@@ -953,15 +949,22 @@ export default function CitationGraph({ projectId }: Props) {
     setAddingFromCluster(true);
     try {
       // Собираем PMIDs и DOIs из выбранных статей
-      const selectedArticles = clusterDetailModal.articles.filter((a: any) =>
-        selectedClusterArticles.has(a.id),
+      const selectedArticles = clusterDetailModal.articles.filter((article) =>
+        selectedClusterArticles.has(article.id),
       );
       const pmids = selectedArticles
-        .filter((a: any) => a.pmid)
-        .map((a: any) => a.pmid);
+        .filter((article): article is ClusterArticleDetail & { pmid: string } =>
+          Boolean(article.pmid),
+        )
+        .map((article) => article.pmid);
       const dois = selectedArticles
-        .filter((a: any) => !a.pmid && a.doi)
-        .map((a: any) => a.doi);
+        .filter(
+          (
+            article,
+          ): article is ClusterArticleDetail & { pmid: null; doi: string } =>
+            !article.pmid && Boolean(article.doi),
+        )
+        .map((article) => article.doi);
 
       const res = await apiImportFromGraph(projectId, {
         pmids,
@@ -1414,7 +1417,7 @@ export default function CitationGraph({ projectId }: Props) {
       }
 
       // Перезапускаем симуляцию
-      fg.d3ReheatSimulation();
+      fg.d3ReheatSimulation?.();
     }
   }, [data]);
 
@@ -1857,7 +1860,11 @@ export default function CitationGraph({ projectId }: Props) {
         setAiResponse(res.response);
 
         // Отладка: показываем что получил сервер
-        const debug = (res as any)._debug;
+        const maybeDebug = (res as Record<string, unknown>)["_debug"];
+        const debug =
+          typeof maybeDebug === "object" && maybeDebug !== null
+            ? (maybeDebug as GraphAIDebugPayload)
+            : undefined;
         if (debug) {
           console.log(
             `[AI DEBUG] Server received: ${debug.receivedArticles} articles, external: ${debug.externalArticles}, for AI: ${debug.articlesForAICount}`,
@@ -5055,9 +5062,20 @@ export default function CitationGraph({ projectId }: Props) {
                   nodeLabel={nodeLabel}
                   nodeVal={nodeVal}
                   nodeRelSize={6}
-                  nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
+                  nodeCanvasObject={(
+                    node: GraphNodeWithCoords,
+                    ctx: CanvasRenderingContext2D,
+                    globalScale: number,
+                  ) => {
+                    const nodeX = node.x;
+                    const nodeY = node.y;
                     // Проверка на валидность координат (могут быть undefined при инициализации)
-                    if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) {
+                    if (
+                      typeof nodeX !== "number" ||
+                      !Number.isFinite(nodeX) ||
+                      typeof nodeY !== "number" ||
+                      !Number.isFinite(nodeY)
+                    ) {
                       return; // Пропускаем отрисовку пока координаты не определены
                     }
 
@@ -5113,7 +5131,7 @@ export default function CitationGraph({ projectId }: Props) {
 
                     // Рисуем узел
                     ctx.beginPath();
-                    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                    ctx.arc(nodeX, nodeY, size, 0, 2 * Math.PI);
                     ctx.fill();
 
                     // Сбрасываем свечение
@@ -5125,7 +5143,7 @@ export default function CitationGraph({ projectId }: Props) {
                       : graphColors.strokeColor;
                     ctx.lineWidth = clusterColor ? 1.2 : 0.8;
                     ctx.beginPath();
-                    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                    ctx.arc(nodeX, nodeY, size, 0, 2 * Math.PI);
                     ctx.stroke();
 
                     // Обводка для AI-найденных (заметнее, но не кричащо)
@@ -5133,7 +5151,7 @@ export default function CitationGraph({ projectId }: Props) {
                       ctx.strokeStyle = "rgba(0, 212, 255, 0.6)";
                       ctx.lineWidth = 1.5;
                       ctx.beginPath();
-                      ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                      ctx.arc(nodeX, nodeY, size, 0, 2 * Math.PI);
                       ctx.stroke();
                     }
 
@@ -5146,7 +5164,7 @@ export default function CitationGraph({ projectId }: Props) {
                       ctx.font = `${Math.max(8, size * 0.8)}px sans-serif`;
                       ctx.textAlign = "center";
                       ctx.textBaseline = "middle";
-                      ctx.fillText("⭐", node.x, node.y - size - 4);
+                      ctx.fillText("⭐", nodeX, nodeY - size - 4);
                     }
 
                     // Метки для крупных узлов при масштабе
@@ -5161,24 +5179,26 @@ export default function CitationGraph({ projectId }: Props) {
                       ctx.fillStyle = graphColors.textColor;
                       ctx.textAlign = "center";
                       ctx.textBaseline = "top";
-                      ctx.fillText(label, node.x, node.y + size + 4);
+                      ctx.fillText(label, nodeX, nodeY + size + 4);
                     }
                   }}
-                  linkColor={(link: any) => {
+                  linkColor={(link: GraphLinkWithSemantic) => {
+                    const similarity = link.similarity ?? semanticEdgeThreshold;
                     return link.isSemantic
-                      ? `rgba(236, 72, 153, ${0.3 + (link.similarity - semanticEdgeThreshold) * 2})` // Розовый для семантических
+                      ? `rgba(236, 72, 153, ${0.3 + (similarity - semanticEdgeThreshold) * 2})` // Розовый для семантических
                       : graphColors.linkColor; // Из предвычисленных цветов
                   }}
-                  linkWidth={(link: any) =>
-                    link.isSemantic
-                      ? 1.5 + (link.similarity - semanticEdgeThreshold) * 3 // Толще для высокой схожести
+                  linkWidth={(link: GraphLinkWithSemantic) => {
+                    const similarity = link.similarity ?? semanticEdgeThreshold;
+                    return link.isSemantic
+                      ? 1.5 + (similarity - semanticEdgeThreshold) * 3 // Толще для высокой схожести
                       : linkThickness === "thin"
                         ? 0.5
                         : linkThickness === "thick"
                           ? 1.5
-                          : 0.8
-                  }
-                  linkLineDash={(link: any) =>
+                          : 0.8;
+                  }}
+                  linkLineDash={(link: GraphLinkWithSemantic) =>
                     link.isSemantic ? [4, 4] : null
                   } // Пунктир для семантических
                   linkDirectionalArrowLength={3}
@@ -5193,7 +5213,10 @@ export default function CitationGraph({ projectId }: Props) {
                   d3AlphaMin={0.001}
                   onEngineStop={() => {}}
                   onNodeHover={handleNodeHover}
-                  onNodeClick={(node: any, event: any) => {
+                  onNodeClick={(
+                    node: GraphNodeWithCoords,
+                    event: MouseEvent,
+                  ) => {
                     if (event?.altKey) {
                       if (node.doi) {
                         window.open(`https://doi.org/${node.doi}`, "_blank");
@@ -5205,8 +5228,16 @@ export default function CitationGraph({ projectId }: Props) {
                       }
                       return;
                     }
+                    const normalizedNode: GraphNode = {
+                      ...node,
+                      authors: Array.isArray(node.authors)
+                        ? node.authors.join(", ")
+                        : node.authors,
+                    };
                     setSelectedNodeForDisplay(
-                      selectedNodeForDisplay?.id === node.id ? null : node,
+                      selectedNodeForDisplay?.id === node.id
+                        ? null
+                        : normalizedNode,
                     );
                   }}
                 />
