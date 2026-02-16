@@ -34,6 +34,7 @@ function renderAdminLayout(initialPath = "/admin") {
       <Routes>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<div>Admin dashboard</div>} />
+          <Route path="users" element={<div>Users page</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -86,5 +87,23 @@ describe("AdminLayout responsive sidebar behavior", () => {
 
     unmount();
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(false);
+  });
+
+  it("closes mobile sidebar when navigating to another admin section", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderAdminLayout();
+
+    await user.click(screen.getByLabelText("Открыть навигацию"));
+    expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+
+    await user.click(screen.getByText("Пользователи"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Users page")).toBeInTheDocument();
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+    });
   });
 });
