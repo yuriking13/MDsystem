@@ -50,6 +50,12 @@ const checks = [
   },
 ];
 
+const webJsMirrorCheck = {
+  name: "web-js-mirrors",
+  description:
+    "JS mirror files that shadow TS/TSX modules are not allowed after cleanup",
+};
+
 function walkFiles(rootDir, extensions) {
   const output = [];
   const queue = [rootDir];
@@ -132,7 +138,48 @@ function runGuardCheck(check) {
   return violations;
 }
 
+function collectWebJsMirrors() {
+  const webSrcRoot = path.join(workspaceRoot, "apps/web/src");
+  const jsFiles = getCachedFiles(webSrcRoot, new Set([".js"]));
+
+  const violations = [];
+  for (const jsFilePath of jsFiles) {
+    const modulePath = jsFilePath.slice(0, -3);
+    const hasTypeScriptSibling =
+      fs.existsSync(`${modulePath}.ts`) || fs.existsSync(`${modulePath}.tsx`);
+
+    if (!hasTypeScriptSibling) {
+      continue;
+    }
+
+    violations.push({
+      file: path.relative(workspaceRoot, jsFilePath),
+      line: 1,
+      snippet: "js-mirror-file",
+    });
+  }
+
+  return violations;
+}
+
+function cleanupWebJsMirrors() {
+  const mirrors = collectWebJsMirrors();
+  for (const mirror of mirrors) {
+    fs.rmSync(path.join(workspaceRoot, mirror.file));
+  }
+  return mirrors;
+}
+
 function main() {
+  const removedWebJsMirrors = cleanupWebJsMirrors();
+  if (removedWebJsMirrors.length > 0) {
+    console.log(
+      `[quality-guards] Removed ${removedWebJsMirrors.length} JS mirror file(s) from apps/web/src before checks.`,
+    );
+  }
+
+  fileCache.clear();
+
   const allViolations = [];
 
   for (const check of checks) {
@@ -140,6 +187,11 @@ function main() {
     if (violations.length > 0) {
       allViolations.push({ check, violations });
     }
+  }
+
+  const jsMirrorViolations = collectWebJsMirrors();
+  if (jsMirrorViolations.length > 0) {
+    allViolations.push({ check: webJsMirrorCheck, violations: jsMirrorViolations });
   }
 
   if (allViolations.length === 0) {
