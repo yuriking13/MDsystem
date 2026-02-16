@@ -521,3 +521,33 @@ test("quality-guards check mode reports responsive target config remediation tip
     /Tip: keep `apps\/web\/tests\/config\/responsiveSuiteTargets\.json` as a unique non-empty array of \.ts\/\.tsx target paths/,
   );
 });
+
+test("quality-guards check mode reports responsive suite tip when config-runner script has no config file", () => {
+  const workspaceRoot = createTempWorkspace();
+  const webPackagePath = path.join(workspaceRoot, "apps/web/package.json");
+
+  writeFile(
+    webPackagePath,
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive": "node scripts/run-responsive-suite.mjs",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep `apps\/web\/package\.json` test:responsive in sync with required responsive suites and ensure every target from `apps\/web\/tests\/config\/responsiveSuiteTargets\.json` exists/,
+  );
+});

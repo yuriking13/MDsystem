@@ -81,7 +81,7 @@ const webLayoutMobileBreakpointLiteralCheck = {
 const webResponsiveTestScriptCoverageCheck = {
   name: "web-responsive-test-script-coverage",
   description:
-    "apps/web package test:responsive must include clean-js-mirrors pre-step and required responsive test files",
+    "apps/web package test:responsive must be config-runner based or include clean-js-mirrors pre-step with canonical responsive targets",
 };
 
 const webLayoutTestViewportLiteralCheck = {
@@ -446,7 +446,13 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
   }
 
   const violations = [];
-  if (!responsiveScript.includes("pnpm run clean:js-mirrors && vitest run")) {
+  const normalizedResponsiveScript = responsiveScript.trim();
+  const configRunnerScript = "node scripts/run-responsive-suite.mjs";
+  const usesConfigRunnerScript = normalizedResponsiveScript === configRunnerScript;
+  if (
+    !usesConfigRunnerScript &&
+    !responsiveScript.includes("pnpm run clean:js-mirrors && vitest run")
+  ) {
     violations.push({
       file: relativeFile,
       line: scriptLine,
@@ -454,9 +460,19 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
     });
   }
 
-  const responsiveTargets = extractVitestTargetsFromScript(responsiveScript);
   const { loadedFromConfig, targets: requiredTargets } =
     loadRequiredWebResponsiveTestTargets(workspaceRoot);
+  if (usesConfigRunnerScript && !loadedFromConfig) {
+    violations.push({
+      file: relativeFile,
+      line: scriptLine,
+      snippet: "missing-config:responsiveSuiteTargets.json",
+    });
+  }
+
+  const responsiveTargets = usesConfigRunnerScript
+    ? [...requiredTargets]
+    : extractVitestTargetsFromScript(responsiveScript);
   const targetSet = new Set(responsiveTargets);
   let hasDuplicateTargets = false;
 

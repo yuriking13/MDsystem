@@ -38,8 +38,8 @@ The repository enforces strict quality gates for TypeScript and UI code:
 - no direct DOM style mutations (`.style.*` / `setAttribute("style", ...)`) in web source.
 - any `height|min-height|max-height: 100vh` declaration in web CSS must be followed by a `100dvh` fallback line.
 - `AppLayout` and `AdminLayout` must use shared responsive helpers (`apps/web/src/lib/responsive.ts`) instead of comparing `window.innerWidth` directly.
-- `apps/web/package.json` script `test:responsive` must include the required responsive regression suite list (guarded by `tests/config/responsiveSuiteContract.test.ts`).
-- `apps/web/package.json` script `test:responsive` must keep the canonical target order (no unexpected/duplicate/reordered suites).
+- `apps/web/package.json` script `test:responsive` must stay delegated to `node scripts/run-responsive-suite.mjs`.
+- `apps/web/tests/config/responsiveSuiteTargets.json` defines the canonical responsive suite list and order (no unexpected/duplicate/reordered targets).
 - `apps/web/tests/components/AppLayout.test.tsx` and `apps/web/tests/pages/AdminLayout.test.tsx` must avoid numeric `setViewportWidth(...)` literals and use shared responsive fixtures/constants.
 - `apps/web/tests/components/AppLayout.test.tsx` and `apps/web/tests/pages/AdminLayout.test.tsx` must derive mobile/open expectations with `isAppMobileViewport` / `isAdminMobileViewport` rather than direct width comparisons.
 - `apps/web/tests/components/AppLayout.test.tsx` and `apps/web/tests/pages/AdminLayout.test.tsx` must avoid inline numeric viewport arrays and iterate shared matrix constants (`TARGET_VIEWPORT_WIDTHS`, `MOBILE_VIEWPORT_WIDTHS`, etc.).

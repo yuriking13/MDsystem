@@ -554,6 +554,75 @@ test("runQualityGuards accepts complete web test:responsive script coverage", ()
   assert.equal(responsiveScriptCoverageViolation, undefined);
 });
 
+test("runQualityGuards accepts config-runner responsive script coverage", () => {
+  const workspaceRoot = createWorkspaceFixture();
+  const responsiveTargets = getDefaultResponsiveTargets();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(responsiveTargets, null, 2),
+  );
+  for (const target of responsiveTargets) {
+    writeFile(path.join(workspaceRoot, "apps/web", target), "export {};");
+  }
+  writeFile(
+    path.join(workspaceRoot, "apps/web/package.json"),
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive": "node scripts/run-responsive-suite.mjs",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const responsiveScriptCoverageViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-test-script-coverage",
+  );
+  assert.equal(responsiveScriptCoverageViolation, undefined);
+});
+
+test("runQualityGuards blocks config-runner responsive script when target config is missing", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/package.json"),
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive": "node scripts/run-responsive-suite.mjs",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const responsiveScriptCoverageViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-test-script-coverage",
+  );
+  assert.ok(responsiveScriptCoverageViolation);
+  assert.ok(
+    responsiveScriptCoverageViolation.violations.some((violation) =>
+      violation.snippet.includes("missing-config:responsiveSuiteTargets.json"),
+    ),
+  );
+});
+
 test("runQualityGuards blocks web test:responsive script without clean-js-mirrors pre-step", () => {
   const workspaceRoot = createWorkspaceFixture();
   const responsiveTargets = getDefaultResponsiveTargets();
