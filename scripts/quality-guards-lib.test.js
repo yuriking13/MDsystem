@@ -131,11 +131,11 @@ test("runQualityGuards enforces style prop usage outside allowlist", () => {
   const workspaceRoot = createWorkspaceFixture();
 
   writeFile(
-    path.join(workspaceRoot, "apps/web/src/components/FlowbiteIcons.tsx"),
+    path.join(workspaceRoot, "apps/web/src/components/ChartFromTable.tsx"),
     [
-      "export function FlowbiteIcons() {",
+      "export function ChartFromTable() {",
       "  const styleObj = { opacity: 0.9 };",
-      "  return <svg style={styleObj}></svg>;",
+      "  return <div style={styleObj}>Chart</div>;",
       "}",
     ].join("\n"),
   );
