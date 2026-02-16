@@ -276,7 +276,7 @@
 /* Stats Grid */
 .admin-stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -2073,7 +2073,7 @@
 /* ===== SYSTEM PAGE ===== */
 .admin-system-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(350px, 100%), 1fr));
   gap: 20px;
 }
 
