@@ -48,6 +48,12 @@ export default function AdminLayout() {
   }, []);
 
   useEffect(() => {
+    if (!isMobileViewport && mobileSidebarOpen) {
+      setMobileSidebarOpen(false);
+    }
+  }, [isMobileViewport, mobileSidebarOpen]);
+
+  useEffect(() => {
     if (!mobileSidebarOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {

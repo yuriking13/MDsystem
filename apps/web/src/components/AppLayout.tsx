@@ -75,6 +75,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { token } = useAuth();
   const location = useLocation();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= 768;
+  });
   const [projectInfo, setProjectInfoState] =
     useState<ProjectInfo>(defaultProjectInfo);
   const [articleCounts, setArticleCounts] =
@@ -128,6 +132,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => {
+      setIsMobileViewport(window.innerWidth <= 768);
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport && mobileSidebarOpen) {
+      setMobileSidebarOpen(false);
+    }
+  }, [isMobileViewport, mobileSidebarOpen]);
 
   useEffect(() => {
     if (!mobileSidebarOpen) return;
