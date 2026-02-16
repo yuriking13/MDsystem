@@ -803,7 +803,7 @@
 }
 
 .search-field-filter {
-  min-width: 180px;
+  min-width: min(180px, 100%);
 }
 
 .search-field-select {
@@ -858,7 +858,7 @@
 }
 
 .search-max-results-field {
-  min-width: 180px;
+  min-width: min(180px, 100%);
 }
 
 .search-max-results-select {
@@ -990,7 +990,7 @@
 /* Search Input in Filter Row */
 .articles-filter-search {
   @apply relative flex-1;
-  min-width: 200px;
+  min-width: min(200px, 100%);
   max-width: 400px;
 }
 
@@ -1062,7 +1062,7 @@
   @apply px-3 py-2 text-sm;
   @apply text-neutral-200;
   @apply flex-1;
-  min-width: 150px;
+  min-width: min(150px, 100%);
   border-radius: 0.375rem;
   background-color: var(--bg-glass-light);
   border: 1px solid rgba(56, 89, 138, 0.3);
@@ -1165,7 +1165,7 @@
 }
 
 .bulk-action-ai-btn--with-progress {
-  min-width: 180px;
+  min-width: min(180px, 100%);
 }
 
 .bulk-action-spinner {
@@ -1176,6 +1176,80 @@
 [data-theme="light"] .bulk-actions {
   background-color: rgba(200, 125, 42, 0.05);
   border-bottom: 1px solid rgba(200, 125, 42, 0.15);
+}
+
+@media (max-width: 900px) {
+  .articles-filters-row {
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .articles-filters-row--options {
+    justify-content: flex-start;
+  }
+
+  .articles-filter-search {
+    width: 100%;
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .articles-filter-years {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .articles-filter-select {
+    flex: 1 1 calc(50% - 5px);
+  }
+
+  .articles-filter-group {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
+  .articles-filter-checkbox--select-all {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .bulk-actions .row {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .articles-filters-row {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .articles-filter-select {
+    flex-basis: 100%;
+  }
+
+  .articles-filter-years input {
+    width: 100%;
+    flex: 1 1 110px;
+  }
+
+  .bulk-actions {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .bulk-actions .row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px;
+  }
+
+  .bulk-actions .bulk-action-btn {
+    width: 100%;
+  }
 }
 
 /* =============================================================================
