@@ -80,6 +80,7 @@
   .project-card-actions {
     gap: 8px;
     flex-wrap: wrap;
+    align-items: stretch;
   }
 
   .project-card-meta {
@@ -93,13 +94,15 @@
   }
 
   .project-action-open {
-    flex: 1;
+    flex: 1 1 100%;
+    width: 100%;
     justify-content: center;
   }
 
   .project-action-delete {
-    min-width: 36px;
-    min-height: 36px;
+    min-width: 38px;
+    min-height: 38px;
+    align-self: flex-end;
   }
 }
 
