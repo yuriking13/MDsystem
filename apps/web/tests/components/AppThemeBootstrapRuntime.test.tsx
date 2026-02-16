@@ -76,7 +76,12 @@ vi.mock("../../src/pages/admin/AdminLoginPage", () => ({
 }));
 
 vi.mock("../../src/pages/admin/AdminLayout", () => ({
-  default: () => <div>Admin Layout</div>,
+  default: () => (
+    <div>
+      <div>Admin Layout</div>
+      <Outlet />
+    </div>
+  ),
 }));
 
 vi.mock("../../src/pages/admin/AdminDashboard", () => ({
@@ -379,6 +384,26 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it("redirects unknown route through root redirect to projects when authenticated", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/totally-unknown-route"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Projects Page")).toBeInTheDocument();
+    });
+  });
+
   it("renders settings page inside authenticated app layout", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
@@ -455,6 +480,46 @@ describe("App theme bootstrap runtime", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
+  it("renders admin dashboard index for /admin route", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+      expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
+    });
+  });
+
+  it("renders nested admin route for /admin/users", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/users"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+      expect(screen.getByText("Admin Users Page")).toBeInTheDocument();
     });
   });
 });
