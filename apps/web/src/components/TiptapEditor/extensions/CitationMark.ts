@@ -1,9 +1,9 @@
-import { Node, mergeAttributes } from '@tiptap/react';
-import { Node as PMNode } from 'prosemirror-model';
-import { Plugin, PluginKey } from 'prosemirror-state';
+import { Node, mergeAttributes, type CommandProps } from "@tiptap/react";
+import { Node as PMNode } from "prosemirror-model";
+import { Plugin, PluginKey, type Transaction } from "prosemirror-state";
 
 export interface CitationMarkOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, string>;
 }
 
 export interface CitationAttrs {
@@ -14,7 +14,14 @@ export interface CitationAttrs {
   subNumber?: number; // Номер цитаты внутри источника (n#k)
 }
 
-declare module '@tiptap/react' {
+type RenderableCitationAttrs = Partial<CitationAttrs>;
+type CitationPluginState = null;
+
+type CitationCommandSet = {
+  updateCitationNumbers: () => boolean;
+};
+
+declare module "@tiptap/react" {
   interface Commands<ReturnType> {
     citation: {
       setCitation: (attrs: CitationAttrs) => ReturnType;
@@ -28,16 +35,16 @@ declare module '@tiptap/react' {
 // Номера цитат всегда компактные (1, 2, 3...) без пропусков
 // Один источник может иметь несколько цитат (n#1, n#2, n#3)
 export const CitationMark = Node.create<CitationMarkOptions>({
-  name: 'citation',
+  name: "citation",
 
-  group: 'inline',
-  
+  group: "inline",
+
   inline: true,
-  
+
   atom: true,
-  
+
   selectable: true,
-  
+
   // Разрешаем перетаскивание цитат для изменения их позиции в документе.
   // При переносе цитаты ProseMirror-плагин автоматически перенумеровывает
   // все цитаты в соответствии с новым порядком появления.
@@ -53,61 +60,64 @@ export const CitationMark = Node.create<CitationMarkOptions>({
     return {
       citationId: {
         default: null,
-        parseHTML: (element: HTMLElement) => element.getAttribute('data-citation-id'),
-        renderHTML: (attributes: Record<string, any>) => {
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute("data-citation-id"),
+        renderHTML: (attributes: RenderableCitationAttrs) => {
           if (!attributes.citationId) {
             return {};
           }
           return {
-            'data-citation-id': attributes.citationId,
+            "data-citation-id": attributes.citationId,
           };
         },
       },
       citationNumber: {
         default: 1,
         parseHTML: (element: HTMLElement) => {
-          const num = element.getAttribute('data-citation-number');
+          const num = element.getAttribute("data-citation-number");
           return num ? parseInt(num, 10) : 1;
         },
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: RenderableCitationAttrs) => {
           return {
-            'data-citation-number': attributes.citationNumber,
+            "data-citation-number": attributes.citationNumber,
           };
         },
       },
       articleId: {
         default: null,
-        parseHTML: (element: HTMLElement) => element.getAttribute('data-article-id'),
-        renderHTML: (attributes: Record<string, any>) => {
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute("data-article-id"),
+        renderHTML: (attributes: RenderableCitationAttrs) => {
           if (!attributes.articleId) {
             return {};
           }
           return {
-            'data-article-id': attributes.articleId,
+            "data-article-id": attributes.articleId,
           };
         },
       },
       subNumber: {
         default: 1,
         parseHTML: (element: HTMLElement) => {
-          const num = element.getAttribute('data-sub-number');
+          const num = element.getAttribute("data-sub-number");
           return num ? parseInt(num, 10) : 1;
         },
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: RenderableCitationAttrs) => {
           return {
-            'data-sub-number': attributes.subNumber || 1,
+            "data-sub-number": attributes.subNumber || 1,
           };
         },
       },
       note: {
-        default: '',
-        parseHTML: (element: HTMLElement) => element.getAttribute('data-note') || '',
-        renderHTML: (attributes: Record<string, any>) => {
+        default: "",
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute("data-note") || "",
+        renderHTML: (attributes: RenderableCitationAttrs) => {
           if (!attributes.note) {
             return {};
           }
           return {
-            'data-note': attributes.note,
+            "data-note": attributes.note,
           };
         },
       },
@@ -117,19 +127,25 @@ export const CitationMark = Node.create<CitationMarkOptions>({
   parseHTML() {
     return [
       {
-        tag: 'span.citation-ref',
+        tag: "span.citation-ref",
       },
     ];
   },
 
-  renderHTML({ node, HTMLAttributes }: { node: any; HTMLAttributes: Record<string, any> }) {
+  renderHTML({
+    node,
+    HTMLAttributes,
+  }: {
+    node: PMNode;
+    HTMLAttributes: Record<string, string>;
+  }) {
     // Отображаем только номер источника [n]
     // Полный идентификатор n#k показывается в списке литературы
     const num = node.attrs.citationNumber || 1;
     return [
-      'span',
+      "span",
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        class: 'citation-ref',
+        class: "citation-ref",
       }),
       `[${num}]`,
     ];
@@ -139,7 +155,7 @@ export const CitationMark = Node.create<CitationMarkOptions>({
     return {
       setCitation:
         (attrs: CitationAttrs) =>
-        ({ commands }: any) => {
+        ({ commands }: CommandProps) => {
           return commands.insertContent({
             type: this.name,
             attrs: {
@@ -152,22 +168,25 @@ export const CitationMark = Node.create<CitationMarkOptions>({
       // Удалить цитату по ID
       removeCitationById:
         (citationId: string) =>
-        ({ tr, state, dispatch }: { tr: any; state: any; dispatch?: (tr: any) => void }) => {
+        ({ tr, state, dispatch }: CommandProps) => {
           let found = false;
-          
-          state.doc.descendants((node: any, pos: number) => {
-            if (node?.type?.name === this.name && node.attrs.citationId === citationId) {
+
+          state.doc.descendants((node: PMNode, pos: number) => {
+            if (
+              node?.type?.name === this.name &&
+              node.attrs.citationId === citationId
+            ) {
               tr.delete(pos, pos + node.nodeSize);
               found = true;
               return false; // stop iteration
             }
             return true;
           });
-          
+
           if (found && dispatch) {
             dispatch(tr);
           }
-          
+
           return found;
         },
 
@@ -179,11 +198,16 @@ export const CitationMark = Node.create<CitationMarkOptions>({
       // 4. Номера всегда последовательны (1, 2, 3...) без пропусков
       updateCitationNumbers:
         () =>
-        ({ tr, state, dispatch }: any) => {
-          const citations: Array<{ pos: number; node: PMNode; articleId: string; citationId: string }> = [];
+        ({ tr, state, dispatch }: CommandProps) => {
+          const citations: Array<{
+            pos: number;
+            node: PMNode;
+            articleId: string;
+            citationId: string;
+          }> = [];
 
           // Собрать все цитаты в порядке появления
-          state.doc.descendants((node: any, pos: number) => {
+          state.doc.descendants((node: PMNode, pos: number) => {
             if (node?.type?.name === this.name) {
               citations.push({
                 pos,
@@ -214,7 +238,8 @@ export const CitationMark = Node.create<CitationMarkOptions>({
           const citationToSubNumber = new Map<string, number>();
 
           for (const citation of citations) {
-            const counter = (articleSubCounters.get(citation.articleId) || 0) + 1;
+            const counter =
+              (articleSubCounters.get(citation.articleId) || 0) + 1;
             articleSubCounters.set(citation.articleId, counter);
             citationToSubNumber.set(citation.citationId, counter);
           }
@@ -225,11 +250,14 @@ export const CitationMark = Node.create<CitationMarkOptions>({
 
           for (const citation of sortedCitations) {
             const newNumber = articleToNumber.get(citation.articleId);
-            const newSubNumber = citationToSubNumber.get(citation.citationId) || 1;
-            
-            if (newNumber !== undefined && 
-                (newNumber !== citation.node.attrs.citationNumber || 
-                 newSubNumber !== citation.node.attrs.subNumber)) {
+            const newSubNumber =
+              citationToSubNumber.get(citation.citationId) || 1;
+
+            if (
+              newNumber !== undefined &&
+              (newNumber !== citation.node.attrs.citationNumber ||
+                newSubNumber !== citation.node.attrs.subNumber)
+            ) {
               tr.setNodeMarkup(citation.pos, undefined, {
                 ...citation.node.attrs,
                 citationNumber: newNumber,
@@ -250,15 +278,15 @@ export const CitationMark = Node.create<CitationMarkOptions>({
 
   // Плагин для автоматической перенумерации при изменениях
   addProseMirrorPlugins() {
-    const pluginKey = new PluginKey('citationRenumber');
+    const pluginKey = new PluginKey("citationRenumber");
     let updateTimeout: ReturnType<typeof setTimeout> | null = null;
-    
+
     return [
       new Plugin({
         key: pluginKey,
         state: {
           init: () => null,
-          apply: (tr: any, value: any) => {
+          apply: (tr: Transaction, value: CitationPluginState) => {
             // Запускаем перенумерацию при изменении документа
             if (tr.docChanged) {
               // Debounce для оптимизации
@@ -267,10 +295,12 @@ export const CitationMark = Node.create<CitationMarkOptions>({
               }
               updateTimeout = setTimeout(() => {
                 try {
-                  (this.editor.commands as any).updateCitationNumbers();
+                  const commands = this.editor
+                    .commands as unknown as CitationCommandSet;
+                  commands.updateCitationNumbers();
                 } catch (e) {
                   // Игнорируем ошибки если редактор уничтожен
-                  console.warn('Citation renumber skipped:', e);
+                  console.warn("Citation renumber skipped:", e);
                 }
               }, 50);
             }
