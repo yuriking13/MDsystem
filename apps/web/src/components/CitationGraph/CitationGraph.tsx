@@ -2175,11 +2175,19 @@ export default function CitationGraph({ projectId }: Props) {
     "#06b6d4": "legend-value--cyan",
     "#fbbf24": "legend-value--amber",
   };
-  const clusterDetailColorDotBaseStyle: React.CSSProperties = {
-    width: 24,
-    height: 24,
-    borderRadius: "50%",
-    flexShrink: 0,
+  const CLUSTER_COLOR_CLASS_MAP: Record<string, string> = {
+    "#6366f1": "cluster-color--indigo",
+    "#22c55e": "cluster-color--green",
+    "#f59e0b": "cluster-color--amber",
+    "#ec4899": "cluster-color--pink",
+    "#06b6d4": "cluster-color--cyan",
+    "#8b5cf6": "cluster-color--violet",
+    "#f97316": "cluster-color--orange",
+    "#14b8a6": "cluster-color--teal",
+    "#ef4444": "cluster-color--red",
+    "#84cc16": "cluster-color--lime",
+    "#a855f7": "cluster-color--purple",
+    "#3b82f6": "cluster-color--blue",
   };
 
   const getGraphHeaderBadgeClassName = (background: string): string =>
@@ -2217,9 +2225,8 @@ export default function CitationGraph({ projectId }: Props) {
     selected: boolean,
   ): string =>
     `graph-semantic-cluster-details-button${selected ? " graph-semantic-cluster-details-button--selected" : ""}`;
-  const getSemanticClusterDotStyle = (color: string): React.CSSProperties => ({
-    background: color,
-  });
+  const getSemanticClusterDotClassName = (color: string): string =>
+    `graph-semantic-cluster-dot ${CLUSTER_COLOR_CLASS_MAP[color] ?? "cluster-color--blue"}`;
   const getSemanticClusterCountBadgeClassName = (selected: boolean): string =>
     `graph-semantic-cluster-count${selected ? " graph-semantic-cluster-count--selected" : ""}`;
   const getSemanticClusterCentralTitleClassName = (selected: boolean): string =>
@@ -2241,13 +2248,16 @@ export default function CitationGraph({ projectId }: Props) {
     `legend-dot ${LEGEND_DOT_COLOR_CLASS_MAP[background] ?? "legend-dot--blue"}`;
   const getLegendValueClassName = (color: string): string =>
     `legend-value ${LEGEND_VALUE_COLOR_CLASS_MAP[color] ?? "legend-value--blue"}`;
-  const getGraphHoverCardStyle = (
+  const getGraphHoverCardClassName = (
     x: number,
     y: number,
-  ): React.CSSProperties => ({
-    left: x,
-    top: y,
-  });
+    width: number,
+    height: number,
+  ): string => {
+    const horizontal = width > 0 && x > width / 2 ? "right" : "left";
+    const vertical = height > 0 && y > height / 2 ? "bottom" : "top";
+    return `graph-hover-card graph-hover-card--${vertical}-${horizontal}`;
+  };
   const getAiMessageBubbleClassName = (role: "user" | "assistant"): string =>
     `ai-message-bubble ai-message-bubble--${role}`;
   const getAiSelectAllButtonClassName = (allSelected: boolean): string =>
@@ -2277,12 +2287,8 @@ export default function CitationGraph({ projectId }: Props) {
     if (priority === "medium") return "Средне";
     return "Низко";
   };
-  const getClusterDetailColorDotStyle = (
-    color: string,
-  ): React.CSSProperties => ({
-    ...clusterDetailColorDotBaseStyle,
-    background: color,
-  });
+  const getClusterDetailColorDotClassName = (color: string): string =>
+    `cluster-detail-color-dot ${CLUSTER_COLOR_CLASS_MAP[color] ?? "cluster-color--blue"}`;
   const getClusterKeywordClassName = (): string =>
     "cluster-detail-keyword-chip";
   const getClusterCentralCardClassName = (): string =>
@@ -3334,8 +3340,9 @@ export default function CitationGraph({ projectId }: Props) {
                     </button>
                     <div className="graph-semantic-cluster-header-row">
                       <span
-                        className="graph-semantic-cluster-dot"
-                        style={getSemanticClusterDotStyle(cluster.color)}
+                        className={getSemanticClusterDotClassName(
+                          cluster.color,
+                        )}
                       />
                       <span className="graph-semantic-cluster-name">
                         {cluster.name}
@@ -3885,10 +3892,11 @@ export default function CitationGraph({ projectId }: Props) {
               hoverCardArticle &&
               !selectedNodeForDisplay && (
                 <div
-                  className="graph-hover-card"
-                  style={getGraphHoverCardStyle(
+                  className={getGraphHoverCardClassName(
                     hoverCardPosition.x,
                     hoverCardPosition.y,
+                    containerRef.current?.clientWidth ?? 0,
+                    containerRef.current?.clientHeight ?? 0,
                   )}
                 >
                   <ArticleCard
@@ -4272,7 +4280,7 @@ export default function CitationGraph({ projectId }: Props) {
 
               <div className="cluster-detail-header">
                 <div
-                  style={getClusterDetailColorDotStyle(
+                  className={getClusterDetailColorDotClassName(
                     clusterDetailModal.cluster.color,
                   )}
                 />

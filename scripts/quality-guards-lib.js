@@ -61,9 +61,7 @@ const webJsSourceCheck = {
   description: "JavaScript/JSX source files are not allowed in apps/web/src",
 };
 
-const WEB_STYLE_PROP_ALLOWLIST = new Set([
-  "apps/web/src/components/CitationGraph/CitationGraph.tsx",
-]);
+const WEB_STYLE_PROP_ALLOWLIST = new Set([]);
 
 const webStylePropCheck = {
   name: "web-style-prop-outside-allowlist",

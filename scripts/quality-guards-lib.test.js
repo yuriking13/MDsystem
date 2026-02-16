@@ -135,12 +135,7 @@ test("runQualityGuards enforces style prop usage outside allowlist", () => {
       workspaceRoot,
       "apps/web/src/components/CitationGraph/CitationGraph.tsx",
     ),
-    [
-      "export function CitationGraph() {",
-      "  const styleObj = { opacity: 0.9 };",
-      "  return <div style={styleObj}>Graph</div>;",
-      "}",
-    ].join("\n"),
+    "export function CitationGraph() { return <div>Graph</div>; }",
   );
 
   writeFile(
