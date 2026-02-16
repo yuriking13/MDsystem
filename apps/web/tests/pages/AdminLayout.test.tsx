@@ -109,11 +109,14 @@ describe("AdminLayout responsive sidebar behavior", () => {
     setViewportWidth(390);
     renderAdminLayout();
 
-    await user.click(screen.getByLabelText("Открыть навигацию"));
+    const toggleButton = screen.getByLabelText("Открыть навигацию");
+    await user.click(toggleButton);
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+    expect(toggleButton).toHaveAttribute("aria-label", "Закрыть навигацию");
 
     fireEvent.keyDown(window, { key: "Escape" });
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(false);
+    expect(toggleButton).toHaveAttribute("aria-label", "Открыть навигацию");
   });
 
   it.each([

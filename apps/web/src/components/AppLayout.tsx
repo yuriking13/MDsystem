@@ -214,7 +214,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
             type="button"
             className="app-mobile-fab-toggle"
             onClick={toggleMobileSidebar}
-            aria-label="Открыть навигацию"
+            aria-label={
+              mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
+            }
             aria-expanded={mobileSidebarOpen}
           >
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -242,7 +244,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 type="button"
                 className="app-mobile-nav-toggle"
                 onClick={toggleMobileSidebar}
-                aria-label="Открыть навигацию"
+                aria-label={
+                  mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
+                }
                 aria-expanded={mobileSidebarOpen}
               >
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -236,7 +236,9 @@ export default function AdminLayout() {
             type="button"
             className="admin-mobile-nav-toggle"
             onClick={toggleMobileSidebar}
-            aria-label="Открыть навигацию"
+            aria-label={
+              mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
+            }
             aria-expanded={mobileSidebarOpen}
           >
             <svg
