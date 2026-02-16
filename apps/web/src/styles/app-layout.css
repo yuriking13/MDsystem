@@ -18,6 +18,7 @@
 .app-main {
   @apply flex-1 overflow-auto;
   min-height: 100vh;
+  min-height: 100dvh;
   contain: layout style;
 }
 
@@ -40,6 +41,7 @@ body.sidebar-modal-open {
 .app-main-fixed {
   height: 100%;
   max-height: 100vh;
+  max-height: 100dvh;
   min-height: 0;
   overflow: hidden;
 }
