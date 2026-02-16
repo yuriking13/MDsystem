@@ -79,3 +79,32 @@ test("quality-guards check mode reports standalone js/jsx source file tip", () =
   assert.equal(fs.existsSync(jsSourcePath), true);
   assert.equal(fs.existsSync(jsxSourcePath), true);
 });
+
+test("quality-guards check mode prints both remediation tips when needed", () => {
+  const workspaceRoot = createTempWorkspace();
+  const tsxPath = path.join(workspaceRoot, "apps/web/src/pages/Home.tsx");
+  const jsMirrorPath = path.join(workspaceRoot, "apps/web/src/pages/Home.js");
+  const standaloneJsPath = path.join(
+    workspaceRoot,
+    "apps/web/src/lib/legacy-helper.js",
+  );
+
+  writeFile(tsxPath, "export const Home = () => null;");
+  writeFile(jsMirrorPath, "export const Home = () => null;");
+  writeFile(standaloneJsPath, "export const legacy = true;");
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: run `pnpm --filter web run clean:js-mirrors` to remove JS mirrors/,
+  );
+  assert.match(
+    result.stderr,
+    /Tip: remove JavaScript files from apps\/web\/src or migrate them to TypeScript/,
+  );
+});
