@@ -247,6 +247,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--text-secondary);
 }
 
@@ -1358,6 +1359,7 @@
 /* Login Page */
 .admin-login-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
