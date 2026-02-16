@@ -128,6 +128,7 @@ const DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
   "tests/styles/authResponsive.test.ts",
   "tests/utils/responsiveMatrix.test.ts",
   "tests/utils/viewport.test.ts",
+  "tests/config/responsiveManualMatrixContract.test.ts",
   "tests/config/responsiveSuiteContract.test.ts",
   "tests/config/responsiveTestConventions.test.ts",
 ];
