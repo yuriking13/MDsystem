@@ -15,7 +15,7 @@ import {
   IconStar,
   IconCheckCircle,
 } from "../FlowbiteIcons";
-import { getLevelColor, getLevelName, getGraphNodeColors } from "./utils";
+import { getLevelName, getGraphNodeColors } from "./utils";
 import type { EnrichedNodeData } from "./types";
 
 function getPValueLabel(quality: number): string {
@@ -181,194 +181,50 @@ export default function NodeInfoPanel({
 
   const level = node.graphLevel ?? 1;
   const hasRussian = !!(displayData.title_ru || displayData.abstract_ru);
-  const levelColor = getLevelColor(level);
+  const nodeLevelModifier =
+    level === 0
+      ? "level-0"
+      : level === 1
+        ? "level-1"
+        : level === 2
+          ? "level-2"
+          : level === 3
+            ? "level-3"
+            : "level-default";
 
-  const headerStyle: React.CSSProperties = {
-    borderLeftColor: levelColor,
-  };
+  const enLanguageButtonClassName = [
+    "node-language-button",
+    language === "en" ? "node-language-button--active" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  const headerTopRowStyle: React.CSSProperties = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 8,
-  };
-
-  const levelBadgeStyle: React.CSSProperties = {
-    backgroundColor: levelColor,
-  };
-
-  const languageToggleStyle: React.CSSProperties = {
-    display: "flex",
-    gap: 2,
-    padding: 2,
-    background: "rgba(255,255,255,0.1)",
-    borderRadius: 6,
-  };
-
-  const languageButtonStyle = (
-    languageCode: "en" | "ru",
-  ): React.CSSProperties => ({
-    padding: "4px 8px",
-    fontSize: 11,
-    fontWeight: language === languageCode ? 600 : 400,
-    background: language === languageCode ? "var(--accent)" : "transparent",
-    color: language === languageCode ? "white" : "var(--text-secondary)",
-    border: "none",
-    borderRadius: 4,
-    cursor: "pointer",
-  });
-
-  const ruLanguageButtonStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: 11,
-    fontWeight: language === "ru" ? 600 : 400,
-    background:
-      language === "ru"
-        ? "var(--accent)"
-        : translating
-          ? "rgba(59, 130, 246, 0.3)"
-          : "transparent",
-    color: language === "ru" || translating ? "white" : "var(--text-secondary)",
-    border: "none",
-    borderRadius: 4,
-    cursor: translating ? "wait" : "pointer",
-  };
-
-  const translationErrorStyle: React.CSSProperties = {
-    padding: "6px 12px",
-    background: "rgba(239, 68, 68, 0.1)",
-    fontSize: 11,
-    color: "#ef4444",
-    borderBottom: "1px solid var(--border-glass)",
-  };
-
-  const translatingInfoStyle: React.CSSProperties = {
-    padding: "6px 12px",
-    background: "rgba(59, 130, 246, 0.1)",
-    fontSize: 11,
-    color: "#3b82f6",
-    borderBottom: "1px solid var(--border-glass)",
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  };
-
-  const smallSpinnerStyle: React.CSSProperties = {
-    width: 12,
-    height: 12,
-  };
-
-  const loadingTitleStyle: React.CSSProperties = {
-    color: "var(--text-secondary)",
-    fontStyle: "italic",
-  };
-
-  const authorsStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: "var(--text-secondary)",
-    marginTop: 6,
-  };
-
-  const journalStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--text-muted)",
-    marginTop: 4,
-    fontStyle: "italic",
-  };
-
-  const abstractContainerStyle: React.CSSProperties = {
-    padding: "12px 16px",
-    borderBottom: "1px solid var(--border-glass)",
-    maxHeight: 200,
-    overflowY: "auto",
-  };
-
-  const abstractTitleStyle: React.CSSProperties = {
-    fontSize: 11,
-    fontWeight: 600,
-    color: "var(--text-secondary)",
-    marginBottom: 6,
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  };
-
-  const abstractTextStyle: React.CSSProperties = {
-    fontSize: 13,
-    lineHeight: 1.6,
-    color: "var(--text-primary)",
-  };
-
-  const doiLinkStyle: React.CSSProperties = {
-    wordBreak: "break-all",
-  };
-
-  const successValueStyle: React.CSSProperties = {
-    color: "var(--success)",
-  };
-
-  const warningValueStyle: React.CSSProperties = {
-    color: "var(--warning)",
-  };
-
-  const addButtonsWrapStyle: React.CSSProperties = {
-    display: "flex",
-    gap: 8,
-    marginTop: 12,
-  };
-
-  const candidateAddButtonStyle: React.CSSProperties = {
-    flex: 1,
-    background: "var(--accent)",
-    borderColor: "var(--accent)",
-  };
-
-  const selectedAddButtonStyle: React.CSSProperties = {
-    flex: 1,
-    background: "#22c55e",
-    borderColor: "#16a34a",
-  };
-
-  const actionSpinnerStyle: React.CSSProperties = {
-    width: 14,
-    height: 14,
-    marginRight: 8,
-    display: "inline-block",
-    verticalAlign: "middle",
-  };
-
-  const actionIconStyle: React.CSSProperties = {
-    marginRight: 6,
-    display: "inline",
-    verticalAlign: "middle",
-  };
-
-  const addMessageStyle: React.CSSProperties = {
-    marginTop: 12,
-    padding: "10px 14px",
-    backgroundColor: "rgba(16, 185, 129, 0.1)",
-    borderRadius: 8,
-    fontSize: 12,
-    color: "#10b981",
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  };
+  const ruLanguageButtonClassName = [
+    "node-language-button",
+    language === "ru" ? "node-language-button--active" : "",
+    translating ? "node-language-button--translating" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="node-info-panel">
       {/* Header Card */}
-      <div className="node-info-header" style={headerStyle}>
-        <div style={headerTopRowStyle}>
-          <div className="node-level-badge" style={levelBadgeStyle}>
+      <div
+        className={`node-info-header node-info-header--${nodeLevelModifier}`}
+      >
+        <div className="node-info-header-top-row">
+          <div
+            className={`node-level-badge node-level-badge--${nodeLevelModifier}`}
+          >
             {getLevelName(level)}
           </div>
           {/* Language Toggle */}
-          <div className="language-toggle" style={languageToggleStyle}>
+          <div className="language-toggle node-language-toggle">
             <button
               onClick={() => setLocalLanguage("en")}
               disabled={translating}
-              style={languageButtonStyle("en")}
+              className={enLanguageButtonClassName}
             >
               EN
             </button>
@@ -381,7 +237,7 @@ export default function NodeInfoPanel({
                 }
               }}
               disabled={translating}
-              style={ruLanguageButtonStyle}
+              className={ruLanguageButtonClassName}
               title={hasRussian ? "Русский перевод" : "Нажмите для перевода"}
             >
               {translating ? "..." : "RU"}
@@ -391,29 +247,29 @@ export default function NodeInfoPanel({
 
         {/* Ошибка перевода */}
         {translationError && (
-          <div style={translationErrorStyle}>{translationError}</div>
+          <div className="node-translation-error">{translationError}</div>
         )}
 
         {/* Перевод в процессе */}
         {translating && (
-          <div style={translatingInfoStyle}>
-            <span className="loading-spinner" style={smallSpinnerStyle} />
+          <div className="node-translating-info">
+            <span className="loading-spinner node-loading-spinner-small" />
             Переводим...
           </div>
         )}
 
         {loadingData ? (
-          <div className="node-title" style={loadingTitleStyle}>
+          <div className="node-title node-title--loading">
             Загрузка данных...
           </div>
         ) : (
           <>
             <div className="node-title">{displayTitle || node.label}</div>
             {displayData.authors && (
-              <div style={authorsStyle}>{displayData.authors}</div>
+              <div className="node-authors-text">{displayData.authors}</div>
             )}
             {displayData.journal && (
-              <div style={journalStyle}>{displayData.journal}</div>
+              <div className="node-journal-text">{displayData.journal}</div>
             )}
           </>
         )}
@@ -421,9 +277,9 @@ export default function NodeInfoPanel({
 
       {/* Abstract */}
       {displayAbstract && (
-        <div style={abstractContainerStyle}>
-          <div style={abstractTitleStyle}>Аннотация</div>
-          <div style={abstractTextStyle}>{displayAbstract}</div>
+        <div className="node-abstract-container">
+          <div className="node-abstract-title">Аннотация</div>
+          <div className="node-abstract-text">{displayAbstract}</div>
         </div>
       )}
 
@@ -465,8 +321,7 @@ export default function NodeInfoPanel({
             href={`https://doi.org/${displayData.doi}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="node-info-link"
-            style={doiLinkStyle}
+            className="node-info-link node-info-link--break-word"
           >
             {displayData.doi} ↗
           </a>
@@ -479,7 +334,7 @@ export default function NodeInfoPanel({
             <IconTrendingUp size="sm" />
             Цитирований
           </div>
-          <div className="node-info-value" style={successValueStyle}>
+          <div className="node-info-value node-info-value--success">
             {displayData.citedByCount}
           </div>
         </div>
@@ -491,7 +346,7 @@ export default function NodeInfoPanel({
             <IconStar size="sm" />
             P-value (значимость)
           </div>
-          <div className="node-info-value" style={warningValueStyle}>
+          <div className="node-info-value node-info-value--warning">
             {getPValueLabel(node.statsQuality)}
           </div>
         </div>
@@ -501,46 +356,39 @@ export default function NodeInfoPanel({
       {(node.graphLevel === 2 ||
         node.graphLevel === 3 ||
         node.graphLevel === 0) && (
-        <div style={addButtonsWrapStyle}>
+        <div className="node-add-buttons-wrap">
           <button
             onClick={() => handleAddToProject("candidate")}
             disabled={adding || addingToSelected}
-            className="node-add-btn"
-            style={candidateAddButtonStyle}
+            className="node-add-btn node-add-btn--split node-add-btn--candidate"
           >
             {adding ? (
               <>
-                <span className="loading-spinner" style={actionSpinnerStyle} />
+                <span className="loading-spinner node-action-spinner" />
                 Добавляю...
               </>
             ) : (
               <>
-                <IconPlus
-                  size="sm"
-                  className="icon-sm"
-                  style={actionIconStyle}
-                />
-                В Кандидаты
+                <IconPlus size="sm" className="icon-sm node-action-icon" />В
+                Кандидаты
               </>
             )}
           </button>
           <button
             onClick={() => handleAddToProject("selected")}
             disabled={adding || addingToSelected}
-            className="node-add-btn"
-            style={selectedAddButtonStyle}
+            className="node-add-btn node-add-btn--split node-add-btn--selected"
           >
             {addingToSelected ? (
               <>
-                <span className="loading-spinner" style={actionSpinnerStyle} />
+                <span className="loading-spinner node-action-spinner" />
                 Добавляю...
               </>
             ) : (
               <>
                 <IconCheckCircle
                   size="sm"
-                  className="icon-sm"
-                  style={actionIconStyle}
+                  className="icon-sm node-action-icon"
                 />
                 В Отобранные
               </>
@@ -550,7 +398,7 @@ export default function NodeInfoPanel({
       )}
 
       {addMessage && (
-        <div style={addMessageStyle}>
+        <div className="node-add-message">
           <IconCheckCircle size="sm" />
           {addMessage}
         </div>

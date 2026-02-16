@@ -64,7 +64,6 @@ const webJsSourceCheck = {
 const WEB_STYLE_PROP_ALLOWLIST = new Set([
   "apps/web/src/components/CitationGraph/CitationGraph.tsx",
   "apps/web/src/components/CitationGraph/GraphSidebar.tsx",
-  "apps/web/src/components/CitationGraph/NodeInfoPanel.tsx",
   "apps/web/src/components/ChartFromTable.tsx",
   "apps/web/src/components/CreateStatisticModal.tsx",
   "apps/web/src/components/FlowbiteIcons.tsx",
