@@ -1885,11 +1885,13 @@
   
   .graph-control-panel {
     left: 0;
+    padding-left: env(safe-area-inset-left, 0px);
     box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35);
   }
   
   .node-details-panel {
     right: 0;
+    padding-right: env(safe-area-inset-right, 0px);
     box-shadow: -8px 0 24px rgba(0, 0, 0, 0.35);
   }
   
