@@ -292,6 +292,18 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(document.querySelector(".app-sidebar-overlay") !== null).toBe(
           shouldOpen,
         );
+        const overlayButton = screen.queryByRole("button", {
+          name: "Закрыть меню навигации",
+        });
+        if (shouldOpen) {
+          expect(overlayButton).toBeInTheDocument();
+          expect(overlayButton).toHaveAttribute(
+            "aria-controls",
+            "app-primary-sidebar",
+          );
+        } else {
+          expect(overlayButton).not.toBeInTheDocument();
+        }
       });
 
       unmount();
@@ -347,6 +359,18 @@ describe("AppLayout mobile sidebar behavior", () => {
           expect(document.querySelector(".app-sidebar-overlay") !== null).toBe(
             shouldOpen,
           );
+          const overlayButton = screen.queryByRole("button", {
+            name: "Закрыть меню навигации",
+          });
+          if (shouldOpen) {
+            expect(overlayButton).toBeInTheDocument();
+            expect(overlayButton).toHaveAttribute(
+              "aria-controls",
+              "app-primary-sidebar",
+            );
+          } else {
+            expect(overlayButton).not.toBeInTheDocument();
+          }
         });
 
         unmount();
@@ -435,6 +459,18 @@ describe("AppLayout mobile sidebar behavior", () => {
           expect(document.querySelector(".app-sidebar-overlay") !== null).toBe(
             shouldOpen,
           );
+          const overlayButton = screen.queryByRole("button", {
+            name: "Закрыть меню навигации",
+          });
+          if (shouldOpen) {
+            expect(overlayButton).toBeInTheDocument();
+            expect(overlayButton).toHaveAttribute(
+              "aria-controls",
+              "app-primary-sidebar",
+            );
+          } else {
+            expect(overlayButton).not.toBeInTheDocument();
+          }
         });
 
         unmount();

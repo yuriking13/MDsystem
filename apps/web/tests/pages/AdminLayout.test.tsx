@@ -280,6 +280,18 @@ describe("AdminLayout responsive sidebar behavior", () => {
             "aria-expanded",
             shouldOpenOnToggle ? "true" : "false",
           );
+          const overlayButton = screen.queryByRole("button", {
+            name: "Закрыть меню навигации",
+          });
+          if (shouldOpenOnToggle) {
+            expect(overlayButton).toBeInTheDocument();
+            expect(overlayButton).toHaveAttribute(
+              "aria-controls",
+              "admin-primary-sidebar",
+            );
+          } else {
+            expect(overlayButton).not.toBeInTheDocument();
+          }
         });
 
         unmount();
