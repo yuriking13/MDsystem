@@ -5919,6 +5919,147 @@ input:focus::placeholder {
   border-radius: 4px;
 }
 
+.graph-semantic-panel {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-glass);
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.05),
+    rgba(59, 130, 246, 0.05)
+  );
+}
+
+.graph-semantic-header {
+  margin-bottom: 12px;
+}
+
+.graph-semantic-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.graph-semantic-title {
+  font-weight: 600;
+}
+
+.graph-semantic-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-semantic-actions-row {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.graph-semantic-generate-btn {
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+.graph-semantic-import-checkbox {
+  cursor: inherit;
+  margin: 0;
+}
+
+.graph-semantic-import-available {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-left: 3px;
+}
+
+.graph-semantic-cancel-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: var(--bg-error);
+  color: white;
+}
+
+.graph-semantic-embedding-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.graph-semantic-search-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.graph-semantic-search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-primary);
+  color: inherit;
+  font-size: 13px;
+}
+
+.graph-semantic-threshold-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.graph-semantic-threshold-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-semantic-threshold-range {
+  width: 60px;
+}
+
+.graph-semantic-threshold-value {
+  font-size: 11px;
+  min-width: 30px;
+}
+
+.graph-semantic-search-btn {
+  padding: 8px 16px;
+}
+
+.graph-semantic-results {
+  margin-top: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.graph-semantic-results-title {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.graph-semantic-result-row {
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-semantic-result-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .graph-advanced-panel {
   display: flex;
   flex-wrap: wrap;
