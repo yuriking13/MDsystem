@@ -2231,58 +2231,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontWeight: 600,
     fontSize: 11,
   };
-  const recommendationsModalStyle: React.CSSProperties = {
-    maxWidth: 700,
-  };
-  const recommendationsTitleStyle: React.CSSProperties = {
-    marginTop: 0,
-    marginBottom: 20,
-    fontSize: 18,
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  };
-  const recommendationsSparkleIconStyle: React.CSSProperties = {
-    color: "#f59e0b",
-  };
-  const recommendationsEmptyStateStyle: React.CSSProperties = {
-    padding: 40,
-    textAlign: "center",
-    color: "var(--text-muted)",
-  };
-  const recommendationsEmptyIconStyle: React.CSSProperties = {
-    opacity: 0.5,
-    marginBottom: 12,
-  };
-  const recommendationsListStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    gap: 12,
-  };
-  const recommendationCardBodyStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 12,
-  };
-  const recommendationTextWrapStyle: React.CSSProperties = {
-    flex: 1,
-  };
-  const recommendationTitleStyle: React.CSSProperties = {
-    fontWeight: 600,
-    marginBottom: 6,
-  };
-  const recommendationDescriptionStyle: React.CSSProperties = {
-    fontSize: 13,
-    color: "var(--text-muted)",
-    marginBottom: 10,
-  };
-  const recommendationActionButtonStyle: React.CSSProperties = {
-    fontSize: 12,
-    padding: "6px 12px",
-  };
-  const recommendationActionIconSpacingStyle: React.CSSProperties = {
-    marginLeft: 6,
-  };
   const clusterDetailModalStyle: React.CSSProperties = {
     maxWidth: 700,
     maxHeight: "80vh",
@@ -4750,9 +4698,8 @@ export default function CitationGraph({ projectId }: Props) {
             onClick={() => setShowRecommendations(false)}
           >
             <div
-              className="node-info-modal"
+              className="node-info-modal recommendations-modal"
               onClick={(e) => e.stopPropagation()}
-              style={recommendationsModalStyle}
             >
               <button
                 className="node-info-modal-close"
@@ -4761,28 +4708,28 @@ export default function CitationGraph({ projectId }: Props) {
                 <IconClose size="md" />
               </button>
 
-              <h3 style={recommendationsTitleStyle}>
-                <span style={recommendationsSparkleIconStyle}>
+              <h3 className="recommendations-title">
+                <span className="recommendations-title-icon">
                   <IconSparkles size="md" />
                 </span>
                 Рекомендации по улучшению графа
               </h3>
 
               {recommendations.length === 0 ? (
-                <div style={recommendationsEmptyStateStyle}>
-                  <div style={recommendationsEmptyIconStyle}>
+                <div className="recommendations-empty-state">
+                  <div className="recommendations-empty-icon">
                     <IconCheckBadge size="lg" />
                   </div>
                   <p>Отлично! Граф в хорошем состоянии, рекомендаций нет.</p>
                 </div>
               ) : (
-                <div style={recommendationsListStyle}>
+                <div className="recommendations-list">
                   {recommendations.map((rec, i) => (
                     <div
                       key={i}
                       style={getRecommendationCardStyle(rec.priority)}
                     >
-                      <div style={recommendationCardBodyStyle}>
+                      <div className="recommendation-card-body">
                         <div
                           style={getRecommendationPriorityBadgeStyle(
                             rec.priority,
@@ -4790,28 +4737,25 @@ export default function CitationGraph({ projectId }: Props) {
                         >
                           {getRecommendationPriorityLabel(rec.priority)}
                         </div>
-                        <div style={recommendationTextWrapStyle}>
-                          <div style={recommendationTitleStyle}>
+                        <div className="recommendation-text-wrap">
+                          <div className="recommendation-title">
                             {rec.title}
                           </div>
-                          <div style={recommendationDescriptionStyle}>
+                          <div className="recommendation-description">
                             {rec.description}
                           </div>
                           {isFetchReferencesRecommendationAction(
                             rec.action,
                           ) && (
                             <button
-                              className="btn secondary"
-                              style={recommendationActionButtonStyle}
+                              className="btn secondary recommendation-action-button"
                               onClick={() => {
                                 setShowRecommendations(false);
                                 handleFetchReferences();
                               }}
                             >
                               <IconRefresh size="sm" />
-                              <span
-                                style={recommendationActionIconSpacingStyle}
-                              >
+                              <span className="recommendation-action-label">
                                 Загрузить ссылки ({rec.action.count ?? 0})
                               </span>
                             </button>

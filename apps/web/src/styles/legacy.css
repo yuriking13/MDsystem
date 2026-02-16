@@ -7043,6 +7043,70 @@ input:focus::placeholder {
   font-size: 12px;
 }
 
+.recommendations-modal {
+  max-width: 700px;
+}
+
+.recommendations-title {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.recommendations-title-icon {
+  color: #f59e0b;
+}
+
+.recommendations-empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.recommendations-empty-icon {
+  opacity: 0.5;
+  margin-bottom: 12px;
+}
+
+.recommendations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recommendation-card-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.recommendation-text-wrap {
+  flex: 1;
+}
+
+.recommendation-title {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.recommendation-description {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.recommendation-action-button {
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.recommendation-action-label {
+  margin-left: 6px;
+}
+
 /* Graph canvas area */
 .graph-canvas-area {
   flex: 1;
