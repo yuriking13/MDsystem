@@ -301,17 +301,10 @@ async function renderChartFromData(
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
-    // Используем visibility:hidden вместо display:none для корректного рендеринга
-    canvas.style.position = "absolute";
-    canvas.style.left = "-9999px";
-    canvas.style.top = "-9999px";
-    canvas.style.visibility = "hidden";
-    document.body.appendChild(canvas);
 
     const ctx = canvas.getContext("2d");
     if (!ctx) {
       console.error("[renderChartFromData] Failed to get 2d context");
-      document.body.removeChild(canvas);
       return null;
     }
 
@@ -330,7 +323,6 @@ async function renderChartFromData(
     const rows = tableData.rows || [];
 
     if (rows.length === 0) {
-      document.body.removeChild(canvas);
       return null;
     }
 
@@ -512,7 +504,6 @@ async function renderChartFromData(
 
     // Очистка
     chart.destroy();
-    document.body.removeChild(canvas);
 
     return dataUrl;
   } catch (e) {
