@@ -10,9 +10,8 @@ export default defineConfig({
     include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
     setupFiles: ["./tests/setup.ts"],
     coverage: {
-      provider: "v8",
+      provider: "istanbul",
       reporter: ["text", "json", "html"],
-      experimentalAstAwareRemapping: false,
       include: [
         "src/components/ArticleCard.tsx",
         "src/components/ArticleAISidebar.tsx",
