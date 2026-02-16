@@ -31,6 +31,7 @@ import ArticleCard from "./ArticleCard";
 import { toArticleData } from "../lib/articleAdapter";
 import { useProjectContext } from "./AppLayout";
 import { useProjectWebSocket } from "../lib/useProjectWebSocket";
+import { getErrorMessage } from "../lib/errorUtils";
 
 type Props = {
   projectId: string;
@@ -76,6 +77,28 @@ const TEXT_AVAILABILITY = [
   { id: "full", label: "Полный текст" },
   { id: "free_full", label: "Бесплатный полный текст" },
 ];
+
+type SearchProgressSocketEvent = {
+  type: "search:progress";
+  payload: SearchProgressEvent;
+};
+
+type AiStat = {
+  text?: string;
+  significance?: "high" | "medium" | "low" | "not-significant" | string;
+  type?:
+    | "confidence-interval"
+    | "effect-size"
+    | "p-value"
+    | "test-statistic"
+    | string;
+};
+
+type AiStatsPayload = {
+  ai?: {
+    stats?: AiStat[];
+  };
+};
 
 /**
  * Real-time elapsed timer component for search progress
@@ -275,9 +298,17 @@ export default function ArticlesSection({
   const [yearToFilter, setYearToFilter] = useState<number | null>(null);
 
   // ============ WebSocket for search progress ============
-  const handleSearchProgressEvent = useCallback((event: any) => {
-    if (event.type !== "search:progress") return;
-    const data = event.payload as SearchProgressEvent;
+  const handleSearchProgressEvent = useCallback((event: unknown) => {
+    if (!event || typeof event !== "object") return;
+    const socketEvent = event as Partial<SearchProgressSocketEvent>;
+    if (
+      socketEvent.type !== "search:progress" ||
+      !socketEvent.payload ||
+      typeof socketEvent.payload !== "object"
+    ) {
+      return;
+    }
+    const data = socketEvent.payload as SearchProgressEvent;
 
     const elapsed = Date.now() - searchStartTimeRef.current;
 
@@ -385,8 +416,8 @@ export default function ArticlesSection({
           total,
         });
       }
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки статей");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка загрузки статей");
     } finally {
       setLoading(false);
     }
@@ -573,8 +604,8 @@ export default function ArticlesSection({
       setOk(res.message);
       setShowSearch(false);
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка поиска");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка поиска");
     } finally {
       setSearching(false);
       // Keep progress visible for 3 seconds after completion
@@ -664,8 +695,8 @@ export default function ArticlesSection({
       setMultiQueries([]);
       setSearchQuery("");
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка поиска");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка поиска");
     } finally {
       setSearching(false);
     }
@@ -720,8 +751,8 @@ export default function ArticlesSection({
       const totalCount = res.totalFound || 0;
       setAllArticlesCount(totalCount);
       setShowAllArticlesConfirm(true);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка получения количества статей");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка получения количества статей");
     } finally {
       setCountingArticles(false);
     }
@@ -779,8 +810,8 @@ export default function ArticlesSection({
       setShowSearch(false);
       setAllArticlesCount(null);
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка поиска");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка поиска");
     } finally {
       setSearching(false);
     }
@@ -820,7 +851,7 @@ export default function ArticlesSection({
       } else if (newStatus === "excluded") {
         toast.info("Статья исключена");
       }
-    } catch (err: any) {
+    } catch (err) {
       // Revert on error
       setArticles(previousArticles);
       setCounts((prev) => ({
@@ -828,7 +859,7 @@ export default function ArticlesSection({
         [newStatus]: Math.max(0, prev[newStatus as keyof typeof prev] - 1),
         [previousStatus]: (prev[previousStatus as keyof typeof prev] || 0) + 1,
       }));
-      toast.error("Ошибка обновления статуса", err?.message);
+      toast.error("Ошибка обновления статуса", getErrorMessage(err));
     }
   }
 
@@ -856,10 +887,10 @@ export default function ArticlesSection({
 
       toast.success(`${count} статей обновлено`, `Статус: ${status}`);
       await loadArticles(); // Reload to sync counts
-    } catch (err: any) {
+    } catch (err) {
       // Revert on error
       setArticles(previousArticles);
-      toast.error("Ошибка массового обновления", err?.message);
+      toast.error("Ошибка массового обновления", getErrorMessage(err));
     }
   }
 
@@ -874,8 +905,8 @@ export default function ArticlesSection({
       toast.success("Перевод завершён");
       setSelectedIds(new Set());
       await loadArticles();
-    } catch (err: any) {
-      toast.error("Ошибка перевода", err?.message);
+    } catch (err) {
+      toast.error("Ошибка перевода", getErrorMessage(err));
     } finally {
       setTranslating(false);
     }
@@ -893,8 +924,8 @@ export default function ArticlesSection({
       setOk(res.message);
       setSelectedIds(new Set());
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка обогащения");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка обогащения");
     } finally {
       setEnriching(false);
     }
@@ -938,8 +969,8 @@ export default function ArticlesSection({
       });
       setSelectedIds(new Set());
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка AI анализа статистики");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка AI анализа статистики");
       setAiStatsProgress(null);
     } finally {
       setDetectingStats(false);
@@ -982,8 +1013,8 @@ export default function ArticlesSection({
       const res = await apiTranslateArticles(projectId);
       setOk(res.message);
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка перевода");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка перевода");
     } finally {
       setTranslating(false);
     }
@@ -1002,8 +1033,8 @@ export default function ArticlesSection({
         const updated = articles.find((a) => a.id === articleId);
         if (updated) setSelectedArticle(updated);
       }
-    } catch (err: any) {
-      setError(err?.message || "Ошибка перевода");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка перевода");
     } finally {
       setTranslatingOne(false);
     }
@@ -1035,15 +1066,18 @@ export default function ArticlesSection({
       setOk(result.message);
       setShowConvertModal(false);
       setSelectedArticle(null);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка создания документа");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка создания документа");
     } finally {
       setConvertingToDoc(false);
     }
   }
 
   // Функция подсветки статистики в тексте
-  function highlightStatistics(text: string, aiStats?: any): React.ReactNode {
+  function highlightStatistics(
+    text: string,
+    aiStats?: AiStatsPayload | null,
+  ): React.ReactNode {
     if (!highlightStats || !text) return text;
 
     // Паттерны для статистики (EN + RU) - расширенные
@@ -1132,7 +1166,7 @@ export default function ArticlesSection({
     }
 
     // Добавляем результаты AI-анализа (из stats_json.ai)
-    if (aiStats?.ai?.stats && Array.isArray(aiStats.ai.stats)) {
+    if (Array.isArray(aiStats?.ai?.stats)) {
       for (const stat of aiStats.ai.stats) {
         if (!stat.text) continue;
 
@@ -2622,9 +2656,9 @@ export default function ArticlesSection({
                           "_blank",
                         );
                       }
-                    } catch (err: any) {
+                    } catch (err) {
                       alert(
-                        err.message ||
+                        getErrorMessage(err) ||
                           "PDF не найден. Попробуйте поискать на сайте журнала.",
                       );
                     }
@@ -3028,8 +3062,8 @@ export default function ArticlesSection({
               `${articleIds.length} ${articleIds.length === 1 ? "статья добавлена" : "статей добавлено"} в отобранные`,
             );
             loadArticles();
-          } catch (err: any) {
-            toast.error(err.message || "Ошибка при изменении статуса");
+          } catch (err) {
+            toast.error(getErrorMessage(err) || "Ошибка при изменении статуса");
           }
         }}
         onHighlightArticle={(articleId) => {
