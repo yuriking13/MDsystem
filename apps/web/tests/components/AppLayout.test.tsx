@@ -12,6 +12,8 @@ import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout, { useProjectContext } from "../../src/components/AppLayout";
 import {
   MOBILE_VIEWPORT_WIDTHS,
+  PROJECT_TAB_CASES,
+  PROJECT_TABS,
   TARGET_VIEWPORT_WIDTHS,
 } from "../utils/responsiveMatrix";
 
@@ -390,6 +392,22 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(TARGET_VIEWPORT_WIDTHS).toEqual([
       360, 390, 768, 1024, 1280, 1440, 1920,
     ]);
+  });
+
+  it("keeps required project tab coverage for responsive routes", () => {
+    expect(PROJECT_TABS).toEqual([
+      "articles",
+      "documents",
+      "files",
+      "statistics",
+      "settings",
+      "graph",
+    ]);
+    expect(
+      PROJECT_TAB_CASES.filter((item) => item.shouldLockLayout).map(
+        (item) => item.tab,
+      ),
+    ).toEqual(["graph"]);
   });
 
   it("toggles body modal class and closes on Escape", async () => {
@@ -1072,14 +1090,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    "articles",
-    "documents",
-    "files",
-    "statistics",
-    "settings",
-    "graph",
-  ])(
+  it.each(PROJECT_TABS)(
     "hides app shell for unauthenticated /projects/:id?tab=%s across width matrix",
     (tab) => {
       mockAuthState.token = null;
@@ -1116,16 +1127,9 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    ["articles", false],
-    ["documents", false],
-    ["files", false],
-    ["statistics", false],
-    ["settings", false],
-    ["graph", true],
-  ])(
-    "renders /projects/:id?tab=%s shell behavior correctly on mobile",
-    (tab, shouldLockLayout) => {
+  it.each(PROJECT_TAB_CASES)(
+    "renders /projects/:id?tab=$tab shell behavior correctly on mobile",
+    ({ tab, shouldLockLayout }) => {
       renderAppLayout(`/projects/p1?tab=${tab}`);
 
       expect(screen.getByText("Project details page")).toBeInTheDocument();
@@ -1152,14 +1156,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    "articles",
-    "documents",
-    "files",
-    "statistics",
-    "settings",
-    "graph",
-  ])(
+  it.each(PROJECT_TABS)(
     "keeps /projects/:id?tab=%s route usable across all target widths",
     async (tab) => {
       const user = userEvent.setup();

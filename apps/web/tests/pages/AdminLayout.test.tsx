@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AdminLayout from "../../src/pages/admin/AdminLayout";
 import {
+  ADMIN_RESPONSIVE_ROUTE_CASES,
   MOBILE_VIEWPORT_WIDTHS,
   TARGET_VIEWPORT_WIDTHS,
 } from "../utils/responsiveMatrix";
@@ -70,6 +71,22 @@ describe("AdminLayout responsive sidebar behavior", () => {
   it("keeps the required responsive viewport matrix", () => {
     expect(TARGET_VIEWPORT_WIDTHS).toEqual([
       360, 390, 768, 1024, 1280, 1440, 1920,
+    ]);
+  });
+
+  it("keeps required admin route coverage for responsive checks", () => {
+    expect(ADMIN_RESPONSIVE_ROUTE_CASES.map(({ route }) => route)).toEqual([
+      "/admin",
+      "/admin/users",
+      "/admin/projects",
+      "/admin/articles",
+      "/admin/activity",
+      "/admin/sessions",
+      "/admin/jobs",
+      "/admin/errors",
+      "/admin/audit",
+      "/admin/system",
+      "/admin/settings",
     ]);
   });
 
@@ -260,19 +277,12 @@ describe("AdminLayout responsive sidebar behavior", () => {
     },
   );
 
-  it.each([
-    ["/admin", "Admin dashboard"],
-    ["/admin/users", "Users page"],
-    ["/admin/projects", "Projects page"],
-    ["/admin/articles", "Articles page"],
-    ["/admin/activity", "Activity page"],
-    ["/admin/sessions", "Sessions page"],
-    ["/admin/jobs", "Jobs page"],
-    ["/admin/errors", "Errors page"],
-    ["/admin/audit", "Audit page"],
-    ["/admin/system", "System page"],
-    ["/admin/settings", "Settings page"],
-  ])(
+  it.each(
+    ADMIN_RESPONSIVE_ROUTE_CASES.map(({ route, pageLabel }) => [
+      route,
+      pageLabel,
+    ]),
+  )(
     "keeps sidebar toggle viewport-gated for %s across width matrix",
     async (route, pageLabel) => {
       const user = userEvent.setup();
@@ -413,19 +423,13 @@ describe("AdminLayout responsive sidebar behavior", () => {
     });
   });
 
-  it.each([
-    ["/admin", "Admin dashboard", "Дашборд"],
-    ["/admin/users", "Users page", "Пользователи"],
-    ["/admin/projects", "Projects page", "Проекты"],
-    ["/admin/articles", "Articles page", "Статьи"],
-    ["/admin/activity", "Activity page", "Активность"],
-    ["/admin/sessions", "Sessions page", "Сессии"],
-    ["/admin/jobs", "Jobs page", "Задачи"],
-    ["/admin/errors", "Errors page", "Ошибки"],
-    ["/admin/audit", "Audit page", "Аудит"],
-    ["/admin/system", "System page", "Система"],
-    ["/admin/settings", "Settings page", "Настройки"],
-  ])(
+  it.each(
+    ADMIN_RESPONSIVE_ROUTE_CASES.map(({ route, pageLabel, mobileTitle }) => [
+      route,
+      pageLabel,
+      mobileTitle,
+    ]),
+  )(
     "shows current section label in mobile topbar for %s",
     (route, pageLabel, expectedMobileTitle) => {
       setViewportWidth(390);
@@ -438,19 +442,13 @@ describe("AdminLayout responsive sidebar behavior", () => {
     },
   );
 
-  it.each([
-    ["/admin", "Admin dashboard", "Дашборд"],
-    ["/admin/users", "Users page", "Пользователи"],
-    ["/admin/projects", "Projects page", "Проекты"],
-    ["/admin/articles", "Articles page", "Статьи"],
-    ["/admin/activity", "Activity page", "Активность"],
-    ["/admin/sessions", "Sessions page", "Сессии"],
-    ["/admin/jobs", "Jobs page", "Задачи"],
-    ["/admin/errors", "Errors page", "Ошибки"],
-    ["/admin/audit", "Audit page", "Аудит"],
-    ["/admin/system", "System page", "Система"],
-    ["/admin/settings", "Settings page", "Настройки"],
-  ])(
+  it.each(
+    ADMIN_RESPONSIVE_ROUTE_CASES.map(({ route, pageLabel, mobileTitle }) => [
+      route,
+      pageLabel,
+      mobileTitle,
+    ]),
+  )(
     "keeps mobile topbar title consistent for %s across target mobile widths",
     (route, pageLabel, expectedMobileTitle) => {
       for (const width of MOBILE_VIEWPORT_WIDTHS) {
