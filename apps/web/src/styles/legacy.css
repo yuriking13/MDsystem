@@ -9690,6 +9690,18 @@ input:focus::placeholder {
   }
 }
 
+@media (max-width: 640px) {
+  .document-editor-container {
+    height: calc(100vh - 180px);
+    min-height: 280px;
+  }
+
+  .citations-panel-fixed {
+    max-height: 180px;
+    padding: 12px;
+  }
+}
+
 /* File upload progress */
 .upload-progress {
   display: flex;
