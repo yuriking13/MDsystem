@@ -136,6 +136,42 @@ describe("documentation functional coverage contract", () => {
     }
   });
 
+  it("keeps submenu tablist and topic panel semantics wired for each section", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const sections = [
+      "Обзор платформы",
+      "База статей",
+      "Документы",
+      "Файлы",
+      "Статистика",
+      "Граф цитирований",
+      "Команда",
+      "Настройки проекта",
+      "API ключи",
+    ];
+
+    for (const section of sections) {
+      await user.click(screen.getByRole("button", { name: section }));
+
+      const tablist = screen.getByRole("tablist");
+      expect(tablist).toHaveAttribute("aria-orientation", "vertical");
+
+      const activeTab = screen
+        .getAllByRole("tab")
+        .find((tab) => tab.getAttribute("aria-selected") === "true");
+      expect(activeTab).toBeDefined();
+
+      const panel = screen.getByRole("tabpanel");
+      expect(panel).toHaveAttribute("aria-labelledby", activeTab?.id);
+      expect(panel).toHaveAttribute(
+        "id",
+        activeTab?.getAttribute("aria-controls") ?? "",
+      );
+    }
+  });
+
   it("keeps settings guidance for protocols, checks, and bibliography styles", async () => {
     const user = userEvent.setup();
     renderDocumentationPage();
