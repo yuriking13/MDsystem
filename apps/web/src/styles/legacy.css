@@ -5789,7 +5789,9 @@ input:focus::placeholder {
 /* Fixed height graph container - fills available space without scroll */
 .graph-container.graph-fixed-height {
   height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -5800,7 +5802,9 @@ input:focus::placeholder {
 /* Fullscreen mode */
 .graph-container.graph-fixed-height.graph-fullscreen {
   height: 100vh !important;
+  height: 100dvh !important;
   max-height: 100vh !important;
+  max-height: 100dvh !important;
   width: 100vw !important;
   position: fixed !important;
   top: 0 !important;
