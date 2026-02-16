@@ -10524,7 +10524,7 @@ input:focus::placeholder {
 
 .auth-actions .auth-submit {
   flex: 1;
-  min-width: 150px;
+  min-width: min(150px, 100%);
 }
 
 .auth-link-btn {
@@ -10867,7 +10867,7 @@ input:focus::placeholder {
 }
 
 .error-boundary-actions .btn {
-  min-width: 140px;
+  min-width: min(140px, 100%);
 }
 /* ===== LIGHT THEME AUTH PAGE OVERRIDES (Coral & Peach) ===== */
 
