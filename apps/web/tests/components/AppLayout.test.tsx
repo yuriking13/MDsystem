@@ -587,4 +587,40 @@ describe("AppLayout mobile sidebar behavior", () => {
       expect(document.body.classList.contains("layout-fixed")).toBe(false);
     }
   });
+
+  it.each([
+    ["/projects/p1/documents/d1", "Document editor page"],
+    ["/projects/p1?tab=graph", "Project details page"],
+  ])(
+    "cleans fixed layout and sidebar modal state when leaving %s",
+    async (route, pageLabel) => {
+      const user = userEvent.setup();
+      renderAppLayout(route);
+
+      expect(screen.getByText(pageLabel)).toBeInTheDocument();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        true,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(true);
+
+      const toggleButton = screen.getByLabelText("Открыть навигацию");
+      await user.click(toggleButton);
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+      expect(toggleButton).toHaveAttribute("aria-label", "Закрыть навигацию");
+
+      await user.click(screen.getByText("Back to projects"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Projects page")).toBeInTheDocument();
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          false,
+        );
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
+        expect(screen.getByLabelText("Открыть навигацию")).toBeInTheDocument();
+      });
+    },
+  );
 });
