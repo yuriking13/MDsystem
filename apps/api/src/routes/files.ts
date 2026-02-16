@@ -3,6 +3,7 @@
  */
 
 import { FastifyPluginAsync } from "fastify";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "../db.js";
 import { pool } from "../pg.js";
 
@@ -38,6 +39,34 @@ import {
   type ExtractedArticle,
 } from "../lib/article-extractor.js";
 import { getUserId } from "../utils/auth-helpers.js";
+
+type FileListResponse = {
+  files: Array<{
+    id: string;
+    name: string;
+    mimeType: string;
+    size: number;
+    sizeFormatted: string;
+    category: string;
+    description: string | null;
+    usedInDocuments: string[];
+    uploadedBy: string | null;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  storageConfigured: boolean;
+};
+
+type ProjectFileWithOptionalExtraction = {
+  id: string;
+  name: string;
+  mimeType: string;
+  category: string;
+  storagePath: string;
+  extractedMetadata?: ExtractedArticle | null;
+  extractedText?: string | null;
+  extractionDate?: Date | null;
+};
 
 const filesRoutes: FastifyPluginAsync = async (app) => {
   // Check if user has access to project
@@ -78,7 +107,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       // Try cache first (only for non-filtered requests)
       const cacheKey = CACHE_KEYS.files(projectId);
       if (!category) {
-        const cached = await cacheGet<any>(cacheKey);
+        const cached = await cacheGet<FileListResponse>(cacheKey);
         if (cached) {
           return cached;
         }
@@ -100,7 +129,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       });
 
       const result = {
-        files: files.map((f: any) => ({
+        files: files.map((f) => ({
           id: f.id,
           name: f.name,
           mimeType: f.mimeType,
@@ -198,8 +227,12 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         );
       }
 
+      if (!validation.ext) {
+        return reply.badRequest("Unable to determine file extension");
+      }
+
       // Generate storage path and upload
-      const storagePath = generateStoragePath(projectId, validation.ext!);
+      const storagePath = generateStoragePath(projectId, validation.ext);
 
       try {
         await uploadFile(storagePath, buffer, mimetype);
@@ -691,13 +724,20 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
 
       // Check for cached metadata (if not forcing re-analysis)
       // Use type assertion to access potentially missing fields
-      const fileAny = file as any;
-      const cachedMetadata = fileAny.extractedMetadata as
+      const fileWithExtraction =
+        file as unknown as ProjectFileWithOptionalExtraction;
+      const cachedMetadata = fileWithExtraction.extractedMetadata as
         | ExtractedArticle
         | null
         | undefined;
-      const cachedText = fileAny.extractedText as string | null | undefined;
-      const cachedAt = fileAny.extractionDate as Date | null | undefined;
+      const cachedText = fileWithExtraction.extractedText as
+        | string
+        | null
+        | undefined;
+      const cachedAt = fileWithExtraction.extractionDate as
+        | Date
+        | null
+        | undefined;
 
       if (!forceReanalyze && cachedMetadata && cachedText) {
         app.log.info(`Using cached metadata for file: ${file.name}`);
@@ -752,8 +792,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         // Header DOI is usually the article DOI; allow it to correct AI output.
         if (
           headerRegexDoi &&
-          (!metadata.doi ||
-            metadata.doi.toLowerCase() !== headerRegexDoi.toLowerCase())
+          metadata.doi?.toLowerCase() !== headerRegexDoi.toLowerCase()
         ) {
           app.log.info(
             `Using regex DOI from header: ${headerRegexDoi} (AI found: ${metadata.doi})`,
@@ -766,13 +805,14 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
 
         // Cache the extracted metadata and text (gracefully handle if columns don't exist)
         try {
+          const updateData = {
+            extractedMetadata: metadata as unknown as Prisma.InputJsonValue,
+            extractedText: text,
+            extractionDate: new Date(),
+          } as unknown as Prisma.ProjectFileUpdateInput;
           await prisma.projectFile.update({
             where: { id: fileId },
-            data: {
-              extractedMetadata: metadata as any,
-              extractedText: text,
-              extractionDate: new Date(),
-            } as any,
+            data: updateData,
           });
           app.log.info(`Cached metadata for file: ${file.name}`);
         } catch (cacheErr) {
@@ -791,7 +831,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           fullText: text,
           cached: false,
         };
-      } catch (err: any) {
+      } catch (err) {
         app.log.error({ err }, `Failed to analyze file: ${file.name}`);
         return reply.internalServerError("Ошибка анализа файла");
       }
@@ -830,7 +870,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
         return reply.notFound("File not found");
       }
 
-      if (!metadata || !metadata.title) {
+      if (!metadata?.title) {
         return reply.badRequest(
           "Метаданные статьи обязательны (как минимум заголовок)",
         );
@@ -926,7 +966,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
           message: `Статья "${metadata.title}" добавлена в ${status === "selected" ? "отобранные" : "кандидаты"}`,
           isExisting: false,
         };
-      } catch (err: any) {
+      } catch (err) {
         app.log.error({ err }, "Failed to import article from file");
         return reply.internalServerError("Ошибка импорта статьи");
       }
@@ -963,13 +1003,13 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
       // Get file info with cached text
       const file = (await prisma.projectFile.findFirst({
         where: { id: fileId, projectId },
-      })) as any;
+      })) as unknown as ProjectFileWithOptionalExtraction | null;
 
       if (!file) {
         return reply.notFound("File not found");
       }
 
-      if (!metadata || !metadata.title) {
+      if (!metadata?.title) {
         return reply.badRequest(
           "Метаданные статьи обязательны (как минимум заголовок)",
         );
@@ -1023,7 +1063,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
                     : [],
                 }));
             }
-          } catch (extractErr: any) {
+          } catch (extractErr) {
             app.log.error(
               { err: extractErr },
               `Failed to extract content from file: ${file.name}`,
@@ -1146,7 +1186,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
               );
 
               bibliographyCount++;
-            } catch (refErr: any) {
+            } catch (refErr) {
               app.log.warn(
                 { err: refErr },
                 `Failed to import reference: ${ref.title || ref.text?.slice(0, 50)}`,
@@ -1170,7 +1210,7 @@ const filesRoutes: FastifyPluginAsync = async (app) => {
               ? `. Добавлено ${bibliographyCount} источников в библиографию.`
               : ""),
         };
-      } catch (err: any) {
+      } catch (err) {
         app.log.error({ err }, "Failed to import file as document");
         return reply.internalServerError("Ошибка создания документа");
       }
