@@ -10421,6 +10421,11 @@ input:focus::placeholder {
   gap: 12px;
 }
 
+.auth-options .auth-link {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .auth-checkbox {
   display: flex;
   align-items: flex-start;
@@ -10600,6 +10605,10 @@ input:focus::placeholder {
     align-items: flex-start;
   }
 
+  .auth-options .auth-link {
+    width: 100%;
+  }
+
   .auth-submit {
     min-height: 42px;
   }
@@ -10628,6 +10637,10 @@ input:focus::placeholder {
   .auth-footer {
     font-size: 12px;
     padding: 12px;
+  }
+
+  .auth-options .auth-link {
+    font-size: 13px;
   }
 }
 
