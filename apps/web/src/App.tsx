@@ -52,10 +52,14 @@ export default function App() {
     const savedTheme = localStorage.getItem("theme");
     if (savedTheme === "light") {
       document.documentElement.setAttribute("data-theme", "light");
+      document.documentElement.classList.add("light-theme");
+      document.documentElement.classList.remove("dark");
       document.body.classList.add("light-theme");
       document.body.classList.remove("dark");
     } else {
       document.documentElement.setAttribute("data-theme", "dark");
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light-theme");
       document.body.classList.add("dark");
       document.body.classList.remove("light-theme");
     }

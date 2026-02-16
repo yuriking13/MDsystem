@@ -13,13 +13,13 @@ describe("App theme bootstrap contract", () => {
 
   it("keeps explicit light-theme branch applying document and body classes", () => {
     expect(appSource).toMatch(
-      /if\s*\(savedTheme === "light"\)\s*\{[\s\S]*?document\.documentElement\.setAttribute\("data-theme", "light"\);[\s\S]*?document\.body\.classList\.add\("light-theme"\);[\s\S]*?document\.body\.classList\.remove\("dark"\);/,
+      /if\s*\(savedTheme === "light"\)\s*\{[\s\S]*?document\.documentElement\.setAttribute\("data-theme", "light"\);[\s\S]*?document\.documentElement\.classList\.add\("light-theme"\);[\s\S]*?document\.documentElement\.classList\.remove\("dark"\);[\s\S]*?document\.body\.classList\.add\("light-theme"\);[\s\S]*?document\.body\.classList\.remove\("dark"\);/,
     );
   });
 
   it("keeps dark-theme fallback branch applying document and body classes", () => {
     expect(appSource).toMatch(
-      /else\s*\{[\s\S]*?document\.documentElement\.setAttribute\("data-theme", "dark"\);[\s\S]*?document\.body\.classList\.add\("dark"\);[\s\S]*?document\.body\.classList\.remove\("light-theme"\);/,
+      /else\s*\{[\s\S]*?document\.documentElement\.setAttribute\("data-theme", "dark"\);[\s\S]*?document\.documentElement\.classList\.add\("dark"\);[\s\S]*?document\.documentElement\.classList\.remove\("light-theme"\);[\s\S]*?document\.body\.classList\.add\("dark"\);[\s\S]*?document\.body\.classList\.remove\("light-theme"\);/,
     );
   });
 
