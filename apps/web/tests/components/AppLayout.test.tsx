@@ -15,6 +15,7 @@ import {
   APP_DRAWER_MAX_WIDTH,
   APP_ADMIN_NO_SHELL_ROUTE_CASES,
   APP_AUTH_ROUTE_CASES,
+  DESKTOP_VIEWPORT_WIDTHS,
   APP_FIXED_ROUTE_CASES,
   APP_NON_FIXED_ROUTE_CASES,
   MOBILE_VIEWPORT_WIDTHS,
@@ -873,7 +874,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([1024, 1280, 1440, 1920])(
+  it.each(DESKTOP_VIEWPORT_WIDTHS)(
     "keeps mobile sidebar closed on desktop widths at %ipx",
     async (width) => {
       const user = userEvent.setup();
