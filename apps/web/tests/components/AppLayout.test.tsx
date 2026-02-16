@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { useEffect, useRef, useState } from "react";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout, { useProjectContext } from "../../src/components/AppLayout";
+import { isAppMobileViewport } from "../../src/lib/responsive";
 import {
   APP_DRAWER_BOUNDARY_CASES,
   APP_DRAWER_MAX_WIDTH,
@@ -968,7 +969,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       const user = userEvent.setup();
 
       for (const width of TARGET_VIEWPORT_WIDTHS) {
-        const shouldOpen = width <= APP_DRAWER_MAX_WIDTH;
+        const shouldOpen = isAppMobileViewport(width);
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -1031,7 +1032,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       const user = userEvent.setup();
 
       for (const width of TARGET_VIEWPORT_WIDTHS) {
-        const shouldOpen = width <= APP_DRAWER_MAX_WIDTH;
+        const shouldOpen = isAppMobileViewport(width);
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -1235,7 +1236,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       const user = userEvent.setup();
 
       for (const width of TARGET_VIEWPORT_WIDTHS) {
-        const shouldOpen = width <= APP_DRAWER_MAX_WIDTH;
+        const shouldOpen = isAppMobileViewport(width);
         const shouldLockLayout = tab === "graph";
         setViewportWidth(width);
         const { unmount } = renderAppLayout(`/projects/p1?tab=${tab}`);

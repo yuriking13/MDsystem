@@ -9,6 +9,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AdminLayout from "../../src/pages/admin/AdminLayout";
+import { isAdminMobileViewport } from "../../src/lib/responsive";
 import {
   ADMIN_DRAWER_VIEWPORT_CASES,
   ADMIN_DRAWER_BOUNDARY_CASES,
@@ -353,7 +354,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
       const user = userEvent.setup();
 
       for (const width of TARGET_VIEWPORT_WIDTHS) {
-        const shouldOpenOnToggle = width <= ADMIN_DRAWER_MAX_WIDTH;
+        const shouldOpenOnToggle = isAdminMobileViewport(width);
         setViewportWidth(width);
         const { unmount } = renderAdminLayout(route);
 

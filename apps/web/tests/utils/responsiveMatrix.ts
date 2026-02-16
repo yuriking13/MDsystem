@@ -1,6 +1,8 @@
 import {
   ADMIN_MOBILE_MAX_WIDTH,
   APP_MOBILE_MAX_WIDTH,
+  isAdminMobileViewport,
+  isAppMobileViewport,
 } from "../../src/lib/responsive";
 
 export const TARGET_VIEWPORT_WIDTHS = [
@@ -20,10 +22,10 @@ export const ADMIN_DRAWER_BOUNDARY_CASES = [
   [ADMIN_DRAWER_MAX_WIDTH + 1, false],
 ] as const;
 export const APP_DRAWER_VIEWPORT_CASES = TARGET_VIEWPORT_WIDTHS.map(
-  (width) => [width, width <= APP_DRAWER_MAX_WIDTH] as const,
+  (width) => [width, isAppMobileViewport(width)] as const,
 );
 export const ADMIN_DRAWER_VIEWPORT_CASES = TARGET_VIEWPORT_WIDTHS.map(
-  (width) => [width, width <= ADMIN_DRAWER_MAX_WIDTH] as const,
+  (width) => [width, isAdminMobileViewport(width)] as const,
 );
 
 export const PROJECT_TAB_CASES = [
