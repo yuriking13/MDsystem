@@ -1191,7 +1191,10 @@
   align-items: center;
   justify-content: center;
   z-index: 200;
-  padding: 1rem;
+  padding: calc(1rem + env(safe-area-inset-top, 0px))
+    calc(1rem + env(safe-area-inset-right, 0px))
+    calc(1rem + env(safe-area-inset-bottom, 0px))
+    calc(1rem + env(safe-area-inset-left, 0px));
   animation: fadeIn 100ms ease-out;
 }
 
@@ -1204,6 +1207,7 @@
   max-width: 700px;
   width: 100%;
   max-height: 90vh;
+  max-height: 90dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
