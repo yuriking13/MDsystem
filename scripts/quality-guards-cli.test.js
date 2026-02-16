@@ -5,6 +5,10 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
+const {
+  DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+} = require("./quality-guards-lib.js");
+
 const guardCliPath = path.resolve(__dirname, "quality-guards.js");
 
 function createTempWorkspace() {
@@ -14,6 +18,10 @@ function createTempWorkspace() {
 function writeFile(filePath, content = "") {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, content, "utf8");
+}
+
+function getDefaultResponsiveTargets() {
+  return [...DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS];
 }
 
 test("quality-guards check mode reports mirror remediation tip", () => {
@@ -271,6 +279,7 @@ test("quality-guards check mode reports responsive suite coverage remediation ti
 test("quality-guards check mode reports responsive suite tip when pre-step is missing", () => {
   const workspaceRoot = createTempWorkspace();
   const webPackagePath = path.join(workspaceRoot, "apps/web/package.json");
+  const responsiveTargets = getDefaultResponsiveTargets();
 
   writeFile(
     webPackagePath,
@@ -278,8 +287,7 @@ test("quality-guards check mode reports responsive suite tip when pre-step is mi
       {
         name: "web",
         scripts: {
-          "test:responsive":
-            "vitest run src/lib/responsive.test.ts tests/components/AppLayout.test.tsx tests/pages/AdminLayout.test.tsx tests/components/AppSidebar.test.tsx tests/styles/articlesLayout.test.ts tests/styles/legacyResponsiveSafeguards.test.ts tests/styles/layoutResponsiveShell.test.ts tests/styles/docsAndGraphResponsive.test.ts tests/styles/projectsAndSettingsResponsive.test.ts tests/styles/adminPagesResponsive.test.ts tests/styles/authResponsive.test.ts tests/utils/responsiveMatrix.test.ts tests/utils/viewport.test.ts tests/config/responsiveSuiteContract.test.ts tests/config/responsiveTestConventions.test.ts",
+          "test:responsive": `vitest run ${responsiveTargets.join(" ")}`,
         },
       },
       null,
@@ -334,6 +342,18 @@ test("quality-guards check mode reports layout test viewport literal remediation
 test("quality-guards check mode reports responsive suite tip when targets are out of canonical order", () => {
   const workspaceRoot = createTempWorkspace();
   const webPackagePath = path.join(workspaceRoot, "apps/web/package.json");
+  const responsiveTargets = getDefaultResponsiveTargets();
+  const viewportTargetIndex = responsiveTargets.indexOf(
+    "tests/utils/viewport.test.ts",
+  );
+  const matrixTargetIndex = responsiveTargets.indexOf(
+    "tests/utils/responsiveMatrix.test.ts",
+  );
+  const reorderedTargets = [...responsiveTargets];
+  if (viewportTargetIndex !== -1 && matrixTargetIndex !== -1) {
+    reorderedTargets[viewportTargetIndex] = responsiveTargets[matrixTargetIndex];
+    reorderedTargets[matrixTargetIndex] = responsiveTargets[viewportTargetIndex];
+  }
 
   writeFile(
     webPackagePath,
@@ -341,8 +361,9 @@ test("quality-guards check mode reports responsive suite tip when targets are ou
       {
         name: "web",
         scripts: {
-          "test:responsive":
-            "pnpm run clean:js-mirrors && vitest run src/lib/responsive.test.ts tests/components/AppLayout.test.tsx tests/pages/AdminLayout.test.tsx tests/components/AppSidebar.test.tsx tests/styles/articlesLayout.test.ts tests/styles/legacyResponsiveSafeguards.test.ts tests/styles/layoutResponsiveShell.test.ts tests/styles/docsAndGraphResponsive.test.ts tests/styles/projectsAndSettingsResponsive.test.ts tests/styles/adminPagesResponsive.test.ts tests/styles/authResponsive.test.ts tests/utils/viewport.test.ts tests/utils/responsiveMatrix.test.ts tests/config/responsiveSuiteContract.test.ts tests/config/responsiveTestConventions.test.ts",
+          "test:responsive": `pnpm run clean:js-mirrors && vitest run ${reorderedTargets.join(
+            " ",
+          )}`,
         },
       },
       null,

@@ -102,7 +102,7 @@ const webLayoutTestInlineViewportArrayCheck = {
     "AppLayout/AdminLayout responsive tests should use shared viewport matrix constants instead of inline numeric arrays",
 };
 
-const REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
+const DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
   "src/lib/responsive.test.ts",
   "tests/components/AppLayout.test.tsx",
   "tests/pages/AdminLayout.test.tsx",
@@ -119,6 +119,39 @@ const REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
   "tests/config/responsiveSuiteContract.test.ts",
   "tests/config/responsiveTestConventions.test.ts",
 ];
+
+const WEB_RESPONSIVE_TARGETS_CONFIG_PATH = path.join(
+  "apps",
+  "web",
+  "tests",
+  "config",
+  "responsiveSuiteTargets.json",
+);
+
+function readRequiredWebResponsiveTestTargets(workspaceRoot) {
+  const configPath = path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH);
+  if (!fs.existsSync(configPath)) {
+    return DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS;
+  }
+
+  try {
+    const parsedConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+    if (!Array.isArray(parsedConfig)) {
+      return DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS;
+    }
+
+    const normalizedTargets = parsedConfig.filter(
+      (target) => typeof target === "string",
+    );
+    if (normalizedTargets.length === 0) {
+      return DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS;
+    }
+
+    return normalizedTargets;
+  } catch (error) {
+    return DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS;
+  }
+}
 
 function walkFiles(rootDir, extensions) {
   const output = [];
@@ -397,10 +430,11 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
   }
 
   const responsiveTargets = extractVitestTargetsFromScript(responsiveScript);
+  const requiredTargets = readRequiredWebResponsiveTestTargets(workspaceRoot);
   const targetSet = new Set(responsiveTargets);
   let hasDuplicateTargets = false;
 
-  for (const requiredTarget of REQUIRED_WEB_RESPONSIVE_TEST_TARGETS) {
+  for (const requiredTarget of requiredTargets) {
     if (!targetSet.has(requiredTarget)) {
       violations.push({
         file: relativeFile,
@@ -426,7 +460,7 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
   }
 
   for (const target of responsiveTargets) {
-    if (!REQUIRED_WEB_RESPONSIVE_TEST_TARGETS.includes(target)) {
+    if (!requiredTargets.includes(target)) {
       violations.push({
         file: relativeFile,
         line: scriptLine,
@@ -444,11 +478,11 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
   if (
     !hasDuplicateTargets &&
     !hasMissingOrUnexpected &&
-    responsiveTargets.length === REQUIRED_WEB_RESPONSIVE_TEST_TARGETS.length
+    responsiveTargets.length === requiredTargets.length
   ) {
     let mismatchIndex = -1;
-    for (let i = 0; i < REQUIRED_WEB_RESPONSIVE_TEST_TARGETS.length; i += 1) {
-      if (responsiveTargets[i] !== REQUIRED_WEB_RESPONSIVE_TEST_TARGETS[i]) {
+    for (let i = 0; i < requiredTargets.length; i += 1) {
+      if (responsiveTargets[i] !== requiredTargets[i]) {
         mismatchIndex = i;
         break;
       }
@@ -685,6 +719,9 @@ module.exports = {
   webLayoutTestViewportLiteralCheck,
   webLayoutTestBreakpointLiteralCheck,
   webLayoutTestInlineViewportArrayCheck,
+  DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+  WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
+  readRequiredWebResponsiveTestTargets,
   runQualityGuards,
   lineForIndex,
 };

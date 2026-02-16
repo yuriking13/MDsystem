@@ -99,6 +99,10 @@ Automated responsive regression coverage for this matrix lives in:
 - `apps/web/tests/config/responsiveSuiteContract.test.ts`
 - `apps/web/tests/config/responsiveTestConventions.test.ts`
 
+Canonical ordered target list for `apps/web/package.json` `test:responsive` is stored in:
+
+- `apps/web/tests/config/responsiveSuiteTargets.json`
+
 Quick run for this focused suite:
 
 - Workspace root: `pnpm test:responsive`

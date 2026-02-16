@@ -4,7 +4,16 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { lineForIndex, runQualityGuards } = require("./quality-guards-lib.js");
+const {
+  DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+  WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
+  lineForIndex,
+  runQualityGuards,
+} = require("./quality-guards-lib.js");
+
+function getDefaultResponsiveTargets() {
+  return [...DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS];
+}
 
 function writeFile(filePath, content) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -467,23 +476,7 @@ test("runQualityGuards blocks incomplete web test:responsive script coverage", (
 
 test("runQualityGuards accepts complete web test:responsive script coverage", () => {
   const workspaceRoot = createWorkspaceFixture();
-  const responsiveTargets = [
-    "src/lib/responsive.test.ts",
-    "tests/components/AppLayout.test.tsx",
-    "tests/pages/AdminLayout.test.tsx",
-    "tests/components/AppSidebar.test.tsx",
-    "tests/styles/articlesLayout.test.ts",
-    "tests/styles/legacyResponsiveSafeguards.test.ts",
-    "tests/styles/layoutResponsiveShell.test.ts",
-    "tests/styles/docsAndGraphResponsive.test.ts",
-    "tests/styles/projectsAndSettingsResponsive.test.ts",
-    "tests/styles/adminPagesResponsive.test.ts",
-    "tests/styles/authResponsive.test.ts",
-    "tests/utils/responsiveMatrix.test.ts",
-    "tests/utils/viewport.test.ts",
-    "tests/config/responsiveSuiteContract.test.ts",
-    "tests/config/responsiveTestConventions.test.ts",
-  ];
+  const responsiveTargets = getDefaultResponsiveTargets();
 
   writeFile(
     path.join(workspaceRoot, "apps/web/package.json"),
@@ -514,23 +507,7 @@ test("runQualityGuards accepts complete web test:responsive script coverage", ()
 
 test("runQualityGuards blocks web test:responsive script without clean-js-mirrors pre-step", () => {
   const workspaceRoot = createWorkspaceFixture();
-  const responsiveTargets = [
-    "src/lib/responsive.test.ts",
-    "tests/components/AppLayout.test.tsx",
-    "tests/pages/AdminLayout.test.tsx",
-    "tests/components/AppSidebar.test.tsx",
-    "tests/styles/articlesLayout.test.ts",
-    "tests/styles/legacyResponsiveSafeguards.test.ts",
-    "tests/styles/layoutResponsiveShell.test.ts",
-    "tests/styles/docsAndGraphResponsive.test.ts",
-    "tests/styles/projectsAndSettingsResponsive.test.ts",
-    "tests/styles/adminPagesResponsive.test.ts",
-    "tests/styles/authResponsive.test.ts",
-    "tests/utils/responsiveMatrix.test.ts",
-    "tests/utils/viewport.test.ts",
-    "tests/config/responsiveSuiteContract.test.ts",
-    "tests/config/responsiveTestConventions.test.ts",
-  ];
+  const responsiveTargets = getDefaultResponsiveTargets();
 
   writeFile(
     path.join(workspaceRoot, "apps/web/package.json"),
@@ -565,21 +542,7 @@ test("runQualityGuards blocks web test:responsive script without clean-js-mirror
 test("runQualityGuards blocks duplicate test targets in web test:responsive script", () => {
   const workspaceRoot = createWorkspaceFixture();
   const responsiveTargets = [
-    "src/lib/responsive.test.ts",
-    "tests/components/AppLayout.test.tsx",
-    "tests/pages/AdminLayout.test.tsx",
-    "tests/components/AppSidebar.test.tsx",
-    "tests/styles/articlesLayout.test.ts",
-    "tests/styles/legacyResponsiveSafeguards.test.ts",
-    "tests/styles/layoutResponsiveShell.test.ts",
-    "tests/styles/docsAndGraphResponsive.test.ts",
-    "tests/styles/projectsAndSettingsResponsive.test.ts",
-    "tests/styles/adminPagesResponsive.test.ts",
-    "tests/styles/authResponsive.test.ts",
-    "tests/utils/responsiveMatrix.test.ts",
-    "tests/utils/viewport.test.ts",
-    "tests/config/responsiveSuiteContract.test.ts",
-    "tests/config/responsiveTestConventions.test.ts",
+    ...getDefaultResponsiveTargets(),
     "tests/components/AppLayout.test.tsx",
   ];
 
@@ -620,21 +583,7 @@ test("runQualityGuards blocks duplicate test targets in web test:responsive scri
 test("runQualityGuards blocks unexpected test targets in web test:responsive script", () => {
   const workspaceRoot = createWorkspaceFixture();
   const responsiveTargets = [
-    "src/lib/responsive.test.ts",
-    "tests/components/AppLayout.test.tsx",
-    "tests/pages/AdminLayout.test.tsx",
-    "tests/components/AppSidebar.test.tsx",
-    "tests/styles/articlesLayout.test.ts",
-    "tests/styles/legacyResponsiveSafeguards.test.ts",
-    "tests/styles/layoutResponsiveShell.test.ts",
-    "tests/styles/docsAndGraphResponsive.test.ts",
-    "tests/styles/projectsAndSettingsResponsive.test.ts",
-    "tests/styles/adminPagesResponsive.test.ts",
-    "tests/styles/authResponsive.test.ts",
-    "tests/utils/responsiveMatrix.test.ts",
-    "tests/utils/viewport.test.ts",
-    "tests/config/responsiveSuiteContract.test.ts",
-    "tests/config/responsiveTestConventions.test.ts",
+    ...getDefaultResponsiveTargets(),
     "tests/config/customExtraResponsive.test.ts",
   ];
 
@@ -674,23 +623,20 @@ test("runQualityGuards blocks unexpected test targets in web test:responsive scr
 
 test("runQualityGuards blocks out-of-order test targets in web test:responsive script", () => {
   const workspaceRoot = createWorkspaceFixture();
-  const responsiveTargets = [
-    "src/lib/responsive.test.ts",
-    "tests/components/AppLayout.test.tsx",
-    "tests/pages/AdminLayout.test.tsx",
-    "tests/components/AppSidebar.test.tsx",
-    "tests/styles/articlesLayout.test.ts",
-    "tests/styles/legacyResponsiveSafeguards.test.ts",
-    "tests/styles/layoutResponsiveShell.test.ts",
-    "tests/styles/docsAndGraphResponsive.test.ts",
-    "tests/styles/projectsAndSettingsResponsive.test.ts",
-    "tests/styles/adminPagesResponsive.test.ts",
-    "tests/styles/authResponsive.test.ts",
+  const responsiveTargets = getDefaultResponsiveTargets();
+  const viewportTargetIndex = responsiveTargets.indexOf(
     "tests/utils/viewport.test.ts",
+  );
+  const matrixTargetIndex = responsiveTargets.indexOf(
     "tests/utils/responsiveMatrix.test.ts",
-    "tests/config/responsiveSuiteContract.test.ts",
-    "tests/config/responsiveTestConventions.test.ts",
-  ];
+  );
+  const reorderedTargets = [...responsiveTargets];
+  if (viewportTargetIndex !== -1 && matrixTargetIndex !== -1) {
+    reorderedTargets[viewportTargetIndex] =
+      responsiveTargets[matrixTargetIndex];
+    reorderedTargets[matrixTargetIndex] =
+      responsiveTargets[viewportTargetIndex];
+  }
 
   writeFile(
     path.join(workspaceRoot, "apps/web/package.json"),
@@ -698,7 +644,7 @@ test("runQualityGuards blocks out-of-order test targets in web test:responsive s
       {
         name: "web",
         scripts: {
-          "test:responsive": `pnpm run clean:js-mirrors && vitest run ${responsiveTargets.join(
+          "test:responsive": `pnpm run clean:js-mirrors && vitest run ${reorderedTargets.join(
             " ",
           )}`,
         },
@@ -721,6 +667,55 @@ test("runQualityGuards blocks out-of-order test targets in web test:responsive s
     responsiveScriptCoverageViolation.violations.some((violation) =>
       violation.snippet.includes("target-order-mismatch:index-12"),
     ),
+  );
+});
+
+test("runQualityGuards reads responsive targets from shared config file when present", () => {
+  const workspaceRoot = createWorkspaceFixture();
+  const customResponsiveTargets = [
+    "tests/config/alpha.test.ts",
+    "tests/config/beta.test.ts",
+  ];
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(customResponsiveTargets, null, 2),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/package.json"),
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive":
+            "pnpm run clean:js-mirrors && vitest run tests/config/alpha.test.ts",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const responsiveScriptCoverageViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-test-script-coverage",
+  );
+  assert.ok(responsiveScriptCoverageViolation);
+  assert.ok(
+    responsiveScriptCoverageViolation.violations.some((violation) =>
+      violation.snippet.includes("missing-target:tests/config/beta.test.ts"),
+    ),
+  );
+  assert.equal(
+    responsiveScriptCoverageViolation.violations.some((violation) =>
+      violation.snippet.includes("missing-target:src/lib/responsive.test.ts"),
+    ),
+    false,
   );
 });
 
