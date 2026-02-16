@@ -2271,7 +2271,8 @@
     align-items: center;
     gap: 10px;
     min-height: 52px;
-    margin: -16px -16px 16px -16px;
+    margin: -16px calc(-16px - env(safe-area-inset-right, 0px)) 16px
+      calc(-16px - env(safe-area-inset-left, 0px));
     padding: calc(10px + env(safe-area-inset-top, 0px))
       calc(16px + env(safe-area-inset-right, 0px)) 10px
       calc(16px + env(safe-area-inset-left, 0px));
@@ -2411,7 +2412,8 @@
   }
 
   .admin-mobile-topbar {
-    margin: -12px -12px 12px -12px;
+    margin: -12px calc(-12px - env(safe-area-inset-right, 0px)) 12px
+      calc(-12px - env(safe-area-inset-left, 0px));
   }
 
   .admin-page-header h1 {
