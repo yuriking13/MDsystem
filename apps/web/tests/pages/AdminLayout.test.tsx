@@ -307,10 +307,12 @@ describe("AdminLayout responsive sidebar behavior", () => {
       name: "Открыть навигацию",
     });
     expect(toggleButton).toBeEnabled();
+    expect(toggleButton).toHaveAttribute("aria-expanded", "false");
 
     await user.click(toggleButton);
     await waitFor(() => {
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+      expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
 
     act(() => {
@@ -322,6 +324,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
         false,
       );
       expect(toggleButton).toBeDisabled();
+      expect(toggleButton).toHaveAttribute("aria-expanded", "false");
     });
 
     act(() => {
@@ -333,6 +336,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(
         false,
       );
+      expect(toggleButton).toHaveAttribute("aria-expanded", "false");
     });
 
     await user.click(toggleButton);
@@ -341,6 +345,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
       expect(
         document.querySelector(".admin-sidebar.mobile-open"),
       ).not.toBeNull();
+      expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
   });
 

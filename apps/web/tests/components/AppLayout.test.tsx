@@ -1498,10 +1498,12 @@ describe("AppLayout mobile sidebar behavior", () => {
       name: "Открыть навигацию",
     });
     expect(toggleButton).toBeEnabled();
+    expect(toggleButton).toHaveAttribute("aria-expanded", "false");
 
     await user.click(toggleButton);
     await waitFor(() => {
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+      expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
 
     act(() => {
@@ -1513,6 +1515,7 @@ describe("AppLayout mobile sidebar behavior", () => {
         false,
       );
       expect(toggleButton).toBeDisabled();
+      expect(toggleButton).toHaveAttribute("aria-expanded", "false");
     });
 
     act(() => {
@@ -1524,12 +1527,14 @@ describe("AppLayout mobile sidebar behavior", () => {
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(
         false,
       );
+      expect(toggleButton).toHaveAttribute("aria-expanded", "false");
     });
 
     await user.click(toggleButton);
     await waitFor(() => {
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
       expect(document.querySelector(".app-sidebar--open")).not.toBeNull();
+      expect(toggleButton).toHaveAttribute("aria-expanded", "true");
     });
   });
 
