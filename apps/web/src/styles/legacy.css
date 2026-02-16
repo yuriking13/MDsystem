@@ -8748,6 +8748,9 @@ input:focus::placeholder {
   width: 500px;
   max-width: 90vw;
   height: 100vh;
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background-color: rgba(10, 22, 40, 0.95);
   backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
