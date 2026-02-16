@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AdminLayout from "../../src/pages/admin/AdminLayout";
 import {
+  ADMIN_DRAWER_VIEWPORT_CASES,
   ADMIN_DRAWER_BOUNDARY_CASES,
   ADMIN_DRAWER_MAX_WIDTH,
   ADMIN_RESPONSIVE_ROUTE_CASES,
@@ -173,15 +174,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
     });
   });
 
-  it.each([
-    [360, true],
-    [390, true],
-    [768, true],
-    [1024, false],
-    [1280, false],
-    [1440, false],
-    [1920, false],
-  ])(
+  it.each(ADMIN_DRAWER_VIEWPORT_CASES)(
     "keeps sidebar modal behavior consistent at %ipx",
     async (width, shouldOpenOnToggle) => {
       const user = userEvent.setup();
