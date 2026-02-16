@@ -135,4 +135,40 @@ describe("documentation functional coverage contract", () => {
       expect(summary?.textContent?.trim().length ?? 0).toBeGreaterThan(20);
     }
   });
+
+  it("keeps settings guidance for protocols, checks, and bibliography styles", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    await user.click(screen.getByRole("button", { name: "Настройки проекта" }));
+    await user.click(
+      screen.getByRole("tab", { name: "Протокол и проверки качества" }),
+    );
+
+    expect(
+      screen.getByText(
+        "Протоколы: CARE, STROBE, CONSORT, PRISMA и другие (по доступности).",
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "AI-проверки помогают увидеть пропущенные разделы, риски ошибок I/II рода и слабые места дизайна.",
+      ),
+    ).toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("tab", {
+        name: "Библиографический стиль и формат вывода",
+      }),
+    );
+
+    expect(
+      screen.getByText("Поддерживаются стили: ГОСТ, APA, Vancouver."),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Если журнал требует другой стиль, переключите его до финального экспорта.",
+      ),
+    ).toBeInTheDocument();
+  });
 });
