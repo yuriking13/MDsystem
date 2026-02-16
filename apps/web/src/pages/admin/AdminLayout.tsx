@@ -28,10 +28,24 @@ export default function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.innerWidth <= 900;
+  });
 
   useEffect(() => {
     setMobileSidebarOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => {
+      setIsMobileViewport(window.innerWidth <= 900);
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   useEffect(() => {
     if (!mobileSidebarOpen) return;
@@ -74,6 +88,8 @@ export default function AdminLayout() {
     return location.pathname.startsWith(path);
   }
 
+  const showSidebarLabels = isMobileViewport || sidebarOpen;
+
   return (
     <div className="admin-layout">
       {mobileSidebarOpen && (
@@ -92,7 +108,7 @@ export default function AdminLayout() {
         <div className="admin-sidebar-header">
           <div className="admin-logo">
             <IconShield size="lg" className="admin-logo-icon" />
-            {sidebarOpen && <span>Scientiaiter Admin</span>}
+            {showSidebarLabels && <span>Scientiaiter Admin</span>}
           </div>
           <button
             className="admin-sidebar-toggle"
@@ -129,11 +145,11 @@ export default function AdminLayout() {
               key={item.path}
               to={item.path}
               className={`admin-nav-item ${isActive(item.path) ? "active" : ""}`}
-              title={!sidebarOpen ? item.label : undefined}
+              title={!showSidebarLabels ? item.label : undefined}
               onClick={() => setMobileSidebarOpen(false)}
             >
               <span className="admin-nav-icon">{item.icon}</span>
-              {sidebarOpen && (
+              {showSidebarLabels && (
                 <>
                   <span className="admin-nav-label">{item.label}</span>
                   {item.badge !== undefined && (
@@ -141,7 +157,7 @@ export default function AdminLayout() {
                   )}
                 </>
               )}
-              {!sidebarOpen && item.badge !== undefined && (
+              {!showSidebarLabels && item.badge !== undefined && (
                 <span className="admin-nav-badge-dot"></span>
               )}
             </Link>
@@ -157,13 +173,13 @@ export default function AdminLayout() {
             <span className="admin-nav-icon">
               <IconArrowLeft />
             </span>
-            {sidebarOpen && (
+            {showSidebarLabels && (
               <span className="admin-nav-label">Вернуться в приложение</span>
             )}
           </Link>
 
           <div className="admin-user-info">
-            {sidebarOpen && admin && (
+            {showSidebarLabels && admin && (
               <div className="admin-user-details">
                 <span className="admin-user-email">{admin.email}</span>
                 <span className="admin-user-role">Администратор</span>
