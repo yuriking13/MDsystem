@@ -1871,6 +1871,8 @@
     top: 0;
     bottom: 0;
     z-index: 26;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
   .graph-control-panel:not(.collapsed) {
