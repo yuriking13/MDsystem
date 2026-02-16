@@ -66,6 +66,12 @@ const webStylePropCheck = {
   description: "style={...} usage is not allowed in apps/web/src",
 };
 
+const webCssViewportFallbackCheck = {
+  name: "web-css-100vh-without-dvh-fallback",
+  description:
+    "CSS declarations using 100vh for height/min-height/max-height must be followed by a 100dvh fallback",
+};
+
 function walkFiles(rootDir, extensions) {
   const output = [];
   const queue = [rootDir];
@@ -195,6 +201,53 @@ function collectWebStylePropViolations(workspaceRoot, fileCache) {
   return violations;
 }
 
+function collectWebCssViewportFallbackViolations(workspaceRoot, fileCache) {
+  const webSrcRoot = path.join(workspaceRoot, "apps/web/src");
+  const cssFiles = getCachedFiles(webSrcRoot, new Set([".css"]), fileCache);
+
+  const violations = [];
+  for (const filePath of cssFiles) {
+    const relativeFile = path
+      .relative(workspaceRoot, filePath)
+      .replaceAll(path.sep, "/");
+    const source = fs.readFileSync(filePath, "utf8");
+    const lines = source.split(/\r?\n/);
+
+    for (let i = 0; i < lines.length; i += 1) {
+      const line = lines[i];
+      const match = line.match(
+        /^\s*(height|min-height|max-height):\s*100vh(?:\s*!important)?\s*;/,
+      );
+      if (!match) {
+        continue;
+      }
+
+      const propertyName = match[1];
+      let nextLineIndex = i + 1;
+      while (
+        nextLineIndex < lines.length &&
+        lines[nextLineIndex].trim().length === 0
+      ) {
+        nextLineIndex += 1;
+      }
+
+      const nextLine = lines[nextLineIndex] || "";
+      const fallbackMatcher = new RegExp(
+        `^\\s*${propertyName}:\\s*100dvh(?:\\s*!important)?\\s*;`,
+      );
+      if (!fallbackMatcher.test(nextLine)) {
+        violations.push({
+          file: relativeFile,
+          line: i + 1,
+          snippet: line.trim(),
+        });
+      }
+    }
+  }
+
+  return violations;
+}
+
 function cleanupWebJsMirrors(workspaceRoot) {
   const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
@@ -249,6 +302,15 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webCssViewportFallbackViolations =
+    collectWebCssViewportFallbackViolations(workspaceRoot, fileCache);
+  if (webCssViewportFallbackViolations.length > 0) {
+    allViolations.push({
+      check: webCssViewportFallbackCheck,
+      violations: webCssViewportFallbackViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
@@ -257,6 +319,7 @@ module.exports = {
   webJsMirrorCheck,
   webJsSourceCheck,
   webStylePropCheck,
+  webCssViewportFallbackCheck,
   runQualityGuards,
   lineForIndex,
 };

@@ -152,3 +152,34 @@ test("runQualityGuards blocks style prop usage in web source", () => {
   assert.equal(stylePropViolation.violations.length, 1);
   assert.match(stylePropViolation.violations[0].file, /InlineStyleLeak\.tsx$/);
 });
+
+test("runQualityGuards blocks 100vh declarations without 100dvh fallback", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/styles/viewport.css"),
+    [
+      ".ok {",
+      "  height: 100vh;",
+      "  height: 100dvh;",
+      "}",
+      "",
+      ".bad {",
+      "  max-height: 100vh !important;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const viewportViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-css-100vh-without-dvh-fallback",
+  );
+  assert.ok(viewportViolation);
+  assert.equal(viewportViolation.violations.length, 1);
+  assert.equal(viewportViolation.violations[0].line, 7);
+  assert.match(viewportViolation.violations[0].snippet, /max-height:\s*100vh/);
+});

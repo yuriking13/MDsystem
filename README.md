@@ -36,6 +36,7 @@ The repository enforces strict quality gates for TypeScript and UI code:
 - no inline JSX style literals (`style={{ ... }}`) in the web app;
 - `style={...}` usage is disallowed in `apps/web/src` (class-based styling only);
 - no direct DOM style mutations (`.style.*` / `setAttribute("style", ...)`) in web source.
+- any `height|min-height|max-height: 100vh` declaration in web CSS must be followed by a `100dvh` fallback line.
 
 Run all checks from the workspace root:
 

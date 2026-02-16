@@ -137,3 +137,24 @@ test("quality-guards check mode reports style-prop remediation tip", () => {
     /Tip: move styles to CSS classes; style=\{\.\.\.\} is disallowed in apps\/web\/src/,
   );
 });
+
+test("quality-guards check mode reports 100vh fallback remediation tip", () => {
+  const workspaceRoot = createTempWorkspace();
+  const cssFilePath = path.join(workspaceRoot, "apps/web/src/styles/viewport.css");
+
+  writeFile(
+    cssFilePath,
+    [".bad {", "  min-height: 100vh;", "}"].join("\n"),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: after any `height\|min-height\|max-height: 100vh`, add the same property with `100dvh` on the next line/,
+  );
+});

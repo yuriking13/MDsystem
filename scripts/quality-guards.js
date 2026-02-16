@@ -48,6 +48,16 @@ function main() {
         "\n[quality-guards] Tip: move styles to CSS classes; style={...} is disallowed in apps/web/src.",
       );
     }
+
+    if (
+      allViolations.some(
+        ({ check }) => check.name === "web-css-100vh-without-dvh-fallback",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: after any `height|min-height|max-height: 100vh`, add the same property with `100dvh` on the next line.",
+      );
+    }
   }
 
   process.exit(1);
