@@ -2401,6 +2401,18 @@
     justify-content: flex-end;
   }
 
+  .article-ai-suggestions-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 6px 8px;
+  }
+
+  .article-ai-add-all-btn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
   .article-ai-input-area {
     padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
   }
