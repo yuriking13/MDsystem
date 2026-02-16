@@ -10093,7 +10093,9 @@ input:focus::placeholder {
   flex-direction: column;
   background: var(--bg-primary);
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Animated background effects */
