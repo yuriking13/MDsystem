@@ -89,6 +89,39 @@ describe("light theme blue/white palette safeguards", () => {
     expect(graphComponent).not.toMatch(/#D99A3A/);
   });
 
+  it("keeps graph component bound to CSS-variable token getters", () => {
+    expect(graphComponent).toMatch(
+      /import[\s\S]*getGraphNodeColors[\s\S]*getGraphBackgroundColors[\s\S]*from "\.\/utils";/,
+    );
+    expect(graphComponent).toMatch(
+      /const nodeColors = getGraphNodeColors\(\);/,
+    );
+    expect(graphComponent).toMatch(
+      /const backgroundColors = getGraphBackgroundColors\(\);/,
+    );
+    expect(graphComponent).toMatch(
+      /bg:\s*backgroundColors\.normal,[\s\S]*bgFullscreen:\s*backgroundColors\.fullscreen,[\s\S]*linkColor:\s*backgroundColors\.linkColor,/,
+    );
+  });
+
+  it("keeps graph legend and helper color maps normalized before lookup", () => {
+    expect(graphComponent).toMatch(
+      /const normalizeColorKey = \(color: string\): string =>[\s\S]*?color\.trim\(\)\.toLowerCase\(\);/,
+    );
+    expect(graphComponent).toMatch(
+      /LEGEND_DOT_COLOR_CLASS_MAP\[normalizeColorKey\(background\)\]/,
+    );
+    expect(graphComponent).toMatch(
+      /LEGEND_VALUE_COLOR_CLASS_MAP\[normalizeColorKey\(color\)\]/,
+    );
+    expect(graphComponent).toMatch(
+      /HELP_LEGEND_DOT_COLOR_CLASS_MAP\[normalizeColorKey\(color\)\]/,
+    );
+    expect(graphComponent).toMatch(
+      /CLUSTER_COLOR_CLASS_MAP\[normalizeColorKey\(color\)\]/,
+    );
+  });
+
   it("keeps key style files free from removed warm palette literals", () => {
     const styleBundle = [indexCss, legacyCss, graphCss, pagesCss].join("\n");
     const removedWarmTokens = [

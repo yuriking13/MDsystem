@@ -154,4 +154,34 @@ describe("DocumentationPage menu + submenu", () => {
       ).toHaveAttribute("aria-selected", "true");
     }
   });
+
+  it("documents all API providers and OpenRouter setup steps", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    await user.click(screen.getByRole("button", { name: "API ключи" }));
+
+    expect(
+      screen.getByRole("heading", {
+        level: 3,
+        name: "Какие провайдеры доступны",
+      }),
+    ).toBeInTheDocument();
+
+    const providers = ["PubMed:", "DOAJ:", "Wiley:", "OpenRouter:"];
+    for (const provider of providers) {
+      expect(screen.getByText(provider)).toBeInTheDocument();
+    }
+
+    await user.click(screen.getByRole("tab", { name: "Настройка OpenRouter" }));
+    expect(screen.getByRole("link", { name: "openrouter.ai" })).toHaveAttribute(
+      "href",
+      "https://openrouter.ai",
+    );
+    expect(
+      screen.getByText(
+        "Проверьте работу: например, запустите перевод аннотации статьи.",
+      ),
+    ).toBeInTheDocument();
+  });
 });
