@@ -260,8 +260,18 @@ function calculateBoxplotStats(values: number[]) {
  * Рендерить график используя Chart.js в офф-скрин canvas
  */
 async function renderChartFromData(
-  tableData: any,
-  config: any,
+  tableData: {
+    headers?: string[];
+    rows?: string[][];
+  },
+  config: {
+    type?: string;
+    title?: string;
+    colors?: string[];
+    labelColumn?: number;
+    dataColumns?: number[];
+    [key: string]: unknown;
+  },
   width = 600,
   height = 400,
 ): Promise<string | null> {
@@ -345,8 +355,21 @@ async function renderChartFromData(
     const labelColumn = config.labelColumn ?? 0;
     const dataColumns = config.dataColumns || [1];
 
-    let chartData: any;
-    let chartConfig: any;
+    let chartData: {
+      labels: string[];
+      datasets: Array<Record<string, unknown>>;
+    };
+    let chartConfig: {
+      type: string;
+      data: {
+        labels: string[];
+        datasets: Array<Record<string, unknown>>;
+      };
+      options: {
+        [key: string]: unknown;
+        scales?: Record<string, unknown>;
+      };
+    };
 
     // Специальная обработка для boxplot
     if (chartType === "boxplot") {
@@ -494,7 +517,10 @@ async function renderChartFromData(
     }
 
     // Рендерим график
-    const chart = new Chart(ctx, chartConfig);
+    const chart = new Chart(
+      ctx,
+      chartConfig as unknown as ConstructorParameters<typeof Chart>[1],
+    );
 
     // Ждём рендеринга (увеличенное время для сложных графиков)
     await new Promise((resolve) => setTimeout(resolve, 300));
@@ -815,6 +841,15 @@ function htmlToDocxElements(
 
   const processNode = (node: Node): TextRun[] => {
     const runs: TextRun[] = [];
+    const extractTextRunText = (run: TextRun): string => {
+      const runLike = run as unknown as {
+        options?: { text?: string };
+        root?: Array<{ children?: Array<{ text?: string }> }>;
+      };
+      return (
+        runLike.options?.text || runLike.root?.[0]?.children?.[0]?.text || ""
+      );
+    };
 
     if (node.nodeType === Node.TEXT_NODE) {
       const text = node.textContent || "";
@@ -853,7 +888,7 @@ function htmlToDocxElements(
       if (tagName === "strong" || tagName === "b") {
         childRuns.forEach((run) => {
           const runData = {
-            text: (run as any).text || "",
+            text: extractTextRunText(run),
             bold: true,
             size: styleConfig.fontSize * 2,
           };
@@ -862,7 +897,7 @@ function htmlToDocxElements(
       } else if (tagName === "em" || tagName === "i") {
         childRuns.forEach((run) => {
           const runData = {
-            text: (run as any).text || "",
+            text: extractTextRunText(run),
             italics: true,
             size: styleConfig.fontSize * 2,
           };
@@ -871,7 +906,7 @@ function htmlToDocxElements(
       } else if (tagName === "u") {
         childRuns.forEach((run) => {
           const runData = {
-            text: (run as any).text || "",
+            text: extractTextRunText(run),
             underline: {},
             size: styleConfig.fontSize * 2,
           };
@@ -880,7 +915,7 @@ function htmlToDocxElements(
       } else if (tagName === "s" || tagName === "strike") {
         childRuns.forEach((run) => {
           const runData = {
-            text: (run as any).text || "",
+            text: extractTextRunText(run),
             strike: true,
             size: styleConfig.fontSize * 2,
           };
