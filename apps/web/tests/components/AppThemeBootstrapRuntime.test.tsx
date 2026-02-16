@@ -533,6 +533,8 @@ describe("App theme bootstrap runtime", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+      expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      expect(screen.queryByText("Admin Settings Page")).not.toBeInTheDocument();
     });
   });
 
@@ -562,6 +564,8 @@ describe("App theme bootstrap runtime", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+        expect(screen.queryByText("Admin Dashboard")).not.toBeInTheDocument();
       });
     },
   );
@@ -582,6 +586,8 @@ describe("App theme bootstrap runtime", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Admin Loading")).toBeInTheDocument();
+      expect(screen.queryByText("Admin Login Page")).not.toBeInTheDocument();
+      expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
     });
   });
 
