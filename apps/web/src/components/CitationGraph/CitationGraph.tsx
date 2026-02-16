@@ -2156,12 +2156,24 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
-  const graphHeaderBadgeBaseStyle: React.CSSProperties = {
-    color: "white",
-    borderRadius: 10,
-    padding: "1px 5px",
-    fontSize: 9,
-    fontWeight: 600,
+  const GRAPH_HEADER_BADGE_CLASS_MAP: Record<string, string> = {
+    "var(--accent)": "graph-header-badge--accent",
+    "var(--accent-secondary)": "graph-header-badge--secondary",
+    "#f59e0b": "graph-header-badge--warning",
+  };
+  const LEGEND_DOT_COLOR_CLASS_MAP: Record<string, string> = {
+    "#ec4899": "legend-dot--pink",
+    "#3b82f6": "legend-dot--blue",
+    "#f97316": "legend-dot--orange",
+    "#06b6d4": "legend-dot--cyan",
+    "#fbbf24": "legend-dot--amber",
+  };
+  const LEGEND_VALUE_COLOR_CLASS_MAP: Record<string, string> = {
+    "#ec4899": "legend-value--pink",
+    "#3b82f6": "legend-value--blue",
+    "#f97316": "legend-value--orange",
+    "#06b6d4": "legend-value--cyan",
+    "#fbbf24": "legend-value--amber",
   };
   const semanticClusterDetailsButtonBaseStyle: React.CSSProperties = {
     position: "absolute",
@@ -2289,19 +2301,8 @@ export default function CitationGraph({ projectId }: Props) {
     zIndex: fullscreen ? 9999 : "auto",
     overflow: "hidden",
   });
-  const getGraphHeaderBadgeStyle = (
-    background: string,
-  ): React.CSSProperties => ({
-    ...graphHeaderBadgeBaseStyle,
-    background,
-  });
-  const getGraphAdvancedSliderStyle = (
-    unlimited: boolean,
-  ): React.CSSProperties => ({
-    width: 120,
-    cursor: unlimited ? "not-allowed" : "pointer",
-    opacity: unlimited ? 0.5 : 1,
-  });
+  const getGraphHeaderBadgeClassName = (background: string): string =>
+    `graph-header-badge ${GRAPH_HEADER_BADGE_CLASS_MAP[background] ?? "graph-header-badge--accent"}`;
   const getGraphProgressFillStyle = (
     progress: number,
   ): React.CSSProperties => ({
@@ -2425,13 +2426,10 @@ export default function CitationGraph({ projectId }: Props) {
     fontWeight: 600,
     fontSize: 10,
   });
-  const getLegendDotStyle = (background: string): React.CSSProperties => ({
-    background,
-  });
-  const getLegendValueStyle = (color: string): React.CSSProperties => ({
-    color,
-    fontWeight: 600,
-  });
+  const getLegendDotClassName = (background: string): string =>
+    `legend-dot ${LEGEND_DOT_COLOR_CLASS_MAP[background] ?? "legend-dot--blue"}`;
+  const getLegendValueClassName = (color: string): string =>
+    `legend-value ${LEGEND_VALUE_COLOR_CLASS_MAP[color] ?? "legend-value--blue"}`;
   const getGraphHoverCardStyle = (
     x: number,
     y: number,
@@ -2832,7 +2830,7 @@ export default function CitationGraph({ projectId }: Props) {
           >
             <IconSparkles size="sm" />
             {recommendations.length > 0 && (
-              <span style={getGraphHeaderBadgeStyle("var(--accent)")}>
+              <span className={getGraphHeaderBadgeClassName("var(--accent)")}>
                 {recommendations.length}
               </span>
             )}
@@ -2895,7 +2893,11 @@ export default function CitationGraph({ projectId }: Props) {
             <IconGraph size="sm" />
             <span>{loadingSemanticClusters ? "..." : "Кластеры"}</span>
             {semanticClusters.length > 0 && (
-              <span style={getGraphHeaderBadgeStyle("var(--accent-secondary)")}>
+              <span
+                className={getGraphHeaderBadgeClassName(
+                  "var(--accent-secondary)",
+                )}
+              >
                 {semanticClusters.length}
               </span>
             )}
@@ -2919,7 +2921,7 @@ export default function CitationGraph({ projectId }: Props) {
             <IconLinkChain size="sm" />
             <span>{loadingGapAnalysis ? "..." : "Gaps"}</span>
             {gapAnalysisResults.length > 0 && (
-              <span style={getGraphHeaderBadgeStyle("#f59e0b")}>
+              <span className={getGraphHeaderBadgeClassName("#f59e0b")}>
                 {gapAnalysisResults.length}
               </span>
             )}
@@ -3017,7 +3019,7 @@ export default function CitationGraph({ projectId }: Props) {
                   setUnlimitedNodes(false);
                 }}
                 disabled={unlimitedNodes}
-                style={getGraphAdvancedSliderStyle(unlimitedNodes)}
+                className="graph-advanced-slider"
                 title="Максимальное количество узлов в графе"
               />
               <button
@@ -3051,7 +3053,7 @@ export default function CitationGraph({ projectId }: Props) {
                   setUnlimitedLinks(false);
                 }}
                 disabled={unlimitedLinks}
-                style={getGraphAdvancedSliderStyle(unlimitedLinks)}
+                className="graph-advanced-slider"
                 title="Максимум связей на каждый узел"
               />
               <button
@@ -3857,34 +3859,25 @@ export default function CitationGraph({ projectId }: Props) {
                 stats.levelCounts.level0 !== undefined &&
                 stats.levelCounts.level0 > 0 && (
                   <div className="graph-stat-item">
-                    <span
-                      className="legend-dot"
-                      style={getLegendDotStyle("#ec4899")}
-                    ></span>
+                    <span className={getLegendDotClassName("#ec4899")}></span>
                     <span>Цитируют:</span>
-                    <span style={getLegendValueStyle("#ec4899")}>
+                    <span className={getLegendValueClassName("#ec4899")}>
                       {stats.levelCounts.level0}
                     </span>
                   </div>
                 )}
               <div className="graph-stat-item">
-                <span
-                  className="legend-dot"
-                  style={getLegendDotStyle("#3b82f6")}
-                ></span>
+                <span className={getLegendDotClassName("#3b82f6")}></span>
                 <span>В проекте:</span>
-                <span style={getLegendValueStyle("#3b82f6")}>
+                <span className={getLegendValueClassName("#3b82f6")}>
                   {stats.levelCounts.level1}
                 </span>
               </div>
               {depth >= 2 && (
                 <div className="graph-stat-item">
-                  <span
-                    className="legend-dot"
-                    style={getLegendDotStyle("#f97316")}
-                  ></span>
+                  <span className={getLegendDotClassName("#f97316")}></span>
                   <span>Ссылки:</span>
-                  <span style={getLegendValueStyle("#f97316")}>
+                  <span className={getLegendValueClassName("#f97316")}>
                     {stats.levelCounts.level2}
                   </span>
                 </div>
@@ -3893,12 +3886,9 @@ export default function CitationGraph({ projectId }: Props) {
                 stats.levelCounts.level3 !== undefined &&
                 stats.levelCounts.level3 > 0 && (
                   <div className="graph-stat-item">
-                    <span
-                      className="legend-dot"
-                      style={getLegendDotStyle("#06b6d4")}
-                    ></span>
+                    <span className={getLegendDotClassName("#06b6d4")}></span>
                     <span>Связанные:</span>
-                    <span style={getLegendValueStyle("#06b6d4")}>
+                    <span className={getLegendValueClassName("#06b6d4")}>
                       {stats.levelCounts.level3}
                     </span>
                   </div>
@@ -3909,12 +3899,9 @@ export default function CitationGraph({ projectId }: Props) {
           {/* P-value статьи - кнопка добавления */}
           {pValueArticlesCount > 0 && (
             <div className="graph-stat-item graph-pvalue-stat-item">
-              <span
-                className="legend-dot"
-                style={getLegendDotStyle("#fbbf24")}
-              ></span>
+              <span className={getLegendDotClassName("#fbbf24")}></span>
               <span>С P-value:</span>
-              <span style={getLegendValueStyle("#fbbf24")}>
+              <span className={getLegendValueClassName("#fbbf24")}>
                 {pValueArticlesCount}
               </span>
               <button
