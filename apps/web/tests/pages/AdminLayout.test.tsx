@@ -11,6 +11,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AdminLayout from "../../src/pages/admin/AdminLayout";
 
 const mockLogout = vi.fn();
+const targetViewportWidths = [360, 390, 768, 1024, 1280, 1440, 1920];
 
 vi.mock("../../src/lib/AdminContext", () => ({
   useAdminAuth: () => ({
@@ -146,6 +147,53 @@ describe("AdminLayout responsive sidebar behavior", () => {
           shouldOpenOnToggle ? "true" : "false",
         );
       });
+    },
+  );
+
+  it.each([
+    ["/admin", "Admin dashboard"],
+    ["/admin/users", "Users page"],
+    ["/admin/projects", "Projects page"],
+    ["/admin/articles", "Articles page"],
+    ["/admin/activity", "Activity page"],
+    ["/admin/sessions", "Sessions page"],
+    ["/admin/jobs", "Jobs page"],
+    ["/admin/errors", "Errors page"],
+    ["/admin/audit", "Audit page"],
+    ["/admin/system", "System page"],
+    ["/admin/settings", "Settings page"],
+  ])(
+    "keeps sidebar toggle viewport-gated for %s across width matrix",
+    async (route, pageLabel) => {
+      const user = userEvent.setup();
+
+      for (const width of targetViewportWidths) {
+        const shouldOpenOnToggle = width <= 900;
+        setViewportWidth(width);
+        const { unmount } = renderAdminLayout(route);
+
+        expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        const toggleButton = screen.getByLabelText("Открыть навигацию");
+        await user.click(toggleButton);
+
+        await waitFor(() => {
+          expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+            shouldOpenOnToggle,
+          );
+          const sidebar = document.querySelector(".admin-sidebar");
+          expect(sidebar).not.toBeNull();
+          expect(sidebar?.classList.contains("mobile-open")).toBe(
+            shouldOpenOnToggle,
+          );
+          expect(toggleButton).toHaveAttribute(
+            "aria-expanded",
+            shouldOpenOnToggle ? "true" : "false",
+          );
+        });
+
+        unmount();
+        document.body.classList.remove("sidebar-modal-open");
+      }
     },
   );
 
