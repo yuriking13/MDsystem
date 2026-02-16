@@ -588,12 +588,20 @@ describe("AppLayout mobile sidebar behavior", () => {
 
         expect(screen.getByText(pageLabel)).toBeInTheDocument();
         expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
+        expect(
           screen.queryByRole("button", { name: "Открыть навигацию" }),
         ).not.toBeInTheDocument();
         expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
         expect(document.querySelector(".animated-bg")).toBeNull();
 
         unmount();
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
       }
     },
   );
@@ -630,6 +638,10 @@ describe("AppLayout mobile sidebar behavior", () => {
 
         expect(screen.getByText(pageLabel)).toBeInTheDocument();
         expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
+        expect(
           screen.queryByRole("button", { name: "Открыть навигацию" }),
         ).not.toBeInTheDocument();
         expect(
@@ -639,6 +651,10 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(document.querySelector(".animated-bg")).toBeNull();
 
         unmount();
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
       }
     },
   );
