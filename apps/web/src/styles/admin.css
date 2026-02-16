@@ -2443,3 +2443,9 @@
   }
 }
 
+@media (max-width: 420px) {
+  .admin-job-summary-item {
+    flex-basis: 100%;
+  }
+}
+
