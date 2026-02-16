@@ -152,6 +152,27 @@ function createThemeStorage(theme: string | null): Storage {
   } as unknown as Storage;
 }
 
+function expectThemeClasses(theme: "light" | "dark") {
+  expect(document.documentElement.getAttribute("data-theme")).toBe(theme);
+
+  if (theme === "light") {
+    expect(document.documentElement.classList.contains("light-theme")).toBe(
+      true,
+    );
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
+    expect(document.body.classList.contains("light-theme")).toBe(true);
+    expect(document.body.classList.contains("dark")).toBe(false);
+    return;
+  }
+
+  expect(document.documentElement.classList.contains("dark")).toBe(true);
+  expect(document.documentElement.classList.contains("light-theme")).toBe(
+    false,
+  );
+  expect(document.body.classList.contains("dark")).toBe(true);
+  expect(document.body.classList.contains("light-theme")).toBe(false);
+}
+
 describe("App theme bootstrap runtime", () => {
   beforeEach(() => {
     authState.token = null;
@@ -832,6 +853,34 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each([
+    ["light", null, "Login Page"],
+    ["dark", null, "Login Page"],
+    ["light", "auth-token", "Projects Page"],
+    ["dark", "auth-token", "Projects Page"],
+  ] as const)(
+    "keeps %s class symmetry when unknown route redirects (token=%s)",
+    async (persistedTheme, token, expectedPageText) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/wildcard-unknown-route"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+    },
+  );
+
   it("renders settings page inside authenticated app layout", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
@@ -941,6 +990,33 @@ describe("App theme bootstrap runtime", () => {
         );
         expect(screen.getByText("App Layout")).toBeInTheDocument();
         expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([
+    ["light", "/projects/p1/documents/d1"],
+    ["dark", "/projects/p1/documents/d1"],
+  ] as const)(
+    "keeps root/body class symmetry for %s theme on deep document route",
+    async (persistedTheme, route) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = "auth-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("App Layout")).toBeInTheDocument();
+        expect(screen.getByText("Document Page")).toBeInTheDocument();
       });
     },
   );
