@@ -2545,6 +2545,27 @@
 }
 
 @media (max-width: 420px) {
+  .admin-mobile-topbar {
+    gap: 8px;
+    min-height: 48px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .admin-mobile-title {
+    font-size: 13px;
+  }
+
+  .admin-mobile-nav-toggle {
+    width: 32px;
+    height: 32px;
+  }
+
+  .admin-mobile-nav-toggle svg {
+    width: 16px;
+    height: 16px;
+  }
+
   .admin-job-summary-item {
     flex-basis: 100%;
   }
