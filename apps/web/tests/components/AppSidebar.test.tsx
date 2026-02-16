@@ -399,4 +399,32 @@ describe("AppSidebar mobile collapse behavior", () => {
       "/projects/project-1?tab=files",
     );
   });
+
+  it("switches from document editor to articles tab without closing, then closes on status pick", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+      initialPath: "/projects/project-1/documents/doc-1",
+    });
+
+    await user.click(screen.getByText("База статей"));
+
+    expect(onCloseMobile).not.toHaveBeenCalled();
+    expect(screen.getByTestId("sidebar-location").textContent).toBe(
+      "/projects/project-1?tab=articles",
+    );
+
+    await user.click(screen.getByText("База статей"));
+    expect(onCloseMobile).not.toHaveBeenCalled();
+
+    await user.click(screen.getByText("Отобранные"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("sidebar-location").textContent).toBe(
+      "/projects/project-1?tab=articles",
+    );
+  });
 });
