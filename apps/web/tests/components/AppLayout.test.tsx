@@ -669,6 +669,37 @@ describe("AppLayout mobile sidebar behavior", () => {
     });
   });
 
+  it("switches shell mode when project tab query changes from graph to non-graph", async () => {
+    const user = userEvent.setup();
+    renderAppLayout("/projects/p1?tab=graph");
+
+    expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+      true,
+    );
+    expect(document.body.classList.contains("layout-fixed")).toBe(true);
+    expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
+    expect(document.querySelector(".app-mobile-topbar")).toBeNull();
+    expect(document.querySelector(".app-mobile-fab-toggle")).not.toBeNull();
+    expect(document.querySelector(".animated-bg")).toBeNull();
+
+    await user.click(screen.getByText("Go documents tab"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Project details page")).toBeInTheDocument();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(false);
+      expect(document.querySelector(".app-layout-fixed")).toBeNull();
+      expect(document.querySelector(".app-mobile-topbar")).not.toBeNull();
+      expect(document.querySelector(".app-mobile-fab-toggle")).toBeNull();
+      expect(document.querySelector(".animated-bg")).not.toBeNull();
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+    });
+  });
+
   it("closes mobile sidebar when navigating to login route", async () => {
     const user = userEvent.setup();
     renderAppLayout();
