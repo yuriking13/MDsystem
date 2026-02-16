@@ -47,6 +47,9 @@ jobs:
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
+      - name: Run repository quality guards
+        run: pnpm run quality:guards
+
       - name: Generate Prisma Client
         run: pnpm --filter api exec prisma generate
 
@@ -95,6 +98,9 @@ jobs:
 
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
+
+      - name: Run repository quality guards
+        run: pnpm run quality:guards
 
       - name: Verify WEB source has no JS mirrors
         run: pnpm --filter web run check:js-mirrors

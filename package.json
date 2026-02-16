@@ -4,9 +4,10 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "preinstall": "node scripts/enforce-pnpm.js",
+    "quality:guards": "node scripts/quality-guards.js",
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
-    "lint": "pnpm -r run lint",
+    "lint": "pnpm run quality:guards && pnpm -r run lint",
     "lint:fix": "pnpm -r run lint:fix",
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r run test",
