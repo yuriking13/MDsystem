@@ -90,6 +90,19 @@ export interface ChartNodeAttrs {
 
 type ChartNodeRenderableAttrs = Partial<ChartNodeAttrs>;
 
+const CHART_BACKGROUND_CLASS_MAP: Record<string, string> = {
+  white: "chart-node-bg-white",
+  "#f8fafc": "chart-node-bg-slate-50",
+  "#f1f5f9": "chart-node-bg-slate-100",
+  "#e2e8f0": "chart-node-bg-slate-200",
+  "#eff6ff": "chart-node-bg-blue-50",
+  "#fef3c7": "chart-node-bg-amber-100",
+};
+
+function getChartBackgroundClass(backgroundColor: string): string {
+  return CHART_BACKGROUND_CLASS_MAP[backgroundColor] ?? "chart-node-bg-white";
+}
+
 // React component for rendering the chart
 function ChartNodeView({
   node,
@@ -191,132 +204,17 @@ function ChartNodeView({
     "scatter",
     "boxplot",
   ];
-  const containerStyle: React.CSSProperties = { backgroundColor: bgColor };
-  const headerStyle: React.CSSProperties = {
-    background: bgColor === "white" ? "#f8fafc" : "rgba(0,0,0,0.05)",
-  };
-  const titleInputStyle: React.CSSProperties = {
-    flex: 1,
-    padding: "4px 8px",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-    fontSize: "14px",
-    background: "white",
-  };
-  const headerActionsStyle: React.CSSProperties = {
-    display: "flex",
-    gap: "4px",
-  };
-  const saveButtonStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: "11px",
-    background: "#4ade80",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-  };
-  const cancelButtonStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: "11px",
-    background: "#94a3b8",
-    color: "white",
-    border: "none",
-    borderRadius: "4px",
-    cursor: "pointer",
-  };
-  const editButtonStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: "11px",
-    background: "rgba(75,116,255,0.1)",
-    color: "#4b74ff",
-    border: "1px solid rgba(75,116,255,0.3)",
-    borderRadius: "4px",
-    cursor: "pointer",
-  };
-  const editPanelStyle: React.CSSProperties = {
-    padding: "12px 16px",
-    borderBottom: "1px solid #e2e8f0",
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "12px",
-    alignItems: "center",
-    background: "rgba(0,0,0,0.02)",
-  };
-  const axisPanelStyle: React.CSSProperties = {
-    padding: "12px 16px",
-    borderBottom: "1px solid #e2e8f0",
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "12px",
-    alignItems: "flex-end",
-    background: "rgba(0,0,0,0.02)",
-  };
-  const fieldGroupStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  };
-  const fieldLabelStyle: React.CSSProperties = {
-    fontSize: "11px",
-    color: "#64748b",
-  };
-  const selectStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-    fontSize: "12px",
-  };
-  const axisInputStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-    fontSize: "12px",
-    width: "120px",
-  };
-  const colorPreviewRowStyle: React.CSSProperties = {
-    display: "flex",
-    gap: "2px",
-    alignItems: "center",
-  };
-  const colorInputRowStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  };
-  const colorInputStyle: React.CSSProperties = {
-    width: "32px",
-    height: "28px",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-    cursor: "pointer",
-    padding: "2px",
-  };
-  const colorValueStyle: React.CSSProperties = {
-    fontSize: "10px",
-    color: "#64748b",
-  };
-  const resetColorsButtonStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: "11px",
-    background: "#f1f5f9",
-    color: "#475569",
-    border: "1px solid #d1d5db",
-    borderRadius: "4px",
-    cursor: "pointer",
-  };
-  const chartContentStyle: React.CSSProperties = {
-    padding: "16px",
-    minHeight: "300px",
-    background: bgColor,
-  };
+  const chartBackgroundClass = getChartBackgroundClass(bgColor);
+  const containerClassName = `chart-node-container ${chartBackgroundClass}`;
+  const headerClassName = `chart-node-header ${
+    bgColor === "white"
+      ? "chart-node-header--default"
+      : "chart-node-header--tinted"
+  }`;
+  const contentClassName = `chart-node-content ${chartBackgroundClass}`;
 
   const getSwatchStyle = (color: string): React.CSSProperties => ({
-    width: "16px",
-    height: "16px",
-    borderRadius: "2px",
-    background: color,
-    border: "1px solid rgba(0,0,0,0.1)",
+    backgroundColor: color,
   });
 
   return (
@@ -324,30 +222,32 @@ function ChartNodeView({
       className="chart-node-wrapper"
       data-chart-id={attrs.chartId}
     >
-      <div className="chart-node-container" style={containerStyle}>
-        <div className="chart-node-header" style={headerStyle}>
+      <div className={containerClassName}>
+        <div className={headerClassName}>
           {isEditing ? (
             <input
-              className="chart-title-input"
+              className="chart-title-input chart-title-input--editing"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
               placeholder="Название графика"
-              style={titleInputStyle}
             />
           ) : (
             <span className="chart-node-title">
               {editTitle || title || config.title || "График"}
             </span>
           )}
-          <div style={headerActionsStyle}>
+          <div className="chart-node-header-actions">
             {isEditing ? (
               <>
-                <button onClick={handleSave} style={saveButtonStyle}>
+                <button
+                  onClick={handleSave}
+                  className="chart-node-action-btn chart-node-action-btn--save"
+                >
                   ✓ Сохранить
                 </button>
                 <button
                   onClick={() => setIsEditing(false)}
-                  style={cancelButtonStyle}
+                  className="chart-node-action-btn chart-node-action-btn--cancel"
                 >
                   ✕
                 </button>
@@ -355,7 +255,7 @@ function ChartNodeView({
             ) : (
               <button
                 onClick={() => setIsEditing(true)}
-                style={editButtonStyle}
+                className="chart-node-action-btn chart-node-action-btn--edit"
                 title="Редактировать график"
               >
                 Редактировать
@@ -366,16 +266,16 @@ function ChartNodeView({
 
         {/* Edit panel */}
         {isEditing && (
-          <div className="chart-edit-panel" style={editPanelStyle}>
+          <div className="chart-edit-panel">
             {/* Chart Type */}
-            <div style={fieldGroupStyle}>
-              <label style={fieldLabelStyle}>Тип графика</label>
+            <div className="chart-node-field-group">
+              <label className="chart-node-field-label">Тип графика</label>
               <select
                 value={selectedChartType}
                 onChange={(e) =>
                   setSelectedChartType(e.target.value as ChartType)
                 }
-                style={selectStyle}
+                className="chart-node-select"
               >
                 {chartTypes.map((type) => (
                   <option key={type} value={type}>
@@ -386,8 +286,8 @@ function ChartNodeView({
             </div>
 
             {/* Color Scheme */}
-            <div style={fieldGroupStyle}>
-              <label style={fieldLabelStyle}>Цветовая схема</label>
+            <div className="chart-node-field-group">
+              <label className="chart-node-field-label">Цветовая схема</label>
               <select
                 value={selectedColorScheme}
                 onChange={(e) =>
@@ -395,7 +295,7 @@ function ChartNodeView({
                     e.target.value as keyof typeof CHART_COLOR_SCHEMES,
                   )
                 }
-                style={selectStyle}
+                className="chart-node-select"
               >
                 {Object.entries(CHART_COLOR_SCHEMES).map(([key, scheme]) => (
                   <option key={key} value={key}>
@@ -406,12 +306,12 @@ function ChartNodeView({
             </div>
 
             {/* Background Color */}
-            <div style={fieldGroupStyle}>
-              <label style={fieldLabelStyle}>Фон</label>
+            <div className="chart-node-field-group">
+              <label className="chart-node-field-label">Фон</label>
               <select
                 value={bgColor}
                 onChange={(e) => setBgColor(e.target.value)}
-                style={selectStyle}
+                className="chart-node-select"
               >
                 <option value="white">Белый</option>
                 <option value="#f8fafc">Светло-серый</option>
@@ -423,11 +323,15 @@ function ChartNodeView({
             </div>
 
             {/* Color Preview */}
-            <div style={colorPreviewRowStyle}>
+            <div className="chart-node-color-preview-row">
               {CHART_COLOR_SCHEMES[selectedColorScheme].colors
                 .slice(0, 6)
                 .map((color, i) => (
-                  <div key={i} style={getSwatchStyle(color)} />
+                  <div
+                    key={i}
+                    className="chart-node-color-swatch"
+                    style={getSwatchStyle(color)}
+                  />
                 ))}
             </div>
           </div>
@@ -435,54 +339,54 @@ function ChartNodeView({
 
         {/* Advanced edit panel for axis labels and colors */}
         {isEditing && (
-          <div className="chart-axis-panel" style={axisPanelStyle}>
+          <div className="chart-axis-panel">
             {/* X Axis Label */}
-            <div style={fieldGroupStyle}>
-              <label style={fieldLabelStyle}>Подпись оси X</label>
+            <div className="chart-node-field-group">
+              <label className="chart-node-field-label">Подпись оси X</label>
               <input
                 value={xAxisLabel}
                 onChange={(e) => setXAxisLabel(e.target.value)}
                 placeholder="Ось X"
-                style={axisInputStyle}
+                className="chart-node-axis-input"
               />
             </div>
 
             {/* Y Axis Label */}
-            <div style={fieldGroupStyle}>
-              <label style={fieldLabelStyle}>Подпись оси Y</label>
+            <div className="chart-node-field-group">
+              <label className="chart-node-field-label">Подпись оси Y</label>
               <input
                 value={yAxisLabel}
                 onChange={(e) => setYAxisLabel(e.target.value)}
                 placeholder="Ось Y"
-                style={axisInputStyle}
+                className="chart-node-axis-input"
               />
             </div>
 
             {/* Text Color */}
-            <div style={fieldGroupStyle}>
-              <label style={fieldLabelStyle}>Цвет текста</label>
-              <div style={colorInputRowStyle}>
+            <div className="chart-node-field-group">
+              <label className="chart-node-field-label">Цвет текста</label>
+              <div className="chart-node-color-input-row">
                 <input
                   type="color"
                   value={textColor}
                   onChange={(e) => setTextColor(e.target.value)}
-                  style={colorInputStyle}
+                  className="chart-node-color-input"
                 />
-                <span style={colorValueStyle}>{textColor}</span>
+                <span className="chart-node-color-value">{textColor}</span>
               </div>
             </div>
 
             {/* Axis Color */}
-            <div style={fieldGroupStyle}>
-              <label style={fieldLabelStyle}>Цвет осей</label>
-              <div style={colorInputRowStyle}>
+            <div className="chart-node-field-group">
+              <label className="chart-node-field-label">Цвет осей</label>
+              <div className="chart-node-color-input-row">
                 <input
                   type="color"
                   value={axisColor}
                   onChange={(e) => setAxisColor(e.target.value)}
-                  style={colorInputStyle}
+                  className="chart-node-color-input"
                 />
-                <span style={colorValueStyle}>{axisColor}</span>
+                <span className="chart-node-color-value">{axisColor}</span>
               </div>
             </div>
 
@@ -492,7 +396,7 @@ function ChartNodeView({
                 setTextColor("#000000");
                 setAxisColor("#000000");
               }}
-              style={resetColorsButtonStyle}
+              className="chart-node-reset-colors-btn"
               title="Сбросить цвета на чёрный"
             >
               ⟲ По умолчанию
@@ -500,7 +404,7 @@ function ChartNodeView({
           </div>
         )}
 
-        <div className="chart-node-content" style={chartContentStyle}>
+        <div className={contentClassName}>
           <ChartFromTable
             tableData={tableData}
             config={effectiveConfig}
