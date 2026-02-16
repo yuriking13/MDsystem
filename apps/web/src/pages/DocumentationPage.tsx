@@ -922,6 +922,7 @@ export default function DocumentationPage(): React.JSX.Element {
               {DOC_SECTIONS.map((section) => (
                 <button
                   key={section.id}
+                  type="button"
                   onClick={() => {
                     setPendingFocusTopicId(null);
                     setActiveSectionId(section.id);
@@ -948,6 +949,7 @@ export default function DocumentationPage(): React.JSX.Element {
                 {activeSection.topics.map((topic, topicIndex) => (
                   <button
                     key={topic.id}
+                    type="button"
                     className={`docs-subnav-item ${activeTopic.id === topic.id ? "active" : ""}`}
                     onClick={() => {
                       setPendingFocusTopicId(null);

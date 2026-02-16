@@ -36,6 +36,10 @@ describe("DocumentationPage menu + submenu", () => {
 
     for (const title of sectionTitles) {
       expect(screen.getByRole("button", { name: title })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: title })).toHaveAttribute(
+        "type",
+        "button",
+      );
     }
   });
 
@@ -235,6 +239,7 @@ describe("DocumentationPage menu + submenu", () => {
     const controlsId = activeTab.getAttribute("aria-controls");
 
     expect(activeTab).toHaveAttribute("aria-selected", "true");
+    expect(activeTab).toHaveAttribute("type", "button");
     expect(activeTab).toHaveAttribute("tabindex", "0");
     expect(controlsId).toBeTruthy();
     expect(panel).toHaveAttribute("id", controlsId);
