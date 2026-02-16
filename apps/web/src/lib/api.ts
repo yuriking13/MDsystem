@@ -13,7 +13,7 @@ type RefreshResponsePayload = {
 
 let refreshInFlight: Promise<string | null> | null = null;
 
-async function readJsonSafe(res: Response): Promise<any> {
+async function readJsonSafe(res: Response): Promise<unknown> {
   const txt = await res.text();
   try {
     return txt ? JSON.parse(txt) : null;
@@ -1067,7 +1067,7 @@ export type BibliographyItem = {
   number: number;
   articleId: string;
   formatted: string;
-  raw?: any;
+  raw?: unknown;
 };
 
 export type BibliographyResponse = {
@@ -1276,7 +1276,7 @@ export type GraphRecommendation = {
   description: string;
   priority: "high" | "medium" | "low";
   articleIds?: string[];
-  action?: any;
+  action?: unknown;
 };
 
 export type GraphRecommendationsResponse = {

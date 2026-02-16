@@ -123,6 +123,11 @@ type GraphAIDebugPayload = {
   articlesForAICount?: number;
 };
 
+type FetchReferencesRecommendationAction = {
+  type: "fetch_references";
+  count?: number;
+};
+
 type ForceGraphD3ChargeForce = {
   strength: (value: number) => {
     distanceMax?: (value: number) => void;
@@ -150,6 +155,13 @@ const isForceGraphD3LinkForce = (
 ): force is ForceGraphD3LinkForce =>
   typeof force === "function" &&
   typeof (force as { distance?: unknown }).distance === "function";
+
+const isFetchReferencesRecommendationAction = (
+  action: unknown,
+): action is FetchReferencesRecommendationAction =>
+  typeof action === "object" &&
+  action !== null &&
+  (action as { type?: unknown }).type === "fetch_references";
 
 type FilterType = "all" | "selected" | "excluded";
 type DepthType = 1 | 2 | 3;
@@ -5678,24 +5690,25 @@ export default function CitationGraph({ projectId }: Props) {
                           <div style={recommendationDescriptionStyle}>
                             {rec.description}
                           </div>
-                          {rec.action &&
-                            rec.action.type === "fetch_references" && (
-                              <button
-                                className="btn secondary"
-                                style={recommendationActionButtonStyle}
-                                onClick={() => {
-                                  setShowRecommendations(false);
-                                  handleFetchReferences();
-                                }}
+                          {isFetchReferencesRecommendationAction(
+                            rec.action,
+                          ) && (
+                            <button
+                              className="btn secondary"
+                              style={recommendationActionButtonStyle}
+                              onClick={() => {
+                                setShowRecommendations(false);
+                                handleFetchReferences();
+                              }}
+                            >
+                              <IconRefresh size="sm" />
+                              <span
+                                style={recommendationActionIconSpacingStyle}
                               >
-                                <IconRefresh size="sm" />
-                                <span
-                                  style={recommendationActionIconSpacingStyle}
-                                >
-                                  Загрузить ссылки ({rec.action.count})
-                                </span>
-                              </button>
-                            )}
+                                Загрузить ссылки ({rec.action.count ?? 0})
+                              </span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
