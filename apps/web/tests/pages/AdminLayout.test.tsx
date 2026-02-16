@@ -128,4 +128,14 @@ describe("AdminLayout responsive sidebar behavior", () => {
       );
     });
   });
+
+  it("shows the current section label in mobile topbar", () => {
+    setViewportWidth(390);
+    renderAdminLayout("/admin/users");
+
+    expect(screen.getByText("Users page")).toBeInTheDocument();
+    const mobileTitle = document.querySelector(".admin-mobile-title");
+    expect(mobileTitle).not.toBeNull();
+    expect(mobileTitle?.textContent).toBe("Пользователи");
+  });
 });
