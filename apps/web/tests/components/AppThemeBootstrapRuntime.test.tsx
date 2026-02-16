@@ -771,6 +771,7 @@ describe("App theme bootstrap runtime", () => {
   });
 
   it.each([
+    ["/admin/projects", "Admin Projects Page"],
     ["/admin/articles", "Admin Articles Page"],
     ["/admin/activity", "Admin Activity Page"],
     ["/admin/sessions", "Admin Sessions Page"],
