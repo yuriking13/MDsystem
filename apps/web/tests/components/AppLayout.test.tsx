@@ -1494,6 +1494,50 @@ describe("AppLayout mobile sidebar behavior", () => {
     });
   });
 
+  it("keeps app drawer usable after mobile-open -> desktop -> mobile cycle", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(APP_DRAWER_MAX_WIDTH);
+    renderAppLayout("/settings");
+
+    const toggleButton = screen.getByRole("button", {
+      name: "Открыть навигацию",
+    });
+    expect(toggleButton).toBeEnabled();
+
+    await user.click(toggleButton);
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+    });
+
+    act(() => {
+      setViewportWidth(APP_DRAWER_MAX_WIDTH + 1);
+    });
+
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+      expect(toggleButton).toBeDisabled();
+    });
+
+    act(() => {
+      setViewportWidth(APP_DRAWER_MAX_WIDTH);
+    });
+
+    await waitFor(() => {
+      expect(toggleButton).toBeEnabled();
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+    });
+
+    await user.click(toggleButton);
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+      expect(document.querySelector(".app-sidebar--open")).not.toBeNull();
+    });
+  });
+
   it("hides sidebar shell on login route", () => {
     renderAppLayout("/login");
 

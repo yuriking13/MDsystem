@@ -300,6 +300,52 @@ describe("AdminLayout responsive sidebar behavior", () => {
     },
   );
 
+  it("keeps admin drawer usable after mobile-open -> desktop -> mobile cycle", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(ADMIN_DRAWER_MAX_WIDTH);
+    renderAdminLayout("/admin/users");
+
+    const toggleButton = screen.getByRole("button", {
+      name: "Открыть навигацию",
+    });
+    expect(toggleButton).toBeEnabled();
+
+    await user.click(toggleButton);
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+    });
+
+    act(() => {
+      setViewportWidth(ADMIN_DRAWER_MAX_WIDTH + 1);
+    });
+
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+      expect(toggleButton).toBeDisabled();
+    });
+
+    act(() => {
+      setViewportWidth(ADMIN_DRAWER_MAX_WIDTH);
+    });
+
+    await waitFor(() => {
+      expect(toggleButton).toBeEnabled();
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+    });
+
+    await user.click(toggleButton);
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+      expect(
+        document.querySelector(".admin-sidebar.mobile-open"),
+      ).not.toBeNull();
+    });
+  });
+
   it.each(
     ADMIN_RESPONSIVE_ROUTE_CASES.map(({ route, pageLabel }) => [
       route,
