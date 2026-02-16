@@ -2235,27 +2235,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontWeight: 600,
     flexShrink: 0,
   };
-  const clusterDetailStatusBadgeBaseStyle: React.CSSProperties = {
-    fontSize: 9,
-    padding: "2px 6px",
-    borderRadius: 4,
-    fontWeight: 600,
-    textTransform: "uppercase",
-    flexShrink: 0,
-  };
-  const clusterDetailSelectedButtonBaseStyle: React.CSSProperties = {
-    flex: 1,
-    padding: "8px 12px",
-    borderRadius: 6,
-    border: "none",
-    color: "white",
-    fontSize: 12,
-    fontWeight: 500,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  };
 
   const getGraphContainerStyle = (
     fullscreen: boolean,
@@ -2433,19 +2412,11 @@ export default function CitationGraph({ projectId }: Props) {
     ...clusterDetailCentralCardBaseStyle,
     borderLeft: `4px solid ${color}`,
   });
-  const getClusterItemRowStyle = (
+  const getClusterItemRowClassName = (
     selected: boolean,
     isLast: boolean,
-  ): React.CSSProperties => ({
-    padding: "10px 14px",
-    borderBottom: isLast ? "none" : "1px solid var(--border-glass)",
-    cursor: "pointer",
-    transition: "background 0.15s",
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 10,
-    background: selected ? "rgba(59, 130, 246, 0.1)" : "transparent",
-  });
+  ): string =>
+    `cluster-detail-item-row${selected ? " cluster-detail-item-row--selected" : ""}${isLast ? " cluster-detail-item-row--last" : ""}`;
   const getClusterItemIndexStyle = (
     isCentral: boolean,
     color: string,
@@ -2454,35 +2425,24 @@ export default function CitationGraph({ projectId }: Props) {
     background: isCentral ? color : "var(--bg-secondary)",
     color: isCentral ? "white" : "var(--text-muted)",
   });
-  const getClusterStatusBadgeStyle = (status: string): React.CSSProperties => ({
-    ...clusterDetailStatusBadgeBaseStyle,
-    background:
+  const getClusterStatusBadgeClassName = (status: string): string =>
+    `cluster-detail-status-badge cluster-detail-status-badge--${
       status === "selected"
-        ? "rgba(34, 197, 94, 0.2)"
+        ? "selected"
         : status === "excluded"
-          ? "rgba(239, 68, 68, 0.2)"
-          : "rgba(59, 130, 246, 0.2)",
-    color:
-      status === "selected"
-        ? "#22c55e"
-        : status === "excluded"
-          ? "#ef4444"
-          : "#3b82f6",
-  });
+          ? "excluded"
+          : "candidate"
+    }`;
   const getClusterStatusLabel = (status: string): string => {
     if (status === "selected") return "Отобрана";
     if (status === "excluded") return "Исключена";
     return "Кандидат";
   };
-  const getClusterSelectedActionButtonStyle = (
+  const getClusterSelectedActionButtonClassName = (
     variant: "selected" | "candidate",
     loadingState: boolean,
-  ): React.CSSProperties => ({
-    ...clusterDetailSelectedButtonBaseStyle,
-    background: variant === "selected" ? "#22c55e" : "#3b82f6",
-    cursor: loadingState ? "wait" : "pointer",
-    opacity: loadingState ? 0.6 : 1,
-  });
+  ): string =>
+    `cluster-detail-selected-button cluster-detail-selected-button--${variant}${loadingState ? " cluster-detail-selected-button--loading" : ""}`;
   const getClusterFilterButtonStyle = (color: string): React.CSSProperties => ({
     flex: 1,
     padding: "10px 16px",
@@ -4551,7 +4511,7 @@ export default function CitationGraph({ projectId }: Props) {
                       return (
                         <div
                           key={article.id}
-                          style={getClusterItemRowStyle(
+                          className={getClusterItemRowClassName(
                             isSelected,
                             idx >= clusterDetailModal.articles.length - 1,
                           )}
@@ -4619,7 +4579,7 @@ export default function CitationGraph({ projectId }: Props) {
                               </span>
                               {/* Status badge */}
                               <span
-                                style={getClusterStatusBadgeStyle(
+                                className={getClusterStatusBadgeClassName(
                                   articleStatus,
                                 )}
                               >
@@ -4655,7 +4615,7 @@ export default function CitationGraph({ projectId }: Props) {
                     <button
                       onClick={() => handleAddClusterArticles("selected")}
                       disabled={addingFromCluster}
-                      style={getClusterSelectedActionButtonStyle(
+                      className={getClusterSelectedActionButtonClassName(
                         "selected",
                         addingFromCluster,
                       )}
@@ -4671,7 +4631,7 @@ export default function CitationGraph({ projectId }: Props) {
                     <button
                       onClick={() => handleAddClusterArticles("candidate")}
                       disabled={addingFromCluster}
-                      style={getClusterSelectedActionButtonStyle(
+                      className={getClusterSelectedActionButtonClassName(
                         "candidate",
                         addingFromCluster,
                       )}
