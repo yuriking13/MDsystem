@@ -2274,6 +2274,16 @@
 }
 
 /* Responsive */
+@media (max-width: 1100px) {
+  .article-ai-sidebar {
+    width: 360px;
+  }
+
+  .articles-page-main--shifted {
+    margin-right: 360px;
+  }
+}
+
 @media (max-width: 768px) {
   .article-ai-fab {
     right: 16px;
