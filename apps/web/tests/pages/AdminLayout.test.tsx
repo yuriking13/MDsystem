@@ -30,7 +30,10 @@ function setViewportWidth(width: number) {
 
 function renderAdminLayout(initialPath = "/admin") {
   return render(
-    <MemoryRouter initialEntries={[initialPath]}>
+    <MemoryRouter
+      initialEntries={[initialPath]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<div>Admin dashboard</div>} />

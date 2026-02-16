@@ -15,7 +15,10 @@ vi.mock("../../src/lib/AuthContext", () => ({
 
 function renderSidebar(mobileViewport: boolean) {
   return render(
-    <MemoryRouter initialEntries={["/projects/project-1?tab=articles"]}>
+    <MemoryRouter
+      initialEntries={["/projects/project-1?tab=articles"]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route
           path="/projects/:id"
@@ -50,7 +53,10 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
 
     rerender(
-      <MemoryRouter initialEntries={["/projects/project-1?tab=articles"]}>
+      <MemoryRouter
+        initialEntries={["/projects/project-1?tab=articles"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
         <Routes>
           <Route path="/projects/:id" element={<AppSidebar mobileViewport />} />
         </Routes>

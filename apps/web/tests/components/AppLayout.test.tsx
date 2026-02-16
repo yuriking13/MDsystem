@@ -25,7 +25,10 @@ function setViewportWidth(width: number) {
 
 function renderAppLayout(initialPath = "/projects") {
   return render(
-    <MemoryRouter initialEntries={[initialPath]}>
+    <MemoryRouter
+      initialEntries={[initialPath]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
       <Routes>
         <Route element={<AppLayout />}>
           <Route
