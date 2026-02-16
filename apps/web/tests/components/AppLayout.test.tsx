@@ -90,6 +90,13 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(false);
   });
 
+  it("shows animated background on standard app routes", () => {
+    renderAppLayout("/projects");
+
+    expect(screen.getByText("Projects page")).toBeInTheDocument();
+    expect(document.querySelector(".animated-bg")).not.toBeNull();
+  });
+
   it("closes mobile sidebar when route changes", async () => {
     const user = userEvent.setup();
     renderAppLayout();
@@ -133,6 +140,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       screen.queryByRole("button", { name: "Открыть навигацию" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+    expect(document.querySelector(".animated-bg")).toBeNull();
   });
 
   it("toggles layout-fixed classes for document editor route lifecycle", async () => {
@@ -145,6 +153,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     );
     expect(document.body.classList.contains("layout-fixed")).toBe(true);
     expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
+    expect(document.querySelector(".animated-bg")).toBeNull();
     expect(
       screen.getByRole("button", { name: "Открыть навигацию" }),
     ).toBeInTheDocument();
@@ -175,6 +184,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     );
     expect(document.body.classList.contains("layout-fixed")).toBe(true);
     expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
+    expect(document.querySelector(".animated-bg")).toBeNull();
     expect(
       screen.getByRole("button", { name: "Открыть навигацию" }),
     ).toBeInTheDocument();
