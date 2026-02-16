@@ -2163,68 +2163,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontSize: 9,
     fontWeight: 600,
   };
-  const semanticCoreSectionStyle: React.CSSProperties = {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTop: "1px solid var(--border-glass)",
-  };
-  const semanticCoreHeaderStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 12,
-  };
-  const semanticCoreTitleGroupStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  };
-  const semanticCoreTitleStyle: React.CSSProperties = {
-    fontWeight: 600,
-    fontSize: 13,
-  };
-  const semanticCoreSubtitleStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--text-muted)",
-  };
-  const semanticCoreToggleStyle: React.CSSProperties = { fontSize: 11 };
-  const semanticCoreControlsStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  };
-  const semanticCoreThresholdGroupStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  };
-  const semanticCoreThresholdLabelStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--text-muted)",
-  };
-  const semanticCoreThresholdRangeStyle: React.CSSProperties = { width: 80 };
-  const semanticCoreThresholdValueStyle: React.CSSProperties = {
-    fontSize: 11,
-    minWidth: 35,
-  };
-  const semanticCoreRefreshButtonStyle: React.CSSProperties = {
-    fontSize: 11,
-    padding: "4px 12px",
-  };
-  const semanticCoreEdgeCountStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--accent-secondary)",
-  };
-  const semanticCoreHintStyle: React.CSSProperties = {
-    marginTop: 8,
-    padding: 8,
-    background: "rgba(236, 72, 153, 0.1)",
-    borderRadius: 6,
-    fontSize: 11,
-  };
-  const semanticCoreHintDashStyle: React.CSSProperties = {
-    color: "rgba(236, 72, 153, 0.8)",
-  };
   const methodologyPanelStyle: React.CSSProperties = {
     padding: "12px 20px",
     borderBottom: "1px solid var(--border-glass)",
@@ -4166,20 +4104,17 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Визуализация семантического ядра */}
             {embeddingStats && embeddingStats.withEmbeddings > 10 && (
-              <div style={semanticCoreSectionStyle}>
-                <div style={semanticCoreHeaderStyle}>
-                  <div style={semanticCoreTitleGroupStyle}>
-                    <span style={semanticCoreTitleStyle}>
+              <div className="graph-semantic-core">
+                <div className="graph-semantic-core-header">
+                  <div className="graph-semantic-core-title-group">
+                    <span className="graph-semantic-core-title">
                       🔗 Семантическое ядро
                     </span>
-                    <span style={semanticCoreSubtitleStyle}>
+                    <span className="graph-semantic-core-subtitle">
                       (связи по смыслу)
                     </span>
                   </div>
-                  <label
-                    className="toggle-switch"
-                    style={semanticCoreToggleStyle}
-                  >
+                  <label className="toggle-switch graph-semantic-core-toggle">
                     <input
                       type="checkbox"
                       checked={showSemanticEdges}
@@ -4195,9 +4130,9 @@ export default function CitationGraph({ projectId }: Props) {
                 </div>
 
                 {showSemanticEdges && (
-                  <div style={semanticCoreControlsStyle}>
-                    <div style={semanticCoreThresholdGroupStyle}>
-                      <label style={semanticCoreThresholdLabelStyle}>
+                  <div className="graph-semantic-core-controls">
+                    <div className="graph-semantic-core-threshold-group">
+                      <label className="graph-semantic-core-threshold-label">
                         Порог схожести:
                       </label>
                       <input
@@ -4209,22 +4144,21 @@ export default function CitationGraph({ projectId }: Props) {
                         onChange={(e) =>
                           setSemanticEdgeThreshold(parseFloat(e.target.value))
                         }
-                        style={semanticCoreThresholdRangeStyle}
+                        className="graph-semantic-core-threshold-range"
                       />
-                      <span style={semanticCoreThresholdValueStyle}>
+                      <span className="graph-semantic-core-threshold-value">
                         {(semanticEdgeThreshold * 100).toFixed(0)}%
                       </span>
                     </div>
                     <button
-                      className="btn secondary"
-                      style={semanticCoreRefreshButtonStyle}
+                      className="btn secondary graph-semantic-core-refresh-btn"
                       onClick={loadSemanticEdges}
                       disabled={loadingSemanticEdges}
                     >
                       {loadingSemanticEdges ? "Загрузка..." : "Обновить"}
                     </button>
                     {semanticEdges.length > 0 && (
-                      <span style={semanticCoreEdgeCountStyle}>
+                      <span className="graph-semantic-core-edge-count">
                         {semanticEdges.length} связей
                       </span>
                     )}
@@ -4232,8 +4166,8 @@ export default function CitationGraph({ projectId }: Props) {
                 )}
 
                 {showSemanticEdges && semanticEdges.length > 0 && (
-                  <div style={semanticCoreHintStyle}>
-                    <span style={semanticCoreHintDashStyle}>— — —</span>{" "}
+                  <div className="graph-semantic-core-hint">
+                    <span className="graph-semantic-core-hint-dash">— — —</span>{" "}
                     Пунктирные розовые линии = семантическая близость (статьи
                     про похожие темы, но без прямого цитирования)
                   </div>

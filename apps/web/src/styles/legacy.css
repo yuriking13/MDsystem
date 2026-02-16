@@ -6060,6 +6060,87 @@ input:focus::placeholder {
   white-space: nowrap;
 }
 
+.graph-semantic-core {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-glass);
+}
+
+.graph-semantic-core-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.graph-semantic-core-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.graph-semantic-core-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.graph-semantic-core-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-semantic-core-toggle {
+  font-size: 11px;
+}
+
+.graph-semantic-core-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.graph-semantic-core-threshold-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-semantic-core-threshold-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-semantic-core-threshold-range {
+  width: 80px;
+}
+
+.graph-semantic-core-threshold-value {
+  font-size: 11px;
+  min-width: 35px;
+}
+
+.graph-semantic-core-refresh-btn {
+  font-size: 11px;
+  padding: 4px 12px;
+}
+
+.graph-semantic-core-edge-count {
+  font-size: 11px;
+  color: var(--accent-secondary);
+}
+
+.graph-semantic-core-hint {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(236, 72, 153, 0.1);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.graph-semantic-core-hint-dash {
+  color: rgba(236, 72, 153, 0.8);
+}
+
 .graph-advanced-panel {
   display: flex;
   flex-wrap: wrap;
