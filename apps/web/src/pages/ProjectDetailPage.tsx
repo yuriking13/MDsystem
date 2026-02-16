@@ -42,9 +42,11 @@ import {
   type ResearchProtocol,
   type ProjectStatistic,
   type DataClassification,
+  type StatisticConfigData,
   type ProjectFile,
   type FileCategory,
   type ExtractedArticleMetadata,
+  type UpdateProjectData,
 } from "../lib/api";
 import { useProjectWebSocket } from "../lib/useProjectWebSocket";
 import { useAuth } from "../lib/AuthContext";
@@ -162,7 +164,7 @@ function generateTableHtml(tableData: TableData, title?: string): string {
 // Sample data templates for each chart type
 const CHART_SAMPLE_DATA: Record<
   ChartType,
-  { title: string; tableData: TableData; config: Record<string, any> }
+  { title: string; tableData: TableData; config: StatisticConfigData }
 > = {
   bar: {
     title: "Сравнение групп пациентов",
@@ -1065,7 +1067,7 @@ export default function ProjectDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      const updateData: Record<string, any> = {
+      const updateData: UpdateProjectData = {
         name: editName.trim(),
         citationStyle,
       };
@@ -3588,7 +3590,7 @@ export default function ProjectDetailPage() {
                         {!showAsTable &&
                           tableData &&
                           stat.config &&
-                          stat.config.type && (
+                          typeof stat.config.type === "string" && (
                             <ChartFromTable
                               tableData={tableData}
                               config={stat.config as unknown as ChartConfig}
@@ -3600,7 +3602,8 @@ export default function ProjectDetailPage() {
                         {/* Если нет конфигурации в режиме графика */}
                         {!showAsTable &&
                           tableData &&
-                          (!stat.config || !stat.config.type) && (
+                          (!stat.config ||
+                            typeof stat.config.type !== "string") && (
                             <div className="stat-no-data stat-no-data--error">
                               ⚠️ Конфигурация графика отсутствует или повреждена
                             </div>

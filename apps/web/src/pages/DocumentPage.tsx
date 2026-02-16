@@ -48,6 +48,7 @@ import {
   type Project,
   type ProjectStatistic,
   type DataClassification,
+  type StatisticConfigData,
   type ProjectFile,
   type DocumentVersion,
 } from "../lib/api";
@@ -1564,7 +1565,7 @@ export default function DocumentPage() {
       data: {
         title?: string;
         description?: string;
-        config?: Record<string, any>;
+        config?: StatisticConfigData;
         tableData?: TableData;
         dataClassification?: DataClassification;
         chartType?: string;

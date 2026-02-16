@@ -57,7 +57,11 @@ import {
 import StatisticEditModal from "../StatisticEditModal";
 import TableEditorModal, { type TableEditorPayload } from "./TableEditorModal";
 import AIWritingAssistant from "./AIWritingAssistant";
-import type { ProjectStatistic, DataClassification } from "../../lib/api";
+import type {
+  ProjectStatistic,
+  DataClassification,
+  StatisticConfigData,
+} from "../../lib/api";
 import type { TableData, ChartConfig } from "../ChartFromTable";
 import { IconChatBubbleQuote, IconClose, IconPlus } from "../FlowbiteIcons";
 import type { Node as ProseMirrorNode } from "prosemirror-model";
@@ -1178,7 +1182,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       async (updates: {
         title?: string;
         description?: string;
-        config?: Record<string, any>;
+        config?: StatisticConfigData;
         tableData?: TableData;
         dataClassification?: DataClassification;
         chartType?: string;
@@ -1201,7 +1205,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               title: updates.title || statistic.title,
               description: updates.description || statistic.description,
               config:
-                updates.config || (statistic.config as Record<string, any>),
+                updates.config || (statistic.config as StatisticConfigData),
               tableData: currentTableData,
               dataClassification:
                 updates.dataClassification || statistic.data_classification,

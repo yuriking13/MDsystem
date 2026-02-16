@@ -1823,13 +1823,15 @@ export type DataClassification = {
   isNormalDistribution?: boolean;
 };
 
+export type StatisticConfigData = Record<string, unknown>;
+
 export type ProjectStatistic = {
   id: string;
   type: "chart" | "table";
   title: string;
   description?: string;
-  config: Record<string, any>;
-  table_data?: Record<string, any>;
+  config: StatisticConfigData;
+  table_data?: StatisticConfigData;
   data_classification?: DataClassification;
   chart_type?: string;
   used_in_documents?: string[];
@@ -1862,8 +1864,8 @@ export async function apiCreateStatistic(
     type: "chart" | "table";
     title: string;
     description?: string;
-    config: Record<string, any>;
-    tableData?: Record<string, any>;
+    config: StatisticConfigData;
+    tableData?: StatisticConfigData;
     dataClassification?: DataClassification;
     chartType?: string;
   },
@@ -1883,8 +1885,8 @@ export async function apiUpdateStatistic(
   data: {
     title?: string;
     description?: string;
-    config?: Record<string, any>;
-    tableData?: Record<string, any>;
+    config?: StatisticConfigData;
+    tableData?: StatisticConfigData;
     dataClassification?: DataClassification;
     chartType?: string;
     orderIndex?: number;
@@ -1958,13 +1960,13 @@ export type SyncStatisticsData = {
   tables: Array<{
     id: string;
     title?: string;
-    tableData: Record<string, any>;
+    tableData: StatisticConfigData;
   }>;
   charts: Array<{
     id: string;
     title?: string;
-    config: Record<string, any>;
-    tableData?: Record<string, any>;
+    config: StatisticConfigData;
+    tableData?: StatisticConfigData;
   }>;
 };
 
