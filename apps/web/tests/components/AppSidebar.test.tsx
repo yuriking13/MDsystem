@@ -480,4 +480,22 @@ describe("AppSidebar mobile collapse behavior", () => {
       ).toBe(false);
     });
   });
+
+  it("initializes dark theme classes when no persisted preference exists", () => {
+    renderSidebar({ mobileViewport: false });
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.body.classList.contains("dark")).toBe(true);
+    expect(document.body.classList.contains("light-theme")).toBe(false);
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio?.checked).toBe(false);
+    expect(darkRadio?.checked).toBe(true);
+  });
 });
