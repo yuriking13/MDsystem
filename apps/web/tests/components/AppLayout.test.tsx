@@ -61,6 +61,7 @@ function renderAppLayout(initialPath = "/projects") {
               <div>
                 <div>Project details page</div>
                 <Link to="/projects">Back to projects</Link>
+                <Link to="/projects/p1?tab=documents">Go documents tab</Link>
               </div>
             }
           />
@@ -574,6 +575,23 @@ describe("AppLayout mobile sidebar behavior", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Settings page")).toBeInTheDocument();
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+    });
+  });
+
+  it("closes mobile sidebar when project tab query changes", async () => {
+    const user = userEvent.setup();
+    renderAppLayout("/projects/p1?tab=articles");
+
+    await user.click(screen.getByLabelText("Открыть навигацию"));
+    expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+
+    await user.click(screen.getByText("Go documents tab"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Project details page")).toBeInTheDocument();
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(
         false,
       );
