@@ -84,6 +84,12 @@ const webResponsiveTestScriptCoverageCheck = {
     "apps/web package test:responsive must include clean-js-mirrors pre-step and required responsive test files",
 };
 
+const webLayoutTestViewportLiteralCheck = {
+  name: "web-layout-test-viewport-literals",
+  description:
+    "AppLayout/AdminLayout responsive tests should use shared viewport constants instead of numeric setViewportWidth literals",
+};
+
 const REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
   "src/lib/responsive.test.ts",
   "tests/components/AppLayout.test.tsx",
@@ -408,6 +414,35 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
   return violations;
 }
 
+function collectWebLayoutTestViewportLiteralViolations(workspaceRoot) {
+  const layoutTestFiles = [
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+  ];
+  const violations = [];
+
+  for (const filePath of layoutTestFiles) {
+    if (!fs.existsSync(filePath)) {
+      continue;
+    }
+
+    const source = fs.readFileSync(filePath, "utf8");
+    const matcher = /setViewportWidth\(\s*\d+\s*\)/g;
+    let match = matcher.exec(source);
+
+    while (match) {
+      violations.push({
+        file: path.relative(workspaceRoot, filePath).replaceAll(path.sep, "/"),
+        line: lineForIndex(source, match.index),
+        snippet: match[0],
+      });
+      match = matcher.exec(source);
+    }
+  }
+
+  return violations;
+}
+
 function cleanupWebJsMirrors(workspaceRoot) {
   const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
@@ -489,6 +524,15 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webLayoutTestViewportLiteralViolations =
+    collectWebLayoutTestViewportLiteralViolations(workspaceRoot);
+  if (webLayoutTestViewportLiteralViolations.length > 0) {
+    allViolations.push({
+      check: webLayoutTestViewportLiteralCheck,
+      violations: webLayoutTestViewportLiteralViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
@@ -500,6 +544,7 @@ module.exports = {
   webCssViewportFallbackCheck,
   webLayoutMobileBreakpointLiteralCheck,
   webResponsiveTestScriptCoverageCheck,
+  webLayoutTestViewportLiteralCheck,
   runQualityGuards,
   lineForIndex,
 };

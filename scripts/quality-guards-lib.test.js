@@ -616,3 +616,66 @@ test("runQualityGuards blocks duplicate test targets in web test:responsive scri
     ),
   );
 });
+
+test("runQualityGuards blocks numeric setViewportWidth literals in layout responsive tests", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    [
+      "import { setViewportWidth } from '../utils/viewport';",
+      "setViewportWidth(390);",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+    [
+      "import { setViewportWidth } from '../utils/viewport';",
+      "setViewportWidth(1280);",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutViewportLiteralViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-test-viewport-literals",
+  );
+  assert.ok(layoutViewportLiteralViolation);
+  assert.equal(layoutViewportLiteralViolation.violations.length, 2);
+});
+
+test("runQualityGuards accepts layout responsive tests using shared viewport constants", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    [
+      "import { PRIMARY_MOBILE_TEST_WIDTH } from '../utils/responsiveMatrix';",
+      "import { setViewportWidth } from '../utils/viewport';",
+      "setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+    [
+      "import { PRIMARY_DESKTOP_TEST_WIDTH } from '../utils/responsiveMatrix';",
+      "import { setViewportWidth } from '../utils/viewport';",
+      "setViewportWidth(PRIMARY_DESKTOP_TEST_WIDTH);",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutViewportLiteralViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-test-viewport-literals",
+  );
+  assert.equal(layoutViewportLiteralViolation, undefined);
+});

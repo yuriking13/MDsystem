@@ -298,3 +298,35 @@ test("quality-guards check mode reports responsive suite tip when pre-step is mi
     /Tip: keep `apps\/web\/package\.json` test:responsive in sync with required responsive suites/,
   );
 });
+
+test("quality-guards check mode reports layout test viewport literal remediation tip", () => {
+  const workspaceRoot = createTempWorkspace();
+  const appLayoutTestPath = path.join(
+    workspaceRoot,
+    "apps/web/tests/components/AppLayout.test.tsx",
+  );
+  const adminLayoutTestPath = path.join(
+    workspaceRoot,
+    "apps/web/tests/pages/AdminLayout.test.tsx",
+  );
+
+  writeFile(
+    appLayoutTestPath,
+    "import { setViewportWidth } from '../utils/viewport';\nsetViewportWidth(390);",
+  );
+  writeFile(
+    adminLayoutTestPath,
+    "import { setViewportWidth } from '../utils/viewport';\nsetViewportWidth(1280);",
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: in AppLayout\/AdminLayout test suites use shared viewport constants\/helpers from `tests\/utils\/responsiveMatrix\.ts` instead of numeric setViewportWidth\(\.\.\.\) literals/,
+  );
+});

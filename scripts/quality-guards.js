@@ -78,6 +78,16 @@ function main() {
         "\n[quality-guards] Tip: keep `apps/web/package.json` test:responsive in sync with required responsive suites (see tests/config/responsiveSuiteContract.test.ts).",
       );
     }
+
+    if (
+      allViolations.some(
+        ({ check }) => check.name === "web-layout-test-viewport-literals",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: in AppLayout/AdminLayout test suites use shared viewport constants/helpers from `tests/utils/responsiveMatrix.ts` instead of numeric setViewportWidth(...) literals.",
+      );
+    }
   }
 
   process.exit(1);
