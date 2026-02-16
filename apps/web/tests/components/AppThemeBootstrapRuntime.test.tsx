@@ -509,6 +509,36 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each([
+    "/admin",
+    "/admin/users",
+    "/admin/users/user-42",
+    "/admin/projects",
+    "/admin/projects/project-777",
+    "/admin/system",
+  ])(
+    "redirects %s to admin login when admin token is absent",
+    async (route) => {
+      const storage = createThemeStorage("dark");
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = null;
+      adminState.loading = false;
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+      });
+    },
+  );
+
   it("shows admin loading state while guard is resolving", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
