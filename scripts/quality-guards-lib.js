@@ -56,6 +56,11 @@ const webJsMirrorCheck = {
     "JS mirror files that shadow TS/TSX modules are not allowed after cleanup",
 };
 
+const webJsSourceCheck = {
+  name: "web-js-source-files",
+  description: "JavaScript source files are not allowed in apps/web/src",
+};
+
 function walkFiles(rootDir, extensions) {
   const output = [];
   const queue = [rootDir];
@@ -139,12 +144,22 @@ function runGuardCheck(check, workspaceRoot, fileCache) {
 function collectWebJsMirrors(workspaceRoot, fileCache) {
   const webSrcRoot = path.join(workspaceRoot, "apps/web/src");
   const jsMirrors = collectJsMirrorFiles(webSrcRoot);
-  fileCache.set(`${webSrcRoot}|.js`, jsMirrors);
 
   return jsMirrors.map((jsFilePath) => ({
     file: path.relative(workspaceRoot, jsFilePath),
     line: 1,
     snippet: "js-mirror-file",
+  }));
+}
+
+function collectWebSourceJsFiles(workspaceRoot, fileCache) {
+  const webSrcRoot = path.join(workspaceRoot, "apps/web/src");
+  const jsFiles = getCachedFiles(webSrcRoot, new Set([".js"]), fileCache);
+
+  return jsFiles.map((jsFilePath) => ({
+    file: path.relative(workspaceRoot, jsFilePath),
+    line: 1,
+    snippet: "js-source-file",
   }));
 }
 
@@ -183,12 +198,21 @@ function runQualityGuards(options = {}) {
     allViolations.push({ check: webJsMirrorCheck, violations: jsMirrorViolations });
   }
 
+  const webJsSourceViolations = collectWebSourceJsFiles(workspaceRoot, fileCache);
+  if (webJsSourceViolations.length > 0) {
+    allViolations.push({
+      check: webJsSourceCheck,
+      violations: webJsSourceViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
 module.exports = {
   checks,
   webJsMirrorCheck,
+  webJsSourceCheck,
   runQualityGuards,
   lineForIndex,
 };

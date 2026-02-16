@@ -90,3 +90,21 @@ test("runQualityGuards reports web js mirrors in check-only mode", () => {
     result.allViolations.some((entry) => entry.check.name === "web-js-mirrors"),
   );
 });
+
+test("runQualityGuards reports standalone js files in web source", () => {
+  const workspaceRoot = createWorkspaceFixture();
+  const jsSourcePath = path.join(workspaceRoot, "apps/web/src/lib/legacy-helper.js");
+  writeFile(jsSourcePath, "export const legacy = true;");
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  assert.ok(
+    result.allViolations.some(
+      (entry) => entry.check.name === "web-js-source-files",
+    ),
+  );
+  assert.equal(fs.existsSync(jsSourcePath), true);
+});
