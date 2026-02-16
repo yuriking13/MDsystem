@@ -364,6 +364,58 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
+  it.each(["light", "dark"] as const)(
+    "applies %s theme bootstrap on admin login route",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = null;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/login"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(document.documentElement.getAttribute("data-theme")).toBe(
+          persistedTheme,
+        );
+        expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each(["light", "dark"] as const)(
+    "applies %s theme bootstrap on authorized admin route",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = "admin-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/settings"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(document.documentElement.getAttribute("data-theme")).toBe(
+          persistedTheme,
+        );
+        expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+        expect(screen.getByText("Admin Settings Page")).toBeInTheDocument();
+      });
+    },
+  );
+
   it("redirects unauthenticated docs route to login page", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
