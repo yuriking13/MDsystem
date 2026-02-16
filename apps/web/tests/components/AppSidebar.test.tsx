@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import AppSidebar from "../../src/components/AppSidebar";
@@ -112,7 +112,14 @@ function renderMainNavSidebar({
 describe("AppSidebar mobile collapse behavior", () => {
   beforeEach(() => {
     mockLogout.mockReset();
+    localStorage.clear();
     document.body.classList.remove("sidebar-collapsed");
+    document.body.classList.remove("light-theme");
+    document.body.classList.remove("dark");
+    document.documentElement.classList.remove("light-theme");
+    document.documentElement.classList.remove("dark");
+    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.classList.remove("no-transitions");
   });
 
   it("hides desktop collapse toggle on mobile viewport", () => {
@@ -426,5 +433,51 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(screen.getByTestId("sidebar-location").textContent).toBe(
       "/projects/project-1?tab=articles",
     );
+  });
+
+  it("updates document theme classes and localStorage via theme switcher radios", async () => {
+    localStorage.setItem("theme", "dark");
+    renderSidebar({ mobileViewport: false });
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio).not.toBeNull();
+    expect(darkRadio).not.toBeNull();
+    expect(darkRadio?.checked).toBe(true);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+
+    fireEvent.click(lightRadio!);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        true,
+      );
+      expect(document.body.classList.contains("light-theme")).toBe(true);
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+      expect(document.body.classList.contains("dark")).toBe(false);
+      expect(lightRadio?.checked).toBe(true);
+    });
+
+    fireEvent.click(darkRadio!);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      expect(document.documentElement.classList.contains("dark")).toBe(true);
+      expect(document.body.classList.contains("dark")).toBe(true);
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("light-theme")).toBe(false);
+      expect(darkRadio?.checked).toBe(true);
+      expect(
+        document.documentElement.classList.contains("no-transitions"),
+      ).toBe(false);
+    });
   });
 });
