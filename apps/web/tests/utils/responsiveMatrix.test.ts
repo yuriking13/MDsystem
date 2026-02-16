@@ -68,6 +68,13 @@ describe("responsive matrix test fixtures", () => {
     ).toBe(true);
   });
 
+  it("keeps primary viewport defaults aligned with mobile/desktop buckets", () => {
+    expect(MOBILE_VIEWPORT_WIDTHS).toContain(PRIMARY_MOBILE_TEST_WIDTH);
+    expect(DESKTOP_VIEWPORT_WIDTHS).toContain(PRIMARY_DESKTOP_TEST_WIDTH);
+    expect(TARGET_VIEWPORT_WIDTHS).toContain(PRIMARY_MOBILE_TEST_WIDTH);
+    expect(TARGET_VIEWPORT_WIDTHS).toContain(PRIMARY_DESKTOP_TEST_WIDTH);
+  });
+
   it("keeps project tab coverage and lock-layout mapping", () => {
     expect(PROJECT_TABS).toEqual([
       "articles",
