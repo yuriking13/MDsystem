@@ -62,6 +62,7 @@ function renderAppLayout(initialPath = "/projects") {
                 <div>Project details page</div>
                 <Link to="/projects">Back to projects</Link>
                 <Link to="/projects/p1?tab=documents">Go documents tab</Link>
+                <Link to="/projects/p1?tab=graph">Go graph tab</Link>
               </div>
             }
           />
@@ -694,6 +695,37 @@ describe("AppLayout mobile sidebar behavior", () => {
       expect(document.querySelector(".app-mobile-topbar")).not.toBeNull();
       expect(document.querySelector(".app-mobile-fab-toggle")).toBeNull();
       expect(document.querySelector(".animated-bg")).not.toBeNull();
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+    });
+  });
+
+  it("switches shell mode when project tab query changes from non-graph to graph", async () => {
+    const user = userEvent.setup();
+    renderAppLayout("/projects/p1?tab=articles");
+
+    expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+      false,
+    );
+    expect(document.body.classList.contains("layout-fixed")).toBe(false);
+    expect(document.querySelector(".app-layout-fixed")).toBeNull();
+    expect(document.querySelector(".app-mobile-topbar")).not.toBeNull();
+    expect(document.querySelector(".app-mobile-fab-toggle")).toBeNull();
+    expect(document.querySelector(".animated-bg")).not.toBeNull();
+
+    await user.click(screen.getByText("Go graph tab"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Project details page")).toBeInTheDocument();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        true,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(true);
+      expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
+      expect(document.querySelector(".app-mobile-topbar")).toBeNull();
+      expect(document.querySelector(".app-mobile-fab-toggle")).not.toBeNull();
+      expect(document.querySelector(".animated-bg")).toBeNull();
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(
         false,
       );
