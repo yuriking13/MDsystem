@@ -1,21 +1,20 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import type { FastifyReply, FastifyRequest } from "fastify";
 
 // Track rate limit calls
 const rateLimitCalls: Map<string, number> = new Map();
 
 vi.mock("../../src/plugins/rate-limit.js", () => {
   function createMockRateLimiter(name: string, max: number) {
-    return async (_req: any, reply: any) => {
+    return async (_req: FastifyRequest, reply: FastifyReply) => {
       const key = name;
       const count = (rateLimitCalls.get(key) || 0) + 1;
       rateLimitCalls.set(key, count);
       if (count > max) {
-        return reply
-          .code(429)
-          .send({
-            error: "TooManyRequests",
-            message: `Rate limit exceeded for ${name}`,
-          });
+        return reply.code(429).send({
+          error: "TooManyRequests",
+          message: `Rate limit exceeded for ${name}`,
+        });
       }
     };
   }
@@ -206,7 +205,7 @@ describe("Global API rate limiting", () => {
     expect(res.statusCode).toBe(429);
 
     // Global counter should still be well within limits
-    expect(rateLimitCalls.get("api")!).toBeLessThanOrEqual(6);
+    expect(rateLimitCalls.get("api") ?? 0).toBeLessThanOrEqual(6);
 
     await app.close();
   });
