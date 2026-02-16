@@ -276,20 +276,10 @@ async function renderChartFromData(
   height = 400,
 ): Promise<string | null> {
   if (typeof window === "undefined" || !tableData || !config) {
-    console.log("[renderChartFromData] Skipping: no window or data", {
-      hasWindow: typeof window !== "undefined",
-      hasTableData: !!tableData,
-      hasConfig: !!config,
-    });
     return null;
   }
 
   try {
-    console.log("[renderChartFromData] Starting chart render", {
-      type: config.type,
-      title: config.title,
-    });
-
     // Динамически импортируем Chart.js
     const { Chart, registerables } = await import("chart.js");
     Chart.register(...registerables);
@@ -302,10 +292,8 @@ async function renderChartFromData(
           boxplotPlugin.BoxPlotController,
           boxplotPlugin.BoxAndWiskers,
         );
-      } catch (e) {
-        console.warn(
-          "[renderChartFromData] Boxplot plugin not available, using fallback",
-        );
+      } catch {
+        // Plugin optional: fallback rendering remains available.
       }
     }
 
@@ -341,13 +329,7 @@ async function renderChartFromData(
     const headers = tableData.headers || [];
     const rows = tableData.rows || [];
 
-    console.log("[renderChartFromData] Data:", {
-      headers,
-      rowCount: rows.length,
-    });
-
     if (rows.length === 0) {
-      console.warn("[renderChartFromData] No rows in table data");
       document.body.removeChild(canvas);
       return null;
     }
@@ -528,11 +510,6 @@ async function renderChartFromData(
     // Получаем изображение
     const dataUrl = canvas.toDataURL("image/png");
 
-    console.log(
-      "[renderChartFromData] Chart rendered successfully, dataUrl length:",
-      dataUrl.length,
-    );
-
     // Очистка
     chart.destroy();
     document.body.removeChild(canvas);
@@ -596,18 +573,8 @@ export async function prepareHtmlForExport(
     '.chart-node, [data-chart-id], [data-type="chart-node"], .chart-node-wrapper',
   );
 
-  console.log("[prepareHtmlForExport] Found chart nodes:", chartNodes.length);
-
   for (const chartNode of Array.from(chartNodes)) {
     const chartId = chartNode.getAttribute("data-chart-id");
-    console.log(
-      "[prepareHtmlForExport] Processing chart:",
-      chartId,
-      "tag:",
-      chartNode.tagName,
-      "class:",
-      chartNode.className,
-    );
 
     // Получаем данные графика из атрибутов (проверяем и сам узел и вложенные элементы)
     let tableDataStr = chartNode.getAttribute("data-table-data");
@@ -633,14 +600,6 @@ export async function prepareHtmlForExport(
         "График";
     }
 
-    console.log("[prepareHtmlForExport] Chart data:", {
-      hasTableData: !!tableDataStr,
-      hasConfig: !!configStr,
-      title,
-      tableDataLength: tableDataStr?.length,
-      configLength: configStr?.length,
-    });
-
     let dataUrl: string | null = null;
     let tableData: { headers?: string[]; rows?: string[][] } | null = null;
     let config: { type?: string } | null = null;
@@ -665,10 +624,6 @@ export async function prepareHtmlForExport(
     // 1. Используем предзахваченное изображение (приоритет)
     if (chartId && chartImages?.has(chartId)) {
       dataUrl = chartImages.get(chartId) || null;
-      console.log(
-        "[prepareHtmlForExport] Using pre-captured image for chart:",
-        chartId,
-      );
     }
 
     // 2. Проверяем есть ли уже canvas в DOM
@@ -677,7 +632,6 @@ export async function prepareHtmlForExport(
       if (canvas && canvas instanceof HTMLCanvasElement) {
         try {
           dataUrl = canvas.toDataURL("image/png");
-          console.log("[prepareHtmlForExport] Captured from canvas");
         } catch (e) {
           console.error(
             "[prepareHtmlForExport] Error converting chart canvas to image:",
@@ -690,15 +644,7 @@ export async function prepareHtmlForExport(
     // 3. Рендерим график из данных если нет изображения
     if (!dataUrl && tableData && config) {
       try {
-        console.log(
-          "[prepareHtmlForExport] Rendering chart from data:",
-          config.type,
-        );
         dataUrl = await renderChartFromData(tableData, config);
-        console.log(
-          "[prepareHtmlForExport] Rendered chart, dataUrl:",
-          dataUrl ? "success" : "failed",
-        );
       } catch (e) {
         console.error("[prepareHtmlForExport] Error rendering chart data:", e);
       }
@@ -798,10 +744,6 @@ export async function prepareHtmlForExport(
       }
 
       chartNode.replaceWith(container);
-      console.log(
-        "[prepareHtmlForExport] Replaced chart with image" +
-          (includeDataTables ? " and data table" : ""),
-      );
     } else {
       // Нет данных для графика - оставляем placeholder с названием
       const placeholder = doc.createElement("div");
@@ -819,7 +761,6 @@ export async function prepareHtmlForExport(
       placeholder.appendChild(placeholderText);
 
       chartNode.replaceWith(placeholder);
-      console.log("[prepareHtmlForExport] Replaced chart with placeholder");
     }
   }
 
