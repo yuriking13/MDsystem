@@ -15,6 +15,7 @@ import type { LevelCounts } from "../../lib/api";
 
 type FilterType = "all" | "selected" | "excluded";
 type DepthType = 1 | 2 | 3;
+type SourceType = "pubmed" | "doaj" | "wiley";
 
 interface GraphSidebarProps {
   // Filters
@@ -24,8 +25,8 @@ interface GraphSidebarProps {
   onDepthChange: (depth: DepthType) => void;
 
   // Sources
-  selectedSources: ("pubmed" | "doaj" | "wiley")[];
-  onSourcesChange: (sources: ("pubmed" | "doaj" | "wiley")[]) => void;
+  selectedSources: SourceType[];
+  onSourcesChange: (sources: SourceType[]) => void;
 
   // Year
   yearFrom?: string;
@@ -84,69 +85,79 @@ function CollapsibleSection({
 }: CollapsibleSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
-  const sectionStyle: React.CSSProperties = {
-    borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
-  };
-
-  const headerStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    width: "100%",
-    padding: "12px 16px",
-    border: "none",
-    cursor: "pointer",
-    transition: "background 0.15s ease",
-  };
-
-  const titleContainerStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    color: "rgba(255, 255, 255, 0.9)",
-    fontSize: "13px",
-    fontWeight: 500,
-  };
-
-  const iconWrapperStyle: React.CSSProperties = {
-    width: "18px",
-    height: "18px",
-    color: "rgba(148, 163, 184, 0.7)",
-  };
-
-  const chevronStyle: React.CSSProperties = {
-    width: "16px",
-    height: "16px",
-    color: "rgba(148, 163, 184, 0.5)",
-    transform: isOpen ? "rotate(90deg)" : "rotate(0deg)",
-    transition: "transform 0.2s ease",
-  };
-
-  const contentStyle: React.CSSProperties = {
-    padding: isOpen ? "0 16px 16px" : "0",
-    maxHeight: isOpen ? "500px" : "0",
-    overflow: "hidden",
-    transition: "all 0.2s ease",
-    opacity: isOpen ? 1 : 0,
-  };
-
   return (
-    <div style={sectionStyle}>
+    <div className="graph-sidebar-section">
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen((prev) => !prev)}
         className="graph-sidebar-collapsible-header"
-        style={headerStyle}
       >
-        <div style={titleContainerStyle}>
-          <span style={iconWrapperStyle}>{icon}</span>
+        <div className="graph-sidebar-section-title-wrap">
+          <span className="graph-sidebar-section-icon">{icon}</span>
           {title}
         </div>
-        <IconChevronRight size="sm" style={chevronStyle} />
+        <IconChevronRight
+          size="sm"
+          className={`graph-sidebar-section-chevron ${
+            isOpen ? "graph-sidebar-section-chevron--open" : ""
+          }`}
+        />
       </button>
-      <div style={contentStyle}>{children}</div>
+      <div
+        className={`graph-sidebar-section-content ${
+          isOpen ? "graph-sidebar-section-content--open" : ""
+        }`}
+      >
+        {children}
+      </div>
     </div>
   );
 }
+
+function getDepthButtonClass(active: boolean): string {
+  return `graph-sidebar-depth-btn ${active ? "graph-sidebar-depth-btn--active" : ""}`;
+}
+
+function getFilterOptionClass(active: boolean): string {
+  return `graph-sidebar-filter-option ${
+    active ? "graph-sidebar-filter-option--active" : ""
+  }`;
+}
+
+function getRadioCircleClass(active: boolean): string {
+  return `graph-sidebar-radio-circle ${
+    active ? "graph-sidebar-radio-circle--active" : ""
+  }`;
+}
+
+function getSourceOptionClass(active: boolean): string {
+  return `graph-sidebar-source-option ${
+    active ? "graph-sidebar-source-option--active" : ""
+  }`;
+}
+
+function getSourceBoxClass(active: boolean, source: SourceType): string {
+  return [
+    "graph-sidebar-source-box",
+    `graph-sidebar-source-box--${source}`,
+    active ? "graph-sidebar-source-box--checked" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function getFeatureButtonClass(active: boolean): string {
+  return `graph-sidebar-feature-btn ${
+    active ? "graph-sidebar-feature-btn--active" : ""
+  }`;
+}
+
+const colorLegendItems = [
+  { label: "Отобранные", dotClassName: "graph-sidebar-legend-dot--selected" },
+  { label: "PubMed", dotClassName: "graph-sidebar-legend-dot--pubmed" },
+  { label: "DOAJ", dotClassName: "graph-sidebar-legend-dot--doaj" },
+  { label: "Wiley", dotClassName: "graph-sidebar-legend-dot--wiley" },
+  { label: "Исключённые", dotClassName: "graph-sidebar-legend-dot--excluded" },
+];
 
 export default function GraphSidebar({
   filter,
@@ -181,345 +192,22 @@ export default function GraphSidebar({
   collapsed,
   onToggleCollapse,
 }: GraphSidebarProps) {
-  // Styles
-  const sidebarStyle: React.CSSProperties = {
-    width: collapsed ? "48px" : "280px",
-    height: "100%",
-    background:
-      "linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(15, 23, 42, 0.95) 100%)",
-    borderRight: "1px solid rgba(148, 163, 184, 0.1)",
-    display: "flex",
-    flexDirection: "column",
-    transition: "width 0.3s ease",
-    overflow: "hidden",
-    flexShrink: 0,
-  };
-
-  const logoSectionStyle: React.CSSProperties = {
-    padding: "16px",
-    borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  };
-
-  const logoStyle: React.CSSProperties = {
-    width: "32px",
-    height: "32px",
-    background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
-  };
-
-  const titleStyle: React.CSSProperties = {
-    fontSize: "16px",
-    fontWeight: 600,
-    color: "white",
-    opacity: collapsed ? 0 : 1,
-    transition: "opacity 0.2s ease",
-    whiteSpace: "nowrap",
-  };
-
-  const subtitleStyle: React.CSSProperties = {
-    fontSize: "11px",
-    color: "rgba(148, 163, 184, 0.7)",
-    opacity: collapsed ? 0 : 1,
-    transition: "opacity 0.2s ease",
-    whiteSpace: "nowrap",
-  };
-
-  const statsGridStyle: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "8px",
-    padding: "12px 16px",
-    borderBottom: "1px solid rgba(148, 163, 184, 0.1)",
-  };
-
-  const statBoxStyle: React.CSSProperties = {
-    background: "rgba(148, 163, 184, 0.05)",
-    borderRadius: "8px",
-    padding: "10px 12px",
-    textAlign: "center",
-  };
-
-  const statValueStyle: React.CSSProperties = {
-    fontSize: "18px",
-    fontWeight: 600,
-    color: "white",
-    lineHeight: 1.2,
-  };
-
-  const statLabelStyle: React.CSSProperties = {
-    fontSize: "10px",
-    color: "rgba(148, 163, 184, 0.7)",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-    marginTop: "2px",
-  };
-
-  const contentStyle: React.CSSProperties = {
-    flex: 1,
-    overflowY: "auto",
-    overflowX: "hidden",
-  };
-
-  const depthButtonsStyle: React.CSSProperties = {
-    display: "flex",
-    gap: "6px",
-    marginBottom: "12px",
-  };
-
-  const depthButtonStyle = (active: boolean): React.CSSProperties => ({
-    flex: 1,
-    padding: "8px 12px",
-    background: active
-      ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-      : "rgba(148, 163, 184, 0.1)",
-    border: "none",
-    borderRadius: "8px",
-    color: active ? "white" : "rgba(148, 163, 184, 0.9)",
-    fontSize: "12px",
-    fontWeight: 500,
-    cursor: "pointer",
-    transition: "all 0.15s ease",
-  });
-
-  const filterOptionStyle = (active: boolean): React.CSSProperties => ({
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "10px 12px",
-    background: active ? "rgba(59, 130, 246, 0.15)" : "transparent",
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.15s ease",
-    marginBottom: "4px",
-  });
-
-  const radioCircleStyle = (active: boolean): React.CSSProperties => ({
-    width: "16px",
-    height: "16px",
-    borderRadius: "50%",
-    border: `2px solid ${active ? "#3b82f6" : "rgba(148, 163, 184, 0.3)"}`,
-    background: active ? "#3b82f6" : "transparent",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.15s ease",
-  });
-
-  const radioInnerStyle: React.CSSProperties = {
-    width: "6px",
-    height: "6px",
-    borderRadius: "50%",
-    background: "white",
-  };
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: "13px",
-    color: "rgba(255, 255, 255, 0.9)",
-    flex: 1,
-  };
-
-  const checkboxContainerStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  };
-
-  const checkboxStyle = (checked: boolean): React.CSSProperties => ({
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "8px 12px",
-    background: checked ? "rgba(59, 130, 246, 0.1)" : "transparent",
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.15s ease",
-  });
-
-  const checkboxBoxStyle = (
-    checked: boolean,
-    color: string,
-  ): React.CSSProperties => ({
-    width: "16px",
-    height: "16px",
-    borderRadius: "4px",
-    border: `2px solid ${checked ? color : "rgba(148, 163, 184, 0.3)"}`,
-    background: checked ? color : "transparent",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.15s ease",
-  });
-
-  const inputRowStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-  };
-
-  const inputStyle: React.CSSProperties = {
-    flex: 1,
-    padding: "8px 12px",
-    background: "rgba(148, 163, 184, 0.1)",
-    border: "1px solid rgba(148, 163, 184, 0.2)",
-    borderRadius: "8px",
-    color: "white",
-    fontSize: "13px",
-    outline: "none",
-    transition: "border-color 0.15s ease",
-  };
-
-  const selectStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "10px 12px",
-    background: "rgba(148, 163, 184, 0.1)",
-    border: "1px solid rgba(148, 163, 184, 0.2)",
-    borderRadius: "8px",
-    color: "white",
-    fontSize: "13px",
-    outline: "none",
-    cursor: "pointer",
-  };
-
-  const actionButtonStyle = (
-    primary: boolean = false,
-    active: boolean = false,
-  ): React.CSSProperties => ({
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    width: "100%",
-    padding: "12px 16px",
-    background: primary
-      ? "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)"
-      : active
-        ? "rgba(59, 130, 246, 0.2)"
-        : "rgba(148, 163, 184, 0.1)",
-    border: active
-      ? "1px solid rgba(59, 130, 246, 0.5)"
-      : "1px solid transparent",
-    borderRadius: "10px",
-    color: primary || active ? "white" : "rgba(255, 255, 255, 0.9)",
-    fontSize: "13px",
-    fontWeight: 500,
-    cursor: "pointer",
-    transition: "all 0.15s ease",
-    marginBottom: "8px",
-  });
-
-  const featureButtonsStyle: React.CSSProperties = {
-    padding: "12px 16px",
-    borderTop: "1px solid rgba(148, 163, 184, 0.1)",
-    marginTop: "auto",
-  };
-
-  const featureButtonStyle = (active: boolean): React.CSSProperties => ({
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    width: "100%",
-    padding: "10px 12px",
-    background: active ? "rgba(59, 130, 246, 0.15)" : "transparent",
-    border: "none",
-    borderRadius: "8px",
-    color: active ? "white" : "rgba(255, 255, 255, 0.8)",
-    fontSize: "13px",
-    fontWeight: 400,
-    cursor: "pointer",
-    transition: "all 0.15s ease",
-    marginBottom: "4px",
-    textAlign: "left" as const,
-  });
-
-  const badgeStyle: React.CSSProperties = {
-    background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-    color: "white",
-    fontSize: "10px",
-    fontWeight: 600,
-    padding: "2px 6px",
-    borderRadius: "10px",
-    marginLeft: "auto",
-  };
-
-  const collapsedLogoSectionStyle: React.CSSProperties = {
-    ...logoSectionStyle,
-    justifyContent: "center",
-    padding: "12px",
-  };
-
-  const logoButtonStyle: React.CSSProperties = {
-    ...logoStyle,
-    cursor: "pointer",
-    border: "none",
-  };
-
-  const actionButtonWrapStyle: React.CSSProperties = {
-    padding: "12px 16px",
-  };
-
-  const colorLegendStyle: React.CSSProperties = {
-    padding: "16px",
-    borderTop: "1px solid rgba(148, 163, 184, 0.1)",
-    background: "rgba(0, 0, 0, 0.2)",
-  };
-
-  const colorLegendTitleStyle: React.CSSProperties = {
-    fontSize: "11px",
-    color: "rgba(148, 163, 184, 0.7)",
-    marginBottom: "10px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  };
-
-  const colorLegendListStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-  };
-
-  const colorLegendItemStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-  };
-
-  const colorLegendLabelStyle: React.CSSProperties = {
-    fontSize: "11px",
-    color: "rgba(255, 255, 255, 0.7)",
-  };
-
-  const colorLegendItems = [
-    { label: "Отобранные", dotClassName: "graph-sidebar-legend-dot--selected" },
-    { label: "PubMed", dotClassName: "graph-sidebar-legend-dot--pubmed" },
-    { label: "DOAJ", dotClassName: "graph-sidebar-legend-dot--doaj" },
-    { label: "Wiley", dotClassName: "graph-sidebar-legend-dot--wiley" },
-    {
-      label: "Исключённые",
-      dotClassName: "graph-sidebar-legend-dot--excluded",
-    },
-  ];
-
-  const toggleSourceCheckbox = (source: "pubmed" | "doaj" | "wiley") => {
+  const toggleSourceCheckbox = (source: SourceType) => {
     if (selectedSources.includes(source)) {
       onSourcesChange(selectedSources.filter((s) => s !== source));
-    } else {
-      onSourcesChange([...selectedSources, source]);
+      return;
     }
+    onSourcesChange([...selectedSources, source]);
   };
 
   if (collapsed) {
     return (
-      <div style={sidebarStyle}>
-        <div style={collapsedLogoSectionStyle}>
-          <button onClick={onToggleCollapse} style={logoButtonStyle}>
+      <div className="graph-sidebar graph-sidebar--collapsed">
+        <div className="graph-sidebar-logo-section graph-sidebar-logo-section--collapsed">
+          <button
+            onClick={onToggleCollapse}
+            className="graph-sidebar-logo-button"
+          >
             <IconGraph size="sm" className="graph-sidebar-logo-icon" />
           </button>
         </div>
@@ -528,53 +216,56 @@ export default function GraphSidebar({
   }
 
   return (
-    <div style={sidebarStyle}>
+    <div className="graph-sidebar">
       {/* Logo Section */}
-      <div style={logoSectionStyle}>
-        <button onClick={onToggleCollapse} style={logoButtonStyle}>
+      <div className="graph-sidebar-logo-section">
+        <button
+          onClick={onToggleCollapse}
+          className="graph-sidebar-logo-button"
+        >
           <IconGraph size="sm" className="graph-sidebar-logo-icon" />
         </button>
-        <div>
-          <div style={titleStyle}>Visual Explorer</div>
-          <div style={subtitleStyle}>Граф цитирования</div>
+        <div className="graph-sidebar-logo-copy">
+          <div className="graph-sidebar-title">Visual Explorer</div>
+          <div className="graph-sidebar-subtitle">Граф цитирования</div>
         </div>
       </div>
 
       {/* Quick Stats */}
-      <div style={statsGridStyle}>
-        <div style={statBoxStyle}>
-          <div style={statValueStyle}>{totalNodes}</div>
-          <div style={statLabelStyle}>Узлов</div>
+      <div className="graph-sidebar-stats-grid">
+        <div className="graph-sidebar-stat-box">
+          <div className="graph-sidebar-stat-value">{totalNodes}</div>
+          <div className="graph-sidebar-stat-label">Узлов</div>
         </div>
-        <div style={statBoxStyle}>
-          <div style={statValueStyle}>{totalLinks}</div>
-          <div style={statLabelStyle}>Связей</div>
+        <div className="graph-sidebar-stat-box">
+          <div className="graph-sidebar-stat-value">{totalLinks}</div>
+          <div className="graph-sidebar-stat-label">Связей</div>
         </div>
       </div>
 
       {/* Scrollable Content */}
-      <div style={contentStyle}>
+      <div className="graph-sidebar-content">
         {/* Depth Section */}
         <CollapsibleSection
           title="Глубина графа"
           icon={<IconCircleStack size="sm" />}
           defaultOpen={true}
         >
-          <div style={depthButtonsStyle}>
+          <div className="graph-sidebar-depth-buttons">
             <button
-              style={depthButtonStyle(depth === 1)}
+              className={getDepthButtonClass(depth === 1)}
               onClick={() => onDepthChange(1)}
             >
               Проект
             </button>
             <button
-              style={depthButtonStyle(depth === 2)}
+              className={getDepthButtonClass(depth === 2)}
               onClick={() => onDepthChange(2)}
             >
               +Ссылки
             </button>
             <button
-              style={depthButtonStyle(depth === 3)}
+              className={getDepthButtonClass(depth === 3)}
               onClick={() => onDepthChange(3)}
             >
               +Цит.
@@ -589,13 +280,15 @@ export default function GraphSidebar({
           defaultOpen={true}
         >
           <div
-            style={filterOptionStyle(filter === "all")}
+            className={getFilterOptionClass(filter === "all")}
             onClick={() => onFilterChange("all")}
           >
-            <div style={radioCircleStyle(filter === "all")}>
-              {filter === "all" && <div style={radioInnerStyle} />}
+            <div className={getRadioCircleClass(filter === "all")}>
+              {filter === "all" && (
+                <div className="graph-sidebar-radio-inner" />
+              )}
             </div>
-            <span style={labelStyle}>Все статьи</span>
+            <span className="graph-sidebar-item-label">Все статьи</span>
             {levelCounts && (
               <span className="graph-sidebar-count-muted">
                 {(levelCounts.level1 || 0) + (levelCounts.level2 || 0)}
@@ -603,13 +296,15 @@ export default function GraphSidebar({
             )}
           </div>
           <div
-            style={filterOptionStyle(filter === "selected")}
+            className={getFilterOptionClass(filter === "selected")}
             onClick={() => onFilterChange("selected")}
           >
-            <div style={radioCircleStyle(filter === "selected")}>
-              {filter === "selected" && <div style={radioInnerStyle} />}
+            <div className={getRadioCircleClass(filter === "selected")}>
+              {filter === "selected" && (
+                <div className="graph-sidebar-radio-inner" />
+              )}
             </div>
-            <span style={labelStyle}>Отобранные</span>
+            <span className="graph-sidebar-item-label">Отобранные</span>
             {levelCounts && (
               <span className="graph-sidebar-count-success">
                 {levelCounts.level1 || 0}
@@ -617,13 +312,15 @@ export default function GraphSidebar({
             )}
           </div>
           <div
-            style={filterOptionStyle(filter === "excluded")}
+            className={getFilterOptionClass(filter === "excluded")}
             onClick={() => onFilterChange("excluded")}
           >
-            <div style={radioCircleStyle(filter === "excluded")}>
-              {filter === "excluded" && <div style={radioInnerStyle} />}
+            <div className={getRadioCircleClass(filter === "excluded")}>
+              {filter === "excluded" && (
+                <div className="graph-sidebar-radio-inner" />
+              )}
             </div>
-            <span style={labelStyle}>Исключённые</span>
+            <span className="graph-sidebar-item-label">Исключённые</span>
           </div>
         </CollapsibleSection>
 
@@ -633,15 +330,17 @@ export default function GraphSidebar({
           icon={<IconCircleStack size="sm" />}
           defaultOpen={false}
         >
-          <div style={checkboxContainerStyle}>
+          <div className="graph-sidebar-sources-list">
             <div
-              style={checkboxStyle(selectedSources.includes("pubmed"))}
+              className={getSourceOptionClass(
+                selectedSources.includes("pubmed"),
+              )}
               onClick={() => toggleSourceCheckbox("pubmed")}
             >
               <div
-                style={checkboxBoxStyle(
+                className={getSourceBoxClass(
                   selectedSources.includes("pubmed"),
-                  "#3b82f6",
+                  "pubmed",
                 )}
               >
                 {selectedSources.includes("pubmed") && (
@@ -656,16 +355,16 @@ export default function GraphSidebar({
                   </svg>
                 )}
               </div>
-              <span style={labelStyle}>PubMed</span>
+              <span className="graph-sidebar-item-label">PubMed</span>
             </div>
             <div
-              style={checkboxStyle(selectedSources.includes("doaj"))}
+              className={getSourceOptionClass(selectedSources.includes("doaj"))}
               onClick={() => toggleSourceCheckbox("doaj")}
             >
               <div
-                style={checkboxBoxStyle(
+                className={getSourceBoxClass(
                   selectedSources.includes("doaj"),
-                  "#eab308",
+                  "doaj",
                 )}
               >
                 {selectedSources.includes("doaj") && (
@@ -680,16 +379,18 @@ export default function GraphSidebar({
                   </svg>
                 )}
               </div>
-              <span style={labelStyle}>DOAJ</span>
+              <span className="graph-sidebar-item-label">DOAJ</span>
             </div>
             <div
-              style={checkboxStyle(selectedSources.includes("wiley"))}
+              className={getSourceOptionClass(
+                selectedSources.includes("wiley"),
+              )}
               onClick={() => toggleSourceCheckbox("wiley")}
             >
               <div
-                style={checkboxBoxStyle(
+                className={getSourceBoxClass(
                   selectedSources.includes("wiley"),
-                  "#8b5cf6",
+                  "wiley",
                 )}
               >
                 {selectedSources.includes("wiley") && (
@@ -704,7 +405,7 @@ export default function GraphSidebar({
                   </svg>
                 )}
               </div>
-              <span style={labelStyle}>Wiley</span>
+              <span className="graph-sidebar-item-label">Wiley</span>
             </div>
           </div>
         </CollapsibleSection>
@@ -715,14 +416,14 @@ export default function GraphSidebar({
           icon={<IconCalendar size="sm" />}
           defaultOpen={false}
         >
-          <div style={inputRowStyle}>
+          <div className="graph-sidebar-year-input-row">
             <input
               type="number"
               placeholder="От"
               value={yearFrom || ""}
               onChange={(e) => onYearFromChange(e.target.value)}
               onBlur={onApplyYearFilter}
-              style={inputStyle}
+              className="graph-sidebar-input"
             />
             <span className="graph-sidebar-year-separator">—</span>
             <input
@@ -731,7 +432,7 @@ export default function GraphSidebar({
               value={yearTo || ""}
               onChange={(e) => onYearToChange(e.target.value)}
               onBlur={onApplyYearFilter}
-              style={inputStyle}
+              className="graph-sidebar-input"
             />
           </div>
         </CollapsibleSection>
@@ -745,7 +446,7 @@ export default function GraphSidebar({
           <select
             value={statsQuality}
             onChange={(e) => onStatsQualityChange(parseInt(e.target.value, 10))}
-            style={selectStyle}
+            className="graph-sidebar-select"
           >
             <option value={0}>Все статьи</option>
             <option value={1}>≥ Упомянут P-value</option>
@@ -755,9 +456,9 @@ export default function GraphSidebar({
         </CollapsibleSection>
 
         {/* Action Button */}
-        <div style={actionButtonWrapStyle}>
+        <div className="graph-sidebar-action-wrap">
           <button
-            style={actionButtonStyle(true)}
+            className="graph-sidebar-action-btn graph-sidebar-action-btn--primary"
             onClick={onFetchReferences}
             disabled={fetchingRefs || fetchJobRunning}
           >
@@ -771,10 +472,10 @@ export default function GraphSidebar({
       </div>
 
       {/* Feature Buttons (bottom) */}
-      <div style={featureButtonsStyle}>
+      <div className="graph-sidebar-feature-buttons">
         {onShowSemanticSearch && (
           <button
-            style={featureButtonStyle(showSemanticSearch || false)}
+            className={getFeatureButtonClass(showSemanticSearch || false)}
             onClick={onShowSemanticSearch}
           >
             <IconSearch size="sm" />
@@ -783,7 +484,7 @@ export default function GraphSidebar({
         )}
         {onShowMethodologyClusters && (
           <button
-            style={featureButtonStyle(showMethodologyClusters || false)}
+            className={getFeatureButtonClass(showMethodologyClusters || false)}
             onClick={onShowMethodologyClusters}
           >
             <IconAdjustments size="sm" />
@@ -792,22 +493,31 @@ export default function GraphSidebar({
         )}
         {onShowSemanticClusters && (
           <button
-            style={featureButtonStyle(showSemanticClusters || false)}
+            className={getFeatureButtonClass(showSemanticClusters || false)}
             onClick={onShowSemanticClusters}
           >
             <IconGraph size="sm" />
             <span>Кластеры</span>
           </button>
         )}
+        {onShowGapAnalysis && (
+          <button
+            className={getFeatureButtonClass(showGapAnalysis || false)}
+            onClick={onShowGapAnalysis}
+          >
+            <IconSearch size="sm" />
+            <span>Пробелы</span>
+          </button>
+        )}
         {onShowRecommendations && (
           <button
-            style={featureButtonStyle(false)}
+            className={getFeatureButtonClass(false)}
             onClick={onShowRecommendations}
           >
             <IconSparkles size="sm" />
             <span>Рекомендации</span>
             {(recommendationsCount || 0) > 0 && (
-              <span style={badgeStyle} className="graph-sidebar-badge">
+              <span className="graph-sidebar-badge">
                 {recommendationsCount}
               </span>
             )}
@@ -816,15 +526,17 @@ export default function GraphSidebar({
       </div>
 
       {/* Color Legend */}
-      <div style={colorLegendStyle}>
-        <div style={colorLegendTitleStyle}>Цветовая легенда</div>
-        <div style={colorLegendListStyle}>
+      <div className="graph-sidebar-color-legend">
+        <div className="graph-sidebar-color-legend-title">Цветовая легенда</div>
+        <div className="graph-sidebar-color-legend-list">
           {colorLegendItems.map((item) => (
-            <div key={item.label} style={colorLegendItemStyle}>
+            <div key={item.label} className="graph-sidebar-color-legend-item">
               <div
                 className={`graph-sidebar-legend-dot ${item.dotClassName}`}
               />
-              <span style={colorLegendLabelStyle}>{item.label}</span>
+              <span className="graph-sidebar-color-legend-label">
+                {item.label}
+              </span>
             </div>
           ))}
         </div>
