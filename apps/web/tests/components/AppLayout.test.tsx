@@ -20,6 +20,7 @@ import {
   APP_FIXED_ROUTE_CASES,
   APP_NON_FIXED_ROUTE_CASES,
   MOBILE_VIEWPORT_WIDTHS,
+  PROJECT_CONTEXT_RESET_DESTINATION_CASES,
   PROJECT_TAB_CASES,
   PROJECT_TABS,
   TARGET_VIEWPORT_WIDTHS,
@@ -605,13 +606,12 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    ["Go settings", "Settings page"],
-    ["Go projects", "Projects page"],
-    ["Go docs", "Docs page"],
-  ])(
-    "resets mobile topbar title to app default after navigating to %s",
-    async (destinationLinkLabel, destinationPageLabel) => {
+  it.each(PROJECT_CONTEXT_RESET_DESTINATION_CASES)(
+    "resets mobile topbar title to app default after navigating to $linkLabel",
+    async ({
+      linkLabel: destinationLinkLabel,
+      pageLabel: destinationPageLabel,
+    }) => {
       for (const width of MOBILE_VIEWPORT_WIDTHS) {
         const user = userEvent.setup();
         setViewportWidth(width);

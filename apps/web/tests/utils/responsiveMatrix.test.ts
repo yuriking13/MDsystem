@@ -12,6 +12,7 @@ import {
   DESKTOP_VIEWPORT_WIDTHS,
   APP_FIXED_ROUTE_CASES,
   APP_NON_FIXED_ROUTE_CASES,
+  PROJECT_CONTEXT_RESET_DESTINATION_CASES,
   MOBILE_VIEWPORT_WIDTHS,
   PROJECT_TAB_CASES,
   PROJECT_TABS,
@@ -79,6 +80,20 @@ describe("responsive matrix test fixtures", () => {
       { tab: "statistics", shouldLockLayout: false },
       { tab: "settings", shouldLockLayout: false },
       { tab: "graph", shouldLockLayout: true },
+    ]);
+    expect(PROJECT_CONTEXT_RESET_DESTINATION_CASES).toEqual([
+      {
+        linkLabel: "Go settings",
+        pageLabel: "Settings page",
+      },
+      {
+        linkLabel: "Go projects",
+        pageLabel: "Projects page",
+      },
+      {
+        linkLabel: "Go docs",
+        pageLabel: "Docs page",
+      },
     ]);
   });
 

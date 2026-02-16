@@ -39,6 +39,21 @@ export const PROJECT_TAB_CASES = [
 
 export const PROJECT_TABS = PROJECT_TAB_CASES.map((item) => item.tab);
 
+export const PROJECT_CONTEXT_RESET_DESTINATION_CASES = [
+  {
+    linkLabel: "Go settings",
+    pageLabel: "Settings page",
+  },
+  {
+    linkLabel: "Go projects",
+    pageLabel: "Projects page",
+  },
+  {
+    linkLabel: "Go docs",
+    pageLabel: "Docs page",
+  },
+] as const;
+
 export const APP_NON_FIXED_ROUTE_CASES = [
   { route: "/projects", pageLabel: "Projects page" },
   { route: "/settings", pageLabel: "Settings page" },
