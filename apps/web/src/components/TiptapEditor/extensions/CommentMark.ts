@@ -1,7 +1,7 @@
-import { Mark, mergeAttributes, CommandProps } from '@tiptap/react';
+import { Mark, mergeAttributes, CommandProps } from "@tiptap/react";
 
 export interface CommentMarkOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, string>;
 }
 
 export interface CommentAttrs {
@@ -13,8 +13,10 @@ export interface CommentAttrs {
   resolved?: boolean;
 }
 
+type RenderableCommentAttrs = Partial<CommentAttrs>;
+
 export const CommentMark = Mark.create<CommentMarkOptions>({
-  name: 'comment',
+  name: "comment",
 
   addOptions() {
     return {
@@ -26,50 +28,56 @@ export const CommentMark = Mark.create<CommentMarkOptions>({
     return {
       commentId: {
         default: null,
-        parseHTML: (element: HTMLElement) => element.getAttribute('data-comment-id'),
-        renderHTML: (attributes: Record<string, any>) => {
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute("data-comment-id"),
+        renderHTML: (attributes: RenderableCommentAttrs) => {
           if (!attributes.commentId) return {};
-          return { 'data-comment-id': attributes.commentId };
+          return { "data-comment-id": attributes.commentId };
         },
       },
       authorId: {
         default: null,
-        parseHTML: (element: HTMLElement) => element.getAttribute('data-author-id'),
-        renderHTML: (attributes: Record<string, any>) => {
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute("data-author-id"),
+        renderHTML: (attributes: RenderableCommentAttrs) => {
           if (!attributes.authorId) return {};
-          return { 'data-author-id': attributes.authorId };
+          return { "data-author-id": attributes.authorId };
         },
       },
       authorEmail: {
         default: null,
-        parseHTML: (element: HTMLElement) => element.getAttribute('data-author-email'),
-        renderHTML: (attributes: Record<string, any>) => {
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute("data-author-email"),
+        renderHTML: (attributes: RenderableCommentAttrs) => {
           if (!attributes.authorEmail) return {};
-          return { 'data-author-email': attributes.authorEmail };
+          return { "data-author-email": attributes.authorEmail };
         },
       },
       text: {
-        default: '',
-        parseHTML: (element: HTMLElement) => element.getAttribute('data-comment-text'),
-        renderHTML: (attributes: Record<string, any>) => {
+        default: "",
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute("data-comment-text"),
+        renderHTML: (attributes: RenderableCommentAttrs) => {
           if (!attributes.text) return {};
-          return { 'data-comment-text': attributes.text };
+          return { "data-comment-text": attributes.text };
         },
       },
       createdAt: {
         default: null,
-        parseHTML: (element: HTMLElement) => element.getAttribute('data-created-at'),
-        renderHTML: (attributes: Record<string, any>) => {
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute("data-created-at"),
+        renderHTML: (attributes: RenderableCommentAttrs) => {
           if (!attributes.createdAt) return {};
-          return { 'data-created-at': attributes.createdAt };
+          return { "data-created-at": attributes.createdAt };
         },
       },
       resolved: {
         default: false,
-        parseHTML: (element: HTMLElement) => element.getAttribute('data-resolved') === 'true',
-        renderHTML: (attributes: Record<string, any>) => {
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute("data-resolved") === "true",
+        renderHTML: (attributes: RenderableCommentAttrs) => {
           if (!attributes.resolved) return {};
-          return { 'data-resolved': 'true' };
+          return { "data-resolved": "true" };
         },
       },
     };
@@ -78,20 +86,20 @@ export const CommentMark = Mark.create<CommentMarkOptions>({
   parseHTML() {
     return [
       {
-        tag: 'span[data-comment-id]',
+        tag: "span[data-comment-id]",
       },
     ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    const isResolved = HTMLAttributes['data-resolved'] === 'true';
+    const isResolved = HTMLAttributes["data-resolved"] === "true";
     return [
-      'span',
+      "span",
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        class: isResolved ? 'comment-mark comment-resolved' : 'comment-mark',
-        style: isResolved 
-          ? 'background-color: rgba(100, 116, 139, 0.15); border-bottom: 1px dashed #94a3b8;' 
-          : 'background-color: rgba(251, 191, 36, 0.25); border-bottom: 2px solid #fbbf24;',
+        class: isResolved ? "comment-mark comment-resolved" : "comment-mark",
+        style: isResolved
+          ? "background-color: rgba(100, 116, 139, 0.15); border-bottom: 1px dashed #94a3b8;"
+          : "background-color: rgba(251, 191, 36, 0.25); border-bottom: 2px solid #fbbf24;",
       }),
       0,
     ];
@@ -109,7 +117,7 @@ export const CommentMark = Mark.create<CommentMarkOptions>({
         ({ commands }: CommandProps) => {
           return commands.unsetMark(this.name);
         },
-    } as any;
+    } as ReturnType<NonNullable<typeof this.parent>>;
   },
 });
 
