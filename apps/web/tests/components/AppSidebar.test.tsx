@@ -67,6 +67,46 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(screen.getByText("Scientiaiter")).toBeInTheDocument();
   });
 
+  it("restores collapsed desktop shell after returning from mobile viewport", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderSidebar(false);
+
+    await user.click(screen.getByTitle("Свернуть"));
+    expect(document.body.classList.contains("sidebar-collapsed")).toBe(true);
+    expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+
+    rerender(
+      <MemoryRouter
+        initialEntries={["/projects/project-1?tab=articles"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <Routes>
+          <Route path="/projects/:id" element={<AppSidebar mobileViewport />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(document.body.classList.contains("sidebar-collapsed")).toBe(false);
+    expect(screen.getByText("Scientiaiter")).toBeInTheDocument();
+
+    rerender(
+      <MemoryRouter
+        initialEntries={["/projects/project-1?tab=articles"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <Routes>
+          <Route
+            path="/projects/:id"
+            element={<AppSidebar mobileViewport={false} />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(document.body.classList.contains("sidebar-collapsed")).toBe(true);
+    expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+  });
+
   it("removes sidebar-collapsed class on unmount", async () => {
     const user = userEvent.setup();
     const { unmount } = renderSidebar(false);
