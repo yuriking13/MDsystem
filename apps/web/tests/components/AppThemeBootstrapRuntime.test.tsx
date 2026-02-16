@@ -703,6 +703,33 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each(["light", "dark"] as const)(
+    "keeps %s theme while admin guard is resolving",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      adminState.loading = true;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/settings"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(document.documentElement.getAttribute("data-theme")).toBe(
+          persistedTheme,
+        );
+        expect(screen.getByText("Admin Loading")).toBeInTheDocument();
+        expect(screen.queryByText("Admin Login Page")).not.toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
   it("redirects unknown route through root redirect to login when unauthenticated", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
