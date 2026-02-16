@@ -108,6 +108,16 @@ function main() {
         "\n[quality-guards] Tip: in AppLayout/AdminLayout test suites iterate shared matrix constants (`TARGET_VIEWPORT_WIDTHS`, `MOBILE_VIEWPORT_WIDTHS`, etc.) instead of inline numeric arrays.",
       );
     }
+
+    if (
+      allViolations.some(
+        ({ check }) => check.name === "web-responsive-target-config",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: keep `apps/web/tests/config/responsiveSuiteTargets.json` as a unique non-empty array of .ts/.tsx target paths.",
+      );
+    }
   }
 
   process.exit(1);

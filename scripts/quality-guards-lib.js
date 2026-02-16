@@ -102,6 +102,12 @@ const webLayoutTestInlineViewportArrayCheck = {
     "AppLayout/AdminLayout responsive tests should use shared viewport matrix constants instead of inline numeric arrays",
 };
 
+const webResponsiveTargetConfigCheck = {
+  name: "web-responsive-target-config",
+  description:
+    "apps/web/tests/config/responsiveSuiteTargets.json must be valid JSON array of unique non-empty .ts/.tsx paths",
+};
+
 const DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
   "src/lib/responsive.test.ts",
   "tests/components/AppLayout.test.tsx",
@@ -634,6 +640,104 @@ function collectWebLayoutTestInlineViewportArrayViolations(workspaceRoot) {
   return violations;
 }
 
+function collectWebResponsiveTargetConfigViolations(workspaceRoot) {
+  const configPath = path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH);
+  if (!fs.existsSync(configPath)) {
+    return [];
+  }
+
+  const relativeFile = WEB_RESPONSIVE_TARGETS_CONFIG_PATH.replaceAll(
+    path.sep,
+    "/",
+  );
+  let parsedConfig;
+  try {
+    parsedConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  } catch (error) {
+    return [
+      {
+        file: relativeFile,
+        line: 1,
+        snippet: "invalid-json:responsiveSuiteTargets.json",
+      },
+    ];
+  }
+
+  if (!Array.isArray(parsedConfig)) {
+    return [
+      {
+        file: relativeFile,
+        line: 1,
+        snippet: "invalid-config-shape:expected-array",
+      },
+    ];
+  }
+
+  if (parsedConfig.length === 0) {
+    return [
+      {
+        file: relativeFile,
+        line: 1,
+        snippet: "empty-target-list",
+      },
+    ];
+  }
+
+  const violations = [];
+  const seenTargets = new Set();
+  for (let index = 0; index < parsedConfig.length; index += 1) {
+    const target = parsedConfig[index];
+    if (typeof target !== "string") {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: `invalid-target-type:index-${index + 1}`,
+      });
+      continue;
+    }
+
+    const trimmedTarget = target.trim();
+    if (trimmedTarget.length === 0) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: `empty-target:index-${index + 1}`,
+      });
+      continue;
+    }
+
+    if (trimmedTarget !== target) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: `untrimmed-target:${target}`,
+      });
+    }
+
+    if (!trimmedTarget.endsWith(".ts") && !trimmedTarget.endsWith(".tsx")) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: `invalid-target-extension:${trimmedTarget}`,
+      });
+      continue;
+    }
+
+    if (seenTargets.has(trimmedTarget)) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: `duplicate-config-target:${trimmedTarget}`,
+      });
+      continue;
+    }
+
+    seenTargets.add(trimmedTarget);
+  }
+
+  return violations;
+}
+
 function cleanupWebJsMirrors(workspaceRoot) {
   const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
@@ -742,6 +846,15 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webResponsiveTargetConfigViolations =
+    collectWebResponsiveTargetConfigViolations(workspaceRoot);
+  if (webResponsiveTargetConfigViolations.length > 0) {
+    allViolations.push({
+      check: webResponsiveTargetConfigCheck,
+      violations: webResponsiveTargetConfigViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
@@ -756,6 +869,7 @@ module.exports = {
   webLayoutTestViewportLiteralCheck,
   webLayoutTestBreakpointLiteralCheck,
   webLayoutTestInlineViewportArrayCheck,
+  webResponsiveTargetConfigCheck,
   DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
   WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
   readRequiredWebResponsiveTestTargets,

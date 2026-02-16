@@ -501,3 +501,23 @@ test("quality-guards check mode reports responsive suite tip when configured tar
     /Tip: keep `apps\/web\/package\.json` test:responsive in sync with required responsive suites and ensure every target from `apps\/web\/tests\/config\/responsiveSuiteTargets\.json` exists/,
   );
 });
+
+test("quality-guards check mode reports responsive target config remediation tip", () => {
+  const workspaceRoot = createTempWorkspace();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(["tests/config/bad-target.js"], null, 2),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep `apps\/web\/tests\/config\/responsiveSuiteTargets\.json` as a unique non-empty array of \.ts\/\.tsx target paths/,
+  );
+});

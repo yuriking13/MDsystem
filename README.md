@@ -104,6 +104,7 @@ Canonical ordered target list for `apps/web/package.json` `test:responsive` is s
 - `apps/web/tests/config/responsiveSuiteTargets.json`
 
 Every target listed in this file must exist as a real test file in `apps/web`.
+The list must remain a unique, non-empty array of `.ts`/`.tsx` file paths.
 
 Quick run for this focused suite:
 

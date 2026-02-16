@@ -1076,3 +1076,87 @@ test("runQualityGuards accepts shared viewport matrix constants in layout respon
   );
   assert.equal(layoutInlineArrayViolation, undefined);
 });
+
+test("runQualityGuards reports invalid responsive target config entries", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(
+      [
+        "tests/config/one.test.ts",
+        "tests/config/one.test.ts",
+        "tests/config/invalid.test.js",
+        "",
+        "  tests/config/trimmed.test.ts",
+        123,
+      ],
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const configViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-target-config",
+  );
+  assert.ok(configViolation);
+  assert.ok(
+    configViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "duplicate-config-target:tests/config/one.test.ts",
+      ),
+    ),
+  );
+  assert.ok(
+    configViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "invalid-target-extension:tests/config/invalid.test.js",
+      ),
+    ),
+  );
+  assert.ok(
+    configViolation.violations.some((violation) =>
+      violation.snippet.includes("empty-target:index-4"),
+    ),
+  );
+  assert.ok(
+    configViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "untrimmed-target:  tests/config/trimmed.test.ts",
+      ),
+    ),
+  );
+  assert.ok(
+    configViolation.violations.some((violation) =>
+      violation.snippet.includes("invalid-target-type:index-6"),
+    ),
+  );
+});
+
+test("runQualityGuards accepts valid responsive target config entries", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(
+      ["tests/config/one.test.ts", "tests/config/two.test.tsx"],
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const configViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-target-config",
+  );
+  assert.equal(configViolation, undefined);
+});
