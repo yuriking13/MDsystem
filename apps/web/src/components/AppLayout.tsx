@@ -234,7 +234,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             className="app-sidebar-overlay"
             type="button"
             onClick={closeMobileSidebar}
-            aria-label="Закрыть навигацию"
+            aria-label="Закрыть меню навигации"
           />
         )}
         <main className={`app-main${isFixedLayout ? " app-main-fixed" : ""}`}>

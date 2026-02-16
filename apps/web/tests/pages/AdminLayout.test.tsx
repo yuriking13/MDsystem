@@ -119,6 +119,26 @@ describe("AdminLayout responsive sidebar behavior", () => {
     expect(toggleButton).toHaveAttribute("aria-label", "Открыть навигацию");
   });
 
+  it("closes mobile sidebar when clicking overlay", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderAdminLayout();
+
+    const toggleButton = screen.getByLabelText("Открыть навигацию");
+    await user.click(toggleButton);
+    expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+
+    await user.click(screen.getByLabelText("Закрыть меню навигации"));
+
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+      expect(toggleButton).toHaveAttribute("aria-label", "Открыть навигацию");
+      expect(screen.queryByLabelText("Закрыть меню навигации")).toBeNull();
+    });
+  });
+
   it.each([
     [360, true],
     [390, true],
