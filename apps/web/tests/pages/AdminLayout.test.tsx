@@ -428,4 +428,33 @@ describe("AdminLayout responsive sidebar behavior", () => {
       expect(mobileTitle?.textContent).toBe(expectedMobileTitle);
     },
   );
+
+  it.each([
+    ["/admin", "Admin dashboard", "Дашборд"],
+    ["/admin/users", "Users page", "Пользователи"],
+    ["/admin/projects", "Projects page", "Проекты"],
+    ["/admin/articles", "Articles page", "Статьи"],
+    ["/admin/activity", "Activity page", "Активность"],
+    ["/admin/sessions", "Sessions page", "Сессии"],
+    ["/admin/jobs", "Jobs page", "Задачи"],
+    ["/admin/errors", "Errors page", "Ошибки"],
+    ["/admin/audit", "Audit page", "Аудит"],
+    ["/admin/system", "System page", "Система"],
+    ["/admin/settings", "Settings page", "Настройки"],
+  ])(
+    "keeps mobile topbar title consistent for %s across target mobile widths",
+    (route, pageLabel, expectedMobileTitle) => {
+      for (const width of [360, 390, 768]) {
+        setViewportWidth(width);
+        const { unmount } = renderAdminLayout(route);
+
+        expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        const mobileTitle = document.querySelector(".admin-mobile-title");
+        expect(mobileTitle).not.toBeNull();
+        expect(mobileTitle?.textContent).toBe(expectedMobileTitle);
+
+        unmount();
+      }
+    },
+  );
 });
