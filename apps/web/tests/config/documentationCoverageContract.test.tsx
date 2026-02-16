@@ -171,4 +171,51 @@ describe("documentation functional coverage contract", () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it("keeps every submenu topic with actionable content depth", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const sections = [
+      "Обзор платформы",
+      "База статей",
+      "Документы",
+      "Файлы",
+      "Статистика",
+      "Граф цитирований",
+      "Команда",
+      "Настройки проекта",
+      "API ключи",
+    ];
+
+    for (const section of sections) {
+      await user.click(screen.getByRole("button", { name: section }));
+
+      const topicNames = screen
+        .getAllByRole("tab")
+        .map((tab) => tab.textContent?.trim())
+        .filter((name): name is string => Boolean(name));
+
+      expect(topicNames.length).toBeGreaterThanOrEqual(3);
+
+      for (const topicName of topicNames) {
+        await user.click(screen.getByRole("tab", { name: topicName }));
+
+        expect(
+          screen.getByRole("heading", { level: 3, name: topicName }),
+        ).toBeInTheDocument();
+
+        const summary = document.querySelector(".docs-topic-summary");
+        expect(summary?.textContent?.trim().length ?? 0).toBeGreaterThan(20);
+
+        const topicContent = document.querySelector(".docs-topic-content");
+        expect(topicContent?.textContent?.trim().length ?? 0).toBeGreaterThan(
+          80,
+        );
+
+        const listItems = topicContent?.querySelectorAll("li") ?? [];
+        expect(listItems.length).toBeGreaterThanOrEqual(2);
+      }
+    }
+  });
 });
