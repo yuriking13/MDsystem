@@ -327,6 +327,64 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it("renders projects page inside authenticated app layout", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/projects"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Projects Page")).toBeInTheDocument();
+    });
+  });
+
+  it("renders login route when unauthenticated", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/login"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
+  it("keeps login route publicly accessible even with auth token", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/login"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
   it("keeps register route publicly accessible regardless of auth token", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
@@ -601,4 +659,35 @@ describe("App theme bootstrap runtime", () => {
       expect(screen.getByText("Admin Projects Page")).toBeInTheDocument();
     });
   });
+
+  it.each([
+    ["/admin/articles", "Admin Articles Page"],
+    ["/admin/activity", "Admin Activity Page"],
+    ["/admin/sessions", "Admin Sessions Page"],
+    ["/admin/jobs", "Admin Jobs Page"],
+    ["/admin/errors", "Admin Errors Page"],
+    ["/admin/audit", "Admin Audit Page"],
+    ["/admin/system", "Admin System Page"],
+  ] as const)(
+    "renders %s under admin layout",
+    async (route, expectedPageText) => {
+      const storage = createThemeStorage("dark");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = null;
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+    },
+  );
 });
