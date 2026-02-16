@@ -13,6 +13,15 @@ import {
   normalizePagination,
 } from "./helpers.js";
 
+type AdminJwtUser = {
+  sub: string;
+  email?: string;
+};
+
+function getAdminUser(req: FastifyRequest): AdminJwtUser {
+  return req.user as AdminJwtUser;
+}
+
 // Middleware to verify admin access
 async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
   try {
@@ -21,7 +30,7 @@ async function requireAdmin(req: FastifyRequest, reply: FastifyReply) {
     return reply.code(401).send({ error: "Unauthorized" });
   }
 
-  const userId = (req.user as any).sub;
+  const userId = getAdminUser(req).sub;
   const result = await pool.query("SELECT is_admin FROM users WHERE id = $1", [
     userId,
   ]);
@@ -37,7 +46,7 @@ async function logAdminAction(
   action: string,
   targetType: string | null,
   targetId: string | null,
-  details: any,
+  details: Record<string, unknown>,
   ipAddress: string | null,
 ) {
   try {
@@ -70,7 +79,7 @@ async function logSystemError(
   userId: string | null,
   requestPath: string | null,
   requestMethod: string | null,
-  requestBody: any,
+  requestBody: unknown,
   ipAddress: string | null,
 ) {
   try {
@@ -170,8 +179,7 @@ export async function adminRoutes(app: FastifyInstance) {
       const token = app.jwt.sign({
         sub: user.id,
         email: user.email,
-        isAdmin: true,
-      } as any);
+      });
 
       return {
         user: { id: user.id, email: user.email, isAdmin: true },
@@ -181,7 +189,7 @@ export async function adminRoutes(app: FastifyInstance) {
   );
 
   // Verify admin status
-  app.get("/api/admin/me", { preHandler: [requireAdmin] }, async (req: any) => {
+  app.get("/api/admin/me", { preHandler: [requireAdmin] }, async (req) => {
     return {
       user: {
         id: req.user.sub,
@@ -195,7 +203,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/generate-token",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const token = generateAdminToken();
       const tokenHash = hashAdminToken(token);
 
@@ -253,40 +261,37 @@ export async function adminRoutes(app: FastifyInstance) {
   });
 
   // ===== Users Management =====
-  app.get(
-    "/api/admin/users",
-    { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const query = z
-        .object({
-          page: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "1")),
-          limit: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "20")),
-          search: z.string().optional(),
-        })
-        .parse(req.query);
+  app.get("/api/admin/users", { preHandler: [requireAdmin] }, async (req) => {
+    const query = z
+      .object({
+        page: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "1")),
+        limit: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "20")),
+        search: z.string().optional(),
+      })
+      .parse(req.query);
 
-      const { page, limit, offset } = normalizePagination(
-        query.page,
-        query.limit,
-        20,
-      );
-      let whereClause = "";
-      const params: any[] = [];
+    const { page, limit, offset } = normalizePagination(
+      query.page,
+      query.limit,
+      20,
+    );
+    let whereClause = "";
+    const params: unknown[] = [];
 
-      if (query.search) {
-        whereClause = "WHERE email ILIKE $1";
-        params.push(`%${query.search}%`);
-      }
+    if (query.search) {
+      whereClause = "WHERE email ILIKE $1";
+      params.push(`%${query.search}%`);
+    }
 
-      const [users, total] = await Promise.all([
-        pool.query(
-          `
+    const [users, total] = await Promise.all([
+      pool.query(
+        `
         SELECT 
           u.id, u.email, u.created_at, u.last_login_at, u.is_admin,
           COUNT(DISTINCT p.id) as projects_count,
@@ -301,26 +306,27 @@ export async function adminRoutes(app: FastifyInstance) {
         ORDER BY u.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `,
-          params,
-        ),
-        pool.query(`SELECT COUNT(*) FROM users ${whereClause}`, params),
-      ]);
+        params,
+      ),
+      pool.query(`SELECT COUNT(*) FROM users ${whereClause}`, params),
+    ]);
 
-      return {
-        users: users.rows,
-        total: parseInt(total.rows[0].count),
-        page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
-      };
-    },
-  );
+    return {
+      users: users.rows,
+      total: parseInt(total.rows[0].count),
+      page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
+    };
+  });
 
   // Get single user details
   app.get(
     "/api/admin/users/:userId",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { userId } = req.params;
+    async (req) => {
+      const { userId } = z
+        .object({ userId: z.string().uuid() })
+        .parse(req.params);
 
       const [user, projects, activity, sessions] = await Promise.all([
         pool.query(
@@ -387,8 +393,10 @@ export async function adminRoutes(app: FastifyInstance) {
   app.patch(
     "/api/admin/users/:userId/admin",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { userId } = req.params;
+    async (req) => {
+      const { userId } = z
+        .object({ userId: z.string().uuid() })
+        .parse(req.params);
       const body = z.object({ isAdmin: z.boolean() }).parse(req.body);
 
       await pool.query(`UPDATE users SET is_admin = $1 WHERE id = $2`, [
@@ -412,57 +420,53 @@ export async function adminRoutes(app: FastifyInstance) {
   // ===== Activity Tracking =====
 
   // Track user activity (called from frontend)
-  app.post(
-    "/api/activity/track",
-    { preHandler: [app.auth] },
-    async (req: any) => {
-      const body = z
-        .object({
-          sessionId: z.string().uuid(),
-          actionType: z.enum([
-            "page_view",
-            "api_call",
-            "document_edit",
-            "search",
-            "login",
-            "logout",
-          ]),
-          actionDetail: z.any().optional(),
-          durationSeconds: z.number().optional(),
-        })
-        .parse(req.body);
+  app.post("/api/activity/track", { preHandler: [app.auth] }, async (req) => {
+    const body = z
+      .object({
+        sessionId: z.string().uuid(),
+        actionType: z.enum([
+          "page_view",
+          "api_call",
+          "document_edit",
+          "search",
+          "login",
+          "logout",
+        ]),
+        actionDetail: z.any().optional(),
+        durationSeconds: z.number().optional(),
+      })
+      .parse(req.body);
 
-      const userId = req.user.sub;
+    const userId = req.user.sub;
 
-      await pool.query(
-        `INSERT INTO user_activity (user_id, session_id, action_type, action_detail, ip_address, user_agent, duration_seconds)
+    await pool.query(
+      `INSERT INTO user_activity (user_id, session_id, action_type, action_detail, ip_address, user_agent, duration_seconds)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-        [
-          userId,
-          body.sessionId,
-          body.actionType,
-          JSON.stringify(body.actionDetail || {}),
-          req.ip,
-          req.headers["user-agent"],
-          body.durationSeconds || 0,
-        ],
-      );
+      [
+        userId,
+        body.sessionId,
+        body.actionType,
+        JSON.stringify(body.actionDetail || {}),
+        req.ip,
+        req.headers["user-agent"],
+        body.durationSeconds || 0,
+      ],
+    );
 
-      // Update session last activity
-      await pool.query(
-        `UPDATE user_sessions SET last_activity_at = NOW() WHERE id = $1 AND user_id = $2`,
-        [body.sessionId, userId],
-      );
+    // Update session last activity
+    await pool.query(
+      `UPDATE user_sessions SET last_activity_at = NOW() WHERE id = $1 AND user_id = $2`,
+      [body.sessionId, userId],
+    );
 
-      return { ok: true };
-    },
-  );
+    return { ok: true };
+  });
 
   // Start session
   app.post(
     "/api/activity/session/start",
     { preHandler: [app.auth] },
-    async (req: any) => {
+    async (req) => {
       const userId = req.user.sub;
 
       const result = await pool.query(
@@ -480,7 +484,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/activity/session/end",
     { preHandler: [app.auth] },
-    async (req: any) => {
+    async (req) => {
       const body = z
         .object({
           sessionId: z.string().uuid(),
@@ -502,7 +506,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/activity",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const query = z
         .object({
           userId: z.string().uuid().optional(),
@@ -526,7 +530,7 @@ export async function adminRoutes(app: FastifyInstance) {
         50,
       );
       const conditions: string[] = [];
-      const params: any[] = [];
+      const params: unknown[] = [];
       let paramIdx = 1;
 
       if (query.userId) {
@@ -580,7 +584,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/activity/calendar",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const query = z
         .object({
           userId: z.string().uuid().optional(),
@@ -593,7 +597,10 @@ export async function adminRoutes(app: FastifyInstance) {
       const endDate = new Date(query.year, query.month, 0);
 
       let userFilter = "";
-      const params: any[] = [startDate.toISOString(), endDate.toISOString()];
+      const params: unknown[] = [
+        startDate.toISOString(),
+        endDate.toISOString(),
+      ];
 
       if (query.userId) {
         userFilter = "AND user_id = $3";
@@ -624,8 +631,8 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/activity/daily/:date",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { date } = req.params;
+    async (req) => {
+      const { date } = z.object({ date: z.string() }).parse(req.params);
       const query = z
         .object({
           userId: z.string().uuid().optional(),
@@ -633,7 +640,7 @@ export async function adminRoutes(app: FastifyInstance) {
         .parse(req.query);
 
       let userFilter = "";
-      const params: any[] = [date];
+      const params: unknown[] = [date];
 
       if (query.userId) {
         userFilter = "AND a.user_id = $2";
@@ -664,52 +671,46 @@ export async function adminRoutes(app: FastifyInstance) {
   );
 
   // ===== Error Logs =====
-  app.get(
-    "/api/admin/errors",
-    { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const query = z
-        .object({
-          resolved: z
-            .enum(["true", "false", "all"])
-            .optional()
-            .default("false"),
-          errorType: z.string().optional(),
-          page: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "1")),
-          limit: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "50")),
-        })
-        .parse(req.query);
+  app.get("/api/admin/errors", { preHandler: [requireAdmin] }, async (req) => {
+    const query = z
+      .object({
+        resolved: z.enum(["true", "false", "all"]).optional().default("false"),
+        errorType: z.string().optional(),
+        page: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "1")),
+        limit: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "50")),
+      })
+      .parse(req.query);
 
-      const { page, limit, offset } = normalizePagination(
-        query.page,
-        query.limit,
-        50,
-      );
-      const conditions: string[] = [];
-      const params: any[] = [];
-      let paramIdx = 1;
+    const { page, limit, offset } = normalizePagination(
+      query.page,
+      query.limit,
+      50,
+    );
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    let paramIdx = 1;
 
-      if (query.resolved !== "all") {
-        conditions.push(`resolved = $${paramIdx++}`);
-        params.push(query.resolved === "true");
-      }
-      if (query.errorType) {
-        conditions.push(`error_type = $${paramIdx++}`);
-        params.push(query.errorType);
-      }
+    if (query.resolved !== "all") {
+      conditions.push(`resolved = $${paramIdx++}`);
+      params.push(query.resolved === "true");
+    }
+    if (query.errorType) {
+      conditions.push(`error_type = $${paramIdx++}`);
+      params.push(query.errorType);
+    }
 
-      const whereClause =
-        conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-      const [errors, total, types] = await Promise.all([
-        pool.query(
-          `
+    const [errors, total, types] = await Promise.all([
+      pool.query(
+        `
         SELECT e.*, u.email as user_email, r.email as resolved_by_email
         FROM system_error_logs e
         LEFT JOIN users u ON u.id = e.user_id
@@ -718,32 +719,31 @@ export async function adminRoutes(app: FastifyInstance) {
         ORDER BY e.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `,
-          params,
-        ),
-        pool.query(
-          `SELECT COUNT(*) FROM system_error_logs ${whereClause}`,
-          params,
-        ),
-        pool.query(
-          `SELECT DISTINCT error_type FROM system_error_logs ORDER BY error_type`,
-        ),
-      ]);
+        params,
+      ),
+      pool.query(
+        `SELECT COUNT(*) FROM system_error_logs ${whereClause}`,
+        params,
+      ),
+      pool.query(
+        `SELECT DISTINCT error_type FROM system_error_logs ORDER BY error_type`,
+      ),
+    ]);
 
-      return {
-        errors: errors.rows,
-        total: parseInt(total.rows[0].count),
-        page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
-        errorTypes: types.rows.map((r) => r.error_type),
-      };
-    },
-  );
+    return {
+      errors: errors.rows,
+      total: parseInt(total.rows[0].count),
+      page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
+      errorTypes: types.rows.map((r) => r.error_type),
+    };
+  });
 
   // Mark error as resolved
   app.patch(
     "/api/admin/errors/:errorId/resolve",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const { errorId } = z
         .object({ errorId: z.string().uuid() })
         .parse(req.params);
@@ -811,49 +811,46 @@ export async function adminRoutes(app: FastifyInstance) {
   );
 
   // ===== Audit Log =====
-  app.get(
-    "/api/admin/audit",
-    { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const query = z
-        .object({
-          adminId: z.string().uuid().optional(),
-          action: z.string().optional(),
-          page: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "1")),
-          limit: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "50")),
-        })
-        .parse(req.query);
+  app.get("/api/admin/audit", { preHandler: [requireAdmin] }, async (req) => {
+    const query = z
+      .object({
+        adminId: z.string().uuid().optional(),
+        action: z.string().optional(),
+        page: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "1")),
+        limit: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "50")),
+      })
+      .parse(req.query);
 
-      const { page, limit, offset } = normalizePagination(
-        query.page,
-        query.limit,
-        50,
-      );
-      const conditions: string[] = [];
-      const params: any[] = [];
-      let paramIdx = 1;
+    const { page, limit, offset } = normalizePagination(
+      query.page,
+      query.limit,
+      50,
+    );
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    let paramIdx = 1;
 
-      if (query.adminId) {
-        conditions.push(`al.admin_id = $${paramIdx++}`);
-        params.push(query.adminId);
-      }
-      if (query.action) {
-        conditions.push(`al.action ILIKE $${paramIdx++}`);
-        params.push(`%${query.action}%`);
-      }
+    if (query.adminId) {
+      conditions.push(`al.admin_id = $${paramIdx++}`);
+      params.push(query.adminId);
+    }
+    if (query.action) {
+      conditions.push(`al.action ILIKE $${paramIdx++}`);
+      params.push(`%${query.action}%`);
+    }
 
-      const whereClause =
-        conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-      const [logs, total] = await Promise.all([
-        pool.query(
-          `
+    const [logs, total] = await Promise.all([
+      pool.query(
+        `
         SELECT al.*, u.email as admin_email
         FROM admin_audit_log al
         JOIN users u ON u.id = al.admin_id
@@ -861,22 +858,21 @@ export async function adminRoutes(app: FastifyInstance) {
         ORDER BY al.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `,
-          params,
-        ),
-        pool.query(
-          `SELECT COUNT(*) FROM admin_audit_log al ${whereClause}`,
-          params,
-        ),
-      ]);
+        params,
+      ),
+      pool.query(
+        `SELECT COUNT(*) FROM admin_audit_log al ${whereClause}`,
+        params,
+      ),
+    ]);
 
-      return {
-        logs: logs.rows,
-        total: parseInt(total.rows[0].count),
-        page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
-      };
-    },
-  );
+    return {
+      logs: logs.rows,
+      total: parseInt(total.rows[0].count),
+      page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
+    };
+  });
 
   // ===== System Overview (minimal file access) =====
   app.get(
@@ -1004,7 +1000,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.patch(
     "/api/admin/users/:userId/block",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const { userId } = z
         .object({ userId: z.string().uuid() })
         .parse(req.params);
@@ -1043,7 +1039,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.delete(
     "/api/admin/users/:userId",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const { userId } = z
         .object({ userId: z.string().uuid() })
         .parse(req.params);
@@ -1120,8 +1116,10 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/users/:userId/reset-password",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { userId } = req.params;
+    async (req) => {
+      const { userId } = z
+        .object({ userId: z.string().uuid() })
+        .parse(req.params);
       const argon2 = await import("argon2");
 
       // Generate temporary password
@@ -1154,8 +1152,10 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/users/:userId/projects",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { userId } = req.params;
+    async (req) => {
+      const { userId } = z
+        .object({ userId: z.string().uuid() })
+        .parse(req.params);
       const query = z
         .object({
           page: z
@@ -1211,7 +1211,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/export/users",
     { preHandler: [requireAdmin] },
-    async (req: any, reply) => {
+    async (req, reply) => {
       const users = await pool.query(`
       SELECT 
         u.id, u.email, u.created_at, u.last_login_at, u.is_admin, u.is_blocked,
@@ -1251,7 +1251,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/export/activity",
     { preHandler: [requireAdmin] },
-    async (req: any, reply) => {
+    async (req, reply) => {
       const query = z
         .object({
           startDate: z.string().optional(),
@@ -1260,7 +1260,7 @@ export async function adminRoutes(app: FastifyInstance) {
         .parse(req.query);
 
       let whereClause = "";
-      const params: any[] = [];
+      const params: unknown[] = [];
 
       if (query.startDate) {
         params.push(query.startDate);
@@ -1312,7 +1312,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/export/errors",
     { preHandler: [requireAdmin] },
-    async (req: any, reply) => {
+    async (req, reply) => {
       const errors = await pool.query(`
       SELECT e.id, e.error_type, e.error_message, e.created_at, e.resolved, 
              e.request_path, e.request_method, u.email as user_email
@@ -1399,7 +1399,7 @@ export async function adminRoutes(app: FastifyInstance) {
       let userId = null;
       try {
         await req.jwtVerify();
-        userId = (req.user as any)?.sub;
+        userId = getAdminUser(req).sub;
       } catch {
         // Ignore auth errors - user might not be logged in
       }
@@ -1423,7 +1423,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/errors/bulk-resolve",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const body = z
         .object({
           errorIds: z.array(z.string().uuid()),
@@ -1472,8 +1472,10 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/sessions/:sessionId/terminate",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { sessionId } = req.params;
+    async (req) => {
+      const { sessionId } = z
+        .object({ sessionId: z.string().uuid() })
+        .parse(req.params);
 
       await pool.query(
         `UPDATE user_sessions SET is_active = false, ended_at = NOW() WHERE id = $1`,
@@ -1497,7 +1499,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/projects",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const query = z
         .object({
           page: z
@@ -1528,7 +1530,7 @@ export async function adminRoutes(app: FastifyInstance) {
         20,
       );
       const conditions: string[] = [];
-      const params: any[] = [];
+      const params: unknown[] = [];
       let paramIdx = 1;
 
       if (query.search) {
@@ -1594,8 +1596,10 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/projects/:projectId",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { projectId } = req.params;
+    async (req) => {
+      const { projectId } = z
+        .object({ projectId: z.string().uuid() })
+        .parse(req.params);
 
       const [project, members, recentActivity, statistics] = await Promise.all([
         pool.query(
@@ -1655,8 +1659,10 @@ export async function adminRoutes(app: FastifyInstance) {
   app.delete(
     "/api/admin/projects/:projectId",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { projectId } = req.params;
+    async (req) => {
+      const { projectId } = z
+        .object({ projectId: z.string().uuid() })
+        .parse(req.params);
       z.object({ confirm: z.literal(true) }).parse(req.body);
 
       const project = await pool.query(
@@ -1712,49 +1718,46 @@ export async function adminRoutes(app: FastifyInstance) {
   );
 
   // ===== Background Jobs Management =====
-  app.get(
-    "/api/admin/jobs",
-    { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const query = z
-        .object({
-          status: z
-            .enum([
-              "pending",
-              "running",
-              "completed",
-              "failed",
-              "cancelled",
-              "all",
-            ])
-            .optional(),
-          page: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "1")),
-          limit: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "50")),
-        })
-        .parse(req.query);
+  app.get("/api/admin/jobs", { preHandler: [requireAdmin] }, async (req) => {
+    const query = z
+      .object({
+        status: z
+          .enum([
+            "pending",
+            "running",
+            "completed",
+            "failed",
+            "cancelled",
+            "all",
+          ])
+          .optional(),
+        page: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "1")),
+        limit: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "50")),
+      })
+      .parse(req.query);
 
-      const { page, limit, offset } = normalizePagination(
-        query.page,
-        query.limit,
-        50,
-      );
-      let whereClause = "";
-      const params: any[] = [];
+    const { page, limit, offset } = normalizePagination(
+      query.page,
+      query.limit,
+      50,
+    );
+    let whereClause = "";
+    const params: unknown[] = [];
 
-      if (query.status && query.status !== "all") {
-        whereClause = "WHERE j.status = $1";
-        params.push(query.status);
-      }
+    if (query.status && query.status !== "all") {
+      whereClause = "WHERE j.status = $1";
+      params.push(query.status);
+    }
 
-      const [jobs, total, summary] = await Promise.all([
-        pool.query(
-          `
+    const [jobs, total, summary] = await Promise.all([
+      pool.query(
+        `
         SELECT j.*, p.name as project_name, u.email as owner_email
         FROM graph_fetch_jobs j
         LEFT JOIN projects p ON p.id = j.project_id
@@ -1763,36 +1766,37 @@ export async function adminRoutes(app: FastifyInstance) {
         ORDER BY j.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `,
-          params,
-        ),
-        pool.query(
-          `SELECT COUNT(*) FROM graph_fetch_jobs j ${whereClause}`,
-          params,
-        ),
-        pool.query(`
+        params,
+      ),
+      pool.query(
+        `SELECT COUNT(*) FROM graph_fetch_jobs j ${whereClause}`,
+        params,
+      ),
+      pool.query(`
         SELECT status, COUNT(*)::int as count
         FROM graph_fetch_jobs
         WHERE created_at >= NOW() - INTERVAL '7 days'
         GROUP BY status
       `),
-      ]);
+    ]);
 
-      return {
-        jobs: jobs.rows,
-        total: parseInt(total.rows[0].count),
-        page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
-        summary: summary.rows,
-      };
-    },
-  );
+    return {
+      jobs: jobs.rows,
+      total: parseInt(total.rows[0].count),
+      page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
+      summary: summary.rows,
+    };
+  });
 
   // Cancel job
   app.post(
     "/api/admin/jobs/:jobId/cancel",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { jobId } = req.params;
+    async (req) => {
+      const { jobId } = z
+        .object({ jobId: z.string().uuid() })
+        .parse(req.params);
 
       const result = await pool.query(
         `UPDATE graph_fetch_jobs 
@@ -1823,8 +1827,10 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/jobs/:jobId/retry",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const { jobId } = req.params;
+    async (req) => {
+      const { jobId } = z
+        .object({ jobId: z.string().uuid() })
+        .parse(req.params);
 
       const result = await pool.query(
         `UPDATE graph_fetch_jobs 
@@ -1848,7 +1854,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/articles",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const query = z
         .object({
           page: z
@@ -1871,7 +1877,7 @@ export async function adminRoutes(app: FastifyInstance) {
         50,
       );
       const conditions: string[] = [];
-      const params: any[] = [];
+      const params: unknown[] = [];
       let paramIdx = 1;
 
       if (query.search) {
@@ -1940,7 +1946,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.delete(
     "/api/admin/articles/orphans",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       z.object({ confirm: z.literal(true) }).parse(req.body);
 
       const result = await pool.query(`
@@ -1964,51 +1970,48 @@ export async function adminRoutes(app: FastifyInstance) {
   );
 
   // ===== Storage Management =====
-  app.get(
-    "/api/admin/storage",
-    { preHandler: [requireAdmin] },
-    async (req: any) => {
-      const query = z
-        .object({
-          page: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "1")),
-          limit: z
-            .string()
-            .optional()
-            .transform((v) => parseInt(v || "50")),
-          category: z.string().optional(),
-          projectId: z.string().uuid().optional(),
-        })
-        .parse(req.query);
+  app.get("/api/admin/storage", { preHandler: [requireAdmin] }, async (req) => {
+    const query = z
+      .object({
+        page: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "1")),
+        limit: z
+          .string()
+          .optional()
+          .transform((v) => parseInt(v || "50")),
+        category: z.string().optional(),
+        projectId: z.string().uuid().optional(),
+      })
+      .parse(req.query);
 
-      const { page, limit, offset } = normalizePagination(
-        query.page,
-        query.limit,
-        50,
-      );
-      const conditions: string[] = [];
-      const params: any[] = [];
-      let paramIdx = 1;
+    const { page, limit, offset } = normalizePagination(
+      query.page,
+      query.limit,
+      50,
+    );
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+    let paramIdx = 1;
 
-      if (query.category) {
-        conditions.push(`pf.category = $${paramIdx}`);
-        params.push(query.category);
-        paramIdx++;
-      }
-      if (query.projectId) {
-        conditions.push(`pf.project_id = $${paramIdx}`);
-        params.push(query.projectId);
-        paramIdx++;
-      }
+    if (query.category) {
+      conditions.push(`pf.category = $${paramIdx}`);
+      params.push(query.category);
+      paramIdx++;
+    }
+    if (query.projectId) {
+      conditions.push(`pf.project_id = $${paramIdx}`);
+      params.push(query.projectId);
+      paramIdx++;
+    }
 
-      const whereClause =
-        conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+    const whereClause =
+      conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-      const [files, total, summary] = await Promise.all([
-        pool.query(
-          `
+    const [files, total, summary] = await Promise.all([
+      pool.query(
+        `
         SELECT pf.*, p.name as project_name, u.email as uploader_email
         FROM project_files pf
         LEFT JOIN projects p ON p.id = pf.project_id
@@ -2017,13 +2020,13 @@ export async function adminRoutes(app: FastifyInstance) {
         ORDER BY pf.created_at DESC
         LIMIT ${limit} OFFSET ${offset}
       `,
-          params,
-        ),
-        pool.query(
-          `SELECT COUNT(*) FROM project_files pf ${whereClause}`,
-          params,
-        ),
-        pool.query(`
+        params,
+      ),
+      pool.query(
+        `SELECT COUNT(*) FROM project_files pf ${whereClause}`,
+        params,
+      ),
+      pool.query(`
         SELECT 
           category,
           COUNT(*)::int as count,
@@ -2032,17 +2035,16 @@ export async function adminRoutes(app: FastifyInstance) {
         GROUP BY category
         ORDER BY total_size DESC
       `),
-      ]);
+    ]);
 
-      return {
-        files: files.rows,
-        total: parseInt(total.rows[0].count),
-        page,
-        totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
-        summary: summary.rows,
-      };
-    },
-  );
+    return {
+      files: files.rows,
+      total: parseInt(total.rows[0].count),
+      page,
+      totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
+      summary: summary.rows,
+    };
+  });
 
   // ===== System Health Extended =====
   app.get("/api/admin/health", { preHandler: [requireAdmin] }, async () => {
@@ -2092,7 +2094,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/users/bulk-block",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const body = z
         .object({
           userIds: z.array(z.string().uuid()),
@@ -2227,7 +2229,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/cleanup/expired-cache",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const result = await pool.query(`
       DELETE FROM graph_cache WHERE expires_at < NOW() RETURNING id
     `);
@@ -2248,7 +2250,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/cleanup/old-sessions",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const body = z
         .object({
           olderThanDays: z.number().min(1).max(365).default(30),
@@ -2283,7 +2285,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/cleanup/old-activity",
     { preHandler: [requireAdmin] },
-    async (req: any) => {
+    async (req) => {
       const body = z
         .object({
           olderThanDays: z.number().min(30).max(365).default(90),
