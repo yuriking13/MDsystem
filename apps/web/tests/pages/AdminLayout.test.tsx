@@ -204,6 +204,18 @@ describe("AdminLayout responsive sidebar behavior", () => {
           document.documentElement.classList.contains("layout-fixed"),
         ).toBe(false);
         expect(document.body.classList.contains("layout-fixed")).toBe(false);
+        const overlayButton = screen.queryByRole("button", {
+          name: "Закрыть меню навигации",
+        });
+        if (shouldOpenOnToggle) {
+          expect(overlayButton).toBeInTheDocument();
+          expect(overlayButton).toHaveAttribute(
+            "aria-controls",
+            "admin-primary-sidebar",
+          );
+        } else {
+          expect(overlayButton).not.toBeInTheDocument();
+        }
       });
     },
   );
