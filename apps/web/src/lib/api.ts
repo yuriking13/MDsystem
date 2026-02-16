@@ -455,7 +455,19 @@ export type Article = {
   url: string;
   source: string;
   has_stats: boolean;
-  stats_json: any;
+  stats_json: {
+    methods?: string[];
+    sampleSize?: number;
+    pValues?: Array<string | number>;
+    ai?: {
+      stats?: Array<{
+        text?: string;
+        significance?: string;
+        type?: string;
+      }>;
+    };
+    [key: string]: unknown;
+  } | null;
   stats_quality: number; // 0-3, качество статистики по p-value
   publication_types: string[] | null;
   fetched_at: string; // Дата обращения к источнику

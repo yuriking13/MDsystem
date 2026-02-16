@@ -24,12 +24,21 @@ export function toArticleData(article: Article): ArticleData {
   const source = sourceMap[article.source?.toLowerCase()] || "pubmed";
 
   // Extract stats info
+  const statisticalMethods = Array.isArray(article.stats_json?.methods)
+    ? article.stats_json.methods.filter(
+        (method): method is string => typeof method === "string",
+      )
+    : [];
+  const pValues = Array.isArray(article.stats_json?.pValues)
+    ? article.stats_json.pValues.map((value) => String(value))
+    : [];
+
   const stats = article.has_stats
     ? {
         hasStatistics: true,
-        statisticalMethods: article.stats_json?.methods || [],
+        statisticalMethods,
         sampleSize: article.stats_json?.sampleSize,
-        pValues: article.stats_json?.pValues || [],
+        pValues,
       }
     : undefined;
 
