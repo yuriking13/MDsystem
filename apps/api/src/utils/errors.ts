@@ -59,12 +59,15 @@ function formatZodError(error: ZodError): string {
 export function setupErrorHandler(app: FastifyInstance) {
   app.setErrorHandler(
     (error: FastifyError, request: FastifyRequest, reply: FastifyReply) => {
+      const requestWithUser = request as FastifyRequest & {
+        user?: { sub?: string };
+      };
       // Логируем ошибку с контекстом
       const logContext = {
         requestId: request.id,
         method: request.method,
         url: request.url,
-        userId: (request as any).user?.sub,
+        userId: requestWithUser.user?.sub,
         errorCode:
           error instanceof TypedAppError ? error.code : error.code || "UNKNOWN",
         statusCode:
