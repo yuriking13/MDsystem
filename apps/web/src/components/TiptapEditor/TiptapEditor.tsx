@@ -7,7 +7,7 @@ import React, {
   useMemo,
   useRef,
 } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import { useEditor, EditorContent, type CommandProps } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
@@ -60,6 +60,15 @@ import "./TiptapEditor.css";
 import type { CitationStyle } from "../../lib/api";
 import type { Citation } from "../../lib/api";
 
+type ParagraphAttrs = {
+  indent?: boolean;
+};
+
+type ParagraphCommandSet = {
+  toggleIndent: () => boolean;
+  setIndent: (indent: boolean) => boolean;
+};
+
 // Custom Paragraph extension with indent support
 const CustomParagraph = Paragraph.extend({
   addAttributes() {
@@ -69,7 +78,7 @@ const CustomParagraph = Paragraph.extend({
         default: false,
         parseHTML: (element: HTMLElement) =>
           element.classList.contains("indent"),
-        renderHTML: (attributes: any) => {
+        renderHTML: (attributes: ParagraphAttrs) => {
           if (!attributes.indent) {
             return {};
           }
@@ -86,14 +95,14 @@ const CustomParagraph = Paragraph.extend({
       ...this.parent?.(),
       toggleIndent:
         () =>
-        ({ commands }: any) => {
+        ({ commands }: CommandProps) => {
           return commands.updateAttributes("paragraph", {
-            indent: (attrs: any) => !attrs.indent,
+            indent: (attrs: ParagraphAttrs) => !attrs.indent,
           });
         },
       setIndent:
         (indent: boolean) =>
-        ({ commands }: any) => {
+        ({ commands }: CommandProps) => {
           return commands.updateAttributes("paragraph", { indent });
         },
     };
@@ -102,8 +111,14 @@ const CustomParagraph = Paragraph.extend({
   addKeyboardShortcuts() {
     return {
       ...this.parent?.(),
-      Tab: () => (this.editor.commands as any).toggleIndent(),
-      "Shift-Tab": () => (this.editor.commands as any).setIndent(false),
+      Tab: () => {
+        const commands = this.editor.commands as unknown as ParagraphCommandSet;
+        return commands.toggleIndent();
+      },
+      "Shift-Tab": () => {
+        const commands = this.editor.commands as unknown as ParagraphCommandSet;
+        return commands.setIndent(false);
+      },
     };
   },
 });
@@ -176,8 +191,8 @@ const PAGE_GAP = 24;
 
 export type ChartData = {
   id: string;
-  config: any;
-  table_data: any;
+  config: ChartConfig;
+  table_data: TableData;
 };
 
 type EditorHeading = {
@@ -198,7 +213,7 @@ interface TiptapEditorProps {
   onTableCreated?: (tableData: {
     rows: number;
     cols: number;
-    data: any[][];
+    data: unknown[][];
   }) => Promise<string | undefined>;
   onLoadStatistic?: (statId: string) => Promise<ProjectStatistic | null>;
   onSaveStatistic?: (
@@ -206,7 +221,7 @@ interface TiptapEditorProps {
     data: {
       title?: string;
       description?: string;
-      config?: Record<string, any>;
+      config?: Record<string, unknown>;
       tableData?: TableData;
       dataClassification?: DataClassification;
       chartType?: string;
