@@ -291,6 +291,26 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it("applies persisted light theme while redirecting unauthenticated root to login", async () => {
+    const storage = createThemeStorage("light");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
   it("redirects authenticated root route into projects page under app layout", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
@@ -306,6 +326,27 @@ describe("App theme bootstrap runtime", () => {
     );
 
     await waitFor(() => {
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Projects Page")).toBeInTheDocument();
+    });
+  });
+
+  it("applies persisted light theme while redirecting authenticated root to projects", async () => {
+    const storage = createThemeStorage("light");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
       expect(screen.getByText("App Layout")).toBeInTheDocument();
       expect(screen.getByText("Projects Page")).toBeInTheDocument();
     });
