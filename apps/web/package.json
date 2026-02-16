@@ -6,7 +6,7 @@
     "dev": "vite",
     "clean:js-mirrors": "node scripts/clean-js-mirrors.mjs",
     "check:js-mirrors": "node scripts/clean-js-mirrors.mjs --check",
-    "build": "pnpm run clean:js-mirrors && tsc -p tsconfig.json && vite build",
+    "build": "pnpm run clean:js-mirrors && tsc -p tsconfig.json --noEmit && vite build",
     "typecheck": "pnpm run clean:js-mirrors && tsc -p tsconfig.json --noEmit",
     "preview": "vite preview",
     "lint": "pnpm run clean:js-mirrors && eslint . --ext .ts,.tsx --max-warnings 0",
