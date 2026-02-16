@@ -138,6 +138,8 @@ describe("App theme bootstrap runtime", () => {
   });
 
   it("applies persisted light theme symmetrically to root and body", async () => {
+    document.documentElement.classList.add("dark");
+    document.body.classList.add("dark");
     const storage = createThemeStorage("light");
     vi.stubGlobal("localStorage", storage);
 
