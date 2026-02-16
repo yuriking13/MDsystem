@@ -6174,6 +6174,37 @@ input:focus::placeholder {
   gap: 8px;
 }
 
+.graph-methodology-chip {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-secondary);
+  color: inherit;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-methodology-chip--active {
+  border: 2px solid var(--accent);
+  background: var(--accent);
+  color: white;
+}
+
+.graph-methodology-chip-count {
+  background: var(--bg-tertiary);
+  padding: 1px 5px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.graph-methodology-chip-count--active {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .graph-methodology-percent {
   font-size: 9px;
   color: var(--text-muted);

@@ -2969,29 +2969,10 @@ export default function CitationGraph({ projectId }: Props) {
     fontSize: 10,
     fontWeight: 600,
   });
-  const getMethodologyChipStyle = (selected: boolean): React.CSSProperties => ({
-    padding: "6px 10px",
-    borderRadius: 6,
-    border: selected
-      ? "2px solid var(--accent)"
-      : "1px solid var(--border-glass)",
-    background: selected ? "var(--accent)" : "var(--bg-secondary)",
-    color: selected ? "white" : "inherit",
-    cursor: "pointer",
-    fontSize: 11,
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  });
-  const getMethodologyCountBadgeStyle = (
-    selected: boolean,
-  ): React.CSSProperties => ({
-    background: selected ? "rgba(255,255,255,0.2)" : "var(--bg-tertiary)",
-    padding: "1px 5px",
-    borderRadius: 8,
-    fontSize: 10,
-    fontWeight: 600,
-  });
+  const getMethodologyChipClassName = (selected: boolean): string =>
+    `graph-methodology-chip${selected ? " graph-methodology-chip--active" : ""}`;
+  const getMethodologyCountBadgeClassName = (selected: boolean): string =>
+    `graph-methodology-chip-count${selected ? " graph-methodology-chip-count--active" : ""}`;
   const getSemanticClusterCardStyle = (
     selected: boolean,
     color: string,
@@ -4081,13 +4062,13 @@ export default function CitationGraph({ projectId }: Props) {
                           : cluster.type,
                       )
                     }
-                    style={getMethodologyChipStyle(
+                    className={getMethodologyChipClassName(
                       methodologyFilter === cluster.type,
                     )}
                   >
                     <span>{cluster.name}</span>
                     <span
-                      style={getMethodologyCountBadgeStyle(
+                      className={getMethodologyCountBadgeClassName(
                         methodologyFilter === cluster.type,
                       )}
                     >
