@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { MemoryRouter, Outlet } from "react-router-dom";
+import { MemoryRouter, Navigate, Outlet } from "react-router-dom";
 import App from "../../src/App";
 
 const authState = {
@@ -24,7 +24,8 @@ vi.mock("../../src/components/Toast", () => ({
 
 vi.mock("../../src/lib/AuthContext", () => ({
   useAuth: () => authState,
-  RequireAuth: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  RequireAuth: ({ children }: { children: React.ReactNode }) =>
+    authState.token ? <>{children}</> : <Navigate to="/login" replace />,
 }));
 
 vi.mock("../../src/lib/AdminContext", () => ({
@@ -260,6 +261,45 @@ describe("App theme bootstrap runtime", () => {
     await waitFor(() => {
       expect(screen.getByText("App Layout")).toBeInTheDocument();
       expect(screen.getByText("Projects Page")).toBeInTheDocument();
+    });
+  });
+
+  it("renders docs page inside authenticated app layout", async () => {
+    const storage = createThemeStorage("light");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/docs"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Documentation Page")).toBeInTheDocument();
+    });
+  });
+
+  it("redirects unauthenticated docs route to login page", async () => {
+    const storage = createThemeStorage(null);
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/docs"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
     });
   });
 });
