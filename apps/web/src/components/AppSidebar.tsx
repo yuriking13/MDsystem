@@ -72,15 +72,17 @@ export default function AppSidebar({
 
   const { articleCounts, articleViewStatus, setArticleViewStatus } =
     useProjectContext();
+  const isCollapsedView = collapsed && !mobileViewport;
+  const showSidebarLabels = !isCollapsedView;
 
   // Sync collapsed state to body class for CSS positioning
   React.useEffect(() => {
-    if (collapsed) {
+    if (isCollapsedView) {
       document.body.classList.add("sidebar-collapsed");
     } else {
       document.body.classList.remove("sidebar-collapsed");
     }
-  }, [collapsed]);
+  }, [isCollapsedView]);
 
   // Check if we're inside a project
   const isInProject =
@@ -260,8 +262,6 @@ export default function AppSidebar({
   };
 
   const navItems = isInProject ? projectNavItems : mainNavItems;
-  const isCollapsedView = collapsed && !mobileViewport;
-  const showSidebarLabels = !isCollapsedView;
 
   return (
     <aside
