@@ -901,6 +901,71 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
+  it.each([
+    [APP_DRAWER_MAX_WIDTH, true],
+    [APP_DRAWER_MAX_WIDTH + 1, false],
+  ])(
+    "applies app drawer breakpoint boundary at %ipx (open=%s)",
+    async (width, shouldOpen) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/settings");
+
+      expect(screen.getByText("Settings page")).toBeInTheDocument();
+
+      const toggleButton = screen.getByRole("button", {
+        name: "Открыть навигацию",
+      });
+      if (shouldOpen) {
+        expect(toggleButton).toBeEnabled();
+      } else {
+        expect(toggleButton).toBeDisabled();
+      }
+
+      await user.click(toggleButton);
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          shouldOpen,
+        );
+      });
+    },
+  );
+
+  it.each([
+    [APP_DRAWER_MAX_WIDTH, true],
+    [APP_DRAWER_MAX_WIDTH + 1, false],
+  ])(
+    "applies app drawer breakpoint boundary on fixed route at %ipx (open=%s)",
+    async (width, shouldOpen) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/projects/p1?tab=graph");
+
+      expect(screen.getByText("Project details page")).toBeInTheDocument();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        true,
+      );
+
+      const toggleButton = screen.getByRole("button", {
+        name: "Открыть навигацию",
+      });
+      if (shouldOpen) {
+        expect(toggleButton).toBeEnabled();
+      } else {
+        expect(toggleButton).toBeDisabled();
+      }
+
+      await user.click(toggleButton);
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          shouldOpen,
+        );
+      });
+    },
+  );
+
   it.each(APP_NON_FIXED_ROUTE_CASES)(
     "opens drawer only on mobile widths for $route",
     async ({ route, pageLabel }) => {

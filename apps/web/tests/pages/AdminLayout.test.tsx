@@ -270,6 +270,36 @@ describe("AdminLayout responsive sidebar behavior", () => {
     },
   );
 
+  it.each([
+    [ADMIN_DRAWER_MAX_WIDTH, true],
+    [ADMIN_DRAWER_MAX_WIDTH + 1, false],
+  ])(
+    "applies admin drawer breakpoint boundary at %ipx (open=%s)",
+    async (width, shouldOpenOnToggle) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAdminLayout("/admin/users");
+
+      expect(screen.getByText("Users page")).toBeInTheDocument();
+      const toggleButton = screen.getByRole("button", {
+        name: "Открыть навигацию",
+      });
+      if (shouldOpenOnToggle) {
+        expect(toggleButton).toBeEnabled();
+      } else {
+        expect(toggleButton).toBeDisabled();
+      }
+
+      await user.click(toggleButton);
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          shouldOpenOnToggle,
+        );
+      });
+    },
+  );
+
   it.each(
     ADMIN_RESPONSIVE_ROUTE_CASES.map(({ route, pageLabel }) => [
       route,
