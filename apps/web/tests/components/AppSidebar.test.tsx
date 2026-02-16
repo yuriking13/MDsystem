@@ -48,6 +48,37 @@ function renderSidebar({
   );
 }
 
+function renderMainNavSidebar({
+  mobileViewport,
+  mobileOpen = false,
+  onCloseMobile,
+}: {
+  mobileViewport: boolean;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}) {
+  return render(
+    <MemoryRouter
+      initialEntries={["/projects"]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <Routes>
+        <Route
+          path="/projects"
+          element={
+            <AppSidebar
+              mobileViewport={mobileViewport}
+              mobileOpen={mobileOpen}
+              onCloseMobile={onCloseMobile}
+            />
+          }
+        />
+        <Route path="/docs" element={<div>Docs route</div>} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+
 describe("AppSidebar mobile collapse behavior", () => {
   beforeEach(() => {
     mockLogout.mockReset();
@@ -178,6 +209,35 @@ describe("AppSidebar mobile collapse behavior", () => {
     });
 
     await user.click(screen.getByText("Документы"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onCloseMobile when opening docs from main mobile navigation", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderMainNavSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+    });
+
+    await user.click(screen.getByText("Документация"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("Docs route")).toBeInTheDocument();
+  });
+
+  it("calls onCloseMobile when selecting projects in main mobile navigation", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderMainNavSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+    });
+
+    await user.click(screen.getByText("Проекты"));
 
     expect(onCloseMobile).toHaveBeenCalledTimes(1);
   });
