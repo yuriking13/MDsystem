@@ -341,4 +341,63 @@ describe("App theme bootstrap runtime", () => {
       expect(screen.getByText("Settings Page")).toBeInTheDocument();
     });
   });
+
+  it("renders project detail page inside authenticated app layout", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/projects/p1"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Project Detail Page")).toBeInTheDocument();
+    });
+  });
+
+  it("renders document editor page inside authenticated app layout", async () => {
+    const storage = createThemeStorage("light");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/projects/p1/documents/d1"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Document Page")).toBeInTheDocument();
+    });
+  });
+
+  it("redirects unauthenticated project detail route to login page", async () => {
+    const storage = createThemeStorage(null);
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/projects/p1"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
 });
