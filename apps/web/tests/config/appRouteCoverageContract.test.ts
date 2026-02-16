@@ -36,6 +36,7 @@ describe("app route coverage contract", () => {
     expect(appSource).toMatch(
       /<Route path="\/admin\/login" element={<AdminLoginPage \/>} \/>/,
     );
+    expect(appSource).toMatch(/<Route index element={<AdminDashboard \/>} \/>/);
     expect(appSource).toMatch(
       /<Route path="users" element={<AdminUsersPage \/>} \/>/,
     );
@@ -50,6 +51,27 @@ describe("app route coverage contract", () => {
     );
     expect(appSource).toMatch(
       /<Route path="settings" element={<AdminSettingsPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="articles" element={<AdminArticlesPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="activity" element={<AdminActivityPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="sessions" element={<AdminSessionsPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="jobs" element={<AdminJobsPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="errors" element={<AdminErrorsPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="audit" element={<AdminAuditPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="system" element={<AdminSystemPage \/>} \/>/,
     );
   });
 
