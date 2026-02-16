@@ -43,6 +43,9 @@ describe("articles section layout css regressions", () => {
 
   it("keeps AI sidebar mobile paddings safe-area aware at 768px", () => {
     expect(articlesCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.article-ai-sidebar\s*\{[\s\S]*?width:\s*100%;[\s\S]*?height:\s*100vh;[\s\S]*?height:\s*100dvh;[\s\S]*?padding-top:\s*0;[\s\S]*?padding-right:\s*0;/,
+    );
+    expect(articlesCss).toMatch(
       /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.article-ai-header\s*\{[\s\S]*?padding:\s*calc\(14px \+ env\(safe-area-inset-top,\s*0px\)\)\s*calc\(16px \+ env\(safe-area-inset-right,\s*0px\)\)\s*14px\s*calc\(16px \+ env\(safe-area-inset-left,\s*0px\)\);/,
     );
     expect(articlesCss).toMatch(
@@ -56,6 +59,12 @@ describe("articles section layout css regressions", () => {
     );
     expect(articlesCss).toMatch(
       /@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*?\.article-ai-input-area\s*\{[\s\S]*?padding:\s*10px calc\(12px \+ env\(safe-area-inset-right,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-bottom,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+  });
+
+  it("keeps ai-sidebar shift width synchronized at medium breakpoint", () => {
+    expect(articlesCss).toMatch(
+      /@media\s*\(max-width:\s*1100px\)\s*\{[\s\S]*?\.article-ai-sidebar\s*\{[\s\S]*?width:\s*360px;[\s\S]*?\}[\s\S]*?\.articles-page-main--shifted\s*\{[\s\S]*?margin-right:\s*360px;/,
     );
   });
 });
