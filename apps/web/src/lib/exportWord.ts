@@ -1765,21 +1765,7 @@ export function exportToPdf(
     // Ждём полной загрузки и открываем диалог печати
     printWindow.onload = () => {
       setTimeout(() => {
-        // Добавляем подсказку для пользователя
-        const hint = printWindow.document.createElement("div");
-        hint.className = "no-print";
-        hint.innerHTML = `
-          <div class="pdf-hint-banner">
-            💡 Для сохранения как PDF: выберите "Сохранить как PDF" в качестве принтера
-            <button onclick="this.parentElement.remove(); window.print();" class="pdf-hint-button">
-              Печать / Сохранить PDF
-            </button>
-          </div>
-        `;
-        printWindow.document.body.insertBefore(
-          hint,
-          printWindow.document.body.firstChild,
-        );
+        injectPdfPrintHint(printWindow);
       }, 300);
     };
   } else {
@@ -1867,20 +1853,7 @@ export function exportBibliographyToPdf(
 
     printWindow.onload = () => {
       setTimeout(() => {
-        const hint = printWindow.document.createElement("div");
-        hint.className = "no-print";
-        hint.innerHTML = `
-          <div class="pdf-hint-banner">
-            💡 Для сохранения как PDF: выберите "Сохранить как PDF" в качестве принтера
-            <button onclick="this.parentElement.remove(); window.print();" class="pdf-hint-button">
-              Печать / Сохранить PDF
-            </button>
-          </div>
-        `;
-        printWindow.document.body.insertBefore(
-          hint,
-          printWindow.document.body.firstChild,
-        );
+        injectPdfPrintHint(printWindow);
       }, 300);
     };
   } else {
@@ -1888,4 +1861,31 @@ export function exportBibliographyToPdf(
       "Не удалось открыть окно для печати. Проверьте блокировщик всплывающих окон.",
     );
   }
+}
+
+function injectPdfPrintHint(printWindow: Window): void {
+  const { document } = printWindow;
+  const hintWrap = document.createElement("div");
+  hintWrap.className = "no-print";
+
+  const banner = document.createElement("div");
+  banner.className = "pdf-hint-banner";
+
+  const text = document.createTextNode(
+    '💡 Для сохранения как PDF: выберите "Сохранить как PDF" в качестве принтера',
+  );
+  banner.appendChild(text);
+
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "pdf-hint-button";
+  button.textContent = "Печать / Сохранить PDF";
+  button.addEventListener("click", () => {
+    banner.remove();
+    printWindow.print();
+  });
+  banner.appendChild(button);
+
+  hintWrap.appendChild(banner);
+  document.body.insertBefore(hintWrap, document.body.firstChild);
 }
