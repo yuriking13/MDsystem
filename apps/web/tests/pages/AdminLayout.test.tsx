@@ -114,6 +114,36 @@ describe("AdminLayout responsive sidebar behavior", () => {
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(false);
   });
 
+  it.each([
+    [360, true],
+    [390, true],
+    [768, true],
+    [1024, false],
+    [1280, false],
+    [1440, false],
+    [1920, false],
+  ])(
+    "keeps sidebar modal behavior consistent at %ipx",
+    async (width, shouldOpenOnToggle) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAdminLayout();
+
+      await user.click(screen.getByLabelText("Открыть навигацию"));
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          shouldOpenOnToggle,
+        );
+        const sidebar = document.querySelector(".admin-sidebar");
+        expect(sidebar).not.toBeNull();
+        expect(sidebar?.classList.contains("mobile-open")).toBe(
+          shouldOpenOnToggle,
+        );
+      });
+    },
+  );
+
   it("cleans up body modal class on unmount", async () => {
     const user = userEvent.setup();
     setViewportWidth(390);
