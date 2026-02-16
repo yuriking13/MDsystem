@@ -661,7 +661,7 @@
 
 .admin-filter-group select,
 .admin-filter-group input {
-  min-width: 200px;
+  min-width: min(200px, 100%);
 }
 
 /* Search Form */
@@ -2037,7 +2037,7 @@
 
 .admin-filters-row .admin-search-form {
   flex: 1;
-  min-width: 300px;
+  min-width: min(300px, 100%);
   margin-bottom: 0;
 }
 
