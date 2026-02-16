@@ -12,9 +12,37 @@ env:
   CI: "true"
 
 jobs:
+  repo-quality:
+    name: Repository quality guards
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Run repository quality guards (strict check mode)
+        run: pnpm run quality:guards:check
+
+      - name: Run repository quality guard unit tests
+        run: pnpm run quality:guards:test
+
   api-quality:
     name: API quality gates
     runs-on: ubuntu-latest
+    needs: [repo-quality]
     services:
       postgres:
         image: postgres:16
@@ -47,12 +75,6 @@ jobs:
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Run repository quality guards
-        run: pnpm run quality:guards:check
-
-      - name: Run repository quality guard unit tests
-        run: pnpm run quality:guards:test
-
       - name: Generate Prisma Client
         run: pnpm --filter api exec prisma generate
 
@@ -84,6 +106,7 @@ jobs:
   web-quality:
     name: WEB quality gates
     runs-on: ubuntu-latest
+    needs: [repo-quality]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -101,9 +124,6 @@ jobs:
 
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
-
-      - name: Run repository quality guards
-        run: pnpm run quality:guards:check
 
       - name: Verify WEB source has no JS mirrors
         run: pnpm --filter web run check:js-mirrors
@@ -145,9 +165,6 @@ jobs:
 
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
-
-      - name: Run repository quality guards
-        run: pnpm run quality:guards:check
 
       - name: Generate Prisma Client
         run: pnpm --filter api exec prisma generate
