@@ -129,6 +129,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     renderAppLayout();
 
     const toggleButton = screen.getByLabelText("Открыть навигацию");
+    expect(toggleButton).toBeEnabled();
     await user.click(toggleButton);
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
     expect(toggleButton).toHaveAttribute("aria-label", "Закрыть навигацию");
@@ -143,6 +144,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     renderAppLayout();
 
     const toggleButton = screen.getByLabelText("Открыть навигацию");
+    expect(toggleButton).toBeEnabled();
     await user.click(toggleButton);
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
 
@@ -179,6 +181,7 @@ describe("AppLayout mobile sidebar behavior", () => {
         "aria-controls",
         "app-primary-sidebar",
       );
+      expect(toggleButton).toBeEnabled();
       expect(document.getElementById("app-primary-sidebar")).not.toBeNull();
     },
   );
@@ -193,6 +196,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       const toggleButton = screen.getByRole("button", {
         name: "Открыть навигацию",
       });
+      expect(toggleButton).toBeEnabled();
       await user.click(toggleButton);
 
       await waitFor(() => {
@@ -222,9 +226,12 @@ describe("AppLayout mobile sidebar behavior", () => {
 
       expect(screen.getByText("Settings page")).toBeInTheDocument();
 
-      await user.click(
-        screen.getByRole("button", { name: "Открыть навигацию" }),
-      );
+      const toggleButton = screen.getByRole("button", {
+        name: "Открыть навигацию",
+      });
+      expect(toggleButton).toBeDisabled();
+
+      await user.click(toggleButton);
 
       await waitFor(() => {
         expect(document.body.classList.contains("sidebar-modal-open")).toBe(
@@ -248,9 +255,15 @@ describe("AppLayout mobile sidebar behavior", () => {
       const { unmount } = renderAppLayout(route);
 
       expect(screen.getByText(pageLabel)).toBeInTheDocument();
-      await user.click(
-        screen.getByRole("button", { name: "Открыть навигацию" }),
-      );
+      const toggleButton = screen.getByRole("button", {
+        name: "Открыть навигацию",
+      });
+      if (shouldOpen) {
+        expect(toggleButton).toBeEnabled();
+      } else {
+        expect(toggleButton).toBeDisabled();
+      }
+      await user.click(toggleButton);
 
       await waitFor(() => {
         expect(document.body.classList.contains("sidebar-modal-open")).toBe(
@@ -283,9 +296,15 @@ describe("AppLayout mobile sidebar behavior", () => {
         const { unmount } = renderAppLayout(route);
 
         expect(screen.getByText(pageLabel)).toBeInTheDocument();
-        await user.click(
-          screen.getByRole("button", { name: "Открыть навигацию" }),
-        );
+        const toggleButton = screen.getByRole("button", {
+          name: "Открыть навигацию",
+        });
+        if (shouldOpen) {
+          expect(toggleButton).toBeEnabled();
+        } else {
+          expect(toggleButton).toBeDisabled();
+        }
+        await user.click(toggleButton);
 
         await waitFor(() => {
           expect(document.body.classList.contains("sidebar-modal-open")).toBe(
@@ -356,9 +375,16 @@ describe("AppLayout mobile sidebar behavior", () => {
           shouldLockLayout,
         );
 
-        await user.click(
-          screen.getByRole("button", { name: "Открыть навигацию" }),
-        );
+        const toggleButton = screen.getByRole("button", {
+          name: "Открыть навигацию",
+        });
+        if (shouldOpen) {
+          expect(toggleButton).toBeEnabled();
+        } else {
+          expect(toggleButton).toBeDisabled();
+        }
+
+        await user.click(toggleButton);
 
         await waitFor(() => {
           expect(document.body.classList.contains("sidebar-modal-open")).toBe(

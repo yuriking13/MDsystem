@@ -215,6 +215,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             type="button"
             className="app-mobile-fab-toggle"
             onClick={toggleMobileSidebar}
+            disabled={!canUseMobileSidebar}
             aria-label={
               mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
             }
@@ -246,6 +247,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 type="button"
                 className="app-mobile-nav-toggle"
                 onClick={toggleMobileSidebar}
+                disabled={!canUseMobileSidebar}
                 aria-label={
                   mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
                 }

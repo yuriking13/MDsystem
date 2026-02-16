@@ -114,6 +114,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
       "aria-controls",
       "admin-primary-sidebar",
     );
+    expect(toggleButton).toBeEnabled();
     expect(document.getElementById("admin-primary-sidebar")).not.toBeNull();
     await user.click(toggleButton);
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
@@ -130,6 +131,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
     renderAdminLayout();
 
     const toggleButton = screen.getByLabelText("Открыть навигацию");
+    expect(toggleButton).toBeEnabled();
     await user.click(toggleButton);
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
 
@@ -160,6 +162,11 @@ describe("AdminLayout responsive sidebar behavior", () => {
       renderAdminLayout();
 
       const toggleButton = screen.getByLabelText("Открыть навигацию");
+      if (shouldOpenOnToggle) {
+        expect(toggleButton).toBeEnabled();
+      } else {
+        expect(toggleButton).toBeDisabled();
+      }
       await user.click(toggleButton);
 
       await waitFor(() => {
@@ -192,6 +199,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
       const toggleButton = screen.getByRole("button", {
         name: "Открыть навигацию",
       });
+      expect(toggleButton).toBeEnabled();
       await user.click(toggleButton);
 
       await waitFor(() => {
@@ -236,6 +244,11 @@ describe("AdminLayout responsive sidebar behavior", () => {
 
         expect(screen.getByText(pageLabel)).toBeInTheDocument();
         const toggleButton = screen.getByLabelText("Открыть навигацию");
+        if (shouldOpenOnToggle) {
+          expect(toggleButton).toBeEnabled();
+        } else {
+          expect(toggleButton).toBeDisabled();
+        }
         await user.click(toggleButton);
 
         await waitFor(() => {

@@ -237,6 +237,7 @@ export default function AdminLayout() {
             type="button"
             className="admin-mobile-nav-toggle"
             onClick={toggleMobileSidebar}
+            disabled={!canUseMobileSidebar}
             aria-label={
               mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
             }
