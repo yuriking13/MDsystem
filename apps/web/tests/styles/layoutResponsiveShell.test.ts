@@ -57,6 +57,18 @@ describe("responsive shell css regressions", () => {
     );
   });
 
+  it("keeps compact mobile topbar and nav controls sizing at 480px", () => {
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*480px\)\s*\{[\s\S]*?\.app-mobile-topbar\s*\{[\s\S]*?min-height:\s*50px;[\s\S]*?gap:\s*8px;[\s\S]*?padding-left:\s*calc\(12px \+ env\(safe-area-inset-left,\s*0px\)\);[\s\S]*?padding-right:\s*calc\(12px \+ env\(safe-area-inset-right,\s*0px\)\);/,
+    );
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*480px\)\s*\{[\s\S]*?\.app-mobile-nav-toggle,\s*\.app-mobile-fab-toggle\s*\{[\s\S]*?width:\s*32px;[\s\S]*?height:\s*32px;/,
+    );
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*480px\)\s*\{[\s\S]*?\.app-mobile-nav-toggle svg,\s*\.app-mobile-fab-toggle svg\s*\{[\s\S]*?width:\s*16px;[\s\S]*?height:\s*16px;/,
+    );
+  });
+
   it("keeps mobile app topbar and fixed-route FAB safe-area offsets", () => {
     expect(appLayoutCss).toMatch(
       /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-mobile-topbar\s*\{[\s\S]*?padding:\s*calc\(10px \+ env\(safe-area-inset-top,\s*0px\)\)\s*calc\(16px \+ env\(safe-area-inset-right,\s*0px\)\)\s*10px\s*calc\(16px \+ env\(safe-area-inset-left,\s*0px\)\);/,
