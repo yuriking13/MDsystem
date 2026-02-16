@@ -40,6 +40,9 @@
     "scripts/*.js": [
       "pnpm run quality:guards:test"
     ],
+    "apps/web/scripts/*.{js,mjs,cjs}": [
+      "pnpm run quality:guards:test"
+    ],
     "*.{ts,tsx}": [
       "prettier --write --ignore-unknown"
     ],
