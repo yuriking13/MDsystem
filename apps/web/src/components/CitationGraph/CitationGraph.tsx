@@ -2210,31 +2210,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontWeight: 500,
     whiteSpace: "nowrap",
   };
-  const aiFoundArticlesWrapStyle: React.CSSProperties = {
-    padding: 12,
-    background: "rgba(0, 255, 255, 0.1)",
-    borderRadius: 10,
-    border: "1px solid rgba(0, 255, 255, 0.3)",
-  };
-  const aiFoundArticlesHeaderStyle: React.CSSProperties = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  };
-  const aiFoundArticlesTitleStyle: React.CSSProperties = {
-    fontWeight: 600,
-    fontSize: 12,
-    color: "#00ffff",
-  };
-  const aiFoundArticlesSelectedCountStyle: React.CSSProperties = {
-    color: "#4ade80",
-    marginLeft: 6,
-  };
-  const aiFoundHeaderActionsStyle: React.CSSProperties = {
-    display: "flex",
-    gap: 4,
-  };
   const aiFoundActionButtonBaseStyle: React.CSSProperties = {
     padding: "4px 8px",
     borderRadius: 4,
@@ -2242,55 +2217,10 @@ export default function CitationGraph({ projectId }: Props) {
     fontSize: 10,
     cursor: "pointer",
   };
-  const aiFoundListStyle: React.CSSProperties = {
-    maxHeight: 200,
-    overflowY: "auto",
-    marginBottom: 10,
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-  };
-  const aiFoundItemInnerStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 8,
-  };
   const aiFoundItemCheckboxStyleBase: React.CSSProperties = {
     fontSize: 14,
     flexShrink: 0,
     marginTop: 1,
-  };
-  const aiFoundItemContentStyle: React.CSSProperties = {
-    flex: 1,
-    minWidth: 0,
-  };
-  const aiFoundItemTitleStyle: React.CSSProperties = {
-    fontWeight: 500,
-    fontSize: 11,
-    lineHeight: 1.3,
-  };
-  const aiFoundItemMetaStyle: React.CSSProperties = {
-    fontSize: 10,
-    color: "var(--text-secondary)",
-    marginTop: 4,
-    display: "flex",
-    gap: 8,
-  };
-  const aiFoundItemReasonStyle: React.CSSProperties = {
-    fontSize: 10,
-    color: "#00ffff",
-    marginTop: 4,
-    fontStyle: "italic",
-  };
-  const aiFoundRemainderStyle: React.CSSProperties = {
-    fontSize: 10,
-    color: "var(--text-muted)",
-    textAlign: "center",
-    padding: 4,
-  };
-  const aiFoundButtonsRowStyle: React.CSSProperties = {
-    display: "flex",
-    gap: 6,
   };
   const aiFoundAddButtonBaseStyle: React.CSSProperties = {
     flex: 1,
@@ -2300,33 +2230,6 @@ export default function CitationGraph({ projectId }: Props) {
     color: "white",
     fontWeight: 600,
     fontSize: 11,
-  };
-  const aiInputPanelStyle: React.CSSProperties = {
-    padding: 12,
-    borderTop: "1px solid var(--border-glass)",
-    background: "var(--bg-secondary)",
-    flexShrink: 0,
-  };
-  const aiInputErrorStyle: React.CSSProperties = {
-    marginBottom: 8,
-    padding: "8px 10px",
-    background: "rgba(239, 68, 68, 0.1)",
-    borderRadius: 6,
-    fontSize: 11,
-    color: "#ef4444",
-  };
-  const aiInputRowStyle: React.CSSProperties = {
-    display: "flex",
-    gap: 6,
-  };
-  const aiMessageInputStyle: React.CSSProperties = {
-    flex: 1,
-    padding: "10px 12px",
-    borderRadius: 8,
-    border: "1px solid var(--border-glass)",
-    background: "var(--bg-primary)",
-    color: "var(--text-primary)",
-    fontSize: 12,
   };
   const recommendationsModalStyle: React.CSSProperties = {
     maxWidth: 700,
@@ -4654,17 +4557,17 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Found Articles from Graph */}
                 {aiFoundArticles.length > 0 && (
-                  <div style={aiFoundArticlesWrapStyle}>
-                    <div style={aiFoundArticlesHeaderStyle}>
-                      <div style={aiFoundArticlesTitleStyle}>
+                  <div className="ai-found-wrap">
+                    <div className="ai-found-header">
+                      <div className="ai-found-title">
                         🔍 Найдено: {aiFoundArticles.length}
                         {aiSelectedForAdd.size > 0 && (
-                          <span style={aiFoundArticlesSelectedCountStyle}>
+                          <span className="ai-found-selected-count">
                             (выбрано: {aiSelectedForAdd.size})
                           </span>
                         )}
                       </div>
-                      <div style={aiFoundHeaderActionsStyle}>
+                      <div className="ai-found-header-actions">
                         <button
                           onClick={toggleSelectAll}
                           style={getAiSelectAllButtonStyle(
@@ -4691,7 +4594,7 @@ export default function CitationGraph({ projectId }: Props) {
                     </div>
 
                     {/* Article List (scrollable) */}
-                    <div style={aiFoundListStyle}>
+                    <div className="ai-found-list">
                       {aiFoundArticles.slice(0, 20).map((article, idx) => {
                         const isSelected = aiSelectedForAdd.has(article.id);
                         return (
@@ -4700,14 +4603,14 @@ export default function CitationGraph({ projectId }: Props) {
                             onClick={() => toggleArticleSelection(article.id)}
                             style={getAiFoundItemStyle(isSelected)}
                           >
-                            <div style={aiFoundItemInnerStyle}>
+                            <div className="ai-found-item-inner">
                               <span
                                 style={getAiFoundItemCheckboxStyle(isSelected)}
                               >
                                 {isSelected ? "☑" : "☐"}
                               </span>
-                              <div style={aiFoundItemContentStyle}>
-                                <div style={aiFoundItemTitleStyle}>
+                              <div className="ai-found-item-content">
+                                <div className="ai-found-item-title">
                                   {idx + 1}.{" "}
                                   {article.title?.substring(0, 70) ||
                                     article.id}
@@ -4715,7 +4618,7 @@ export default function CitationGraph({ projectId }: Props) {
                                     ? "..."
                                     : ""}
                                 </div>
-                                <div style={aiFoundItemMetaStyle}>
+                                <div className="ai-found-item-meta">
                                   {article.year && (
                                     <span>📅 {article.year}</span>
                                   )}
@@ -4724,7 +4627,7 @@ export default function CitationGraph({ projectId }: Props) {
                                   ) : null}
                                 </div>
                                 {article.reason && (
-                                  <div style={aiFoundItemReasonStyle}>
+                                  <div className="ai-found-item-reason">
                                     💡 {article.reason.substring(0, 80)}
                                     {article.reason.length > 80 ? "..." : ""}
                                   </div>
@@ -4735,14 +4638,14 @@ export default function CitationGraph({ projectId }: Props) {
                         );
                       })}
                       {aiFoundArticles.length > 20 && (
-                        <div style={aiFoundRemainderStyle}>
+                        <div className="ai-found-remainder">
                           ... и ещё {aiFoundArticles.length - 20} статей
                         </div>
                       )}
                     </div>
 
                     {/* Action Buttons */}
-                    <div style={aiFoundButtonsRowStyle}>
+                    <div className="ai-found-buttons-row">
                       <button
                         onClick={() => handleAIAddSelectedArticles("candidate")}
                         disabled={aiAddingArticles}
@@ -4787,9 +4690,9 @@ export default function CitationGraph({ projectId }: Props) {
               </div>
 
               {/* Input */}
-              <div style={aiInputPanelStyle}>
-                {aiError && <div style={aiInputErrorStyle}>{aiError}</div>}
-                <div style={aiInputRowStyle}>
+              <div className="ai-input-panel">
+                {aiError && <div className="ai-input-error">{aiError}</div>}
+                <div className="ai-input-row">
                   <input
                     type="text"
                     value={aiMessage}
@@ -4799,7 +4702,7 @@ export default function CitationGraph({ projectId }: Props) {
                     }
                     placeholder="Искать в графе..."
                     disabled={aiLoading}
-                    style={aiMessageInputStyle}
+                    className="ai-message-input"
                   />
                   <button
                     onClick={handleAISend}
