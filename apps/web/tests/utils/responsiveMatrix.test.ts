@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  ADMIN_DRAWER_MAX_WIDTH,
   ADMIN_RESPONSIVE_ROUTE_CASES,
+  APP_DRAWER_MAX_WIDTH,
   APP_ADMIN_NO_SHELL_ROUTE_CASES,
   APP_AUTH_ROUTE_CASES,
   APP_FIXED_ROUTE_CASES,
@@ -19,7 +21,9 @@ describe("responsive matrix test fixtures", () => {
   });
 
   it("keeps mobile viewport widths as a subset of target widths", () => {
-    expect(MOBILE_VIEWPORT_WIDTHS).toEqual([360, 390, 768]);
+    expect(APP_DRAWER_MAX_WIDTH).toBe(768);
+    expect(ADMIN_DRAWER_MAX_WIDTH).toBe(900);
+    expect(MOBILE_VIEWPORT_WIDTHS).toEqual([360, 390, APP_DRAWER_MAX_WIDTH]);
     expect(
       MOBILE_VIEWPORT_WIDTHS.every((width) =>
         TARGET_VIEWPORT_WIDTHS.includes(width),

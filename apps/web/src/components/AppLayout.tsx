@@ -11,6 +11,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import AnimatedBackground from "./AnimatedBackground";
 import { useAuth } from "../lib/AuthContext";
+import { isAppMobileViewport } from "../lib/responsive";
 
 interface ProjectInfo {
   name: string | null;
@@ -85,7 +86,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === "undefined") return false;
-    return window.innerWidth <= 768;
+    return isAppMobileViewport(window.innerWidth);
   });
   const [projectInfo, setProjectInfoState] =
     useState<ProjectInfo>(defaultProjectInfo);
@@ -194,7 +195,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => {
-      setIsMobileViewport(window.innerWidth <= 768);
+      setIsMobileViewport(isAppMobileViewport(window.innerWidth));
     };
     onResize();
     window.addEventListener("resize", onResize);

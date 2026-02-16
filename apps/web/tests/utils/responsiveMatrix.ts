@@ -1,8 +1,15 @@
+import {
+  ADMIN_MOBILE_MAX_WIDTH,
+  APP_MOBILE_MAX_WIDTH,
+} from "../../src/lib/responsive";
+
 export const TARGET_VIEWPORT_WIDTHS = [
   360, 390, 768, 1024, 1280, 1440, 1920,
 ] as const;
 
-export const MOBILE_VIEWPORT_WIDTHS = [360, 390, 768] as const;
+export const MOBILE_VIEWPORT_WIDTHS = [360, 390, APP_MOBILE_MAX_WIDTH] as const;
+export const APP_DRAWER_MAX_WIDTH = APP_MOBILE_MAX_WIDTH;
+export const ADMIN_DRAWER_MAX_WIDTH = ADMIN_MOBILE_MAX_WIDTH;
 
 export const PROJECT_TAB_CASES = [
   { tab: "articles", shouldLockLayout: false },

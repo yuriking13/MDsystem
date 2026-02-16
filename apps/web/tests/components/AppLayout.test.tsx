@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout, { useProjectContext } from "../../src/components/AppLayout";
 import {
+  APP_DRAWER_MAX_WIDTH,
   APP_ADMIN_NO_SHELL_ROUTE_CASES,
   APP_AUTH_ROUTE_CASES,
   APP_FIXED_ROUTE_CASES,
@@ -914,7 +915,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       const user = userEvent.setup();
 
       for (const width of TARGET_VIEWPORT_WIDTHS) {
-        const shouldOpen = width <= 768;
+        const shouldOpen = width <= APP_DRAWER_MAX_WIDTH;
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -977,7 +978,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       const user = userEvent.setup();
 
       for (const width of TARGET_VIEWPORT_WIDTHS) {
-        const shouldOpen = width <= 768;
+        const shouldOpen = width <= APP_DRAWER_MAX_WIDTH;
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -1181,7 +1182,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       const user = userEvent.setup();
 
       for (const width of TARGET_VIEWPORT_WIDTHS) {
-        const shouldOpen = width <= 768;
+        const shouldOpen = width <= APP_DRAWER_MAX_WIDTH;
         const shouldLockLayout = tab === "graph";
         setViewportWidth(width);
         const { unmount } = renderAppLayout(`/projects/p1?tab=${tab}`);

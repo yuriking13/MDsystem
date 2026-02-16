@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAdminAuth } from "../../lib/AdminContext";
+import { isAdminMobileViewport } from "../../lib/responsive";
 import "../../styles/admin.css";
 import {
   IconUsers,
@@ -30,7 +31,7 @@ export default function AdminLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(() => {
     if (typeof window === "undefined") return false;
-    return window.innerWidth <= 900;
+    return isAdminMobileViewport(window.innerWidth);
   });
   const canUseMobileSidebar = isMobileViewport;
 
@@ -50,7 +51,7 @@ export default function AdminLayout() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const onResize = () => {
-      setIsMobileViewport(window.innerWidth <= 900);
+      setIsMobileViewport(isAdminMobileViewport(window.innerWidth));
     };
     onResize();
     window.addEventListener("resize", onResize);
