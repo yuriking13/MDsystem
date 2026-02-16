@@ -13,6 +13,20 @@ const adminLayoutSuiteSource = readFileSync(
 );
 
 describe("responsive layout test conventions", () => {
+  it("keeps layout suites wired to shared viewport utility", () => {
+    expect(appLayoutSuiteSource).toContain('from "../utils/viewport"');
+    expect(adminLayoutSuiteSource).toContain('from "../utils/viewport"');
+    expect(appLayoutSuiteSource).toContain("setViewportWidth");
+    expect(adminLayoutSuiteSource).toContain("setViewportWidth");
+  });
+
+  it("keeps layout suites importing shared responsive matrix fixtures", () => {
+    expect(appLayoutSuiteSource).toContain('from "../utils/responsiveMatrix"');
+    expect(adminLayoutSuiteSource).toContain(
+      'from "../utils/responsiveMatrix"',
+    );
+  });
+
   it("keeps AppLayout and AdminLayout suites bound to shared viewport matrices", () => {
     expect(appLayoutSuiteSource).toContain("TARGET_VIEWPORT_WIDTHS");
     expect(adminLayoutSuiteSource).toContain("TARGET_VIEWPORT_WIDTHS");
