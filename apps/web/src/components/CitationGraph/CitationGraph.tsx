@@ -2210,99 +2210,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontWeight: 500,
     whiteSpace: "nowrap",
   };
-  const aiPanelHeaderStyle: React.CSSProperties = {
-    padding: "10px 12px",
-    borderBottom: "1px solid var(--border-glass)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    background:
-      "linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))",
-    flexShrink: 0,
-  };
-  const aiPanelHeaderTitleWrapStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  };
-  const aiPanelHeaderTitleStyle: React.CSSProperties = {
-    fontWeight: 600,
-    fontSize: 13,
-  };
-  const aiPanelCollapseButtonStyle: React.CSSProperties = {
-    background: "transparent",
-    border: "none",
-    color: "var(--text-secondary)",
-    cursor: "pointer",
-    padding: 4,
-    display: "flex",
-    alignItems: "center",
-  };
-  const aiHistoryWrapStyle: React.CSSProperties = {
-    flex: 1,
-    overflowY: "auto",
-    padding: 12,
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  };
-  const aiEmptyStateStyle: React.CSSProperties = {
-    textAlign: "center",
-    color: "var(--text-secondary)",
-    padding: 16,
-    fontSize: 12,
-  };
-  const aiEmptySearchIconStyle: React.CSSProperties = {
-    margin: "0 auto 12px",
-    opacity: 0.5,
-  };
-  const aiEmptyTitleStyle: React.CSSProperties = {
-    marginBottom: 8,
-    fontWeight: 500,
-  };
-  const aiEmptyDescriptionStyle: React.CSSProperties = {
-    fontSize: 11,
-    marginBottom: 10,
-    opacity: 0.9,
-  };
-  const aiExamplesWrapStyle: React.CSSProperties = {
-    fontSize: 11,
-    opacity: 0.8,
-    textAlign: "left",
-    paddingLeft: 12,
-  };
-  const aiExampleTextStyle: React.CSSProperties = {
-    fontStyle: "italic",
-    marginBottom: 4,
-  };
-  const aiExampleTextLastStyle: React.CSSProperties = {
-    fontStyle: "italic",
-  };
-  const aiDepthWarningStyle: React.CSSProperties = {
-    marginTop: 12,
-    padding: "8px 10px",
-    background: "rgba(251, 191, 36, 0.15)",
-    borderRadius: 6,
-    fontSize: 10,
-    color: "#fbbf24",
-  };
-  const aiLoadingMessageStyle: React.CSSProperties = {
-    padding: "10px 12px",
-    borderRadius: 10,
-    background: "var(--bg-secondary)",
-    alignSelf: "flex-start",
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  };
-  const aiLoadingSpinnerStyle: React.CSSProperties = {
-    width: 14,
-    height: 14,
-  };
-  const aiLoadingTextStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: "var(--text-secondary)",
-  };
   const aiFoundArticlesWrapStyle: React.CSSProperties = {
     padding: 12,
     background: "rgba(0, 255, 255, 0.1)",
@@ -4673,14 +4580,14 @@ export default function CitationGraph({ projectId }: Props) {
           {showAIAssistant && (
             <div className="ai-panel-sidebar">
               {/* AI Panel Header */}
-              <div style={aiPanelHeaderStyle}>
-                <div style={aiPanelHeaderTitleWrapStyle}>
+              <div className="ai-panel-header">
+                <div className="ai-panel-header-title-wrap">
                   <IconSparkles size="md" className="text-purple-400" />
-                  <span style={aiPanelHeaderTitleStyle}>AI Ассистент</span>
+                  <span className="ai-panel-header-title">AI Ассистент</span>
                 </div>
                 <button
                   onClick={() => setShowAIAssistant(false)}
-                  style={aiPanelCollapseButtonStyle}
+                  className="ai-panel-collapse-btn"
                   title="Свернуть"
                 >
                   <IconChevronRight size="sm" />
@@ -4688,42 +4595,43 @@ export default function CitationGraph({ projectId }: Props) {
               </div>
 
               {/* Chat History */}
-              <div style={aiHistoryWrapStyle}>
+              <div className="ai-history-wrap">
                 {aiHistory.length === 0 && (
-                  <div style={aiEmptyStateStyle}>
+                  <div className="ai-empty-state">
                     <IconSearch
                       size="lg"
-                      className="icon-lg"
-                      style={aiEmptySearchIconStyle}
+                      className="icon-lg ai-empty-search-icon"
                     />
-                    <p style={aiEmptyTitleStyle}>Поиск в графе</p>
-                    <p style={aiEmptyDescriptionStyle}>
+                    <p className="ai-empty-title">Поиск в графе</p>
+                    <p className="ai-empty-description">
                       AI найдёт статьи среди ссылок и цитирующих работ
                     </p>
-                    <div style={aiExamplesWrapStyle}>
-                      <p style={aiExampleTextStyle}>💡 «Найди мета-анализы»</p>
-                      <p style={aiExampleTextStyle}>
+                    <div className="ai-empty-examples">
+                      <p className="ai-empty-example">
+                        💡 «Найди мета-анализы»
+                      </p>
+                      <p className="ai-empty-example">
                         💡 «РКИ за последние 5 лет»
                       </p>
                       {semanticClusters.length > 0 && (
-                        <p style={aiExampleTextStyle}>
+                        <p className="ai-empty-example">
                           💡 «Статьи из кластера про...»
                         </p>
                       )}
                       {gapAnalysisResults.length > 0 && (
-                        <p style={aiExampleTextLastStyle}>
+                        <p className="ai-empty-example ai-empty-example--last">
                           💡 «Статьи для закрытия gap...»
                         </p>
                       )}
                       {semanticClusters.length === 0 &&
                         gapAnalysisResults.length === 0 && (
-                          <p style={aiExampleTextLastStyle}>
+                          <p className="ai-empty-example ai-empty-example--last">
                             💡 «Статьи про лечение»
                           </p>
                         )}
                     </div>
                     {depth < 2 && (
-                      <div style={aiDepthWarningStyle}>
+                      <div className="ai-empty-depth-warning">
                         ⚠️ Для поиска нужно загрузить связи: выберите «+Ссылки»
                         или «+Цитирующие»
                       </div>
@@ -4738,12 +4646,9 @@ export default function CitationGraph({ projectId }: Props) {
                 ))}
 
                 {aiLoading && (
-                  <div style={aiLoadingMessageStyle}>
-                    <span
-                      className="loading-spinner"
-                      style={aiLoadingSpinnerStyle}
-                    />
-                    <span style={aiLoadingTextStyle}>Думаю...</span>
+                  <div className="ai-loading-message">
+                    <span className="loading-spinner ai-loading-spinner" />
+                    <span className="ai-loading-text">Думаю...</span>
                   </div>
                 )}
 
