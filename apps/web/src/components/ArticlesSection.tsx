@@ -1782,7 +1782,7 @@ export default function ArticlesSection({
               </label>
             </div>
 
-            <div className="row gap">
+            <div className="row gap search-form-actions">
               <button
                 className="btn search-submit-btn"
                 disabled={searching || searchSources.length === 0}

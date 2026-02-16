@@ -1179,6 +1179,28 @@
 }
 
 @media (max-width: 900px) {
+  .search-sources-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .search-query-row {
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .search-query-field {
+    flex: 1 1 100%;
+  }
+
+  .search-field-filter,
+  .search-max-results-field {
+    flex: 1 1 220px;
+  }
+
+  .search-add-query-btn {
+    width: 100%;
+  }
+
   .articles-filters-row {
     flex-wrap: wrap;
     align-items: stretch;
@@ -1222,6 +1244,46 @@
 }
 
 @media (max-width: 640px) {
+  .search-form-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .search-sources-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .search-source-option {
+    padding: 10px 12px;
+  }
+
+  .search-query-row,
+  .search-custom-years,
+  .search-extra-options,
+  .search-form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-custom-year-field,
+  .search-field-filter,
+  .search-max-results-field {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .search-translate-option {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .search-form-actions .btn,
+  .search-submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
   .articles-filters-row {
     padding-left: 12px;
     padding-right: 12px;
