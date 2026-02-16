@@ -11,11 +11,15 @@ import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout from "../../src/components/AppLayout";
 
 const mockLogout = vi.fn();
+const mockAuthState = {
+  token: "test-token",
+  user: { email: "user@example.com" } as { email: string } | null,
+};
 
 vi.mock("../../src/lib/AuthContext", () => ({
   useAuth: () => ({
-    token: "test-token",
-    user: { email: "user@example.com" },
+    token: mockAuthState.token,
+    user: mockAuthState.user,
     logout: mockLogout,
   }),
 }));
@@ -65,6 +69,7 @@ function renderAppLayout(initialPath = "/projects") {
               </div>
             }
           />
+          <Route path="/admin" element={<div>Admin route content</div>} />
           <Route path="/login" element={<div>Login page</div>} />
         </Route>
       </Routes>
@@ -75,6 +80,8 @@ function renderAppLayout(initialPath = "/projects") {
 describe("AppLayout mobile sidebar behavior", () => {
   beforeEach(() => {
     mockLogout.mockReset();
+    mockAuthState.token = "test-token";
+    mockAuthState.user = { email: "user@example.com" };
     document.body.classList.remove("sidebar-modal-open");
     setViewportWidth(390);
   });
@@ -136,6 +143,31 @@ describe("AppLayout mobile sidebar behavior", () => {
     renderAppLayout("/login");
 
     expect(screen.getByText("Login page")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Открыть навигацию" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+    expect(document.querySelector(".animated-bg")).toBeNull();
+  });
+
+  it("hides sidebar shell on admin route", () => {
+    renderAppLayout("/admin");
+
+    expect(screen.getByText("Admin route content")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Открыть навигацию" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+    expect(document.querySelector(".animated-bg")).toBeNull();
+  });
+
+  it("hides sidebar shell when user is not authenticated", () => {
+    mockAuthState.token = null;
+    mockAuthState.user = null;
+
+    renderAppLayout("/projects");
+
+    expect(screen.getByText("Projects page")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Открыть навигацию" }),
     ).not.toBeInTheDocument();
