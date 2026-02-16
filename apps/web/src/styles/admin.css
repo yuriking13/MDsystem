@@ -2258,7 +2258,9 @@
   .admin-main,
   .admin-sidebar.collapsed + .admin-main {
     margin-left: 0;
-    padding: 16px;
+    padding: 16px calc(16px + env(safe-area-inset-right, 0px))
+      calc(16px + env(safe-area-inset-bottom, 0px))
+      calc(16px + env(safe-area-inset-left, 0px));
   }
 
   .admin-mobile-topbar {
@@ -2403,7 +2405,9 @@
 @media (max-width: 640px) {
   .admin-main,
   .admin-sidebar.collapsed + .admin-main {
-    padding: 12px;
+    padding: 12px calc(12px + env(safe-area-inset-right, 0px))
+      calc(12px + env(safe-area-inset-bottom, 0px))
+      calc(12px + env(safe-area-inset-left, 0px));
   }
 
   .admin-mobile-topbar {
