@@ -84,6 +84,7 @@ Automated responsive regression coverage for this matrix lives in:
 - `apps/web/tests/styles/legacyResponsiveSafeguards.test.ts`
 - `apps/web/tests/styles/layoutResponsiveShell.test.ts`
 - `apps/web/tests/styles/docsAndGraphResponsive.test.ts`
+- `apps/web/tests/styles/projectsAndSettingsResponsive.test.ts`
 
 Quick run for this focused suite:
 
