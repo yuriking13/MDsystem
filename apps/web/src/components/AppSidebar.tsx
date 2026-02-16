@@ -44,6 +44,7 @@ interface AppSidebarProps {
   projectRole?: string;
   projectUpdatedAt?: string;
   mobileOpen?: boolean;
+  mobileViewport?: boolean;
   onCloseMobile?: () => void;
 }
 
@@ -53,6 +54,7 @@ export default function AppSidebar({
   projectRole,
   projectUpdatedAt,
   mobileOpen = false,
+  mobileViewport = false,
   onCloseMobile,
 }: AppSidebarProps) {
   const { user, logout } = useAuth();
@@ -258,12 +260,14 @@ export default function AppSidebar({
   };
 
   const navItems = isInProject ? projectNavItems : mainNavItems;
+  const isCollapsedView = collapsed && !mobileViewport;
+  const showSidebarLabels = !isCollapsedView;
 
   return (
     <aside
       className={cn(
         "app-sidebar",
-        collapsed && "app-sidebar--collapsed",
+        isCollapsedView && "app-sidebar--collapsed",
         mobileOpen && "app-sidebar--open",
         className,
       )}
@@ -272,9 +276,9 @@ export default function AppSidebar({
       <button
         className="sidebar-collapse-toggle"
         onClick={() => setCollapsed(!collapsed)}
-        title={collapsed ? "Развернуть" : "Свернуть"}
+        title={isCollapsedView ? "Развернуть" : "Свернуть"}
       >
-        {collapsed ? (
+        {isCollapsedView ? (
           <ChevronRightIcon className="w-4 h-4" />
         ) : (
           <ChevronLeftIcon className="w-4 h-4" />
@@ -287,7 +291,7 @@ export default function AppSidebar({
           <div className="sidebar-logo-icon">
             <img src="/logo.svg" alt="Scientiaiter Logo" className="w-5 h-5" />
           </div>
-          {!collapsed && (
+          {showSidebarLabels && (
             <span className="sidebar-logo-text">Scientiaiter</span>
           )}
         </div>
@@ -305,9 +309,9 @@ export default function AppSidebar({
             title="Назад к проектам"
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            {!collapsed && <span>К проектам</span>}
+            {showSidebarLabels && <span>К проектам</span>}
           </button>
-          {!collapsed && projectName && (
+          {showSidebarLabels && projectName && (
             <>
               <div className="sidebar-project-name" title={projectName}>
                 {projectName}
@@ -353,13 +357,13 @@ export default function AppSidebar({
                     "sidebar-nav-item",
                     isActive && "sidebar-nav-item--active",
                   )}
-                  title={collapsed ? item.label : undefined}
+                  title={isCollapsedView ? item.label : undefined}
                 >
                   <Icon className="sidebar-nav-icon" />
-                  {!collapsed && (
+                  {showSidebarLabels && (
                     <span className="sidebar-nav-label">{item.label}</span>
                   )}
-                  {!collapsed && isArticlesItem && (
+                  {showSidebarLabels && isArticlesItem && (
                     <ChevronDownIcon
                       className={cn(
                         "w-4 h-4 ml-auto transition-transform duration-200",
@@ -399,12 +403,12 @@ export default function AppSidebar({
                                   "sidebar-submenu-item--active",
                               )}
                               title={
-                                collapsed
+                                isCollapsedView
                                   ? `${statusItem.label} (${statusItem.count})`
                                   : undefined
                               }
                             >
-                              {!collapsed ? (
+                              {showSidebarLabels ? (
                                 <>
                                   <StatusIcon className="sidebar-submenu-icon" />
                                   <span className="sidebar-submenu-label">
@@ -435,7 +439,7 @@ export default function AppSidebar({
         <div
           className={cn(
             "sidebar-theme-switcher-wrap",
-            collapsed && "sidebar-theme-switcher-wrap--collapsed",
+            isCollapsedView && "sidebar-theme-switcher-wrap--collapsed",
           )}
         >
           <fieldset
@@ -512,7 +516,7 @@ export default function AppSidebar({
             <div className="sidebar-user-avatar">
               <UserCircleIcon className="w-7 h-7" />
             </div>
-            {!collapsed && (
+            {showSidebarLabels && (
               <div className="sidebar-user-info">
                 <span className="sidebar-user-email">{user.email}</span>
               </div>
@@ -530,7 +534,9 @@ export default function AppSidebar({
           title="Выйти"
         >
           <ArrowRightOnRectangleIcon className="sidebar-footer-icon" />
-          {!collapsed && <span className="sidebar-footer-label">Выйти</span>}
+          {showSidebarLabels && (
+            <span className="sidebar-footer-label">Выйти</span>
+          )}
         </button>
       </div>
     </aside>

@@ -196,6 +196,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           projectRole={projectInfo.role || undefined}
           projectUpdatedAt={projectInfo.updatedAt || undefined}
           mobileOpen={mobileSidebarOpen}
+          mobileViewport={isMobileViewport}
           onCloseMobile={() => setMobileSidebarOpen(false)}
         />
         {isFixedLayout && (
