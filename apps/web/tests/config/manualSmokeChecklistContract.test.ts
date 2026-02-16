@@ -59,6 +59,30 @@ describe("manual smoke checklist contract", () => {
     }
   });
 
+  it("keeps main sidebar navigation entries for projects and docs", () => {
+    expect(sidebarSource).toContain('id: "projects"');
+    expect(sidebarSource).toContain('label: "Проекты"');
+    expect(sidebarSource).toContain('path: "/projects"');
+    expect(sidebarSource).toContain('id: "docs"');
+    expect(sidebarSource).toContain('label: "Документация"');
+    expect(sidebarSource).toContain('path: "/docs"');
+  });
+
+  it("keeps article status submenu entries available for smoke traversal", () => {
+    const statusExpectations: Array<{ id: string; label: string }> = [
+      { id: "candidate", label: "Кандидаты" },
+      { id: "selected", label: "Отобранные" },
+      { id: "excluded", label: "Исключённые" },
+      { id: "all", label: "Все" },
+      { id: "deleted", label: "Корзина" },
+    ];
+
+    for (const { id, label } of statusExpectations) {
+      expect(sidebarSource).toContain(`id: "${id}"`);
+      expect(sidebarSource).toContain(`label: "${label}"`);
+    }
+  });
+
   it("keeps no-transition theme toggle safety in sidebar switcher", () => {
     expect(sidebarSource).toMatch(
       /document\.documentElement\.classList\.add\("no-transitions"\);/,
