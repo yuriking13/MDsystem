@@ -121,6 +121,7 @@ export default function AdminLayout() {
 
       {/* Sidebar */}
       <aside
+        id="admin-primary-sidebar"
         className={`admin-sidebar ${sidebarOpen ? "open" : "collapsed"} ${mobileSidebarOpen ? "mobile-open" : ""}`}
       >
         <div className="admin-sidebar-header">
@@ -239,6 +240,7 @@ export default function AdminLayout() {
             aria-label={
               mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
             }
+            aria-controls="admin-primary-sidebar"
             aria-expanded={mobileSidebarOpen}
           >
             <svg

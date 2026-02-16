@@ -39,6 +39,7 @@ interface NavItem {
 }
 
 interface AppSidebarProps {
+  sidebarId?: string;
   className?: string;
   projectName?: string;
   projectRole?: string;
@@ -49,6 +50,7 @@ interface AppSidebarProps {
 }
 
 export default function AppSidebar({
+  sidebarId,
   className,
   projectName,
   projectRole,
@@ -269,6 +271,7 @@ export default function AppSidebar({
 
   return (
     <aside
+      id={sidebarId}
       className={cn(
         "app-sidebar",
         isCollapsedView && "app-sidebar--collapsed",

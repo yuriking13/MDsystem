@@ -171,9 +171,15 @@ describe("AppLayout mobile sidebar behavior", () => {
       renderAppLayout("/docs");
 
       expect(screen.getByText("Docs page")).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: "Открыть навигацию" }),
-      ).toBeInTheDocument();
+      const toggleButton = screen.getByRole("button", {
+        name: "Открыть навигацию",
+      });
+      expect(toggleButton).toBeInTheDocument();
+      expect(toggleButton).toHaveAttribute(
+        "aria-controls",
+        "app-primary-sidebar",
+      );
+      expect(document.getElementById("app-primary-sidebar")).not.toBeNull();
     },
   );
 
@@ -592,9 +598,14 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(document.body.classList.contains("layout-fixed")).toBe(true);
     expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
     expect(document.querySelector(".animated-bg")).toBeNull();
-    expect(
-      screen.getByRole("button", { name: "Открыть навигацию" }),
-    ).toBeInTheDocument();
+    const toggleButton = screen.getByRole("button", {
+      name: "Открыть навигацию",
+    });
+    expect(toggleButton).toBeInTheDocument();
+    expect(toggleButton).toHaveAttribute(
+      "aria-controls",
+      "app-primary-sidebar",
+    );
     expect(document.querySelector(".app-mobile-topbar")).toBeNull();
 
     unmount();

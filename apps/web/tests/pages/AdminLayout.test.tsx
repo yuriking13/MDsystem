@@ -110,6 +110,11 @@ describe("AdminLayout responsive sidebar behavior", () => {
     renderAdminLayout();
 
     const toggleButton = screen.getByLabelText("Открыть навигацию");
+    expect(toggleButton).toHaveAttribute(
+      "aria-controls",
+      "admin-primary-sidebar",
+    );
+    expect(document.getElementById("admin-primary-sidebar")).not.toBeNull();
     await user.click(toggleButton);
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
     expect(toggleButton).toHaveAttribute("aria-label", "Закрыть навигацию");

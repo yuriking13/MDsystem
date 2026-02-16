@@ -202,6 +202,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         className={`app-layout${showAnimatedBg ? " app-layout-with-animated-bg" : ""}${isFixedLayout ? " app-layout-fixed" : ""}`}
       >
         <AppSidebar
+          sidebarId="app-primary-sidebar"
           projectName={projectInfo.name || undefined}
           projectRole={projectInfo.role || undefined}
           projectUpdatedAt={projectInfo.updatedAt || undefined}
@@ -217,6 +218,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             aria-label={
               mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
             }
+            aria-controls="app-primary-sidebar"
             aria-expanded={mobileSidebarOpen}
           >
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,6 +249,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 aria-label={
                   mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
                 }
+                aria-controls="app-primary-sidebar"
                 aria-expanded={mobileSidebarOpen}
               >
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
