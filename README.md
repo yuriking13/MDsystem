@@ -53,3 +53,22 @@ The guard script can also be run directly:
 - `pnpm run quality:guards` (auto-cleans WEB JS mirrors, then checks)
 - `pnpm run quality:guards:check` (strict check mode, no auto-clean; used by root scripts and CI)
 - `pnpm run quality:guards:test` (unit tests for guard logic)
+
+## Responsive QA matrix
+
+For manual UI validation, use these baseline viewport widths:
+
+- 360
+- 390
+- 768
+- 1024
+- 1280
+- 1440
+- 1920
+
+Primary routes to verify:
+
+- User: `/login`, `/register`, `/projects`, `/settings`, `/docs`
+- Project tabs: `/projects/:id?tab=articles|documents|files|statistics|settings|graph`
+- Document editor: `/projects/:projectId/documents/:docId`
+- Admin shell and pages: `/admin` plus major sections (`users`, `projects`, `articles`, `activity`, `sessions`, `jobs`, `errors`, `audit`, `system`, `settings`)
