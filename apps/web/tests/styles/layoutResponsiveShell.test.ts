@@ -17,7 +17,19 @@ describe("responsive shell css regressions", () => {
       /html\.layout-fixed,\s*html\.layout-fixed body\s*\{[\s\S]*?height:\s*100vh;[\s\S]*?height:\s*100dvh;[\s\S]*?max-height:\s*100vh;[\s\S]*?max-height:\s*100dvh;/,
     );
     expect(appLayoutCss).toMatch(
+      /html\.layout-fixed #root\s*\{[\s\S]*?height:\s*100vh;[\s\S]*?height:\s*100dvh;[\s\S]*?max-height:\s*100vh;[\s\S]*?max-height:\s*100dvh;/,
+    );
+    expect(appLayoutCss).toMatch(
       /\.app-layout-fixed\s*\{[\s\S]*?height:\s*100vh;[\s\S]*?height:\s*100dvh;[\s\S]*?max-height:\s*100vh;[\s\S]*?max-height:\s*100dvh;/,
+    );
+    expect(appLayoutCss).toMatch(
+      /\.app-main-fixed\s*\{[\s\S]*?max-height:\s*100vh;[\s\S]*?max-height:\s*100dvh;/,
+    );
+  });
+
+  it("keeps app main shell viewport-height fallback for non-fixed pages", () => {
+    expect(appLayoutCss).toMatch(
+      /\.app-main\s*\{[\s\S]*?min-height:\s*100vh;[\s\S]*?min-height:\s*100dvh;/,
     );
   });
 
