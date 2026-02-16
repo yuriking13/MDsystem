@@ -98,8 +98,18 @@ test("runQualityGuards reports standalone js/jsx files in web source", () => {
     workspaceRoot,
     "apps/web/src/components/LegacyWidget.jsx",
   );
+  const mjsSourcePath = path.join(
+    workspaceRoot,
+    "apps/web/src/utils/legacy-module.mjs",
+  );
+  const cjsSourcePath = path.join(
+    workspaceRoot,
+    "apps/web/src/utils/legacy-commonjs.cjs",
+  );
   writeFile(jsSourcePath, "export const legacy = true;");
   writeFile(jsxSourcePath, "export const LegacyWidget = () => null;");
+  writeFile(mjsSourcePath, "export const legacyModule = true;");
+  writeFile(cjsSourcePath, "module.exports = { legacyCommonJs: true };");
 
   const result = runQualityGuards({
     workspaceRoot,
@@ -113,4 +123,6 @@ test("runQualityGuards reports standalone js/jsx files in web source", () => {
   );
   assert.equal(fs.existsSync(jsSourcePath), true);
   assert.equal(fs.existsSync(jsxSourcePath), true);
+  assert.equal(fs.existsSync(mjsSourcePath), true);
+  assert.equal(fs.existsSync(cjsSourcePath), true);
 });
