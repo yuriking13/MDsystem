@@ -68,6 +68,16 @@ function main() {
         "\n[quality-guards] Tip: in AppLayout/AdminLayout call helpers from `apps/web/src/lib/responsive.ts` instead of comparing `window.innerWidth` directly.",
       );
     }
+
+    if (
+      allViolations.some(
+        ({ check }) => check.name === "web-responsive-test-script-coverage",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: keep `apps/web/package.json` test:responsive in sync with required responsive suites (see tests/config/responsiveSuiteContract.test.ts).",
+      );
+    }
   }
 
   process.exit(1);

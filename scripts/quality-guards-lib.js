@@ -78,6 +78,29 @@ const webLayoutMobileBreakpointLiteralCheck = {
     "AppLayout/AdminLayout should not compare window.innerWidth directly; use shared responsive helper functions",
 };
 
+const webResponsiveTestScriptCoverageCheck = {
+  name: "web-responsive-test-script-coverage",
+  description:
+    "apps/web package test:responsive must include clean-js-mirrors pre-step and required responsive test files",
+};
+
+const REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
+  "src/lib/responsive.test.ts",
+  "tests/components/AppLayout.test.tsx",
+  "tests/pages/AdminLayout.test.tsx",
+  "tests/components/AppSidebar.test.tsx",
+  "tests/styles/articlesLayout.test.ts",
+  "tests/styles/legacyResponsiveSafeguards.test.ts",
+  "tests/styles/layoutResponsiveShell.test.ts",
+  "tests/styles/docsAndGraphResponsive.test.ts",
+  "tests/styles/projectsAndSettingsResponsive.test.ts",
+  "tests/styles/adminPagesResponsive.test.ts",
+  "tests/styles/authResponsive.test.ts",
+  "tests/utils/responsiveMatrix.test.ts",
+  "tests/utils/viewport.test.ts",
+  "tests/config/responsiveSuiteContract.test.ts",
+];
+
 function walkFiles(rootDir, extensions) {
   const output = [];
   const queue = [rootDir];
@@ -287,6 +310,103 @@ function collectWebLayoutMobileBreakpointLiteralViolations(workspaceRoot) {
   return violations;
 }
 
+function extractVitestTargetsFromScript(command) {
+  const marker = "vitest run";
+  const markerIndex = command.indexOf(marker);
+  if (markerIndex === -1) {
+    return [];
+  }
+
+  const targetSlice = command.slice(markerIndex + marker.length).trim();
+  if (!targetSlice) {
+    return [];
+  }
+
+  return targetSlice
+    .split(/\s+/)
+    .filter((token) => token.endsWith(".ts") || token.endsWith(".tsx"));
+}
+
+function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
+  const packagePath = path.join(workspaceRoot, "apps/web/package.json");
+  if (!fs.existsSync(packagePath)) {
+    return [];
+  }
+
+  const relativeFile = path
+    .relative(workspaceRoot, packagePath)
+    .replaceAll(path.sep, "/");
+  const source = fs.readFileSync(packagePath, "utf8");
+  const scriptIndex = source.indexOf('"test:responsive"');
+  const scriptLine = scriptIndex === -1 ? 1 : lineForIndex(source, scriptIndex);
+
+  let parsedPackage;
+  try {
+    parsedPackage = JSON.parse(source);
+  } catch (error) {
+    return [
+      {
+        file: relativeFile,
+        line: 1,
+        snippet: "invalid-json:apps/web/package.json",
+      },
+    ];
+  }
+
+  const responsiveScript =
+    parsedPackage &&
+    parsedPackage.scripts &&
+    parsedPackage.scripts["test:responsive"];
+
+  if (typeof responsiveScript !== "string") {
+    return [
+      {
+        file: relativeFile,
+        line: scriptLine,
+        snippet: "missing-script:test:responsive",
+      },
+    ];
+  }
+
+  const violations = [];
+  if (!responsiveScript.includes("pnpm run clean:js-mirrors && vitest run")) {
+    violations.push({
+      file: relativeFile,
+      line: scriptLine,
+      snippet: "missing-pre-step:clean-js-mirrors+vitest-run",
+    });
+  }
+
+  const responsiveTargets = extractVitestTargetsFromScript(responsiveScript);
+  const targetSet = new Set(responsiveTargets);
+
+  for (const requiredTarget of REQUIRED_WEB_RESPONSIVE_TEST_TARGETS) {
+    if (!targetSet.has(requiredTarget)) {
+      violations.push({
+        file: relativeFile,
+        line: scriptLine,
+        snippet: `missing-target:${requiredTarget}`,
+      });
+    }
+  }
+
+  if (targetSet.size !== responsiveTargets.length) {
+    const seen = new Set();
+    for (const target of responsiveTargets) {
+      if (seen.has(target)) {
+        violations.push({
+          file: relativeFile,
+          line: scriptLine,
+          snippet: `duplicate-target:${target}`,
+        });
+      }
+      seen.add(target);
+    }
+  }
+
+  return violations;
+}
+
 function cleanupWebJsMirrors(workspaceRoot) {
   const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
@@ -359,6 +479,15 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webResponsiveTestScriptCoverageViolations =
+    collectWebResponsiveTestScriptCoverageViolations(workspaceRoot);
+  if (webResponsiveTestScriptCoverageViolations.length > 0) {
+    allViolations.push({
+      check: webResponsiveTestScriptCoverageCheck,
+      violations: webResponsiveTestScriptCoverageViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
@@ -369,6 +498,7 @@ module.exports = {
   webStylePropCheck,
   webCssViewportFallbackCheck,
   webLayoutMobileBreakpointLiteralCheck,
+  webResponsiveTestScriptCoverageCheck,
   runQualityGuards,
   lineForIndex,
 };

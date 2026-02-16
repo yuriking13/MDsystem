@@ -236,3 +236,34 @@ test("quality-guards check mode reports tip for reverse-order layout breakpoint 
     /Tip: in AppLayout\/AdminLayout call helpers from `apps\/web\/src\/lib\/responsive\.ts` instead of comparing `window\.innerWidth` directly/,
   );
 });
+
+test("quality-guards check mode reports responsive suite coverage remediation tip", () => {
+  const workspaceRoot = createTempWorkspace();
+  const webPackagePath = path.join(workspaceRoot, "apps/web/package.json");
+
+  writeFile(
+    webPackagePath,
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive":
+            "pnpm run clean:js-mirrors && vitest run tests/components/AppLayout.test.tsx",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep `apps\/web\/package\.json` test:responsive in sync with required responsive suites/,
+  );
+});

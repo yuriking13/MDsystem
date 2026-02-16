@@ -423,3 +423,90 @@ test("runQualityGuards accepts shared responsive helpers in layout files", () =>
   );
   assert.equal(layoutBreakpointViolation, undefined);
 });
+
+test("runQualityGuards blocks incomplete web test:responsive script coverage", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/package.json"),
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive":
+            "pnpm run clean:js-mirrors && vitest run tests/components/AppLayout.test.tsx",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const responsiveScriptCoverageViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-test-script-coverage",
+  );
+  assert.ok(responsiveScriptCoverageViolation);
+  assert.ok(
+    responsiveScriptCoverageViolation.violations.some((violation) =>
+      violation.snippet.includes("missing-target:tests/pages/AdminLayout.test.tsx"),
+    ),
+  );
+  assert.ok(
+    responsiveScriptCoverageViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "missing-target:tests/config/responsiveSuiteContract.test.ts",
+      ),
+    ),
+  );
+});
+
+test("runQualityGuards accepts complete web test:responsive script coverage", () => {
+  const workspaceRoot = createWorkspaceFixture();
+  const responsiveTargets = [
+    "src/lib/responsive.test.ts",
+    "tests/components/AppLayout.test.tsx",
+    "tests/pages/AdminLayout.test.tsx",
+    "tests/components/AppSidebar.test.tsx",
+    "tests/styles/articlesLayout.test.ts",
+    "tests/styles/legacyResponsiveSafeguards.test.ts",
+    "tests/styles/layoutResponsiveShell.test.ts",
+    "tests/styles/docsAndGraphResponsive.test.ts",
+    "tests/styles/projectsAndSettingsResponsive.test.ts",
+    "tests/styles/adminPagesResponsive.test.ts",
+    "tests/styles/authResponsive.test.ts",
+    "tests/utils/responsiveMatrix.test.ts",
+    "tests/utils/viewport.test.ts",
+    "tests/config/responsiveSuiteContract.test.ts",
+  ];
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/package.json"),
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive": `pnpm run clean:js-mirrors && vitest run ${responsiveTargets.join(
+            " ",
+          )}`,
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const responsiveScriptCoverageViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-test-script-coverage",
+  );
+  assert.equal(responsiveScriptCoverageViolation, undefined);
+});

@@ -38,6 +38,7 @@ The repository enforces strict quality gates for TypeScript and UI code:
 - no direct DOM style mutations (`.style.*` / `setAttribute("style", ...)`) in web source.
 - any `height|min-height|max-height: 100vh` declaration in web CSS must be followed by a `100dvh` fallback line.
 - `AppLayout` and `AdminLayout` must use shared responsive helpers (`apps/web/src/lib/responsive.ts`) instead of comparing `window.innerWidth` directly.
+- `apps/web/package.json` script `test:responsive` must include the required responsive regression suite list (guarded by `tests/config/responsiveSuiteContract.test.ts`).
 
 Run all checks from the workspace root:
 
