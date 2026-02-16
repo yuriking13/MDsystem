@@ -10642,6 +10642,18 @@ input:focus::placeholder {
   .auth-options .auth-link {
     font-size: 13px;
   }
+
+  .auth-checkbox {
+    font-size: 13px;
+  }
+
+  .auth-checkbox span {
+    overflow-wrap: anywhere;
+  }
+
+  .auth-terms .auth-checkbox span {
+    font-size: 12px;
+  }
 }
 
 /* ===== FUTURISTIC LOADING STATES ===== */
