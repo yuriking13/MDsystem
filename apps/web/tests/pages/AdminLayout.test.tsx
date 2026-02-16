@@ -109,4 +109,23 @@ describe("AdminLayout responsive sidebar behavior", () => {
       );
     });
   });
+
+  it("closes mobile sidebar when resizing to desktop viewport", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderAdminLayout();
+
+    await user.click(screen.getByLabelText("Открыть навигацию"));
+    expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+
+    act(() => {
+      setViewportWidth(1280);
+    });
+
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+    });
+  });
 });
