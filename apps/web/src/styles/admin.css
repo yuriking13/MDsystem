@@ -2327,6 +2327,19 @@
     flex-wrap: wrap;
   }
 
+  .admin-quick-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-calendar-header {
+    gap: 10px;
+  }
+
+  .admin-calendar-title {
+    min-width: 0;
+    font-size: 16px;
+  }
+
   .admin-table th,
   .admin-table td {
     padding: 9px 10px;
