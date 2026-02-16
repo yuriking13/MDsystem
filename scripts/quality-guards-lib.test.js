@@ -1,0 +1,72 @@
+const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const test = require("node:test");
+
+const { lineForIndex, runQualityGuards } = require("./quality-guards-lib.js");
+
+function writeFile(filePath, content) {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, content, "utf8");
+}
+
+function createWorkspaceFixture() {
+  return fs.mkdtempSync(path.join(os.tmpdir(), "quality-guards-"));
+}
+
+test("lineForIndex returns expected 1-based line number", () => {
+  const source = ["first", "second", "third", "fourth"].join("\n");
+  const indexOfThird = source.indexOf("third");
+  assert.equal(lineForIndex(source, indexOfThird), 3);
+});
+
+test("runQualityGuards detects explicit any and inline style violations", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/components/Test.tsx"),
+    [
+      "export function Test() {",
+      "  const bad: any = 1;",
+      "  return <div style={{ color: 'red' }}>{bad}</div>;",
+      "}",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/lib/dom.ts"),
+    "document.body.style.cursor = 'wait';",
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const checkNames = result.allViolations.map((entry) => entry.check.name);
+  assert.ok(checkNames.includes("explicit-any"));
+  assert.ok(checkNames.includes("inline-style-literal"));
+  assert.ok(checkNames.includes("dom-style-mutation"));
+});
+
+test("runQualityGuards removes web js mirrors when auto clean is enabled", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  const tsxPath = path.join(workspaceRoot, "apps/web/src/pages/Home.tsx");
+  const jsMirrorPath = path.join(workspaceRoot, "apps/web/src/pages/Home.js");
+  writeFile(tsxPath, "export const Home = () => null;");
+  writeFile(jsMirrorPath, "export const Home = () => null;");
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: true,
+  });
+
+  assert.equal(result.removedWebJsMirrors.length, 1);
+  assert.equal(fs.existsSync(jsMirrorPath), false);
+  assert.equal(
+    result.allViolations.some((entry) => entry.check.name === "web-js-mirrors"),
+    false,
+  );
+});
