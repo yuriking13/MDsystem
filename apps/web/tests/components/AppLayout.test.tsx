@@ -253,6 +253,9 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(document.querySelector(".app-sidebar--open") !== null).toBe(
           shouldOpen,
         );
+        expect(document.querySelector(".app-sidebar-overlay") !== null).toBe(
+          shouldOpen,
+        );
       });
 
       unmount();
@@ -356,6 +359,9 @@ describe("AppLayout mobile sidebar behavior", () => {
             shouldOpen,
           );
           expect(document.querySelector(".app-sidebar--open") !== null).toBe(
+            shouldOpen,
+          );
+          expect(document.querySelector(".app-sidebar-overlay") !== null).toBe(
             shouldOpen,
           );
         });

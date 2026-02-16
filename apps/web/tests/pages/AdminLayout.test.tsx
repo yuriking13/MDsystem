@@ -166,6 +166,9 @@ describe("AdminLayout responsive sidebar behavior", () => {
         expect(sidebar?.classList.contains("mobile-open")).toBe(
           shouldOpenOnToggle,
         );
+        expect(document.querySelector(".admin-sidebar-overlay") !== null).toBe(
+          shouldOpenOnToggle,
+        );
         expect(toggleButton).toHaveAttribute(
           "aria-expanded",
           shouldOpenOnToggle ? "true" : "false",
@@ -239,6 +242,9 @@ describe("AdminLayout responsive sidebar behavior", () => {
           expect(sidebar?.classList.contains("mobile-open")).toBe(
             shouldOpenOnToggle,
           );
+          expect(
+            document.querySelector(".admin-sidebar-overlay") !== null,
+          ).toBe(shouldOpenOnToggle);
           expect(toggleButton).toHaveAttribute(
             "aria-expanded",
             shouldOpenOnToggle ? "true" : "false",
