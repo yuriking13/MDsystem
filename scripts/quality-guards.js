@@ -65,7 +65,7 @@ function main() {
       )
     ) {
       console.error(
-        "\n[quality-guards] Tip: in AppLayout/AdminLayout use helpers from `apps/web/src/lib/responsive.ts` instead of numeric `window.innerWidth` literals.",
+        "\n[quality-guards] Tip: in AppLayout/AdminLayout call helpers from `apps/web/src/lib/responsive.ts` instead of comparing `window.innerWidth` directly.",
       );
     }
   }

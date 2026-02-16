@@ -279,7 +279,7 @@ test("runQualityGuards requires matching property for 100dvh fallback", () => {
   assert.match(viewportViolation.violations[0].snippet, /min-height:\s*100vh/);
 });
 
-test("runQualityGuards blocks numeric innerWidth breakpoints in layout files", () => {
+test("runQualityGuards blocks direct innerWidth comparisons in layout files", () => {
   const workspaceRoot = createWorkspaceFixture();
 
   writeFile(
@@ -298,6 +298,43 @@ test("runQualityGuards blocks numeric innerWidth breakpoints in layout files", (
       "export function AdminLayout() {",
       "  const isMobile = window.innerWidth <= 900;",
       "  return isMobile ? null : null;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutBreakpointViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-mobile-breakpoint-literals",
+  );
+  assert.ok(layoutBreakpointViolation);
+  assert.equal(layoutBreakpointViolation.violations.length, 2);
+});
+
+test("runQualityGuards blocks innerWidth comparisons even with constants", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/components/AppLayout.tsx"),
+    [
+      "import { APP_MOBILE_MAX_WIDTH } from '../lib/responsive';",
+      "export function AppLayout() {",
+      "  const isMobile = window.innerWidth <= APP_MOBILE_MAX_WIDTH;",
+      "  return isMobile ? null : null;",
+      "}",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/pages/admin/AdminLayout.tsx"),
+    [
+      "import { ADMIN_MOBILE_MAX_WIDTH } from '../../lib/responsive';",
+      "export function AdminLayout() {",
+      "  const isDesktop = window.innerWidth > ADMIN_MOBILE_MAX_WIDTH;",
+      "  return isDesktop ? null : null;",
       "}",
     ].join("\n"),
   );

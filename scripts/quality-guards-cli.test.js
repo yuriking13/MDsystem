@@ -207,6 +207,6 @@ test("quality-guards check mode reports layout breakpoint literal remediation ti
   assert.equal(result.status, 1);
   assert.match(
     result.stderr,
-    /Tip: in AppLayout\/AdminLayout use helpers from `apps\/web\/src\/lib\/responsive\.ts` instead of numeric `window\.innerWidth` literals/,
+    /Tip: in AppLayout\/AdminLayout call helpers from `apps\/web\/src\/lib\/responsive\.ts` instead of comparing `window\.innerWidth` directly/,
   );
 });

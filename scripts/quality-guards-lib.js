@@ -75,7 +75,7 @@ const webCssViewportFallbackCheck = {
 const webLayoutMobileBreakpointLiteralCheck = {
   name: "web-layout-mobile-breakpoint-literals",
   description:
-    "AppLayout/AdminLayout should not use numeric window.innerWidth breakpoints directly; use shared responsive helpers/constants",
+    "AppLayout/AdminLayout should not compare window.innerWidth directly; use shared responsive helper functions",
 };
 
 function walkFiles(rootDir, extensions) {
@@ -270,7 +270,7 @@ function collectWebLayoutMobileBreakpointLiteralViolations(workspaceRoot) {
     }
 
     const source = fs.readFileSync(filePath, "utf8");
-    const matcher = /innerWidth\s*[<>]=?\s*\d+/g;
+    const matcher = /innerWidth\s*[<>]=?/g;
     let match = matcher.exec(source);
 
     while (match) {
