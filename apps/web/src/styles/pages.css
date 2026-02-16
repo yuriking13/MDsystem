@@ -53,6 +53,10 @@
     gap: 12px;
   }
 
+  .projects-create-btn {
+    width: 100%;
+  }
+
   .project-card {
     padding: 14px;
   }
@@ -419,6 +423,10 @@
 .projects-grid {
   @apply grid gap-4;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+}
+
+.projects-create-btn {
+  justify-content: center;
 }
 
 .project-card {
