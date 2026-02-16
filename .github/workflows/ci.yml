@@ -131,6 +131,9 @@ jobs:
       - name: Typecheck WEB
         run: pnpm --filter web typecheck
 
+      - name: Run responsive regression matrix
+        run: pnpm --filter web run test:responsive
+
       - name: Test WEB with coverage
         run: pnpm --filter web test:coverage
 
