@@ -311,4 +311,27 @@ describe("DocumentationPage menu + submenu", () => {
     expect(activeTab).toHaveAttribute("tabindex", "-1");
     expect(inactiveTab).toHaveAttribute("tabindex", "0");
   });
+
+  it("wraps keyboard navigation at submenu boundaries", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    await user.click(screen.getByRole("button", { name: "API ключи" }));
+
+    const firstTab = screen.getByRole("tab", {
+      name: "Какие провайдеры доступны",
+    });
+    const lastTab = screen.getByRole("tab", {
+      name: "Безопасность и типовые ошибки",
+    });
+
+    firstTab.focus();
+    await user.keyboard("{ArrowUp}");
+    expect(lastTab).toHaveAttribute("aria-selected", "true");
+    expect(lastTab).toHaveFocus();
+
+    await user.keyboard("{ArrowDown}");
+    expect(firstTab).toHaveAttribute("aria-selected", "true");
+    expect(firstTab).toHaveFocus();
+  });
 });
