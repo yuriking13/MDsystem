@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout from "../../src/components/AppLayout";
@@ -41,6 +47,7 @@ function renderAppLayout(initialPath = "/projects") {
             }
           />
           <Route path="/settings" element={<div>Settings page</div>} />
+          <Route path="/login" element={<div>Login page</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -80,5 +87,33 @@ describe("AppLayout mobile sidebar behavior", () => {
         false,
       );
     });
+  });
+
+  it("closes mobile sidebar when resizing to desktop viewport", async () => {
+    const user = userEvent.setup();
+    renderAppLayout();
+
+    await user.click(screen.getByLabelText("Открыть навигацию"));
+    expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+
+    act(() => {
+      setViewportWidth(1280);
+    });
+
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+    });
+  });
+
+  it("hides sidebar shell on login route", () => {
+    renderAppLayout("/login");
+
+    expect(screen.getByText("Login page")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Открыть навигацию" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
   });
 });
