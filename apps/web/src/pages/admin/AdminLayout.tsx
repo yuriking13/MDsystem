@@ -95,6 +95,8 @@ export default function AdminLayout() {
   }
 
   const showSidebarLabels = isMobileViewport || sidebarOpen;
+  const currentSectionLabel =
+    sidebarItems.find((item) => isActive(item.path))?.label ?? "Админ-панель";
 
   return (
     <div className="admin-layout">
@@ -240,7 +242,7 @@ export default function AdminLayout() {
               />
             </svg>
           </button>
-          <span className="admin-mobile-title">Admin Panel</span>
+          <span className="admin-mobile-title">{currentSectionLabel}</span>
         </div>
         <Outlet />
       </main>
