@@ -2,11 +2,20 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const workspaceRoot = process.cwd();
+const SKIP_DIRECTORIES = new Set([
+  "node_modules",
+  "dist",
+  "coverage",
+  ".git",
+  ".turbo",
+  ".next",
+  "build",
+]);
 
 const checks = [
   {
     name: "explicit-any",
-    roots: ["apps/api/src", "apps/web/src"],
+    roots: ["apps/api", "apps/web"],
     fileExtensions: new Set([".ts", ".tsx"]),
     pattern: /Record<string,\s*any>|:\s*any\b|as\s+any\b|<any>|any\[\]/g,
     description: "Explicit any typing is not allowed",
@@ -25,6 +34,20 @@ const checks = [
     pattern: /\.style\./g,
     description: "Direct DOM style mutation is not allowed",
   },
+  {
+    name: "inline-style-attribute-string",
+    roots: ["apps/web/src"],
+    fileExtensions: new Set([".ts", ".tsx"]),
+    pattern: /style=["']/g,
+    description: "Inline HTML style attributes in strings are not allowed",
+  },
+  {
+    name: "dom-style-attribute-mutation",
+    roots: ["apps/web/src"],
+    fileExtensions: new Set([".ts", ".tsx"]),
+    pattern: /setAttribute\(\s*["']style["']/g,
+    description: "setAttribute('style', ...) is not allowed",
+  },
 ];
 
 function walkFiles(rootDir, extensions) {
@@ -42,7 +65,7 @@ function walkFiles(rootDir, extensions) {
       const fullPath = path.join(current, entry.name);
 
       if (entry.isDirectory()) {
-        if (entry.name === "node_modules" || entry.name === "dist") {
+        if (SKIP_DIRECTORIES.has(entry.name)) {
           continue;
         }
         queue.push(fullPath);
@@ -56,6 +79,21 @@ function walkFiles(rootDir, extensions) {
   }
 
   return output;
+}
+
+const fileCache = new Map();
+
+function getCachedFiles(rootDir, extensions) {
+  const extensionKey = Array.from(extensions).sort().join(",");
+  const cacheKey = `${rootDir}|${extensionKey}`;
+  const cachedFiles = fileCache.get(cacheKey);
+  if (cachedFiles) {
+    return cachedFiles;
+  }
+
+  const files = walkFiles(rootDir, extensions);
+  fileCache.set(cacheKey, files);
+  return files;
 }
 
 function lineForIndex(source, index) {
@@ -73,7 +111,7 @@ function runGuardCheck(check) {
 
   for (const relativeRoot of check.roots) {
     const absoluteRoot = path.join(workspaceRoot, relativeRoot);
-    const files = walkFiles(absoluteRoot, check.fileExtensions);
+    const files = getCachedFiles(absoluteRoot, check.fileExtensions);
 
     for (const filePath of files) {
       const source = fs.readFileSync(filePath, "utf8");
@@ -111,7 +149,9 @@ function main() {
 
   console.error("[quality-guards] Guard violations found:");
   for (const { check, violations } of allViolations) {
-    console.error(`\n- ${check.name}: ${check.description}`);
+    console.error(
+      `\n- ${check.name}: ${check.description} (found ${violations.length})`,
+    );
     for (const violation of violations) {
       console.error(
         `  ${violation.file}:${violation.line} -> ${violation.snippet}`,
