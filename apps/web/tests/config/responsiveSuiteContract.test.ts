@@ -50,6 +50,13 @@ describe("responsive suite command contract", () => {
     );
   });
 
+  it("keeps all configured responsive target files present in web workspace", () => {
+    for (const target of REQUIRED_RESPONSIVE_TEST_FILES) {
+      const targetPath = resolve(process.cwd(), target);
+      expect(() => readFileSync(targetPath, "utf8")).not.toThrow();
+    }
+  });
+
   it("keeps test:responsive script with clean-js-mirrors pre-step", () => {
     expect(responsiveScript).toContain(
       "pnpm run clean:js-mirrors && vitest run",

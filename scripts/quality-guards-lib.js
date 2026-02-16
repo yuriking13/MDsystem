@@ -128,29 +128,48 @@ const WEB_RESPONSIVE_TARGETS_CONFIG_PATH = path.join(
   "responsiveSuiteTargets.json",
 );
 
-function readRequiredWebResponsiveTestTargets(workspaceRoot) {
+function loadRequiredWebResponsiveTestTargets(workspaceRoot) {
   const configPath = path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH);
   if (!fs.existsSync(configPath)) {
-    return DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS;
+    return {
+      targets: DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+      loadedFromConfig: false,
+    };
   }
 
   try {
     const parsedConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
     if (!Array.isArray(parsedConfig)) {
-      return DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS;
+      return {
+        targets: DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+        loadedFromConfig: false,
+      };
     }
 
     const normalizedTargets = parsedConfig.filter(
       (target) => typeof target === "string",
     );
     if (normalizedTargets.length === 0) {
-      return DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS;
+      return {
+        targets: DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+        loadedFromConfig: false,
+      };
     }
 
-    return normalizedTargets;
+    return {
+      targets: normalizedTargets,
+      loadedFromConfig: true,
+    };
   } catch (error) {
-    return DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS;
+    return {
+      targets: DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+      loadedFromConfig: false,
+    };
   }
+}
+
+function readRequiredWebResponsiveTestTargets(workspaceRoot) {
+  return loadRequiredWebResponsiveTestTargets(workspaceRoot).targets;
 }
 
 function walkFiles(rootDir, extensions) {
@@ -430,7 +449,8 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
   }
 
   const responsiveTargets = extractVitestTargetsFromScript(responsiveScript);
-  const requiredTargets = readRequiredWebResponsiveTestTargets(workspaceRoot);
+  const { loadedFromConfig, targets: requiredTargets } =
+    loadRequiredWebResponsiveTestTargets(workspaceRoot);
   const targetSet = new Set(responsiveTargets);
   let hasDuplicateTargets = false;
 
@@ -494,6 +514,19 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
         line: scriptLine,
         snippet: `target-order-mismatch:index-${mismatchIndex + 1}`,
       });
+    }
+  }
+
+  if (loadedFromConfig) {
+    for (const requiredTarget of requiredTargets) {
+      const targetPath = path.join(workspaceRoot, "apps", "web", requiredTarget);
+      if (!fs.existsSync(targetPath)) {
+        violations.push({
+          file: WEB_RESPONSIVE_TARGETS_CONFIG_PATH.replaceAll(path.sep, "/"),
+          line: 1,
+          snippet: `missing-required-target-file:${requiredTarget}`,
+        });
+      }
     }
   }
 

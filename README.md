@@ -103,6 +103,8 @@ Canonical ordered target list for `apps/web/package.json` `test:responsive` is s
 
 - `apps/web/tests/config/responsiveSuiteTargets.json`
 
+Every target listed in this file must exist as a real test file in `apps/web`.
+
 Quick run for this focused suite:
 
 - Workspace root: `pnpm test:responsive`

@@ -719,6 +719,99 @@ test("runQualityGuards reads responsive targets from shared config file when pre
   );
 });
 
+test("runQualityGuards reports missing target files declared in responsive config", () => {
+  const workspaceRoot = createWorkspaceFixture();
+  const customResponsiveTargets = [
+    "tests/config/alpha.test.ts",
+    "tests/config/missing.test.ts",
+  ];
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(customResponsiveTargets, null, 2),
+  );
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/config/alpha.test.ts"),
+    "export {};",
+  );
+  writeFile(
+    path.join(workspaceRoot, "apps/web/package.json"),
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive":
+            "pnpm run clean:js-mirrors && vitest run tests/config/alpha.test.ts tests/config/missing.test.ts",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const responsiveScriptCoverageViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-test-script-coverage",
+  );
+  assert.ok(responsiveScriptCoverageViolation);
+  assert.ok(
+    responsiveScriptCoverageViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "missing-required-target-file:tests/config/missing.test.ts",
+      ),
+    ),
+  );
+});
+
+test("runQualityGuards accepts responsive config when all targets exist", () => {
+  const workspaceRoot = createWorkspaceFixture();
+  const customResponsiveTargets = [
+    "tests/config/alpha.test.ts",
+    "tests/config/beta.test.ts",
+  ];
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(customResponsiveTargets, null, 2),
+  );
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/config/alpha.test.ts"),
+    "export {};",
+  );
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/config/beta.test.ts"),
+    "export {};",
+  );
+  writeFile(
+    path.join(workspaceRoot, "apps/web/package.json"),
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive":
+            "pnpm run clean:js-mirrors && vitest run tests/config/alpha.test.ts tests/config/beta.test.ts",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const responsiveScriptCoverageViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-test-script-coverage",
+  );
+  assert.equal(responsiveScriptCoverageViolation, undefined);
+});
+
 test("runQualityGuards blocks numeric setViewportWidth literals in layout responsive tests", () => {
   const workspaceRoot = createWorkspaceFixture();
 

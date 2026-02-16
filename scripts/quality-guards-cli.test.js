@@ -7,6 +7,7 @@ const test = require("node:test");
 
 const {
   DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+  WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
 } = require("./quality-guards-lib.js");
 
 const guardCliPath = path.resolve(__dirname, "quality-guards.js");
@@ -430,5 +431,44 @@ test("quality-guards check mode reports inline viewport array remediation tip fo
   assert.match(
     result.stderr,
     /Tip: in AppLayout\/AdminLayout test suites iterate shared matrix constants \(`TARGET_VIEWPORT_WIDTHS`, `MOBILE_VIEWPORT_WIDTHS`, etc\.\) instead of inline numeric arrays/,
+  );
+});
+
+test("quality-guards check mode reports responsive suite tip when configured target file is missing", () => {
+  const workspaceRoot = createTempWorkspace();
+  const webPackagePath = path.join(workspaceRoot, "apps/web/package.json");
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(["tests/config/present.test.ts", "tests/config/missing.test.ts"], null, 2),
+  );
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/config/present.test.ts"),
+    "export {};",
+  );
+  writeFile(
+    webPackagePath,
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive":
+            "pnpm run clean:js-mirrors && vitest run tests/config/present.test.ts tests/config/missing.test.ts",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep `apps\/web\/package\.json` test:responsive in sync with required responsive suites and ensure every target from `apps\/web\/tests\/config\/responsiveSuiteTargets\.json` exists/,
   );
 });

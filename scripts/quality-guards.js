@@ -75,7 +75,7 @@ function main() {
       )
     ) {
       console.error(
-        "\n[quality-guards] Tip: keep `apps/web/package.json` test:responsive in sync with required responsive suites (see tests/config/responsiveSuiteContract.test.ts).",
+        "\n[quality-guards] Tip: keep `apps/web/package.json` test:responsive in sync with required responsive suites and ensure every target from `apps/web/tests/config/responsiveSuiteTargets.json` exists.",
       );
     }
 
