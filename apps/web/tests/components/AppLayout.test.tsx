@@ -55,6 +55,8 @@ function ProjectContextTitlePage() {
       <Link to="/settings">Go settings</Link>
       <Link to="/projects">Go projects</Link>
       <Link to="/docs">Go docs</Link>
+      <Link to="/projects/p1?tab=documents">Go project documents</Link>
+      <Link to="/projects/p1?tab=graph">Go project graph</Link>
     </div>
   );
 }
@@ -248,6 +250,64 @@ describe("AppLayout mobile sidebar behavior", () => {
 
         unmount();
       }
+    },
+  );
+
+  it.each([360, 390, 768])(
+    "keeps project title when navigating between project-scoped non-fixed routes at %ipx",
+    async (width) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/projects/p1/context-title");
+
+      await waitFor(() => {
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Альфа");
+      });
+
+      await user.click(screen.getByText("Go project documents"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Project details page")).toBeInTheDocument();
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Альфа");
+      });
+    },
+  );
+
+  it.each([360, 390, 768])(
+    "preserves project title across graph tab round-trip at %ipx",
+    async (width) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/projects/p1/context-title");
+
+      await waitFor(() => {
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Альфа");
+      });
+
+      await user.click(screen.getByText("Go project graph"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Project details page")).toBeInTheDocument();
+        expect(document.querySelector(".app-mobile-topbar")).toBeNull();
+        expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
+      });
+
+      await user.click(screen.getByText("Go documents tab"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Project details page")).toBeInTheDocument();
+        expect(document.querySelector(".app-mobile-topbar")).not.toBeNull();
+        expect(document.querySelector(".app-layout-fixed")).toBeNull();
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Альфа");
+      });
     },
   );
 
