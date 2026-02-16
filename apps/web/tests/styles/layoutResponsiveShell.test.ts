@@ -36,6 +36,18 @@ describe("responsive shell css regressions", () => {
     );
   });
 
+  it("keeps disabled styling for mobile-only nav toggles", () => {
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-mobile-fab-toggle:disabled\s*\{[\s\S]*?cursor:\s*not-allowed;[\s\S]*?opacity:\s*0\.55;[\s\S]*?pointer-events:\s*none;/,
+    );
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-mobile-nav-toggle:disabled\s*\{[\s\S]*?cursor:\s*not-allowed;[\s\S]*?opacity:\s*0\.55;[\s\S]*?pointer-events:\s*none;/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-mobile-nav-toggle:disabled\s*\{[\s\S]*?cursor:\s*not-allowed;[\s\S]*?opacity:\s*0\.55;[\s\S]*?pointer-events:\s*none;/,
+    );
+  });
+
   it("keeps admin sidebar viewport-height fallback and safe-area support", () => {
     expect(adminCss).toMatch(
       /\.admin-sidebar\s*\{[\s\S]*?height:\s*100vh;[\s\S]*?height:\s*100dvh;[\s\S]*?padding-top:\s*env\(safe-area-inset-top,\s*0px\);[\s\S]*?padding-left:\s*env\(safe-area-inset-left,\s*0px\);[\s\S]*?padding-right:\s*env\(safe-area-inset-right,\s*0px\);/,

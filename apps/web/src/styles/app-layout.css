@@ -935,6 +935,12 @@ html.layout-fixed #root {
     color: #ffffff;
   }
 
+  .app-mobile-fab-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
   .light-theme .app-mobile-fab-toggle,
   [data-theme="light"] .app-mobile-fab-toggle {
     background: rgba(255, 255, 255, 0.95);
@@ -994,6 +1000,12 @@ html.layout-fixed #root {
     background: rgba(30, 48, 80, 0.95);
     border-color: rgba(56, 89, 138, 0.55);
     color: #ffffff;
+  }
+
+  .app-mobile-nav-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    pointer-events: none;
   }
 
   .light-theme .app-mobile-nav-toggle,

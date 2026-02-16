@@ -2335,6 +2335,12 @@
     background: rgba(30, 48, 80, 0.95);
   }
 
+  .admin-mobile-nav-toggle:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
   .light-theme .admin-mobile-nav-toggle,
   [data-theme="light"] .admin-mobile-nav-toggle {
     border-color: rgba(224, 214, 202, 0.9);
