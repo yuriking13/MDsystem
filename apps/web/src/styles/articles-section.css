@@ -2320,23 +2320,27 @@
   }
 
   .article-ai-header {
-    padding: 14px 16px;
+    padding: 14px calc(16px + env(safe-area-inset-right, 0px))
+      14px calc(16px + env(safe-area-inset-left, 0px));
   }
 
   .article-ai-settings {
     flex-wrap: wrap;
     gap: 8px 12px;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: calc(16px + env(safe-area-inset-left, 0px));
+    padding-right: calc(16px + env(safe-area-inset-right, 0px));
   }
 
   .article-ai-messages {
-    padding: 14px 16px;
+    padding: 14px calc(16px + env(safe-area-inset-right, 0px))
+      14px calc(16px + env(safe-area-inset-left, 0px));
     gap: 14px;
   }
 
   .article-ai-input-area {
-    padding: 12px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+    padding: 12px calc(16px + env(safe-area-inset-right, 0px))
+      calc(14px + env(safe-area-inset-bottom, 0px))
+      calc(16px + env(safe-area-inset-left, 0px));
   }
 }
 
@@ -2361,7 +2365,8 @@
   }
 
   .article-ai-header {
-    padding: 12px;
+    padding: 12px calc(12px + env(safe-area-inset-right, 0px))
+      12px calc(12px + env(safe-area-inset-left, 0px));
   }
 
   .article-ai-header-title {
@@ -2373,8 +2378,8 @@
   }
 
   .article-ai-settings {
-    padding-left: 12px;
-    padding-right: 12px;
+    padding-left: calc(12px + env(safe-area-inset-left, 0px));
+    padding-right: calc(12px + env(safe-area-inset-right, 0px));
   }
 
   .article-ai-setting-label {
@@ -2383,7 +2388,8 @@
   }
 
   .article-ai-messages {
-    padding: 12px;
+    padding: 12px calc(12px + env(safe-area-inset-right, 0px))
+      12px calc(12px + env(safe-area-inset-left, 0px));
     gap: 12px;
   }
 
@@ -2414,6 +2420,8 @@
   }
 
   .article-ai-input-area {
-    padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 10px calc(12px + env(safe-area-inset-right, 0px))
+      calc(12px + env(safe-area-inset-bottom, 0px))
+      calc(12px + env(safe-area-inset-left, 0px));
   }
 }
