@@ -184,4 +184,30 @@ describe("DocumentationPage menu + submenu", () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it("keeps submenu depth comprehensive for each top-level section", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const sectionTitles = [
+      "Обзор платформы",
+      "База статей",
+      "Документы",
+      "Файлы",
+      "Статистика",
+      "Граф цитирований",
+      "Команда",
+      "Настройки проекта",
+      "API ключи",
+    ];
+
+    for (const sectionTitle of sectionTitles) {
+      await user.click(screen.getByRole("button", { name: sectionTitle }));
+      const tabs = screen.getAllByRole("tab");
+      expect(tabs.length).toBeGreaterThanOrEqual(3);
+      expect(
+        tabs.some((tab) => tab.getAttribute("aria-selected") === "true"),
+      ).toBe(true);
+    }
+  });
 });
