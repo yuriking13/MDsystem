@@ -605,7 +605,7 @@
 /* Graph Toolbar */
 .graph-toolbar {
   position: absolute;
-  top: 16px;
+  top: calc(16px + env(safe-area-inset-top, 0px));
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -1893,7 +1893,7 @@
   
   .graph-toolbar {
     flex-wrap: wrap;
-    max-width: calc(100% - 32px);
+    max-width: calc(100% - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
   }
 }
 
@@ -1901,7 +1901,7 @@
   .graph-toolbar {
     gap: 6px;
     padding: 8px;
-    max-width: calc(100% - 16px);
+    max-width: calc(100% - 16px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
   }
 
   .toolbar-button {
