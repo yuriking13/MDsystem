@@ -1033,8 +1033,11 @@
     margin-bottom: 0 !important;
     width: auto;
     min-width: max-content;
+    max-width: min(260px, calc(100vw - 48px));
     flex: 0 0 auto;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .docs-sidebar-card {
