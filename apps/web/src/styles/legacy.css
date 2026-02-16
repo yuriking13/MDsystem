@@ -6141,6 +6141,44 @@ input:focus::placeholder {
   color: rgba(236, 72, 153, 0.8);
 }
 
+.graph-methodology-panel {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-glass);
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.05),
+    rgba(236, 72, 153, 0.05)
+  );
+}
+
+.graph-methodology-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.graph-methodology-title {
+  font-weight: 600;
+}
+
+.graph-methodology-reset-btn {
+  font-size: 10px;
+  padding: 2px 6px;
+  margin-left: auto;
+}
+
+.graph-methodology-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.graph-methodology-percent {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
 .graph-advanced-panel {
   display: flex;
   flex-wrap: wrap;

@@ -2163,33 +2163,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontSize: 9,
     fontWeight: 600,
   };
-  const methodologyPanelStyle: React.CSSProperties = {
-    padding: "12px 20px",
-    borderBottom: "1px solid var(--border-glass)",
-    background:
-      "linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05))",
-  };
-  const methodologyHeaderStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  };
-  const methodologyTitleStyle: React.CSSProperties = { fontWeight: 600 };
-  const methodologyResetButtonStyle: React.CSSProperties = {
-    fontSize: 10,
-    padding: "2px 6px",
-    marginLeft: "auto",
-  };
-  const methodologyListStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 8,
-  };
-  const methodologyPercentStyle: React.CSSProperties = {
-    fontSize: 9,
-    color: "var(--text-muted)",
-  };
   const semanticClustersPanelStyle: React.CSSProperties = {
     padding: "12px 20px",
     borderBottom: "1px solid var(--border-glass)",
@@ -4179,22 +4152,21 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Methodology Clusters Panel */}
         {showMethodologyClusters && methodologyClusters.length > 0 && (
-          <div className="graph-filters" style={methodologyPanelStyle}>
-            <div style={methodologyHeaderStyle}>
+          <div className="graph-filters graph-methodology-panel">
+            <div className="graph-methodology-header">
               <IconChartBar size="sm" />
-              <span style={methodologyTitleStyle}>
+              <span className="graph-methodology-title">
                 Кластеризация по методологиям
               </span>
               <button
-                className="btn secondary"
-                style={methodologyResetButtonStyle}
+                className="btn secondary graph-methodology-reset-btn"
                 onClick={() => filterByMethodology(null)}
               >
                 Сбросить фильтр
               </button>
             </div>
 
-            <div style={methodologyListStyle}>
+            <div className="graph-methodology-list">
               {methodologyClusters
                 .filter((c) => c.count > 0)
                 .sort((a, b) => b.count - a.count)
@@ -4220,7 +4192,7 @@ export default function CitationGraph({ projectId }: Props) {
                     >
                       {cluster.count}
                     </span>
-                    <span style={methodologyPercentStyle}>
+                    <span className="graph-methodology-percent">
                       ({cluster.percentage.toFixed(0)}%)
                     </span>
                   </button>
