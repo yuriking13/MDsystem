@@ -73,3 +73,11 @@ Primary routes to verify:
 - Project tabs: `/projects/:id?tab=articles|documents|files|statistics|settings|graph`
 - Document editor: `/projects/:projectId/documents/:docId`
 - Admin shell and pages: `/admin` plus major sections (`users`, `projects`, `articles`, `activity`, `sessions`, `jobs`, `errors`, `audit`, `system`, `settings`)
+
+Automated responsive regression coverage for this matrix lives in:
+
+- `apps/web/tests/components/AppLayout.test.tsx`
+- `apps/web/tests/pages/AdminLayout.test.tsx`
+- `apps/web/tests/components/AppSidebar.test.tsx`
+- `apps/web/tests/styles/articlesLayout.test.ts`
+- `apps/web/tests/styles/layoutResponsiveShell.test.ts`
