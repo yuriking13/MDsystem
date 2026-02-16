@@ -87,18 +87,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
   });
   const [projectInfo, setProjectInfoState] =
     useState<ProjectInfo>(defaultProjectInfo);
+  const [projectInfoProjectId, setProjectInfoProjectId] = useState<
+    string | null
+  >(null);
   const [articleCounts, setArticleCounts] =
     useState<ArticleCounts>(defaultArticleCounts);
   const [articleViewStatus, setArticleViewStatus] =
     useState<ArticleViewStatus>("candidate");
-  const previousProjectIdRef = useRef<string | null>(null);
+  const currentProjectIdRef = useRef<string | null>(null);
 
   const setProjectInfo = (info: Partial<ProjectInfo>) => {
     setProjectInfoState((prev) => ({ ...prev, ...info }));
+    setProjectInfoProjectId(currentProjectIdRef.current);
   };
 
   const clearProjectInfo = () => {
     setProjectInfoState(defaultProjectInfo);
+    setProjectInfoProjectId(null);
   };
 
   // Don't show sidebar on login/register/admin pages
@@ -119,9 +124,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
     searchParams.get("tab") === "graph";
   const currentProjectId =
     location.pathname.match(/^\/projects\/([^/]+)/)?.[1] ?? null;
+  currentProjectIdRef.current = currentProjectId;
   const isProjectScopedRoute = /^\/projects\/[^/]+(?:\/|$)/.test(
     location.pathname,
   );
+  const projectInfoForCurrentRoute =
+    currentProjectId !== null && projectInfoProjectId === currentProjectId
+      ? projectInfo
+      : defaultProjectInfo;
   const showAnimatedBg = !isDocumentEditor && !isGraphTab;
   const isFixedLayout = isDocumentEditor || isGraphTab;
   const shouldLockLayout = !hideSidebar && isFixedLayout;
@@ -168,21 +178,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     if (!isProjectScopedRoute) {
       setProjectInfoState(defaultProjectInfo);
+      setProjectInfoProjectId(null);
     }
   }, [isProjectScopedRoute]);
-
-  useEffect(() => {
-    if (previousProjectIdRef.current === null) {
-      previousProjectIdRef.current = currentProjectId;
-      return;
-    }
-
-    if (previousProjectIdRef.current !== currentProjectId) {
-      setProjectInfoState(defaultProjectInfo);
-    }
-
-    previousProjectIdRef.current = currentProjectId;
-  }, [currentProjectId]);
 
   useEffect(() => {
     if (!isMobileViewport && mobileSidebarOpen) {
@@ -219,7 +217,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   return (
     <ProjectContext.Provider
       value={{
-        projectInfo,
+        projectInfo: projectInfoForCurrentRoute,
         setProjectInfo,
         clearProjectInfo,
         articleCounts,
@@ -234,9 +232,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
       >
         <AppSidebar
           sidebarId="app-primary-sidebar"
-          projectName={projectInfo.name || undefined}
-          projectRole={projectInfo.role || undefined}
-          projectUpdatedAt={projectInfo.updatedAt || undefined}
+          projectName={projectInfoForCurrentRoute.name || undefined}
+          projectRole={projectInfoForCurrentRoute.role || undefined}
+          projectUpdatedAt={projectInfoForCurrentRoute.updatedAt || undefined}
           mobileOpen={mobileSidebarOpen}
           mobileViewport={isMobileViewport}
           onCloseMobile={closeMobileSidebar}
@@ -296,8 +294,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </svg>
               </button>
               <span className="app-mobile-topbar-title">
-                {isProjectScopedRoute && projectInfo.name
-                  ? projectInfo.name
+                {isProjectScopedRoute && projectInfoForCurrentRoute.name
+                  ? projectInfoForCurrentRoute.name
                   : "Scientiaiter"}
               </span>
             </div>

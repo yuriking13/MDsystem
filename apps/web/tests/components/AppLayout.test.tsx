@@ -58,6 +58,29 @@ function ProjectContextTitlePage() {
       <Link to="/projects/p1?tab=documents">Go project documents</Link>
       <Link to="/projects/p1?tab=graph">Go project graph</Link>
       <Link to="/projects/p2?tab=documents">Go another project</Link>
+      <Link to="/projects/p2/context-title">Go project beta context</Link>
+    </div>
+  );
+}
+
+function ProjectContextTitlePageBeta() {
+  const { setProjectInfo } = useProjectContext();
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    setProjectInfo({
+      name: "Проект Бета",
+      role: "viewer",
+      updatedAt: "2026-02-16T00:00:00.000Z",
+    });
+  }, [setProjectInfo]);
+
+  return (
+    <div>
+      <div>Project context title page beta</div>
+      <Link to="/projects/p2?tab=documents">Go project two documents</Link>
     </div>
   );
 }
@@ -86,6 +109,10 @@ function renderAppLayout(initialPath = "/projects") {
           <Route
             path="/projects/p1/context-title"
             element={<ProjectContextTitlePage />}
+          />
+          <Route
+            path="/projects/p2/context-title"
+            element={<ProjectContextTitlePageBeta />}
           />
           <Route
             path="/projects/:id"
@@ -339,6 +366,44 @@ describe("AppLayout mobile sidebar behavior", () => {
           document.querySelector(".app-mobile-topbar-title")?.textContent,
         ).toBe("Scientiaiter");
         expect(document.querySelector(".sidebar-project-name")).toBeNull();
+      });
+    },
+  );
+
+  it.each([360, 390, 768])(
+    "updates title when switching to another project route with context metadata at %ipx",
+    async (width) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/projects/p1/context-title");
+
+      await waitFor(() => {
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Альфа");
+      });
+
+      await user.click(screen.getByText("Go project beta context"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Project context title page beta"),
+        ).toBeInTheDocument();
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Бета");
+      });
+
+      await user.click(screen.getByText("Go project two documents"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Project details page")).toBeInTheDocument();
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Бета");
+        expect(
+          document.querySelector(".sidebar-project-name")?.textContent,
+        ).toBe("Проект Бета");
       });
     },
   );
