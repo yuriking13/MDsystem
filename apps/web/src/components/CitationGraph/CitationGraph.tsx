@@ -5,7 +5,11 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import ForceGraph2D from "react-force-graph-2d";
+import ForceGraph2D, {
+  type ForceGraphMethods,
+  type LinkObject,
+  type NodeObject,
+} from "react-force-graph-2d";
 import {
   apiGetCitationGraph,
   apiFetchReferences,
@@ -118,6 +122,34 @@ type GraphAIDebugPayload = {
   externalArticles?: number;
   articlesForAICount?: number;
 };
+
+type ForceGraphD3ChargeForce = {
+  strength: (value: number) => {
+    distanceMax?: (value: number) => void;
+  };
+  distanceMax?: (value: number) => void;
+};
+
+type ForceGraphD3LinkForce = {
+  distance: (value: number) => void;
+};
+
+type GraphForceHandle = ForceGraphMethods<
+  NodeObject<GraphNodeWithCoords>,
+  LinkObject<GraphNodeWithCoords, GraphLink>
+>;
+
+const isForceGraphD3ChargeForce = (
+  force: unknown,
+): force is ForceGraphD3ChargeForce =>
+  typeof force === "function" &&
+  typeof (force as { strength?: unknown }).strength === "function";
+
+const isForceGraphD3LinkForce = (
+  force: unknown,
+): force is ForceGraphD3LinkForce =>
+  typeof force === "function" &&
+  typeof (force as { distance?: unknown }).distance === "function";
 
 type FilterType = "all" | "selected" | "excluded";
 type DepthType = 1 | 2 | 3;
@@ -440,7 +472,7 @@ export default function CitationGraph({ projectId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphAreaRef = useRef<HTMLDivElement>(null);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<any>(null);
+  const graphRef = useRef<GraphForceHandle>();
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   // === ФИЛЬТРАЦИЯ ДАННЫХ ГРАФА ПО МЕТОДОЛОГИИ ===
@@ -1397,16 +1429,21 @@ export default function CitationGraph({ projectId }: Props) {
 
     // Увеличиваем силу отталкивания для разреженного графа
     const fg = graphRef.current;
-    if (fg.d3Force) {
+    if (typeof fg.d3Force === "function") {
       // Настраиваем силу отталкивания (charge)
       const charge = fg.d3Force("charge");
-      if (charge) {
-        charge.strength(-400).distanceMax(600);
+      if (isForceGraphD3ChargeForce(charge)) {
+        const charged = charge.strength(-400);
+        if (charged && typeof charged.distanceMax === "function") {
+          charged.distanceMax(600);
+        } else if (typeof charge.distanceMax === "function") {
+          charge.distanceMax(600);
+        }
       }
 
       // Настраиваем расстояние связей
       const link = fg.d3Force("link");
-      if (link) {
+      if (isForceGraphD3LinkForce(link)) {
         link.distance(120);
       }
 
