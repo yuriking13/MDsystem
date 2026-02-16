@@ -6,7 +6,7 @@
     "preinstall": "node scripts/enforce-pnpm.js",
     "quality:guards": "node scripts/quality-guards.js",
     "quality:guards:check": "node scripts/quality-guards.js --check",
-    "quality:guards:test": "node --test scripts/quality-guards-lib.test.js scripts/js-mirror-utils.test.js scripts/quality-guards-cli.test.js",
+    "quality:guards:test": "node scripts/run-quality-guards-tests.mjs",
     "quality:repo": "pnpm run quality:guards:check && pnpm run quality:guards:test",
     "clean:js-mirrors": "pnpm --filter web run clean:js-mirrors",
     "check:js-mirrors": "pnpm --filter web run check:js-mirrors",
