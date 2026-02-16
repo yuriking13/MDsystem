@@ -653,24 +653,19 @@ export async function prepareHtmlForExport(
     if (dataUrl) {
       // Заменяем chartNode на изображение с подписью и опционально таблицей данных
       const container = doc.createElement("div");
-      container.style.margin = "1em 0";
-      container.style.pageBreakInside = "avoid";
+      container.className = "export-chart-container";
 
       const figure = doc.createElement("figure");
-      figure.style.textAlign = "center";
-      figure.style.margin = "0";
+      figure.className = "export-chart-figure";
 
       const img = doc.createElement("img");
       img.src = dataUrl;
-      img.style.maxWidth = "100%";
-      img.style.height = "auto";
+      img.className = "export-chart-image";
       img.setAttribute("data-chart-image", "true");
 
       const caption = doc.createElement("figcaption");
       caption.textContent = title;
-      caption.style.fontSize = "0.9em";
-      caption.style.color = "#64748b";
-      caption.style.marginTop = "0.5em";
+      caption.className = "export-chart-caption";
 
       figure.appendChild(img);
       figure.appendChild(caption);
@@ -684,21 +679,16 @@ export async function prepareHtmlForExport(
         tableData.rows
       ) {
         const dataTableWrapper = doc.createElement("div");
-        dataTableWrapper.style.marginTop = "1em";
-        dataTableWrapper.style.fontSize = "0.85em";
+        dataTableWrapper.className = "export-chart-data-wrapper";
 
         const dataTableTitle = doc.createElement("p");
-        dataTableTitle.style.fontStyle = "italic";
-        dataTableTitle.style.color = "#64748b";
-        dataTableTitle.style.marginBottom = "0.5em";
+        dataTableTitle.className = "export-chart-data-title";
         dataTableTitle.textContent = `Исходные данные для графика "${title}":`;
         dataTableWrapper.appendChild(dataTableTitle);
 
         const dataTable = doc.createElement("table");
         dataTable.setAttribute("data-chart-source-data", "true");
-        dataTable.style.borderCollapse = "collapse";
-        dataTable.style.width = "100%";
-        dataTable.style.marginBottom = "1em";
+        dataTable.className = "export-chart-data-table";
 
         // Header row
         const thead = doc.createElement("thead");
@@ -706,10 +696,7 @@ export async function prepareHtmlForExport(
         for (const header of tableData.headers) {
           const th = doc.createElement("th");
           th.textContent = header;
-          th.style.border = "1px solid #94a3b8";
-          th.style.padding = "6px 10px";
-          th.style.background = "#f1f5f9";
-          th.style.fontWeight = "bold";
+          th.className = "export-chart-data-th";
           headerRow.appendChild(th);
         }
         thead.appendChild(headerRow);
@@ -722,8 +709,7 @@ export async function prepareHtmlForExport(
           for (const cell of row) {
             const td = doc.createElement("td");
             td.textContent = cell;
-            td.style.border = "1px solid #94a3b8";
-            td.style.padding = "6px 10px";
+            td.className = "export-chart-data-td";
             tr.appendChild(td);
           }
           tbody.appendChild(tr);
@@ -733,9 +719,7 @@ export async function prepareHtmlForExport(
         dataTableWrapper.appendChild(dataTable);
 
         const hint = doc.createElement("p");
-        hint.style.fontSize = "0.8em";
-        hint.style.color = "#94a3b8";
-        hint.style.fontStyle = "italic";
+        hint.className = "export-chart-data-hint";
         hint.textContent =
           "💡 Для создания редактируемого графика: выделите таблицу выше → Вставка → Диаграмма в Microsoft Word";
         dataTableWrapper.appendChild(hint);
@@ -747,15 +731,10 @@ export async function prepareHtmlForExport(
     } else {
       // Нет данных для графика - оставляем placeholder с названием
       const placeholder = doc.createElement("div");
-      placeholder.style.textAlign = "center";
-      placeholder.style.padding = "20px";
-      placeholder.style.background = "#f8fafc";
-      placeholder.style.border = "1px dashed #cbd5e1";
-      placeholder.style.borderRadius = "4px";
-      placeholder.style.margin = "1em 0";
+      placeholder.className = "export-chart-placeholder";
 
       const placeholderText = doc.createElement("em");
-      placeholderText.style.color = "#64748b";
+      placeholderText.className = "export-chart-placeholder-text";
       // textContent исключает HTML-инъекцию в placeholder подписи графика
       placeholderText.textContent = `[${title || "График"}]`;
       placeholder.appendChild(placeholderText);
@@ -1600,6 +1579,63 @@ export function generatePrintHtml(
     .toc { page-break-after: always; }
     .print-centered-title { text-align: center; }
     .toc-list { list-style: none; padding: 0; }
+    .export-chart-container {
+      margin: 1em 0;
+      page-break-inside: avoid;
+    }
+    .export-chart-figure {
+      text-align: center;
+      margin: 0;
+    }
+    .export-chart-image {
+      max-width: 100%;
+      height: auto;
+    }
+    .export-chart-caption {
+      font-size: 0.9em;
+      color: #64748b;
+      margin-top: 0.5em;
+    }
+    .export-chart-data-wrapper {
+      margin-top: 1em;
+      font-size: 0.85em;
+    }
+    .export-chart-data-title {
+      font-style: italic;
+      color: #64748b;
+      margin-bottom: 0.5em;
+    }
+    .export-chart-data-table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 1em;
+    }
+    .export-chart-data-th {
+      border: 1px solid #94a3b8;
+      padding: 6px 10px;
+      background: #f1f5f9;
+      font-weight: 700;
+    }
+    .export-chart-data-td {
+      border: 1px solid #94a3b8;
+      padding: 6px 10px;
+    }
+    .export-chart-data-hint {
+      font-size: 0.8em;
+      color: #94a3b8;
+      font-style: italic;
+    }
+    .export-chart-placeholder {
+      text-align: center;
+      padding: 20px;
+      background: #f8fafc;
+      border: 1px dashed #cbd5e1;
+      border-radius: 4px;
+      margin: 1em 0;
+    }
+    .export-chart-placeholder-text {
+      color: #64748b;
+    }
     .chapter { page-break-before: always; }
     .bibliography { page-break-before: always; }
     .bib-item { 
