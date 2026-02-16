@@ -809,6 +809,9 @@ export default function DocumentationPage(): React.JSX.Element {
   const [activeTopicId, setActiveTopicId] = useState<string>(
     DOC_SECTIONS[0].topics[0].id,
   );
+  const [pendingFocusTopicId, setPendingFocusTopicId] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const sectionHasTopic = activeSection.topics.some(
@@ -819,12 +822,67 @@ export default function DocumentationPage(): React.JSX.Element {
     }
   }, [activeSection, activeTopicId]);
 
+  useEffect(() => {
+    if (!pendingFocusTopicId || pendingFocusTopicId !== activeTopicId) return;
+
+    const tab = document.getElementById(
+      `docs-tab-${pendingFocusTopicId}`,
+    ) as HTMLButtonElement | null;
+    tab?.focus();
+    setPendingFocusTopicId(null);
+  }, [activeTopicId, pendingFocusTopicId]);
+
   const activeTopic = useMemo(
     () =>
       activeSection.topics.find((topic) => topic.id === activeTopicId) ??
       activeSection.topics[0],
     [activeSection, activeTopicId],
   );
+
+  const activateTopicByIndex = (topicIndex: number): void => {
+    const topic = activeSection.topics[topicIndex];
+    if (!topic) return;
+
+    setActiveTopicId(topic.id);
+    setPendingFocusTopicId(topic.id);
+  };
+
+  const handleTopicTabKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    topicIndex: number,
+  ): void => {
+    const lastIndex = activeSection.topics.length - 1;
+    if (lastIndex < 0) return;
+
+    switch (event.key) {
+      case "ArrowDown":
+      case "ArrowRight": {
+        event.preventDefault();
+        const nextIndex = topicIndex >= lastIndex ? 0 : topicIndex + 1;
+        activateTopicByIndex(nextIndex);
+        break;
+      }
+      case "ArrowUp":
+      case "ArrowLeft": {
+        event.preventDefault();
+        const nextIndex = topicIndex <= 0 ? lastIndex : topicIndex - 1;
+        activateTopicByIndex(nextIndex);
+        break;
+      }
+      case "Home": {
+        event.preventDefault();
+        activateTopicByIndex(0);
+        break;
+      }
+      case "End": {
+        event.preventDefault();
+        activateTopicByIndex(lastIndex);
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   return (
     <div className="container docs-page">
@@ -877,12 +935,19 @@ export default function DocumentationPage(): React.JSX.Element {
 
             <div className="docs-subnav">
               <div className="docs-subnav-title">Подменю раздела</div>
-              <div className="docs-subnav-list" role="tablist">
-                {activeSection.topics.map((topic) => (
+              <div
+                className="docs-subnav-list"
+                role="tablist"
+                aria-orientation="vertical"
+              >
+                {activeSection.topics.map((topic, topicIndex) => (
                   <button
                     key={topic.id}
                     className={`docs-subnav-item ${activeTopic.id === topic.id ? "active" : ""}`}
                     onClick={() => setActiveTopicId(topic.id)}
+                    onKeyDown={(event) =>
+                      handleTopicTabKeyDown(event, topicIndex)
+                    }
                     role="tab"
                     id={`docs-tab-${topic.id}`}
                     aria-controls={`docs-panel-${topic.id}`}

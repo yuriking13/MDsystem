@@ -240,4 +240,41 @@ describe("DocumentationPage menu + submenu", () => {
     expect(panel).toHaveAttribute("id", controlsId);
     expect(panel).toHaveAttribute("aria-labelledby", activeTab.id);
   });
+
+  it("supports keyboard navigation between submenu topics", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    await user.click(screen.getByRole("button", { name: "Настройки проекта" }));
+
+    const firstTab = screen.getByRole("tab", {
+      name: "Тип и подтип исследования",
+    });
+    firstTab.focus();
+    expect(firstTab).toHaveFocus();
+
+    await user.keyboard("{ArrowDown}");
+    const secondTab = screen.getByRole("tab", {
+      name: "Протокол и проверки качества",
+    });
+    expect(secondTab).toHaveAttribute("aria-selected", "true");
+    expect(secondTab).toHaveFocus();
+
+    await user.keyboard("{End}");
+    const lastTab = screen.getByRole("tab", {
+      name: "Библиографический стиль и формат вывода",
+    });
+    expect(lastTab).toHaveAttribute("aria-selected", "true");
+    expect(lastTab).toHaveFocus();
+    expect(
+      screen.getByRole("heading", {
+        level: 3,
+        name: "Библиографический стиль и формат вывода",
+      }),
+    ).toBeInTheDocument();
+
+    await user.keyboard("{Home}");
+    expect(firstTab).toHaveAttribute("aria-selected", "true");
+    expect(firstTab).toHaveFocus();
+  });
 });
