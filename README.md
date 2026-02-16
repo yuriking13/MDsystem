@@ -32,7 +32,7 @@ pnpm -r build
 The repository enforces strict quality gates for TypeScript and UI code:
 
 - no explicit `any` typings in API and web TypeScript files;
-- no JavaScript source files in `apps/web/src` (TypeScript-only source tree);
+- no JavaScript/JSX source files in `apps/web/src` (TypeScript-only source tree);
 - no inline JSX style literals (`style={{ ... }}`) in the web app;
 - no direct DOM style mutations (`.style.*` / `setAttribute("style", ...)`) in web source.
 

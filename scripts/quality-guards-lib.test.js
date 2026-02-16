@@ -91,10 +91,15 @@ test("runQualityGuards reports web js mirrors in check-only mode", () => {
   );
 });
 
-test("runQualityGuards reports standalone js files in web source", () => {
+test("runQualityGuards reports standalone js/jsx files in web source", () => {
   const workspaceRoot = createWorkspaceFixture();
   const jsSourcePath = path.join(workspaceRoot, "apps/web/src/lib/legacy-helper.js");
+  const jsxSourcePath = path.join(
+    workspaceRoot,
+    "apps/web/src/components/LegacyWidget.jsx",
+  );
   writeFile(jsSourcePath, "export const legacy = true;");
+  writeFile(jsxSourcePath, "export const LegacyWidget = () => null;");
 
   const result = runQualityGuards({
     workspaceRoot,
@@ -107,4 +112,5 @@ test("runQualityGuards reports standalone js files in web source", () => {
     ),
   );
   assert.equal(fs.existsSync(jsSourcePath), true);
+  assert.equal(fs.existsSync(jsxSourcePath), true);
 });

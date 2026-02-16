@@ -55,11 +55,16 @@ test("quality-guards default mode auto-cleans mirrors", () => {
   assert.equal(fs.existsSync(jsMirrorPath), false);
 });
 
-test("quality-guards check mode reports standalone js source file tip", () => {
+test("quality-guards check mode reports standalone js/jsx source file tip", () => {
   const workspaceRoot = createTempWorkspace();
   const jsSourcePath = path.join(workspaceRoot, "apps/web/src/lib/legacy-helper.js");
+  const jsxSourcePath = path.join(
+    workspaceRoot,
+    "apps/web/src/components/legacy-widget.jsx",
+  );
 
   writeFile(jsSourcePath, "export const legacy = true;");
+  writeFile(jsxSourcePath, "export const LegacyWidget = () => null;");
 
   const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
     cwd: workspaceRoot,
@@ -72,4 +77,5 @@ test("quality-guards check mode reports standalone js source file tip", () => {
     /Tip: remove JavaScript files from apps\/web\/src or migrate them to TypeScript/,
   );
   assert.equal(fs.existsSync(jsSourcePath), true);
+  assert.equal(fs.existsSync(jsxSourcePath), true);
 });

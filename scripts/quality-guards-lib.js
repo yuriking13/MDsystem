@@ -58,7 +58,7 @@ const webJsMirrorCheck = {
 
 const webJsSourceCheck = {
   name: "web-js-source-files",
-  description: "JavaScript source files are not allowed in apps/web/src",
+  description: "JavaScript/JSX source files are not allowed in apps/web/src",
 };
 
 function walkFiles(rootDir, extensions) {
@@ -154,7 +154,10 @@ function collectWebJsMirrors(workspaceRoot, fileCache) {
 
 function collectWebSourceJsFiles(workspaceRoot, fileCache) {
   const webSrcRoot = path.join(workspaceRoot, "apps/web/src");
-  const jsFiles = getCachedFiles(webSrcRoot, new Set([".js"]), fileCache);
+  const jsLikeExtensions = [".js", ".jsx", ".mjs", ".cjs"];
+  const jsFiles = jsLikeExtensions.flatMap((extension) =>
+    getCachedFiles(webSrcRoot, new Set([extension]), fileCache),
+  );
 
   return jsFiles.map((jsFilePath) => ({
     file: path.relative(workspaceRoot, jsFilePath),
