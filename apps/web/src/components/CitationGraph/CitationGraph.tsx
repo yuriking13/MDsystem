@@ -2210,55 +2210,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontWeight: 500,
     whiteSpace: "nowrap",
   };
-  const statsLinkValueStyle: React.CSSProperties = { color: "#10b981" };
-  const pvalueStatItemStyle: React.CSSProperties = { marginLeft: "auto" };
-  const pvalueButtonStyle: React.CSSProperties = {
-    padding: "4px 10px",
-    fontSize: 11,
-    marginLeft: 8,
-    background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
-    border: "none",
-    color: "#1e293b",
-    fontWeight: 600,
-  };
-  const noReferencesWarningStyle: React.CSSProperties = {
-    padding: "12px 20px",
-    background: "rgba(251, 191, 36, 0.1)",
-    borderBottom: "1px solid var(--border-glass)",
-    fontSize: 12,
-    color: "#fbbf24",
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  };
-  const graphMainSplitStyle: React.CSSProperties = {
-    flex: 1,
-    display: "flex",
-    overflow: "hidden",
-    minHeight: 0,
-  };
-  const graphAreaStyle: React.CSSProperties = {
-    flex: 1,
-    overflow: "hidden",
-    position: "relative",
-    minHeight: 0,
-  };
-  const graphEmptyStateStyle: React.CSSProperties = {
-    padding: 60,
-    textAlign: "center",
-  };
-  const graphCanvasFillStyle: React.CSSProperties = {
-    width: "100%",
-    height: "100%",
-  };
-  const graphFloatingControlsStyle: React.CSSProperties = {
-    position: "absolute",
-    bottom: 16,
-    right: 16,
-    display: "flex",
-    gap: 8,
-    zIndex: 10,
-  };
   const aiPanelHeaderStyle: React.CSSProperties = {
     padding: "10px 12px",
     borderBottom: "1px solid var(--border-glass)",
@@ -4339,7 +4290,7 @@ export default function CitationGraph({ projectId }: Props) {
           <div className="graph-stat-item">
             <IconLink size="sm" />
             <span>Связей:</span>
-            <span className="graph-stat-value" style={statsLinkValueStyle}>
+            <span className="graph-stat-value graph-stats-link-value">
               {stats.totalLinks}
             </span>
           </div>
@@ -4400,7 +4351,7 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* P-value статьи - кнопка добавления */}
           {pValueArticlesCount > 0 && (
-            <div className="graph-stat-item" style={pvalueStatItemStyle}>
+            <div className="graph-stat-item graph-pvalue-stat-item">
               <span
                 className="legend-dot"
                 style={getLegendDotStyle("#fbbf24")}
@@ -4410,8 +4361,7 @@ export default function CitationGraph({ projectId }: Props) {
                 {pValueArticlesCount}
               </span>
               <button
-                className="btn secondary"
-                style={pvalueButtonStyle}
+                className="btn secondary graph-pvalue-button"
                 onClick={handleAddAllWithPValue}
                 disabled={addingPValueArticles}
                 title="Добавить все статьи с P-value в проект как кандидаты"
@@ -4426,7 +4376,7 @@ export default function CitationGraph({ projectId }: Props) {
         {depth >= 2 &&
           stats.availableReferences === 0 &&
           stats.availableCiting === 0 && (
-            <div style={noReferencesWarningStyle}>
+            <div className="graph-no-references-warning">
               <IconExclamation size="sm" />
               Данные о ссылках не загружены. Нажмите "Обновить связи" для
               загрузки.
@@ -4434,21 +4384,21 @@ export default function CitationGraph({ projectId }: Props) {
           )}
 
         {/* Main Area: Graph + AI Panel side by side */}
-        <div style={graphMainSplitStyle}>
+        <div className="graph-main-split">
           {/* Graph Area */}
           <div
             ref={graphAreaRef}
             onMouseMove={handleGraphMouseMove}
             onMouseLeave={clearHoverCard}
-            style={graphAreaStyle}
+            className="graph-main-graph-area"
           >
             {!data || data.nodes.length === 0 ? (
-              <div className="muted" style={graphEmptyStateStyle}>
+              <div className="muted graph-main-empty-state">
                 <IconChartBar size="lg" className="icon-lg" />
                 <p>Нет данных для графа с текущими фильтрами.</p>
               </div>
             ) : (
-              <div style={graphCanvasFillStyle}>
+              <div className="graph-main-canvas-fill">
                 <ForceGraph2D
                   ref={graphRef}
                   graphData={
@@ -4641,7 +4591,7 @@ export default function CitationGraph({ projectId }: Props) {
                 />
 
                 {/* Floating controls overlay */}
-                <div style={graphFloatingControlsStyle}>
+                <div className="graph-main-floating-controls">
                   {/* Animation toggle */}
                   <button
                     onClick={toggleAnimation}
