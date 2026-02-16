@@ -88,6 +88,8 @@ export interface ChartNodeAttrs {
   axisColor?: string;
 }
 
+type ChartNodeRenderableAttrs = Partial<ChartNodeAttrs>;
+
 // React component for rendering the chart
 function ChartNodeView({
   node,
@@ -526,7 +528,7 @@ export const ChartNode = Node.create({
         default: null,
         parseHTML: (element: HTMLElement) =>
           element.getAttribute("data-chart-id"),
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ChartNodeRenderableAttrs) => {
           return attributes.chartId
             ? { "data-chart-id": attributes.chartId }
             : {};
@@ -538,7 +540,7 @@ export const ChartNode = Node.create({
           const data = element.getAttribute("data-table-data");
           return data ? JSON.parse(data) : null;
         },
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ChartNodeRenderableAttrs) => {
           return attributes.tableData
             ? {
                 "data-table-data": JSON.stringify(attributes.tableData),
@@ -552,7 +554,7 @@ export const ChartNode = Node.create({
           const data = element.getAttribute("data-config");
           return data ? JSON.parse(data) : null;
         },
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ChartNodeRenderableAttrs) => {
           return attributes.config
             ? {
                 "data-config": JSON.stringify(attributes.config),
@@ -564,7 +566,7 @@ export const ChartNode = Node.create({
         default: "",
         parseHTML: (element: HTMLElement) =>
           element.getAttribute("data-title") || "",
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ChartNodeRenderableAttrs) => {
           return attributes.title ? { "data-title": attributes.title } : {};
         },
       },
@@ -597,7 +599,7 @@ export const ChartNode = Node.create({
     ];
   },
 
-  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, unknown> }) {
     return [
       "div",
       mergeAttributes(HTMLAttributes, { "data-type": "chart-node" }),

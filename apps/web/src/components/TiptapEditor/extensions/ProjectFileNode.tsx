@@ -26,6 +26,8 @@ export interface ProjectFileNodeAttrs {
   caption?: string;
 }
 
+type ProjectFileRenderableAttrs = Partial<ProjectFileNodeAttrs>;
+
 // React component for rendering the file
 function ProjectFileNodeView({
   node,
@@ -226,7 +228,7 @@ export const ProjectFileNode = Node.create({
         default: null,
         parseHTML: (element: HTMLElement) =>
           element.getAttribute("data-file-id"),
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ProjectFileRenderableAttrs) => {
           return attributes.fileId ? { "data-file-id": attributes.fileId } : {};
         },
       },
@@ -234,7 +236,7 @@ export const ProjectFileNode = Node.create({
         default: null,
         parseHTML: (element: HTMLElement) =>
           element.getAttribute("data-project-id"),
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ProjectFileRenderableAttrs) => {
           return attributes.projectId
             ? { "data-project-id": attributes.projectId }
             : {};
@@ -244,7 +246,7 @@ export const ProjectFileNode = Node.create({
         default: "",
         parseHTML: (element: HTMLElement) =>
           element.getAttribute("data-file-name") || "",
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ProjectFileRenderableAttrs) => {
           return attributes.fileName
             ? { "data-file-name": attributes.fileName }
             : {};
@@ -254,7 +256,7 @@ export const ProjectFileNode = Node.create({
         default: "",
         parseHTML: (element: HTMLElement) =>
           element.getAttribute("data-mime-type") || "",
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ProjectFileRenderableAttrs) => {
           return attributes.mimeType
             ? { "data-mime-type": attributes.mimeType }
             : {};
@@ -264,7 +266,7 @@ export const ProjectFileNode = Node.create({
         default: "other",
         parseHTML: (element: HTMLElement) =>
           element.getAttribute("data-category") || "other",
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ProjectFileRenderableAttrs) => {
           return attributes.category
             ? { "data-category": attributes.category }
             : {};
@@ -274,7 +276,7 @@ export const ProjectFileNode = Node.create({
         default: "",
         parseHTML: (element: HTMLElement) =>
           element.getAttribute("data-caption") || "",
-        renderHTML: (attributes: Record<string, any>) => {
+        renderHTML: (attributes: ProjectFileRenderableAttrs) => {
           return attributes.caption
             ? { "data-caption": attributes.caption }
             : {};
@@ -291,7 +293,7 @@ export const ProjectFileNode = Node.create({
     ];
   },
 
-  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, any> }) {
+  renderHTML({ HTMLAttributes }: { HTMLAttributes: Record<string, unknown> }) {
     return [
       "div",
       mergeAttributes(HTMLAttributes, { "data-type": "project-file-node" }),
