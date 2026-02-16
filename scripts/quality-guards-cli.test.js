@@ -7,6 +7,7 @@ const test = require("node:test");
 
 const {
   DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+  WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH,
   WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
 } = require("./quality-guards-lib.js");
 
@@ -581,5 +582,39 @@ test("quality-guards check mode reports responsive suite tip when config-runner 
   assert.match(
     result.stderr,
     /Tip: keep `apps\/web\/package\.json` test:responsive in sync with required responsive suites and ensure every target from `apps\/web\/tests\/config\/responsiveSuiteTargets\.json` exists/,
+  );
+});
+
+test("quality-guards check mode reports responsive manual matrix remediation tip", () => {
+  const workspaceRoot = createTempWorkspace();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH),
+    JSON.stringify(
+      {
+        viewportWidths: [360, 390, 768],
+        userRoutes: {
+          auth: ["/login"],
+          shell: ["/projects"],
+          projectTabs: ["articles"],
+          projectDocumentRoutePattern: "(",
+          projectGraphRoutePattern: "^/projects/[^/]+\\?tab=graph$",
+        },
+        adminRoutes: ["/admin"],
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep `apps\/web\/tests\/config\/responsiveManualMatrix\.json` aligned with the required manual QA viewport\+route matrix and valid regex patterns/,
   );
 });

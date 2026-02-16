@@ -6,6 +6,7 @@ const test = require("node:test");
 
 const {
   DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
+  WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH,
   WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
   lineForIndex,
   readRequiredWebResponsiveTestTargets,
@@ -1345,4 +1346,149 @@ test("runQualityGuards accepts valid responsive target config entries", () => {
     (entry) => entry.check.name === "web-responsive-target-config",
   );
   assert.equal(configViolation, undefined);
+});
+
+test("runQualityGuards ignores missing responsive manual matrix config file", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const manualMatrixViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-manual-matrix-config",
+  );
+  assert.equal(manualMatrixViolation, undefined);
+});
+
+test("runQualityGuards reports invalid responsive manual matrix config entries", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH),
+    JSON.stringify(
+      {
+        viewportWidths: [360, 390, 768, 768],
+        userRoutes: {
+          auth: ["/login", ""],
+          shell: ["/projects", "/projects"],
+          projectTabs: [],
+          projectDocumentRoutePattern: "(",
+          projectGraphRoutePattern: 123,
+        },
+        adminRoutes: ["/admin", "/admin"],
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const manualMatrixViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-manual-matrix-config",
+  );
+  assert.ok(manualMatrixViolation);
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("duplicate-viewport-widths"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "viewport-width-mismatch:expected-plan-matrix",
+      ),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("invalid-user-routes-field-entry:auth"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("duplicate-user-routes-field-entry:shell"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("invalid-user-routes-field:projectTabs"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "invalid-user-route-pattern-regex:projectDocumentRoutePattern",
+      ),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "invalid-user-route-pattern:projectGraphRoutePattern",
+      ),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("duplicate-admin-routes"),
+    ),
+  );
+});
+
+test("runQualityGuards accepts valid responsive manual matrix config entries", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH),
+    JSON.stringify(
+      {
+        viewportWidths: [360, 390, 768, 1024, 1280, 1440, 1920],
+        userRoutes: {
+          auth: ["/login", "/register"],
+          shell: ["/projects", "/settings", "/docs"],
+          projectTabs: [
+            "articles",
+            "documents",
+            "files",
+            "statistics",
+            "settings",
+            "graph",
+          ],
+          projectDocumentRoutePattern: "^/projects/[^/]+/documents/[^/]+$",
+          projectGraphRoutePattern: "^/projects/[^/]+\\?tab=graph$",
+        },
+        adminRoutes: [
+          "/admin",
+          "/admin/users",
+          "/admin/projects",
+          "/admin/articles",
+          "/admin/activity",
+          "/admin/sessions",
+          "/admin/jobs",
+          "/admin/errors",
+          "/admin/audit",
+          "/admin/system",
+          "/admin/settings",
+        ],
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const manualMatrixViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-manual-matrix-config",
+  );
+  assert.equal(manualMatrixViolation, undefined);
 });

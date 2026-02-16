@@ -128,6 +128,16 @@ function main() {
         "\n[quality-guards] Tip: keep `apps/web/tests/config/responsiveSuiteTargets.json` as a unique non-empty array of .ts/.tsx target paths.",
       );
     }
+
+    if (
+      allViolations.some(
+        ({ check }) => check.name === "web-responsive-manual-matrix-config",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: keep `apps/web/tests/config/responsiveManualMatrix.json` aligned with the required manual QA viewport+route matrix and valid regex patterns.",
+      );
+    }
   }
 
   process.exit(1);

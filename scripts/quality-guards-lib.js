@@ -114,6 +114,12 @@ const webResponsiveTargetConfigCheck = {
     "apps/web/tests/config/responsiveSuiteTargets.json must be valid JSON array of unique non-empty .ts/.tsx paths",
 };
 
+const webResponsiveManualMatrixConfigCheck = {
+  name: "web-responsive-manual-matrix-config",
+  description:
+    "apps/web/tests/config/responsiveManualMatrix.json must keep valid viewport and route matrix structure",
+};
+
 const DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
   "src/lib/responsive.test.ts",
   "tests/components/AppLayout.test.tsx",
@@ -139,6 +145,14 @@ const WEB_RESPONSIVE_TARGETS_CONFIG_PATH = path.join(
   "tests",
   "config",
   "responsiveSuiteTargets.json",
+);
+
+const WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH = path.join(
+  "apps",
+  "web",
+  "tests",
+  "config",
+  "responsiveManualMatrix.json",
 );
 
 function loadRequiredWebResponsiveTestTargets(workspaceRoot) {
@@ -856,6 +870,193 @@ function collectWebResponsiveTargetConfigViolations(workspaceRoot) {
   return violations;
 }
 
+function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
+  const configPath = path.join(
+    workspaceRoot,
+    WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH,
+  );
+  if (!fs.existsSync(configPath)) {
+    return [];
+  }
+
+  const relativeFile = WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH.replaceAll(
+    path.sep,
+    "/",
+  );
+  let parsedConfig;
+  try {
+    parsedConfig = JSON.parse(fs.readFileSync(configPath, "utf8"));
+  } catch (error) {
+    return [
+      {
+        file: relativeFile,
+        line: 1,
+        snippet: "invalid-json:responsiveManualMatrix.json",
+      },
+    ];
+  }
+
+  if (!parsedConfig || typeof parsedConfig !== "object" || Array.isArray(parsedConfig)) {
+    return [
+      {
+        file: relativeFile,
+        line: 1,
+        snippet: "invalid-config-shape:expected-object",
+      },
+    ];
+  }
+
+  const violations = [];
+  const requiredViewportWidths = [360, 390, 768, 1024, 1280, 1440, 1920];
+  const {
+    viewportWidths,
+    userRoutes,
+    adminRoutes,
+  } = parsedConfig;
+
+  if (!Array.isArray(viewportWidths)) {
+    violations.push({
+      file: relativeFile,
+      line: 1,
+      snippet: "invalid-viewport-widths:expected-array",
+    });
+  } else {
+    if (
+      viewportWidths.some(
+        (width) => typeof width !== "number" || !Number.isFinite(width),
+      )
+    ) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: "invalid-viewport-width-entry:non-numeric",
+      });
+    }
+
+    if (new Set(viewportWidths).size !== viewportWidths.length) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: "duplicate-viewport-widths",
+      });
+    }
+
+    if (
+      viewportWidths.length !== requiredViewportWidths.length ||
+      viewportWidths.some(
+        (width, index) => width !== requiredViewportWidths[index],
+      )
+    ) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: "viewport-width-mismatch:expected-plan-matrix",
+      });
+    }
+  }
+
+  if (!userRoutes || typeof userRoutes !== "object" || Array.isArray(userRoutes)) {
+    violations.push({
+      file: relativeFile,
+      line: 1,
+      snippet: "invalid-user-routes:expected-object",
+    });
+  } else {
+    const userRouteArrayFields = [
+      "auth",
+      "shell",
+      "projectTabs",
+    ];
+    for (const field of userRouteArrayFields) {
+      const fieldValue = userRoutes[field];
+      if (!Array.isArray(fieldValue) || fieldValue.length === 0) {
+        violations.push({
+          file: relativeFile,
+          line: 1,
+          snippet: `invalid-user-routes-field:${field}`,
+        });
+        continue;
+      }
+
+      if (
+        fieldValue.some(
+          (value) => typeof value !== "string" || value.trim().length === 0,
+        )
+      ) {
+        violations.push({
+          file: relativeFile,
+          line: 1,
+          snippet: `invalid-user-routes-field-entry:${field}`,
+        });
+      }
+
+      if (new Set(fieldValue).size !== fieldValue.length) {
+        violations.push({
+          file: relativeFile,
+          line: 1,
+          snippet: `duplicate-user-routes-field-entry:${field}`,
+        });
+      }
+    }
+
+    const userRoutePatternFields = [
+      "projectDocumentRoutePattern",
+      "projectGraphRoutePattern",
+    ];
+    for (const field of userRoutePatternFields) {
+      const patternValue = userRoutes[field];
+      if (typeof patternValue !== "string" || patternValue.trim().length === 0) {
+        violations.push({
+          file: relativeFile,
+          line: 1,
+          snippet: `invalid-user-route-pattern:${field}`,
+        });
+        continue;
+      }
+
+      try {
+        new RegExp(patternValue);
+      } catch (error) {
+        violations.push({
+          file: relativeFile,
+          line: 1,
+          snippet: `invalid-user-route-pattern-regex:${field}`,
+        });
+      }
+    }
+  }
+
+  if (!Array.isArray(adminRoutes) || adminRoutes.length === 0) {
+    violations.push({
+      file: relativeFile,
+      line: 1,
+      snippet: "invalid-admin-routes:expected-non-empty-array",
+    });
+  } else {
+    if (
+      adminRoutes.some(
+        (route) => typeof route !== "string" || route.trim().length === 0,
+      )
+    ) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: "invalid-admin-route-entry",
+      });
+    }
+
+    if (new Set(adminRoutes).size !== adminRoutes.length) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: "duplicate-admin-routes",
+      });
+    }
+  }
+
+  return violations;
+}
+
 function cleanupWebJsMirrors(workspaceRoot) {
   const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
@@ -982,6 +1183,15 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webResponsiveManualMatrixConfigViolations =
+    collectWebResponsiveManualMatrixConfigViolations(workspaceRoot);
+  if (webResponsiveManualMatrixConfigViolations.length > 0) {
+    allViolations.push({
+      check: webResponsiveManualMatrixConfigCheck,
+      violations: webResponsiveManualMatrixConfigViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
@@ -998,8 +1208,10 @@ module.exports = {
   webLayoutTestInlineViewportArrayCheck,
   webLayoutTestRouteMatrixCoverageCheck,
   webResponsiveTargetConfigCheck,
+  webResponsiveManualMatrixConfigCheck,
   DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
   WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
+  WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH,
   readRequiredWebResponsiveTestTargets,
   runQualityGuards,
   lineForIndex,
