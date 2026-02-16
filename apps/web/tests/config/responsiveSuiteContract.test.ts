@@ -54,9 +54,7 @@ describe("responsive suite command contract", () => {
 
   it("keeps all required responsive regression files in test:responsive", () => {
     const responsiveTargets = extractVitestTargets(responsiveScript);
-    expect(responsiveTargets).toEqual(
-      expect.arrayContaining(REQUIRED_RESPONSIVE_TEST_FILES),
-    );
+    expect(responsiveTargets).toEqual(REQUIRED_RESPONSIVE_TEST_FILES);
   });
 
   it("keeps responsive regression targets unique", () => {

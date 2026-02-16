@@ -330,3 +330,34 @@ test("quality-guards check mode reports layout test viewport literal remediation
     /Tip: in AppLayout\/AdminLayout test suites use shared viewport constants\/helpers from `tests\/utils\/responsiveMatrix\.ts` instead of numeric setViewportWidth\(\.\.\.\) literals/,
   );
 });
+
+test("quality-guards check mode reports responsive suite tip when targets are out of canonical order", () => {
+  const workspaceRoot = createTempWorkspace();
+  const webPackagePath = path.join(workspaceRoot, "apps/web/package.json");
+
+  writeFile(
+    webPackagePath,
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive":
+            "pnpm run clean:js-mirrors && vitest run src/lib/responsive.test.ts tests/components/AppLayout.test.tsx tests/pages/AdminLayout.test.tsx tests/components/AppSidebar.test.tsx tests/styles/articlesLayout.test.ts tests/styles/legacyResponsiveSafeguards.test.ts tests/styles/layoutResponsiveShell.test.ts tests/styles/docsAndGraphResponsive.test.ts tests/styles/projectsAndSettingsResponsive.test.ts tests/styles/adminPagesResponsive.test.ts tests/styles/authResponsive.test.ts tests/utils/viewport.test.ts tests/utils/responsiveMatrix.test.ts tests/config/responsiveSuiteContract.test.ts tests/config/responsiveTestConventions.test.ts",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep `apps\/web\/package\.json` test:responsive in sync with required responsive suites/,
+  );
+});

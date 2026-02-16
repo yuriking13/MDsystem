@@ -386,6 +386,7 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
 
   const responsiveTargets = extractVitestTargetsFromScript(responsiveScript);
   const targetSet = new Set(responsiveTargets);
+  let hasDuplicateTargets = false;
 
   for (const requiredTarget of REQUIRED_WEB_RESPONSIVE_TEST_TARGETS) {
     if (!targetSet.has(requiredTarget)) {
@@ -398,6 +399,7 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
   }
 
   if (targetSet.size !== responsiveTargets.length) {
+    hasDuplicateTargets = true;
     const seen = new Set();
     for (const target of responsiveTargets) {
       if (seen.has(target)) {
@@ -408,6 +410,44 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
         });
       }
       seen.add(target);
+    }
+  }
+
+  for (const target of responsiveTargets) {
+    if (!REQUIRED_WEB_RESPONSIVE_TEST_TARGETS.includes(target)) {
+      violations.push({
+        file: relativeFile,
+        line: scriptLine,
+        snippet: `unexpected-target:${target}`,
+      });
+    }
+  }
+
+  const hasMissingOrUnexpected = violations.some(
+    (violation) =>
+      violation.snippet.startsWith("missing-target:") ||
+      violation.snippet.startsWith("unexpected-target:"),
+  );
+
+  if (
+    !hasDuplicateTargets &&
+    !hasMissingOrUnexpected &&
+    responsiveTargets.length === REQUIRED_WEB_RESPONSIVE_TEST_TARGETS.length
+  ) {
+    let mismatchIndex = -1;
+    for (let i = 0; i < REQUIRED_WEB_RESPONSIVE_TEST_TARGETS.length; i += 1) {
+      if (responsiveTargets[i] !== REQUIRED_WEB_RESPONSIVE_TEST_TARGETS[i]) {
+        mismatchIndex = i;
+        break;
+      }
+    }
+
+    if (mismatchIndex !== -1) {
+      violations.push({
+        file: relativeFile,
+        line: scriptLine,
+        snippet: `target-order-mismatch:index-${mismatchIndex + 1}`,
+      });
     }
   }
 
