@@ -29,6 +29,9 @@
     "prettier": "^3.8.1"
   },
   "lint-staged": {
+    "*": [
+      "pnpm run quality:guards"
+    ],
     "*.{ts,tsx}": [
       "prettier --write --ignore-unknown"
     ],
