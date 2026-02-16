@@ -6032,6 +6032,29 @@ input:focus::placeholder {
   overflow: hidden;
 }
 
+.graph-semantic-embedding-progress {
+  width: 100%;
+  height: 6px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--bg-tertiary);
+}
+
+.graph-semantic-embedding-progress::-webkit-progress-bar {
+  background: var(--bg-tertiary);
+}
+
+.graph-semantic-embedding-progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #10b981, #3b82f6);
+}
+
+.graph-semantic-embedding-progress::-moz-progress-bar {
+  background: linear-gradient(90deg, #10b981, #3b82f6);
+}
+
 .graph-semantic-embedding-message {
   font-size: 11px;
 }
@@ -6118,6 +6141,26 @@ input:focus::placeholder {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.graph-semantic-result-score {
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.graph-semantic-result-score--high {
+  background: rgba(16, 185, 129, 0.85);
+}
+
+.graph-semantic-result-score--medium {
+  background: rgba(16, 185, 129, 0.65);
+}
+
+.graph-semantic-result-score--low {
+  background: rgba(16, 185, 129, 0.45);
 }
 
 .graph-semantic-core {
@@ -6364,6 +6407,49 @@ input:focus::placeholder {
   gap: 8px;
 }
 
+.graph-semantic-cluster-card {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-secondary);
+  color: inherit;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 150px;
+  position: relative;
+}
+
+.graph-semantic-cluster-card--selected {
+  border: 2px solid var(--accent-secondary);
+  background: rgba(59, 130, 246, 0.18);
+  color: white;
+}
+
+.graph-semantic-cluster-details-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+}
+
+.graph-semantic-cluster-details-button--selected {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .graph-semantic-cluster-header-row {
   display: flex;
   align-items: center;
@@ -6372,12 +6458,55 @@ input:focus::placeholder {
   padding-right: 20px;
 }
 
+.graph-semantic-cluster-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
 .graph-semantic-cluster-name {
   font-weight: 600;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.graph-semantic-cluster-count {
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.2);
+  color: var(--accent-secondary);
+}
+
+.graph-semantic-cluster-count--selected {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.graph-semantic-cluster-central-title {
+  font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  color: var(--text-muted);
+}
+
+.graph-semantic-cluster-central-title--selected {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.graph-semantic-cluster-keywords {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.graph-semantic-cluster-keywords--selected {
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .graph-semantic-cluster-empty-hint {
@@ -6504,6 +6633,25 @@ input:focus::placeholder {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
+}
+
+.graph-gap-similarity {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 10px;
+}
+
+.graph-gap-similarity--high {
+  background: rgba(245, 158, 11, 0.85);
+}
+
+.graph-gap-similarity--medium {
+  background: rgba(245, 158, 11, 0.65);
+}
+
+.graph-gap-similarity--low {
+  background: rgba(245, 158, 11, 0.45);
 }
 
 .graph-gap-reason {
@@ -6664,6 +6812,30 @@ input:focus::placeholder {
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 10px;
+}
+
+.graph-progress-native {
+  width: 100%;
+  height: 6px;
+  margin-bottom: 10px;
+  appearance: none;
+  -webkit-appearance: none;
+  border: none;
+  border-radius: 3px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.graph-progress-native::-webkit-progress-bar {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.graph-progress-native::-webkit-progress-value {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+
+.graph-progress-native::-moz-progress-bar {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
 }
 
 .graph-progress-footer {
@@ -7382,6 +7554,23 @@ input:focus::placeholder {
   gap: 6px;
 }
 
+.cluster-detail-keyword-chip {
+  background: rgba(59, 130, 246, 0.16);
+  color: var(--accent-secondary);
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.cluster-detail-central-card {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent-secondary);
+}
+
 .cluster-detail-central-label {
   font-size: 11px;
   color: var(--text-muted);
@@ -7436,6 +7625,25 @@ input:focus::placeholder {
   margin-top: 4px;
   cursor: pointer;
   accent-color: #3b82f6;
+}
+
+.cluster-detail-item-index {
+  min-width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+}
+
+.cluster-detail-item-index--central {
+  background: var(--accent-secondary);
+  color: white;
 }
 
 .cluster-detail-item-row {
@@ -7569,6 +7777,18 @@ input:focus::placeholder {
   margin-top: 16px;
   display: flex;
   gap: 10px;
+}
+
+.cluster-detail-filter-button {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent-secondary);
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
 }
 
 .cluster-detail-close-button {

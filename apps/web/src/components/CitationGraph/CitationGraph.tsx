@@ -2175,91 +2175,15 @@ export default function CitationGraph({ projectId }: Props) {
     "#06b6d4": "legend-value--cyan",
     "#fbbf24": "legend-value--amber",
   };
-  const semanticClusterDetailsButtonBaseStyle: React.CSSProperties = {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    width: 18,
-    height: 18,
-    borderRadius: 4,
-    border: "none",
-    color: "inherit",
-    cursor: "pointer",
-    fontSize: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  };
-  const semanticClusterDotBaseStyle: React.CSSProperties = {
-    width: 10,
-    height: 10,
-    borderRadius: "50%",
-    flexShrink: 0,
-  };
-  const semanticClusterCountBaseStyle: React.CSSProperties = {
-    padding: "2px 6px",
-    borderRadius: 10,
-    fontSize: 10,
-    fontWeight: 600,
-  };
-  const semanticClusterCentralTitleBaseStyle: React.CSSProperties = {
-    fontSize: 9,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    width: "100%",
-  };
-  const semanticClusterKeywordsBaseStyle: React.CSSProperties = {
-    fontSize: 9,
-  };
   const clusterDetailColorDotBaseStyle: React.CSSProperties = {
     width: 24,
     height: 24,
     borderRadius: "50%",
     flexShrink: 0,
   };
-  const clusterDetailCentralCardBaseStyle: React.CSSProperties = {
-    marginBottom: 16,
-    padding: 12,
-    background: "var(--bg-tertiary)",
-    borderRadius: 8,
-  };
-  const clusterDetailItemIndexBaseStyle: React.CSSProperties = {
-    minWidth: 24,
-    height: 24,
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 10,
-    fontWeight: 600,
-    flexShrink: 0,
-  };
 
-  const getGraphContainerStyle = (
-    fullscreen: boolean,
-  ): React.CSSProperties => ({
-    display: "flex",
-    flexDirection: "row",
-    height: fullscreen ? "100vh" : "100%",
-    width: fullscreen ? "100vw" : "100%",
-    position: fullscreen ? "fixed" : "relative",
-    top: fullscreen ? 0 : "auto",
-    left: fullscreen ? 0 : "auto",
-    zIndex: fullscreen ? 9999 : "auto",
-    overflow: "hidden",
-  });
   const getGraphHeaderBadgeClassName = (background: string): string =>
     `graph-header-badge ${GRAPH_HEADER_BADGE_CLASS_MAP[background] ?? "graph-header-badge--accent"}`;
-  const getGraphProgressFillStyle = (
-    progress: number,
-  ): React.CSSProperties => ({
-    height: "100%",
-    width: `${progress}%`,
-    background: "linear-gradient(90deg, #3b82f6, #8b5cf6)",
-    borderRadius: 3,
-    transition: "width 0.3s ease",
-  });
   const getSemanticImportLabelClassName = (
     importMissing: boolean,
     disabled: boolean,
@@ -2274,86 +2198,45 @@ export default function CitationGraph({ projectId }: Props) {
     }
     return "graph-semantic-embedding-message graph-semantic-embedding-message--muted";
   };
-  const getSemanticEmbeddingProgressFillStyle = (
-    total: number,
-    processed: number,
-  ): React.CSSProperties => ({
-    height: "100%",
-    width: `${total > 0 ? Math.round((processed / total) * 100) : 0}%`,
-    background: "linear-gradient(90deg, #10b981, #3b82f6)",
-    transition: "width 0.3s ease",
-  });
-  const getSemanticResultScoreStyle = (
-    similarity: number,
-  ): React.CSSProperties => ({
-    marginLeft: 8,
-    padding: "2px 6px",
-    background: `rgba(16, 185, 129, ${similarity})`,
-    borderRadius: 4,
-    fontSize: 10,
-    fontWeight: 600,
-  });
+  const getSemanticResultScoreClassName = (similarity: number): string => {
+    if (similarity >= 0.8) {
+      return "graph-semantic-result-score graph-semantic-result-score--high";
+    }
+    if (similarity >= 0.6) {
+      return "graph-semantic-result-score graph-semantic-result-score--medium";
+    }
+    return "graph-semantic-result-score graph-semantic-result-score--low";
+  };
   const getMethodologyChipClassName = (selected: boolean): string =>
     `graph-methodology-chip${selected ? " graph-methodology-chip--active" : ""}`;
   const getMethodologyCountBadgeClassName = (selected: boolean): string =>
     `graph-methodology-chip-count${selected ? " graph-methodology-chip-count--active" : ""}`;
-  const getSemanticClusterCardStyle = (
+  const getSemanticClusterCardClassName = (selected: boolean): string =>
+    `graph-semantic-cluster-card${selected ? " graph-semantic-cluster-card--selected" : ""}`;
+  const getSemanticClusterDetailsButtonClassName = (
     selected: boolean,
-    color: string,
-  ): React.CSSProperties => ({
-    padding: "8px 12px",
-    borderRadius: 8,
-    border: selected ? `2px solid ${color}` : "1px solid var(--border-glass)",
-    background: selected ? color : "var(--bg-secondary)",
-    color: selected ? "white" : "inherit",
-    cursor: "pointer",
-    fontSize: 11,
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-start",
-    gap: 4,
-    minWidth: 150,
-    position: "relative",
-  });
-  const getSemanticClusterDetailsButtonStyle = (
-    selected: boolean,
-  ): React.CSSProperties => ({
-    ...semanticClusterDetailsButtonBaseStyle,
-    background: selected ? "rgba(255,255,255,0.2)" : "var(--bg-tertiary)",
-  });
+  ): string =>
+    `graph-semantic-cluster-details-button${selected ? " graph-semantic-cluster-details-button--selected" : ""}`;
   const getSemanticClusterDotStyle = (color: string): React.CSSProperties => ({
-    ...semanticClusterDotBaseStyle,
     background: color,
   });
-  const getSemanticClusterCountBadgeStyle = (
-    selected: boolean,
-    color: string,
-  ): React.CSSProperties => ({
-    ...semanticClusterCountBaseStyle,
-    background: selected ? "rgba(255,255,255,0.2)" : `${color}30`,
-    color: selected ? "white" : color,
-  });
-  const getSemanticClusterCentralTitleStyle = (
-    selected: boolean,
-  ): React.CSSProperties => ({
-    ...semanticClusterCentralTitleBaseStyle,
-    color: selected ? "rgba(255,255,255,0.8)" : "var(--text-muted)",
-  });
-  const getSemanticClusterKeywordsStyle = (
-    selected: boolean,
-  ): React.CSSProperties => ({
-    ...semanticClusterKeywordsBaseStyle,
-    color: selected ? "rgba(255,255,255,0.7)" : "var(--text-muted)",
-  });
+  const getSemanticClusterCountBadgeClassName = (selected: boolean): string =>
+    `graph-semantic-cluster-count${selected ? " graph-semantic-cluster-count--selected" : ""}`;
+  const getSemanticClusterCentralTitleClassName = (selected: boolean): string =>
+    `graph-semantic-cluster-central-title${selected ? " graph-semantic-cluster-central-title--selected" : ""}`;
+  const getSemanticClusterKeywordsClassName = (selected: boolean): string =>
+    `graph-semantic-cluster-keywords${selected ? " graph-semantic-cluster-keywords--selected" : ""}`;
   const getGapAnalyzeButtonClassName = (loadingState: boolean): string =>
     `graph-gap-analyze-button${loadingState ? " graph-gap-analyze-button--loading" : ""}`;
-  const getGapSimilarityStyle = (similarity: number): React.CSSProperties => ({
-    background: `rgba(245, 158, 11, ${similarity})`,
-    padding: "2px 8px",
-    borderRadius: 10,
-    fontWeight: 600,
-    fontSize: 10,
-  });
+  const getGapSimilarityClassName = (similarity: number): string => {
+    if (similarity >= 0.8) {
+      return "graph-gap-similarity graph-gap-similarity--high";
+    }
+    if (similarity >= 0.6) {
+      return "graph-gap-similarity graph-gap-similarity--medium";
+    }
+    return "graph-gap-similarity graph-gap-similarity--low";
+  };
   const getLegendDotClassName = (background: string): string =>
     `legend-dot ${LEGEND_DOT_COLOR_CLASS_MAP[background] ?? "legend-dot--blue"}`;
   const getLegendValueClassName = (color: string): string =>
@@ -2400,31 +2283,17 @@ export default function CitationGraph({ projectId }: Props) {
     ...clusterDetailColorDotBaseStyle,
     background: color,
   });
-  const getClusterKeywordStyle = (color: string): React.CSSProperties => ({
-    background: color + "20",
-    color,
-    padding: "4px 10px",
-    borderRadius: 12,
-    fontSize: 11,
-    fontWeight: 500,
-  });
-  const getClusterCentralCardStyle = (color: string): React.CSSProperties => ({
-    ...clusterDetailCentralCardBaseStyle,
-    borderLeft: `4px solid ${color}`,
-  });
+  const getClusterKeywordClassName = (): string =>
+    "cluster-detail-keyword-chip";
+  const getClusterCentralCardClassName = (): string =>
+    "cluster-detail-central-card";
   const getClusterItemRowClassName = (
     selected: boolean,
     isLast: boolean,
   ): string =>
     `cluster-detail-item-row${selected ? " cluster-detail-item-row--selected" : ""}${isLast ? " cluster-detail-item-row--last" : ""}`;
-  const getClusterItemIndexStyle = (
-    isCentral: boolean,
-    color: string,
-  ): React.CSSProperties => ({
-    ...clusterDetailItemIndexBaseStyle,
-    background: isCentral ? color : "var(--bg-secondary)",
-    color: isCentral ? "white" : "var(--text-muted)",
-  });
+  const getClusterItemIndexClassName = (isCentral: boolean): string =>
+    `cluster-detail-item-index${isCentral ? " cluster-detail-item-index--central" : ""}`;
   const getClusterStatusBadgeClassName = (status: string): string =>
     `cluster-detail-status-badge cluster-detail-status-badge--${
       status === "selected"
@@ -2443,17 +2312,8 @@ export default function CitationGraph({ projectId }: Props) {
     loadingState: boolean,
   ): string =>
     `cluster-detail-selected-button cluster-detail-selected-button--${variant}${loadingState ? " cluster-detail-selected-button--loading" : ""}`;
-  const getClusterFilterButtonStyle = (color: string): React.CSSProperties => ({
-    flex: 1,
-    padding: "10px 16px",
-    borderRadius: 8,
-    border: "none",
-    background: color,
-    color: "white",
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 500,
-  });
+  const getClusterFilterButtonClassName = (): string =>
+    "cluster-detail-filter-button";
   const HELP_ICON_COLOR_CLASS_MAP: Record<string, string> = {
     "#3b82f6": "help-icon--blue",
     "#10b981": "help-icon--green",
@@ -2501,7 +2361,6 @@ export default function CitationGraph({ projectId }: Props) {
     <div
       className={`graph-container graph-fixed-height ${isFullscreen ? "graph-fullscreen" : ""}`}
       ref={containerRef}
-      style={getGraphContainerStyle(isFullscreen)}
     >
       {/* Main Content Area */}
       <div className="graph-main-area">
@@ -2981,9 +2840,11 @@ export default function CitationGraph({ projectId }: Props) {
               </button>
             </div>
 
-            <div className="progress-bar-animated graph-progress-track">
-              <div style={getGraphProgressFillStyle(fetchJobStatus.progress)} />
-            </div>
+            <progress
+              className="graph-progress-native"
+              max={100}
+              value={Math.max(0, Math.min(fetchJobStatus.progress, 100))}
+            />
 
             <div className="graph-progress-footer">
               <span>
@@ -3117,14 +2978,11 @@ export default function CitationGraph({ projectId }: Props) {
                     </span>
                   )}
                   {generatingEmbeddings && embeddingJob && (
-                    <div className="graph-semantic-embedding-track">
-                      <div
-                        style={getSemanticEmbeddingProgressFillStyle(
-                          embeddingJob.total,
-                          embeddingJob.processed,
-                        )}
-                      />
-                    </div>
+                    <progress
+                      className="graph-semantic-embedding-progress"
+                      max={Math.max(embeddingJob.total, 1)}
+                      value={Math.max(0, embeddingJob.processed)}
+                    />
                   )}
                 </div>
               )}
@@ -3180,7 +3038,9 @@ export default function CitationGraph({ projectId }: Props) {
                       {result.titleEn || result.title}
                     </span>
                     <span
-                      style={getSemanticResultScoreStyle(result.similarity)}
+                      className={getSemanticResultScoreClassName(
+                        result.similarity,
+                      )}
                     >
                       {(result.similarity * 100).toFixed(0)}%
                     </span>
@@ -3455,9 +3315,8 @@ export default function CitationGraph({ projectId }: Props) {
                       openClusterDetails(cluster);
                     }}
                     title="Клик: фильтр | Двойной клик: детали"
-                    style={getSemanticClusterCardStyle(
+                    className={getSemanticClusterCardClassName(
                       selectedSemanticCluster === cluster.id,
-                      cluster.color,
                     )}
                   >
                     {/* Кнопка деталей */}
@@ -3466,7 +3325,7 @@ export default function CitationGraph({ projectId }: Props) {
                         e.stopPropagation();
                         openClusterDetails(cluster);
                       }}
-                      style={getSemanticClusterDetailsButtonStyle(
+                      className={getSemanticClusterDetailsButtonClassName(
                         selectedSemanticCluster === cluster.id,
                       )}
                       title="Подробнее о кластере"
@@ -3474,14 +3333,16 @@ export default function CitationGraph({ projectId }: Props) {
                       ⓘ
                     </button>
                     <div className="graph-semantic-cluster-header-row">
-                      <span style={getSemanticClusterDotStyle(cluster.color)} />
+                      <span
+                        className="graph-semantic-cluster-dot"
+                        style={getSemanticClusterDotStyle(cluster.color)}
+                      />
                       <span className="graph-semantic-cluster-name">
                         {cluster.name}
                       </span>
                       <span
-                        style={getSemanticClusterCountBadgeStyle(
+                        className={getSemanticClusterCountBadgeClassName(
                           selectedSemanticCluster === cluster.id,
-                          cluster.color,
                         )}
                       >
                         {cluster.articleCount}
@@ -3489,7 +3350,7 @@ export default function CitationGraph({ projectId }: Props) {
                     </div>
                     {cluster.centralArticleTitle && (
                       <div
-                        style={getSemanticClusterCentralTitleStyle(
+                        className={getSemanticClusterCentralTitleClassName(
                           selectedSemanticCluster === cluster.id,
                         )}
                         title={cluster.centralArticleTitle}
@@ -3499,7 +3360,7 @@ export default function CitationGraph({ projectId }: Props) {
                     )}
                     {cluster.keywords.length > 0 && (
                       <div
-                        style={getSemanticClusterKeywordsStyle(
+                        className={getSemanticClusterKeywordsClassName(
                           selectedSemanticCluster === cluster.id,
                         )}
                       >
@@ -3625,7 +3486,9 @@ export default function CitationGraph({ projectId }: Props) {
                 {gapAnalysisResults.map((gap, idx) => (
                   <div key={idx} className="graph-gap-result-card">
                     <div className="graph-gap-result-header">
-                      <span style={getGapSimilarityStyle(gap.similarity)}>
+                      <span
+                        className={getGapSimilarityClassName(gap.similarity)}
+                      >
                         {(gap.similarity * 100).toFixed(0)}% схожесть
                       </span>
                       <span className="graph-gap-reason">{gap.reason}</span>
@@ -4432,12 +4295,7 @@ export default function CitationGraph({ projectId }: Props) {
                   <div className="cluster-detail-keywords-wrap">
                     {clusterDetailModal.cluster.keywords.map(
                       (kw: string, i: number) => (
-                        <span
-                          key={i}
-                          style={getClusterKeywordStyle(
-                            clusterDetailModal.cluster.color,
-                          )}
-                        >
+                        <span key={i} className={getClusterKeywordClassName()}>
                           {kw}
                         </span>
                       ),
@@ -4448,11 +4306,7 @@ export default function CitationGraph({ projectId }: Props) {
 
               {/* Central Article */}
               {clusterDetailModal.cluster.centralArticleTitle && (
-                <div
-                  style={getClusterCentralCardStyle(
-                    clusterDetailModal.cluster.color,
-                  )}
-                >
+                <div className={getClusterCentralCardClassName()}>
                   <div className="cluster-detail-central-label">
                     ⭐ Центральная статья кластера:
                   </div>
@@ -4545,9 +4399,8 @@ export default function CitationGraph({ projectId }: Props) {
                                 setSelectedNodeForDisplay(node);
                               }
                             }}
-                            style={getClusterItemIndexStyle(
+                            className={getClusterItemIndexClassName(
                               isCentralArticle,
-                              clusterDetailModal.cluster.color,
                             )}
                           >
                             {isCentralArticle ? "⭐" : idx + 1}
@@ -4656,9 +4509,7 @@ export default function CitationGraph({ projectId }: Props) {
                     filterBySemanticCluster(clusterDetailModal.cluster.id);
                     setClusterDetailModal(null);
                   }}
-                  style={getClusterFilterButtonStyle(
-                    clusterDetailModal.cluster.color,
-                  )}
+                  className={getClusterFilterButtonClassName()}
                 >
                   Показать только этот кластер
                 </button>
