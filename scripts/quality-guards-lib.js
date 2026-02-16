@@ -575,8 +575,12 @@ function collectWebLayoutTestBreakpointLiteralViolations(workspaceRoot) {
     }
 
     const source = fs.readFileSync(filePath, "utf8");
-    const matcher =
-      /(?:(?:width|viewportWidth)\s*[<>]=?\s*(?:APP_DRAWER_MAX_WIDTH|ADMIN_DRAWER_MAX_WIDTH|\d+)|(?:APP_DRAWER_MAX_WIDTH|ADMIN_DRAWER_MAX_WIDTH|\d+)\s*[<>]=?\s*(?:width|viewportWidth))/g;
+    const widthIdentifierPattern =
+      "(?:width|viewportWidth|[A-Za-z_$][\\w$]*[Ww]idth)";
+    const matcher = new RegExp(
+      `(?:${widthIdentifierPattern}\\s*[<>]=?\\s*(?:APP_DRAWER_MAX_WIDTH|ADMIN_DRAWER_MAX_WIDTH|\\d+)|(?:APP_DRAWER_MAX_WIDTH|ADMIN_DRAWER_MAX_WIDTH|\\d+)\\s*[<>]=?\\s*${widthIdentifierPattern})`,
+      "g",
+    );
     let match = matcher.exec(source);
 
     while (match) {

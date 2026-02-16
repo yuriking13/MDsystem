@@ -955,6 +955,37 @@ test("runQualityGuards blocks direct breakpoint comparisons in layout responsive
   assert.equal(layoutBreakpointLiteralViolation.violations.length, 2);
 });
 
+test("runQualityGuards blocks direct breakpoint comparisons for custom *Width variable names", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    [
+      "const shouldOpen = screenWidth <= APP_DRAWER_MAX_WIDTH;",
+      "export const value = shouldOpen;",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+    [
+      "const shouldOpen = ADMIN_DRAWER_MAX_WIDTH >= currentWidth;",
+      "export const value = shouldOpen;",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutBreakpointLiteralViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-test-breakpoint-literals",
+  );
+  assert.ok(layoutBreakpointLiteralViolation);
+  assert.equal(layoutBreakpointLiteralViolation.violations.length, 2);
+});
+
 test("runQualityGuards accepts helper-based breakpoint semantics in layout responsive tests", () => {
   const workspaceRoot = createWorkspaceFixture();
 
