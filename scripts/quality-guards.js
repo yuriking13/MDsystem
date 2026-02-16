@@ -43,13 +43,9 @@ function main() {
       );
     }
 
-    if (
-      allViolations.some(
-        ({ check }) => check.name === "web-style-prop-outside-allowlist",
-      )
-    ) {
+    if (allViolations.some(({ check }) => check.name === "web-style-prop-usage")) {
       console.error(
-        "\n[quality-guards] Tip: move styles to CSS classes; style={...} is temporarily allowlisted only for legacy hotspot files.",
+        "\n[quality-guards] Tip: move styles to CSS classes; style={...} is disallowed in apps/web/src.",
       );
     }
   }

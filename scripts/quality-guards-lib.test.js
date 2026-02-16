@@ -127,16 +127,8 @@ test("runQualityGuards reports standalone js/jsx files in web source", () => {
   assert.equal(fs.existsSync(cjsSourcePath), true);
 });
 
-test("runQualityGuards enforces style prop usage outside allowlist", () => {
+test("runQualityGuards blocks style prop usage in web source", () => {
   const workspaceRoot = createWorkspaceFixture();
-
-  writeFile(
-    path.join(
-      workspaceRoot,
-      "apps/web/src/components/CitationGraph/CitationGraph.tsx",
-    ),
-    "export function CitationGraph() { return <div>Graph</div>; }",
-  );
 
   writeFile(
     path.join(workspaceRoot, "apps/web/src/components/InlineStyleLeak.tsx"),
@@ -154,7 +146,7 @@ test("runQualityGuards enforces style prop usage outside allowlist", () => {
   });
 
   const stylePropViolation = result.allViolations.find(
-    (entry) => entry.check.name === "web-style-prop-outside-allowlist",
+    (entry) => entry.check.name === "web-style-prop-usage",
   );
   assert.ok(stylePropViolation);
   assert.equal(stylePropViolation.violations.length, 1);

@@ -34,7 +34,7 @@ The repository enforces strict quality gates for TypeScript and UI code:
 - no explicit `any` typings in API and web TypeScript files;
 - no JavaScript/JSX source files in `apps/web/src` (TypeScript-only source tree);
 - no inline JSX style literals (`style={{ ... }}`) in the web app;
-- `style={...}` usage is blocked in web source except for a temporary legacy allowlist;
+- `style={...}` usage is disallowed in `apps/web/src` (class-based styling only);
 - no direct DOM style mutations (`.style.*` / `setAttribute("style", ...)`) in web source.
 
 Run all checks from the workspace root:

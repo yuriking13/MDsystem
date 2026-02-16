@@ -109,7 +109,7 @@ test("quality-guards check mode prints both remediation tips when needed", () =>
   );
 });
 
-test("quality-guards check mode reports style-prop allowlist remediation tip", () => {
+test("quality-guards check mode reports style-prop remediation tip", () => {
   const workspaceRoot = createTempWorkspace();
   const styleLeakPath = path.join(
     workspaceRoot,
@@ -134,6 +134,6 @@ test("quality-guards check mode reports style-prop allowlist remediation tip", (
   assert.equal(result.status, 1);
   assert.match(
     result.stderr,
-    /Tip: move styles to CSS classes; style=\{\.\.\.\} is temporarily allowlisted only for legacy hotspot files/,
+    /Tip: move styles to CSS classes; style=\{\.\.\.\} is disallowed in apps\/web\/src/,
   );
 });

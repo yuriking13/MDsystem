@@ -61,12 +61,9 @@ const webJsSourceCheck = {
   description: "JavaScript/JSX source files are not allowed in apps/web/src",
 };
 
-const WEB_STYLE_PROP_ALLOWLIST = new Set([]);
-
 const webStylePropCheck = {
-  name: "web-style-prop-outside-allowlist",
-  description:
-    "style={...} usage is allowed only in explicitly allowlisted legacy files",
+  name: "web-style-prop-usage",
+  description: "style={...} usage is not allowed in apps/web/src",
 };
 
 function walkFiles(rootDir, extensions) {
@@ -181,10 +178,6 @@ function collectWebStylePropViolations(workspaceRoot, fileCache) {
   const violations = [];
   for (const filePath of tsxFiles) {
     const relativeFile = path.relative(workspaceRoot, filePath).replaceAll(path.sep, "/");
-    if (WEB_STYLE_PROP_ALLOWLIST.has(relativeFile)) {
-      continue;
-    }
-
     const source = fs.readFileSync(filePath, "utf8");
     const matcher = /style=\{/g;
     let match = matcher.exec(source);
