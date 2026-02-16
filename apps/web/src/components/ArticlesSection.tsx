@@ -78,6 +78,52 @@ const TEXT_AVAILABILITY = [
   { id: "free_full", label: "Бесплатный полный текст" },
 ];
 
+const ARTICLES_ARROW_CLASS_PREFIX = "articles-nav-arrow-pos-";
+const articlesArrowRuleCache = new Map<string, string>();
+let articlesArrowStyleSheet: CSSStyleSheet | null = null;
+
+const ensureArticlesArrowStyleSheet = (): CSSStyleSheet | null => {
+  if (articlesArrowStyleSheet) return articlesArrowStyleSheet;
+  if (typeof document === "undefined") return null;
+
+  const styleEl = document.createElement("style");
+  styleEl.id = "articles-nav-arrow-rules";
+  document.head.appendChild(styleEl);
+  articlesArrowStyleSheet = styleEl.sheet as CSSStyleSheet | null;
+  return articlesArrowStyleSheet;
+};
+
+const ensureArticlesArrowPositionClass = (
+  left: number,
+  right: number,
+): string => {
+  const roundedLeft = Math.round(left);
+  const roundedRight = Math.round(right);
+  const key = `${roundedLeft}:${roundedRight}`;
+  const cachedClassName = articlesArrowRuleCache.get(key);
+  if (cachedClassName) return cachedClassName;
+
+  const hash = key.split("").reduce((acc, char) => {
+    return (acc * 31 + char.charCodeAt(0)) % 2147483647;
+  }, 17);
+  const className = `${ARTICLES_ARROW_CLASS_PREFIX}${hash.toString(36)}`;
+  const styleSheet = ensureArticlesArrowStyleSheet();
+
+  if (styleSheet) {
+    styleSheet.insertRule(
+      `.${className} .articles-nav-arrow--left{left:${roundedLeft}px;}`,
+      styleSheet.cssRules.length,
+    );
+    styleSheet.insertRule(
+      `.${className} .articles-nav-arrow--right{right:${roundedRight}px;}`,
+      styleSheet.cssRules.length,
+    );
+  }
+
+  articlesArrowRuleCache.set(key, className);
+  return className;
+};
+
 type SearchProgressSocketEvent = {
   type: "search:progress";
   payload: SearchProgressEvent;
@@ -284,6 +330,9 @@ export default function ArticlesSection({
     left: number;
     right: number;
   } | null>(null);
+  const [arrowPositionClass, setArrowPositionClass] = useState<string | null>(
+    null,
+  );
 
   // Сортировка
   const [sortBy, setSortBy] = useState<
@@ -458,20 +507,16 @@ export default function ArticlesSection({
       const rightGapCenter = (gridRect.right + viewportWidth) / 2;
       const leftPosition = leftGapCenter;
       const rightPosition = viewportWidth - rightGapCenter;
-
-      document.documentElement.style.setProperty(
-        "--articles-nav-arrow-left",
-        `${leftPosition}px`,
-      );
-      document.documentElement.style.setProperty(
-        "--articles-nav-arrow-right",
-        `${rightPosition}px`,
+      const nextArrowPositionClass = ensureArticlesArrowPositionClass(
+        leftPosition,
+        rightPosition,
       );
 
       setArrowPositions({
         left: leftPosition,
         right: rightPosition,
       });
+      setArrowPositionClass(nextArrowPositionClass);
     }
 
     // Начальный расчёт
@@ -504,14 +549,16 @@ export default function ArticlesSection({
       window.removeEventListener("resize", calculateArrowPositions);
       observer.disconnect();
       resizeObserver.disconnect();
-      document.documentElement.style.removeProperty(
-        "--articles-nav-arrow-left",
-      );
-      document.documentElement.style.removeProperty(
-        "--articles-nav-arrow-right",
-      );
     };
   }, []);
+
+  useEffect(() => {
+    if (!arrowPositionClass) return;
+    document.body.classList.add(arrowPositionClass);
+    return () => {
+      document.body.classList.remove(arrowPositionClass);
+    };
+  }, [arrowPositionClass]);
 
   // Вычислить годы из пресета
   function getYearsFromPreset(): { yearFrom: number; yearTo: number } {
