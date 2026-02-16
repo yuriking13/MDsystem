@@ -849,3 +849,62 @@ test("runQualityGuards accepts helper-based breakpoint semantics in layout respo
   );
   assert.equal(layoutBreakpointLiteralViolation, undefined);
 });
+
+test("runQualityGuards blocks inline numeric viewport arrays in layout responsive tests", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    [
+      "for (const width of [360, 390, 768]) {",
+      "  void width;",
+      "}",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+    [
+      "it.each([[360, true], [1024, false]])('x', () => {});",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutInlineArrayViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-test-inline-viewport-arrays",
+  );
+  assert.ok(layoutInlineArrayViolation);
+  assert.equal(layoutInlineArrayViolation.violations.length, 2);
+});
+
+test("runQualityGuards accepts shared viewport matrix constants in layout responsive tests", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    [
+      "for (const width of TARGET_VIEWPORT_WIDTHS) {",
+      "  void width;",
+      "}",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+    ["it.each(MOBILE_VIEWPORT_WIDTHS)('x', () => {});"].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutInlineArrayViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-test-inline-viewport-arrays",
+  );
+  assert.equal(layoutInlineArrayViolation, undefined);
+});

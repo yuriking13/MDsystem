@@ -96,6 +96,12 @@ const webLayoutTestBreakpointLiteralCheck = {
     "AppLayout/AdminLayout responsive tests should use shared breakpoint helpers instead of direct width comparisons",
 };
 
+const webLayoutTestInlineViewportArrayCheck = {
+  name: "web-layout-test-inline-viewport-arrays",
+  description:
+    "AppLayout/AdminLayout responsive tests should use shared viewport matrix constants instead of inline numeric arrays",
+};
+
 const REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
   "src/lib/responsive.test.ts",
   "tests/components/AppLayout.test.tsx",
@@ -519,6 +525,44 @@ function collectWebLayoutTestBreakpointLiteralViolations(workspaceRoot) {
   return violations;
 }
 
+function collectWebLayoutTestInlineViewportArrayViolations(workspaceRoot) {
+  const layoutTestFiles = [
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+  ];
+  const violations = [];
+
+  for (const filePath of layoutTestFiles) {
+    if (!fs.existsSync(filePath)) {
+      continue;
+    }
+
+    const source = fs.readFileSync(filePath, "utf8");
+    const patterns = [
+      /for\s*\(\s*const\s+\w+\s+of\s+\[[^\]]*\d[^\]]*\]\s*\)/g,
+      /(?:it|test)\.each\(\s*\[[^\]]*\d[^\]]*\]/g,
+    ];
+
+    for (const pattern of patterns) {
+      const matcher = new RegExp(pattern.source, pattern.flags);
+      let match = matcher.exec(source);
+
+      while (match) {
+        violations.push({
+          file: path
+            .relative(workspaceRoot, filePath)
+            .replaceAll(path.sep, "/"),
+          line: lineForIndex(source, match.index),
+          snippet: match[0],
+        });
+        match = matcher.exec(source);
+      }
+    }
+  }
+
+  return violations;
+}
+
 function cleanupWebJsMirrors(workspaceRoot) {
   const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
@@ -618,6 +662,15 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webLayoutTestInlineViewportArrayViolations =
+    collectWebLayoutTestInlineViewportArrayViolations(workspaceRoot);
+  if (webLayoutTestInlineViewportArrayViolations.length > 0) {
+    allViolations.push({
+      check: webLayoutTestInlineViewportArrayCheck,
+      violations: webLayoutTestInlineViewportArrayViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
@@ -631,6 +684,7 @@ module.exports = {
   webResponsiveTestScriptCoverageCheck,
   webLayoutTestViewportLiteralCheck,
   webLayoutTestBreakpointLiteralCheck,
+  webLayoutTestInlineViewportArrayCheck,
   runQualityGuards,
   lineForIndex,
 };

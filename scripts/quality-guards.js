@@ -98,6 +98,16 @@ function main() {
         "\n[quality-guards] Tip: in AppLayout/AdminLayout test suites derive mobile/open expectations via `isAppMobileViewport` / `isAdminMobileViewport` instead of direct width comparisons.",
       );
     }
+
+    if (
+      allViolations.some(
+        ({ check }) => check.name === "web-layout-test-inline-viewport-arrays",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: in AppLayout/AdminLayout test suites iterate shared matrix constants (`TARGET_VIEWPORT_WIDTHS`, `MOBILE_VIEWPORT_WIDTHS`, etc.) instead of inline numeric arrays.",
+      );
+    }
   }
 
   process.exit(1);

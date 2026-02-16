@@ -390,3 +390,24 @@ test("quality-guards check mode reports layout breakpoint literal remediation ti
     /Tip: in AppLayout\/AdminLayout test suites derive mobile\/open expectations via `isAppMobileViewport` \/ `isAdminMobileViewport` instead of direct width comparisons/,
   );
 });
+
+test("quality-guards check mode reports inline viewport array remediation tip for tests", () => {
+  const workspaceRoot = createTempWorkspace();
+  const appLayoutTestPath = path.join(
+    workspaceRoot,
+    "apps/web/tests/components/AppLayout.test.tsx",
+  );
+
+  writeFile(appLayoutTestPath, "for (const width of [360, 390, 768]) { }");
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: in AppLayout\/AdminLayout test suites iterate shared matrix constants \(`TARGET_VIEWPORT_WIDTHS`, `MOBILE_VIEWPORT_WIDTHS`, etc\.\) instead of inline numeric arrays/,
+  );
+});
