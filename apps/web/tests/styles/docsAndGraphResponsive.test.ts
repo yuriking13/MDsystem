@@ -42,6 +42,18 @@ describe("docs and citation-graph responsive css regressions", () => {
     );
   });
 
+  it("keeps docs header and action row stack-safe on mobile breakpoint", () => {
+    expect(pagesCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.docs-page-header\s*\{[\s\S]*?flex-direction:\s*column;[\s\S]*?align-items:\s*flex-start;[\s\S]*?\}[\s\S]*?\.docs-page-header \.row\.gap\s*\{[\s\S]*?flex-wrap:\s*wrap;/,
+    );
+  });
+
+  it("keeps docs nav items compact at narrow-mobile breakpoint", () => {
+    expect(pagesCss).toMatch(
+      /@media\s*\(max-width:\s*480px\)\s*\{[\s\S]*?\.docs-nav \.doc-nav-item\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?padding:\s*8px 10px;/,
+    );
+  });
+
   it("keeps graph fullscreen height fallbacks and toolbar safe-area anchor", () => {
     expect(graphCss).toMatch(
       /\.graph-fullscreen\s*\{[\s\S]*?height:\s*100vh !important;[\s\S]*?height:\s*100dvh !important;/,
