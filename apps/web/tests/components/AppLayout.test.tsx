@@ -99,6 +99,7 @@ function ProjectContextTitlePageBeta() {
     <div>
       <div>Project context title page beta</div>
       <Link to="/projects/p2?tab=documents">Go project two documents</Link>
+      <Link to="/projects/p1?tab=articles">Go back to project one</Link>
     </div>
   );
 }
@@ -448,6 +449,48 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(
           document.querySelector(".sidebar-project-name")?.textContent,
         ).toBe("Проект Бета");
+      });
+    },
+  );
+
+  it.each([360, 390, 768])(
+    "does not leak second-project context when returning to first project at %ipx",
+    async (width) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/projects/p1/context-title");
+
+      await waitFor(() => {
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Альфа");
+      });
+
+      await user.click(screen.getByText("Go project beta context"));
+
+      await waitFor(() => {
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Бета");
+      });
+
+      await user.click(screen.getByText("Go back to project one"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Project details page")).toBeInTheDocument();
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Scientiaiter");
+        expect(screen.getByTestId("project-context-name")).toHaveTextContent(
+          "null",
+        );
+        expect(
+          screen.getByTestId("project-context-selected-count"),
+        ).toHaveTextContent("0");
+        expect(screen.getByTestId("project-context-status")).toHaveTextContent(
+          "candidate",
+        );
+        expect(document.querySelector(".sidebar-project-name")).toBeNull();
       });
     },
   );
