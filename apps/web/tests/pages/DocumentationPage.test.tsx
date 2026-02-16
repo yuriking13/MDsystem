@@ -19,6 +19,26 @@ function renderDocumentationPage() {
 }
 
 describe("DocumentationPage menu + submenu", () => {
+  it("renders all major documentation sections in sidebar menu", () => {
+    renderDocumentationPage();
+
+    const sectionTitles = [
+      "Обзор платформы",
+      "База статей",
+      "Документы",
+      "Файлы",
+      "Статистика",
+      "Граф цитирований",
+      "Команда",
+      "Настройки проекта",
+      "API ключи",
+    ];
+
+    for (const title of sectionTitles) {
+      expect(screen.getByRole("button", { name: title })).toBeInTheDocument();
+    }
+  });
+
   it("renders default overview section and first subtopic", () => {
     renderDocumentationPage();
 
@@ -103,5 +123,35 @@ describe("DocumentationPage menu + submenu", () => {
     expect(
       screen.getByRole("tab", { name: "Экспорт и библиография" }),
     ).toHaveAttribute("aria-selected", "false");
+  });
+
+  it("keeps first submenu topic active for every section after section switch", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const sectionToFirstTopic: Record<string, string> = {
+      "Обзор платформы": "Основной сценарий работы",
+      "База статей": "Поиск и фильтры",
+      Документы: "Создание структуры работы",
+      Файлы: "Загрузка и организация",
+      Статистика: "Создание таблиц и графиков",
+      "Граф цитирований": "Построение графа и глубина",
+      Команда: "Роли и права",
+      "Настройки проекта": "Тип и подтип исследования",
+      "API ключи": "Какие провайдеры доступны",
+    };
+
+    for (const [sectionTitle, firstTopicTitle] of Object.entries(
+      sectionToFirstTopic,
+    )) {
+      await user.click(screen.getByRole("button", { name: sectionTitle }));
+
+      expect(
+        screen.getByRole("heading", { level: 2, name: sectionTitle }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole("tab", { name: firstTopicTitle }),
+      ).toHaveAttribute("aria-selected", "true");
+    }
   });
 });
