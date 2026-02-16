@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import AppSidebar from "../../src/components/AppSidebar";
 
 const mockLogout = vi.fn();
@@ -18,31 +18,61 @@ function renderSidebar({
   mobileViewport,
   mobileOpen = false,
   onCloseMobile,
+  initialPath = "/projects/project-1?tab=articles",
 }: {
   sidebarId?: string;
   mobileViewport: boolean;
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
+  initialPath?: string;
 }) {
+  function LocationProbe() {
+    const location = useLocation();
+    return (
+      <div data-testid="sidebar-location">
+        {location.pathname}
+        {location.search}
+      </div>
+    );
+  }
+
   return render(
     <MemoryRouter
-      initialEntries={["/projects/project-1?tab=articles"]}
+      initialEntries={[initialPath]}
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <Routes>
         <Route
           path="/projects/:id"
           element={
-            <AppSidebar
-              sidebarId={sidebarId}
-              mobileViewport={mobileViewport}
-              mobileOpen={mobileOpen}
-              onCloseMobile={onCloseMobile}
-            />
+            <>
+              <AppSidebar
+                sidebarId={sidebarId}
+                mobileViewport={mobileViewport}
+                mobileOpen={mobileOpen}
+                onCloseMobile={onCloseMobile}
+              />
+              <LocationProbe />
+            </>
+          }
+        />
+        <Route
+          path="/projects/:projectId/documents/:docId"
+          element={
+            <>
+              <AppSidebar
+                sidebarId={sidebarId}
+                mobileViewport={mobileViewport}
+                mobileOpen={mobileOpen}
+                onCloseMobile={onCloseMobile}
+              />
+              <LocationProbe />
+            </>
           }
         />
         <Route path="/projects" element={<div>Projects route</div>} />
         <Route path="/settings" element={<div>Settings route</div>} />
+        <Route path="/docs" element={<div>Docs route</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -310,5 +340,27 @@ describe("AppSidebar mobile collapse behavior", () => {
     await user.click(screen.getByText("Кандидаты"));
 
     expect(onCloseMobile).toHaveBeenCalledTimes(1);
+  });
+
+  it("navigates from document-editor route to project tab and closes mobile drawer", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+      initialPath: "/projects/project-1/documents/doc-1",
+    });
+
+    expect(screen.getByTestId("sidebar-location").textContent).toBe(
+      "/projects/project-1/documents/doc-1",
+    );
+
+    await user.click(screen.getByText("Файлы"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("sidebar-location").textContent).toBe(
+      "/projects/project-1?tab=files",
+    );
   });
 });
