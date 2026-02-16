@@ -132,6 +132,27 @@ describe("responsive shell css regressions", () => {
     );
   });
 
+  it("keeps admin mobile sidebar width/transform behavior and overlay layering at 900px", () => {
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar\s*\{[\s\S]*?width:\s*min\(280px,\s*88vw\);[\s\S]*?transform:\s*translateX\(-100%\);/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar\.mobile-open\s*\{[\s\S]*?transform:\s*translateX\(0\);/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar\.collapsed\s*\{[\s\S]*?width:\s*min\(280px,\s*88vw\);/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar-overlay\s*\{[\s\S]*?display:\s*block;[\s\S]*?position:\s*fixed;[\s\S]*?inset:\s*0;[\s\S]*?z-index:\s*90;/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar\s*\{[\s\S]*?z-index:\s*100;/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar-toggle\s*\{[\s\S]*?display:\s*none;/,
+    );
+  });
+
   it("keeps admin compact main/topbar spacing safe-area aware at 640px", () => {
     expect(adminCss).toMatch(
       /@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*?\.admin-main,[\s\S]*?padding:\s*12px calc\(12px \+ env\(safe-area-inset-right,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-bottom,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-left,\s*0px\)\);/,
