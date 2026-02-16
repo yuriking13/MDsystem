@@ -68,6 +68,14 @@ describe("manual smoke checklist contract", () => {
     expect(sidebarSource).toContain('path: "/docs"');
   });
 
+  it("keeps profile settings and back-to-project controls in sidebar shell", () => {
+    expect(sidebarSource).toContain('title="Перейти в настройки"');
+    expect(sidebarSource).toContain('navigate("/settings")');
+    expect(sidebarSource).toContain('title="Назад к проектам"');
+    expect(sidebarSource).toContain("<span>К проектам</span>");
+    expect(sidebarSource).toContain('navigate("/projects")');
+  });
+
   it("keeps article status submenu entries available for smoke traversal", () => {
     const statusExpectations: Array<{ id: string; label: string }> = [
       { id: "candidate", label: "Кандидаты" },
