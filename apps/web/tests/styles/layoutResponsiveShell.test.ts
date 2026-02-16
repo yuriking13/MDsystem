@@ -12,6 +12,21 @@ const adminCss = readFileSync(
 );
 
 describe("responsive shell css regressions", () => {
+  it("keeps app shell overlays and mobile controls hidden by default", () => {
+    expect(appLayoutCss).toMatch(
+      /\.app-mobile-topbar\s*\{\s*display:\s*none;\s*\}/,
+    );
+    expect(appLayoutCss).toMatch(
+      /\.app-mobile-fab-toggle\s*\{\s*display:\s*none;\s*\}/,
+    );
+    expect(appLayoutCss).toMatch(
+      /\.app-sidebar-overlay\s*\{\s*display:\s*none;\s*\}/,
+    );
+    expect(appLayoutCss).toMatch(
+      /body\.sidebar-modal-open\s*\{\s*overflow:\s*hidden;\s*\}/,
+    );
+  });
+
   it("keeps fixed layout containers guarded with 100vh and 100dvh pairs", () => {
     expect(appLayoutCss).toMatch(
       /html\.layout-fixed,\s*html\.layout-fixed body\s*\{[\s\S]*?height:\s*100vh;[\s\S]*?height:\s*100dvh;[\s\S]*?max-height:\s*100vh;[\s\S]*?max-height:\s*100dvh;/,
@@ -108,6 +123,15 @@ describe("responsive shell css regressions", () => {
   it("keeps admin sidebar viewport-height fallback and safe-area support", () => {
     expect(adminCss).toMatch(
       /\.admin-sidebar\s*\{[\s\S]*?height:\s*100vh;[\s\S]*?height:\s*100dvh;[\s\S]*?padding-top:\s*env\(safe-area-inset-top,\s*0px\);[\s\S]*?padding-left:\s*env\(safe-area-inset-left,\s*0px\);[\s\S]*?padding-right:\s*env\(safe-area-inset-right,\s*0px\);/,
+    );
+  });
+
+  it("keeps admin shell mobile controls hidden by default and layout viewport-safe", () => {
+    expect(adminCss).toMatch(
+      /\.admin-layout\s*\{[\s\S]*?min-height:\s*100vh;[\s\S]*?min-height:\s*100dvh;/,
+    );
+    expect(adminCss).toMatch(
+      /\.admin-mobile-topbar,\s*\.admin-sidebar-overlay\s*\{\s*display:\s*none;\s*\}/,
     );
   });
 
