@@ -2432,6 +2432,22 @@
     width: 100%;
   }
 
+  .admin-activity-day {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .admin-activity-date {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-activity-count {
+    min-width: 0;
+    width: 100%;
+    text-align: left;
+  }
+
   .admin-jobs-summary {
     gap: 8px;
   }
