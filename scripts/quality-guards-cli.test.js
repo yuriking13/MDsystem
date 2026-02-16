@@ -267,3 +267,34 @@ test("quality-guards check mode reports responsive suite coverage remediation ti
     /Tip: keep `apps\/web\/package\.json` test:responsive in sync with required responsive suites/,
   );
 });
+
+test("quality-guards check mode reports responsive suite tip when pre-step is missing", () => {
+  const workspaceRoot = createTempWorkspace();
+  const webPackagePath = path.join(workspaceRoot, "apps/web/package.json");
+
+  writeFile(
+    webPackagePath,
+    JSON.stringify(
+      {
+        name: "web",
+        scripts: {
+          "test:responsive":
+            "vitest run src/lib/responsive.test.ts tests/components/AppLayout.test.tsx tests/pages/AdminLayout.test.tsx tests/components/AppSidebar.test.tsx tests/styles/articlesLayout.test.ts tests/styles/legacyResponsiveSafeguards.test.ts tests/styles/layoutResponsiveShell.test.ts tests/styles/docsAndGraphResponsive.test.ts tests/styles/projectsAndSettingsResponsive.test.ts tests/styles/adminPagesResponsive.test.ts tests/styles/authResponsive.test.ts tests/utils/responsiveMatrix.test.ts tests/utils/viewport.test.ts tests/config/responsiveSuiteContract.test.ts",
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep `apps\/web\/package\.json` test:responsive in sync with required responsive suites/,
+  );
+});
