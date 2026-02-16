@@ -1237,6 +1237,7 @@ input:focus::placeholder {
 .article-modal {
   max-width: 750px;
   max-height: 85vh;
+  max-height: 85dvh;
   overflow-y: auto;
 }
 
@@ -2669,6 +2670,7 @@ input:focus::placeholder {
 .statistic-edit-modal {
   max-width: 1000px;
   max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
 }
 
@@ -2906,6 +2908,7 @@ input:focus::placeholder {
 .create-statistic-modal {
   max-width: 1000px;
   max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
 }
 
@@ -3140,6 +3143,7 @@ input:focus::placeholder {
 .chart-creator-modal {
   max-width: 900px;
   max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
 }
 
@@ -3300,6 +3304,7 @@ input:focus::placeholder {
 .page-settings-modal {
   max-width: 700px;
   max-height: 90vh;
+  max-height: 90dvh;
   overflow-y: auto;
 }
 
@@ -7608,6 +7613,7 @@ input:focus::placeholder {
 .cluster-detail-modal {
   max-width: 700px;
   max-height: 80vh;
+  max-height: 80dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -9772,6 +9778,7 @@ input:focus::placeholder {
 .file-preview-modal {
   max-width: 90vw;
   max-height: 90vh;
+  max-height: 90dvh;
   width: auto;
 }
 
@@ -9807,12 +9814,14 @@ input:focus::placeholder {
 .file-preview-media-image {
   max-width: 100%;
   max-height: 70vh;
+  max-height: 70dvh;
   object-fit: contain;
 }
 
 .file-preview-media-video {
   max-width: 100%;
   max-height: 70vh;
+  max-height: 70dvh;
 }
 
 .file-preview-media-audio {
