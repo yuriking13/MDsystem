@@ -131,4 +131,25 @@ describe("responsive shell css regressions", () => {
       /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-mobile-topbar\s*\{[\s\S]*?padding:\s*calc\(10px \+ env\(safe-area-inset-top,\s*0px\)\)\s*calc\(16px \+ env\(safe-area-inset-right,\s*0px\)\)\s*10px\s*calc\(16px \+ env\(safe-area-inset-left,\s*0px\)\);/,
     );
   });
+
+  it("keeps admin compact main/topbar spacing safe-area aware at 640px", () => {
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*?\.admin-main,[\s\S]*?padding:\s*12px calc\(12px \+ env\(safe-area-inset-right,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-bottom,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*?\.admin-mobile-topbar\s*\{[\s\S]*?margin:\s*-12px calc\(-12px - env\(safe-area-inset-right,\s*0px\)\)\s*12px\s*calc\(-12px - env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+  });
+
+  it("keeps admin mobile topbar and toggle compact sizing at 420px", () => {
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*420px\)\s*\{[\s\S]*?\.admin-mobile-topbar\s*\{[\s\S]*?gap:\s*8px;[\s\S]*?min-height:\s*48px;[\s\S]*?padding-left:\s*calc\(10px \+ env\(safe-area-inset-left,\s*0px\)\);[\s\S]*?padding-right:\s*calc\(10px \+ env\(safe-area-inset-right,\s*0px\)\);/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*420px\)\s*\{[\s\S]*?\.admin-mobile-nav-toggle\s*\{[\s\S]*?width:\s*32px;[\s\S]*?height:\s*32px;/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*420px\)\s*\{[\s\S]*?\.admin-mobile-nav-toggle svg\s*\{[\s\S]*?width:\s*16px;[\s\S]*?height:\s*16px;/,
+    );
+  });
 });
