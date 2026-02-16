@@ -2672,6 +2672,234 @@ input:focus::placeholder {
   overflow-y: auto;
 }
 
+.create-stat-icon-accent {
+  color: var(--accent);
+}
+
+.create-stat-icon-gap-6 {
+  margin-right: 6px;
+}
+
+.create-stat-icon-gap-4 {
+  margin-right: 4px;
+}
+
+.create-stat-icon-gap-4-no-shrink {
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.create-stat-title-row {
+  margin-bottom: 16px;
+}
+
+.create-stat-title-field {
+  flex: 1;
+}
+
+.create-stat-table-meta-row {
+  margin-bottom: 12px;
+}
+
+.create-stat-table-meta-label {
+  display: flex;
+  align-items: center;
+}
+
+.create-stat-table-action-button {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.create-stat-table-wrap {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.create-stat-table {
+  width: 100%;
+}
+
+.create-stat-index-column {
+  width: 50px;
+}
+
+.create-stat-row-align-center {
+  align-items: center;
+}
+
+.create-stat-flex-1 {
+  flex: 1;
+}
+
+.create-stat-remove-column-button {
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.create-stat-center-text {
+  text-align: center;
+}
+
+.create-stat-centered-row {
+  align-items: center;
+  justify-content: center;
+}
+
+.create-stat-remove-row-button {
+  padding: 1px 4px;
+  font-size: 9px;
+}
+
+.create-stat-table-hint-card {
+  margin-top: 16px;
+  padding: 12px;
+}
+
+.create-stat-table-hint-text {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.create-stat-chart-panel {
+  align-items: flex-start;
+}
+
+.create-stat-chart-config-column {
+  flex: 1;
+}
+
+.create-stat-chart-type-block {
+  margin-bottom: 16px;
+}
+
+.create-stat-chart-type-hint-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.create-stat-chart-type-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.create-stat-chart-type-button {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.create-stat-chart-type-button--recommended {
+  border: 2px solid var(--success);
+}
+
+.create-stat-field-spacing {
+  margin-bottom: 12px;
+}
+
+.create-stat-data-columns-row {
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.create-stat-checkbox-auto {
+  width: auto;
+}
+
+.create-stat-option-text {
+  font-size: 13px;
+}
+
+.create-stat-preview-panel {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.create-stat-preview-label {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.create-stat-preview-empty {
+  text-align: center;
+  padding: 40px;
+}
+
+.create-stat-classification-card {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.create-stat-classification-header {
+  margin-bottom: 12px;
+}
+
+.create-stat-classification-title {
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+
+.create-stat-classification-subtitle {
+  font-size: 12px;
+}
+
+.create-stat-classification-fields {
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.create-stat-classification-field {
+  min-width: 200px;
+}
+
+.create-stat-classification-field-label {
+  font-size: 12px;
+}
+
+.create-stat-description-field {
+  margin-bottom: 16px;
+}
+
+.create-stat-description-textarea {
+  resize: vertical;
+}
+
+.create-stat-explanation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.create-stat-explanation-card {
+  padding: 14px;
+}
+
+.create-stat-explanation-title {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.create-stat-explanation-text {
+  font-size: 11px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.create-stat-footer {
+  justify-content: space-between;
+}
+
+.create-stat-create-button {
+  display: flex;
+  align-items: center;
+}
+
 .chart-creator-modal {
   max-width: 900px;
   max-height: 90vh;

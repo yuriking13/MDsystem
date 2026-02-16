@@ -10,27 +10,14 @@ import ChartFromTable, {
 } from "./ChartFromTable";
 import { apiCreateStatistic, type ProjectStatistic } from "../lib/api";
 
-const iconAccentStyle: React.CSSProperties = { color: "var(--accent)" };
-const iconMarginRight6Style: React.CSSProperties = { marginRight: 6 };
-const iconMarginRight4Style: React.CSSProperties = { marginRight: 4 };
-const iconMarginRight4NoShrinkStyle: React.CSSProperties = {
-  marginRight: 4,
-  flexShrink: 0,
-};
-const lightBulbIconStyle: React.CSSProperties = {
-  marginRight: 6,
-  color: "var(--accent)",
-};
-
 // SVG Icons (Flowbite/Heroicons style)
 const PlusIcon = () => (
   <svg
-    className="icon-md"
+    className="icon-md create-stat-icon-accent"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconAccentStyle}
   >
     <path
       strokeLinecap="round"
@@ -58,12 +45,11 @@ const CloseIcon = () => (
 
 const TableIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm create-stat-icon-gap-6"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconMarginRight6Style}
   >
     <path
       strokeLinecap="round"
@@ -75,12 +61,11 @@ const TableIcon = () => (
 
 const ChartIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm create-stat-icon-gap-6"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconMarginRight6Style}
   >
     <path
       strokeLinecap="round"
@@ -92,12 +77,11 @@ const ChartIcon = () => (
 
 const BeakerIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm create-stat-icon-gap-6"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconMarginRight6Style}
   >
     <path
       strokeLinecap="round"
@@ -109,12 +93,11 @@ const BeakerIcon = () => (
 
 const QuantitativeIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm create-stat-icon-gap-4-no-shrink"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconMarginRight4NoShrinkStyle}
   >
     <path
       strokeLinecap="round"
@@ -126,12 +109,11 @@ const QuantitativeIcon = () => (
 
 const QualitativeIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm create-stat-icon-gap-4-no-shrink"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconMarginRight4NoShrinkStyle}
   >
     <path
       strokeLinecap="round"
@@ -148,12 +130,11 @@ const QualitativeIcon = () => (
 
 const LightBulbIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm create-stat-icon-gap-6 create-stat-icon-accent"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={lightBulbIconStyle}
   >
     <path
       strokeLinecap="round"
@@ -165,12 +146,11 @@ const LightBulbIcon = () => (
 
 const CheckIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm create-stat-icon-gap-4"
     fill="none"
     stroke="currentColor"
     strokeWidth={2}
     viewBox="0 0 24 24"
-    style={iconMarginRight4Style}
   >
     <path
       strokeLinecap="round"
@@ -182,12 +162,11 @@ const CheckIcon = () => (
 
 const SpinnerIcon = () => (
   <svg
-    className="icon-sm loading-spinner"
+    className="icon-sm loading-spinner create-stat-icon-gap-4"
     fill="none"
     stroke="currentColor"
     strokeWidth={2}
     viewBox="0 0 24 24"
-    style={iconMarginRight4Style}
   >
     <path
       strokeLinecap="round"
@@ -199,12 +178,11 @@ const SpinnerIcon = () => (
 
 const TableDataIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm create-stat-icon-gap-4"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconMarginRight4Style}
   >
     <path
       strokeLinecap="round"
@@ -393,134 +371,13 @@ export default function CreateStatisticModal({
     "doughnut",
   ];
 
-  const titleRowStyle: React.CSSProperties = { marginBottom: 16 };
-  const titleFieldStyle: React.CSSProperties = { flex: 1 };
-  const tableMetaRowStyle: React.CSSProperties = { marginBottom: 12 };
-  const tableMetaLabelStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-  };
-  const tableActionButtonStyle: React.CSSProperties = {
-    padding: "6px 12px",
-    fontSize: 12,
-  };
-  const tableWrapStyle: React.CSSProperties = {
-    maxHeight: 350,
-    overflowY: "auto",
-  };
-  const tableStyle: React.CSSProperties = { width: "100%" };
-  const indexColumnStyle: React.CSSProperties = { width: 50 };
-  const rowAlignCenterStyle: React.CSSProperties = { alignItems: "center" };
-  const fullFlexStyle: React.CSSProperties = { flex: 1 };
-  const removeColumnButtonStyle: React.CSSProperties = {
-    padding: "2px 6px",
-    fontSize: 10,
-  };
-  const centerTextStyle: React.CSSProperties = { textAlign: "center" };
-  const centeredRowStyle: React.CSSProperties = {
-    alignItems: "center",
-    justifyContent: "center",
-  };
-  const removeRowButtonStyle: React.CSSProperties = {
-    padding: "1px 4px",
-    fontSize: 9,
-  };
-  const tableHintCardStyle: React.CSSProperties = {
-    marginTop: 16,
-    padding: 12,
-  };
-  const tableHintTextStyle: React.CSSProperties = {
-    fontSize: 12,
-    display: "flex",
-    alignItems: "center",
-  };
-
-  const chartPanelStyle: React.CSSProperties = { alignItems: "flex-start" };
-  const chartConfigColumnStyle: React.CSSProperties = { flex: 1 };
-  const chartTypeBlockStyle: React.CSSProperties = { marginBottom: 16 };
-  const chartTypeHintLabelStyle: React.CSSProperties = {
-    display: "block",
-    marginBottom: 8,
-  };
-  const chartTypeButtonsStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 6,
-  };
-  const fieldSpacingStyle: React.CSSProperties = { marginBottom: 12 };
-  const dataColumnsRowStyle: React.CSSProperties = {
-    marginTop: 8,
-    flexWrap: "wrap",
-  };
-  const checkboxWidthAutoStyle: React.CSSProperties = { width: "auto" };
-  const optionTextStyle: React.CSSProperties = { fontSize: 13 };
-  const previewPanelStyle: React.CSSProperties = {
-    flex: 1,
-    background: "rgba(0,0,0,0.2)",
-    borderRadius: 12,
-    padding: 16,
-  };
-  const previewLabelStyle: React.CSSProperties = {
-    marginBottom: 8,
-    fontSize: 12,
-  };
-  const previewEmptyStyle: React.CSSProperties = {
-    textAlign: "center",
-    padding: 40,
-  };
-
-  const classificationCardStyle: React.CSSProperties = {
-    padding: 16,
-    marginBottom: 16,
-  };
-  const classificationHeaderStyle: React.CSSProperties = { marginBottom: 12 };
-  const classificationTitleStyle: React.CSSProperties = {
-    fontSize: 14,
-    display: "flex",
-    alignItems: "center",
-  };
-  const classificationSubtitleStyle: React.CSSProperties = { fontSize: 12 };
-  const classificationFieldsStyle: React.CSSProperties = {
-    flexWrap: "wrap",
-    gap: 16,
-  };
-  const classificationFieldStyle: React.CSSProperties = { minWidth: 200 };
-  const classificationFieldLabelStyle: React.CSSProperties = { fontSize: 12 };
-  const descriptionFieldStyle: React.CSSProperties = { marginBottom: 16 };
-  const descriptionTextareaStyle: React.CSSProperties = {
-    resize: "vertical",
-  };
-  const explanationGridStyle: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-  };
-  const explanationCardStyle: React.CSSProperties = { padding: 14 };
-  const explanationTitleStyle: React.CSSProperties = {
-    margin: "0 0 8px 0",
-    fontSize: 13,
-    display: "flex",
-    alignItems: "center",
-  };
-  const explanationTextStyle: React.CSSProperties = {
-    fontSize: 11,
-    margin: 0,
-    lineHeight: 1.5,
-  };
-
-  const footerStyle: React.CSSProperties = { justifyContent: "space-between" };
-  const createButtonStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-  };
-
-  const getChartTypeButtonStyle = (
+  const getChartTypeButtonClassName = (
+    isCurrent: boolean,
     isRecommended: boolean,
-  ): React.CSSProperties => ({
-    padding: "8px 12px",
-    fontSize: 12,
-    border: isRecommended ? "2px solid var(--success)" : undefined,
-  });
+  ): string =>
+    `btn create-stat-chart-type-button ${
+      isCurrent ? "" : "secondary"
+    } ${isRecommended ? "create-stat-chart-type-button--recommended" : ""}`;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -568,8 +425,8 @@ export default function CreateStatisticModal({
           {/* Step 1: Table Data */}
           {activeTab === "table" && (
             <div>
-              <div className="row gap" style={titleRowStyle}>
-                <label className="stack" style={titleFieldStyle}>
+              <div className="row gap create-stat-title-row">
+                <label className="stack create-stat-title-field">
                   <span>Название графика</span>
                   <input
                     value={title}
@@ -579,52 +436,48 @@ export default function CreateStatisticModal({
                 </label>
               </div>
 
-              <div className="row space" style={tableMetaRowStyle}>
-                <span className="muted" style={tableMetaLabelStyle}>
+              <div className="row space create-stat-table-meta-row">
+                <span className="muted create-stat-table-meta-label">
                   <TableDataIcon />
                   Таблица данных: {tableData.rows.length} строк ×{" "}
                   {tableData.headers.length} колонок
                 </span>
                 <div className="row gap">
                   <button
-                    className="btn secondary"
+                    className="btn secondary create-stat-table-action-button"
                     onClick={addColumn}
-                    style={tableActionButtonStyle}
                   >
                     + Колонка
                   </button>
                   <button
-                    className="btn secondary"
+                    className="btn secondary create-stat-table-action-button"
                     onClick={addRow}
-                    style={tableActionButtonStyle}
                   >
                     + Строка
                   </button>
                 </div>
               </div>
 
-              <div style={tableWrapStyle}>
-                <table className="chart-source-table" style={tableStyle}>
+              <div className="create-stat-table-wrap">
+                <table className="chart-source-table create-stat-table">
                   <thead>
                     <tr>
-                      <th style={indexColumnStyle}>#</th>
+                      <th className="create-stat-index-column">#</th>
                       {tableData.headers.map((h, i) => (
                         <th key={i}>
-                          <div className="row gap" style={rowAlignCenterStyle}>
+                          <div className="row gap create-stat-row-align-center">
                             <input
                               type="text"
                               value={h}
                               onChange={(e) =>
                                 handleHeaderChange(i, e.target.value)
                               }
-                              className="chart-data-input header-input"
-                              style={fullFlexStyle}
+                              className="chart-data-input header-input create-stat-flex-1"
                             />
                             {tableData.headers.length > 2 && (
                               <button
-                                className="btn secondary"
+                                className="btn secondary create-stat-remove-column-button"
                                 onClick={() => removeColumn(i)}
-                                style={removeColumnButtonStyle}
                                 title="Удалить колонку"
                               >
                                 ✕
@@ -638,14 +491,13 @@ export default function CreateStatisticModal({
                   <tbody>
                     {tableData.rows.map((row, ri) => (
                       <tr key={ri}>
-                        <td style={centerTextStyle}>
-                          <div className="row gap" style={centeredRowStyle}>
+                        <td className="create-stat-center-text">
+                          <div className="row gap create-stat-centered-row">
                             <span className="muted">{ri + 1}</span>
                             {tableData.rows.length > 1 && (
                               <button
-                                className="btn secondary"
+                                className="btn secondary create-stat-remove-row-button"
                                 onClick={() => removeRow(ri)}
-                                style={removeRowButtonStyle}
                                 title="Удалить строку"
                               >
                                 ✕
@@ -671,8 +523,8 @@ export default function CreateStatisticModal({
                 </table>
               </div>
 
-              <div className="card" style={tableHintCardStyle}>
-                <div className="muted" style={tableHintTextStyle}>
+              <div className="card create-stat-table-hint-card">
+                <div className="muted create-stat-table-hint-text">
                   <LightBulbIcon />
                   Введите данные в таблицу, затем перейдите к выбору типа
                   графика
@@ -683,13 +535,13 @@ export default function CreateStatisticModal({
 
           {/* Step 2: Chart Type */}
           {activeTab === "chart" && (
-            <div className="row gap" style={chartPanelStyle}>
-              <div style={chartConfigColumnStyle}>
-                <div style={chartTypeBlockStyle}>
-                  <span className="muted" style={chartTypeHintLabelStyle}>
+            <div className="row gap create-stat-chart-panel">
+              <div className="create-stat-chart-config-column">
+                <div className="create-stat-chart-type-block">
+                  <span className="muted create-stat-chart-type-hint-label">
                     Выберите тип графика
                   </span>
-                  <div style={chartTypeButtonsStyle}>
+                  <div className="create-stat-chart-type-buttons">
                     {allChartTypes.map((t) => {
                       const info = CHART_TYPE_INFO[t] ?? {
                         name: String(t),
@@ -699,11 +551,11 @@ export default function CreateStatisticModal({
                       return (
                         <button
                           key={t}
-                          className={`btn ${chartType === t ? "" : "secondary"}`}
-                          onClick={() => setChartType(t)}
-                          style={getChartTypeButtonStyle(
+                          className={getChartTypeButtonClassName(
+                            chartType === t,
                             recommendedTypes.includes(t),
                           )}
+                          onClick={() => setChartType(t)}
                           title={info.description}
                         >
                           {info.icon} {info.name}
@@ -715,7 +567,7 @@ export default function CreateStatisticModal({
 
                 {chartType === "scatter" ? (
                   <>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack create-stat-field-spacing">
                       <span>Ось X (горизонтальная)</span>
                       <select
                         value={xColumn}
@@ -728,7 +580,7 @@ export default function CreateStatisticModal({
                         ))}
                       </select>
                     </label>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack create-stat-field-spacing">
                       <span>Ось Y (вертикальная)</span>
                       <select
                         value={yColumn}
@@ -744,7 +596,7 @@ export default function CreateStatisticModal({
                   </>
                 ) : chartType === "histogram" ? (
                   <>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack create-stat-field-spacing">
                       <span>Колонка с данными для гистограммы</span>
                       <select
                         value={dataColumns[0] || 1}
@@ -759,7 +611,7 @@ export default function CreateStatisticModal({
                         ))}
                       </select>
                     </label>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack create-stat-field-spacing">
                       <span>Количество интервалов: {bins}</span>
                       <input
                         type="range"
@@ -772,7 +624,7 @@ export default function CreateStatisticModal({
                   </>
                 ) : (
                   <>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack create-stat-field-spacing">
                       <span>Колонка меток (подписи на оси X)</span>
                       <select
                         value={labelColumn}
@@ -785,26 +637,25 @@ export default function CreateStatisticModal({
                         ))}
                       </select>
                     </label>
-                    <div style={fieldSpacingStyle}>
+                    <div className="create-stat-field-spacing">
                       <span className="muted">
                         Колонки с данными (значения на оси Y)
                       </span>
-                      <div className="row gap" style={dataColumnsRowStyle}>
+                      <div className="row gap create-stat-data-columns-row">
                         {tableData.headers.map(
                           (h, i) =>
                             i !== labelColumn && (
                               <label
                                 key={i}
-                                className="row gap"
-                                style={rowAlignCenterStyle}
+                                className="row gap create-stat-row-align-center"
                               >
                                 <input
                                   type="checkbox"
                                   checked={dataColumns.includes(i)}
                                   onChange={() => toggleDataColumn(i)}
-                                  style={checkboxWidthAutoStyle}
+                                  className="create-stat-checkbox-auto"
                                 />
-                                <span style={optionTextStyle}>
+                                <span className="create-stat-option-text">
                                   {h || `Колонка ${i + 1}`}
                                 </span>
                               </label>
@@ -817,8 +668,8 @@ export default function CreateStatisticModal({
               </div>
 
               {/* Preview */}
-              <div style={previewPanelStyle}>
-                <div className="muted" style={previewLabelStyle}>
+              <div className="create-stat-preview-panel">
+                <div className="muted create-stat-preview-label">
                   Предпросмотр:
                 </div>
                 {chartType === "scatter" ||
@@ -831,7 +682,7 @@ export default function CreateStatisticModal({
                     theme="dark"
                   />
                 ) : (
-                  <div className="muted" style={previewEmptyStyle}>
+                  <div className="muted create-stat-preview-empty">
                     Выберите колонки с данными
                   </div>
                 )}
@@ -842,23 +693,20 @@ export default function CreateStatisticModal({
           {/* Step 3: Classification */}
           {activeTab === "classification" && (
             <div>
-              <div className="card" style={classificationCardStyle}>
-                <div className="row space" style={classificationHeaderStyle}>
-                  <strong style={classificationTitleStyle}>
+              <div className="card create-stat-classification-card">
+                <div className="row space create-stat-classification-header">
+                  <strong className="create-stat-classification-title">
                     <BeakerIcon />
                     Классификация данных
                   </strong>
-                  <span className="muted" style={classificationSubtitleStyle}>
+                  <span className="muted create-stat-classification-subtitle">
                     Рекомендуемый метод: {recommendedMethod}
                   </span>
                 </div>
 
-                <div className="row gap" style={classificationFieldsStyle}>
-                  <label className="stack" style={classificationFieldStyle}>
-                    <span
-                      className="muted"
-                      style={classificationFieldLabelStyle}
-                    >
+                <div className="row gap create-stat-classification-fields">
+                  <label className="stack create-stat-classification-field">
+                    <span className="muted create-stat-classification-field-label">
                       Тип переменной
                     </span>
                     <select
@@ -874,11 +722,8 @@ export default function CreateStatisticModal({
                     </select>
                   </label>
 
-                  <label className="stack" style={classificationFieldStyle}>
-                    <span
-                      className="muted"
-                      style={classificationFieldLabelStyle}
-                    >
+                  <label className="stack create-stat-classification-field">
+                    <span className="muted create-stat-classification-field-label">
                       Подтип
                     </span>
                     <select
@@ -905,11 +750,8 @@ export default function CreateStatisticModal({
                   </label>
 
                   {variableType === "quantitative" && (
-                    <label className="stack" style={classificationFieldStyle}>
-                      <span
-                        className="muted"
-                        style={classificationFieldLabelStyle}
-                      >
+                    <label className="stack create-stat-classification-field">
+                      <span className="muted create-stat-classification-field-label">
                         Распределение
                       </span>
                       <select
@@ -936,36 +778,36 @@ export default function CreateStatisticModal({
                 </div>
               </div>
 
-              <label className="stack" style={descriptionFieldStyle}>
+              <label className="stack create-stat-description-field">
                 <span>Описание (необязательно)</span>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Описание графика или метода анализа..."
                   rows={3}
-                  style={descriptionTextareaStyle}
+                  className="create-stat-description-textarea"
                 />
               </label>
 
               {/* Explanation cards */}
-              <div style={explanationGridStyle}>
-                <div className="card" style={explanationCardStyle}>
-                  <h5 style={explanationTitleStyle}>
+              <div className="create-stat-explanation-grid">
+                <div className="card create-stat-explanation-card">
+                  <h5 className="create-stat-explanation-title">
                     <QuantitativeIcon />
                     Количественные данные
                   </h5>
-                  <p className="muted" style={explanationTextStyle}>
+                  <p className="muted create-stat-explanation-text">
                     <strong>Непрерывные:</strong> возраст, рост, вес, давление
                     <br />
                     <strong>Дискретные:</strong> количество детей, число визитов
                   </p>
                 </div>
-                <div className="card" style={explanationCardStyle}>
-                  <h5 style={explanationTitleStyle}>
+                <div className="card create-stat-explanation-card">
+                  <h5 className="create-stat-explanation-title">
                     <QualitativeIcon />
                     Качественные данные
                   </h5>
-                  <p className="muted" style={explanationTextStyle}>
+                  <p className="muted create-stat-explanation-text">
                     <strong>Номинальные:</strong> группа крови, пол
                     <br />
                     <strong>Дихотомические:</strong> да/нет, жив/умер
@@ -978,7 +820,7 @@ export default function CreateStatisticModal({
           )}
         </div>
         {/* Actions */}
-        <div className="modal-footer" style={footerStyle}>
+        <div className="modal-footer create-stat-footer">
           <div className="row gap">
             {activeTab !== "table" && (
               <button
@@ -1010,10 +852,9 @@ export default function CreateStatisticModal({
               Отмена
             </button>
             <button
-              className="btn-primary"
+              className="btn-primary create-stat-create-button"
               onClick={handleCreate}
               disabled={saving || !title.trim()}
-              style={createButtonStyle}
             >
               {saving ? (
                 <>
