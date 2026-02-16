@@ -7,7 +7,7 @@ import {
   act,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout, { useProjectContext } from "../../src/components/AppLayout";
 
@@ -122,6 +122,38 @@ function ProjectDetailsContextPage() {
   );
 }
 
+function ProjectContextPersistencePage() {
+  const { setProjectInfo, clearProjectInfo } = useProjectContext();
+  const [counter, setCounter] = useState(0);
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    setProjectInfo({
+      name: "Проект Гамма",
+      role: "editor",
+      updatedAt: "2026-02-16T01:00:00.000Z",
+    });
+  }, [setProjectInfo]);
+
+  useEffect(() => {
+    return () => {
+      clearProjectInfo();
+    };
+  }, [clearProjectInfo]);
+
+  return (
+    <div>
+      <div>Project context persistence page</div>
+      <div data-testid="context-persistence-counter">{String(counter)}</div>
+      <button type="button" onClick={() => setCounter((prev) => prev + 1)}>
+        Bump context local state
+      </button>
+    </div>
+  );
+}
+
 function renderAppLayout(initialPath = "/projects") {
   return render(
     <MemoryRouter
@@ -150,6 +182,10 @@ function renderAppLayout(initialPath = "/projects") {
           <Route
             path="/projects/p2/context-title"
             element={<ProjectContextTitlePageBeta />}
+          />
+          <Route
+            path="/projects/p1/context-persistence"
+            element={<ProjectContextPersistencePage />}
           />
           <Route path="/projects/:id" element={<ProjectDetailsContextPage />} />
           <Route
@@ -257,6 +293,29 @@ describe("AppLayout mobile sidebar behavior", () => {
 
     expect(screen.getByText("Projects page")).toBeInTheDocument();
     expect(document.querySelector(".animated-bg")).not.toBeNull();
+  });
+
+  it("keeps project context title stable across local rerenders", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderAppLayout("/projects/p1/context-persistence");
+
+    await waitFor(() => {
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Проект Гамма");
+    });
+
+    await user.click(screen.getByText("Bump context local state"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByTestId("context-persistence-counter"),
+      ).toHaveTextContent("1");
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Проект Гамма");
+    });
   });
 
   it.each([360, 390, 768])(

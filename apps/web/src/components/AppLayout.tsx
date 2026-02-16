@@ -4,6 +4,8 @@ import React, {
   useState,
   useEffect,
   useRef,
+  useCallback,
+  useMemo,
 } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
@@ -102,25 +104,25 @@ export default function AppLayout({ children }: AppLayoutProps) {
   >(null);
   const currentProjectIdRef = useRef<string | null>(null);
 
-  const setProjectInfo = (info: Partial<ProjectInfo>) => {
+  const setProjectInfo = useCallback((info: Partial<ProjectInfo>) => {
     setProjectInfoState((prev) => ({ ...prev, ...info }));
     setProjectInfoProjectId(currentProjectIdRef.current);
-  };
+  }, []);
 
-  const clearProjectInfo = () => {
+  const clearProjectInfo = useCallback(() => {
     setProjectInfoState(defaultProjectInfo);
     setProjectInfoProjectId(null);
-  };
+  }, []);
 
-  const setArticleCounts = (counts: ArticleCounts) => {
+  const setArticleCounts = useCallback((counts: ArticleCounts) => {
     setArticleCountsState(counts);
     setArticleCountsProjectId(currentProjectIdRef.current);
-  };
+  }, []);
 
-  const setArticleViewStatus = (status: ArticleViewStatus) => {
+  const setArticleViewStatus = useCallback((status: ArticleViewStatus) => {
     setArticleViewStatusState(status);
     setArticleViewStatusProjectId(currentProjectIdRef.current);
-  };
+  }, []);
 
   // Don't show sidebar on login/register/admin pages
   const hideSidebar =
@@ -238,22 +240,33 @@ export default function AppLayout({ children }: AppLayoutProps) {
     };
   }, [mobileSidebarOpen]);
 
+  const projectContextValue = useMemo<ProjectContextType>(
+    () => ({
+      projectInfo: projectInfoForCurrentRoute,
+      setProjectInfo,
+      clearProjectInfo,
+      articleCounts: articleCountsForCurrentRoute,
+      setArticleCounts,
+      articleViewStatus: articleViewStatusForCurrentRoute,
+      setArticleViewStatus,
+    }),
+    [
+      articleCountsForCurrentRoute,
+      articleViewStatusForCurrentRoute,
+      clearProjectInfo,
+      projectInfoForCurrentRoute,
+      setArticleCounts,
+      setArticleViewStatus,
+      setProjectInfo,
+    ],
+  );
+
   if (hideSidebar) {
     return <>{children || <Outlet />}</>;
   }
 
   return (
-    <ProjectContext.Provider
-      value={{
-        projectInfo: projectInfoForCurrentRoute,
-        setProjectInfo,
-        clearProjectInfo,
-        articleCounts: articleCountsForCurrentRoute,
-        setArticleCounts,
-        articleViewStatus: articleViewStatusForCurrentRoute,
-        setArticleViewStatus,
-      }}
-    >
+    <ProjectContext.Provider value={projectContextValue}>
       {showAnimatedBg && <AnimatedBackground />}
       <div
         className={`app-layout${showAnimatedBg ? " app-layout-with-animated-bg" : ""}${isFixedLayout ? " app-layout-fixed" : ""}`}
