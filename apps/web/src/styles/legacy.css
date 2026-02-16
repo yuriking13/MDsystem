@@ -1739,6 +1739,7 @@ input:focus::placeholder {
 
   .document-editor-container {
     height: calc(100vh - 260px);
+    height: calc(100dvh - 260px);
     min-height: 420px;
   }
 
@@ -1756,6 +1757,7 @@ input:focus::placeholder {
 
   .document-editor-container {
     height: calc(100vh - 220px);
+    height: calc(100dvh - 220px);
     min-height: 340px;
     border-radius: 12px;
   }
@@ -1920,6 +1922,7 @@ input:focus::placeholder {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 200px);
+  height: calc(100dvh - 200px);
   min-height: 500px;
   border: 1px solid var(--border-glass);
   border-radius: 16px;
@@ -9709,6 +9712,7 @@ input:focus::placeholder {
 @media (max-width: 640px) {
   .document-editor-container {
     height: calc(100vh - 180px);
+    height: calc(100dvh - 180px);
     min-height: 280px;
   }
 
