@@ -657,6 +657,38 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(document.querySelector(".animated-bg")).toBeNull();
   });
 
+  it.each([
+    ["/projects", "Projects page"],
+    ["/settings", "Settings page"],
+    ["/docs", "Docs page"],
+  ])(
+    "hides app shell for unauthenticated users on %s across width matrix",
+    (route, pageLabel) => {
+      mockAuthState.token = null;
+      mockAuthState.user = null;
+
+      for (const width of targetViewportWidths) {
+        setViewportWidth(width);
+        const { unmount } = renderAppLayout(route);
+
+        expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Открыть навигацию" }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Закрыть навигацию" }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Закрыть меню навигации" }),
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+        expect(document.querySelector(".animated-bg")).toBeNull();
+
+        unmount();
+      }
+    },
+  );
+
   it("toggles layout-fixed classes for document editor route lifecycle", async () => {
     const user = userEvent.setup();
     const { unmount } = renderAppLayout("/projects/p1/documents/d1");
