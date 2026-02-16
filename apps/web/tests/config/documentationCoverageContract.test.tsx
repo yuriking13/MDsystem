@@ -102,4 +102,37 @@ describe("documentation functional coverage contract", () => {
       expect(screen.getByText(expectedText)).toBeInTheDocument();
     }
   });
+
+  it("keeps each docs section with multi-topic submenu and explanatory summary", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const sections = [
+      "Обзор платформы",
+      "База статей",
+      "Документы",
+      "Файлы",
+      "Статистика",
+      "Граф цитирований",
+      "Команда",
+      "Настройки проекта",
+      "API ключи",
+    ];
+
+    for (const section of sections) {
+      await user.click(screen.getByRole("button", { name: section }));
+      expect(
+        screen.getByRole("heading", { level: 2, name: section }),
+      ).toBeInTheDocument();
+
+      const tabs = screen.getAllByRole("tab");
+      expect(tabs.length).toBeGreaterThanOrEqual(3);
+      expect(
+        tabs.some((tab) => tab.getAttribute("aria-selected") === "true"),
+      ).toBe(true);
+
+      const summary = document.querySelector(".docs-topic-summary");
+      expect(summary?.textContent?.trim().length ?? 0).toBeGreaterThan(20);
+    }
+  });
 });
