@@ -110,6 +110,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isGraphTab =
     location.pathname.match(/^\/projects\/[^/]+$/) &&
     searchParams.get("tab") === "graph";
+  const isProjectScopedRoute = /^\/projects\/[^/]+(?:\/|$)/.test(
+    location.pathname,
+  );
   const showAnimatedBg = !isDocumentEditor && !isGraphTab;
   const isFixedLayout = isDocumentEditor || isGraphTab;
   const shouldLockLayout = !hideSidebar && isFixedLayout;
@@ -152,6 +155,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  useEffect(() => {
+    if (!isProjectScopedRoute) {
+      setProjectInfoState(defaultProjectInfo);
+    }
+  }, [isProjectScopedRoute]);
 
   useEffect(() => {
     if (!isMobileViewport && mobileSidebarOpen) {
@@ -265,7 +274,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </svg>
               </button>
               <span className="app-mobile-topbar-title">
-                {projectInfo.name || "Scientiaiter"}
+                {isProjectScopedRoute && projectInfo.name
+                  ? projectInfo.name
+                  : "Scientiaiter"}
               </span>
             </div>
           )}

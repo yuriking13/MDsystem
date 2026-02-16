@@ -7,8 +7,9 @@ import {
   act,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useEffect, useRef } from "react";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
-import AppLayout from "../../src/components/AppLayout";
+import AppLayout, { useProjectContext } from "../../src/components/AppLayout";
 
 const mockLogout = vi.fn();
 const targetViewportWidths = [360, 390, 768, 1024, 1280, 1440, 1920];
@@ -34,6 +35,28 @@ function setViewportWidth(width: number) {
   window.dispatchEvent(new Event("resize"));
 }
 
+function ProjectContextTitlePage() {
+  const { setProjectInfo } = useProjectContext();
+  const initializedRef = useRef(false);
+
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+    setProjectInfo({
+      name: "Проект Альфа",
+      role: "owner",
+      updatedAt: "2026-02-15T00:00:00.000Z",
+    });
+  }, [setProjectInfo]);
+
+  return (
+    <div>
+      <div>Project context title page</div>
+      <Link to="/settings">Go settings</Link>
+    </div>
+  );
+}
+
 function renderAppLayout(initialPath = "/projects") {
   return render(
     <MemoryRouter
@@ -55,6 +78,10 @@ function renderAppLayout(initialPath = "/projects") {
           />
           <Route path="/settings" element={<div>Settings page</div>} />
           <Route path="/docs" element={<div>Docs page</div>} />
+          <Route
+            path="/projects/p1/context-title"
+            element={<ProjectContextTitlePage />}
+          />
           <Route
             path="/projects/:id"
             element={
@@ -171,6 +198,39 @@ describe("AppLayout mobile sidebar behavior", () => {
 
     expect(screen.getByText("Projects page")).toBeInTheDocument();
     expect(document.querySelector(".animated-bg")).not.toBeNull();
+  });
+
+  it("shows project name in mobile topbar when project context provides one", async () => {
+    setViewportWidth(390);
+    renderAppLayout("/projects/p1/context-title");
+
+    expect(screen.getByText("Project context title page")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Проект Альфа");
+    });
+  });
+
+  it("resets mobile topbar title to app default outside project routes", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderAppLayout("/projects/p1/context-title");
+
+    await waitFor(() => {
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Проект Альфа");
+    });
+
+    await user.click(screen.getByText("Go settings"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Settings page")).toBeInTheDocument();
+      expect(
+        document.querySelector(".app-mobile-topbar-title")?.textContent,
+      ).toBe("Scientiaiter");
+    });
   });
 
   it.each([360, 390, 768])(
