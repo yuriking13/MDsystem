@@ -50,6 +50,9 @@ jobs:
       - name: Run repository quality guards
         run: pnpm run quality:guards
 
+      - name: Run repository quality guard unit tests
+        run: pnpm run quality:guards:test
+
       - name: Generate Prisma Client
         run: pnpm --filter api exec prisma generate
 
