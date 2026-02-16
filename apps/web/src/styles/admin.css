@@ -5,6 +5,7 @@
 .admin-layout {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-primary);
 }
 
@@ -25,6 +26,7 @@
   top: 0;
   left: 0;
   height: 100vh;
+  height: 100dvh;
   z-index: 100;
 }
 

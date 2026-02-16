@@ -87,6 +87,7 @@ html.layout-fixed #root {
 
 .app-sidebar {
   @apply relative flex flex-col h-screen sticky top-0;
+  height: 100dvh;
   
   /* Solid background — single color, no gradient */
   background: hsla(220, 25%, 8%, 0.85);
