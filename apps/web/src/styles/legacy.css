@@ -10141,7 +10141,8 @@ input:focus::placeholder {
   flex: 1;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: calc(40px + env(safe-area-inset-top, 0px)) 24px
+    calc(40px + env(safe-area-inset-bottom, 0px));
   width: 100%;
   position: relative;
   z-index: 1;
@@ -10557,6 +10558,7 @@ input:focus::placeholder {
   color: var(--text-muted);
   line-height: 1.4;
   overflow-wrap: anywhere;
+  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 .auth-footer a {
@@ -10572,7 +10574,8 @@ input:focus::placeholder {
 
 @media (max-width: 768px) {
   .auth-container {
-    padding: 20px 16px;
+    padding: calc(20px + env(safe-area-inset-top, 0px)) 16px
+      calc(20px + env(safe-area-inset-bottom, 0px));
   }
 
   .auth-grid {
@@ -10616,7 +10619,8 @@ input:focus::placeholder {
 
 @media (max-width: 480px) {
   .auth-container {
-    padding: 14px 12px;
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 12px
+      calc(14px + env(safe-area-inset-bottom, 0px));
   }
 
   .auth-form-card {
