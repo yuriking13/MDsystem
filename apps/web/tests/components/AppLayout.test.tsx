@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout, { useProjectContext } from "../../src/components/AppLayout";
 import {
+  APP_DRAWER_BOUNDARY_CASES,
   APP_DRAWER_MAX_WIDTH,
   APP_ADMIN_NO_SHELL_ROUTE_CASES,
   APP_AUTH_ROUTE_CASES,
@@ -901,10 +902,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    [APP_DRAWER_MAX_WIDTH, true],
-    [APP_DRAWER_MAX_WIDTH + 1, false],
-  ])(
+  it.each(APP_DRAWER_BOUNDARY_CASES)(
     "applies app drawer breakpoint boundary at %ipx (open=%s)",
     async (width, shouldOpen) => {
       const user = userEvent.setup();
@@ -932,10 +930,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    [APP_DRAWER_MAX_WIDTH, true],
-    [APP_DRAWER_MAX_WIDTH + 1, false],
-  ])(
+  it.each(APP_DRAWER_BOUNDARY_CASES)(
     "applies app drawer breakpoint boundary on fixed route at %ipx (open=%s)",
     async (width, shouldOpen) => {
       const user = userEvent.setup();

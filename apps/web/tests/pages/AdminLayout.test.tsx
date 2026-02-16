@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AdminLayout from "../../src/pages/admin/AdminLayout";
 import {
+  ADMIN_DRAWER_BOUNDARY_CASES,
   ADMIN_DRAWER_MAX_WIDTH,
   ADMIN_RESPONSIVE_ROUTE_CASES,
   MOBILE_VIEWPORT_WIDTHS,
@@ -270,10 +271,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
     },
   );
 
-  it.each([
-    [ADMIN_DRAWER_MAX_WIDTH, true],
-    [ADMIN_DRAWER_MAX_WIDTH + 1, false],
-  ])(
+  it.each(ADMIN_DRAWER_BOUNDARY_CASES)(
     "applies admin drawer breakpoint boundary at %ipx (open=%s)",
     async (width, shouldOpenOnToggle) => {
       const user = userEvent.setup();

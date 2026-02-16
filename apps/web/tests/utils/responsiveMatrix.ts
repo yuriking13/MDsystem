@@ -10,6 +10,14 @@ export const TARGET_VIEWPORT_WIDTHS = [
 export const MOBILE_VIEWPORT_WIDTHS = [360, 390, APP_MOBILE_MAX_WIDTH] as const;
 export const APP_DRAWER_MAX_WIDTH = APP_MOBILE_MAX_WIDTH;
 export const ADMIN_DRAWER_MAX_WIDTH = ADMIN_MOBILE_MAX_WIDTH;
+export const APP_DRAWER_BOUNDARY_CASES = [
+  [APP_DRAWER_MAX_WIDTH, true],
+  [APP_DRAWER_MAX_WIDTH + 1, false],
+] as const;
+export const ADMIN_DRAWER_BOUNDARY_CASES = [
+  [ADMIN_DRAWER_MAX_WIDTH, true],
+  [ADMIN_DRAWER_MAX_WIDTH + 1, false],
+] as const;
 
 export const PROJECT_TAB_CASES = [
   { tab: "articles", shouldLockLayout: false },
