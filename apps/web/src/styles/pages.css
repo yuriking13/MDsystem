@@ -1049,6 +1049,8 @@
   .settings-provider-actions .btn {
     flex: 1 1 170px;
     justify-content: center;
+    white-space: normal;
+    line-height: 1.3;
   }
 
   .settings-provider-actions {
