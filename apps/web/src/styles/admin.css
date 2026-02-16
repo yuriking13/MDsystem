@@ -2208,6 +2208,10 @@
     width: 280px;
   }
 
+  .admin-sidebar.collapsed .admin-logo span {
+    display: inline;
+  }
+
   .admin-main,
   .admin-sidebar.collapsed + .admin-main {
     margin-left: 0;
