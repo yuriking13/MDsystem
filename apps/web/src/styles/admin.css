@@ -2443,6 +2443,17 @@
     overflow-wrap: anywhere;
   }
 
+  .admin-progress-cell {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px 8px;
+  }
+
+  .admin-progress-track {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
   .admin-search-form {
     width: 100%;
   }
