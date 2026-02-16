@@ -621,8 +621,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       const applyRowHeight = (row: HTMLTableRowElement, clientY: number) => {
         const delta = clientY - startY;
         const newHeight = Math.max(10, startHeight + delta);
-        row.style.height = `${newHeight}px`;
-        row.style.minHeight = `${newHeight}px`;
+        row.setAttribute("height", `${Math.round(newHeight)}`);
         return newHeight;
       };
 
@@ -781,15 +780,15 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         containerWidth: number,
       ) => {
         return cols.map((col) => {
-          const styleWidth = col.style.width;
-          if (styleWidth) {
-            if (styleWidth.includes("%")) {
-              const pct = parseFloat(styleWidth);
+          const widthAttr = col.getAttribute("width");
+          if (widthAttr) {
+            if (widthAttr.includes("%")) {
+              const pct = parseFloat(widthAttr);
               if (!Number.isNaN(pct)) {
                 return (containerWidth * pct) / 100;
               }
             } else {
-              const parsed = parseFloat(styleWidth);
+              const parsed = parseFloat(widthAttr);
               if (!Number.isNaN(parsed) && parsed > 0) {
                 return parsed;
               }
@@ -836,7 +835,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       ) => {
         cols.forEach((col, idx) => {
           const width = widths[idx] ?? minWidth;
-          col.style.width = `${width}px`;
+          col.setAttribute("width", `${Math.round(width)}`);
         });
       };
 
@@ -1528,7 +1527,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               ) {
                 // Ensure each column has a width so resize stays stable
                 colElements.forEach((col, idx) => {
-                  const currentWidth = col.style.width;
+                  const currentWidth = col.getAttribute("width");
                   if (
                     !currentWidth ||
                     currentWidth === "auto" ||
@@ -1537,7 +1536,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
                     // Set a default width if none exists
                     const headerCell = headerCells[idx] as HTMLElement;
                     const cellWidth = headerCell?.offsetWidth || 100;
-                    col.style.width = `${cellWidth}px`;
+                    col.setAttribute("width", `${Math.round(cellWidth)}`);
                   }
                 });
               }
