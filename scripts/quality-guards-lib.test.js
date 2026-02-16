@@ -1473,6 +1473,11 @@ test("runQualityGuards reports invalid responsive manual matrix config entries",
   );
   assert.ok(
     manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("user-routes-field-mismatch:auth"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
       violation.snippet.includes("duplicate-user-routes-field-entry:shell"),
     ),
   );
@@ -1498,6 +1503,97 @@ test("runQualityGuards reports invalid responsive manual matrix config entries",
   assert.ok(
     manualMatrixViolation.violations.some((violation) =>
       violation.snippet.includes("duplicate-admin-routes"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("admin-routes-mismatch:expected-plan-matrix"),
+    ),
+  );
+});
+
+test("runQualityGuards reports manual matrix route list and pattern mismatches", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH),
+    JSON.stringify(
+      {
+        viewportWidths: [360, 390, 768, 1024, 1280, 1440, 1920],
+        userRoutes: {
+          auth: ["/login", "/register", "/signin"],
+          shell: ["/projects", "/docs", "/settings"],
+          projectTabs: [
+            "articles",
+            "documents",
+            "files",
+            "settings",
+            "statistics",
+            "graph",
+          ],
+          projectDocumentRoutePattern: "^/projects/.+/documents/.+$",
+          projectGraphRoutePattern: "^/projects/.+\\?tab=graph$",
+        },
+        adminRoutes: [
+          "/admin",
+          "/admin/projects",
+          "/admin/users",
+          "/admin/articles",
+          "/admin/activity",
+          "/admin/sessions",
+          "/admin/jobs",
+          "/admin/errors",
+          "/admin/audit",
+          "/admin/system",
+          "/admin/settings",
+        ],
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const manualMatrixViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-manual-matrix-config",
+  );
+  assert.ok(manualMatrixViolation);
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("user-routes-field-mismatch:auth"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("user-routes-field-mismatch:shell"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("user-routes-field-mismatch:projectTabs"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "user-route-pattern-mismatch:projectDocumentRoutePattern",
+      ),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "user-route-pattern-mismatch:projectGraphRoutePattern",
+      ),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("admin-routes-mismatch:expected-plan-matrix"),
     ),
   );
 });

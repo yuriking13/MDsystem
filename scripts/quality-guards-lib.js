@@ -950,6 +950,35 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
 
   const violations = [];
   const requiredViewportWidths = [360, 390, 768, 1024, 1280, 1440, 1920];
+  const requiredUserRouteArrays = {
+    auth: ["/login", "/register"],
+    shell: ["/projects", "/settings", "/docs"],
+    projectTabs: [
+      "articles",
+      "documents",
+      "files",
+      "statistics",
+      "settings",
+      "graph",
+    ],
+  };
+  const requiredUserRoutePatterns = {
+    projectDocumentRoutePattern: "^/projects/[^/]+/documents/[^/]+$",
+    projectGraphRoutePattern: "^/projects/[^/]+\\?tab=graph$",
+  };
+  const requiredAdminRoutes = [
+    "/admin",
+    "/admin/users",
+    "/admin/projects",
+    "/admin/articles",
+    "/admin/activity",
+    "/admin/sessions",
+    "/admin/jobs",
+    "/admin/errors",
+    "/admin/audit",
+    "/admin/system",
+    "/admin/settings",
+  ];
   const {
     viewportWidths,
     userRoutes,
@@ -1039,6 +1068,19 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
           snippet: `duplicate-user-routes-field-entry:${field}`,
         });
       }
+
+      const requiredFieldValue = requiredUserRouteArrays[field];
+      if (
+        requiredFieldValue &&
+        (fieldValue.length !== requiredFieldValue.length ||
+          fieldValue.some((value, index) => value !== requiredFieldValue[index]))
+      ) {
+        violations.push({
+          file: relativeFile,
+          line: 1,
+          snippet: `user-routes-field-mismatch:${field}`,
+        });
+      }
     }
 
     const userRoutePatternFields = [
@@ -1063,6 +1105,15 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
           file: relativeFile,
           line: 1,
           snippet: `invalid-user-route-pattern-regex:${field}`,
+        });
+      }
+
+      const requiredPatternValue = requiredUserRoutePatterns[field];
+      if (requiredPatternValue && patternValue !== requiredPatternValue) {
+        violations.push({
+          file: relativeFile,
+          line: 1,
+          snippet: `user-route-pattern-mismatch:${field}`,
         });
       }
     }
@@ -1092,6 +1143,17 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
         file: relativeFile,
         line: 1,
         snippet: "duplicate-admin-routes",
+      });
+    }
+
+    if (
+      adminRoutes.length !== requiredAdminRoutes.length ||
+      adminRoutes.some((route, index) => route !== requiredAdminRoutes[index])
+    ) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: "admin-routes-mismatch:expected-plan-matrix",
       });
     }
   }
