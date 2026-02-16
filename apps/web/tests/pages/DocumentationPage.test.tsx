@@ -210,4 +210,13 @@ describe("DocumentationPage menu + submenu", () => {
       ).toBe(true);
     }
   });
+
+  it("navigates back to projects route from docs header action", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    await user.click(screen.getByRole("link", { name: "← К проектам" }));
+
+    expect(screen.getByText("Projects route")).toBeInTheDocument();
+  });
 });
