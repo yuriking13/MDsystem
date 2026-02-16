@@ -3686,8 +3686,8 @@ input:focus::placeholder {
 /* Theme Toggle Button */
 .theme-toggle-btn {
   position: fixed;
-  bottom: 20px;
-  left: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  left: calc(20px + env(safe-area-inset-left, 0px));
   width: 44px;
   height: 44px;
   border-radius: 50%;
