@@ -64,6 +64,12 @@ describe("AdminLayout responsive sidebar behavior", () => {
     setViewportWidth(1280);
   });
 
+  it("keeps the required responsive viewport matrix", () => {
+    expect(targetViewportWidths).toEqual([
+      360, 390, 768, 1024, 1280, 1440, 1920,
+    ]);
+  });
+
   it("shows labels on mobile even after desktop sidebar collapse", async () => {
     const user = userEvent.setup();
     renderAdminLayout();

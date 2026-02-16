@@ -383,6 +383,12 @@ describe("AppLayout mobile sidebar behavior", () => {
     setViewportWidth(390);
   });
 
+  it("keeps the required responsive viewport matrix", () => {
+    expect(targetViewportWidths).toEqual([
+      360, 390, 768, 1024, 1280, 1440, 1920,
+    ]);
+  });
+
   it("toggles body modal class and closes on Escape", async () => {
     const user = userEvent.setup();
     renderAppLayout();
