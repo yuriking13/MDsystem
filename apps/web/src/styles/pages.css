@@ -61,6 +61,11 @@
     padding: 14px;
   }
 
+  .project-card-meta {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+
   .project-card-actions {
     margin-top: 12px;
   }
@@ -75,6 +80,16 @@
   .project-card-actions {
     gap: 8px;
     flex-wrap: wrap;
+  }
+
+  .project-card-meta {
+    gap: 6px 10px;
+  }
+
+  .project-meta-item {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .project-action-open {
@@ -1009,6 +1024,7 @@
     flex-wrap: nowrap;
     gap: 8px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     padding: 6px;
     scrollbar-width: thin;
   }
