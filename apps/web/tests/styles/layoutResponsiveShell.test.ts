@@ -27,6 +27,15 @@ describe("responsive shell css regressions", () => {
     );
   });
 
+  it("keeps mobile app topbar and fixed-route FAB safe-area offsets", () => {
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-mobile-topbar\s*\{[\s\S]*?padding:\s*calc\(10px \+ env\(safe-area-inset-top,\s*0px\)\)\s*calc\(16px \+ env\(safe-area-inset-right,\s*0px\)\)\s*10px\s*calc\(16px \+ env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-mobile-fab-toggle\s*\{[\s\S]*?left:\s*calc\(12px \+ env\(safe-area-inset-left,\s*0px\)\);[\s\S]*?top:\s*calc\(12px \+ env\(safe-area-inset-top,\s*0px\)\);/,
+    );
+  });
+
   it("keeps admin sidebar viewport-height fallback and safe-area support", () => {
     expect(adminCss).toMatch(
       /\.admin-sidebar\s*\{[\s\S]*?height:\s*100vh;[\s\S]*?height:\s*100dvh;[\s\S]*?padding-top:\s*env\(safe-area-inset-top,\s*0px\);[\s\S]*?padding-left:\s*env\(safe-area-inset-left,\s*0px\);[\s\S]*?padding-right:\s*env\(safe-area-inset-right,\s*0px\);/,
