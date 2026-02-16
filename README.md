@@ -37,6 +37,7 @@ The repository enforces strict quality gates for TypeScript and UI code:
 
 Run all checks from the workspace root:
 
+- Repository guard checks: `pnpm run quality:repo`
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
