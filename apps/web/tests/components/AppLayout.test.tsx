@@ -21,6 +21,7 @@ import {
   PROJECT_TABS,
   TARGET_VIEWPORT_WIDTHS,
 } from "../utils/responsiveMatrix";
+import { setViewportWidth } from "../utils/viewport";
 
 const mockLogout = vi.fn();
 const mockAuthState = {
@@ -35,15 +36,6 @@ vi.mock("../../src/lib/AuthContext", () => ({
     logout: mockLogout,
   }),
 }));
-
-function setViewportWidth(width: number) {
-  Object.defineProperty(window, "innerWidth", {
-    configurable: true,
-    writable: true,
-    value: width,
-  });
-  window.dispatchEvent(new Event("resize"));
-}
 
 function ProjectContextTitlePage() {
   const { setProjectInfo, setArticleCounts, setArticleViewStatus } =

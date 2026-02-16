@@ -12,7 +12,7 @@
     "lint": "pnpm run clean:js-mirrors && eslint . --ext .ts,.tsx --max-warnings 0",
     "lint:fix": "pnpm run clean:js-mirrors && eslint . --ext .ts,.tsx --fix --max-warnings 0",
     "test": "pnpm run clean:js-mirrors && vitest run",
-    "test:responsive": "pnpm run clean:js-mirrors && vitest run tests/components/AppLayout.test.tsx tests/pages/AdminLayout.test.tsx tests/components/AppSidebar.test.tsx tests/styles/articlesLayout.test.ts tests/styles/legacyResponsiveSafeguards.test.ts tests/styles/layoutResponsiveShell.test.ts tests/styles/docsAndGraphResponsive.test.ts tests/styles/projectsAndSettingsResponsive.test.ts tests/styles/adminPagesResponsive.test.ts tests/styles/authResponsive.test.ts tests/utils/responsiveMatrix.test.ts",
+    "test:responsive": "pnpm run clean:js-mirrors && vitest run tests/components/AppLayout.test.tsx tests/pages/AdminLayout.test.tsx tests/components/AppSidebar.test.tsx tests/styles/articlesLayout.test.ts tests/styles/legacyResponsiveSafeguards.test.ts tests/styles/layoutResponsiveShell.test.ts tests/styles/docsAndGraphResponsive.test.ts tests/styles/projectsAndSettingsResponsive.test.ts tests/styles/adminPagesResponsive.test.ts tests/styles/authResponsive.test.ts tests/utils/responsiveMatrix.test.ts tests/utils/viewport.test.ts",
     "test:watch": "vitest",
     "test:coverage": "pnpm run clean:js-mirrors && vitest run --coverage"
   },

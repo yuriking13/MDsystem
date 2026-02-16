@@ -15,6 +15,7 @@ import {
   MOBILE_VIEWPORT_WIDTHS,
   TARGET_VIEWPORT_WIDTHS,
 } from "../utils/responsiveMatrix";
+import { setViewportWidth } from "../utils/viewport";
 
 const mockLogout = vi.fn();
 
@@ -24,15 +25,6 @@ vi.mock("../../src/lib/AdminContext", () => ({
     logout: mockLogout,
   }),
 }));
-
-function setViewportWidth(width: number) {
-  Object.defineProperty(window, "innerWidth", {
-    configurable: true,
-    writable: true,
-    value: width,
-  });
-  window.dispatchEvent(new Event("resize"));
-}
 
 function renderAdminLayout(initialPath = "/admin") {
   return render(
