@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetArticles,
   apiAdminDeleteOrphanArticles,
   type AdminArticle,
+  type AdminArticlesResponse,
 } from "../../lib/adminApi";
 import {
   IconBook,
@@ -11,7 +12,6 @@ import {
   IconRefresh,
   IconTrash,
   IconCheckCircle,
-  IconFilter,
 } from "../../components/FlowbiteIcons";
 
 function formatDate(date: string): string {
@@ -28,6 +28,7 @@ export default function AdminArticlesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
+  const [appliedSearch, setAppliedSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState("");
   const [hasStatsFilter, setHasStatsFilter] = useState<
     "true" | "false" | "all"
@@ -35,19 +36,21 @@ export default function AdminArticlesPage() {
   const [sources, setSources] = useState<{ source: string; count: number }[]>(
     [],
   );
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<AdminArticlesResponse["stats"] | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cleanupLoading, setCleanupLoading] = useState(false);
 
-  async function loadArticles() {
+  const loadArticles = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const data = await apiAdminGetArticles({
         page,
         limit: 50,
-        search: search || undefined,
+        search: appliedSearch || undefined,
         source: sourceFilter || undefined,
         hasStats: hasStatsFilter,
       });
@@ -61,16 +64,16 @@ export default function AdminArticlesPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, appliedSearch, sourceFilter, hasStatsFilter]);
 
   useEffect(() => {
     loadArticles();
-  }, [page, sourceFilter, hasStatsFilter]);
+  }, [loadArticles]);
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setPage(1);
-    loadArticles();
+    setAppliedSearch(search.trim());
   }
 
   async function handleDeleteOrphans() {
@@ -186,7 +189,7 @@ export default function AdminArticlesPage() {
           <select
             value={hasStatsFilter}
             onChange={(e) => {
-              setHasStatsFilter(e.target.value as any);
+              setHasStatsFilter(e.target.value as "true" | "false" | "all");
               setPage(1);
             }}
             className="admin-select"

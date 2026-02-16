@@ -4,13 +4,21 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "preinstall": "node scripts/enforce-pnpm.js",
+    "quality:guards": "node scripts/quality-guards.js",
+    "quality:guards:check": "node scripts/quality-guards.js --check",
+    "quality:guards:test": "node scripts/run-quality-guards-tests.mjs",
+    "quality:repo": "pnpm run quality:guards:check && pnpm run quality:guards:test",
+    "clean:js-mirrors": "pnpm --filter web run clean:js-mirrors",
+    "check:js-mirrors": "pnpm --filter web run check:js-mirrors",
     "dev": "pnpm -r dev",
-    "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
-    "lint:fix": "pnpm -r lint --fix",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm --filter api test",
-    "test:coverage": "pnpm --filter api test:coverage",
+    "build": "pnpm run quality:repo && pnpm -r build",
+    "build:ci": "pnpm -r build",
+    "lint": "pnpm run quality:repo && pnpm -r run lint",
+    "lint:fix": "pnpm run quality:repo && pnpm -r run lint:fix",
+    "typecheck": "pnpm run quality:repo && pnpm -r run typecheck",
+    "test": "pnpm run quality:repo && pnpm -r run test",
+    "test:responsive": "pnpm run quality:repo && pnpm --filter web run test:responsive",
+    "test:coverage": "pnpm run quality:repo && pnpm -r run test:coverage",
     "prepare": "husky || true",
     "db:cleanup": "cd apps/api && node -e \"require('child_process').execSync('psql ' + process.env.DATABASE_URL + ' -f prisma/migrations/cleanup_invalid_statistics.sql', {stdio: 'inherit'})\""
   },
@@ -28,6 +36,15 @@
     "prettier": "^3.8.1"
   },
   "lint-staged": {
+    "*": [
+      "pnpm run quality:guards:check"
+    ],
+    "scripts/*.js": [
+      "pnpm run quality:guards:test"
+    ],
+    "apps/web/scripts/*.{js,mjs,cjs}": [
+      "pnpm run quality:guards:test"
+    ],
     "*.{ts,tsx}": [
       "prettier --write --ignore-unknown"
     ],

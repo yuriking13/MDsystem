@@ -20,9 +20,41 @@ interface TableEditorModalProps {
   onSave: (payload: TableEditorPayload) => void;
 }
 
+type TableRowRecord = Record<string, string | number>;
+
+type TabulatorColumnDef = Record<string, unknown>;
+
+interface TabulatorRowLike {
+  getElement: () => HTMLElement | null;
+  delete: () => void;
+  revalidate?: () => void;
+}
+
+interface TabulatorCellLike {
+  getRow: () => TabulatorRowLike | null;
+}
+
+interface TabulatorColumnLike {
+  getWidth: () => number;
+}
+
+interface TabulatorLike {
+  destroy: () => void;
+  on: (event: string, callback: (...args: unknown[]) => void) => void;
+  getRows: () => TabulatorRowLike[];
+  addRow: (row: TableRowRecord, top?: boolean) => void;
+  addColumn: (definition: TabulatorColumnDef, ...args: unknown[]) => void;
+  getData: () => Record<string, unknown>[];
+  getColumns: () => TabulatorColumnLike[];
+}
+
+type ModalSectionProps = {
+  children?: React.ReactNode;
+};
+
 // Helper to build column definitions for Tabulator
 const buildColumns = (cols: number, widths?: number[]) => {
-  const columns: any[] = [
+  const columns: TabulatorColumnDef[] = [
     {
       title: "#",
       field: "_rowNum",
@@ -31,7 +63,7 @@ const buildColumns = (cols: number, widths?: number[]) => {
       resizable: false,
       width: 40,
       cssClass: "row-number-col",
-      editor: false as any,
+      editor: false,
       frozen: true,
     },
   ];
@@ -52,7 +84,7 @@ const buildColumns = (cols: number, widths?: number[]) => {
 // Convert 2D array to tabulator row objects
 const dataToRows = (data: string[][], cols: number) => {
   return data.map((row, idx) => {
-    const obj: Record<string, any> = { id: idx };
+    const obj: TableRowRecord = { id: idx };
     for (let c = 0; c < cols; c++) {
       obj[`c${c}`] = row[c] ?? "";
     }
@@ -61,14 +93,85 @@ const dataToRows = (data: string[][], cols: number) => {
 };
 
 // Convert tabulator rows back to 2D array
-const rowsToData = (rows: any[], cols: number) => {
+const rowsToData = (rows: Record<string, unknown>[], cols: number) => {
   return rows.map((rowObj) => {
     const arr: string[] = [];
     for (let c = 0; c < cols; c++) {
-      arr.push(rowObj[`c${c}`] ?? "");
+      const cellValue = rowObj[`c${c}`];
+      arr.push(
+        typeof cellValue === "string" ? cellValue : `${cellValue ?? ""}`,
+      );
     }
     return arr;
   });
+};
+
+const ROW_HEIGHT_CLASS_PREFIX = "tabulator-row-height-";
+const rowHeightRuleCache = new Set<number>();
+let rowHeightStyleSheet: CSSStyleSheet | null = null;
+
+const clampRowHeight = (height: number) => Math.max(10, Math.min(500, height));
+
+const getRowHeightClassName = (height: number) =>
+  `${ROW_HEIGHT_CLASS_PREFIX}${Math.round(clampRowHeight(height))}`;
+
+const ensureRowHeightStyleSheet = (): CSSStyleSheet | null => {
+  if (rowHeightStyleSheet) return rowHeightStyleSheet;
+  if (typeof document === "undefined") return null;
+
+  const styleEl = document.createElement("style");
+  styleEl.id = "tabulator-row-height-rules";
+  document.head.appendChild(styleEl);
+  rowHeightStyleSheet = styleEl.sheet as CSSStyleSheet | null;
+  return rowHeightStyleSheet;
+};
+
+const clearRowHeightClass = (el: HTMLElement) => {
+  const heightClasses: string[] = [];
+  el.classList.forEach((className) => {
+    if (className.startsWith(ROW_HEIGHT_CLASS_PREFIX)) {
+      heightClasses.push(className);
+    }
+  });
+  if (heightClasses.length > 0) {
+    el.classList.remove(...heightClasses);
+  }
+};
+
+const ensureRowHeightRule = (height: number): string => {
+  const safeHeight = Math.round(clampRowHeight(height));
+  const className = getRowHeightClassName(safeHeight);
+  if (rowHeightRuleCache.has(safeHeight)) {
+    return className;
+  }
+
+  const sheet = ensureRowHeightStyleSheet();
+  if (sheet) {
+    sheet.insertRule(
+      `.tabulator-container .tabulator-row.${className}{height:${safeHeight}px;min-height:${safeHeight}px;}`,
+      sheet.cssRules.length,
+    );
+  }
+
+  rowHeightRuleCache.add(safeHeight);
+  return className;
+};
+
+const applyRowHeightClass = (el: HTMLElement, height: number) => {
+  clearRowHeightClass(el);
+  el.classList.add(ensureRowHeightRule(height));
+};
+
+const readRowHeightFromClass = (el: HTMLElement): number | null => {
+  for (const className of Array.from(el.classList)) {
+    if (!className.startsWith(ROW_HEIGHT_CLASS_PREFIX)) continue;
+    const rawHeight = className.slice(ROW_HEIGHT_CLASS_PREFIX.length);
+    const parsed = parseInt(rawHeight, 10);
+    if (!Number.isNaN(parsed) && parsed >= 10) {
+      return clampRowHeight(parsed);
+    }
+  }
+  return null;
 };
 
 export const TableEditorModal: React.FC<TableEditorModalProps> = ({
@@ -80,27 +183,36 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
   onSave,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const tableRef = useRef<any | null>(null);
+  const tableRef = useRef<TabulatorLike | null>(null);
   const [columnsCount, setColumnsCount] = useState<number>(0);
   const [selectedRowIdx, setSelectedRowIdx] = useState<number | null>(null);
   const [selectedRowHeight, setSelectedRowHeight] = useState<number>(30);
-  const ModalAny = Modal as any;
-  const ModalHeader = ModalAny?.Header || ((props: any) => <div {...props} />);
-  const ModalBody = ModalAny?.Body || ((props: any) => <div {...props} />);
-  const ModalFooter = ModalAny?.Footer || ((props: any) => <div {...props} />);
+  const modalWithSections = Modal as typeof Modal & {
+    Header?: React.ComponentType<ModalSectionProps>;
+    Body?: React.ComponentType<ModalSectionProps>;
+    Footer?: React.ComponentType<ModalSectionProps>;
+  };
+  const ModalHeader =
+    modalWithSections.Header ||
+    ((props: ModalSectionProps) => <div>{props.children}</div>);
+  const ModalBody =
+    modalWithSections.Body ||
+    ((props: ModalSectionProps) => <div>{props.children}</div>);
+  const ModalFooter =
+    modalWithSections.Footer ||
+    ((props: ModalSectionProps) => <div>{props.children}</div>);
 
   // Apply height to a specific row
   const applyRowHeight = useCallback((rowIdx: number, height: number) => {
     const table = tableRef.current;
     if (!table) return;
-    const safeHeight = Math.max(10, Math.min(500, height));
+    const safeHeight = clampRowHeight(height);
     const rows = table.getRows();
     const row = rows[rowIdx];
     if (row) {
       const el = row.getElement();
       if (el) {
-        el.style.height = `${safeHeight}px`;
-        el.style.minHeight = `${safeHeight}px`;
+        applyRowHeightClass(el, safeHeight);
       }
     }
   }, []);
@@ -135,15 +247,13 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
       const table = tableRef.current;
       if (!table) return;
       const rows = table.getRows();
-      rows.forEach((r: any, idx: number) => {
-        const el = r.getElement();
+      rows.forEach((row, idx: number) => {
+        const el = row.getElement();
         if (el) {
           if (idx === rowIdx) {
-            el.style.outline = "2px solid #3b82f6";
-            el.style.outlineOffset = "-2px";
+            el.classList.add("tabulator-row-selected-outline");
           } else {
-            el.style.outline = "";
-            el.style.outlineOffset = "";
+            el.classList.remove("tabulator-row-selected-outline");
           }
         }
       });
@@ -187,7 +297,7 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
           resizable: true,
           minWidth: 50,
         },
-      });
+      }) as unknown as TabulatorLike;
 
       table.on("tableBuilt", () => {
         // Apply initial row heights
@@ -197,9 +307,8 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
             if (typeof h === "number" && h >= 10 && rows[idx]) {
               const el = rows[idx].getElement();
               if (el) {
-                const safeHeight = Math.max(10, Math.min(500, Math.round(h)));
-                el.style.height = `${safeHeight}px`;
-                el.style.minHeight = `${safeHeight}px`;
+                const safeHeight = clampRowHeight(Math.round(h));
+                applyRowHeightClass(el, safeHeight);
                 try {
                   rows[idx].revalidate?.();
                 } catch (err) {
@@ -212,25 +321,29 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
 
         // Add row click handlers for selection
         const rows = table.getRows();
-        rows.forEach((_: any, idx: number) => {
+        rows.forEach((_, idx: number) => {
           const el = rows[idx].getElement();
           if (el) {
-            el.style.cursor = "pointer";
+            el.classList.add("tabulator-row-clickable");
           }
         });
       });
 
       // Row click to select (use both rowClick and cellClick for reliability)
-      const handleRowSelect = (row: any) => {
+      const handleRowSelect = (row: TabulatorRowLike) => {
         const rows = table.getRows();
         const idx = rows.indexOf(row);
         if (idx >= 0) {
           selectRow(idx);
         }
       };
-      table.on("rowClick", (_e: any, row: any) => handleRowSelect(row));
-      table.on("cellClick", (_e: any, cell: any) => {
-        const row = cell.getRow();
+      table.on("rowClick", (_event, row) => {
+        if (row) {
+          handleRowSelect(row as TabulatorRowLike);
+        }
+      });
+      table.on("cellClick", (_event, cell) => {
+        const row = (cell as TabulatorCellLike | undefined)?.getRow?.();
         if (row) handleRowSelect(row);
       });
 
@@ -238,14 +351,13 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     }, 50);
 
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const handleAddRow = () => {
     const table = tableRef.current;
     if (!table) return;
     const cols = columnsCount;
-    const rowObj: Record<string, any> = { id: Date.now() };
+    const rowObj: TableRowRecord = { id: Date.now() };
     for (let c = 0; c < cols; c++) {
       rowObj[`c${c}`] = "";
     }
@@ -279,9 +391,9 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
       editor: "input",
       resizable: true,
       minWidth: 50,
-    } as any;
+    } satisfies TabulatorColumnDef;
     table.addColumn(colDef, false, undefined, undefined, true);
-    table.getData().forEach((row: any) => {
+    table.getData().forEach((row) => {
       row[field] = row[field] ?? "";
     });
     setColumnsCount(newIndex + 1);
@@ -298,7 +410,7 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     const table = tableRef.current;
     if (!table) return;
     const rows = table.getRows();
-    rows.forEach((_: any, idx: number) => {
+    rows.forEach((_, idx: number) => {
       applyRowHeight(idx, height);
     });
     if (selectedRowIdx !== null) {
@@ -310,11 +422,10 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     const table = tableRef.current;
     if (!table) return;
     const rows = table.getRows();
-    rows.forEach((row: any) => {
+    rows.forEach((row) => {
       const el = row.getElement();
       if (el) {
-        el.style.height = "";
-        el.style.minHeight = "";
+        clearRowHeightClass(el);
       }
     });
     if (selectedRowIdx !== null) {
@@ -332,21 +443,18 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     const data = rowsToData(rows, cols);
     const colDefs = table.getColumns();
     // Skip the first "#" row-number column
-    const colWidths = colDefs.slice(1).map((c: any) => c.getWidth());
+    const colWidths = colDefs.slice(1).map((column) => column.getWidth());
 
     // Get row heights from DOM
     const tabulatorRows = table.getRows();
-    const rowHeights = tabulatorRows.map((row: any) => {
+    const rowHeights = tabulatorRows.map((row) => {
       const el = row.getElement();
       if (!el) return 30;
 
-      // Priority 1: Use explicitly set inline style (most reliable)
-      const styleHeight = el.style.height;
-      if (styleHeight) {
-        const parsed = parseInt(styleHeight, 10);
-        if (!Number.isNaN(parsed) && parsed >= 10) {
-          return Math.max(10, Math.min(500, parsed));
-        }
+      // Priority 1: Use explicit row-height class
+      const classHeight = readRowHeightFromClass(el);
+      if (typeof classHeight === "number") {
+        return classHeight;
       }
 
       // Priority 2: Fall back to offsetHeight if style not set
@@ -389,31 +497,11 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
         </div>
 
         {/* Row height controls */}
-        <div
-          style={{
-            marginBottom: "12px",
-            display: "flex",
-            gap: "12px",
-            alignItems: "center",
-            flexWrap: "wrap",
-            padding: "8px 12px",
-            background: "rgba(59, 130, 246, 0.05)",
-            borderRadius: "8px",
-            border: "1px solid rgba(59, 130, 246, 0.15)",
-          }}
-        >
-          <span style={{ fontSize: "13px", fontWeight: 500, color: "#64748b" }}>
-            Высота строки:
-          </span>
+        <div className="tabulator-row-height-controls">
+          <span className="tabulator-row-height-label">Высота строки:</span>
           {selectedRowIdx !== null ? (
             <>
-              <span
-                style={{
-                  fontSize: "12px",
-                  color: "#3b82f6",
-                  fontWeight: 600,
-                }}
-              >
+              <span className="tabulator-row-height-selected-label">
                 Строка {selectedRowIdx + 1}
               </span>
               <input
@@ -423,30 +511,24 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
                 step="5"
                 value={selectedRowHeight}
                 onChange={(e) => handleRowHeightChange(Number(e.target.value))}
-                style={{
-                  padding: "4px 8px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  width: "80px",
-                }}
+                className="tabulator-row-height-input"
               />
-              <span style={{ fontSize: "11px", color: "#94a3b8" }}>px</span>
+              <span className="tabulator-row-height-unit">px</span>
               <input
                 type="range"
                 min="10"
                 max="300"
                 value={selectedRowHeight}
                 onChange={(e) => handleRowHeightChange(Number(e.target.value))}
-                style={{ width: "120px" }}
+                className="tabulator-row-height-range"
               />
             </>
           ) : (
-            <span style={{ fontSize: "12px", color: "#94a3b8" }}>
+            <span className="tabulator-row-height-hint">
               Кликните на строку для выбора
             </span>
           )}
-          <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
+          <div className="tabulator-row-height-actions">
             <Button size="xs" color="gray" onClick={handleSetAllRowHeights}>
               Всем строкам
             </Button>
@@ -457,13 +539,7 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
         </div>
 
         <div className="tabulator-container" ref={containerRef} />
-        <p
-          style={{
-            fontSize: "11px",
-            color: "#94a3b8",
-            marginTop: "8px",
-          }}
-        >
+        <p className="tabulator-row-height-footnote">
           💡 Кликните на строку чтобы выбрать её и изменить высоту.
           Перетаскивайте границы колонок для изменения ширины.
         </p>

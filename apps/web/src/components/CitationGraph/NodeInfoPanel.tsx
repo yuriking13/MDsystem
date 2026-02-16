@@ -3,6 +3,7 @@ import {
   apiGetArticleByPmid,
   apiTranslateText,
   apiImportFromGraph,
+  type GraphNode,
 } from "../../lib/api";
 import { getErrorMessage } from "../../lib/errorUtils";
 import {
@@ -14,7 +15,7 @@ import {
   IconStar,
   IconCheckCircle,
 } from "../FlowbiteIcons";
-import { getLevelColor, getLevelName, getGraphNodeColors } from "./utils";
+import { getLevelName, getGraphNodeColors } from "./utils";
 import type { EnrichedNodeData } from "./types";
 
 function getPValueLabel(quality: number): string {
@@ -24,7 +25,7 @@ function getPValueLabel(quality: number): string {
 }
 
 type Props = {
-  node: any;
+  node: GraphNode;
   projectId: string;
   onRefresh?: () => void;
   globalLang?: "en" | "ru";
@@ -180,52 +181,50 @@ export default function NodeInfoPanel({
 
   const level = node.graphLevel ?? 1;
   const hasRussian = !!(displayData.title_ru || displayData.abstract_ru);
+  const nodeLevelModifier =
+    level === 0
+      ? "level-0"
+      : level === 1
+        ? "level-1"
+        : level === 2
+          ? "level-2"
+          : level === 3
+            ? "level-3"
+            : "level-default";
+
+  const enLanguageButtonClassName = [
+    "node-language-button",
+    language === "en" ? "node-language-button--active" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const ruLanguageButtonClassName = [
+    "node-language-button",
+    language === "ru" ? "node-language-button--active" : "",
+    translating ? "node-language-button--translating" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="node-info-panel">
       {/* Header Card */}
       <div
-        className="node-info-header"
-        style={{ borderLeftColor: getLevelColor(level) }}
+        className={`node-info-header node-info-header--${nodeLevelModifier}`}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "flex-start",
-            gap: 8,
-          }}
-        >
+        <div className="node-info-header-top-row">
           <div
-            className="node-level-badge"
-            style={{ backgroundColor: getLevelColor(level) }}
+            className={`node-level-badge node-level-badge--${nodeLevelModifier}`}
           >
             {getLevelName(level)}
           </div>
           {/* Language Toggle */}
-          <div
-            className="language-toggle"
-            style={{
-              display: "flex",
-              gap: 2,
-              padding: 2,
-              background: "rgba(255,255,255,0.1)",
-              borderRadius: 6,
-            }}
-          >
+          <div className="language-toggle node-language-toggle">
             <button
               onClick={() => setLocalLanguage("en")}
               disabled={translating}
-              style={{
-                padding: "4px 8px",
-                fontSize: 11,
-                fontWeight: language === "en" ? 600 : 400,
-                background: language === "en" ? "var(--accent)" : "transparent",
-                color: language === "en" ? "white" : "var(--text-secondary)",
-                border: "none",
-                borderRadius: 4,
-                cursor: "pointer",
-              }}
+              className={enLanguageButtonClassName}
             >
               EN
             </button>
@@ -238,24 +237,7 @@ export default function NodeInfoPanel({
                 }
               }}
               disabled={translating}
-              style={{
-                padding: "4px 8px",
-                fontSize: 11,
-                fontWeight: language === "ru" ? 600 : 400,
-                background:
-                  language === "ru"
-                    ? "var(--accent)"
-                    : translating
-                      ? "rgba(59, 130, 246, 0.3)"
-                      : "transparent",
-                color:
-                  language === "ru" || translating
-                    ? "white"
-                    : "var(--text-secondary)",
-                border: "none",
-                borderRadius: 4,
-                cursor: translating ? "wait" : "pointer",
-              }}
+              className={ruLanguageButtonClassName}
               title={hasRussian ? "Русский перевод" : "Нажмите для перевода"}
             >
               {translating ? "..." : "RU"}
@@ -265,73 +247,29 @@ export default function NodeInfoPanel({
 
         {/* Ошибка перевода */}
         {translationError && (
-          <div
-            style={{
-              padding: "6px 12px",
-              background: "rgba(239, 68, 68, 0.1)",
-              fontSize: 11,
-              color: "#ef4444",
-              borderBottom: "1px solid var(--border-glass)",
-            }}
-          >
-            {translationError}
-          </div>
+          <div className="node-translation-error">{translationError}</div>
         )}
 
         {/* Перевод в процессе */}
         {translating && (
-          <div
-            style={{
-              padding: "6px 12px",
-              background: "rgba(59, 130, 246, 0.1)",
-              fontSize: 11,
-              color: "#3b82f6",
-              borderBottom: "1px solid var(--border-glass)",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <span
-              className="loading-spinner"
-              style={{ width: 12, height: 12 }}
-            />
+          <div className="node-translating-info">
+            <span className="loading-spinner node-loading-spinner-small" />
             Переводим...
           </div>
         )}
 
         {loadingData ? (
-          <div
-            className="node-title"
-            style={{ color: "var(--text-secondary)", fontStyle: "italic" }}
-          >
+          <div className="node-title node-title--loading">
             Загрузка данных...
           </div>
         ) : (
           <>
             <div className="node-title">{displayTitle || node.label}</div>
             {displayData.authors && (
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-secondary)",
-                  marginTop: 6,
-                }}
-              >
-                {displayData.authors}
-              </div>
+              <div className="node-authors-text">{displayData.authors}</div>
             )}
             {displayData.journal && (
-              <div
-                style={{
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                  marginTop: 4,
-                  fontStyle: "italic",
-                }}
-              >
-                {displayData.journal}
-              </div>
+              <div className="node-journal-text">{displayData.journal}</div>
             )}
           </>
         )}
@@ -339,35 +277,9 @@ export default function NodeInfoPanel({
 
       {/* Abstract */}
       {displayAbstract && (
-        <div
-          style={{
-            padding: "12px 16px",
-            borderBottom: "1px solid var(--border-glass)",
-            maxHeight: 200,
-            overflowY: "auto",
-          }}
-        >
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: "var(--text-secondary)",
-              marginBottom: 6,
-              textTransform: "uppercase",
-              letterSpacing: "0.5px",
-            }}
-          >
-            Аннотация
-          </div>
-          <div
-            style={{
-              fontSize: 13,
-              lineHeight: 1.6,
-              color: "var(--text-primary)",
-            }}
-          >
-            {displayAbstract}
-          </div>
+        <div className="node-abstract-container">
+          <div className="node-abstract-title">Аннотация</div>
+          <div className="node-abstract-text">{displayAbstract}</div>
         </div>
       )}
 
@@ -409,8 +321,7 @@ export default function NodeInfoPanel({
             href={`https://doi.org/${displayData.doi}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="node-info-link"
-            style={{ wordBreak: "break-all" }}
+            className="node-info-link node-info-link--break-word"
           >
             {displayData.doi} ↗
           </a>
@@ -423,7 +334,7 @@ export default function NodeInfoPanel({
             <IconTrendingUp size="sm" />
             Цитирований
           </div>
-          <div className="node-info-value" style={{ color: "var(--success)" }}>
+          <div className="node-info-value node-info-value--success">
             {displayData.citedByCount}
           </div>
         </div>
@@ -435,7 +346,7 @@ export default function NodeInfoPanel({
             <IconStar size="sm" />
             P-value (значимость)
           </div>
-          <div className="node-info-value" style={{ color: "var(--warning)" }}>
+          <div className="node-info-value node-info-value--warning">
             {getPValueLabel(node.statsQuality)}
           </div>
         </div>
@@ -445,76 +356,39 @@ export default function NodeInfoPanel({
       {(node.graphLevel === 2 ||
         node.graphLevel === 3 ||
         node.graphLevel === 0) && (
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <div className="node-add-buttons-wrap">
           <button
             onClick={() => handleAddToProject("candidate")}
             disabled={adding || addingToSelected}
-            className="node-add-btn"
-            style={{
-              flex: 1,
-              background: "var(--accent)",
-              borderColor: "var(--accent)",
-            }}
+            className="node-add-btn node-add-btn--split node-add-btn--candidate"
           >
             {adding ? (
               <>
-                <span
-                  className="loading-spinner"
-                  style={{
-                    width: 14,
-                    height: 14,
-                    marginRight: 8,
-                    display: "inline-block",
-                    verticalAlign: "middle",
-                  }}
-                />
+                <span className="loading-spinner node-action-spinner" />
                 Добавляю...
               </>
             ) : (
               <>
-                <IconPlus
-                  size="sm"
-                  className="icon-sm"
-                  style={{
-                    marginRight: 6,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
-                />
-                В Кандидаты
+                <IconPlus size="sm" className="icon-sm node-action-icon" />В
+                Кандидаты
               </>
             )}
           </button>
           <button
             onClick={() => handleAddToProject("selected")}
             disabled={adding || addingToSelected}
-            className="node-add-btn"
-            style={{ flex: 1, background: "#22c55e", borderColor: "#16a34a" }}
+            className="node-add-btn node-add-btn--split node-add-btn--selected"
           >
             {addingToSelected ? (
               <>
-                <span
-                  className="loading-spinner"
-                  style={{
-                    width: 14,
-                    height: 14,
-                    marginRight: 8,
-                    display: "inline-block",
-                    verticalAlign: "middle",
-                  }}
-                />
+                <span className="loading-spinner node-action-spinner" />
                 Добавляю...
               </>
             ) : (
               <>
                 <IconCheckCircle
                   size="sm"
-                  className="icon-sm"
-                  style={{
-                    marginRight: 6,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
+                  className="icon-sm node-action-icon"
                 />
                 В Отобранные
               </>
@@ -524,19 +398,7 @@ export default function NodeInfoPanel({
       )}
 
       {addMessage && (
-        <div
-          style={{
-            marginTop: 12,
-            padding: "10px 14px",
-            backgroundColor: "rgba(16, 185, 129, 0.1)",
-            borderRadius: 8,
-            fontSize: 12,
-            color: "#10b981",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
+        <div className="node-add-message">
           <IconCheckCircle size="sm" />
           {addMessage}
         </div>

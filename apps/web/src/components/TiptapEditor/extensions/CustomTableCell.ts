@@ -1,4 +1,5 @@
 import TableCell from "@tiptap/extension-table-cell";
+import { getInlineStyleValue } from "./inlineStyleUtils";
 
 export const CustomTableCell = TableCell.extend({
   addAttributes() {
@@ -8,7 +9,7 @@ export const CustomTableCell = TableCell.extend({
         default: null,
         parseHTML: (element) => {
           return (
-            element.style.backgroundColor ||
+            getInlineStyleValue(element, "background-color") ||
             element.getAttribute("data-bgcolor") ||
             null
           );
@@ -19,14 +20,14 @@ export const CustomTableCell = TableCell.extend({
       },
       textAlign: {
         default: null,
-        parseHTML: (element) => element.style.textAlign || null,
+        parseHTML: (element) => getInlineStyleValue(element, "text-align"),
         renderHTML: (attributes) => {
           return {};
         },
       },
       verticalAlign: {
         default: null,
-        parseHTML: (element) => element.style.verticalAlign || null,
+        parseHTML: (element) => getInlineStyleValue(element, "vertical-align"),
         renderHTML: (attributes) => {
           return {};
         },
@@ -51,7 +52,7 @@ export const CustomTableCell = TableCell.extend({
       styleParts.push(`vertical-align: ${attrs.verticalAlign}`);
     }
 
-    const mergedAttrs: Record<string, any> = {
+    const mergedAttrs: Record<string, unknown> = {
       ...HTMLAttributes,
       ...(styleParts.length ? { style: styleParts.join("; ") } : {}),
       ...(attrs.backgroundColor

@@ -13,7 +13,7 @@ type RefreshResponsePayload = {
 
 let refreshInFlight: Promise<string | null> | null = null;
 
-async function readJsonSafe(res: Response): Promise<any> {
+async function readJsonSafe(res: Response): Promise<unknown> {
   const txt = await res.text();
   try {
     return txt ? JSON.parse(txt) : null;
@@ -455,7 +455,19 @@ export type Article = {
   url: string;
   source: string;
   has_stats: boolean;
-  stats_json: any;
+  stats_json: {
+    methods?: string[];
+    sampleSize?: number;
+    pValues?: Array<string | number>;
+    ai?: {
+      stats?: Array<{
+        text?: string;
+        significance?: string;
+        type?: string;
+      }>;
+    };
+    [key: string]: unknown;
+  } | null;
   stats_quality: number; // 0-3, качество статистики по p-value
   publication_types: string[] | null;
   fetched_at: string; // Дата обращения к источнику
@@ -1067,7 +1079,7 @@ export type BibliographyItem = {
   number: number;
   articleId: string;
   formatted: string;
-  raw?: any;
+  raw?: unknown;
 };
 
 export type BibliographyResponse = {
@@ -1276,7 +1288,7 @@ export type GraphRecommendation = {
   description: string;
   priority: "high" | "medium" | "low";
   articleIds?: string[];
-  action?: any;
+  action?: unknown;
 };
 
 export type GraphRecommendationsResponse = {
@@ -1811,13 +1823,15 @@ export type DataClassification = {
   isNormalDistribution?: boolean;
 };
 
+export type StatisticConfigData = Record<string, unknown>;
+
 export type ProjectStatistic = {
   id: string;
   type: "chart" | "table";
   title: string;
   description?: string;
-  config: Record<string, any>;
-  table_data?: Record<string, any>;
+  config: StatisticConfigData;
+  table_data?: StatisticConfigData;
   data_classification?: DataClassification;
   chart_type?: string;
   used_in_documents?: string[];
@@ -1850,8 +1864,8 @@ export async function apiCreateStatistic(
     type: "chart" | "table";
     title: string;
     description?: string;
-    config: Record<string, any>;
-    tableData?: Record<string, any>;
+    config: StatisticConfigData;
+    tableData?: StatisticConfigData;
     dataClassification?: DataClassification;
     chartType?: string;
   },
@@ -1871,8 +1885,8 @@ export async function apiUpdateStatistic(
   data: {
     title?: string;
     description?: string;
-    config?: Record<string, any>;
-    tableData?: Record<string, any>;
+    config?: StatisticConfigData;
+    tableData?: StatisticConfigData;
     dataClassification?: DataClassification;
     chartType?: string;
     orderIndex?: number;
@@ -1946,13 +1960,13 @@ export type SyncStatisticsData = {
   tables: Array<{
     id: string;
     title?: string;
-    tableData: Record<string, any>;
+    tableData: StatisticConfigData;
   }>;
   charts: Array<{
     id: string;
     title?: string;
-    config: Record<string, any>;
-    tableData?: Record<string, any>;
+    config: StatisticConfigData;
+    tableData?: StatisticConfigData;
   }>;
 };
 

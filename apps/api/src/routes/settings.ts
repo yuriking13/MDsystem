@@ -1,4 +1,4 @@
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { z } from "zod";
 import { getDb } from "../utils/db.js";
 import { encryptApiKey } from "../utils/apiKeyCrypto.js";
@@ -23,7 +23,7 @@ const ParamsSchema = z.object({
   provider: z.string().min(1),
 });
 
-function badRequest(reply: any, message: string) {
+function badRequest(reply: FastifyReply, message: string) {
   reply.code(400).send({ error: "BadRequest", message });
 }
 
@@ -37,16 +37,19 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (!user) return reply.code(401).send({ error: "Unauthorized" });
 
       const db = getDb(fastify);
-      const res = await db.query("select provider from user_api_keys where user_id = $1", [
-        user.id,
-      ]);
+      const res = await db.query(
+        "select provider from user_api_keys where user_id = $1",
+        [user.id],
+      );
 
       const keys: Record<string, boolean> = Object.fromEntries(
         KnownProviders.map((p) => [p, false]),
       );
 
       for (const row of res.rows) {
-        const provider = normalizeProvider(String((row as any).provider));
+        const provider = normalizeProvider(
+          String((row as { provider?: unknown }).provider ?? ""),
+        );
         if (!provider) continue;
         keys[provider] = true;
       }
@@ -70,7 +73,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const provider = normalizeProvider(parsed.data.provider);
       if (!isValidProvider(provider)) {
-        return badRequest(reply, "Invalid provider (use [a-z0-9_-], 2..50 chars)");
+        return badRequest(
+          reply,
+          "Invalid provider (use [a-z0-9_-], 2..50 chars)",
+        );
       }
 
       const encrypted = encryptApiKey(parsed.data.key);
@@ -106,14 +112,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const provider = normalizeProvider(parsed.data.provider);
       if (!isValidProvider(provider)) {
-        return badRequest(reply, "Invalid provider (use [a-z0-9_-], 2..50 chars)");
+        return badRequest(
+          reply,
+          "Invalid provider (use [a-z0-9_-], 2..50 chars)",
+        );
       }
 
       const db = getDb(fastify);
-      await db.query("delete from user_api_keys where user_id = $1 and provider = $2", [
-        user.id,
-        provider,
-      ]);
+      await db.query(
+        "delete from user_api_keys where user_id = $1 and provider = $2",
+        [user.id, provider],
+      );
 
       return { ok: true };
     },

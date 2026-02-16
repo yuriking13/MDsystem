@@ -126,7 +126,6 @@ export default function ArticleCard({
   const [showActions, setShowActions] = useState(false);
 
   const status = STATUS_CONFIG[article.status];
-  const StatusIcon = status.icon;
   const sourceStyle = SOURCE_STYLES[article.source];
 
   const displayTitle =

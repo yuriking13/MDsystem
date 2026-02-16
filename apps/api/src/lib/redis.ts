@@ -194,7 +194,12 @@ export async function initRedisClient(): Promise<Redis | null> {
   connectionAttempted = true;
 
   try {
-    const client = new Redis(env.REDIS_URL!, {
+    const redisUrl = env.REDIS_URL;
+    if (!redisUrl) {
+      return null;
+    }
+
+    const client = new Redis(redisUrl, {
       password: env.REDIS_PASSWORD || undefined,
       maxRetriesPerRequest: 3,
       retryStrategy: (times: number) => {

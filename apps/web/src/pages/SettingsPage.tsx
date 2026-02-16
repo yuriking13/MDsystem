@@ -175,17 +175,16 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="container">
+    <div className="container settings-account-page">
       {/* Header Card */}
-      <div className="card" style={{ marginBottom: 20 }}>
-        <div className="row space">
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <div className="card settings-section-card">
+        <div className="row space settings-account-header">
+          <div className="settings-header-main">
             <svg
-              className="icon-lg"
+              className="icon-lg settings-icon-accent"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
-              style={{ color: "var(--accent)" }}
             >
               <path
                 strokeLinecap="round"
@@ -201,24 +200,23 @@ export default function SettingsPage() {
               />
             </svg>
             <div>
-              <h1 style={{ margin: 0 }}>Настройки</h1>
-              <p className="muted" style={{ margin: 0 }}>
+              <h1 className="settings-header-title">Настройки</h1>
+              <p className="muted settings-header-subtitle">
                 Профиль и API ключи
               </p>
             </div>
           </div>
-          <div className="row gap">
+          <div className="row gap settings-account-header-actions">
             <button
               className="btn secondary"
               onClick={() => nav("/projects")}
               type="button"
             >
               <svg
-                className="icon-sm"
+                className="icon-sm settings-btn-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                style={{ marginRight: 6 }}
               >
                 <path
                   strokeLinecap="round"
@@ -231,11 +229,10 @@ export default function SettingsPage() {
             </button>
             <button className="btn secondary" onClick={logout} type="button">
               <svg
-                className="icon-sm"
+                className="icon-sm settings-btn-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
-                style={{ marginRight: 6 }}
               >
                 <path
                   strokeLinecap="round"
@@ -251,14 +248,13 @@ export default function SettingsPage() {
       </div>
 
       {/* Profile Card */}
-      <div className="settings-card" style={{ marginBottom: 20 }}>
+      <div className="settings-card settings-section-card">
         <div className="settings-card-header">
           <svg
-            className="icon-md"
+            className="icon-md settings-icon-accent"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            style={{ color: "var(--accent)" }}
           >
             <path
               strokeLinecap="round"
@@ -267,40 +263,30 @@ export default function SettingsPage() {
               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
             />
           </svg>
-          <h4 style={{ margin: 0 }}>Профиль</h4>
+          <h4 className="settings-card-title">Профиль</h4>
         </div>
         <div className="settings-card-body">
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "120px 1fr",
-              gap: "12px 20px",
-              alignItems: "center",
-            }}
-          >
-            <div className="muted" style={{ fontSize: 13 }}>
-              User ID
-            </div>
-            <div style={{ fontFamily: "monospace", fontSize: 13 }}>
+          <div className="settings-profile-grid">
+            <div className="muted settings-profile-label">User ID</div>
+            <div className="settings-profile-value settings-profile-value-id">
               {user?.id || "—"}
             </div>
-            <div className="muted" style={{ fontSize: 13 }}>
-              Email
+            <div className="muted settings-profile-label">Email</div>
+            <div className="settings-profile-value settings-profile-value-email">
+              {user?.email || "—"}
             </div>
-            <div style={{ fontSize: 14 }}>{user?.email || "—"}</div>
           </div>
         </div>
       </div>
 
       {/* Help & Documentation Card */}
-      <div className="settings-card" style={{ marginBottom: 20 }}>
+      <div className="settings-card settings-section-card">
         <div className="settings-card-header">
           <svg
-            className="icon-md"
+            className="icon-md settings-icon-accent"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            style={{ color: "var(--accent)" }}
           >
             <path
               strokeLinecap="round"
@@ -309,23 +295,15 @@ export default function SettingsPage() {
               d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <h4 style={{ margin: 0 }}>Справка</h4>
+          <h4 className="settings-card-title">Справка</h4>
         </div>
         <div className="settings-card-body">
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 16,
-                flexWrap: "wrap",
-              }}
-            >
+          <div className="settings-help-content">
+            <div className="settings-help-actions">
               <button
-                className="btn secondary"
+                className="btn secondary settings-help-action-btn"
                 onClick={() => nav("/docs")}
                 type="button"
-                style={{ display: "flex", alignItems: "center", gap: 8 }}
               >
                 <svg
                   className="icon-sm"
@@ -343,13 +321,12 @@ export default function SettingsPage() {
                 Документация
               </button>
               <button
-                className="btn secondary"
+                className="btn secondary settings-help-action-btn"
                 onClick={() => {
                   resetOnboarding();
                   window.location.reload();
                 }}
                 type="button"
-                style={{ display: "flex", alignItems: "center", gap: 8 }}
               >
                 <svg
                   className="icon-sm"
@@ -373,10 +350,7 @@ export default function SettingsPage() {
                 Повторить обучение
               </button>
             </div>
-            <p
-              className="muted"
-              style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}
-            >
+            <p className="muted settings-help-text">
               Ознакомьтесь с документацией, чтобы узнать обо всех возможностях
               платформы, или повторите обучение для новых пользователей.
             </p>
@@ -388,11 +362,10 @@ export default function SettingsPage() {
       <div className="settings-card">
         <div className="settings-card-header">
           <svg
-            className="icon-md"
+            className="icon-md settings-icon-accent"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
-            style={{ color: "var(--accent)" }}
           >
             <path
               strokeLinecap="round"
@@ -401,7 +374,7 @@ export default function SettingsPage() {
               d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
             />
           </svg>
-          <h4 style={{ margin: 0 }}>API Ключи</h4>
+          <h4 className="settings-card-title">API Ключи</h4>
         </div>
         <div className="settings-card-body">
           <p className="settings-hint">
@@ -410,119 +383,52 @@ export default function SettingsPage() {
           </p>
 
           {busy && (
-            <div
-              className="muted"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 16,
-              }}
-            >
+            <div className="muted settings-status-row settings-feedback-spacing">
               <div className="loading-spinner" />
               Загрузка...
             </div>
           )}
           {error && (
-            <div className="alert" style={{ marginBottom: 16 }}>
-              {error}
-            </div>
+            <div className="alert settings-feedback-spacing">{error}</div>
           )}
-          {ok && (
-            <div className="ok" style={{ marginBottom: 16 }}>
-              {ok}
-            </div>
-          )}
+          {ok && <div className="ok settings-feedback-spacing">{ok}</div>}
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div className="settings-provider-list">
             {list.map(({ p, has, meta }) => (
               <div
                 key={p}
-                style={{
-                  padding: 16,
-                  background: "var(--bg-glass-light)",
-                  border: "1px solid var(--border-glass)",
-                  borderRadius: 12,
-                  borderLeft: has
-                    ? "3px solid var(--success)"
-                    : "3px solid var(--border-glass)",
-                }}
+                className={`settings-provider-item ${has ? "settings-provider-item--configured" : ""}`}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: 14,
-                    marginBottom: 14,
-                  }}
-                >
+                <div className="settings-provider-header">
                   <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: has
-                        ? "rgba(74, 222, 128, 0.1)"
-                        : "var(--bg-glass)",
-                      borderRadius: 10,
-                      color: has ? "var(--success)" : "var(--text-muted)",
-                      flexShrink: 0,
-                    }}
+                    className={`settings-provider-icon-box ${has ? "settings-provider-icon-box--configured" : ""}`}
                   >
                     {meta?.icon}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        marginBottom: 4,
-                      }}
-                    >
-                      <strong style={{ fontSize: 15 }}>
+                  <div className="settings-provider-meta">
+                    <div className="settings-provider-title-row">
+                      <strong className="settings-provider-name">
                         {meta?.name || p}
                       </strong>
                       {has ? (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            padding: "3px 8px",
-                            background: "rgba(74, 222, 128, 0.15)",
-                            color: "var(--success)",
-                            borderRadius: 6,
-                            fontWeight: 500,
-                          }}
-                        >
+                        <span className="settings-provider-badge settings-provider-badge--configured">
                           ✓ Настроен
                         </span>
                       ) : (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            padding: "3px 8px",
-                            background: "rgba(255, 255, 255, 0.05)",
-                            color: "var(--text-muted)",
-                            borderRadius: 6,
-                          }}
-                        >
+                        <span className="settings-provider-badge settings-provider-badge--empty">
                           Не настроен
                         </span>
                       )}
                     </div>
-                    <p
-                      className="muted"
-                      style={{ margin: 0, fontSize: 12, lineHeight: 1.4 }}
-                    >
+                    <p className="muted settings-provider-description">
                       {meta?.description}
                     </p>
                   </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <div className="settings-provider-actions">
                   <input
+                    className="settings-provider-input"
                     type="password"
                     placeholder={
                       has ? "Обновить ключ..." : "Вставьте API ключ..."
@@ -531,21 +437,18 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setDraft((d) => ({ ...d, [p]: e.target.value }))
                     }
-                    style={{ flex: 1, padding: "10px 14px", fontSize: 13 }}
                   />
                   <button
-                    className="btn"
+                    className="btn settings-provider-action-btn"
                     onClick={() => save(p)}
                     disabled={busy}
                     type="button"
-                    style={{ padding: "10px 18px", fontSize: 13 }}
                   >
                     <svg
-                      className="icon-sm"
+                      className="icon-sm settings-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
-                      style={{ marginRight: 6 }}
                     >
                       <path
                         strokeLinecap="round"
@@ -557,22 +460,16 @@ export default function SettingsPage() {
                     Сохранить
                   </button>
                   <button
-                    className="btn secondary"
+                    className={`btn secondary settings-provider-action-btn ${has ? "settings-provider-delete-btn--active" : ""}`}
                     onClick={() => del(p)}
                     disabled={busy || !has}
                     type="button"
-                    style={{
-                      padding: "10px 18px",
-                      fontSize: 13,
-                      color: has ? "var(--danger)" : undefined,
-                    }}
                   >
                     <svg
-                      className="icon-sm"
+                      className="icon-sm settings-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
-                      style={{ marginRight: 6 }}
                     >
                       <path
                         strokeLinecap="round"

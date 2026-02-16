@@ -12,6 +12,17 @@ const DEFAULT_BATCH_SIZE = 50; // Размер batch для API (OpenRouter по
 const BATCH_DELAY_MS = 200; // Задержка между batches для rate limiting
 const PARALLEL_BATCHES = 3; // Количество параллельных batch запросов
 
+interface EmbeddingArticleRow {
+  id: string;
+  title_en: string | null;
+  abstract_en: string | null;
+}
+
+interface ArticleWithText {
+  id: string;
+  text: string;
+}
+
 // Получаем API ключ пользователя из базы
 async function getUserApiKey(
   userId: string,
@@ -70,7 +81,7 @@ async function bulkInsertEmbeddings(
   if (articles.length === 0) return;
 
   // Строим VALUES для bulk insert
-  const values: any[] = [];
+  const values: unknown[] = [];
   const placeholders: string[] = [];
 
   articles.forEach((article, i) => {
@@ -126,7 +137,7 @@ async function updateProgress(
   },
 ) {
   const setClauses: string[] = ["updated_at = now()"];
-  const values: any[] = [];
+  const values: unknown[] = [];
   let paramIdx = 1;
 
   if (updates.processed !== undefined) {
@@ -155,7 +166,7 @@ async function updateProgress(
 
   // Отправляем WebSocket событие
   broadcastToProject(projectId, {
-    type: "embedding:progress" as any,
+    type: "embedding:progress",
     projectId,
     payload: {
       jobId,
@@ -345,7 +356,7 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
 
     // Отправляем WebSocket событие с актуальным total
     broadcastToProject(projectId, {
-      type: "embedding:progress" as any,
+      type: "embedding:progress",
       projectId,
       payload: {
         jobId,
@@ -363,7 +374,7 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
         [jobId],
       );
       broadcastToProject(projectId, {
-        type: "embedding:completed" as any,
+        type: "embedding:completed",
         projectId,
         payload: { jobId, processed: 0, total: 0, errors: 0 },
         timestamp: Date.now(),
@@ -376,15 +387,16 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
     // ============================================
 
     // Подготавливаем статьи с текстом
-    const articlesWithText = articles.rows
-      .map((article: any) => ({
+    const articleRows = articles.rows as EmbeddingArticleRow[];
+    const articlesWithText = articleRows
+      .map((article) => ({
         id: article.id,
         text: [article.title_en, article.abstract_en]
           .filter(Boolean)
           .join(" ")
           .trim(),
       }))
-      .filter((a: any) => a.text.length > 0);
+      .filter((a): a is ArticleWithText => a.text.length > 0);
 
     // Статьи без текста считаем ошибками
     errors = articles.rows.length - articlesWithText.length;
@@ -410,7 +422,7 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
           [jobId],
         );
         broadcastToProject(projectId, {
-          type: "embedding:error" as any,
+          type: "embedding:error",
           projectId,
           payload: {
             jobId,
@@ -428,7 +440,7 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
       if (await isJobCancelled(jobId)) {
         log.info("Job cancelled", { jobId });
         broadcastToProject(projectId, {
-          type: "embedding:cancelled" as any,
+          type: "embedding:cancelled",
           projectId,
           payload: { jobId, processed, total: totalArticles, errors },
           timestamp: Date.now(),
@@ -445,16 +457,14 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
           // Небольшая задержка для staggered start
           await new Promise((resolve) => setTimeout(resolve, batchIdx * 50));
 
-          const texts = batch.map((a: any) => a.text);
+          const texts = batch.map((a) => a.text);
           const embeddings = await generateBatchEmbeddings(texts, apiKey);
 
           // Формируем данные для bulk insert
-          const articlesWithEmbeddings = batch.map(
-            (article: any, idx: number) => ({
-              id: article.id,
-              embedding: embeddings[idx],
-            }),
-          );
+          const articlesWithEmbeddings = batch.map((article, idx: number) => ({
+            id: article.id,
+            embedding: embeddings[idx],
+          }));
 
           // Bulk insert в PostgreSQL
           await bulkInsertEmbeddings(articlesWithEmbeddings);
@@ -498,7 +508,7 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
     );
 
     broadcastToProject(projectId, {
-      type: "embedding:completed" as any,
+      type: "embedding:completed",
       projectId,
       payload: { jobId, processed, total: totalArticles, errors },
       timestamp: Date.now(),
@@ -521,7 +531,7 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
     );
 
     broadcastToProject(projectId, {
-      type: "embedding:error" as any,
+      type: "embedding:error",
       projectId,
       payload: { jobId, error: errorMessage },
       timestamp: Date.now(),

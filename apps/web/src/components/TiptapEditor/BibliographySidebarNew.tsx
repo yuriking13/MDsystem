@@ -208,13 +208,7 @@ export default function BibliographySidebarNew({
         <div className="flex items-center gap-2 text-sm font-medium text-neutral-200">
           <IconBook size="sm" className="text-blue-400" />
           Библиография
-          <span
-            className="px-1.5 py-0.5 text-xs rounded"
-            style={{
-              background: "var(--bg-secondary)",
-              color: "var(--text-muted)",
-            }}
-          >
+          <span className="px-1.5 py-0.5 text-xs rounded bibliography-count-badge">
             {uniqueSourcesCount}/{safeCitations.length}
           </span>
         </div>
@@ -239,16 +233,12 @@ export default function BibliographySidebarNew({
       </div>
 
       {/* Search & View Toggle */}
-      <div
-        className="px-4 py-2 space-y-2"
-        style={{ borderBottom: "1px solid var(--border-glass)" }}
-      >
+      <div className="px-4 py-2 space-y-2 bibliography-controls-wrap">
         {/* Search */}
         <div className="relative">
           <IconSearch
             size="sm"
-            className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
-            style={{ width: 14, height: 14 }}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none bibliography-search-icon"
           />
           <input
             type="text"
@@ -261,10 +251,7 @@ export default function BibliographySidebarNew({
 
         {/* View toggle */}
         <div className="flex items-center justify-between">
-          <div
-            className="flex rounded-lg overflow-hidden"
-            style={{ border: "1px solid var(--border-glass)" }}
-          >
+          <div className="flex rounded-lg overflow-hidden bibliography-view-toggle">
             <button
               onClick={() => setViewMode("all")}
               className={cn(
@@ -272,12 +259,8 @@ export default function BibliographySidebarNew({
                 viewMode === "all"
                   ? "bg-blue-500 text-white"
                   : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+                viewMode !== "all" && "bibliography-view-toggle-inactive",
               )}
-              style={
-                viewMode !== "all"
-                  ? { background: "var(--bg-secondary)" }
-                  : undefined
-              }
             >
               Все
             </button>
@@ -288,15 +271,9 @@ export default function BibliographySidebarNew({
                 viewMode === "bySource"
                   ? "bg-blue-500 text-white"
                   : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+                "bibliography-view-toggle-with-divider",
+                viewMode !== "bySource" && "bibliography-view-toggle-inactive",
               )}
-              style={
-                viewMode !== "bySource"
-                  ? {
-                      background: "var(--bg-secondary)",
-                      borderLeft: "1px solid var(--border-glass)",
-                    }
-                  : { borderLeft: "1px solid var(--border-glass)" }
-              }
             >
               По источнику
             </button>
@@ -318,15 +295,7 @@ export default function BibliographySidebarNew({
           </div>
         ) : viewMode === "all" ? (
           // All citations view
-          <div
-            className="divide-y"
-            style={
-              {
-                "--tw-divide-opacity": 1,
-                borderColor: "var(--border-glass)",
-              } as React.CSSProperties
-            }
-          >
+          <div className="divide-y bibliography-divide">
             {sortedCitations.map((citation) => (
               <CitationItem
                 key={citation.id}
@@ -350,15 +319,7 @@ export default function BibliographySidebarNew({
           </div>
         ) : (
           // Grouped by source view
-          <div
-            className="divide-y"
-            style={
-              {
-                "--tw-divide-opacity": 1,
-                borderColor: "var(--border-glass)",
-              } as React.CSSProperties
-            }
-          >
+          <div className="divide-y bibliography-divide">
             {Array.from(groupedCitations.entries())
               .sort((a, b) => (a[1][0]?.number || 0) - (b[1][0]?.number || 0))
               .map(([dedupeKey, citationInfos]) => {
@@ -588,10 +549,7 @@ function SourceGroup({
   const inlineNumber = citationInfos[0]?.number || 1;
 
   return (
-    <div
-      className="border-b last:border-b-0"
-      style={{ borderColor: "var(--border-glass)" }}
-    >
+    <div className="border-b last:border-b-0 bibliography-source-group">
       {/* Source header */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
@@ -644,8 +602,7 @@ function SourceGroup({
             return (
               <div
                 key={citation.id}
-                className="flex items-start gap-2 p-2 rounded"
-                style={{ background: "var(--bg-secondary)" }}
+                className="flex items-start gap-2 p-2 rounded bibliography-source-item"
                 data-sidebar-citation-id={citation.id}
                 onMouseEnter={() =>
                   highlightCitationInEditor(citation.id, true)

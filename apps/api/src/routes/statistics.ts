@@ -27,6 +27,20 @@ const StatIdSchemaAny = z.object({
   statId: z.string().min(1),
 });
 
+type StatisticsListResponse = {
+  statistics: unknown[];
+};
+
+type ForceDeleteQuery = {
+  force?: string;
+};
+
+type StatisticIdentityRow = {
+  id: string;
+};
+
+type StatisticRecord = Record<string, unknown>;
+
 type JsonValue =
   | string
   | number
@@ -174,7 +188,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Try cache first
       const cacheKey = CACHE_KEYS.statistics(parsed.data.id);
-      const cached = await cacheGet<any>(cacheKey);
+      const cached = await cacheGet<StatisticsListResponse>(cacheKey);
       if (cached) {
         return cached;
       }
@@ -362,7 +376,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       const updates: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
       let idx = 1;
 
       if (bodyP.data.title !== undefined) {
@@ -516,7 +530,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const usedInDocs = usageCheck.rows[0].used_in_documents || [];
 
       // Проверяем force флаг в query параметрах
-      const force = (request.query as any)?.force === "true";
+      const force = (request.query as ForceDeleteQuery)?.force === "true";
 
       if (usedInDocs.length > 0 && !force) {
         return reply.code(409).send({
@@ -720,7 +734,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
          WHERE project_id = $1 AND $2 = ANY(COALESCE(used_in_documents, ARRAY[]::text[]))`,
         [paramsP.data.id, documentId],
       );
-      const existingIds = new Set(existingRes.rows.map((r: any) => r.id));
+      const existingIds = new Set(
+        existingRes.rows.map((r) => (r as StatisticIdentityRow).id),
+      );
 
       // Remove document link from statistics that are no longer in the document
       for (const existingId of existingIds) {
@@ -737,7 +753,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      const createdStats: any[] = [];
+      const createdStats: StatisticRecord[] = [];
 
       // Process tables
       for (const table of tables) {

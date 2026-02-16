@@ -93,6 +93,21 @@ export type PubMedArticle = {
   studyTypes: string[];
 };
 
+type PubMedAuthor = {
+  LastName?: string;
+  Initials?: string;
+};
+
+type ElinkId = string | { "#text"?: string };
+type ElinkLink = { Id?: ElinkId };
+type ElinkSet = {
+  IdList?: { Id?: ElinkId };
+  LinkSetDb?: { Link?: ElinkLink | ElinkLink[] };
+};
+type ElinkResponse = {
+  eLinkResult?: { LinkSet?: ElinkSet | ElinkSet[] };
+};
+
 // Маппинг полей поиска на PubMed теги
 const SEARCH_FIELD_TAGS: Record<PubMedSearchField, string> = {
   "All Fields": "", // Без тега - PubMed ищет везде
@@ -272,7 +287,7 @@ export async function pubmedEFetchBatch(args: {
       let authors = "";
       if (Array.isArray(authList)) {
         authors = authList
-          .map((au: any) => {
+          .map((au: PubMedAuthor) => {
             const ln = decodeHtmlEntities(String(au?.LastName ?? ""));
             const ini = decodeHtmlEntities(String(au?.Initials ?? ""));
             return `${ln} ${ini}`.trim();
@@ -406,7 +421,7 @@ export async function pubmedFetchByPmids(args: {
       let authors = "";
       if (Array.isArray(authList)) {
         authors = authList
-          .map((au: any) => {
+          .map((au: PubMedAuthor) => {
             const ln = decodeHtmlEntities(String(au?.LastName ?? ""));
             const ini = decodeHtmlEntities(String(au?.Initials ?? ""));
             return `${ln} ${ini}`.trim();
@@ -680,10 +695,11 @@ export async function pubmedGetReferences(args: {
   return results;
 }
 
-function parseElinkResults(data: any): Map<string, string[]> {
+function parseElinkResults(data: unknown): Map<string, string[]> {
   const result = new Map<string, string[]>();
+  const elinkData = data as ElinkResponse;
 
-  const linkSets = data?.eLinkResult?.LinkSet;
+  const linkSets = elinkData?.eLinkResult?.LinkSet;
   if (!linkSets) return result;
 
   const sets = Array.isArray(linkSets) ? linkSets : [linkSets];

@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { apiAdminMe, type AdminUser } from "./adminApi";
 import { getAdminToken, setAdminToken, clearAdminToken } from "./adminToken";
@@ -21,7 +28,13 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function refreshAdmin() {
+  const logout = useCallback(() => {
+    clearAdminToken();
+    setTokenState(null);
+    setAdmin(null);
+  }, []);
+
+  const refreshAdmin = useCallback(async () => {
     const t = getAdminToken();
     if (!t) {
       setAdmin(null);
@@ -33,19 +46,16 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       logout();
     }
-  }
+  }, [logout]);
 
-  async function loginWithToken(t: string) {
-    setAdminToken(t);
-    setTokenState(t);
-    await refreshAdmin();
-  }
-
-  function logout() {
-    clearAdminToken();
-    setTokenState(null);
-    setAdmin(null);
-  }
+  const loginWithToken = useCallback(
+    async (t: string) => {
+      setAdminToken(t);
+      setTokenState(t);
+      await refreshAdmin();
+    },
+    [refreshAdmin],
+  );
 
   useEffect(() => {
     const t = getAdminToken();
@@ -57,12 +67,11 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     refreshAdmin()
       .catch(() => logout())
       .finally(() => setLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [logout, refreshAdmin]);
 
   const value = useMemo<AdminAuthState>(
     () => ({ token, admin, loading, loginWithToken, logout, refreshAdmin }),
-    [token, admin, loading]
+    [token, admin, loading, loginWithToken, logout, refreshAdmin],
   );
 
   return <AdminCtx.Provider value={value}>{children}</AdminCtx.Provider>;
@@ -88,7 +97,9 @@ export function RequireAdmin({ children }: { children: React.ReactNode }) {
   }
 
   if (!token) {
-    return <Navigate to="/admin/login" replace state={{ from: loc.pathname }} />;
+    return (
+      <Navigate to="/admin/login" replace state={{ from: loc.pathname }} />
+    );
   }
 
   return <>{children}</>;

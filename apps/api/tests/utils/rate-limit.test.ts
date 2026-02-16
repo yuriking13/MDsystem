@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 
 // Тестируем in-memory rate limiter (без Redis)
 describe("Rate Limiter - Memory fallback", () => {

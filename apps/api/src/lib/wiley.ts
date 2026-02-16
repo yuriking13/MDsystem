@@ -32,6 +32,32 @@ export type WileySearchResult = {
   items: WileyArticle[];
 };
 
+type CrossRefAuthor = {
+  family?: string;
+  given?: string;
+};
+
+type CrossRefItem = {
+  DOI?: string;
+  URL?: string;
+  author?: CrossRefAuthor[];
+  title?: string[] | string;
+  abstract?: string;
+  published?: {
+    "date-parts"?: Array<Array<string | number>>;
+  };
+  "container-title"?: string[];
+};
+
+type CrossRefMessage = {
+  items?: CrossRefItem[];
+  "total-results"?: number;
+};
+
+type CrossRefResponse = {
+  message?: CrossRefMessage;
+};
+
 /**
  * Search Wiley articles via CrossRef API
  * CrossRef member ID for Wiley: 311
@@ -81,15 +107,15 @@ export async function wileySearch(args: {
       throw new Error(`CrossRef API error: HTTP ${response.status}`);
     }
 
-    const data: any = await response.json();
+    const data = (await response.json()) as CrossRefResponse;
     const message = data.message || {};
 
-    const items: WileyArticle[] = (message.items || []).map((item: any) => {
+    const items: WileyArticle[] = (message.items || []).map((item) => {
       // Extract authors
       let authors = "";
       if (Array.isArray(item.author)) {
         authors = item.author
-          .map((a: any) => `${a.family || ""} ${a.given?.[0] || ""}`.trim())
+          .map((a) => `${a.family || ""} ${a.given?.[0] || ""}`.trim())
           .filter(Boolean)
           .join(", ");
       }
@@ -98,7 +124,7 @@ export async function wileySearch(args: {
       let year: number | undefined;
       const pubDate = item.published?.["date-parts"]?.[0];
       if (Array.isArray(pubDate) && pubDate[0]) {
-        year = parseInt(pubDate[0], 10);
+        year = parseInt(String(pubDate[0]), 10);
         if (isNaN(year)) year = undefined;
       }
 
@@ -144,8 +170,8 @@ export async function wileySearch(args: {
       total: message["total-results"] || 0,
       items,
     };
-  } catch (error: any) {
-    log.error("Search error", error as Error);
+  } catch (error) {
+    log.error("Search error", error);
     throw error;
   }
 }

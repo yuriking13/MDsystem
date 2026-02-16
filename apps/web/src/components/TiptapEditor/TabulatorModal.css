@@ -23,6 +23,64 @@
   flex-wrap: wrap;
 }
 
+.tabulator-row-height-controls {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.15);
+}
+
+.tabulator-row-height-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+.tabulator-row-height-selected-label {
+  font-size: 12px;
+  color: #3b82f6;
+  font-weight: 600;
+}
+
+.tabulator-row-height-input {
+  padding: 4px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13px;
+  width: 80px;
+}
+
+.tabulator-row-height-unit {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.tabulator-row-height-range {
+  width: 120px;
+}
+
+.tabulator-row-height-hint {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.tabulator-row-height-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.tabulator-row-height-footnote {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 8px;
+}
+
 /* Highlight row number column */
 .tabulator-container .row-number-col {
   color: #94a3b8;
@@ -34,4 +92,13 @@
 /* Selected row styling */
 .tabulator-container .tabulator-row:hover {
   background: rgba(59, 130, 246, 0.04) !important;
+}
+
+.tabulator-container .tabulator-row-clickable {
+  cursor: pointer;
+}
+
+.tabulator-container .tabulator-row-selected-outline {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
 }

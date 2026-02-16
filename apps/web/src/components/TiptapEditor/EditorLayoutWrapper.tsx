@@ -136,13 +136,10 @@ export default function EditorLayoutWrapper({
         )}
 
         {/* Center: Editor */}
-        <main
-          className="flex-1 flex flex-col min-w-0 overflow-hidden"
-          style={{ background: "var(--bg-primary)" }}
-        >
+        <main className="flex-1 flex flex-col min-w-0 overflow-hidden editor-layout-main">
           {/* Toggle buttons when sidebars are hidden */}
           {(!showOutline || !showBibliography) && (
-            <div className="editor-header" style={{ padding: "4px 12px" }}>
+            <div className="editor-header editor-layout-toggle-row">
               {/* Left toggle (outline) */}
               {!showOutline ? (
                 <button

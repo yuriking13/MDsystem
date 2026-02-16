@@ -475,7 +475,10 @@ const citationsPlugin: FastifyPluginAsync = async (fastify) => {
         if (!citationsByDedupeKey.has(key)) {
           citationsByDedupeKey.set(key, []);
         }
-        citationsByDedupeKey.get(key)!.push(row);
+        const citationsForKey = citationsByDedupeKey.get(key);
+        if (citationsForKey) {
+          citationsForKey.push(row);
+        }
       }
 
       for (const [, citations] of citationsByDedupeKey) {

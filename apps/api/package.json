@@ -11,8 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint": "eslint . --ext .ts --max-warnings 0",
+    "lint:fix": "eslint . --ext .ts --fix --max-warnings 0",
     "prisma": "prisma",
     "generate": "prisma generate",
     "migrate:deploy": "prisma migrate deploy"

@@ -1,4 +1,5 @@
-import TableHeader from '@tiptap/extension-table-header';
+import TableHeader from "@tiptap/extension-table-header";
+import { getInlineStyleValue } from "./inlineStyleUtils";
 
 export const CustomTableHeader = TableHeader.extend({
   addAttributes() {
@@ -7,7 +8,11 @@ export const CustomTableHeader = TableHeader.extend({
       backgroundColor: {
         default: null,
         parseHTML: (element) => {
-          return element.style.backgroundColor || element.getAttribute('data-bgcolor') || null;
+          return (
+            getInlineStyleValue(element, "background-color") ||
+            element.getAttribute("data-bgcolor") ||
+            null
+          );
         },
         renderHTML: (attributes) => {
           return {};
@@ -15,14 +20,14 @@ export const CustomTableHeader = TableHeader.extend({
       },
       textAlign: {
         default: null,
-        parseHTML: (element) => element.style.textAlign || null,
+        parseHTML: (element) => getInlineStyleValue(element, "text-align"),
         renderHTML: (attributes) => {
           return {};
         },
       },
       verticalAlign: {
         default: null,
-        parseHTML: (element) => element.style.verticalAlign || null,
+        parseHTML: (element) => getInlineStyleValue(element, "vertical-align"),
         renderHTML: (attributes) => {
           return {};
         },
@@ -40,20 +45,22 @@ export const CustomTableHeader = TableHeader.extend({
     if (attrs.backgroundColor) {
       styleParts.push(`background-color: ${attrs.backgroundColor}`);
     }
-    if (attrs.textAlign && attrs.textAlign !== 'left') {
+    if (attrs.textAlign && attrs.textAlign !== "left") {
       styleParts.push(`text-align: ${attrs.textAlign}`);
     }
-    if (attrs.verticalAlign && attrs.verticalAlign !== 'top') {
+    if (attrs.verticalAlign && attrs.verticalAlign !== "top") {
       styleParts.push(`vertical-align: ${attrs.verticalAlign}`);
     }
 
-    const mergedAttrs: Record<string, any> = {
+    const mergedAttrs: Record<string, unknown> = {
       ...HTMLAttributes,
-      ...(styleParts.length ? { style: styleParts.join('; ') } : {}),
-      ...(attrs.backgroundColor ? { 'data-bgcolor': attrs.backgroundColor } : {}),
+      ...(styleParts.length ? { style: styleParts.join("; ") } : {}),
+      ...(attrs.backgroundColor
+        ? { "data-bgcolor": attrs.backgroundColor }
+        : {}),
     };
 
-    return ['th', mergedAttrs, 0];
+    return ["th", mergedAttrs, 0];
   },
 });
 

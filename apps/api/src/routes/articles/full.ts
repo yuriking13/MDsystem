@@ -14,6 +14,8 @@ import {
   hasAnyStats,
   calculateStatsQuality,
   detectStatsParallel,
+  type AIStatsResult,
+  type ExtractedStats,
 } from "../../lib/stats.js";
 import {
   translateArticlesParallel,
@@ -110,6 +112,39 @@ const AddArticleByDoiSchema = z.object({
   doi: z.string().trim().min(1).max(500),
   status: z.enum(["candidate", "selected"]).optional().default("candidate"),
 });
+
+type ProjectArticlesQuery = {
+  status?: string;
+  hasStats?: string;
+  sourceQuery?: string;
+};
+
+type ProjectArticlesListResponse = {
+  articles: unknown[];
+  searchQueries: string[];
+  counts: Record<string, number>;
+  total: number | null;
+};
+
+type GraphAiAssistantParsed = {
+  response: string;
+  foundArticleIds: string[];
+  foundArticlesInfo: Array<{
+    id: string;
+    reason?: string;
+  }>;
+};
+
+type ArticlesAiAssistantParsed = {
+  response: string;
+  suggestedArticleIds: string[];
+  suggestedArticlesInfo: Array<{
+    id: string;
+    reason?: string;
+    relevanceScore?: number;
+  }>;
+  summary?: unknown;
+};
 
 // Получить API ключ пользователя для провайдера
 async function getUserApiKey(
@@ -722,7 +757,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const processedDois = new Set<string>();
       let skipped = 0;
 
-      const sourceResults: Record<string, { count: number; added: number }> = {};
+      const sourceResults: Record<string, { count: number; added: number }> =
+        {};
 
       // ============ PUBMED SEARCH ============
       if (sources.includes("pubmed")) {
@@ -733,7 +769,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           for (const pubType of searchPubTypes) {
             const typeFilters = { ...filters, publicationTypes: [pubType] };
             try {
-              const maxForType = Math.ceil(maxPerSource / searchPubTypes.length);
+              const maxForType = Math.ceil(
+                maxPerSource / searchPubTypes.length,
+              );
               const { count, items } = await pubmedFetchAll({
                 apiKey: apiKey || undefined,
                 topic: bodyP.data.query,
@@ -750,7 +788,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 if (!pmid || processedPmids.has(pmid)) continue;
                 processedPmids.add(pmid);
                 if (article.doi) processedDois.add(article.doi.toLowerCase());
-                if (existingPmidsInProject.has(pmid)) { skipped++; continue; }
+                if (existingPmidsInProject.has(pmid)) {
+                  skipped++;
+                  continue;
+                }
 
                 collectedArticles.push({
                   pmid: article.pmid,
@@ -767,7 +808,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 });
               }
             } catch (err) {
-              log.error("Error searching PubMed", err instanceof Error ? err : new Error(String(err)), { pubType });
+              log.error(
+                "Error searching PubMed",
+                err instanceof Error ? err : new Error(String(err)),
+                { pubType },
+              );
             }
           }
         } else {
@@ -791,7 +836,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               if (pmid) {
                 if (processedPmids.has(pmid)) continue;
                 processedPmids.add(pmid);
-                if (existingPmidsInProject.has(pmid)) { skipped++; continue; }
+                if (existingPmidsInProject.has(pmid)) {
+                  skipped++;
+                  continue;
+                }
               }
               if (article.doi) processedDois.add(article.doi.toLowerCase());
 
@@ -806,11 +854,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 url: article.url,
                 studyTypes: article.studyTypes,
                 source: "pubmed",
-                pubType: searchPubTypes.length === 1 ? searchPubTypes[0] : undefined,
+                pubType:
+                  searchPubTypes.length === 1 ? searchPubTypes[0] : undefined,
               });
             }
           } catch (err) {
-            log.error("Error searching PubMed", err instanceof Error ? err : new Error(String(err)));
+            log.error(
+              "Error searching PubMed",
+              err instanceof Error ? err : new Error(String(err)),
+            );
           }
         }
       }
@@ -822,8 +874,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
         try {
           const doajFilters = {
-            publishedFrom: bodyP.data.filters?.yearFrom ? `${bodyP.data.filters.yearFrom}-01-01` : undefined,
-            publishedTo: bodyP.data.filters?.yearTo ? `${bodyP.data.filters.yearTo}-12-31` : undefined,
+            publishedFrom: bodyP.data.filters?.yearFrom
+              ? `${bodyP.data.filters.yearFrom}-01-01`
+              : undefined,
+            publishedTo: bodyP.data.filters?.yearTo
+              ? `${bodyP.data.filters.yearTo}-12-31`
+              : undefined,
           };
           const { count, items } = await doajFetchAll({
             topic: bodyP.data.query,
@@ -837,7 +893,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
           for (const article of items) {
             const doi = article.doi?.toLowerCase();
-            if (doi && (processedDois.has(doi) || existingDoisInProject.has(doi))) { skipped++; continue; }
+            if (
+              doi &&
+              (processedDois.has(doi) || existingDoisInProject.has(doi))
+            ) {
+              skipped++;
+              continue;
+            }
             if (doi) processedDois.add(doi);
 
             collectedArticles.push({
@@ -845,7 +907,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             });
           }
         } catch (err) {
-          log.error("Error searching DOAJ", err instanceof Error ? err : new Error(String(err)));
+          log.error(
+            "Error searching DOAJ",
+            err instanceof Error ? err : new Error(String(err)),
+          );
         }
       }
 
@@ -856,8 +921,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
         try {
           const wileyFilters = {
-            publishedFrom: bodyP.data.filters?.yearFrom ? `${bodyP.data.filters.yearFrom}-01-01` : undefined,
-            publishedTo: bodyP.data.filters?.yearTo ? `${bodyP.data.filters.yearTo}-12-31` : undefined,
+            publishedFrom: bodyP.data.filters?.yearFrom
+              ? `${bodyP.data.filters.yearFrom}-01-01`
+              : undefined,
+            publishedTo: bodyP.data.filters?.yearTo
+              ? `${bodyP.data.filters.yearTo}-12-31`
+              : undefined,
           };
           const { count, items } = await wileyFetchAll({
             topic: bodyP.data.query,
@@ -871,7 +940,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
           for (const article of items) {
             const doi = article.doi?.toLowerCase();
-            if (doi && (processedDois.has(doi) || existingDoisInProject.has(doi))) { skipped++; continue; }
+            if (
+              doi &&
+              (processedDois.has(doi) || existingDoisInProject.has(doi))
+            ) {
+              skipped++;
+              continue;
+            }
             if (doi) processedDois.add(doi);
 
             collectedArticles.push({
@@ -879,7 +954,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             });
           }
         } catch (err) {
-          log.error("Error searching Wiley", err instanceof Error ? err : new Error(String(err)));
+          log.error(
+            "Error searching Wiley",
+            err instanceof Error ? err : new Error(String(err)),
+          );
         }
       }
 
@@ -922,7 +1000,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             removed: relevanceFiltered,
           });
         } catch (err) {
-          log.error("AI relevance filter error", err instanceof Error ? err : new Error(String(err)));
+          log.error(
+            "AI relevance filter error",
+            err instanceof Error ? err : new Error(String(err)),
+          );
           // On error, keep all articles
           articlesToSave = collectedArticles;
         }
@@ -966,7 +1047,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
           articleIds.push(articleId);
 
-          const sourceTag = article.source !== "pubmed" ? ` [${article.source.toUpperCase()}]` : "";
+          const sourceTag =
+            article.source !== "pubmed"
+              ? ` [${article.source.toUpperCase()}]`
+              : "";
           const wasAdded = await addArticleToProject(
             projectId,
             articleId,
@@ -980,17 +1064,24 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             if (sourceResults[srcKey]) sourceResults[srcKey].added++;
             newArticleIds.push(articleId);
             if (article.pmid) existingPmidsInProject.add(article.pmid);
-            if (article.doi) existingDoisInProject.add(article.doi.toLowerCase());
+            if (article.doi)
+              existingDoisInProject.add(article.doi.toLowerCase());
           } else {
             skipped++;
           }
         } catch (err) {
-          log.error("Error saving article", err instanceof Error ? err : new Error(String(err)));
+          log.error(
+            "Error saving article",
+            err instanceof Error ? err : new Error(String(err)),
+          );
         }
 
         // Send progress every 50 articles
         if ((i + 1) % 50 === 0 || i === articlesToSave.length - 1) {
-          sendProgress("saving", { total: articlesToSave.length, saved: added });
+          sendProgress("saving", {
+            total: articlesToSave.length,
+            saved: added,
+          });
         }
       }
 
@@ -1013,7 +1104,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         );
         if (toEnrich.rows.length > 0) {
           try {
-            const result = await enrichArticlesByDOIBatch(toEnrich.rows, { parallelCount: 3 });
+            const result = await enrichArticlesByDOIBatch(toEnrich.rows, {
+              parallelCount: 3,
+            });
             enriched = result.enriched;
             for (const [articleId, data] of result.results) {
               try {
@@ -1022,11 +1115,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                   [JSON.stringify({ crossref: data }), articleId],
                 );
               } catch (err) {
-                log.error("Crossref update error", err instanceof Error ? err : new Error(String(err)));
+                log.error(
+                  "Crossref update error",
+                  err instanceof Error ? err : new Error(String(err)),
+                );
               }
             }
           } catch (err) {
-            log.error("Crossref enrichment error", err instanceof Error ? err : new Error(String(err)));
+            log.error(
+              "Crossref enrichment error",
+              err instanceof Error ? err : new Error(String(err)),
+            );
           }
         }
       }
@@ -1034,7 +1133,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // Перевод с верификацией
       let translated = 0;
       if (shouldTranslate && newArticleIds.length > 0 && openrouterKey) {
-        sendProgress("translating", { total: newArticleIds.length, translated: 0 });
+        sendProgress("translating", {
+          total: newArticleIds.length,
+          translated: 0,
+        });
 
         const toTranslate = await pool.query(
           `SELECT id, title_en, abstract_en FROM articles 
@@ -1047,12 +1149,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             const TR_BATCH = 5;
             for (let i = 0; i < toTranslate.rows.length; i += TR_BATCH) {
               const batch = toTranslate.rows.slice(i, i + TR_BATCH);
-              const { results } = await translateArticlesBatchOptimized(openrouterKey, batch);
+              const { results } = await translateArticlesBatchOptimized(
+                openrouterKey,
+                batch,
+              );
 
               for (const [articleId, tr] of results) {
                 // Верификация перевода: проверяем что перевод — действительно перевод, а не ошибка AI
-                const originalTitle = batch.find((b: { id: string }) => b.id === articleId)?.title_en || "";
-                const verifiedTitle = tr.title_ru ? await verifyTranslation(openrouterKey, originalTitle, tr.title_ru) : null;
+                const originalTitle =
+                  batch.find((b: { id: string }) => b.id === articleId)
+                    ?.title_en || "";
+                const verifiedTitle = tr.title_ru
+                  ? await verifyTranslation(
+                      openrouterKey,
+                      originalTitle,
+                      tr.title_ru,
+                    )
+                  : null;
                 const verifiedAbstract = tr.abstract_ru || null;
 
                 if (verifiedTitle || verifiedAbstract) {
@@ -1083,7 +1196,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let statsFound = 0;
       const shouldDetectStats = bodyP.data.filters?.detectStats;
       if (shouldDetectStats && newArticleIds.length > 0 && openrouterKey) {
-        sendProgress("detecting_stats", { total: newArticleIds.length, analyzed: 0, found: 0 });
+        sendProgress("detecting_stats", {
+          total: newArticleIds.length,
+          analyzed: 0,
+          found: 0,
+        });
 
         const toAnalyze = await pool.query(
           `SELECT id, abstract_en, abstract_ru FROM articles 
@@ -1095,10 +1212,16 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
         if (toAnalyze.rows.length > 0) {
           try {
-            const articlesForStats = toAnalyze.rows.map((r: { id: string; abstract_en?: string; abstract_ru?: string }) => ({
-              id: r.id,
-              abstract: r.abstract_en || r.abstract_ru || "",
-            }));
+            const articlesForStats = toAnalyze.rows.map(
+              (r: {
+                id: string;
+                abstract_en?: string;
+                abstract_ru?: string;
+              }) => ({
+                id: r.id,
+                abstract: r.abstract_en || r.abstract_ru || "",
+              }),
+            );
 
             // Первый проход: regex + AI
             const firstPass = await detectStatsParallel({
@@ -1110,7 +1233,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
             // Второй проход: повторная AI проверка для статей, где результаты первого прохода неоднозначны
             // (regex нашёл, а AI нет, или наоборот)
-            const secondPassArticles: Array<{ id: string; abstract: string }> = [];
+            const secondPassArticles: Array<{ id: string; abstract: string }> =
+              [];
             for (const article of articlesForStats) {
               const firstResult = firstPass.results.get(article.id);
               if (!firstResult) continue;
@@ -1124,9 +1248,19 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               }
             }
 
-            let secondPassResults: Map<string, { hasStats: boolean; quality: number; stats: any; aiStats?: any }> = new Map();
+            let secondPassResults: Map<
+              string,
+              {
+                hasStats: boolean;
+                quality: number;
+                stats: ExtractedStats;
+                aiStats?: AIStatsResult;
+              }
+            > = new Map();
             if (secondPassArticles.length > 0) {
-              log.info(`Double-check stats for ${secondPassArticles.length} ambiguous articles`);
+              log.info(
+                `Double-check stats for ${secondPassArticles.length} ambiguous articles`,
+              );
               const secondPass = await detectStatsParallel({
                 articles: secondPassArticles,
                 openrouterKey,
@@ -1151,10 +1285,19 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
                 if (secondResult !== undefined) {
                   // Двойная проверка: если хотя бы 2 из 3 говорят "да" — есть статистика
-                  const votes = [regexFound, aiFound1, aiFound2 || false].filter(Boolean).length;
+                  const votes = [
+                    regexFound,
+                    aiFound1,
+                    aiFound2 || false,
+                  ].filter(Boolean).length;
                   finalHasStats = votes >= 2;
-                  finalQuality = Math.max(firstResult.quality, secondResult?.quality || 0);
-                  confidence = finalHasStats ? "double_confirmed" : "double_denied";
+                  finalQuality = Math.max(
+                    firstResult.quality,
+                    secondResult?.quality || 0,
+                  );
+                  confidence = finalHasStats
+                    ? "double_confirmed"
+                    : "double_denied";
                 } else {
                   finalHasStats = regexFound || aiFound1;
                   confidence = "single";
@@ -1175,14 +1318,28 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                       stats_quality = GREATEST(COALESCE(stats_quality, 0), $1),
                       stats_json = COALESCE(stats_json, '{}'::jsonb) || $2::jsonb
                      WHERE id = $3`,
-                    [finalQuality, JSON.stringify({ ai: combinedAiStats }), articleId],
+                    [
+                      finalQuality,
+                      JSON.stringify({ ai: combinedAiStats }),
+                      articleId,
+                    ],
                   );
                 } else {
                   await pool.query(
                     `UPDATE articles SET 
                       stats_json = COALESCE(stats_json, '{}'::jsonb) || $1::jsonb
                      WHERE id = $2`,
-                    [JSON.stringify({ ai: { hasStats: false, stats: [], confidence, doubleChecked: secondResult !== undefined } }), articleId],
+                    [
+                      JSON.stringify({
+                        ai: {
+                          hasStats: false,
+                          stats: [],
+                          confidence,
+                          doubleChecked: secondResult !== undefined,
+                        },
+                      }),
+                      articleId,
+                    ],
                   );
                 }
 
@@ -1204,7 +1361,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Обновляем updated_at проекта
-      await pool.query(`UPDATE projects SET updated_at = now() WHERE id = $1`, [projectId]);
+      await pool.query(`UPDATE projects SET updated_at = now() WHERE id = $1`, [
+        projectId,
+      ]);
 
       // Invalidate articles cache after adding new articles
       if (added > 0) {
@@ -1282,7 +1441,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Query params для фильтрации
-      const query = request.query as any;
+      const query = request.query as ProjectArticlesQuery;
       const status = query.status; // candidate, selected, excluded
       const hasStats = query.hasStats === "true";
       const sourceQuery = query.sourceQuery; // Фильтр по поисковому запросу
@@ -1296,7 +1455,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         : CACHE_KEYS.articles(paramsP.data.id);
 
       // Try cache first
-      const cached = await cacheGet<any>(cacheKey);
+      const cached = await cacheGet<ProjectArticlesListResponse>(cacheKey);
       if (cached) {
         return cached;
       }
@@ -1326,7 +1485,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         JOIN articles a ON a.id = pa.article_id
         WHERE pa.project_id = $1
       `;
-      const params: any[] = [paramsP.data.id];
+      const params: unknown[] = [paramsP.data.id];
       let paramIdx = 2;
 
       if (
@@ -1567,7 +1726,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         JOIN project_articles pa ON pa.article_id = a.id
         WHERE pa.project_id = $1
       `;
-      const params: any[] = [paramsP.data.id];
+      const params: unknown[] = [paramsP.data.id];
 
       if (bodyP.data.articleIds?.length) {
         sql += ` AND a.id = ANY($2)`;
@@ -1601,7 +1760,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       });
 
       // Функция отправки SSE события
-      const sendEvent = (event: string, data: any) => {
+      const sendEvent = (event: string, data: unknown) => {
         try {
           reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
         } catch (err) {
@@ -1769,7 +1928,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         JOIN project_articles pa ON pa.article_id = a.id
         WHERE pa.project_id = $1 AND a.doi IS NOT NULL
       `;
-      const params: any[] = [paramsP.data.id];
+      const params: unknown[] = [paramsP.data.id];
 
       if (bodyP.data.articleIds?.length) {
         sql += ` AND a.id = ANY($2)`;
@@ -1799,7 +1958,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       });
 
       // Функция отправки SSE события
-      const sendEvent = (event: string, data: any) => {
+      const sendEvent = (event: string, data: unknown) => {
         try {
           reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
         } catch (err) {
@@ -1942,7 +2101,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Подсчитываем ВСЕ статьи проекта и статьи с PMID отдельно
       let totalCountSql = `SELECT COUNT(*) as cnt FROM project_articles pa WHERE pa.project_id = $1`;
-      const totalCountParams: any[] = [paramsP.data.id];
+      const totalCountParams: unknown[] = [paramsP.data.id];
 
       if (selectedOnly) {
         totalCountSql += ` AND pa.status = 'selected'`;
@@ -1955,7 +2114,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let countSql = `SELECT COUNT(*) as cnt FROM articles a
          JOIN project_articles pa ON pa.article_id = a.id
          WHERE pa.project_id = $1 AND a.pmid IS NOT NULL`;
-      const countParams: any[] = [paramsP.data.id];
+      const countParams: unknown[] = [paramsP.data.id];
       let paramIdx = 2;
 
       if (selectedOnly) {
@@ -2475,7 +2634,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let wileyToken: string | undefined;
       try {
         wileyToken = (await getUserApiKey(userId, "wiley")) || undefined;
-      } catch (e) {
+      } catch {
         // Нет токена - не проблема
       }
 
@@ -2665,7 +2824,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       });
 
       // Функция отправки SSE события
-      const sendEvent = (event: string, data: any) => {
+      const sendEvent = (event: string, data: unknown) => {
         try {
           reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
         } catch (err) {
@@ -2712,11 +2871,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         // Сохраняем результаты в БД
         for (const [articleId, statsResult] of result.results) {
           try {
-            if (
-              statsResult.aiStats &&
-              statsResult.aiStats.stats &&
-              statsResult.aiStats.stats.length > 0
-            ) {
+            if ((statsResult.aiStats?.stats?.length ?? 0) > 0) {
               await pool.query(
                 `UPDATE articles SET 
                   has_stats = true,
@@ -2925,11 +3080,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           title_ru: result.title_ru || null,
           abstract_ru: result.abstract_ru || null,
         };
-      } catch (err: any) {
+      } catch (err) {
         log.error("Translation error:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Translation failed";
         return reply.code(500).send({
           ok: false,
-          error: err?.message || "Translation failed",
+          error: errorMessage,
         });
       }
     },
@@ -3016,15 +3173,23 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Отладка: что пришло в body
-      const rawBody = request.body as any;
+      const rawBody = request.body as Record<string, unknown> | null;
       log.debug(
         `AI Assistant raw body keys: ${Object.keys(rawBody || {}).join(", ")}`,
       );
       log.debug(
-        `AI Assistant raw graphArticles length: ${rawBody?.graphArticles?.length}`,
+        `AI Assistant raw graphArticles length: ${
+          Array.isArray(rawBody?.graphArticles)
+            ? rawBody.graphArticles.length
+            : 0
+        }`,
       );
       log.debug(
-        `AI Assistant raw message: ${rawBody?.message?.substring(0, 50)}`,
+        `AI Assistant raw message: ${
+          typeof rawBody?.message === "string"
+            ? rawBody.message.substring(0, 50)
+            : ""
+        }`,
       );
 
       const bodyP = GraphAIAssistantSchema.safeParse(request.body);
@@ -3332,7 +3497,7 @@ ${articlesForAI || "Нет статей с полными данными для 
         const content = data.choices?.[0]?.message?.content || "";
 
         // Парсим JSON из ответа
-        let parsed: any = {
+        let parsed: GraphAiAssistantParsed = {
           response: content,
           foundArticleIds: [],
           foundArticlesInfo: [],
@@ -3340,7 +3505,7 @@ ${articlesForAI || "Нет статей с полными данными для 
         try {
           const jsonMatch = content.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]);
+            parsed = JSON.parse(jsonMatch[0]) as GraphAiAssistantParsed;
           }
         } catch {
           // Если не удалось распарсить - возвращаем как текст
@@ -3364,7 +3529,7 @@ ${articlesForAI || "Нет статей с полными данными для 
         const foundArticles = validatedFoundIds.map((id: string) => {
           const article = foundArticlesMap.get(id);
           const info = (parsed.foundArticlesInfo || []).find(
-            (i: any) => i.id === id,
+            (i) => i.id === id,
           );
           return {
             id,
@@ -3393,11 +3558,13 @@ ${articlesForAI || "Нет статей с полными данными для 
             articlesWithData: articlesWithData.length,
           },
         };
-      } catch (err: any) {
+      } catch (err) {
         log.error("Graph AI Assistant error:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "AI Assistant error";
         return reply.code(500).send({
           ok: false,
-          error: err?.message || "AI Assistant error",
+          error: errorMessage,
         });
       }
     },
@@ -3410,7 +3577,9 @@ ${articlesForAI || "Нет статей с полными данными для 
 
   const ArticlesAIAssistantSchema = z.object({
     message: z.string().min(1).max(2000),
-    status: z.enum(["candidate", "selected", "excluded", "all"]).default("candidate"),
+    status: z
+      .enum(["candidate", "selected", "excluded", "all"])
+      .default("candidate"),
     maxSuggestions: z.number().int().min(1).max(50).default(10),
   });
 
@@ -3486,7 +3655,8 @@ ${articlesForAI || "Нет статей с полными данными для 
         if (articles.length === 0) {
           return {
             ok: true,
-            response: "В базе нет статей для анализа. Сначала найдите и добавьте статьи через поиск.",
+            response:
+              "В базе нет статей для анализа. Сначала найдите и добавьте статьи через поиск.",
             suggestedArticles: [],
             totalAnalyzed: 0,
           };
@@ -3531,7 +3701,9 @@ ${articlesForAI || "Нет статей с полными данными для 
               a.publication_types && a.publication_types.length > 0
                 ? `Типы: ${a.publication_types.join(", ")}`
                 : null,
-              a.has_stats ? `Статистика: Да (качество: ${a.stats_quality || 0}/3)` : null,
+              a.has_stats
+                ? `Статистика: Да (качество: ${a.stats_quality || 0}/3)`
+                : null,
               a.stats_json
                 ? `Данные статистики: ${JSON.stringify(a.stats_json).substring(0, 300)}`
                 : null,
@@ -3565,8 +3737,12 @@ ${project?.research_subtype ? `Подтип: ${project.research_subtype}` : ""}
 ═══════════════════════════════════════════════════
 
 Всего статей: ${articles.length}
-Статусы: ${Object.entries(statusCounts).map(([k, v]) => `${k}: ${v}`).join(", ")}
-Источники: ${Object.entries(sourceCounts).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(", ")}
+Статусы: ${Object.entries(statusCounts)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join(", ")}
+Источники: ${Object.entries(sourceCounts)
+          .map(([k, v]) => `${k.toUpperCase()}: ${v}`)
+          .join(", ")}
 С абстрактом: ${withAbstract}
 Со статистикой: ${withStats}
 ${yearMin && yearMax ? `Годы публикаций: ${yearMin} - ${yearMax}` : ""}
@@ -3662,7 +3838,7 @@ ${articlesForAI}
         const content = data.choices?.[0]?.message?.content || "";
 
         // Парсим JSON из ответа
-        let parsed: any = {
+        let parsed: ArticlesAiAssistantParsed = {
           response: content,
           suggestedArticleIds: [],
           suggestedArticlesInfo: [],
@@ -3670,7 +3846,7 @@ ${articlesForAI}
         try {
           const jsonMatch = content.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]);
+            parsed = JSON.parse(jsonMatch[0]) as ArticlesAiAssistantParsed;
           }
         } catch {
           parsed = {
@@ -3681,17 +3857,17 @@ ${articlesForAI}
         }
 
         // Валидируем найденные ID
-        const validIds = new Set(articles.map((a: any) => a.id));
+        const validIds = new Set(articles.map((a) => a.id));
         const validatedIds = (parsed.suggestedArticleIds || []).filter(
           (id: string) => validIds.has(id),
         );
 
         // Собираем полную информацию о рекомендованных статьях
-        const articlesMap = new Map(articles.map((a: any) => [a.id, a]));
+        const articlesMap = new Map(articles.map((a) => [a.id, a]));
         const suggestedArticles = validatedIds.map((id: string) => {
           const article = articlesMap.get(id);
           const info = (parsed.suggestedArticlesInfo || []).find(
-            (i: any) => i.id === id,
+            (i) => i.id === id,
           );
           return {
             id,
@@ -3717,11 +3893,13 @@ ${articlesForAI}
           summary: parsed.summary || null,
           totalAnalyzed: articles.length,
         };
-      } catch (err: any) {
+      } catch (err) {
         log.error("Articles AI Assistant error:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "AI Assistant error";
         return reply.code(500).send({
           ok: false,
-          error: err?.message || "AI Assistant error",
+          error: errorMessage,
         });
       }
     },

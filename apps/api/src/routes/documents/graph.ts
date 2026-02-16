@@ -43,6 +43,65 @@ const UpdateDocumentSchema = z.object({
   orderIndex: z.number().int().min(0).optional(),
 });
 
+type DedupeArticleLike = {
+  id?: string;
+  article_id?: string;
+  pmid?: string | null;
+  doi?: string | null;
+  title_en?: string | null;
+  title_ru?: string | null;
+  authors?: string[] | string | null;
+  journal?: string | null;
+  year?: number | null;
+  volume?: string | null;
+  issue?: string | null;
+  pages?: string | null;
+};
+
+type GraphExportNode = {
+  id: string;
+  label?: string;
+  title?: string | null;
+  year?: number | null;
+  pmid?: string | null;
+  doi?: string | null;
+  citedByCount?: number | null;
+};
+
+type GraphExportLink = {
+  source: string;
+  target: string;
+};
+
+type GraphCacheRow = {
+  pmid: string;
+  title: string | null;
+  authors: string | null;
+  year: number | null;
+  doi: string | null;
+};
+
+type GraphArticleRow = {
+  id: string;
+  doi: string | null;
+  pmid: string | null;
+  title_en: string | null;
+  title_ru: string | null;
+  abstract_en: string | null;
+  abstract_ru: string | null;
+  authors: string[] | string | null;
+  year: number | null;
+  journal: string | null;
+  raw_json?: Record<string, unknown> | null;
+  reference_pmids?: string[] | string | null;
+  cited_by_pmids?: string[] | string | null;
+  reference_dois?: string[] | string | null;
+  crossref_cited_by_count?: number | null;
+  references_fetched_at?: Date | string | null;
+  stats_quality?: number | null;
+  source?: string | null;
+};
+
 // Проверка доступа к проекту
 async function checkProjectAccess(
   projectId: string,
@@ -237,7 +296,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       const updates: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
       let idx = 1;
 
       if (bodyP.data.title !== undefined) {
@@ -594,7 +653,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
         // Найти минимальный свободный sub_number (переиспользуем освободившиеся номера)
         const usedSubNumbers = new Set(
-          existingCitations.rows.map((r: any) => r.sub_number || 1),
+          existingCitations.rows.map(
+            (r) => (r as { sub_number?: number }).sub_number || 1,
+          ),
         );
         subNumber = 1;
         while (usedSubNumbers.has(subNumber)) {
@@ -608,7 +669,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           [paramsP.data.docId],
         );
         const usedNumbers = new Set(
-          usedInlineNumbers.rows.map((r: any) => r.inline_number),
+          usedInlineNumbers.rows.map(
+            (r) => (r as { inline_number: number }).inline_number,
+          ),
         );
         inlineNumber = 1;
         while (usedNumbers.has(inlineNumber)) {
@@ -710,7 +773,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       const updates: string[] = [];
-      const values: any[] = [];
+      const values: unknown[] = [];
       let idx = 1;
 
       if (bodyP.data.note !== undefined) {
@@ -930,7 +993,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       );
 
       // Создаём группы статей-дубликатов по ключу дедупликации (PMID > DOI > title)
-      const getDedupeKey = (row: any): string => {
+      const getDedupeKey = (row: DedupeArticleLike): string => {
         if (row.pmid) return `pmid:${row.pmid}`;
         if (row.doi) return `doi:${row.doi.toLowerCase()}`;
         if (row.title_en)
@@ -938,7 +1001,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             .toLowerCase()
             .replace(/[^\w\s]/g, "")
             .trim()}`;
-        return `id:${row.article_id}`;
+        return `id:${row.article_id || row.id || "unknown"}`;
       };
 
       // Группируем по ключу дедупликации, сохраняем порядок первого появления
@@ -971,13 +1034,19 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Перенумеровываем sub_number для каждой группы дедупликации
       // (группируем по ключу, а не по article_id)
-      const citationsByDedupeKey = new Map<string, any[]>();
+      const citationsByDedupeKey = new Map<
+        string,
+        Array<{ id: string; order_index: number }>
+      >();
       for (const row of citationsWithArticles.rows) {
         const key = getDedupeKey(row);
         if (!citationsByDedupeKey.has(key)) {
           citationsByDedupeKey.set(key, []);
         }
-        citationsByDedupeKey.get(key)!.push(row);
+        const citationGroup = citationsByDedupeKey.get(key);
+        if (citationGroup) {
+          citationGroup.push(row);
+        }
       }
 
       for (const [, citations] of citationsByDedupeKey) {
@@ -1141,7 +1210,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Функция для получения ключа дедупликации
       // Приоритет: PMID > базовый DOI (без версий) > нормализованный title
-      const getDedupeKey = (article: any): string => {
+      const getDedupeKey = (article: DedupeArticleLike): string => {
         if (article.pmid) {
           return `pmid:${article.pmid}`;
         }
@@ -1159,12 +1228,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           return `title:${normalizedTitle}`;
         }
         // Fallback на article_id
-        return `id:${article.id}`;
+        return `id:${article.id || article.article_id || "unknown"}`;
       };
 
       // Группируем статьи по ключу дедупликации
       // Сохраняем первое появление (по порядку документов и inline_number)
-      const dedupeKeyToArticle = new Map<string, any>(); // ключ -> данные статьи (первое появление)
+      const dedupeKeyToArticle = new Map<string, DedupeArticleLike>(); // ключ -> данные статьи (первое появление)
       const dedupeKeyOrder: string[] = []; // порядок первого появления ключей
       const articleIdToDedupeKey = new Map<string, string>(); // article_id -> ключ дедупликации
 
@@ -1188,14 +1257,25 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const dedupeKeyToNumber = new Map<string, number>(); // ключ дедупликации -> глобальный номер
 
       dedupeKeyOrder.forEach((dedupeKey, index) => {
-        const article = dedupeKeyToArticle.get(dedupeKey)!;
+        const article = dedupeKeyToArticle.get(dedupeKey);
+        if (!article) {
+          return;
+        }
         const globalNumber = index + 1;
         dedupeKeyToNumber.set(dedupeKey, globalNumber);
+        const normalizedAuthors = Array.isArray(article.authors)
+          ? article.authors
+          : article.authors
+            ? article.authors
+                .split(",")
+                .map((author) => author.trim())
+                .filter(Boolean)
+            : null;
 
         const bibArticle: BibliographyArticle = {
-          title_en: article.title_en,
+          title_en: article.title_en || "",
           title_ru: article.title_ru,
-          authors: article.authors,
+          authors: normalizedAuthors,
           journal: article.journal,
           year: article.year,
           volume: article.volume,
@@ -1207,7 +1287,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
         bibliography.push({
           number: globalNumber,
-          articleId: article.id,
+          articleId: article.id || article.article_id || dedupeKey,
           formatted: formatCitation(bibArticle, citationStyle),
         });
       });
@@ -1362,7 +1442,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Функция для получения ключа дедупликации
       // Приоритет: PMID > базовый DOI (без версий) > нормализованный title
-      const getDedupeKey = (article: any): string => {
+      const getDedupeKey = (article: DedupeArticleLike): string => {
         if (article.pmid) {
           return `pmid:${article.pmid}`;
         }
@@ -1380,11 +1460,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           return `title:${normalizedTitle}`;
         }
         // Fallback на article_id
-        return `id:${article.id}`;
+        return `id:${article.id || article.article_id || "unknown"}`;
       };
 
       // Группируем статьи по ключу дедупликации
-      const dedupeKeyToArticle = new Map<string, any>();
+      const dedupeKeyToArticle = new Map<string, DedupeArticleLike>();
       const dedupeKeyOrder: string[] = [];
 
       for (const citation of allCitationsRes.rows) {
@@ -1398,12 +1478,30 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Создаём библиографию из уникальных источников
       const bibliography = dedupeKeyOrder.map((dedupeKey, index) => {
-        const article = dedupeKeyToArticle.get(dedupeKey)!;
+        const article = dedupeKeyToArticle.get(dedupeKey);
+        if (!article) {
+          return {
+            number: index + 1,
+            articleId: dedupeKey,
+            formatted: "",
+            raw: {
+              title_en: "",
+            } as BibliographyArticle,
+          };
+        }
+        const normalizedAuthors = Array.isArray(article.authors)
+          ? article.authors
+          : article.authors
+            ? article.authors
+                .split(",")
+                .map((author) => author.trim())
+                .filter(Boolean)
+            : null;
 
         const bibArticle: BibliographyArticle = {
-          title_en: article.title_en,
+          title_en: article.title_en || "",
           title_ru: article.title_ru,
-          authors: article.authors,
+          authors: normalizedAuthors,
           journal: article.journal,
           year: article.year,
           volume: article.volume,
@@ -1415,7 +1513,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
         return {
           number: index + 1,
-          articleId: article.id,
+          articleId: article.id || article.article_id || dedupeKey,
           formatted: formatCitation(bibArticle, citationStyle as CitationStyle),
           raw: bibArticle,
         };
@@ -1493,7 +1591,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       );
 
       // Try cache first (citation graph is expensive to compute)
-      const cached = await cacheGet<any>(cacheKey);
+      const cached = await cacheGet<unknown>(cacheKey);
       if (cached) {
         return cached;
       }
@@ -1645,7 +1743,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             if (!yearGroups.has(yearGroup)) {
               yearGroups.set(yearGroup, []);
             }
-            yearGroups.get(yearGroup)!.push(node);
+            const group = yearGroups.get(yearGroup);
+            if (group) {
+              group.push(node);
+            }
           }
 
           for (const [period, nodes] of yearGroups) {
@@ -1685,7 +1786,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             if (!journalGroups.has(journal)) {
               journalGroups.set(journal, []);
             }
-            journalGroups.get(journal)!.push(node);
+            const group = journalGroups.get(journal);
+            if (group) {
+              group.push(node);
+            }
           }
 
           for (const [journal, nodes] of journalGroups) {
@@ -1776,7 +1880,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Условие по source_query
       let sourceQueryCondition = "";
-      const queryParams: any[] = [paramsP.data.projectId];
+      const queryParams: unknown[] = [paramsP.data.projectId];
       let paramIdx = 2;
       if (hasSourceQueryCol && sourceQueries.length > 0) {
         queryParams.push(sourceQueries);
@@ -1981,9 +2085,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         []; // cited_by -> наши статьи
 
       // Массивы для сохранения статей для дальнейшей обработки связей
-      let level0Articles: any[] = []; // cited_by
-      let level2Articles: any[] = [];
-      let level3Articles: any[] = [];
+      let level0Articles: GraphArticleRow[] = []; // cited_by
+      let level2Articles: GraphArticleRow[] = [];
+      let level3Articles: GraphArticleRow[] = [];
 
       // Счётчики для статистики (объявляем здесь для доступа в результате)
       let allCitedByCollected: string[] = [];
@@ -2218,7 +2322,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Загружаем статьи уровня 2 (references) - сначала ищем в БД
-      const level2InDb = new Map<string, any>(); // pmid -> article data
+      const level2InDb = new Map<string, GraphArticleRow>(); // pmid -> article data
       const level2NotInDb = new Set<string>(); // PMIDs не в БД
 
       // Подсчёт добавленных ДОПОЛНИТЕЛЬНЫХ узлов (уровни 0, 2, 3)
@@ -2234,7 +2338,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         // Строим условия фильтрации для уровня 2
         let level2YearCondition = "";
         let level2StatsCondition = "";
-        const level2Params: any[] = [level2PmidsArr];
+        const level2Params: unknown[] = [level2PmidsArr];
         let level2ParamIdx = 2;
 
         if (yearFrom !== undefined && !isNaN(yearFrom)) {
@@ -2343,7 +2447,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               )
             : { rows: [] };
 
-        const graphCacheByPmid = new Map<string, any>();
+        const graphCacheByPmid = new Map<string, GraphCacheRow>();
         for (const row of graphCacheRes.rows) {
           graphCacheByPmid.set(row.pmid, row);
         }
@@ -2377,7 +2481,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             title_ru: null,
             abstract: null,
             abstract_ru: null,
-            authors,
+            authors: authors || null,
             journal: null,
             year,
             status: "reference",
@@ -2394,7 +2498,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Загружаем статьи уровня 2 по DOI (для DOAJ/Wiley ссылок через Crossref)
-      const level2DoiInDb = new Map<string, any>(); // doi -> article data
+      const level2DoiInDb = new Map<string, GraphArticleRow>(); // doi -> article data
       const level2DoiNotInDb = new Set<string>(); // DOIs не в БД
 
       if (depth >= 2 && level2Dois.size > 0 && canAddMore()) {
@@ -2519,7 +2623,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // Загружаем статьи уровня 0 (citing articles - те кто цитирует нас) - сначала ищем в БД
-      const level0InDb = new Map<string, any>(); // pmid -> article data
+      const level0InDb = new Map<string, GraphArticleRow>(); // pmid -> article data
       const level0NotInDb = new Set<string>(); // PMIDs не в БД
 
       log.debug("Level 0 check", {
@@ -2539,7 +2643,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         // Строим условия фильтрации для уровня 0
         let level0YearCondition = "";
         let level0StatsCondition = "";
-        const level0Params: any[] = [level0PmidsArr];
+        const level0Params: unknown[] = [level0PmidsArr];
         let level0ParamIdx = 2;
 
         if (yearFrom !== undefined && !isNaN(yearFrom)) {
@@ -2648,7 +2752,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               )
             : { rows: [] };
 
-        const graphCacheL0ByPmid = new Map<string, any>();
+        const graphCacheL0ByPmid = new Map<string, GraphCacheRow>();
         for (const row of graphCacheL0Res.rows) {
           graphCacheL0ByPmid.set(row.pmid, row);
         }
@@ -2682,7 +2786,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             title_ru: null,
             abstract: null,
             abstract_ru: null,
-            authors,
+            authors: authors || null,
             journal: null,
             year,
             status: "citing",
@@ -2700,7 +2804,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // ===== УРОВЕНЬ 3: Статьи, которые тоже ссылаются на level 2 (связанные работы) =====
       // Это статьи, которые цитируют те же references что и мы - т.е. похожие исследования
-      const level3InDb = new Map<string, any>();
+      const level3InDb = new Map<string, GraphArticleRow>();
       const level3NotInDb = new Set<string>();
 
       log.debug("Level 3 check", {
@@ -2733,7 +2837,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           // Строим условия фильтрации для уровня 3
           let level3YearCondition = "";
           let level3StatsCondition = "";
-          const level3Params: any[] = [level3PmidsArr];
+          const level3Params: unknown[] = [level3PmidsArr];
           let level3ParamIdx = 2;
 
           if (yearFrom !== undefined && !isNaN(yearFrom)) {
@@ -2841,7 +2945,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 )
               : { rows: [] };
 
-          const graphCacheL3ByPmid = new Map<string, any>();
+          const graphCacheL3ByPmid = new Map<string, GraphCacheRow>();
           for (const row of graphCacheL3Res.rows) {
             graphCacheL3ByPmid.set(row.pmid, row);
           }
@@ -2875,7 +2979,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               title_ru: null,
               abstract: null,
               abstract_ru: null,
-              authors,
+              authors: authors || null,
               journal: null,
               year,
               status: "related",
@@ -3142,7 +3246,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
             // Анализируем abstract на p-value
             if (a.abstract) {
-              (n as any).abstract = a.abstract;
+              n.abstract = a.abstract;
               const stats = extractStats(a.abstract);
               const quality = calculateStatsQuality(stats);
               n.statsQuality = quality;
@@ -3226,7 +3330,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 .replace(/<[^>]*>/g, "")
                 .replace(/\s+/g, " ")
                 .trim();
-              (node as any).abstract = cleanAbstract;
+              node.abstract = cleanAbstract;
 
               const stats = extractStats(cleanAbstract);
               const quality = calculateStatsQuality(stats);
@@ -3425,7 +3529,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     userId: string,
     versionType: "manual" | "auto" | "exit" = "auto",
     versionNote?: string,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     // Get current document content
     const doc = await pool.query(
       `SELECT title, content FROM documents WHERE id = $1`,
@@ -3506,9 +3610,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         );
 
         return { versions: versions.rows };
-      } catch (e: any) {
+      } catch (e) {
         // Table doesn't exist yet
-        if (e.message?.includes("does not exist")) {
+        if (e instanceof Error && e.message?.includes("does not exist")) {
           return { versions: [], tableNotReady: true };
         }
         throw e;
@@ -3580,9 +3684,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         );
 
         return { version };
-      } catch (e: any) {
+      } catch (e) {
         // Table doesn't exist yet
-        if (e.message?.includes("does not exist")) {
+        if (e instanceof Error && e.message?.includes("does not exist")) {
           return reply.code(503).send({
             error: "Versioning not available yet",
             tableNotReady: true,
@@ -3695,9 +3799,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
 
         return { created: false };
-      } catch (e: any) {
+      } catch (e) {
         // Table doesn't exist
-        if (e.message?.includes("does not exist")) {
+        if (e instanceof Error && e.message?.includes("does not exist")) {
           return { created: false, tableNotReady: true };
         }
         throw e;
@@ -3844,7 +3948,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         description: string;
         priority: "high" | "medium" | "low";
         articleIds?: string[];
-        action?: any;
+        action?: unknown;
       }> = [];
 
       try {
@@ -4012,8 +4116,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 };
 
 // Helper функции для экспорта графа
-function generateGraphML(nodes: any[], links: any[]): string {
-  const escapeXml = (str: string) =>
+function generateGraphML(
+  nodes: GraphExportNode[],
+  links: GraphExportLink[],
+): string {
+  const escapeXml = (str?: string | null) =>
     str
       ?.replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -4054,8 +4161,11 @@ function generateGraphML(nodes: any[], links: any[]): string {
   return xml;
 }
 
-function generateGEXF(nodes: any[], links: any[]): string {
-  const escapeXml = (str: string) =>
+function generateGEXF(
+  nodes: GraphExportNode[],
+  links: GraphExportLink[],
+): string {
+  const escapeXml = (str?: string | null) =>
     str
       ?.replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")

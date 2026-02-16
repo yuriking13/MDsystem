@@ -100,6 +100,7 @@ export type UserDetailResponse = {
   user: UserListItem & {
     subscription_status: string;
     subscription_expires: string | null;
+    is_blocked?: boolean;
   };
   projects: UserProject[];
   recentActivity: UserActivitySummary[];
@@ -112,7 +113,7 @@ export type ActivityItem = {
   email: string;
   session_id: string;
   action_type: string;
-  action_detail: any;
+  action_detail: unknown;
   ip_address: string;
   user_agent: string;
   created_at: string;
@@ -161,7 +162,7 @@ export type ErrorLogItem = {
   user_email: string | null;
   request_path: string | null;
   request_method: string | null;
-  request_body: any;
+  request_body: unknown;
   ip_address: string;
   created_at: string;
   resolved: boolean;
@@ -185,7 +186,7 @@ export type AuditLogItem = {
   action: string;
   target_type: string | null;
   target_id: string | null;
-  details: any;
+  details: unknown;
   ip_address: string;
   created_at: string;
 };
@@ -224,7 +225,7 @@ export type SystemOverview = {
 export async function apiAdminLogin(
   email: string,
   password: string,
-  adminToken?: string
+  adminToken?: string,
 ): Promise<AdminAuthResponse> {
   return adminApiFetch<AdminAuthResponse>("/api/admin/login", {
     method: "POST",
@@ -237,10 +238,16 @@ export async function apiAdminMe(): Promise<{ user: AdminUser }> {
   return adminApiFetch<{ user: AdminUser }>("/api/admin/me");
 }
 
-export async function apiAdminGenerateToken(): Promise<{ token: string; message: string }> {
-  return adminApiFetch<{ token: string; message: string }>("/api/admin/generate-token", {
-    method: "POST",
-  });
+export async function apiAdminGenerateToken(): Promise<{
+  token: string;
+  message: string;
+}> {
+  return adminApiFetch<{ token: string; message: string }>(
+    "/api/admin/generate-token",
+    {
+      method: "POST",
+    },
+  );
 }
 
 export async function apiAdminStats(): Promise<AdminStats> {
@@ -251,7 +258,7 @@ export async function apiAdminStats(): Promise<AdminStats> {
 export async function apiAdminGetUsers(
   page = 1,
   limit = 20,
-  search?: string
+  search?: string,
 ): Promise<UsersListResponse> {
   const params = new URLSearchParams({
     page: String(page),
@@ -261,13 +268,15 @@ export async function apiAdminGetUsers(
   return adminApiFetch<UsersListResponse>(`/api/admin/users?${params}`);
 }
 
-export async function apiAdminGetUser(userId: string): Promise<UserDetailResponse> {
+export async function apiAdminGetUser(
+  userId: string,
+): Promise<UserDetailResponse> {
   return adminApiFetch<UserDetailResponse>(`/api/admin/users/${userId}`);
 }
 
 export async function apiAdminUpdateUserAdmin(
   userId: string,
-  isAdmin: boolean
+  isAdmin: boolean,
 ): Promise<{ ok: true }> {
   return adminApiFetch<{ ok: true }>(`/api/admin/users/${userId}/admin`, {
     method: "PATCH",
@@ -291,29 +300,35 @@ export async function apiAdminGetActivity(params: {
   if (params.actionType) urlParams.append("actionType", params.actionType);
   if (params.page) urlParams.append("page", String(params.page));
   if (params.limit) urlParams.append("limit", String(params.limit));
-  return adminApiFetch<ActivityListResponse>(`/api/admin/activity?${urlParams}`);
+  return adminApiFetch<ActivityListResponse>(
+    `/api/admin/activity?${urlParams}`,
+  );
 }
 
 export async function apiAdminGetCalendar(
   year: number,
   month: number,
-  userId?: string
+  userId?: string,
 ): Promise<CalendarResponse> {
   const params = new URLSearchParams({
     year: String(year),
     month: String(month),
   });
   if (userId) params.append("userId", userId);
-  return adminApiFetch<CalendarResponse>(`/api/admin/activity/calendar?${params}`);
+  return adminApiFetch<CalendarResponse>(
+    `/api/admin/activity/calendar?${params}`,
+  );
 }
 
 export async function apiAdminGetDailyActivity(
   date: string,
-  userId?: string
+  userId?: string,
 ): Promise<DailyActivityResponse> {
   const params = new URLSearchParams();
   if (userId) params.append("userId", userId);
-  return adminApiFetch<DailyActivityResponse>(`/api/admin/activity/daily/${date}?${params}`);
+  return adminApiFetch<DailyActivityResponse>(
+    `/api/admin/activity/daily/${date}?${params}`,
+  );
 }
 
 // Errors
@@ -333,7 +348,7 @@ export async function apiAdminGetErrors(params: {
 
 export async function apiAdminResolveError(
   errorId: string,
-  notes?: string
+  notes?: string,
 ): Promise<{ ok: true }> {
   return adminApiFetch<{ ok: true }>(`/api/admin/errors/${errorId}/resolve`, {
     method: "PATCH",
@@ -373,7 +388,11 @@ export type ExtendedStats = {
     articles_count: string;
   }[];
   errorsByType: { error_type: string; count: string }[];
-  activityByType: { action_type: string; count: string; total_minutes: string }[];
+  activityByType: {
+    action_type: string;
+    count: string;
+    total_minutes: string;
+  }[];
 };
 
 export type RealtimeStats = {
@@ -421,7 +440,7 @@ export async function apiAdminRealtimeStats(): Promise<RealtimeStats> {
 export async function apiAdminBlockUser(
   userId: string,
   blocked: boolean,
-  reason?: string
+  reason?: string,
 ): Promise<{ ok: true }> {
   return adminApiFetch<{ ok: true }>(`/api/admin/users/${userId}/block`, {
     method: "PATCH",
@@ -429,7 +448,9 @@ export async function apiAdminBlockUser(
   });
 }
 
-export async function apiAdminDeleteUser(userId: string): Promise<{ ok: true }> {
+export async function apiAdminDeleteUser(
+  userId: string,
+): Promise<{ ok: true }> {
   return adminApiFetch<{ ok: true }>(`/api/admin/users/${userId}`, {
     method: "DELETE",
     body: JSON.stringify({ confirm: true }),
@@ -437,24 +458,26 @@ export async function apiAdminDeleteUser(userId: string): Promise<{ ok: true }> 
 }
 
 export async function apiAdminResetPassword(
-  userId: string
+  userId: string,
 ): Promise<{ tempPassword: string; message: string }> {
   return adminApiFetch<{ tempPassword: string; message: string }>(
     `/api/admin/users/${userId}/reset-password`,
-    { method: "POST" }
+    { method: "POST" },
   );
 }
 
 export async function apiAdminGetUserProjects(
   userId: string,
   page = 1,
-  limit = 20
+  limit = 20,
 ): Promise<UserProjectsResponse> {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
   });
-  return adminApiFetch<UserProjectsResponse>(`/api/admin/users/${userId}/projects?${params}`);
+  return adminApiFetch<UserProjectsResponse>(
+    `/api/admin/users/${userId}/projects?${params}`,
+  );
 }
 
 // Export
@@ -462,7 +485,10 @@ export function getExportUsersUrl(): string {
   return "/api/admin/export/users";
 }
 
-export function getExportActivityUrl(startDate?: string, endDate?: string): string {
+export function getExportActivityUrl(
+  startDate?: string,
+  endDate?: string,
+): string {
   const params = new URLSearchParams();
   if (startDate) params.append("startDate", startDate);
   if (endDate) params.append("endDate", endDate);
@@ -476,23 +502,35 @@ export function getExportErrorsUrl(): string {
 // Bulk Operations
 export async function apiAdminBulkResolveErrors(
   errorIds: string[],
-  notes?: string
+  notes?: string,
 ): Promise<{ ok: true; resolvedCount: number }> {
-  return adminApiFetch<{ ok: true; resolvedCount: number }>("/api/admin/errors/bulk-resolve", {
-    method: "POST",
-    body: JSON.stringify({ errorIds, notes }),
-  });
+  return adminApiFetch<{ ok: true; resolvedCount: number }>(
+    "/api/admin/errors/bulk-resolve",
+    {
+      method: "POST",
+      body: JSON.stringify({ errorIds, notes }),
+    },
+  );
 }
 
 // Sessions
-export async function apiAdminGetActiveSessions(): Promise<{ sessions: ActiveSession[] }> {
-  return adminApiFetch<{ sessions: ActiveSession[] }>("/api/admin/sessions/active");
+export async function apiAdminGetActiveSessions(): Promise<{
+  sessions: ActiveSession[];
+}> {
+  return adminApiFetch<{ sessions: ActiveSession[] }>(
+    "/api/admin/sessions/active",
+  );
 }
 
-export async function apiAdminTerminateSession(sessionId: string): Promise<{ ok: true }> {
-  return adminApiFetch<{ ok: true }>(`/api/admin/sessions/${sessionId}/terminate`, {
-    method: "POST",
-  });
+export async function apiAdminTerminateSession(
+  sessionId: string,
+): Promise<{ ok: true }> {
+  return adminApiFetch<{ ok: true }>(
+    `/api/admin/sessions/${sessionId}/terminate`,
+    {
+      method: "POST",
+    },
+  );
 }
 
 // Client Error Logging (public endpoint)
@@ -548,7 +586,12 @@ export type AdminProjectDetail = {
     ai_error_analysis_enabled: boolean;
     ai_protocol_check_enabled: boolean;
   };
-  members: { user_id: string; email: string; role: string; joined_at: string }[];
+  members: {
+    user_id: string;
+    email: string;
+    role: string;
+    joined_at: string;
+  }[];
   recentActivity: ActivityItem[];
   statisticsSummary: { type: string; count: number }[];
 };
@@ -557,8 +600,13 @@ export async function apiAdminGetProjects(params: {
   page?: number;
   limit?: number;
   search?: string;
-  sortBy?: 'created_at' | 'updated_at' | 'name' | 'documents_count' | 'articles_count';
-  sortOrder?: 'asc' | 'desc';
+  sortBy?:
+    | "created_at"
+    | "updated_at"
+    | "name"
+    | "documents_count"
+    | "articles_count";
+  sortOrder?: "asc" | "desc";
 }): Promise<AdminProjectsResponse> {
   const urlParams = new URLSearchParams();
   if (params.page) urlParams.append("page", String(params.page));
@@ -566,14 +614,20 @@ export async function apiAdminGetProjects(params: {
   if (params.search) urlParams.append("search", params.search);
   if (params.sortBy) urlParams.append("sortBy", params.sortBy);
   if (params.sortOrder) urlParams.append("sortOrder", params.sortOrder);
-  return adminApiFetch<AdminProjectsResponse>(`/api/admin/projects?${urlParams}`);
+  return adminApiFetch<AdminProjectsResponse>(
+    `/api/admin/projects?${urlParams}`,
+  );
 }
 
-export async function apiAdminGetProject(projectId: string): Promise<AdminProjectDetail> {
+export async function apiAdminGetProject(
+  projectId: string,
+): Promise<AdminProjectDetail> {
   return adminApiFetch<AdminProjectDetail>(`/api/admin/projects/${projectId}`);
 }
 
-export async function apiAdminDeleteProject(projectId: string): Promise<{ ok: true }> {
+export async function apiAdminDeleteProject(
+  projectId: string,
+): Promise<{ ok: true }> {
   return adminApiFetch<{ ok: true }>(`/api/admin/projects/${projectId}`, {
     method: "DELETE",
     body: JSON.stringify({ confirm: true }),
@@ -668,7 +722,7 @@ export async function apiAdminGetArticles(params: {
   limit?: number;
   search?: string;
   source?: string;
-  hasStats?: 'true' | 'false' | 'all';
+  hasStats?: "true" | "false" | "all";
 }): Promise<AdminArticlesResponse> {
   const urlParams = new URLSearchParams();
   if (params.page) urlParams.append("page", String(params.page));
@@ -676,14 +730,22 @@ export async function apiAdminGetArticles(params: {
   if (params.search) urlParams.append("search", params.search);
   if (params.source) urlParams.append("source", params.source);
   if (params.hasStats) urlParams.append("hasStats", params.hasStats);
-  return adminApiFetch<AdminArticlesResponse>(`/api/admin/articles?${urlParams}`);
+  return adminApiFetch<AdminArticlesResponse>(
+    `/api/admin/articles?${urlParams}`,
+  );
 }
 
-export async function apiAdminDeleteOrphanArticles(): Promise<{ ok: true; deletedCount: number }> {
-  return adminApiFetch<{ ok: true; deletedCount: number }>("/api/admin/articles/orphans", {
-    method: "DELETE",
-    body: JSON.stringify({ confirm: true }),
-  });
+export async function apiAdminDeleteOrphanArticles(): Promise<{
+  ok: true;
+  deletedCount: number;
+}> {
+  return adminApiFetch<{ ok: true; deletedCount: number }>(
+    "/api/admin/articles/orphans",
+    {
+      method: "DELETE",
+      body: JSON.stringify({ confirm: true }),
+    },
+  );
 }
 
 // ========== Storage Management ==========
@@ -761,7 +823,9 @@ export type AdminRetentionResponse = {
 };
 
 export async function apiAdminGetRetention(): Promise<AdminRetentionResponse> {
-  return adminApiFetch<AdminRetentionResponse>("/api/admin/analytics/retention");
+  return adminApiFetch<AdminRetentionResponse>(
+    "/api/admin/analytics/retention",
+  );
 }
 
 // ========== System Config ==========
@@ -794,36 +858,51 @@ export async function apiAdminGetConfig(): Promise<AdminConfigResponse> {
 export async function apiAdminBulkBlockUsers(
   userIds: string[],
   blocked: boolean,
-  reason?: string
+  reason?: string,
 ): Promise<{ ok: true; affectedCount: number }> {
-  return adminApiFetch<{ ok: true; affectedCount: number }>("/api/admin/users/bulk-block", {
-    method: "POST",
-    body: JSON.stringify({ userIds, blocked, reason }),
-  });
+  return adminApiFetch<{ ok: true; affectedCount: number }>(
+    "/api/admin/users/bulk-block",
+    {
+      method: "POST",
+      body: JSON.stringify({ userIds, blocked, reason }),
+    },
+  );
 }
 
 // ========== Cleanup Operations ==========
 
-export async function apiAdminCleanupExpiredCache(): Promise<{ ok: true; deletedCount: number }> {
-  return adminApiFetch<{ ok: true; deletedCount: number }>("/api/admin/cleanup/expired-cache", {
-    method: "POST",
-  });
+export async function apiAdminCleanupExpiredCache(): Promise<{
+  ok: true;
+  deletedCount: number;
+}> {
+  return adminApiFetch<{ ok: true; deletedCount: number }>(
+    "/api/admin/cleanup/expired-cache",
+    {
+      method: "POST",
+    },
+  );
 }
 
 export async function apiAdminCleanupOldSessions(
-  olderThanDays: number
+  olderThanDays: number,
 ): Promise<{ ok: true; deletedCount: number }> {
-  return adminApiFetch<{ ok: true; deletedCount: number }>("/api/admin/cleanup/old-sessions", {
-    method: "POST",
-    body: JSON.stringify({ olderThanDays }),
-  });
+  return adminApiFetch<{ ok: true; deletedCount: number }>(
+    "/api/admin/cleanup/old-sessions",
+    {
+      method: "POST",
+      body: JSON.stringify({ olderThanDays }),
+    },
+  );
 }
 
 export async function apiAdminCleanupOldActivity(
-  olderThanDays: number
+  olderThanDays: number,
 ): Promise<{ ok: true; deletedCount: number }> {
-  return adminApiFetch<{ ok: true; deletedCount: number }>("/api/admin/cleanup/old-activity", {
-    method: "POST",
-    body: JSON.stringify({ olderThanDays }),
-  });
+  return adminApiFetch<{ ok: true; deletedCount: number }>(
+    "/api/admin/cleanup/old-activity",
+    {
+      method: "POST",
+      body: JSON.stringify({ olderThanDays }),
+    },
+  );
 }

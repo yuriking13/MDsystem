@@ -96,10 +96,7 @@ export default function EditorHeader({
 
           {/* Save status */}
           {isSaving ? (
-            <span
-              className="flex items-center gap-1"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <span className="flex items-center gap-1 editor-header-save-status">
               <IconRefresh size="sm" className="animate-spin" />
               <span className="hidden md:inline">Сохранение...</span>
             </span>

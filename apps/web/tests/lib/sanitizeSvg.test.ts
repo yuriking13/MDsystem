@@ -10,7 +10,7 @@ vi.mock("dompurify", () => ({
 
 describe("sanitizeSvg with DOMPurify", () => {
   beforeAll(() => {
-    mockSanitize.mockImplementation((input: string, _config: any) => {
+    mockSanitize.mockImplementation((input: string) => {
       // Simulate DOMPurify behavior: strip script tags and event handlers
       let result = input;
       result = result.replace(/<script[\s\S]*?<\/script>/gi, "");
@@ -24,8 +24,7 @@ describe("sanitizeSvg with DOMPurify", () => {
   // We test the sanitize config by verifying DOMPurify is called with the right params
   it("should call DOMPurify.sanitize with SVG profile config", async () => {
     // Import dynamically to pick up mock
-    const mod =
-      await import("../../src/components/TiptapEditor/AIWritingAssistant");
+    await import("../../src/components/TiptapEditor/AIWritingAssistant");
     // sanitizeSvg is not exported, so we test indirectly through the module
     // Instead, let's test the DOMPurify config directly
     const DOMPurify = (await import("dompurify")).default;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetJobs,
@@ -14,7 +14,6 @@ import {
   IconClock,
   IconExclamation,
 } from "../../components/FlowbiteIcons";
-import { Link } from "react-router-dom";
 
 function formatDate(date: string | null): string {
   if (!date) return "—";
@@ -67,7 +66,7 @@ export default function AdminJobsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadJobs() {
+  const loadJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -85,14 +84,14 @@ export default function AdminJobsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, statusFilter]);
 
   useEffect(() => {
     loadJobs();
     // Auto-refresh every 30 seconds
     const interval = setInterval(loadJobs, 30000);
     return () => clearInterval(interval);
-  }, [page, statusFilter]);
+  }, [loadJobs]);
 
   async function handleCancel(jobId: string) {
     if (!confirm("Отменить эту задачу?")) return;
@@ -136,18 +135,16 @@ export default function AdminJobsPage() {
           {summary.map((s) => (
             <div
               key={s.status}
-              className={`admin-job-summary-item admin-job-${s.status}`}
+              className={`admin-job-summary-item admin-clickable admin-job-${s.status}`}
               onClick={() => setStatusFilter(s.status)}
-              style={{ cursor: "pointer" }}
             >
               <span className="admin-job-summary-count">{s.count}</span>
               <span className="admin-job-summary-status">{s.status}</span>
             </div>
           ))}
           <div
-            className="admin-job-summary-item"
+            className="admin-job-summary-item admin-clickable"
             onClick={() => setStatusFilter("all")}
-            style={{ cursor: "pointer" }}
           >
             <span className="admin-job-summary-count">
               {summary.reduce((sum, s) => sum + s.count, 0)}
@@ -233,12 +230,12 @@ export default function AdminJobsPage() {
                       <td>{getStatusBadge(job.status)}</td>
                       <td>
                         <div className="admin-progress-cell">
-                          <div className="admin-progress-bar">
-                            <div
-                              className="admin-progress-fill"
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
+                          <progress
+                            className="admin-progress-track"
+                            value={progress}
+                            max={100}
+                            aria-label={`Прогресс задачи ${job.id}`}
+                          />
                           <span className="admin-progress-text">
                             {job.fetched_pmids}/{job.total_pmids_to_fetch}
                           </span>

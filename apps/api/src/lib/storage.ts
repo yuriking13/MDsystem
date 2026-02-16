@@ -74,12 +74,20 @@ export function getS3Client(): S3Client {
   }
 
   if (!s3Client) {
+    const accessKeyId = env.S3_ACCESS_KEY_ID;
+    const secretAccessKey = env.S3_SECRET_ACCESS_KEY;
+    if (!accessKeyId || !secretAccessKey) {
+      throw new Error(
+        "S3 credentials are not configured. Please set S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.",
+      );
+    }
+
     s3Client = new S3Client({
       endpoint: env.S3_ENDPOINT,
       region: env.S3_REGION,
       credentials: {
-        accessKeyId: env.S3_ACCESS_KEY_ID!,
-        secretAccessKey: env.S3_SECRET_ACCESS_KEY!,
+        accessKeyId,
+        secretAccessKey,
       },
       forcePathStyle: true, // Required for Yandex Object Storage
     });

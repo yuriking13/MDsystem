@@ -148,6 +148,66 @@
   outline: none;
 }
 
+.toolbar-select--font-size {
+  width: 52px;
+}
+
+.toolbar-select--font-family {
+  width: 100px;
+}
+
+.toolbar-font-option--default {
+  font-family: inherit;
+}
+
+.toolbar-font-option--times {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.toolbar-font-option--arial {
+  font-family: Arial, sans-serif;
+}
+
+.toolbar-font-option--georgia {
+  font-family: Georgia, serif;
+}
+
+.toolbar-font-option--verdana {
+  font-family: Verdana, sans-serif;
+}
+
+.toolbar-font-option--roboto {
+  font-family: Roboto, sans-serif;
+}
+
+.toolbar-font-option--open-sans {
+  font-family: "Open Sans", sans-serif;
+}
+
+.toolbar-font-option--lato {
+  font-family: Lato, sans-serif;
+}
+
+.toolbar-font-option--montserrat {
+  font-family: Montserrat, sans-serif;
+}
+
+.toolbar-font-option--pt-sans {
+  font-family: "PT Sans", sans-serif;
+}
+
+.toolbar-font-option--pt-serif {
+  font-family: "PT Serif", serif;
+}
+
+.toolbar-font-option--courier {
+  font-family: "Courier New", monospace;
+}
+
+.toolbar-menu-wrap {
+  position: relative;
+}
+
 /* Toolbar dropdown (glass theme) */
 .toolbar-dropdown {
   position: absolute;
@@ -202,6 +262,72 @@
   background: rgba(59, 130, 246, 0.15);
 }
 
+.toolbar-dropdown-item--row-action {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-dropdown-item--locked {
+  opacity: 0.5;
+}
+
+.toolbar-dropdown--table-color {
+  min-width: 180px;
+}
+
+.toolbar-dropdown-item--color-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar-cell-color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-block;
+}
+
+.toolbar-cell-color-swatch--none {
+  background: #fff;
+}
+
+.toolbar-cell-color-swatch--blue {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.toolbar-cell-color-swatch--green {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.toolbar-cell-color-swatch--yellow {
+  background: rgba(234, 179, 8, 0.15);
+}
+
+.toolbar-cell-color-swatch--red {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.toolbar-cell-color-swatch--purple {
+  background: rgba(168, 85, 247, 0.15);
+}
+
+.toolbar-cell-color-swatch--gray {
+  background: rgba(100, 116, 139, 0.15);
+}
+
+.toolbar-align-controls {
+  display: flex;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.toolbar-align-btn {
+  flex: 1;
+}
+
 /* Dropdown section label */
 .toolbar-dropdown-label {
   font-size: 10px;
@@ -229,6 +355,13 @@
 }
 .toolbar-style-badge:hover {
   background: rgba(59, 130, 246, 0.2);
+}
+
+.toolbar-tail {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* ---- Editor header (glass theme) ---- */
@@ -284,6 +417,102 @@
   border-bottom: 1px solid var(--accent, #3b82f6);
 }
 
+.editor-header-save-status {
+  color: var(--text-secondary, #94a3b8);
+}
+
+.editor-layout-main {
+  background: var(--bg-primary);
+}
+
+.editor-layout-toggle-row {
+  padding: 4px 12px;
+}
+
+.tiptap-loading--error {
+  color: #ef4444;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.tiptap-error-reload-btn {
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tiptap-comment-modal {
+  max-width: 400px;
+}
+
+.tiptap-comment-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tiptap-comment-hint {
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.tiptap-comment-textarea {
+  resize: vertical;
+}
+
+.tiptap-comment-add-icon {
+  margin-right: 4px;
+}
+
+.editor-status-progress {
+  width: 80px;
+  height: 6px;
+  border: none;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(56, 89, 138, 0.3);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.editor-status-progress::-webkit-progress-bar {
+  background: rgba(56, 89, 138, 0.3);
+  border-radius: 999px;
+}
+
+.editor-status-progress::-webkit-progress-value {
+  border-radius: 999px;
+}
+
+.editor-status-progress::-moz-progress-bar {
+  border-radius: 999px;
+}
+
+.editor-status-progress--goal::-webkit-progress-value,
+.editor-status-progress--goal::-moz-progress-bar {
+  background: #22c55e;
+}
+
+.editor-status-progress--high::-webkit-progress-value,
+.editor-status-progress--high::-moz-progress-bar {
+  background: #3b82f6;
+}
+
+.editor-status-progress--mid::-webkit-progress-value,
+.editor-status-progress--mid::-moz-progress-bar {
+  background: #f59e0b;
+}
+
+.editor-status-progress--low::-webkit-progress-value,
+.editor-status-progress--low::-moz-progress-bar {
+  background: #a3a3a3;
+}
+
 /* ---- Editor layout sidebar (glass theme) ---- */
 .editor-sidebar {
   display: flex;
@@ -303,6 +532,26 @@
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary, #e2e8f0);
+}
+
+.editor-outline-empty-icon {
+  color: var(--text-muted);
+}
+
+.editor-outline-empty-title {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.editor-outline-empty-subtitle {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.editor-outline-count-badge {
+  color: var(--text-muted);
+  background: var(--border-glass);
 }
 
 /* Main area with outline + editor + bibliography */
@@ -424,6 +673,15 @@
   flex: none;
   display: flex;
   flex-direction: column;
+}
+
+.tiptap-row-resize-cursor {
+  cursor: row-resize !important;
+}
+
+body.tiptap-row-resize-active {
+  cursor: row-resize !important;
+  user-select: none !important;
 }
 
 .tiptap-editor .tiptap {
@@ -1273,6 +1531,30 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.chart-node-bg-white {
+  background: white;
+}
+
+.chart-node-bg-slate-50 {
+  background: #f8fafc;
+}
+
+.chart-node-bg-slate-100 {
+  background: #f1f5f9;
+}
+
+.chart-node-bg-slate-200 {
+  background: #e2e8f0;
+}
+
+.chart-node-bg-blue-50 {
+  background: #eff6ff;
+}
+
+.chart-node-bg-amber-100 {
+  background: #fef3c7;
+}
+
 .chart-node-header {
   background: #f8fafc;
   padding: 12px 16px;
@@ -1280,6 +1562,174 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.chart-node-header--default {
+  background: #f8fafc;
+}
+
+.chart-node-header--tinted {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.chart-node-header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.chart-title-input--editing {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 14px;
+  background: white;
+}
+
+.chart-node-action-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.chart-node-action-btn--save {
+  background: #4ade80;
+  color: white;
+}
+
+.chart-node-action-btn--cancel {
+  background: #94a3b8;
+  color: white;
+}
+
+.chart-node-action-btn--edit {
+  background: rgba(75, 116, 255, 0.1);
+  color: #4b74ff;
+  border: 1px solid rgba(75, 116, 255, 0.3);
+}
+
+.chart-edit-panel,
+.chart-axis-panel {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.chart-edit-panel {
+  align-items: center;
+}
+
+.chart-axis-panel {
+  align-items: flex-end;
+}
+
+.chart-node-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chart-node-field-label {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.chart-node-select {
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.chart-node-axis-input {
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 12px;
+  width: 120px;
+}
+
+.chart-node-color-preview-row {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.chart-node-color-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.chart-node-color-swatch--default-1 { background-color: rgba(75, 116, 255, 0.8); }
+.chart-node-color-swatch--default-2 { background-color: rgba(74, 222, 128, 0.8); }
+.chart-node-color-swatch--default-3 { background-color: rgba(255, 107, 107, 0.8); }
+.chart-node-color-swatch--default-4 { background-color: rgba(251, 191, 36, 0.8); }
+.chart-node-color-swatch--default-5 { background-color: rgba(168, 85, 247, 0.8); }
+.chart-node-color-swatch--default-6 { background-color: rgba(236, 72, 153, 0.8); }
+
+.chart-node-color-swatch--cool-1 { background-color: rgba(59, 130, 246, 0.8); }
+.chart-node-color-swatch--cool-2 { background-color: rgba(34, 211, 238, 0.8); }
+.chart-node-color-swatch--cool-3 { background-color: rgba(99, 102, 241, 0.8); }
+.chart-node-color-swatch--cool-4 { background-color: rgba(139, 92, 246, 0.8); }
+.chart-node-color-swatch--cool-5 { background-color: rgba(6, 182, 212, 0.8); }
+.chart-node-color-swatch--cool-6 { background-color: rgba(79, 70, 229, 0.8); }
+
+.chart-node-color-swatch--warm-1 { background-color: rgba(239, 68, 68, 0.8); }
+.chart-node-color-swatch--warm-2 { background-color: rgba(249, 115, 22, 0.8); }
+.chart-node-color-swatch--warm-3 { background-color: rgba(234, 179, 8, 0.8); }
+.chart-node-color-swatch--warm-4 { background-color: rgba(251, 146, 60, 0.8); }
+.chart-node-color-swatch--warm-5 { background-color: rgba(220, 38, 38, 0.8); }
+.chart-node-color-swatch--warm-6 { background-color: rgba(245, 158, 11, 0.8); }
+
+.chart-node-color-swatch--mono-1 { background-color: rgba(30, 41, 59, 0.9); }
+.chart-node-color-swatch--mono-2 { background-color: rgba(51, 65, 85, 0.8); }
+.chart-node-color-swatch--mono-3 { background-color: rgba(71, 85, 105, 0.7); }
+.chart-node-color-swatch--mono-4 { background-color: rgba(100, 116, 139, 0.6); }
+.chart-node-color-swatch--mono-5 { background-color: rgba(148, 163, 184, 0.5); }
+.chart-node-color-swatch--mono-6 { background-color: rgba(203, 213, 225, 0.4); }
+
+.chart-node-color-swatch--scientific-1 { background-color: rgba(0, 63, 92, 0.8); }
+.chart-node-color-swatch--scientific-2 { background-color: rgba(47, 75, 124, 0.8); }
+.chart-node-color-swatch--scientific-3 { background-color: rgba(102, 81, 145, 0.8); }
+.chart-node-color-swatch--scientific-4 { background-color: rgba(160, 81, 149, 0.8); }
+.chart-node-color-swatch--scientific-5 { background-color: rgba(212, 80, 135, 0.8); }
+.chart-node-color-swatch--scientific-6 { background-color: rgba(249, 93, 106, 0.8); }
+
+.chart-node-color-input-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chart-node-color-input {
+  width: 32px;
+  height: 28px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.chart-node-color-value {
+  font-size: 10px;
+  color: #64748b;
+}
+
+.chart-node-reset-colors-btn {
+  padding: 4px 8px;
+  font-size: 11px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 .chart-node-icon {
@@ -1415,6 +1865,45 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.bibliography-count-badge {
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+}
+
+.bibliography-controls-wrap {
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.bibliography-search-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.bibliography-view-toggle {
+  border: 1px solid var(--border-glass);
+}
+
+.bibliography-view-toggle-inactive {
+  background: var(--bg-secondary);
+}
+
+.bibliography-view-toggle-with-divider {
+  border-left: 1px solid var(--border-glass);
+}
+
+.bibliography-divide {
+  --tw-divide-opacity: 1;
+  border-color: var(--border-glass);
+}
+
+.bibliography-source-group {
+  border-color: var(--border-glass);
+}
+
+.bibliography-source-item {
+  background: var(--bg-secondary);
 }
 
 .bib-view-toggle {
@@ -1728,6 +2217,30 @@
   color: #4b74ff;
 }
 
+.citation-filter-btn.citation-source--pubmed.active {
+  background: rgba(37, 99, 235, 0.14);
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.citation-filter-btn.citation-source--doaj.active {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.citation-filter-btn.citation-source--wiley.active {
+  background: rgba(139, 92, 246, 0.14);
+  border-color: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.citation-filter-btn.citation-source--crossref.active {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: #10b981;
+  color: #10b981;
+}
+
 /* Results info */
 .citation-results-info {
   padding: 8px 20px;
@@ -1835,6 +2348,26 @@
   font-size: 10px;
   font-weight: 600;
   color: white;
+}
+
+.citation-source-badge.citation-source--pubmed {
+  background-color: #2563eb;
+}
+
+.citation-source-badge.citation-source--doaj {
+  background-color: #f59e0b;
+}
+
+.citation-source-badge.citation-source--wiley {
+  background-color: #8b5cf6;
+}
+
+.citation-source-badge.citation-source--crossref {
+  background-color: #10b981;
+}
+
+.citation-source-badge.citation-source--default {
+  background-color: #64748b;
 }
 
 .citation-stats-badge {
@@ -2669,6 +3202,10 @@
   flex-wrap: wrap;
 }
 
+.ai-hidden-file-input {
+  display: none;
+}
+
 .ai-doi-or {
   font-size: 11px;
   color: var(--text-secondary, #94a3b8);
@@ -2769,6 +3306,33 @@
   color: var(--text-secondary, #94a3b8);
   text-align: center;
   padding: 0 16px 12px;
+}
+
+.table-caption-container,
+.figure-caption-container {
+  user-select: none;
+  pointer-events: none;
+  color: var(--text-primary, #1e293b);
+  font-size: 14px;
+}
+
+.table-caption-container {
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.figure-caption-container {
+  text-align: center;
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.editor-caption-number {
+  font-weight: 700;
+}
+
+.editor-caption-title {
+  font-weight: 400;
 }
 
 /* Toolbar AI button styles */

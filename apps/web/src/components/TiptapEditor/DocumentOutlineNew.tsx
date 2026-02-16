@@ -115,13 +115,10 @@ export default function DocumentOutline({
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
           <IconDocument
             size="lg"
-            className="w-12 h-12 mb-3"
-            style={{ color: "var(--text-muted)" }}
+            className="w-12 h-12 mb-3 editor-outline-empty-icon"
           />
-          <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
-            Нет заголовков
-          </p>
-          <p style={{ color: "var(--text-muted)", fontSize: 12, marginTop: 4 }}>
+          <p className="editor-outline-empty-title">Нет заголовков</p>
+          <p className="editor-outline-empty-subtitle">
             Добавьте заголовки H1, H2, H3 для структуры
           </p>
         </div>
@@ -177,13 +174,7 @@ export default function DocumentOutline({
         <div className="flex items-center gap-2 editor-sidebar-title">
           <IconList size="sm" className="text-blue-400" />
           Оглавление
-          <span
-            className="text-xs px-1.5 py-0.5 rounded-full"
-            style={{
-              color: "var(--text-muted)",
-              background: "var(--border-glass)",
-            }}
-          >
+          <span className="text-xs px-1.5 py-0.5 rounded-full editor-outline-count-badge">
             {headings.length}
           </span>
         </div>

@@ -91,21 +91,21 @@ export default function EditorStatusBar({
 
           {wordCountGoal && wordCountProgress !== null && (
             <div className="flex items-center gap-1.5">
-              <div className="w-20 h-1.5 bg-[rgba(56,89,138,0.3)] rounded-full overflow-hidden">
-                <div
-                  className={cn(
-                    "h-full rounded-full transition-all duration-300",
-                    wordCountProgress >= 100
-                      ? "bg-green-500"
-                      : wordCountProgress >= 75
-                        ? "bg-blue-500"
-                        : wordCountProgress >= 50
-                          ? "bg-amber-500"
-                          : "bg-neutral-400",
-                  )}
-                  style={{ width: `${wordCountProgress}%` }}
-                />
-              </div>
+              <progress
+                className={cn(
+                  "editor-status-progress",
+                  wordCountProgress >= 100
+                    ? "editor-status-progress--goal"
+                    : wordCountProgress >= 75
+                      ? "editor-status-progress--high"
+                      : wordCountProgress >= 50
+                        ? "editor-status-progress--mid"
+                        : "editor-status-progress--low",
+                )}
+                value={wordCountProgress}
+                max={100}
+                aria-label="Прогресс по целевому количеству слов"
+              />
               <span className="text-neutral-500">
                 {wordCountProgress}% из {wordCountGoal.toLocaleString()}
               </span>

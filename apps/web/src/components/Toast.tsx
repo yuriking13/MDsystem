@@ -1,10 +1,10 @@
-import React, { useEffect, useState, createContext, useContext, useCallback } from 'react';
+import React, { useState, createContext, useContext, useCallback } from "react";
 
 // ============================================================
 // Toast Types
 // ============================================================
 
-export type ToastType = 'success' | 'error' | 'warning' | 'info';
+export type ToastType = "success" | "error" | "warning" | "info";
 
 export interface ToastMessage {
   id: string;
@@ -17,7 +17,7 @@ export interface ToastMessage {
 
 interface ToastContextType {
   toasts: ToastMessage[];
-  addToast: (toast: Omit<ToastMessage, 'id'>) => string;
+  addToast: (toast: Omit<ToastMessage, "id">) => string;
   removeToast: (id: string) => void;
   success: (title: string, message?: string) => void;
   error: (title: string, message?: string) => void;
@@ -34,7 +34,7 @@ const ToastContext = createContext<ToastContextType | null>(null);
 export function useToast() {
   const context = useContext(ToastContext);
   if (!context) {
-    throw new Error('useToast must be used within a ToastProvider');
+    throw new Error("useToast must be used within a ToastProvider");
   }
   return context;
 }
@@ -47,46 +47,63 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
   const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(t => t.id !== id));
+    setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  const addToast = useCallback((toast: Omit<ToastMessage, 'id'>) => {
-    const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const newToast: ToastMessage = {
-      ...toast,
-      id,
-      duration: toast.duration ?? 5000,
-      dismissible: toast.dismissible ?? true,
-    };
-    
-    setToasts(prev => [...prev, newToast]);
-    
-    // Auto-remove after duration
-    if (newToast.duration && newToast.duration > 0) {
-      setTimeout(() => removeToast(id), newToast.duration);
-    }
-    
-    return id;
-  }, [removeToast]);
+  const addToast = useCallback(
+    (toast: Omit<ToastMessage, "id">) => {
+      const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const newToast: ToastMessage = {
+        ...toast,
+        id,
+        duration: toast.duration ?? 5000,
+        dismissible: toast.dismissible ?? true,
+      };
 
-  const success = useCallback((title: string, message?: string) => {
-    addToast({ type: 'success', title, message });
-  }, [addToast]);
+      setToasts((prev) => [...prev, newToast]);
 
-  const error = useCallback((title: string, message?: string) => {
-    addToast({ type: 'error', title, message, duration: 8000 }); // Longer for errors
-  }, [addToast]);
+      // Auto-remove after duration
+      if (newToast.duration && newToast.duration > 0) {
+        setTimeout(() => removeToast(id), newToast.duration);
+      }
 
-  const warning = useCallback((title: string, message?: string) => {
-    addToast({ type: 'warning', title, message });
-  }, [addToast]);
+      return id;
+    },
+    [removeToast],
+  );
 
-  const info = useCallback((title: string, message?: string) => {
-    addToast({ type: 'info', title, message });
-  }, [addToast]);
+  const success = useCallback(
+    (title: string, message?: string) => {
+      addToast({ type: "success", title, message });
+    },
+    [addToast],
+  );
+
+  const error = useCallback(
+    (title: string, message?: string) => {
+      addToast({ type: "error", title, message, duration: 8000 }); // Longer for errors
+    },
+    [addToast],
+  );
+
+  const warning = useCallback(
+    (title: string, message?: string) => {
+      addToast({ type: "warning", title, message });
+    },
+    [addToast],
+  );
+
+  const info = useCallback(
+    (title: string, message?: string) => {
+      addToast({ type: "info", title, message });
+    },
+    [addToast],
+  );
 
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast, success, error, warning, info }}>
+    <ToastContext.Provider
+      value={{ toasts, addToast, removeToast, success, error, warning, info }}
+    >
       {children}
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </ToastContext.Provider>
@@ -97,12 +114,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 // Toast Container
 // ============================================================
 
-function ToastContainer({ toasts, onRemove }: { toasts: ToastMessage[]; onRemove: (id: string) => void }) {
+function ToastContainer({
+  toasts,
+  onRemove,
+}: {
+  toasts: ToastMessage[];
+  onRemove: (id: string) => void;
+}) {
   if (toasts.length === 0) return null;
 
   return (
     <div className="toast-container">
-      {toasts.map(toast => (
+      {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onRemove={onRemove} />
       ))}
       <style>{`
@@ -134,7 +157,13 @@ function ToastContainer({ toasts, onRemove }: { toasts: ToastMessage[]; onRemove
 // Toast Item
 // ============================================================
 
-function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: string) => void }) {
+function ToastItem({
+  toast,
+  onRemove,
+}: {
+  toast: ToastMessage;
+  onRemove: (id: string) => void;
+}) {
   const [isExiting, setIsExiting] = useState(false);
 
   const handleClose = () => {
@@ -143,28 +172,30 @@ function ToastItem({ toast, onRemove }: { toast: ToastMessage; onRemove: (id: st
   };
 
   const icons: Record<ToastType, string> = {
-    success: '✓',
-    error: '✕',
-    warning: '⚠',
-    info: 'ℹ',
+    success: "✓",
+    error: "✕",
+    warning: "⚠",
+    info: "ℹ",
   };
 
   const gradients: Record<ToastType, string> = {
-    success: 'var(--success-gradient)',
-    error: 'var(--danger-gradient)',
-    warning: 'var(--warning-gradient)',
-    info: 'var(--accent-gradient)',
+    success: "var(--success-gradient)",
+    error: "var(--danger-gradient)",
+    warning: "var(--warning-gradient)",
+    info: "var(--accent-gradient)",
   };
 
   const glows: Record<ToastType, string> = {
-    success: 'var(--success-glow)',
-    error: 'var(--danger-glow)',
-    warning: 'rgba(251, 191, 36, 0.3)',
-    info: 'var(--accent-glow)',
+    success: "var(--success-glow)",
+    error: "var(--danger-glow)",
+    warning: "rgba(251, 191, 36, 0.3)",
+    info: "var(--accent-glow)",
   };
 
   return (
-    <div className={`toast-item toast-${toast.type} ${isExiting ? 'toast-exit' : 'toast-enter'}`}>
+    <div
+      className={`toast-item toast-${toast.type} ${isExiting ? "toast-exit" : "toast-enter"}`}
+    >
       <div className="toast-icon">{icons[toast.type]}</div>
       <div className="toast-content">
         <div className="toast-title">{toast.title}</div>

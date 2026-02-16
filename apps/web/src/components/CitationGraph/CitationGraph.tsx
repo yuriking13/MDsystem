@@ -5,7 +5,11 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import ForceGraph2D from "react-force-graph-2d";
+import ForceGraph2D, {
+  type ForceGraphMethods,
+  type LinkObject,
+  type NodeObject,
+} from "react-force-graph-2d";
 import {
   apiGetCitationGraph,
   apiFetchReferences,
@@ -108,6 +112,57 @@ type GraphData = {
   links: GraphLink[];
 };
 
+type GraphLinkWithSemantic = GraphLink & {
+  isSemantic?: boolean;
+  similarity?: number;
+};
+
+type GraphAIDebugPayload = {
+  receivedArticles?: number;
+  externalArticles?: number;
+  articlesForAICount?: number;
+};
+
+type FetchReferencesRecommendationAction = {
+  type: "fetch_references";
+  count?: number;
+};
+
+type ForceGraphD3ChargeForce = {
+  strength: (value: number) => {
+    distanceMax?: (value: number) => void;
+  };
+  distanceMax?: (value: number) => void;
+};
+
+type ForceGraphD3LinkForce = {
+  distance: (value: number) => void;
+};
+
+type GraphForceHandle = ForceGraphMethods<
+  NodeObject<GraphNodeWithCoords>,
+  LinkObject<GraphNodeWithCoords, GraphLink>
+>;
+
+const isForceGraphD3ChargeForce = (
+  force: unknown,
+): force is ForceGraphD3ChargeForce =>
+  typeof force === "function" &&
+  typeof (force as { strength?: unknown }).strength === "function";
+
+const isForceGraphD3LinkForce = (
+  force: unknown,
+): force is ForceGraphD3LinkForce =>
+  typeof force === "function" &&
+  typeof (force as { distance?: unknown }).distance === "function";
+
+const isFetchReferencesRecommendationAction = (
+  action: unknown,
+): action is FetchReferencesRecommendationAction =>
+  typeof action === "object" &&
+  action !== null &&
+  (action as { type?: unknown }).type === "fetch_references";
+
 type FilterType = "all" | "selected" | "excluded";
 type DepthType = 1 | 2 | 3;
 
@@ -125,6 +180,71 @@ type FetchJobStatus = {
   secondsSinceProgress?: number | null;
   isStalled?: boolean;
   cancelReason?: string;
+};
+
+const GRAPH_HOVER_CARD_CLASS_PREFIX = "graph-hover-card-pos-";
+const GRAPH_HOVER_CARD_POSITION_STEP = 12;
+const GRAPH_HOVER_CARD_MAX_RULES = 800;
+const graphHoverCardRuleCache = new Map<string, string>();
+let graphHoverCardStyleSheet: CSSStyleSheet | null = null;
+let graphHoverCardStyleElement: HTMLStyleElement | null = null;
+
+const resetGraphHoverCardStyles = (): void => {
+  graphHoverCardRuleCache.clear();
+  if (graphHoverCardStyleElement?.parentNode) {
+    graphHoverCardStyleElement.parentNode.removeChild(
+      graphHoverCardStyleElement,
+    );
+  }
+  graphHoverCardStyleElement = null;
+  graphHoverCardStyleSheet = null;
+};
+
+const ensureGraphHoverCardStyleSheet = (): CSSStyleSheet | null => {
+  if (graphHoverCardStyleSheet) return graphHoverCardStyleSheet;
+  if (typeof document === "undefined") return null;
+
+  const styleEl = document.createElement("style");
+  styleEl.id = "graph-hover-card-rules";
+  document.head.appendChild(styleEl);
+  graphHoverCardStyleElement = styleEl;
+  graphHoverCardStyleSheet = styleEl.sheet as CSSStyleSheet | null;
+  return graphHoverCardStyleSheet;
+};
+
+const ensureGraphHoverCardPositionClass = (
+  left: number,
+  top: number,
+): string => {
+  const roundedLeft =
+    Math.round(left / GRAPH_HOVER_CARD_POSITION_STEP) *
+    GRAPH_HOVER_CARD_POSITION_STEP;
+  const roundedTop =
+    Math.round(top / GRAPH_HOVER_CARD_POSITION_STEP) *
+    GRAPH_HOVER_CARD_POSITION_STEP;
+  const key = `${roundedLeft}:${roundedTop}`;
+  const cachedClassName = graphHoverCardRuleCache.get(key);
+  if (cachedClassName) return cachedClassName;
+
+  if (graphHoverCardRuleCache.size >= GRAPH_HOVER_CARD_MAX_RULES) {
+    resetGraphHoverCardStyles();
+  }
+
+  const hash = key.split("").reduce((acc, char) => {
+    return (acc * 31 + char.charCodeAt(0)) % 2147483647;
+  }, 23);
+  const className = `${GRAPH_HOVER_CARD_CLASS_PREFIX}${hash.toString(36)}`;
+  const styleSheet = ensureGraphHoverCardStyleSheet();
+
+  if (styleSheet) {
+    styleSheet.insertRule(
+      `.${className}{left:${roundedLeft}px;top:${roundedTop}px;}`,
+      styleSheet.cssRules.length,
+    );
+  }
+
+  graphHoverCardRuleCache.set(key, className);
+  return className;
 };
 
 export default function CitationGraph({ projectId }: Props) {
@@ -193,6 +313,7 @@ export default function CitationGraph({ projectId }: Props) {
 
   // Модальное окно "Как это работает"
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   // Новые настройки графа
   const [sortBy, setSortBy] = useState<
@@ -320,13 +441,7 @@ export default function CitationGraph({ projectId }: Props) {
   // Детали кластера (модальное окно)
   const [clusterDetailModal, setClusterDetailModal] = useState<{
     cluster: SemanticCluster;
-    articles: Array<{
-      id: string;
-      title: string;
-      year: number | null;
-      authors: string | null;
-      status?: string;
-    }>;
+    articles: ClusterArticleDetail[];
   } | null>(null);
   const [loadingClusterDetails, setLoadingClusterDetails] = useState(false);
   // Выбранные статьи в кластере для массовых действий
@@ -335,6 +450,12 @@ export default function CitationGraph({ projectId }: Props) {
   >(new Set());
   // Состояние добавления статей из кластера
   const [addingFromCluster, setAddingFromCluster] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      resetGraphHoverCardStyles();
+    };
+  }, []);
 
   // === GAP ANALYSIS ===
   const [showGapAnalysis, setShowGapAnalysis] = useState(false);
@@ -433,9 +554,8 @@ export default function CitationGraph({ projectId }: Props) {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const graphAreaRef = useRef<HTMLDivElement>(null);
-  // ForceGraph2D ref - тип any необходим из-за отсутствия типов в библиотеке
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const graphRef = useRef<any>(null);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<GraphForceHandle>();
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
 
   // === ФИЛЬТРАЦИЯ ДАННЫХ ГРАФА ПО МЕТОДОЛОГИИ ===
@@ -574,6 +694,24 @@ export default function CitationGraph({ projectId }: Props) {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  useEffect(() => {
+    if (!showExportMenu) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        exportDropdownRef.current &&
+        !exportDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowExportMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showExportMenu]);
+
   // Экспорт графа
   const handleExport = async (
     format: "json" | "graphml" | "cytoscape" | "gexf",
@@ -591,6 +729,8 @@ export default function CitationGraph({ projectId }: Props) {
     } catch (err) {
       console.error("Export failed:", err);
       alert(`Ошибка экспорта: ${getErrorMessage(err)}`);
+    } finally {
+      setShowExportMenu(false);
     }
   };
 
@@ -874,15 +1014,7 @@ export default function CitationGraph({ projectId }: Props) {
           }
           return null;
         })
-        .filter(Boolean) as Array<{
-        id: string;
-        title: string;
-        year: number | null;
-        authors: string | null;
-        status: string;
-        pmid: string | null;
-        doi: string | null;
-      }>;
+        .filter((article): article is ClusterArticleDetail => article !== null);
 
       // Сортируем: центральная статья первая
       articles.sort((a, b) => {
@@ -916,7 +1048,7 @@ export default function CitationGraph({ projectId }: Props) {
   // Выбрать все статьи кластера
   const selectAllClusterArticles = () => {
     if (!clusterDetailModal) return;
-    const allIds = clusterDetailModal.articles.map((a: any) => a.id);
+    const allIds = clusterDetailModal.articles.map((article) => article.id);
     setSelectedClusterArticles(new Set(allIds));
   };
 
@@ -932,15 +1064,22 @@ export default function CitationGraph({ projectId }: Props) {
     setAddingFromCluster(true);
     try {
       // Собираем PMIDs и DOIs из выбранных статей
-      const selectedArticles = clusterDetailModal.articles.filter((a: any) =>
-        selectedClusterArticles.has(a.id),
+      const selectedArticles = clusterDetailModal.articles.filter((article) =>
+        selectedClusterArticles.has(article.id),
       );
       const pmids = selectedArticles
-        .filter((a: any) => a.pmid)
-        .map((a: any) => a.pmid);
+        .filter((article): article is ClusterArticleDetail & { pmid: string } =>
+          Boolean(article.pmid),
+        )
+        .map((article) => article.pmid);
       const dois = selectedArticles
-        .filter((a: any) => !a.pmid && a.doi)
-        .map((a: any) => a.doi);
+        .filter(
+          (
+            article,
+          ): article is ClusterArticleDetail & { pmid: null; doi: string } =>
+            !article.pmid && Boolean(article.doi),
+        )
+        .map((article) => article.doi);
 
       const res = await apiImportFromGraph(projectId, {
         pmids,
@@ -1373,16 +1512,21 @@ export default function CitationGraph({ projectId }: Props) {
 
     // Увеличиваем силу отталкивания для разреженного графа
     const fg = graphRef.current;
-    if (fg.d3Force) {
+    if (typeof fg.d3Force === "function") {
       // Настраиваем силу отталкивания (charge)
       const charge = fg.d3Force("charge");
-      if (charge) {
-        charge.strength(-400).distanceMax(600);
+      if (isForceGraphD3ChargeForce(charge)) {
+        const charged = charge.strength(-400);
+        if (charged && typeof charged.distanceMax === "function") {
+          charged.distanceMax(600);
+        } else if (typeof charge.distanceMax === "function") {
+          charge.distanceMax(600);
+        }
       }
 
       // Настраиваем расстояние связей
       const link = fg.d3Force("link");
-      if (link) {
+      if (isForceGraphD3LinkForce(link)) {
         link.distance(120);
       }
 
@@ -1393,7 +1537,7 @@ export default function CitationGraph({ projectId }: Props) {
       }
 
       // Перезапускаем симуляцию
-      fg.d3ReheatSimulation();
+      fg.d3ReheatSimulation?.();
     }
   }, [data]);
 
@@ -1836,7 +1980,11 @@ export default function CitationGraph({ projectId }: Props) {
         setAiResponse(res.response);
 
         // Отладка: показываем что получил сервер
-        const debug = (res as any)._debug;
+        const maybeDebug = (res as Record<string, unknown>)["_debug"];
+        const debug =
+          typeof maybeDebug === "object" && maybeDebug !== null
+            ? (maybeDebug as GraphAIDebugPayload)
+            : undefined;
         if (debug) {
           console.log(
             `[AI DEBUG] Server received: ${debug.receivedArticles} articles, external: ${debug.externalArticles}, for AI: ${debug.articlesForAICount}`,
@@ -1893,10 +2041,17 @@ export default function CitationGraph({ projectId }: Props) {
     setAiAddingArticles(true);
     try {
       // Собираем PMIDs и DOIs из найденных статей
-      const pmids = aiFoundArticles.filter((a) => a.pmid).map((a) => a.pmid!);
+      const pmids = aiFoundArticles
+        .map((a) => a.pmid)
+        .filter(
+          (pmid): pmid is string => typeof pmid === "string" && pmid.length > 0,
+        );
       const dois = aiFoundArticles
-        .filter((a) => !a.pmid && a.doi)
-        .map((a) => a.doi!);
+        .filter((a) => !a.pmid)
+        .map((a) => a.doi)
+        .filter(
+          (doi): doi is string => typeof doi === "string" && doi.length > 0,
+        );
 
       const res = await apiImportFromGraph(projectId, {
         pmids,
@@ -1970,10 +2125,17 @@ export default function CitationGraph({ projectId }: Props) {
 
     setAiAddingArticles(true);
     try {
-      const pmids = articlesToAdd.filter((a) => a.pmid).map((a) => a.pmid!);
+      const pmids = articlesToAdd
+        .map((a) => a.pmid)
+        .filter(
+          (pmid): pmid is string => typeof pmid === "string" && pmid.length > 0,
+        );
       const dois = articlesToAdd
-        .filter((a) => !a.pmid && a.doi)
-        .map((a) => a.doi!);
+        .filter((a) => !a.pmid)
+        .map((a) => a.doi)
+        .filter(
+          (doi): doi is string => typeof doi === "string" && doi.length > 0,
+        );
 
       const res = await apiImportFromGraph(projectId, { pmids, dois, status });
 
@@ -2028,10 +2190,17 @@ export default function CitationGraph({ projectId }: Props) {
         return;
       }
 
-      const pmids = articlesToAdd.filter((n) => n.pmid).map((n) => n.pmid!);
+      const pmids = articlesToAdd
+        .map((n) => n.pmid)
+        .filter(
+          (pmid): pmid is string => typeof pmid === "string" && pmid.length > 0,
+        );
       const dois = articlesToAdd
-        .filter((n) => !n.pmid && n.doi)
-        .map((n) => n.doi!);
+        .filter((n) => !n.pmid)
+        .map((n) => n.doi)
+        .filter(
+          (doi): doi is string => typeof doi === "string" && doi.length > 0,
+        );
 
       const res = await apiImportFromGraph(projectId, {
         pmids,
@@ -2058,14 +2227,191 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
+  const GRAPH_HEADER_BADGE_CLASS_MAP: Record<string, string> = {
+    "var(--accent)": "graph-header-badge--accent",
+    "var(--accent-secondary)": "graph-header-badge--secondary",
+    "#f59e0b": "graph-header-badge--warning",
+  };
+  const LEGEND_DOT_COLOR_CLASS_MAP: Record<string, string> = {
+    "#ec4899": "legend-dot--pink",
+    "#3b82f6": "legend-dot--blue",
+    "#f97316": "legend-dot--orange",
+    "#06b6d4": "legend-dot--cyan",
+    "#fbbf24": "legend-dot--amber",
+  };
+  const LEGEND_VALUE_COLOR_CLASS_MAP: Record<string, string> = {
+    "#ec4899": "legend-value--pink",
+    "#3b82f6": "legend-value--blue",
+    "#f97316": "legend-value--orange",
+    "#06b6d4": "legend-value--cyan",
+    "#fbbf24": "legend-value--amber",
+  };
+  const CLUSTER_COLOR_CLASS_MAP: Record<string, string> = {
+    "#6366f1": "cluster-color--indigo",
+    "#22c55e": "cluster-color--green",
+    "#f59e0b": "cluster-color--amber",
+    "#ec4899": "cluster-color--pink",
+    "#06b6d4": "cluster-color--cyan",
+    "#8b5cf6": "cluster-color--violet",
+    "#f97316": "cluster-color--orange",
+    "#14b8a6": "cluster-color--teal",
+    "#ef4444": "cluster-color--red",
+    "#84cc16": "cluster-color--lime",
+    "#a855f7": "cluster-color--purple",
+    "#3b82f6": "cluster-color--blue",
+  };
+
+  const getGraphHeaderBadgeClassName = (background: string): string =>
+    `graph-header-badge ${GRAPH_HEADER_BADGE_CLASS_MAP[background] ?? "graph-header-badge--accent"}`;
+  const getSemanticImportLabelClassName = (
+    importMissing: boolean,
+    disabled: boolean,
+  ): string =>
+    `graph-semantic-import-label${importMissing ? " graph-semantic-import-label--active" : ""}${disabled ? " graph-semantic-import-label--disabled" : ""}`;
+  const getSemanticEmbeddingMessageClassName = (message: string): string => {
+    if (message.startsWith("✓")) {
+      return "graph-semantic-embedding-message graph-semantic-embedding-message--success";
+    }
+    if (message.startsWith("Ошибка")) {
+      return "graph-semantic-embedding-message graph-semantic-embedding-message--error";
+    }
+    return "graph-semantic-embedding-message graph-semantic-embedding-message--muted";
+  };
+  const getSemanticResultScoreClassName = (similarity: number): string => {
+    if (similarity >= 0.8) {
+      return "graph-semantic-result-score graph-semantic-result-score--high";
+    }
+    if (similarity >= 0.6) {
+      return "graph-semantic-result-score graph-semantic-result-score--medium";
+    }
+    return "graph-semantic-result-score graph-semantic-result-score--low";
+  };
+  const getMethodologyChipClassName = (selected: boolean): string =>
+    `graph-methodology-chip${selected ? " graph-methodology-chip--active" : ""}`;
+  const getMethodologyCountBadgeClassName = (selected: boolean): string =>
+    `graph-methodology-chip-count${selected ? " graph-methodology-chip-count--active" : ""}`;
+  const getSemanticClusterCardClassName = (selected: boolean): string =>
+    `graph-semantic-cluster-card${selected ? " graph-semantic-cluster-card--selected" : ""}`;
+  const getSemanticClusterDetailsButtonClassName = (
+    selected: boolean,
+  ): string =>
+    `graph-semantic-cluster-details-button${selected ? " graph-semantic-cluster-details-button--selected" : ""}`;
+  const getSemanticClusterDotClassName = (color: string): string =>
+    `graph-semantic-cluster-dot ${CLUSTER_COLOR_CLASS_MAP[color] ?? "cluster-color--blue"}`;
+  const getSemanticClusterCountBadgeClassName = (selected: boolean): string =>
+    `graph-semantic-cluster-count${selected ? " graph-semantic-cluster-count--selected" : ""}`;
+  const getSemanticClusterCentralTitleClassName = (selected: boolean): string =>
+    `graph-semantic-cluster-central-title${selected ? " graph-semantic-cluster-central-title--selected" : ""}`;
+  const getSemanticClusterKeywordsClassName = (selected: boolean): string =>
+    `graph-semantic-cluster-keywords${selected ? " graph-semantic-cluster-keywords--selected" : ""}`;
+  const getGapAnalyzeButtonClassName = (loadingState: boolean): string =>
+    `graph-gap-analyze-button${loadingState ? " graph-gap-analyze-button--loading" : ""}`;
+  const getGapSimilarityClassName = (similarity: number): string => {
+    if (similarity >= 0.8) {
+      return "graph-gap-similarity graph-gap-similarity--high";
+    }
+    if (similarity >= 0.6) {
+      return "graph-gap-similarity graph-gap-similarity--medium";
+    }
+    return "graph-gap-similarity graph-gap-similarity--low";
+  };
+  const getLegendDotClassName = (background: string): string =>
+    `legend-dot ${LEGEND_DOT_COLOR_CLASS_MAP[background] ?? "legend-dot--blue"}`;
+  const getLegendValueClassName = (color: string): string =>
+    `legend-value ${LEGEND_VALUE_COLOR_CLASS_MAP[color] ?? "legend-value--blue"}`;
+  const getGraphHoverCardClassName = (x: number, y: number): string =>
+    `graph-hover-card ${ensureGraphHoverCardPositionClass(x, y)}`;
+  const getAiMessageBubbleClassName = (role: "user" | "assistant"): string =>
+    `ai-message-bubble ai-message-bubble--${role}`;
+  const getAiSelectAllButtonClassName = (allSelected: boolean): string =>
+    `ai-found-action-button ${allSelected ? "ai-found-action-button--all-selected" : "ai-found-action-button--default"}`;
+  const getAiFoundItemClassName = (selected: boolean): string =>
+    `ai-found-item${selected ? " ai-found-item--selected" : ""}`;
+  const getAiFoundItemCheckboxClassName = (selected: boolean): string =>
+    `ai-found-item-checkbox${selected ? " ai-found-item-checkbox--selected" : ""}`;
+  const getAiAddButtonClassName = (
+    variant: "candidate" | "selected",
+    loadingState: boolean,
+  ): string =>
+    `ai-add-button ai-add-button--${variant}${loadingState ? " ai-add-button--loading" : ""}`;
+  const getAiSendButtonClassName = (loadingState: boolean): string =>
+    `ai-send-button${loadingState ? " ai-send-button--loading" : ""}`;
+  const getRecommendationCardClassName = (
+    priority: "high" | "medium" | "low",
+  ): string => `recommendation-card recommendation-card--${priority}`;
+  const getRecommendationPriorityBadgeClassName = (
+    priority: "high" | "medium" | "low",
+  ): string =>
+    `recommendation-priority-badge recommendation-priority-badge--${priority}`;
+  const getRecommendationPriorityLabel = (
+    priority: "high" | "medium" | "low",
+  ): string => {
+    if (priority === "high") return "Важно";
+    if (priority === "medium") return "Средне";
+    return "Низко";
+  };
+  const getClusterDetailColorDotClassName = (color: string): string =>
+    `cluster-detail-color-dot ${CLUSTER_COLOR_CLASS_MAP[color] ?? "cluster-color--blue"}`;
+  const getClusterKeywordClassName = (): string =>
+    "cluster-detail-keyword-chip";
+  const getClusterCentralCardClassName = (): string =>
+    "cluster-detail-central-card";
+  const getClusterItemRowClassName = (
+    selected: boolean,
+    isLast: boolean,
+  ): string =>
+    `cluster-detail-item-row${selected ? " cluster-detail-item-row--selected" : ""}${isLast ? " cluster-detail-item-row--last" : ""}`;
+  const getClusterItemIndexClassName = (isCentral: boolean): string =>
+    `cluster-detail-item-index${isCentral ? " cluster-detail-item-index--central" : ""}`;
+  const getClusterStatusBadgeClassName = (status: string): string =>
+    `cluster-detail-status-badge cluster-detail-status-badge--${
+      status === "selected"
+        ? "selected"
+        : status === "excluded"
+          ? "excluded"
+          : "candidate"
+    }`;
+  const getClusterStatusLabel = (status: string): string => {
+    if (status === "selected") return "Отобрана";
+    if (status === "excluded") return "Исключена";
+    return "Кандидат";
+  };
+  const getClusterSelectedActionButtonClassName = (
+    variant: "selected" | "candidate",
+    loadingState: boolean,
+  ): string =>
+    `cluster-detail-selected-button cluster-detail-selected-button--${variant}${loadingState ? " cluster-detail-selected-button--loading" : ""}`;
+  const getClusterFilterButtonClassName = (): string =>
+    "cluster-detail-filter-button";
+  const HELP_ICON_COLOR_CLASS_MAP: Record<string, string> = {
+    "#3b82f6": "help-icon--blue",
+    "#10b981": "help-icon--green",
+    "#6366f1": "help-icon--indigo",
+    "#f59e0b": "help-icon--amber",
+    "#ec4899": "help-icon--pink",
+    "#8b5cf6": "help-icon--violet",
+  };
+  const HELP_LEGEND_DOT_COLOR_CLASS_MAP: Record<string, string> = {
+    "#22c55e": "help-legend-dot--green",
+    "#3b82f6": "help-legend-dot--blue",
+    "#eab308": "help-legend-dot--yellow",
+    "#8b5cf6": "help-legend-dot--violet",
+    "#ef4444": "help-legend-dot--red",
+    "#f97316": "help-legend-dot--orange",
+    "#ec4899": "help-legend-dot--pink",
+  };
+  const getHelpIconClassName = (color: string): string =>
+    `help-icon ${HELP_ICON_COLOR_CLASS_MAP[color] ?? "help-icon--blue"}`;
+  const getHelpLegendDotClassName = (color: string): string =>
+    `help-legend-dot ${HELP_LEGEND_DOT_COLOR_CLASS_MAP[color] ?? "help-legend-dot--blue"}`;
+  const getGraphExportMenuClassName = (isOpen: boolean): string =>
+    `graph-export-dropdown-menu ${isOpen ? "graph-export-dropdown-menu--open" : ""}`;
+
   if (loading) {
     return (
       <div className="graph-container">
-        <div className="muted" style={{ padding: 40, textAlign: "center" }}>
-          <div
-            className="loading-spinner"
-            style={{ margin: "0 auto 16px", width: 32, height: 32 }}
-          />
+        <div className="muted graph-loading-message">
+          <div className="loading-spinner graph-loading-spinner" />
           Загрузка графа цитирований...
         </div>
       </div>
@@ -2075,9 +2421,7 @@ export default function CitationGraph({ projectId }: Props) {
   if (error) {
     return (
       <div className="graph-container">
-        <div className="alert" style={{ margin: 20 }}>
-          {error}
-        </div>
+        <div className="alert graph-error-alert">{error}</div>
       </div>
     );
   }
@@ -2086,40 +2430,15 @@ export default function CitationGraph({ projectId }: Props) {
     <div
       className={`graph-container graph-fixed-height ${isFullscreen ? "graph-fullscreen" : ""}`}
       ref={containerRef}
-      style={{
-        display: "flex",
-        flexDirection: "row",
-        height: isFullscreen ? "100vh" : "100%",
-        width: isFullscreen ? "100vw" : "100%",
-        position: isFullscreen ? "fixed" : "relative",
-        top: isFullscreen ? 0 : "auto",
-        left: isFullscreen ? 0 : "auto",
-        zIndex: isFullscreen ? 9999 : "auto",
-        overflow: "hidden",
-      }}
     >
       {/* Main Content Area */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      <div className="graph-main-area">
         {/* Compact Header Panel with Dropdowns - horizontal layout */}
         <div className="graph-header-filters">
           {/* Title */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              marginRight: 8,
-            }}
-          >
+          <div className="graph-header-title-wrap">
             <IconGraph size="md" className="text-accent" />
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Граф</span>
+            <span className="graph-header-title-text">Граф</span>
           </div>
 
           {/* Depth Dropdown */}
@@ -2167,7 +2486,7 @@ export default function CitationGraph({ projectId }: Props) {
           </select>
 
           {/* Year Range */}
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <div className="graph-year-range">
             <input
               type="number"
               placeholder="Год от"
@@ -2179,10 +2498,9 @@ export default function CitationGraph({ projectId }: Props) {
                   : undefined;
                 if (val !== yearFrom) setYearFrom(val);
               }}
-              className="graph-compact-input"
-              style={{ width: 70 }}
+              className="graph-compact-input graph-year-input graph-year-input--from"
             />
-            <span style={{ color: "var(--text-muted)", fontSize: 11 }}>—</span>
+            <span className="graph-year-separator">—</span>
             <input
               type="number"
               placeholder="До"
@@ -2192,8 +2510,7 @@ export default function CitationGraph({ projectId }: Props) {
                 const val = yearToInput ? parseInt(yearToInput, 10) : undefined;
                 if (val !== yearTo) setYearTo(val);
               }}
-              className="graph-compact-input"
-              style={{ width: 60 }}
+              className="graph-compact-input graph-year-input graph-year-input--to"
             />
           </div>
 
@@ -2222,35 +2539,31 @@ export default function CitationGraph({ projectId }: Props) {
           </select>
 
           {/* Lang Toggle */}
-          <div className="lang-toggle" style={{ padding: 0 }}>
+          <div className="lang-toggle graph-header-lang-toggle">
             <button
-              className={globalLang === "en" ? "active" : ""}
               onClick={() => setGlobalLang("en")}
-              style={{ padding: "4px 8px", fontSize: 11 }}
+              className={`graph-header-lang-button ${
+                globalLang === "en" ? "active" : ""
+              }`}
             >
               EN
             </button>
             <button
-              className={globalLang === "ru" ? "active" : ""}
               onClick={() => setGlobalLang("ru")}
-              style={{ padding: "4px 8px", fontSize: 11 }}
+              className={`graph-header-lang-button ${
+                globalLang === "ru" ? "active" : ""
+              }`}
             >
               RU
             </button>
           </div>
 
           {/* Spacer */}
-          <div style={{ flex: 1 }} />
+          <div className="graph-header-spacer" />
 
           {/* Actions */}
           <button
-            className="btn secondary"
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-            }}
+            className="btn secondary graph-header-action-btn"
             onClick={handleFetchReferences}
             disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
           >
@@ -2258,37 +2571,21 @@ export default function CitationGraph({ projectId }: Props) {
               size="sm"
               className={fetchingRefs ? "animate-spin" : ""}
             />
-            <span style={{ marginLeft: 4 }}>
+            <span className="graph-header-action-label">
               {fetchingRefs ? "..." : "Связи"}
             </span>
           </button>
 
           {/* Рекомендации */}
           <button
-            className="btn secondary"
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            className="btn secondary graph-header-action-btn graph-header-action-btn--with-gap"
             onClick={loadRecommendations}
             disabled={loadingRecommendations}
             title="Рекомендации по улучшению графа"
           >
             <IconSparkles size="sm" />
             {recommendations.length > 0 && (
-              <span
-                style={{
-                  background: "var(--accent)",
-                  color: "white",
-                  borderRadius: 10,
-                  padding: "1px 5px",
-                  fontSize: 9,
-                  fontWeight: 600,
-                }}
-              >
+              <span className={getGraphHeaderBadgeClassName("var(--accent)")}>
                 {recommendations.length}
               </span>
             )}
@@ -2296,14 +2593,9 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* Семантический поиск */}
           <button
-            className={showSemanticSearch ? "btn primary" : "btn secondary"}
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            className={`${
+              showSemanticSearch ? "btn primary" : "btn secondary"
+            } graph-header-action-btn graph-header-action-btn--with-gap`}
             onClick={() => {
               setShowSemanticSearch(!showSemanticSearch);
               if (!showSemanticSearch) {
@@ -2319,16 +2611,9 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* Анализ методологий */}
           <button
-            className={
+            className={`${
               showMethodologyClusters ? "btn primary" : "btn secondary"
-            }
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            } graph-header-action-btn graph-header-action-btn--with-gap`}
             onClick={() => {
               if (
                 !showMethodologyClusters &&
@@ -2348,16 +2633,9 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* Семантические кластеры */}
           <button
-            className={
+            className={`${
               showSemanticClustersPanel ? "btn primary" : "btn secondary"
-            }
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            } graph-header-action-btn graph-header-action-btn--with-gap`}
             onClick={() => {
               if (!showSemanticClustersPanel && semanticClusters.length === 0) {
                 loadSemanticClusters();
@@ -2371,14 +2649,9 @@ export default function CitationGraph({ projectId }: Props) {
             <span>{loadingSemanticClusters ? "..." : "Кластеры"}</span>
             {semanticClusters.length > 0 && (
               <span
-                style={{
-                  background: "var(--accent-secondary)",
-                  color: "white",
-                  borderRadius: 10,
-                  padding: "1px 5px",
-                  fontSize: 9,
-                  fontWeight: 600,
-                }}
+                className={getGraphHeaderBadgeClassName(
+                  "var(--accent-secondary)",
+                )}
               >
                 {semanticClusters.length}
               </span>
@@ -2387,14 +2660,9 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* Gap Analysis */}
           <button
-            className={showGapAnalysis ? "btn primary" : "btn secondary"}
-            style={{
-              padding: "5px 10px",
-              fontSize: 11,
-              display: "flex",
-              alignItems: "center",
-              gap: 4,
-            }}
+            className={`${
+              showGapAnalysis ? "btn primary" : "btn secondary"
+            } graph-header-action-btn graph-header-action-btn--with-gap`}
             onClick={() => {
               if (!showGapAnalysis && gapAnalysisResults.length === 0) {
                 handleGapAnalysis();
@@ -2408,140 +2676,46 @@ export default function CitationGraph({ projectId }: Props) {
             <IconLinkChain size="sm" />
             <span>{loadingGapAnalysis ? "..." : "Gaps"}</span>
             {gapAnalysisResults.length > 0 && (
-              <span
-                style={{
-                  background: "#f59e0b",
-                  color: "white",
-                  borderRadius: 10,
-                  padding: "1px 5px",
-                  fontSize: 9,
-                  fontWeight: 600,
-                }}
-              >
+              <span className={getGraphHeaderBadgeClassName("#f59e0b")}>
                 {gapAnalysisResults.length}
               </span>
             )}
           </button>
 
           {/* Экспорт */}
-          <div className="dropdown" style={{ position: "relative" }}>
+          <div
+            className="dropdown graph-export-dropdown-wrap"
+            ref={exportDropdownRef}
+          >
             <button
               className="graph-compact-btn"
               title="Экспорт графа"
-              onClick={(e) => {
-                const menu = e.currentTarget.nextElementSibling as HTMLElement;
-                if (menu)
-                  menu.style.display =
-                    menu.style.display === "none" ? "block" : "none";
-              }}
+              onClick={() => setShowExportMenu((prev) => !prev)}
             >
               <IconDownload size="sm" />
             </button>
-            <div
-              style={{
-                display: "none",
-                position: "absolute",
-                right: 0,
-                top: "100%",
-                marginTop: 4,
-                background: "var(--bg-secondary)",
-                border: "1px solid var(--border-glass)",
-                borderRadius: 8,
-                padding: 4,
-                minWidth: 140,
-                zIndex: 1000,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-              }}
-            >
+            <div className={getGraphExportMenuClassName(showExportMenu)}>
               <button
                 onClick={() => handleExport("json")}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "6px 10px",
-                  textAlign: "left",
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  borderRadius: 4,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "none")
-                }
+                className="graph-export-menu-item"
               >
                 JSON
               </button>
               <button
                 onClick={() => handleExport("graphml")}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "6px 10px",
-                  textAlign: "left",
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  borderRadius: 4,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "none")
-                }
+                className="graph-export-menu-item"
               >
                 GraphML
               </button>
               <button
                 onClick={() => handleExport("cytoscape")}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "6px 10px",
-                  textAlign: "left",
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  borderRadius: 4,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "none")
-                }
+                className="graph-export-menu-item"
               >
                 Cytoscape
               </button>
               <button
                 onClick={() => handleExport("gexf")}
-                style={{
-                  display: "block",
-                  width: "100%",
-                  padding: "6px 10px",
-                  textAlign: "left",
-                  background: "none",
-                  border: "none",
-                  color: "inherit",
-                  cursor: "pointer",
-                  fontSize: 12,
-                  borderRadius: 4,
-                }}
-                onMouseEnter={(e) =>
-                  (e.currentTarget.style.background = "var(--bg-hover)")
-                }
-                onMouseLeave={(e) =>
-                  (e.currentTarget.style.background = "none")
-                }
+                className="graph-export-menu-item"
               >
                 GEXF (Gephi)
               </button>
@@ -2567,10 +2741,11 @@ export default function CitationGraph({ projectId }: Props) {
           <button
             onClick={() => setShowAIAssistant(!showAIAssistant)}
             className={
-              showAIAssistant ? "graph-compact-btn-active" : "graph-compact-btn"
+              showAIAssistant
+                ? "graph-compact-btn-active graph-header-action-btn--with-gap"
+                : "graph-compact-btn graph-header-action-btn--with-gap"
             }
             title="AI Ассистент"
-            style={{ display: "flex", alignItems: "center", gap: 4 }}
           >
             <IconSparkles size="sm" />
             AI
@@ -2579,19 +2754,7 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Advanced Settings Panel */}
         {showAdvancedSettings && (
-          <div
-            className="graph-filters"
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 16,
-              padding: "12px 20px",
-              borderBottom: "1px solid var(--border-glass)",
-              alignItems: "center",
-              background:
-                "linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05))",
-            }}
-          >
+          <div className="graph-filters graph-advanced-panel">
             {/* Max Nodes Slider */}
             <div className="graph-filter-group">
               <div className="graph-filter-label">
@@ -2611,22 +2774,14 @@ export default function CitationGraph({ projectId }: Props) {
                   setUnlimitedNodes(false);
                 }}
                 disabled={unlimitedNodes}
-                style={{
-                  width: 120,
-                  cursor: unlimitedNodes ? "not-allowed" : "pointer",
-                  opacity: unlimitedNodes ? 0.5 : 1,
-                }}
+                className="graph-advanced-slider"
                 title="Максимальное количество узлов в графе"
               />
               <button
                 onClick={() => setUnlimitedNodes(!unlimitedNodes)}
-                className={unlimitedNodes ? "btn primary" : "btn secondary"}
-                style={{
-                  padding: "4px 10px",
-                  fontSize: 10,
-                  marginLeft: 8,
-                  whiteSpace: "nowrap",
-                }}
+                className={`${
+                  unlimitedNodes ? "btn primary" : "btn secondary"
+                } graph-advanced-limit-button`}
                 title="Без ограничений"
               >
                 ∞
@@ -2653,22 +2808,14 @@ export default function CitationGraph({ projectId }: Props) {
                   setUnlimitedLinks(false);
                 }}
                 disabled={unlimitedLinks}
-                style={{
-                  width: 120,
-                  cursor: unlimitedLinks ? "not-allowed" : "pointer",
-                  opacity: unlimitedLinks ? 0.5 : 1,
-                }}
+                className="graph-advanced-slider"
                 title="Максимум связей на каждый узел"
               />
               <button
                 onClick={() => setUnlimitedLinks(!unlimitedLinks)}
-                className={unlimitedLinks ? "btn primary" : "btn secondary"}
-                style={{
-                  padding: "4px 10px",
-                  fontSize: 10,
-                  marginLeft: 8,
-                  whiteSpace: "nowrap",
-                }}
+                className={`${
+                  unlimitedLinks ? "btn primary" : "btn secondary"
+                } graph-advanced-limit-button`}
                 title="Без ограничений"
               >
                 ∞
@@ -2677,15 +2824,7 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Clustering Toggle */}
             <div className="graph-filter-group">
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 12,
-                  cursor: "pointer",
-                }}
-              >
+              <label className="graph-clustering-label">
                 <input
                   type="checkbox"
                   checked={enableClustering}
@@ -2700,14 +2839,7 @@ export default function CitationGraph({ projectId }: Props) {
                   onChange={(e) =>
                     setClusterBy(e.target.value as typeof clusterBy)
                   }
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: 11,
-                    border: "1px solid var(--border-glass)",
-                    borderRadius: 6,
-                    background: "var(--bg-secondary)",
-                    color: "var(--text-primary)",
-                  }}
+                  className="graph-clustering-select"
                 >
                   <option value="auto">Авто</option>
                   <option value="year">По годам</option>
@@ -2719,42 +2851,24 @@ export default function CitationGraph({ projectId }: Props) {
             {/* Load More Button */}
             {canLoadMore && !unlimitedNodes && maxNodes < 5000 && (
               <button
-                className="btn secondary"
-                style={{ padding: "6px 12px", fontSize: 11 }}
+                className="btn secondary graph-load-more-button"
                 onClick={handleLoadMore}
                 title="Загрузить больше связанных статей"
               >
-                <IconPlus
-                  size="sm"
-                  className="icon-sm"
-                  style={{ marginRight: 4 }}
-                />
+                <IconPlus size="sm" className="icon-sm graph-load-more-icon" />
                 Загрузить больше (+1000)
               </button>
             )}
 
             {/* Current Limits Info */}
             {currentLimits && !unlimitedNodes && !unlimitedLinks && (
-              <div
-                style={{
-                  marginLeft: "auto",
-                  fontSize: 11,
-                  color: "var(--text-muted)",
-                }}
-              >
+              <div className="graph-limits-info">
                 Текущие лимиты: {currentLimits.maxExtraNodes} узлов,{" "}
                 {currentLimits.maxLinksPerNode} связей/узел
               </div>
             )}
             {(unlimitedNodes || unlimitedLinks) && (
-              <div
-                style={{
-                  marginLeft: "auto",
-                  fontSize: 11,
-                  color: "var(--text-success)",
-                  fontWeight: 600,
-                }}
-              >
+              <div className="graph-unlimited-info">
                 ∞ Без ограничений{" "}
                 {unlimitedNodes && unlimitedLinks
                   ? ""
@@ -2768,89 +2882,40 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Progress Bar */}
         {fetchJobStatus?.isRunning && (
-          <div
-            style={{
-              padding: "16px 20px",
-              background:
-                "linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))",
-              borderBottom: "1px solid var(--border-glass)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 10,
-              }}
-            >
+          <div className="graph-progress-panel">
+            <div className="graph-progress-header">
               <div className="loading-spinner" />
-              <div style={{ flex: 1 }}>
-                <span
-                  style={{
-                    fontWeight: 600,
-                    fontSize: 13,
-                    color: "var(--text-primary)",
-                  }}
-                >
+              <div className="graph-progress-title-wrap">
+                <span className="graph-progress-title">
                   Загрузка связей (PubMed + Crossref)...
                 </span>
                 {fetchJobStatus.currentPhase && (
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      marginTop: 2,
-                    }}
-                  >
+                  <div className="graph-progress-phase">
                     {fetchJobStatus.currentPhase}
                     {fetchJobStatus.phaseProgress &&
                       ` — ${fetchJobStatus.phaseProgress}`}
                   </div>
                 )}
               </div>
-              <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+              <span className="graph-progress-time">
                 {formatTime(fetchJobStatus.elapsedSeconds)}
               </span>
               <button
                 onClick={handleCancelFetch}
-                className="btn secondary"
-                style={{ padding: "4px 8px", fontSize: 11 }}
+                className="btn secondary graph-progress-cancel-button"
                 title="Отменить загрузку"
               >
                 ✕ Отмена
               </button>
             </div>
 
-            <div
-              className="progress-bar-animated"
-              style={{
-                height: 6,
-                background: "rgba(255,255,255,0.1)",
-                borderRadius: 3,
-                overflow: "hidden",
-                marginBottom: 10,
-              }}
-            >
-              <div
-                style={{
-                  height: "100%",
-                  width: `${fetchJobStatus.progress}%`,
-                  background: "linear-gradient(90deg, #3b82f6, #8b5cf6)",
-                  borderRadius: 3,
-                  transition: "width 0.3s ease",
-                }}
-              />
-            </div>
+            <progress
+              className="graph-progress-native"
+              max={100}
+              value={Math.max(0, Math.min(fetchJobStatus.progress, 100))}
+            />
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontSize: 11,
-                color: "var(--text-muted)",
-              }}
-            >
+            <div className="graph-progress-footer">
               <span>
                 Статей: {fetchJobStatus.processedArticles || 0} /{" "}
                 {fetchJobStatus.totalArticles || "?"}
@@ -2858,22 +2923,13 @@ export default function CitationGraph({ projectId }: Props) {
               <span>{fetchJobStatus.progress}% завершено</span>
             </div>
 
-            <div
-              style={{
-                marginTop: 10,
-                fontSize: 11,
-                color: "#fbbf24",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
+            <div className="graph-progress-hint">
               <IconInfoCircle size="sm" />
               <span>
                 Загрузка выполняется в фоне. Граф обновится автоматически.
                 {fetchJobStatus.secondsSinceProgress != null &&
                   fetchJobStatus.secondsSinceProgress > 30 && (
-                    <span style={{ color: "#f97316" }}>
+                    <span className="graph-progress-stale-hint">
                       {" "}
                       (нет обновлений {fetchJobStatus.secondsSinceProgress} сек
                       — возможно, сервер PubMed медленно отвечает)
@@ -2885,20 +2941,7 @@ export default function CitationGraph({ projectId }: Props) {
         )}
 
         {refsMessage && (
-          <div
-            className="info"
-            style={{
-              margin: "8px 20px",
-              padding: 12,
-              fontSize: 13,
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "rgba(59, 130, 246, 0.15)",
-              borderRadius: 8,
-              border: "1px solid rgba(59, 130, 246, 0.3)",
-            }}
-          >
+          <div className="info graph-refs-message">
             {refsMessage.startsWith("crossref:") ? (
               <>
                 <IconLinkChain size="sm" className="text-blue-400" />
@@ -2917,38 +2960,20 @@ export default function CitationGraph({ projectId }: Props) {
         )}
 
         {importMessage && (
-          <div
-            className="ok"
-            style={{ margin: "8px 20px", padding: 12, fontSize: 13 }}
-          >
-            {importMessage}
-          </div>
+          <div className="ok graph-import-message">{importMessage}</div>
         )}
 
         {/* Semantic Search Panel */}
         {showSemanticSearch && (
-          <div
-            className="graph-filters"
-            style={{
-              padding: "12px 20px",
-              borderBottom: "1px solid var(--border-glass)",
-              background:
-                "linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05))",
-            }}
-          >
-            <div style={{ marginBottom: 12 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 8,
-                }}
-              >
+          <div className="graph-filters graph-semantic-panel">
+            <div className="graph-semantic-header">
+              <div className="graph-semantic-title-row">
                 <IconSearch size="sm" />
-                <span style={{ fontWeight: 600 }}>Семантический поиск</span>
+                <span className="graph-semantic-title">
+                  Семантический поиск
+                </span>
                 {embeddingStats && (
-                  <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                  <span className="graph-semantic-meta">
                     ({embeddingStats.withEmbeddings}/
                     {embeddingStats.totalArticles} статей с embeddings,
                     {embeddingStats.completionRate.toFixed(0)}%)
@@ -2957,19 +2982,10 @@ export default function CitationGraph({ projectId }: Props) {
               </div>
 
               {embeddingStats && embeddingStats.withoutEmbeddings > 0 && (
-                <div
-                  style={{
-                    marginBottom: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    flexWrap: "wrap",
-                  }}
-                >
+                <div className="graph-semantic-actions-row">
                   {/* Кнопка генерации */}
                   <button
-                    className="btn secondary"
-                    style={{ fontSize: 11, padding: "4px 10px" }}
+                    className="btn secondary graph-semantic-generate-btn"
                     onClick={handleGenerateEmbeddings}
                     disabled={generatingEmbeddings}
                   >
@@ -2984,25 +3000,10 @@ export default function CitationGraph({ projectId }: Props) {
                   {missingArticlesStats &&
                     missingArticlesStats.totalMissing > 0 && (
                       <label
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 5,
-                          fontSize: 11,
-                          color: importMissingArticles
-                            ? "var(--text-primary)"
-                            : "var(--text-muted)",
-                          cursor: generatingEmbeddings
-                            ? "not-allowed"
-                            : "pointer",
-                          padding: "3px 8px",
-                          borderRadius: 4,
-                          background: importMissingArticles
-                            ? "rgba(16, 185, 129, 0.1)"
-                            : "transparent",
-                          border: `1px solid ${importMissingArticles ? "rgba(16, 185, 129, 0.3)" : "var(--border-color)"}`,
-                          transition: "all 0.2s",
-                        }}
+                        className={getSemanticImportLabelClassName(
+                          importMissingArticles,
+                          generatingEmbeddings,
+                        )}
                         title={`Импортировать топ-${missingArticlesStats.importLimit || 1000} цитирующих статей из PubMed (всего доступно: ${(missingArticlesStats.totalAvailable || missingArticlesStats.totalMissing).toLocaleString()}). Ранжируются по частоте цитирования ваших статей. Ретракции исключаются.`}
                       >
                         <input
@@ -3012,7 +3013,7 @@ export default function CitationGraph({ projectId }: Props) {
                             setImportMissingArticles(e.target.checked)
                           }
                           disabled={generatingEmbeddings}
-                          style={{ cursor: "inherit", margin: 0 }}
+                          className="graph-semantic-import-checkbox"
                         />
                         <span>
                           +{missingArticlesStats.totalMissing.toLocaleString()}{" "}
@@ -3020,13 +3021,7 @@ export default function CitationGraph({ projectId }: Props) {
                           {missingArticlesStats.totalAvailable &&
                             missingArticlesStats.totalAvailable >
                               missingArticlesStats.totalMissing && (
-                              <span
-                                style={{
-                                  fontSize: 9,
-                                  color: "var(--text-muted)",
-                                  marginLeft: 3,
-                                }}
-                              >
+                              <span className="graph-semantic-import-available">
                                 из{" "}
                                 {missingArticlesStats.totalAvailable.toLocaleString()}
                               </span>
@@ -3036,13 +3031,7 @@ export default function CitationGraph({ projectId }: Props) {
                     )}
                   {generatingEmbeddings && embeddingJob?.jobId && (
                     <button
-                      className="btn"
-                      style={{
-                        fontSize: 11,
-                        padding: "4px 8px",
-                        background: "var(--bg-error)",
-                        color: "white",
-                      }}
+                      className="btn graph-semantic-cancel-btn"
                       onClick={handleCancelEmbeddings}
                     >
                       Отменить
@@ -3050,64 +3039,35 @@ export default function CitationGraph({ projectId }: Props) {
                   )}
                   {embeddingMessage && (
                     <span
-                      style={{
-                        fontSize: 11,
-                        color: embeddingMessage.startsWith("✓")
-                          ? "#10b981"
-                          : embeddingMessage.startsWith("Ошибка")
-                            ? "#ef4444"
-                            : "var(--text-muted)",
-                      }}
+                      className={getSemanticEmbeddingMessageClassName(
+                        embeddingMessage,
+                      )}
                     >
                       {embeddingMessage}
                     </span>
                   )}
                   {generatingEmbeddings && embeddingJob && (
-                    <div
-                      style={{
-                        flex: 1,
-                        height: 6,
-                        background: "var(--bg-tertiary)",
-                        borderRadius: 3,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          height: "100%",
-                          width: `${embeddingJob.total > 0 ? Math.round((embeddingJob.processed / embeddingJob.total) * 100) : 0}%`,
-                          background:
-                            "linear-gradient(90deg, #10b981, #3b82f6)",
-                          transition: "width 0.3s ease",
-                        }}
-                      />
-                    </div>
+                    <progress
+                      className="graph-semantic-embedding-progress"
+                      max={Math.max(embeddingJob.total, 1)}
+                      value={Math.max(0, embeddingJob.processed)}
+                    />
                   )}
                 </div>
               )}
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div className="graph-semantic-search-controls">
               <input
                 type="text"
                 value={semanticQuery}
                 onChange={(e) => setSemanticQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSemanticSearch()}
                 placeholder="Введите запрос для поиска похожих статей..."
-                style={{
-                  flex: 1,
-                  padding: "8px 12px",
-                  borderRadius: 6,
-                  border: "1px solid var(--border-glass)",
-                  background: "var(--bg-primary)",
-                  color: "inherit",
-                  fontSize: 13,
-                }}
+                className="graph-semantic-search-input"
               />
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  Порог:
-                </label>
+              <div className="graph-semantic-threshold-wrap">
+                <label className="graph-semantic-threshold-label">Порог:</label>
                 <input
                   type="range"
                   min={0.3}
@@ -3117,68 +3077,39 @@ export default function CitationGraph({ projectId }: Props) {
                   onChange={(e) =>
                     setSemanticThreshold(parseFloat(e.target.value))
                   }
-                  style={{ width: 60 }}
+                  className="graph-semantic-threshold-range"
                 />
-                <span style={{ fontSize: 11, minWidth: 30 }}>
+                <span className="graph-semantic-threshold-value">
                   {semanticThreshold.toFixed(2)}
                 </span>
               </div>
               <button
-                className="btn primary"
+                className="btn primary graph-semantic-search-btn"
                 onClick={handleSemanticSearch}
                 disabled={semanticSearching || !semanticQuery.trim()}
-                style={{ padding: "8px 16px" }}
               >
                 {semanticSearching ? "..." : "Найти"}
               </button>
             </div>
 
             {semanticResults.length > 0 && (
-              <div style={{ marginTop: 12, maxHeight: 200, overflowY: "auto" }}>
-                <div
-                  style={{
-                    fontSize: 11,
-                    color: "var(--text-muted)",
-                    marginBottom: 6,
-                  }}
-                >
+              <div className="graph-semantic-results">
+                <div className="graph-semantic-results-title">
                   Найдено {semanticResults.length} похожих статей:
                 </div>
                 {semanticResults.map((result) => (
                   <div
                     key={result.id}
                     onClick={() => highlightSemanticResult(result.id)}
-                    style={{
-                      padding: "6px 8px",
-                      marginBottom: 4,
-                      background: "var(--bg-secondary)",
-                      borderRadius: 4,
-                      cursor: "pointer",
-                      fontSize: 12,
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                    }}
+                    className="graph-semantic-result-row"
                   >
-                    <span
-                      style={{
-                        flex: 1,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <span className="graph-semantic-result-title">
                       {result.titleEn || result.title}
                     </span>
                     <span
-                      style={{
-                        marginLeft: 8,
-                        padding: "2px 6px",
-                        background: `rgba(16, 185, 129, ${result.similarity})`,
-                        borderRadius: 4,
-                        fontSize: 10,
-                        fontWeight: 600,
-                      }}
+                      className={getSemanticResultScoreClassName(
+                        result.similarity,
+                      )}
                     >
                       {(result.similarity * 100).toFixed(0)}%
                     </span>
@@ -3189,32 +3120,17 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Визуализация семантического ядра */}
             {embeddingStats && embeddingStats.withEmbeddings > 10 && (
-              <div
-                style={{
-                  marginTop: 16,
-                  paddingTop: 16,
-                  borderTop: "1px solid var(--border-glass)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 12,
-                  }}
-                >
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 8 }}
-                  >
-                    <span style={{ fontWeight: 600, fontSize: 13 }}>
+              <div className="graph-semantic-core">
+                <div className="graph-semantic-core-header">
+                  <div className="graph-semantic-core-title-group">
+                    <span className="graph-semantic-core-title">
                       🔗 Семантическое ядро
                     </span>
-                    <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                    <span className="graph-semantic-core-subtitle">
                       (связи по смыслу)
                     </span>
                   </div>
-                  <label className="toggle-switch" style={{ fontSize: 11 }}>
+                  <label className="toggle-switch graph-semantic-core-toggle">
                     <input
                       type="checkbox"
                       checked={showSemanticEdges}
@@ -3230,15 +3146,9 @@ export default function CitationGraph({ projectId }: Props) {
                 </div>
 
                 {showSemanticEdges && (
-                  <div
-                    style={{ display: "flex", alignItems: "center", gap: 12 }}
-                  >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
-                    >
-                      <label
-                        style={{ fontSize: 11, color: "var(--text-muted)" }}
-                      >
+                  <div className="graph-semantic-core-controls">
+                    <div className="graph-semantic-core-threshold-group">
+                      <label className="graph-semantic-core-threshold-label">
                         Порог схожести:
                       </label>
                       <input
@@ -3250,27 +3160,21 @@ export default function CitationGraph({ projectId }: Props) {
                         onChange={(e) =>
                           setSemanticEdgeThreshold(parseFloat(e.target.value))
                         }
-                        style={{ width: 80 }}
+                        className="graph-semantic-core-threshold-range"
                       />
-                      <span style={{ fontSize: 11, minWidth: 35 }}>
+                      <span className="graph-semantic-core-threshold-value">
                         {(semanticEdgeThreshold * 100).toFixed(0)}%
                       </span>
                     </div>
                     <button
-                      className="btn secondary"
-                      style={{ fontSize: 11, padding: "4px 12px" }}
+                      className="btn secondary graph-semantic-core-refresh-btn"
                       onClick={loadSemanticEdges}
                       disabled={loadingSemanticEdges}
                     >
                       {loadingSemanticEdges ? "Загрузка..." : "Обновить"}
                     </button>
                     {semanticEdges.length > 0 && (
-                      <span
-                        style={{
-                          fontSize: 11,
-                          color: "var(--accent-secondary)",
-                        }}
-                      >
+                      <span className="graph-semantic-core-edge-count">
                         {semanticEdges.length} связей
                       </span>
                     )}
@@ -3278,18 +3182,8 @@ export default function CitationGraph({ projectId }: Props) {
                 )}
 
                 {showSemanticEdges && semanticEdges.length > 0 && (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      padding: 8,
-                      background: "rgba(236, 72, 153, 0.1)",
-                      borderRadius: 6,
-                      fontSize: 11,
-                    }}
-                  >
-                    <span style={{ color: "rgba(236, 72, 153, 0.8)" }}>
-                      — — —
-                    </span>{" "}
+                  <div className="graph-semantic-core-hint">
+                    <span className="graph-semantic-core-hint-dash">— — —</span>{" "}
                     Пунктирные розовые линии = семантическая близость (статьи
                     про похожие темы, но без прямого цитирования)
                   </div>
@@ -3301,37 +3195,21 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Methodology Clusters Panel */}
         {showMethodologyClusters && methodologyClusters.length > 0 && (
-          <div
-            className="graph-filters"
-            style={{
-              padding: "12px 20px",
-              borderBottom: "1px solid var(--border-glass)",
-              background:
-                "linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(236, 72, 153, 0.05))",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
+          <div className="graph-filters graph-methodology-panel">
+            <div className="graph-methodology-header">
               <IconChartBar size="sm" />
-              <span style={{ fontWeight: 600 }}>
+              <span className="graph-methodology-title">
                 Кластеризация по методологиям
               </span>
               <button
-                className="btn secondary"
-                style={{ fontSize: 10, padding: "2px 6px", marginLeft: "auto" }}
+                className="btn secondary graph-methodology-reset-btn"
                 onClick={() => filterByMethodology(null)}
               >
                 Сбросить фильтр
               </button>
             </div>
 
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <div className="graph-methodology-list">
               {methodologyClusters
                 .filter((c) => c.count > 0)
                 .sort((a, b) => b.count - a.count)
@@ -3345,44 +3223,19 @@ export default function CitationGraph({ projectId }: Props) {
                           : cluster.type,
                       )
                     }
-                    style={{
-                      padding: "6px 10px",
-                      borderRadius: 6,
-                      border:
-                        methodologyFilter === cluster.type
-                          ? "2px solid var(--accent)"
-                          : "1px solid var(--border-glass)",
-                      background:
-                        methodologyFilter === cluster.type
-                          ? "var(--accent)"
-                          : "var(--bg-secondary)",
-                      color:
-                        methodologyFilter === cluster.type
-                          ? "white"
-                          : "inherit",
-                      cursor: "pointer",
-                      fontSize: 11,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
+                    className={getMethodologyChipClassName(
+                      methodologyFilter === cluster.type,
+                    )}
                   >
                     <span>{cluster.name}</span>
                     <span
-                      style={{
-                        background:
-                          methodologyFilter === cluster.type
-                            ? "rgba(255,255,255,0.2)"
-                            : "var(--bg-tertiary)",
-                        padding: "1px 5px",
-                        borderRadius: 8,
-                        fontSize: 10,
-                        fontWeight: 600,
-                      }}
+                      className={getMethodologyCountBadgeClassName(
+                        methodologyFilter === cluster.type,
+                      )}
                     >
                       {cluster.count}
                     </span>
-                    <span style={{ fontSize: 9, color: "var(--text-muted)" }}>
+                    <span className="graph-methodology-percent">
                       ({cluster.percentage.toFixed(0)}%)
                     </span>
                   </button>
@@ -3393,41 +3246,26 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Semantic Clusters Panel */}
         {showSemanticClustersPanel && (
-          <div
-            className="graph-filters"
-            style={{
-              padding: "12px 20px",
-              borderBottom: "1px solid var(--border-glass)",
-              background:
-                "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(34, 197, 94, 0.05))",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 12,
-              }}
-            >
+          <div className="graph-filters graph-semantic-clusters-panel">
+            <div className="graph-semantic-clusters-header">
               <IconGraph size="sm" />
-              <span style={{ fontWeight: 600 }}>🔮 Семантические кластеры</span>
-              <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              <span className="graph-semantic-clusters-title">
+                🔮 Семантические кластеры
+              </span>
+              <span className="graph-semantic-clusters-subtitle">
                 (группировка по смыслу)
               </span>
-              <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+              <div className="graph-semantic-clusters-actions">
                 {semanticClusters.length > 0 && (
                   <button
-                    className="btn secondary"
-                    style={{ fontSize: 10, padding: "2px 6px" }}
+                    className="btn secondary graph-semantic-clusters-action-btn"
                     onClick={() => filterBySemanticCluster(null)}
                   >
                     Сбросить
                   </button>
                 )}
                 <button
-                  className="btn secondary"
-                  style={{ fontSize: 10, padding: "2px 6px" }}
+                  className="btn secondary graph-semantic-clusters-action-btn"
                   onClick={handleCreateSemanticClusters}
                   disabled={creatingSemanticClusters}
                 >
@@ -3439,12 +3277,7 @@ export default function CitationGraph({ projectId }: Props) {
                 </button>
                 {semanticClusters.length > 0 && (
                   <button
-                    className="btn secondary"
-                    style={{
-                      fontSize: 10,
-                      padding: "2px 6px",
-                      color: "#ef4444",
-                    }}
+                    className="btn secondary graph-semantic-clusters-action-btn graph-semantic-clusters-delete-btn"
                     onClick={handleDeleteSemanticClusters}
                   >
                     Удалить
@@ -3455,19 +3288,9 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Настройки кластеризации */}
             {semanticClusters.length === 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 16,
-                  marginBottom: 12,
-                  padding: 12,
-                  background: "var(--bg-secondary)",
-                  borderRadius: 8,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+              <div className="graph-semantic-cluster-settings">
+                <div className="graph-semantic-cluster-setting-group">
+                  <label className="graph-semantic-cluster-setting-label">
                     Кластеров:
                   </label>
                   <input
@@ -3481,19 +3304,11 @@ export default function CitationGraph({ projectId }: Props) {
                         numClusters: parseInt(e.target.value) || 5,
                       }))
                     }
-                    style={{
-                      width: 50,
-                      padding: "4px 6px",
-                      borderRadius: 4,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-primary)",
-                      color: "inherit",
-                      fontSize: 11,
-                    }}
+                    className="graph-semantic-cluster-setting-input"
                   />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                <div className="graph-semantic-cluster-setting-group">
+                  <label className="graph-semantic-cluster-setting-label">
                     Мин. размер:
                   </label>
                   <input
@@ -3507,19 +3322,11 @@ export default function CitationGraph({ projectId }: Props) {
                         minClusterSize: parseInt(e.target.value) || 3,
                       }))
                     }
-                    style={{
-                      width: 50,
-                      padding: "4px 6px",
-                      borderRadius: 4,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-primary)",
-                      color: "inherit",
-                      fontSize: 11,
-                    }}
+                    className="graph-semantic-cluster-setting-input"
                   />
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <label style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                <div className="graph-semantic-cluster-setting-group">
+                  <label className="graph-semantic-cluster-setting-label">
                     Порог схожести:
                   </label>
                   <input
@@ -3534,24 +3341,16 @@ export default function CitationGraph({ projectId }: Props) {
                         similarityThreshold: parseFloat(e.target.value),
                       }))
                     }
-                    style={{ width: 60 }}
+                    className="graph-semantic-cluster-similarity-range"
                   />
-                  <span style={{ fontSize: 11 }}>
+                  <span className="graph-semantic-cluster-similarity-value">
                     {(
                       semanticClusterSettings.similarityThreshold * 100
                     ).toFixed(0)}
                     %
                   </span>
                 </div>
-                <label
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    fontSize: 11,
-                    cursor: "pointer",
-                  }}
-                >
+                <label className="graph-semantic-cluster-checkbox-label">
                   <input
                     type="checkbox"
                     checked={semanticClusterSettings.generateNames}
@@ -3569,7 +3368,7 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Список кластеров */}
             {semanticClusters.length > 0 && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <div className="graph-semantic-cluster-list">
                 {semanticClusters.map((cluster) => (
                   <div
                     key={cluster.id}
@@ -3585,30 +3384,9 @@ export default function CitationGraph({ projectId }: Props) {
                       openClusterDetails(cluster);
                     }}
                     title="Клик: фильтр | Двойной клик: детали"
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: 8,
-                      border:
-                        selectedSemanticCluster === cluster.id
-                          ? `2px solid ${cluster.color}`
-                          : "1px solid var(--border-glass)",
-                      background:
-                        selectedSemanticCluster === cluster.id
-                          ? cluster.color
-                          : "var(--bg-secondary)",
-                      color:
-                        selectedSemanticCluster === cluster.id
-                          ? "white"
-                          : "inherit",
-                      cursor: "pointer",
-                      fontSize: 11,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "flex-start",
-                      gap: 4,
-                      minWidth: 150,
-                      position: "relative",
-                    }}
+                    className={getSemanticClusterCardClassName(
+                      selectedSemanticCluster === cluster.id,
+                    )}
                   >
                     {/* Кнопка деталей */}
                     <button
@@ -3616,90 +3394,35 @@ export default function CitationGraph({ projectId }: Props) {
                         e.stopPropagation();
                         openClusterDetails(cluster);
                       }}
-                      style={{
-                        position: "absolute",
-                        top: 4,
-                        right: 4,
-                        width: 18,
-                        height: 18,
-                        borderRadius: 4,
-                        border: "none",
-                        background:
-                          selectedSemanticCluster === cluster.id
-                            ? "rgba(255,255,255,0.2)"
-                            : "var(--bg-tertiary)",
-                        color: "inherit",
-                        cursor: "pointer",
-                        fontSize: 10,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                      className={getSemanticClusterDetailsButtonClassName(
+                        selectedSemanticCluster === cluster.id,
+                      )}
                       title="Подробнее о кластере"
                     >
                       ⓘ
                     </button>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        width: "100%",
-                        paddingRight: 20,
-                      }}
-                    >
+                    <div className="graph-semantic-cluster-header-row">
                       <span
-                        style={{
-                          width: 10,
-                          height: 10,
-                          borderRadius: "50%",
-                          background: cluster.color,
-                          flexShrink: 0,
-                        }}
+                        className={getSemanticClusterDotClassName(
+                          cluster.color,
+                        )}
                       />
-                      <span
-                        style={{
-                          fontWeight: 600,
-                          flex: 1,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                      <span className="graph-semantic-cluster-name">
                         {cluster.name}
                       </span>
                       <span
-                        style={{
-                          background:
-                            selectedSemanticCluster === cluster.id
-                              ? "rgba(255,255,255,0.2)"
-                              : cluster.color + "30",
-                          color:
-                            selectedSemanticCluster === cluster.id
-                              ? "white"
-                              : cluster.color,
-                          padding: "2px 6px",
-                          borderRadius: 10,
-                          fontSize: 10,
-                          fontWeight: 600,
-                        }}
+                        className={getSemanticClusterCountBadgeClassName(
+                          selectedSemanticCluster === cluster.id,
+                        )}
                       >
                         {cluster.articleCount}
                       </span>
                     </div>
                     {cluster.centralArticleTitle && (
                       <div
-                        style={{
-                          fontSize: 9,
-                          color:
-                            selectedSemanticCluster === cluster.id
-                              ? "rgba(255,255,255,0.8)"
-                              : "var(--text-muted)",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                          width: "100%",
-                        }}
+                        className={getSemanticClusterCentralTitleClassName(
+                          selectedSemanticCluster === cluster.id,
+                        )}
                         title={cluster.centralArticleTitle}
                       >
                         ⭐ {cluster.centralArticleTitle.slice(0, 40)}...
@@ -3707,13 +3430,9 @@ export default function CitationGraph({ projectId }: Props) {
                     )}
                     {cluster.keywords.length > 0 && (
                       <div
-                        style={{
-                          fontSize: 9,
-                          color:
-                            selectedSemanticCluster === cluster.id
-                              ? "rgba(255,255,255,0.7)"
-                              : "var(--text-muted)",
-                        }}
+                        className={getSemanticClusterKeywordsClassName(
+                          selectedSemanticCluster === cluster.id,
+                        )}
                       >
                         {cluster.keywords.slice(0, 3).join(", ")}
                       </div>
@@ -3725,17 +3444,10 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Подсказка про embeddings */}
             {semanticClusters.length === 0 && !creatingSemanticClusters && (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: 16,
-                  color: "var(--text-muted)",
-                  fontSize: 12,
-                }}
-              >
+              <div className="graph-semantic-cluster-empty-hint">
                 {embeddingStats && embeddingStats.withEmbeddings < 10 ? (
                   <>
-                    <div style={{ marginBottom: 8, color: "#f59e0b" }}>
+                    <div className="graph-semantic-cluster-empty-warning">
                       ⚠️ Недостаточно embeddings для кластеризации
                     </div>
                     <div>
@@ -3759,48 +3471,19 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Gap Analysis Panel */}
         {showGapAnalysis && (
-          <div
-            className="graph-filters"
-            style={{
-              padding: "10px 16px",
-              borderBottom: "1px solid var(--border-glass)",
-              background:
-                "linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(239, 68, 68, 0.05))",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div className="graph-filters graph-gap-panel">
+            <div className="graph-gap-header">
+              <div className="graph-gap-title-wrap">
                 <IconLinkChain size="sm" />
-                <span style={{ fontWeight: 600, fontSize: 13 }}>
-                  🔍 Анализ пробелов
-                </span>
-                <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+                <span className="graph-gap-title">🔍 Анализ пробелов</span>
+                <span className="graph-gap-subtitle">
                   (похожие статьи без цитирований)
                 </span>
               </div>
 
               {/* Фильтры - компактная версия */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginLeft: "auto",
-                  background: "var(--bg-secondary)",
-                  padding: "6px 10px",
-                  borderRadius: 8,
-                }}
-              >
-                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  Годы:
-                </span>
+              <div className="graph-gap-filters-wrap">
+                <span className="graph-gap-filter-label">Годы:</span>
                 <select
                   value={gapYearFrom || ""}
                   onChange={(e) =>
@@ -3808,16 +3491,7 @@ export default function CitationGraph({ projectId }: Props) {
                       e.target.value ? parseInt(e.target.value, 10) : undefined,
                     )
                   }
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: 12,
-                    borderRadius: 4,
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-primary)",
-                    color: "inherit",
-                    cursor: "pointer",
-                    minWidth: 70,
-                  }}
+                  className="graph-gap-filter-select"
                 >
                   <option value="">с...</option>
                   {Array.from(
@@ -3831,7 +3505,7 @@ export default function CitationGraph({ projectId }: Props) {
                       </option>
                     ))}
                 </select>
-                <span style={{ color: "var(--text-muted)" }}>—</span>
+                <span className="graph-gap-separator">—</span>
                 <select
                   value={gapYearTo || ""}
                   onChange={(e) =>
@@ -3839,16 +3513,7 @@ export default function CitationGraph({ projectId }: Props) {
                       e.target.value ? parseInt(e.target.value, 10) : undefined,
                     )
                   }
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: 12,
-                    borderRadius: 4,
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-primary)",
-                    color: "inherit",
-                    cursor: "pointer",
-                    minWidth: 70,
-                  }}
+                  className="graph-gap-filter-select"
                 >
                   <option value="">по...</option>
                   {Array.from(
@@ -3863,28 +3528,11 @@ export default function CitationGraph({ projectId }: Props) {
                     ))}
                 </select>
 
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: "var(--text-muted)",
-                    marginLeft: 4,
-                  }}
-                >
-                  Лимит:
-                </span>
+                <span className="graph-gap-limit-label">Лимит:</span>
                 <select
                   value={gapLimit}
                   onChange={(e) => setGapLimit(parseInt(e.target.value, 10))}
-                  style={{
-                    padding: "4px 8px",
-                    fontSize: 12,
-                    borderRadius: 4,
-                    border: "1px solid var(--border-color)",
-                    background: "var(--bg-primary)",
-                    color: "inherit",
-                    cursor: "pointer",
-                    minWidth: 55,
-                  }}
+                  className="graph-gap-filter-select graph-gap-limit-select"
                 >
                   <option value={20}>20</option>
                   <option value={50}>50</option>
@@ -3897,111 +3545,45 @@ export default function CitationGraph({ projectId }: Props) {
               <button
                 onClick={handleGapAnalysis}
                 disabled={loadingGapAnalysis}
-                style={{
-                  fontSize: 12,
-                  padding: "6px 16px",
-                  background: loadingGapAnalysis
-                    ? "var(--bg-tertiary)"
-                    : "linear-gradient(135deg, #f59e0b, #ef4444)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 6,
-                  cursor: loadingGapAnalysis ? "wait" : "pointer",
-                  transition: "all 0.2s ease",
-                  boxShadow: loadingGapAnalysis
-                    ? "none"
-                    : "0 2px 8px rgba(245, 158, 11, 0.3)",
-                  fontWeight: 500,
-                  whiteSpace: "nowrap",
-                }}
+                className={getGapAnalyzeButtonClassName(loadingGapAnalysis)}
               >
                 {loadingGapAnalysis ? "⏳ Поиск..." : "🔍 Найти пробелы"}
               </button>
             </div>
 
             {gapAnalysisResults.length > 0 ? (
-              <div style={{ maxHeight: 200, overflowY: "auto", marginTop: 12 }}>
+              <div className="graph-gap-results-wrap">
                 {gapAnalysisResults.map((gap, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      padding: 10,
-                      marginBottom: 8,
-                      background: "var(--bg-secondary)",
-                      borderRadius: 6,
-                      fontSize: 11,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 6,
-                      }}
-                    >
+                  <div key={idx} className="graph-gap-result-card">
+                    <div className="graph-gap-result-header">
                       <span
-                        style={{
-                          background: `rgba(245, 158, 11, ${gap.similarity})`,
-                          padding: "2px 8px",
-                          borderRadius: 10,
-                          fontWeight: 600,
-                          fontSize: 10,
-                        }}
+                        className={getGapSimilarityClassName(gap.similarity)}
                       >
                         {(gap.similarity * 100).toFixed(0)}% схожесть
                       </span>
-                      <span
-                        style={{
-                          fontSize: 9,
-                          color: "var(--text-muted)",
-                          maxWidth: "60%",
-                        }}
-                      >
-                        {gap.reason}
-                      </span>
+                      <span className="graph-gap-reason">{gap.reason}</span>
                     </div>
-                    <div style={{ display: "flex", gap: 8 }}>
+                    <div className="graph-gap-pair">
                       <div
-                        style={{ flex: 1, cursor: "pointer" }}
+                        className="graph-gap-article-col"
                         onClick={() => highlightSemanticResult(gap.article1.id)}
                       >
-                        <div
-                          style={{
-                            fontWeight: 500,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
+                        <div className="graph-gap-article-title">
                           {gap.article1.title?.slice(0, 50)}...
                         </div>
-                        <div
-                          style={{ fontSize: 9, color: "var(--text-muted)" }}
-                        >
+                        <div className="graph-gap-article-year">
                           {gap.article1.year || "N/A"}
                         </div>
                       </div>
-                      <div style={{ color: "#f59e0b", padding: "0 8px" }}>
-                        ↔
-                      </div>
+                      <div className="graph-gap-arrow">↔</div>
                       <div
-                        style={{ flex: 1, cursor: "pointer" }}
+                        className="graph-gap-article-col"
                         onClick={() => highlightSemanticResult(gap.article2.id)}
                       >
-                        <div
-                          style={{
-                            fontWeight: 500,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
+                        <div className="graph-gap-article-title">
                           {gap.article2.title?.slice(0, 50)}...
                         </div>
-                        <div
-                          style={{ fontSize: 9, color: "var(--text-muted)" }}
-                        >
+                        <div className="graph-gap-article-year">
                           {gap.article2.year || "N/A"}
                         </div>
                       </div>
@@ -4010,14 +3592,7 @@ export default function CitationGraph({ projectId }: Props) {
                 ))}
               </div>
             ) : (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: 16,
-                  color: "var(--text-muted)",
-                  fontSize: 12,
-                }}
-              >
+              <div className="graph-gap-empty">
                 {loadingGapAnalysis
                   ? "Анализируем связи..."
                   : "Не найдено статей с высокой схожестью без цитирований"}
@@ -4036,7 +3611,7 @@ export default function CitationGraph({ projectId }: Props) {
           <div className="graph-stat-item">
             <IconLink size="sm" />
             <span>Связей:</span>
-            <span className="graph-stat-value" style={{ color: "#10b981" }}>
+            <span className="graph-stat-value graph-stats-link-value">
               {stats.totalLinks}
             </span>
           </div>
@@ -4046,34 +3621,25 @@ export default function CitationGraph({ projectId }: Props) {
                 stats.levelCounts.level0 !== undefined &&
                 stats.levelCounts.level0 > 0 && (
                   <div className="graph-stat-item">
-                    <span
-                      className="legend-dot"
-                      style={{ background: "#ec4899" }}
-                    ></span>
+                    <span className={getLegendDotClassName("#ec4899")}></span>
                     <span>Цитируют:</span>
-                    <span style={{ color: "#ec4899", fontWeight: 600 }}>
+                    <span className={getLegendValueClassName("#ec4899")}>
                       {stats.levelCounts.level0}
                     </span>
                   </div>
                 )}
               <div className="graph-stat-item">
-                <span
-                  className="legend-dot"
-                  style={{ background: "#3b82f6" }}
-                ></span>
+                <span className={getLegendDotClassName("#3b82f6")}></span>
                 <span>В проекте:</span>
-                <span style={{ color: "#3b82f6", fontWeight: 600 }}>
+                <span className={getLegendValueClassName("#3b82f6")}>
                   {stats.levelCounts.level1}
                 </span>
               </div>
               {depth >= 2 && (
                 <div className="graph-stat-item">
-                  <span
-                    className="legend-dot"
-                    style={{ background: "#f97316" }}
-                  ></span>
+                  <span className={getLegendDotClassName("#f97316")}></span>
                   <span>Ссылки:</span>
-                  <span style={{ color: "#f97316", fontWeight: 600 }}>
+                  <span className={getLegendValueClassName("#f97316")}>
                     {stats.levelCounts.level2}
                   </span>
                 </div>
@@ -4082,12 +3648,9 @@ export default function CitationGraph({ projectId }: Props) {
                 stats.levelCounts.level3 !== undefined &&
                 stats.levelCounts.level3 > 0 && (
                   <div className="graph-stat-item">
-                    <span
-                      className="legend-dot"
-                      style={{ background: "#06b6d4" }}
-                    ></span>
+                    <span className={getLegendDotClassName("#06b6d4")}></span>
                     <span>Связанные:</span>
-                    <span style={{ color: "#06b6d4", fontWeight: 600 }}>
+                    <span className={getLegendValueClassName("#06b6d4")}>
                       {stats.levelCounts.level3}
                     </span>
                   </div>
@@ -4097,26 +3660,14 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* P-value статьи - кнопка добавления */}
           {pValueArticlesCount > 0 && (
-            <div className="graph-stat-item" style={{ marginLeft: "auto" }}>
-              <span
-                className="legend-dot"
-                style={{ background: "#fbbf24" }}
-              ></span>
+            <div className="graph-stat-item graph-pvalue-stat-item">
+              <span className={getLegendDotClassName("#fbbf24")}></span>
               <span>С P-value:</span>
-              <span style={{ color: "#fbbf24", fontWeight: 600 }}>
+              <span className={getLegendValueClassName("#fbbf24")}>
                 {pValueArticlesCount}
               </span>
               <button
-                className="btn secondary"
-                style={{
-                  padding: "4px 10px",
-                  fontSize: 11,
-                  marginLeft: 8,
-                  background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
-                  border: "none",
-                  color: "#1e293b",
-                  fontWeight: 600,
-                }}
+                className="btn secondary graph-pvalue-button"
                 onClick={handleAddAllWithPValue}
                 disabled={addingPValueArticles}
                 title="Добавить все статьи с P-value в проект как кандидаты"
@@ -4131,18 +3682,7 @@ export default function CitationGraph({ projectId }: Props) {
         {depth >= 2 &&
           stats.availableReferences === 0 &&
           stats.availableCiting === 0 && (
-            <div
-              style={{
-                padding: "12px 20px",
-                background: "rgba(251, 191, 36, 0.1)",
-                borderBottom: "1px solid var(--border-glass)",
-                fontSize: 12,
-                color: "#fbbf24",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
+            <div className="graph-no-references-warning">
               <IconExclamation size="sm" />
               Данные о ссылках не загружены. Нажмите "Обновить связи" для
               загрузки.
@@ -4150,31 +3690,21 @@ export default function CitationGraph({ projectId }: Props) {
           )}
 
         {/* Main Area: Graph + AI Panel side by side */}
-        <div
-          style={{ flex: 1, display: "flex", overflow: "hidden", minHeight: 0 }}
-        >
+        <div className="graph-main-split">
           {/* Graph Area */}
           <div
             ref={graphAreaRef}
             onMouseMove={handleGraphMouseMove}
             onMouseLeave={clearHoverCard}
-            style={{
-              flex: 1,
-              overflow: "hidden",
-              position: "relative",
-              minHeight: 0,
-            }}
+            className="graph-main-graph-area"
           >
             {!data || data.nodes.length === 0 ? (
-              <div
-                className="muted"
-                style={{ padding: 60, textAlign: "center" }}
-              >
+              <div className="muted graph-main-empty-state">
                 <IconChartBar size="lg" className="icon-lg" />
                 <p>Нет данных для графа с текущими фильтрами.</p>
               </div>
             ) : (
-              <div style={{ width: "100%", height: "100%" }}>
+              <div className="graph-main-canvas-fill">
                 <ForceGraph2D
                   ref={graphRef}
                   graphData={
@@ -4186,9 +3716,20 @@ export default function CitationGraph({ projectId }: Props) {
                   nodeLabel={nodeLabel}
                   nodeVal={nodeVal}
                   nodeRelSize={6}
-                  nodeCanvasObject={(node: any, ctx: any, globalScale: any) => {
+                  nodeCanvasObject={(
+                    node: GraphNodeWithCoords,
+                    ctx: CanvasRenderingContext2D,
+                    globalScale: number,
+                  ) => {
+                    const nodeX = node.x;
+                    const nodeY = node.y;
                     // Проверка на валидность координат (могут быть undefined при инициализации)
-                    if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) {
+                    if (
+                      typeof nodeX !== "number" ||
+                      !Number.isFinite(nodeX) ||
+                      typeof nodeY !== "number" ||
+                      !Number.isFinite(nodeY)
+                    ) {
                       return; // Пропускаем отрисовку пока координаты не определены
                     }
 
@@ -4244,7 +3785,7 @@ export default function CitationGraph({ projectId }: Props) {
 
                     // Рисуем узел
                     ctx.beginPath();
-                    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                    ctx.arc(nodeX, nodeY, size, 0, 2 * Math.PI);
                     ctx.fill();
 
                     // Сбрасываем свечение
@@ -4256,7 +3797,7 @@ export default function CitationGraph({ projectId }: Props) {
                       : graphColors.strokeColor;
                     ctx.lineWidth = clusterColor ? 1.2 : 0.8;
                     ctx.beginPath();
-                    ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                    ctx.arc(nodeX, nodeY, size, 0, 2 * Math.PI);
                     ctx.stroke();
 
                     // Обводка для AI-найденных (заметнее, но не кричащо)
@@ -4264,7 +3805,7 @@ export default function CitationGraph({ projectId }: Props) {
                       ctx.strokeStyle = "rgba(0, 212, 255, 0.6)";
                       ctx.lineWidth = 1.5;
                       ctx.beginPath();
-                      ctx.arc(node.x, node.y, size, 0, 2 * Math.PI);
+                      ctx.arc(nodeX, nodeY, size, 0, 2 * Math.PI);
                       ctx.stroke();
                     }
 
@@ -4277,7 +3818,7 @@ export default function CitationGraph({ projectId }: Props) {
                       ctx.font = `${Math.max(8, size * 0.8)}px sans-serif`;
                       ctx.textAlign = "center";
                       ctx.textBaseline = "middle";
-                      ctx.fillText("⭐", node.x, node.y - size - 4);
+                      ctx.fillText("⭐", nodeX, nodeY - size - 4);
                     }
 
                     // Метки для крупных узлов при масштабе
@@ -4292,24 +3833,26 @@ export default function CitationGraph({ projectId }: Props) {
                       ctx.fillStyle = graphColors.textColor;
                       ctx.textAlign = "center";
                       ctx.textBaseline = "top";
-                      ctx.fillText(label, node.x, node.y + size + 4);
+                      ctx.fillText(label, nodeX, nodeY + size + 4);
                     }
                   }}
-                  linkColor={(link: any) => {
+                  linkColor={(link: GraphLinkWithSemantic) => {
+                    const similarity = link.similarity ?? semanticEdgeThreshold;
                     return link.isSemantic
-                      ? `rgba(236, 72, 153, ${0.3 + (link.similarity - semanticEdgeThreshold) * 2})` // Розовый для семантических
+                      ? `rgba(236, 72, 153, ${0.3 + (similarity - semanticEdgeThreshold) * 2})` // Розовый для семантических
                       : graphColors.linkColor; // Из предвычисленных цветов
                   }}
-                  linkWidth={(link: any) =>
-                    link.isSemantic
-                      ? 1.5 + (link.similarity - semanticEdgeThreshold) * 3 // Толще для высокой схожести
+                  linkWidth={(link: GraphLinkWithSemantic) => {
+                    const similarity = link.similarity ?? semanticEdgeThreshold;
+                    return link.isSemantic
+                      ? 1.5 + (similarity - semanticEdgeThreshold) * 3 // Толще для высокой схожести
                       : linkThickness === "thin"
                         ? 0.5
                         : linkThickness === "thick"
                           ? 1.5
-                          : 0.8
-                  }
-                  linkLineDash={(link: any) =>
+                          : 0.8;
+                  }}
+                  linkLineDash={(link: GraphLinkWithSemantic) =>
                     link.isSemantic ? [4, 4] : null
                   } // Пунктир для семантических
                   linkDirectionalArrowLength={3}
@@ -4324,7 +3867,10 @@ export default function CitationGraph({ projectId }: Props) {
                   d3AlphaMin={0.001}
                   onEngineStop={() => {}}
                   onNodeHover={handleNodeHover}
-                  onNodeClick={(node: any, event: any) => {
+                  onNodeClick={(
+                    node: GraphNodeWithCoords,
+                    event: MouseEvent,
+                  ) => {
                     if (event?.altKey) {
                       if (node.doi) {
                         window.open(`https://doi.org/${node.doi}`, "_blank");
@@ -4336,23 +3882,22 @@ export default function CitationGraph({ projectId }: Props) {
                       }
                       return;
                     }
+                    const normalizedNode: GraphNode = {
+                      ...node,
+                      authors: Array.isArray(node.authors)
+                        ? node.authors.join(", ")
+                        : node.authors,
+                    };
                     setSelectedNodeForDisplay(
-                      selectedNodeForDisplay?.id === node.id ? null : node,
+                      selectedNodeForDisplay?.id === node.id
+                        ? null
+                        : normalizedNode,
                     );
                   }}
                 />
 
                 {/* Floating controls overlay */}
-                <div
-                  style={{
-                    position: "absolute",
-                    bottom: 16,
-                    right: 16,
-                    display: "flex",
-                    gap: 8,
-                    zIndex: 10,
-                  }}
-                >
+                <div className="graph-main-floating-controls">
                   {/* Animation toggle */}
                   <button
                     onClick={toggleAnimation}
@@ -4410,11 +3955,10 @@ export default function CitationGraph({ projectId }: Props) {
               hoverCardArticle &&
               !selectedNodeForDisplay && (
                 <div
-                  className="graph-hover-card"
-                  style={{
-                    left: hoverCardPosition.x,
-                    top: hoverCardPosition.y,
-                  }}
+                  className={getGraphHoverCardClassName(
+                    hoverCardPosition.x,
+                    hoverCardPosition.y,
+                  )}
                 >
                   <ArticleCard
                     article={hoverCardArticle}
@@ -4434,35 +3978,14 @@ export default function CitationGraph({ projectId }: Props) {
           {showAIAssistant && (
             <div className="ai-panel-sidebar">
               {/* AI Panel Header */}
-              <div
-                style={{
-                  padding: "10px 12px",
-                  borderBottom: "1px solid var(--border-glass)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  background:
-                    "linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(99, 102, 241, 0.1))",
-                  flexShrink: 0,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div className="ai-panel-header">
+                <div className="ai-panel-header-title-wrap">
                   <IconSparkles size="md" className="text-purple-400" />
-                  <span style={{ fontWeight: 600, fontSize: 13 }}>
-                    AI Ассистент
-                  </span>
+                  <span className="ai-panel-header-title">AI Ассистент</span>
                 </div>
                 <button
                   onClick={() => setShowAIAssistant(false)}
-                  style={{
-                    background: "transparent",
-                    border: "none",
-                    color: "var(--text-secondary)",
-                    cursor: "pointer",
-                    padding: 4,
-                    display: "flex",
-                    alignItems: "center",
-                  }}
+                  className="ai-panel-collapse-btn"
                   title="Свернуть"
                 >
                   <IconChevronRight size="sm" />
@@ -4470,81 +3993,43 @@ export default function CitationGraph({ projectId }: Props) {
               </div>
 
               {/* Chat History */}
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  padding: 12,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 10,
-                }}
-              >
+              <div className="ai-history-wrap">
                 {aiHistory.length === 0 && (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      color: "var(--text-secondary)",
-                      padding: 16,
-                      fontSize: 12,
-                    }}
-                  >
+                  <div className="ai-empty-state">
                     <IconSearch
                       size="lg"
-                      className="icon-lg"
-                      style={{
-                        margin: "0 auto 12px",
-                        opacity: 0.5,
-                      }}
+                      className="icon-lg ai-empty-search-icon"
                     />
-                    <p style={{ marginBottom: 8, fontWeight: 500 }}>
-                      Поиск в графе
-                    </p>
-                    <p style={{ fontSize: 11, marginBottom: 10, opacity: 0.9 }}>
+                    <p className="ai-empty-title">Поиск в графе</p>
+                    <p className="ai-empty-description">
                       AI найдёт статьи среди ссылок и цитирующих работ
                     </p>
-                    <div
-                      style={{
-                        fontSize: 11,
-                        opacity: 0.8,
-                        textAlign: "left",
-                        paddingLeft: 12,
-                      }}
-                    >
-                      <p style={{ fontStyle: "italic", marginBottom: 4 }}>
+                    <div className="ai-empty-examples">
+                      <p className="ai-empty-example">
                         💡 «Найди мета-анализы»
                       </p>
-                      <p style={{ fontStyle: "italic", marginBottom: 4 }}>
+                      <p className="ai-empty-example">
                         💡 «РКИ за последние 5 лет»
                       </p>
                       {semanticClusters.length > 0 && (
-                        <p style={{ fontStyle: "italic", marginBottom: 4 }}>
+                        <p className="ai-empty-example">
                           💡 «Статьи из кластера про...»
                         </p>
                       )}
                       {gapAnalysisResults.length > 0 && (
-                        <p style={{ fontStyle: "italic" }}>
+                        <p className="ai-empty-example ai-empty-example--last">
                           💡 «Статьи для закрытия gap...»
                         </p>
                       )}
                       {semanticClusters.length === 0 &&
                         gapAnalysisResults.length === 0 && (
-                          <p style={{ fontStyle: "italic" }}>
+                          <p className="ai-empty-example ai-empty-example--last">
                             💡 «Статьи про лечение»
                           </p>
                         )}
                     </div>
                     {depth < 2 && (
-                      <div
-                        style={{
-                          marginTop: 12,
-                          padding: "8px 10px",
-                          background: "rgba(251, 191, 36, 0.15)",
-                          borderRadius: 6,
-                          fontSize: 10,
-                          color: "#fbbf24",
-                        }}
-                      >
+                      <div className="ai-empty-depth-warning">
                         ⚠️ Для поиска нужно загрузить связи: выберите «+Ссылки»
                         или «+Цитирующие»
                       </div>
@@ -4555,101 +4040,37 @@ export default function CitationGraph({ projectId }: Props) {
                 {aiHistory.map((msg, idx) => (
                   <div
                     key={idx}
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      background:
-                        msg.role === "user"
-                          ? "linear-gradient(135deg, #3b82f6, #2563eb)"
-                          : "var(--bg-secondary)",
-                      color:
-                        msg.role === "user" ? "white" : "var(--text-primary)",
-                      alignSelf:
-                        msg.role === "user" ? "flex-end" : "flex-start",
-                      maxWidth: "90%",
-                      fontSize: 12,
-                      lineHeight: 1.4,
-                      whiteSpace: "pre-wrap",
-                    }}
+                    className={getAiMessageBubbleClassName(msg.role)}
                   >
                     {msg.content}
                   </div>
                 ))}
 
                 {aiLoading && (
-                  <div
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 10,
-                      background: "var(--bg-secondary)",
-                      alignSelf: "flex-start",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <span
-                      className="loading-spinner"
-                      style={{ width: 14, height: 14 }}
-                    />
-                    <span
-                      style={{ fontSize: 12, color: "var(--text-secondary)" }}
-                    >
-                      Думаю...
-                    </span>
+                  <div className="ai-loading-message">
+                    <span className="loading-spinner ai-loading-spinner" />
+                    <span className="ai-loading-text">Думаю...</span>
                   </div>
                 )}
 
                 {/* Found Articles from Graph */}
                 {aiFoundArticles.length > 0 && (
-                  <div
-                    style={{
-                      padding: 12,
-                      background: "rgba(0, 255, 255, 0.1)",
-                      borderRadius: 10,
-                      border: "1px solid rgba(0, 255, 255, 0.3)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        marginBottom: 10,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontWeight: 600,
-                          fontSize: 12,
-                          color: "#00ffff",
-                        }}
-                      >
+                  <div className="ai-found-wrap">
+                    <div className="ai-found-header">
+                      <div className="ai-found-title">
                         🔍 Найдено: {aiFoundArticles.length}
                         {aiSelectedForAdd.size > 0 && (
-                          <span style={{ color: "#4ade80", marginLeft: 6 }}>
+                          <span className="ai-found-selected-count">
                             (выбрано: {aiSelectedForAdd.size})
                           </span>
                         )}
                       </div>
-                      <div style={{ display: "flex", gap: 4 }}>
+                      <div className="ai-found-header-actions">
                         <button
                           onClick={toggleSelectAll}
-                          style={{
-                            padding: "4px 8px",
-                            borderRadius: 4,
-                            border: "none",
-                            background:
-                              aiSelectedForAdd.size === aiFoundArticles.length
-                                ? "rgba(74, 222, 128, 0.3)"
-                                : "rgba(255,255,255,0.1)",
-                            color:
-                              aiSelectedForAdd.size === aiFoundArticles.length
-                                ? "#4ade80"
-                                : "var(--text-secondary)",
-                            fontSize: 10,
-                            cursor: "pointer",
-                          }}
+                          className={getAiSelectAllButtonClassName(
+                            aiSelectedForAdd.size === aiFoundArticles.length,
+                          )}
                           title={
                             aiSelectedForAdd.size === aiFoundArticles.length
                               ? "Снять все"
@@ -4662,15 +4083,7 @@ export default function CitationGraph({ projectId }: Props) {
                         </button>
                         <button
                           onClick={handleAIClearHighlight}
-                          style={{
-                            padding: "4px 8px",
-                            borderRadius: 4,
-                            border: "none",
-                            background: "rgba(255,255,255,0.1)",
-                            color: "var(--text-secondary)",
-                            fontSize: 10,
-                            cursor: "pointer",
-                          }}
+                          className="ai-found-action-button ai-found-action-button--default"
                           title="Сбросить подсветку"
                         >
                           ✕
@@ -4679,60 +4092,25 @@ export default function CitationGraph({ projectId }: Props) {
                     </div>
 
                     {/* Article List (scrollable) */}
-                    <div
-                      style={{
-                        maxHeight: 200,
-                        overflowY: "auto",
-                        marginBottom: 10,
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 6,
-                      }}
-                    >
+                    <div className="ai-found-list">
                       {aiFoundArticles.slice(0, 20).map((article, idx) => {
                         const isSelected = aiSelectedForAdd.has(article.id);
                         return (
                           <div
                             key={article.id}
                             onClick={() => toggleArticleSelection(article.id)}
-                            style={{
-                              padding: "8px 10px",
-                              background: isSelected
-                                ? "rgba(74, 222, 128, 0.15)"
-                                : "var(--bg-primary)",
-                              borderRadius: 6,
-                              borderLeft: `3px solid ${isSelected ? "#4ade80" : "#00ffff"}`,
-                              cursor: "pointer",
-                              transition: "all 0.15s ease",
-                            }}
+                            className={getAiFoundItemClassName(isSelected)}
                           >
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "flex-start",
-                                gap: 8,
-                              }}
-                            >
+                            <div className="ai-found-item-inner">
                               <span
-                                style={{
-                                  fontSize: 14,
-                                  color: isSelected
-                                    ? "#4ade80"
-                                    : "var(--text-secondary)",
-                                  flexShrink: 0,
-                                  marginTop: 1,
-                                }}
+                                className={getAiFoundItemCheckboxClassName(
+                                  isSelected,
+                                )}
                               >
                                 {isSelected ? "☑" : "☐"}
                               </span>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div
-                                  style={{
-                                    fontWeight: 500,
-                                    fontSize: 11,
-                                    lineHeight: 1.3,
-                                  }}
-                                >
+                              <div className="ai-found-item-content">
+                                <div className="ai-found-item-title">
                                   {idx + 1}.{" "}
                                   {article.title?.substring(0, 70) ||
                                     article.id}
@@ -4740,15 +4118,7 @@ export default function CitationGraph({ projectId }: Props) {
                                     ? "..."
                                     : ""}
                                 </div>
-                                <div
-                                  style={{
-                                    fontSize: 10,
-                                    color: "var(--text-secondary)",
-                                    marginTop: 4,
-                                    display: "flex",
-                                    gap: 8,
-                                  }}
-                                >
+                                <div className="ai-found-item-meta">
                                   {article.year && (
                                     <span>📅 {article.year}</span>
                                   )}
@@ -4757,14 +4127,7 @@ export default function CitationGraph({ projectId }: Props) {
                                   ) : null}
                                 </div>
                                 {article.reason && (
-                                  <div
-                                    style={{
-                                      fontSize: 10,
-                                      color: "#00ffff",
-                                      marginTop: 4,
-                                      fontStyle: "italic",
-                                    }}
-                                  >
+                                  <div className="ai-found-item-reason">
                                     💡 {article.reason.substring(0, 80)}
                                     {article.reason.length > 80 ? "..." : ""}
                                   </div>
@@ -4775,37 +4138,21 @@ export default function CitationGraph({ projectId }: Props) {
                         );
                       })}
                       {aiFoundArticles.length > 20 && (
-                        <div
-                          style={{
-                            fontSize: 10,
-                            color: "var(--text-muted)",
-                            textAlign: "center",
-                            padding: 4,
-                          }}
-                        >
+                        <div className="ai-found-remainder">
                           ... и ещё {aiFoundArticles.length - 20} статей
                         </div>
                       )}
                     </div>
 
                     {/* Action Buttons */}
-                    <div style={{ display: "flex", gap: 6 }}>
+                    <div className="ai-found-buttons-row">
                       <button
                         onClick={() => handleAIAddSelectedArticles("candidate")}
                         disabled={aiAddingArticles}
-                        style={{
-                          flex: 1,
-                          padding: "10px 12px",
-                          borderRadius: 6,
-                          border: "none",
-                          background: aiAddingArticles
-                            ? "var(--bg-secondary)"
-                            : "linear-gradient(135deg, #3b82f6, #2563eb)",
-                          color: "white",
-                          fontWeight: 600,
-                          fontSize: 11,
-                          cursor: aiAddingArticles ? "not-allowed" : "pointer",
-                        }}
+                        className={getAiAddButtonClassName(
+                          "candidate",
+                          aiAddingArticles,
+                        )}
                         title={
                           aiSelectedForAdd.size > 0
                             ? `Добавить ${aiSelectedForAdd.size} выбранных в Кандидаты`
@@ -4821,19 +4168,10 @@ export default function CitationGraph({ projectId }: Props) {
                       <button
                         onClick={() => handleAIAddSelectedArticles("selected")}
                         disabled={aiAddingArticles}
-                        style={{
-                          flex: 1,
-                          padding: "10px 12px",
-                          borderRadius: 6,
-                          border: "none",
-                          background: aiAddingArticles
-                            ? "var(--bg-secondary)"
-                            : "linear-gradient(135deg, #22c55e, #16a34a)",
-                          color: "white",
-                          fontWeight: 600,
-                          fontSize: 11,
-                          cursor: aiAddingArticles ? "not-allowed" : "pointer",
-                        }}
+                        className={getAiAddButtonClassName(
+                          "selected",
+                          aiAddingArticles,
+                        )}
                         title={
                           aiSelectedForAdd.size > 0
                             ? `Добавить ${aiSelectedForAdd.size} выбранных в Отобранные`
@@ -4852,29 +4190,9 @@ export default function CitationGraph({ projectId }: Props) {
               </div>
 
               {/* Input */}
-              <div
-                style={{
-                  padding: 12,
-                  borderTop: "1px solid var(--border-glass)",
-                  background: "var(--bg-secondary)",
-                  flexShrink: 0,
-                }}
-              >
-                {aiError && (
-                  <div
-                    style={{
-                      marginBottom: 8,
-                      padding: "8px 10px",
-                      background: "rgba(239, 68, 68, 0.1)",
-                      borderRadius: 6,
-                      fontSize: 11,
-                      color: "#ef4444",
-                    }}
-                  >
-                    {aiError}
-                  </div>
-                )}
-                <div style={{ display: "flex", gap: 6 }}>
+              <div className="ai-input-panel">
+                {aiError && <div className="ai-input-error">{aiError}</div>}
+                <div className="ai-input-row">
                   <input
                     type="text"
                     value={aiMessage}
@@ -4884,29 +4202,12 @@ export default function CitationGraph({ projectId }: Props) {
                     }
                     placeholder="Искать в графе..."
                     disabled={aiLoading}
-                    style={{
-                      flex: 1,
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-primary)",
-                      color: "var(--text-primary)",
-                      fontSize: 12,
-                    }}
+                    className="ai-message-input"
                   />
                   <button
                     onClick={handleAISend}
                     disabled={aiLoading || !aiMessage.trim()}
-                    style={{
-                      padding: "10px 12px",
-                      borderRadius: 8,
-                      border: "none",
-                      background: aiLoading
-                        ? "var(--bg-secondary)"
-                        : "linear-gradient(135deg, #8b5cf6, #6366f1)",
-                      color: "white",
-                      cursor: aiLoading ? "not-allowed" : "pointer",
-                    }}
+                    className={getAiSendButtonClassName(aiLoading)}
                   >
                     <IconSend size="sm" />
                   </button>
@@ -4949,9 +4250,8 @@ export default function CitationGraph({ projectId }: Props) {
             onClick={() => setShowRecommendations(false)}
           >
             <div
-              className="node-info-modal"
+              className="node-info-modal recommendations-modal"
               onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: 700 }}
             >
               <button
                 className="node-info-modal-close"
@@ -4960,119 +4260,58 @@ export default function CitationGraph({ projectId }: Props) {
                 <IconClose size="md" />
               </button>
 
-              <h3
-                style={{
-                  marginTop: 0,
-                  marginBottom: 20,
-                  fontSize: 18,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <span style={{ color: "#f59e0b" }}>
+              <h3 className="recommendations-title">
+                <span className="recommendations-title-icon">
                   <IconSparkles size="md" />
                 </span>
                 Рекомендации по улучшению графа
               </h3>
 
               {recommendations.length === 0 ? (
-                <div
-                  style={{
-                    padding: 40,
-                    textAlign: "center",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  <div style={{ opacity: 0.5, marginBottom: 12 }}>
+                <div className="recommendations-empty-state">
+                  <div className="recommendations-empty-icon">
                     <IconCheckBadge size="lg" />
                   </div>
                   <p>Отлично! Граф в хорошем состоянии, рекомендаций нет.</p>
                 </div>
               ) : (
-                <div
-                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
-                >
+                <div className="recommendations-list">
                   {recommendations.map((rec, i) => (
                     <div
                       key={i}
-                      style={{
-                        background:
-                          rec.priority === "high"
-                            ? "rgba(239, 68, 68, 0.1)"
-                            : rec.priority === "medium"
-                              ? "rgba(249, 115, 22, 0.1)"
-                              : "rgba(59, 130, 246, 0.1)",
-                        border: `1px solid ${
-                          rec.priority === "high"
-                            ? "rgba(239, 68, 68, 0.3)"
-                            : rec.priority === "medium"
-                              ? "rgba(249, 115, 22, 0.3)"
-                              : "rgba(59, 130, 246, 0.3)"
-                        }`,
-                        borderRadius: 8,
-                        padding: 16,
-                      }}
+                      className={getRecommendationCardClassName(rec.priority)}
                     >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "flex-start",
-                          gap: 12,
-                        }}
-                      >
+                      <div className="recommendation-card-body">
                         <div
-                          style={{
-                            background:
-                              rec.priority === "high"
-                                ? "#ef4444"
-                                : rec.priority === "medium"
-                                  ? "#f97316"
-                                  : "#3b82f6",
-                            color: "white",
-                            borderRadius: 6,
-                            padding: "4px 8px",
-                            fontSize: 10,
-                            fontWeight: 600,
-                            textTransform: "uppercase",
-                            flexShrink: 0,
-                          }}
+                          className={getRecommendationPriorityBadgeClassName(
+                            rec.priority,
+                          )}
                         >
-                          {rec.priority === "high"
-                            ? "Важно"
-                            : rec.priority === "medium"
-                              ? "Средне"
-                              : "Низко"}
+                          {getRecommendationPriorityLabel(rec.priority)}
                         </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, marginBottom: 6 }}>
+                        <div className="recommendation-text-wrap">
+                          <div className="recommendation-title">
                             {rec.title}
                           </div>
-                          <div
-                            style={{
-                              fontSize: 13,
-                              color: "var(--text-muted)",
-                              marginBottom: 10,
-                            }}
-                          >
+                          <div className="recommendation-description">
                             {rec.description}
                           </div>
-                          {rec.action &&
-                            rec.action.type === "fetch_references" && (
-                              <button
-                                className="btn secondary"
-                                style={{ fontSize: 12, padding: "6px 12px" }}
-                                onClick={() => {
-                                  setShowRecommendations(false);
-                                  handleFetchReferences();
-                                }}
-                              >
-                                <IconRefresh size="sm" />
-                                <span style={{ marginLeft: 6 }}>
-                                  Загрузить ссылки ({rec.action.count})
-                                </span>
-                              </button>
-                            )}
+                          {isFetchReferencesRecommendationAction(
+                            rec.action,
+                          ) && (
+                            <button
+                              className="btn secondary recommendation-action-button"
+                              onClick={() => {
+                                setShowRecommendations(false);
+                                handleFetchReferences();
+                              }}
+                            >
+                              <IconRefresh size="sm" />
+                              <span className="recommendation-action-label">
+                                Загрузить ссылки ({rec.action.count ?? 0})
+                              </span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -5090,15 +4329,8 @@ export default function CitationGraph({ projectId }: Props) {
             onClick={() => setClusterDetailModal(null)}
           >
             <div
-              className="node-info-modal"
+              className="node-info-modal cluster-detail-modal"
               onClick={(e) => e.stopPropagation()}
-              style={{
-                maxWidth: 700,
-                maxHeight: "80vh",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-              }}
             >
               <button
                 className="node-info-modal-close"
@@ -5107,34 +4339,17 @@ export default function CitationGraph({ projectId }: Props) {
                 <IconClose size="md" />
               </button>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  marginBottom: 16,
-                }}
-              >
+              <div className="cluster-detail-header">
                 <div
-                  style={{
-                    width: 24,
-                    height: 24,
-                    borderRadius: "50%",
-                    background: clusterDetailModal.cluster.color,
-                    flexShrink: 0,
-                  }}
+                  className={getClusterDetailColorDotClassName(
+                    clusterDetailModal.cluster.color,
+                  )}
                 />
                 <div>
-                  <h3 style={{ margin: 0, fontSize: 18 }}>
+                  <h3 className="cluster-detail-title">
                     {clusterDetailModal.cluster.name}
                   </h3>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-muted)",
-                      marginTop: 4,
-                    }}
-                  >
+                  <div className="cluster-detail-meta">
                     {clusterDetailModal.cluster.articleCount} статей в кластере
                   </div>
                 </div>
@@ -5142,30 +4357,14 @@ export default function CitationGraph({ projectId }: Props) {
 
               {/* Keywords */}
               {clusterDetailModal.cluster.keywords.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-muted)",
-                      marginBottom: 6,
-                    }}
-                  >
+                <div className="cluster-detail-keywords-section">
+                  <div className="cluster-detail-keywords-label">
                     Ключевые слова:
                   </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <div className="cluster-detail-keywords-wrap">
                     {clusterDetailModal.cluster.keywords.map(
                       (kw: string, i: number) => (
-                        <span
-                          key={i}
-                          style={{
-                            background: clusterDetailModal.cluster.color + "20",
-                            color: clusterDetailModal.cluster.color,
-                            padding: "4px 10px",
-                            borderRadius: 12,
-                            fontSize: 11,
-                            fontWeight: 500,
-                          }}
-                        >
+                        <span key={i} className={getClusterKeywordClassName()}>
                           {kw}
                         </span>
                       ),
@@ -5176,91 +4375,39 @@ export default function CitationGraph({ projectId }: Props) {
 
               {/* Central Article */}
               {clusterDetailModal.cluster.centralArticleTitle && (
-                <div
-                  style={{
-                    marginBottom: 16,
-                    padding: 12,
-                    background: "var(--bg-tertiary)",
-                    borderRadius: 8,
-                    borderLeft: `4px solid ${clusterDetailModal.cluster.color}`,
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      marginBottom: 4,
-                    }}
-                  >
+                <div className={getClusterCentralCardClassName()}>
+                  <div className="cluster-detail-central-label">
                     ⭐ Центральная статья кластера:
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 500 }}>
+                  <div className="cluster-detail-central-title">
                     {clusterDetailModal.cluster.centralArticleTitle}
                   </div>
                 </div>
               )}
 
               {/* Articles List */}
-              <div
-                style={{
-                  fontSize: 12,
-                  color: "var(--text-muted)",
-                  marginBottom: 8,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                }}
-              >
+              <div className="cluster-detail-list-header">
                 <span>Все статьи кластера:</span>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div className="cluster-detail-list-header-actions">
                   <button
                     onClick={selectAllClusterArticles}
-                    style={{
-                      padding: "4px 8px",
-                      fontSize: 11,
-                      borderRadius: 4,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-secondary)",
-                      color: "var(--text-secondary)",
-                      cursor: "pointer",
-                    }}
+                    className="cluster-detail-header-button"
                   >
                     Выбрать все
                   </button>
                   {selectedClusterArticles.size > 0 && (
                     <button
                       onClick={deselectAllClusterArticles}
-                      style={{
-                        padding: "4px 8px",
-                        fontSize: 11,
-                        borderRadius: 4,
-                        border: "1px solid var(--border-glass)",
-                        background: "var(--bg-secondary)",
-                        color: "var(--text-secondary)",
-                        cursor: "pointer",
-                      }}
+                      className="cluster-detail-header-button"
                     >
                       Снять выбор ({selectedClusterArticles.size})
                     </button>
                   )}
                 </div>
               </div>
-              <div
-                style={{
-                  flex: 1,
-                  overflow: "auto",
-                  border: "1px solid var(--border-glass)",
-                  borderRadius: 8,
-                }}
-              >
+              <div className="cluster-detail-list-container">
                 {loadingClusterDetails ? (
-                  <div
-                    style={{
-                      padding: 20,
-                      textAlign: "center",
-                      color: "var(--text-muted)",
-                    }}
-                  >
+                  <div className="cluster-detail-loading">
                     Загрузка статей...
                   </div>
                 ) : (
@@ -5281,35 +4428,16 @@ export default function CitationGraph({ projectId }: Props) {
                         article.id,
                       );
                       const articleStatus = article.status || "candidate";
+                      const isCentralArticle =
+                        article.id ===
+                        clusterDetailModal.cluster.centralArticleId;
                       return (
                         <div
                           key={article.id}
-                          style={{
-                            padding: "10px 14px",
-                            borderBottom:
-                              idx < clusterDetailModal.articles.length - 1
-                                ? "1px solid var(--border-glass)"
-                                : "none",
-                            cursor: "pointer",
-                            transition: "background 0.15s",
-                            display: "flex",
-                            alignItems: "flex-start",
-                            gap: 10,
-                            background: isSelected
-                              ? "rgba(59, 130, 246, 0.1)"
-                              : "transparent",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.background =
-                                "var(--bg-tertiary)";
-                            }
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isSelected) {
-                              e.currentTarget.style.background = "transparent";
-                            }
-                          }}
+                          className={getClusterItemRowClassName(
+                            isSelected,
+                            idx >= clusterDetailModal.articles.length - 1,
+                          )}
                         >
                           {/* Checkbox */}
                           <input
@@ -5319,13 +4447,7 @@ export default function CitationGraph({ projectId }: Props) {
                               toggleClusterArticleSelection(article.id)
                             }
                             onClick={(e) => e.stopPropagation()}
-                            style={{
-                              width: 16,
-                              height: 16,
-                              marginTop: 4,
-                              cursor: "pointer",
-                              accentColor: "#3b82f6",
-                            }}
+                            className="cluster-detail-item-checkbox"
                           />
                           <span
                             onClick={() => {
@@ -5346,32 +4468,11 @@ export default function CitationGraph({ projectId }: Props) {
                                 setSelectedNodeForDisplay(node);
                               }
                             }}
-                            style={{
-                              minWidth: 24,
-                              height: 24,
-                              borderRadius: "50%",
-                              background:
-                                article.id ===
-                                clusterDetailModal.cluster.centralArticleId
-                                  ? clusterDetailModal.cluster.color
-                                  : "var(--bg-secondary)",
-                              color:
-                                article.id ===
-                                clusterDetailModal.cluster.centralArticleId
-                                  ? "white"
-                                  : "var(--text-muted)",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              fontSize: 10,
-                              fontWeight: 600,
-                              flexShrink: 0,
-                            }}
+                            className={getClusterItemIndexClassName(
+                              isCentralArticle,
+                            )}
                           >
-                            {article.id ===
-                            clusterDetailModal.cluster.centralArticleId
-                              ? "⭐"
-                              : idx + 1}
+                            {isCentralArticle ? "⭐" : idx + 1}
                           </span>
                           <div
                             onClick={() => {
@@ -5392,75 +4493,28 @@ export default function CitationGraph({ projectId }: Props) {
                                 setSelectedNodeForDisplay(node);
                               }
                             }}
-                            style={{ flex: 1, minWidth: 0 }}
+                            className="cluster-detail-item-content"
                           >
-                            <div
-                              style={{
-                                fontSize: 13,
-                                fontWeight: 500,
-                                marginBottom: 4,
-                                lineHeight: 1.4,
-                                display: "flex",
-                                alignItems: "flex-start",
-                                gap: 8,
-                              }}
-                            >
-                              <span style={{ flex: 1 }}>{article.title}</span>
+                            <div className="cluster-detail-item-title-row">
+                              <span className="cluster-detail-item-title-text">
+                                {article.title}
+                              </span>
                               {/* Status badge */}
                               <span
-                                style={{
-                                  fontSize: 9,
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                  fontWeight: 600,
-                                  textTransform: "uppercase",
-                                  flexShrink: 0,
-                                  background:
-                                    articleStatus === "selected"
-                                      ? "rgba(34, 197, 94, 0.2)"
-                                      : articleStatus === "excluded"
-                                        ? "rgba(239, 68, 68, 0.2)"
-                                        : "rgba(59, 130, 246, 0.2)",
-                                  color:
-                                    articleStatus === "selected"
-                                      ? "#22c55e"
-                                      : articleStatus === "excluded"
-                                        ? "#ef4444"
-                                        : "#3b82f6",
-                                }}
+                                className={getClusterStatusBadgeClassName(
+                                  articleStatus,
+                                )}
                               >
-                                {articleStatus === "selected"
-                                  ? "Отобрана"
-                                  : articleStatus === "excluded"
-                                    ? "Исключена"
-                                    : "Кандидат"}
+                                {getClusterStatusLabel(articleStatus)}
                               </span>
                             </div>
                             {article.authors && (
-                              <div
-                                style={{
-                                  fontSize: 11,
-                                  color: "var(--text-muted)",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
+                              <div className="cluster-detail-authors">
                                 {article.authors}
                               </div>
                             )}
                             {article.year && (
-                              <span
-                                style={{
-                                  fontSize: 10,
-                                  color: "var(--text-muted)",
-                                  background: "var(--bg-secondary)",
-                                  padding: "2px 6px",
-                                  borderRadius: 4,
-                                  marginTop: 4,
-                                  display: "inline-block",
-                                }}
-                              >
+                              <span className="cluster-detail-year">
                                 {article.year}
                               </span>
                             )}
@@ -5474,45 +4528,19 @@ export default function CitationGraph({ projectId }: Props) {
 
               {/* Actions for selected articles */}
               {selectedClusterArticles.size > 0 && (
-                <div
-                  style={{
-                    marginTop: 12,
-                    padding: 12,
-                    background: "rgba(59, 130, 246, 0.1)",
-                    borderRadius: 8,
-                    border: "1px solid rgba(59, 130, 246, 0.3)",
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "var(--text-secondary)",
-                      marginBottom: 10,
-                    }}
-                  >
+                <div className="cluster-detail-selected-actions">
+                  <div className="cluster-detail-selected-meta">
                     Выбрано статей:{" "}
                     <strong>{selectedClusterArticles.size}</strong>
                   </div>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div className="cluster-detail-selected-buttons">
                     <button
                       onClick={() => handleAddClusterArticles("selected")}
                       disabled={addingFromCluster}
-                      style={{
-                        flex: 1,
-                        padding: "8px 12px",
-                        borderRadius: 6,
-                        border: "none",
-                        background: "#22c55e",
-                        color: "white",
-                        cursor: addingFromCluster ? "wait" : "pointer",
-                        fontSize: 12,
-                        fontWeight: 500,
-                        opacity: addingFromCluster ? 0.6 : 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                      }}
+                      className={getClusterSelectedActionButtonClassName(
+                        "selected",
+                        addingFromCluster,
+                      )}
                     >
                       {addingFromCluster ? (
                         <>Добавляем...</>
@@ -5525,22 +4553,10 @@ export default function CitationGraph({ projectId }: Props) {
                     <button
                       onClick={() => handleAddClusterArticles("candidate")}
                       disabled={addingFromCluster}
-                      style={{
-                        flex: 1,
-                        padding: "8px 12px",
-                        borderRadius: 6,
-                        border: "none",
-                        background: "#3b82f6",
-                        color: "white",
-                        cursor: addingFromCluster ? "wait" : "pointer",
-                        fontSize: 12,
-                        fontWeight: 500,
-                        opacity: addingFromCluster ? 0.6 : 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: 6,
-                      }}
+                      className={getClusterSelectedActionButtonClassName(
+                        "candidate",
+                        addingFromCluster,
+                      )}
                     >
                       {addingFromCluster ? (
                         <>Добавляем...</>
@@ -5555,38 +4571,20 @@ export default function CitationGraph({ projectId }: Props) {
               )}
 
               {/* Actions */}
-              <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
+              <div className="cluster-detail-footer-actions">
                 <button
                   onClick={() => {
                     // Filter graph to show only this cluster
                     filterBySemanticCluster(clusterDetailModal.cluster.id);
                     setClusterDetailModal(null);
                   }}
-                  style={{
-                    flex: 1,
-                    padding: "10px 16px",
-                    borderRadius: 8,
-                    border: "none",
-                    background: clusterDetailModal.cluster.color,
-                    color: "white",
-                    cursor: "pointer",
-                    fontSize: 13,
-                    fontWeight: 500,
-                  }}
+                  className={getClusterFilterButtonClassName()}
                 >
                   Показать только этот кластер
                 </button>
                 <button
                   onClick={() => setClusterDetailModal(null)}
-                  style={{
-                    padding: "10px 16px",
-                    borderRadius: 8,
-                    border: "1px solid var(--border-glass)",
-                    background: "var(--bg-secondary)",
-                    color: "var(--text-primary)",
-                    cursor: "pointer",
-                    fontSize: 13,
-                  }}
+                  className="cluster-detail-close-button"
                 >
                   Закрыть
                 </button>
@@ -5602,9 +4600,8 @@ export default function CitationGraph({ projectId }: Props) {
             onClick={() => setShowHelpModal(false)}
           >
             <div
-              className="node-info-modal"
+              className="node-info-modal help-modal"
               onClick={(e) => e.stopPropagation()}
-              style={{ maxWidth: 600 }}
             >
               <button
                 className="node-info-modal-close"
@@ -5613,191 +4610,91 @@ export default function CitationGraph({ projectId }: Props) {
                 <IconClose className="icon-md" />
               </button>
 
-              <h3
-                style={{
-                  marginTop: 0,
-                  marginBottom: 20,
-                  fontSize: 18,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                }}
-              >
-                <IconInfoCircle size="md" style={{ color: "#3b82f6" }} />
+              <h3 className="help-title">
+                <IconInfoCircle
+                  size="md"
+                  className={getHelpIconClassName("#3b82f6")}
+                />
                 Как работает граф цитирований
               </h3>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 16,
-                  fontSize: 14,
-                  lineHeight: 1.6,
-                }}
-              >
+              <div className="help-content">
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconCircleStack size="sm" style={{ color: "#3b82f6" }} />
+                  <div className="help-section-heading">
+                    <IconCircleStack
+                      size="sm"
+                      className={getHelpIconClassName("#3b82f6")}
+                    />
                     <strong>Узлы (статьи)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p className="help-section-paragraph">
                     Каждый узел — это статья. Размер узла зависит от количества
                     цитирований: чем больше цитирований, тем крупнее узел.
                   </p>
                 </div>
 
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconArrowRight size="sm" style={{ color: "#3b82f6" }} />
+                  <div className="help-section-heading">
+                    <IconArrowRight
+                      size="sm"
+                      className={getHelpIconClassName("#3b82f6")}
+                    />
                     <strong>Стрелки (связи)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p className="help-section-paragraph">
                     Стрелки показывают направление цитирования: от цитирующей
                     статьи к цитируемой.
                   </p>
                 </div>
 
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconAdjustments size="sm" style={{ color: "#3b82f6" }} />
+                  <div className="help-section-heading">
+                    <IconAdjustments
+                      size="sm"
+                      className={getHelpIconClassName("#3b82f6")}
+                    />
                     <strong>Цвета узлов</strong>
                   </div>
-                  <div
-                    style={{
-                      marginTop: 8,
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 6,
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
+                  <div className="help-color-legend-wrap">
+                    <div className="help-legend-item-row">
                       <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#22c55e",
-                          flexShrink: 0,
-                        }}
+                        className={getHelpLegendDotClassName("#22c55e")}
                       ></span>
                       <span>Зелёный — отобранные статьи</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
+                    <div className="help-legend-item-row">
                       <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#3b82f6",
-                          flexShrink: 0,
-                        }}
+                        className={getHelpLegendDotClassName("#3b82f6")}
                       ></span>
                       <span>Синий — PubMed (кандидаты)</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
+                    <div className="help-legend-item-row">
                       <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#eab308",
-                          flexShrink: 0,
-                        }}
+                        className={getHelpLegendDotClassName("#eab308")}
                       ></span>
                       <span>Жёлтый — DOAJ (кандидаты)</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
+                    <div className="help-legend-item-row">
                       <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#8b5cf6",
-                          flexShrink: 0,
-                        }}
+                        className={getHelpLegendDotClassName("#8b5cf6")}
                       ></span>
                       <span>Фиолетовый — Wiley (кандидаты)</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
+                    <div className="help-legend-item-row">
                       <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#ef4444",
-                          flexShrink: 0,
-                        }}
+                        className={getHelpLegendDotClassName("#ef4444")}
                       ></span>
                       <span>Красный — исключённые</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
+                    <div className="help-legend-item-row">
                       <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#f97316",
-                          flexShrink: 0,
-                        }}
+                        className={getHelpLegendDotClassName("#f97316")}
                       ></span>
                       <span>Оранжевый — ссылки (references)</span>
                     </div>
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
+                    <div className="help-legend-item-row">
                       <span
-                        style={{
-                          width: 12,
-                          height: 12,
-                          borderRadius: "50%",
-                          background: "#ec4899",
-                          flexShrink: 0,
-                        }}
+                        className={getHelpLegendDotClassName("#ec4899")}
                       ></span>
                       <span>Розовый — статьи, цитирующие вашу базу</span>
                     </div>
@@ -5805,52 +4702,39 @@ export default function CitationGraph({ projectId }: Props) {
                 </div>
 
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconPlay size="sm" style={{ color: "#3b82f6" }} />
+                  <div className="help-section-heading">
+                    <IconPlay
+                      size="sm"
+                      className={getHelpIconClassName("#3b82f6")}
+                    />
                     <strong>Действия</strong>
                   </div>
-                  <div style={{ marginTop: 6, color: "var(--text-secondary)" }}>
-                    <p style={{ margin: "4px 0" }}>
+                  <div className="help-actions-list">
+                    <p className="help-action-row">
                       • <strong>Клик</strong> — показать информацию о статье
                     </p>
-                    <p style={{ margin: "4px 0" }}>
+                    <p className="help-action-row">
                       • <strong>Alt + клик</strong> — открыть статью в
                       PubMed/DOI
                     </p>
-                    <p style={{ margin: "4px 0" }}>
+                    <p className="help-action-row">
                       • <strong>Перетаскивание</strong> — перемещать узлы
                     </p>
-                    <p style={{ margin: "4px 0" }}>
+                    <p className="help-action-row">
                       • <strong>Колёсико мыши</strong> — масштабирование
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconRefresh size="sm" style={{ color: "#3b82f6" }} />
+                  <div className="help-section-heading">
+                    <IconRefresh
+                      size="sm"
+                      className={getHelpIconClassName("#3b82f6")}
+                    />
                     <strong>Загрузка связей</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p className="help-section-paragraph">
                     Нажмите «Обновить связи» для загрузки информации о ссылках и
                     цитированиях. Для PubMed статей данные берутся из PubMed
                     API, для DOAJ/Wiley — из Crossref по DOI. Это позволяет
@@ -5859,30 +4743,15 @@ export default function CitationGraph({ projectId }: Props) {
                 </div>
 
                 {/* Семантический поиск */}
-                <div
-                  style={{
-                    marginTop: 16,
-                    paddingTop: 16,
-                    borderTop: "1px solid var(--border-glass)",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconSearch size="sm" style={{ color: "#10b981" }} />
+                <div className="help-divider-section">
+                  <div className="help-section-heading">
+                    <IconSearch
+                      size="sm"
+                      className={getHelpIconClassName("#10b981")}
+                    />
                     <strong>Семантический поиск (Сем.)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p className="help-section-paragraph">
                     Поиск статей по смыслу с помощью AI-эмбеддингов. Находит
                     похожие статьи даже без прямых цитирований. Сначала создайте
                     эмбеддинги для статей, затем используйте поиск.
@@ -5891,23 +4760,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Семантические кластеры */}
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconGraph size="sm" style={{ color: "#6366f1" }} />
+                  <div className="help-section-heading">
+                    <IconGraph
+                      size="sm"
+                      className={getHelpIconClassName("#6366f1")}
+                    />
                     <strong>Семантические кластеры (Кластеры)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p className="help-section-paragraph">
                     Автоматическая группировка статей по тематике с помощью
                     K-Means кластеризации эмбеддингов. Каждый кластер получает
                     название, цвет и центральную (наиболее типичную) статью.
@@ -5917,23 +4777,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Gap Analysis */}
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconExclamation size="sm" style={{ color: "#f59e0b" }} />
+                  <div className="help-section-heading">
+                    <IconExclamation
+                      size="sm"
+                      className={getHelpIconClassName("#f59e0b")}
+                    />
                     <strong>Анализ пробелов (Gaps)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p className="help-section-paragraph">
                     Находит "мосты" между кластерами — статьи, которые
                     семантически близки к нескольким тематическим группам.
                     Помогает выявить междисциплинарные работы и потенциальные
@@ -5943,23 +4794,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Методологический фильтр */}
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconFilter size="sm" style={{ color: "#ec4899" }} />
+                  <div className="help-section-heading">
+                    <IconFilter
+                      size="sm"
+                      className={getHelpIconClassName("#ec4899")}
+                    />
                     <strong>Методологический фильтр (Метод.)</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p className="help-section-paragraph">
                     Фильтрация статей по типу исследования: мета-анализы, РКИ
                     (рандомизированные контролируемые исследования),
                     систематические обзоры, когортные исследования и другие. Тип
@@ -5969,23 +4811,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* AI рекомендации */}
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 8,
-                      color: "var(--text-primary)",
-                    }}
-                  >
-                    <IconSparkles size="sm" style={{ color: "#8b5cf6" }} />
+                  <div className="help-section-heading">
+                    <IconSparkles
+                      size="sm"
+                      className={getHelpIconClassName("#8b5cf6")}
+                    />
                     <strong>AI-помощник</strong>
                   </div>
-                  <p
-                    style={{
-                      margin: "6px 0 0",
-                      color: "var(--text-secondary)",
-                    }}
-                  >
+                  <p className="help-section-paragraph">
                     Умный поиск статей с помощью нейросетей. Опишите, что ищете,
                     и AI найдёт релевантные статьи в вашем графе, а также
                     предложит рекомендации по улучшению обзора.
@@ -5995,18 +4828,7 @@ export default function CitationGraph({ projectId }: Props) {
 
               <button
                 onClick={() => setShowHelpModal(false)}
-                style={{
-                  marginTop: 24,
-                  width: "100%",
-                  padding: "12px",
-                  background: "var(--accent)",
-                  color: "white",
-                  border: "none",
-                  borderRadius: 8,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  cursor: "pointer",
-                }}
+                className="help-close-button"
               >
                 Понятно
               </button>

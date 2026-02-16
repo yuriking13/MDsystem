@@ -18,6 +18,7 @@ export type WSEventType =
   | "article:statusChanged"
   | "project:updated"
   | "embedding:progress"
+  | "embedding:import-progress"
   | "embedding:completed"
   | "embedding:error"
   | "embedding:cancelled"
@@ -314,13 +315,23 @@ export async function registerWebSocket(app: FastifyInstance) {
       if (!projectConnections.has(projectId)) {
         projectConnections.set(projectId, new Set());
       }
-      projectConnections.get(projectId)!.add(socket);
+      const projectSockets = projectConnections.get(projectId);
+      if (!projectSockets) {
+        socket.close(1011, "Connection registration failed");
+        return;
+      }
+      projectSockets.add(socket);
 
       // Добавляем в Map пользователя
       if (!userConnections.has(userId)) {
         userConnections.set(userId, new Set());
       }
-      userConnections.get(userId)!.add(socket);
+      const userSockets = userConnections.get(userId);
+      if (!userSockets) {
+        socket.close(1011, "Connection registration failed");
+        return;
+      }
+      userSockets.add(socket);
 
       log.info("Client connected", { projectId, userId });
 

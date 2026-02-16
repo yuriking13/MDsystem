@@ -31,6 +31,7 @@ import ArticleCard from "./ArticleCard";
 import { toArticleData } from "../lib/articleAdapter";
 import { useProjectContext } from "./AppLayout";
 import { useProjectWebSocket } from "../lib/useProjectWebSocket";
+import { getErrorMessage } from "../lib/errorUtils";
 
 type Props = {
   projectId: string;
@@ -77,10 +78,84 @@ const TEXT_AVAILABILITY = [
   { id: "free_full", label: "Бесплатный полный текст" },
 ];
 
+const ARTICLES_ARROW_CLASS_PREFIX = "articles-nav-arrow-pos-";
+const articlesArrowRuleCache = new Map<string, string>();
+let articlesArrowStyleSheet: CSSStyleSheet | null = null;
+
+const ensureArticlesArrowStyleSheet = (): CSSStyleSheet | null => {
+  if (articlesArrowStyleSheet) return articlesArrowStyleSheet;
+  if (typeof document === "undefined") return null;
+
+  const styleEl = document.createElement("style");
+  styleEl.id = "articles-nav-arrow-rules";
+  document.head.appendChild(styleEl);
+  articlesArrowStyleSheet = styleEl.sheet as CSSStyleSheet | null;
+  return articlesArrowStyleSheet;
+};
+
+const ensureArticlesArrowPositionClass = (
+  left: number,
+  right: number,
+): string => {
+  const roundedLeft = Math.round(left);
+  const roundedRight = Math.round(right);
+  const key = `${roundedLeft}:${roundedRight}`;
+  const cachedClassName = articlesArrowRuleCache.get(key);
+  if (cachedClassName) return cachedClassName;
+
+  const hash = key.split("").reduce((acc, char) => {
+    return (acc * 31 + char.charCodeAt(0)) % 2147483647;
+  }, 17);
+  const className = `${ARTICLES_ARROW_CLASS_PREFIX}${hash.toString(36)}`;
+  const styleSheet = ensureArticlesArrowStyleSheet();
+
+  if (styleSheet) {
+    styleSheet.insertRule(
+      `.${className} .articles-nav-arrow--left{left:${roundedLeft}px;}`,
+      styleSheet.cssRules.length,
+    );
+    styleSheet.insertRule(
+      `.${className} .articles-nav-arrow--right{right:${roundedRight}px;}`,
+      styleSheet.cssRules.length,
+    );
+  }
+
+  articlesArrowRuleCache.set(key, className);
+  return className;
+};
+
+type SearchProgressSocketEvent = {
+  type: "search:progress";
+  payload: SearchProgressEvent;
+};
+
+type AiStat = {
+  text?: string;
+  significance?: "high" | "medium" | "low" | "not-significant" | string;
+  type?:
+    | "confidence-interval"
+    | "effect-size"
+    | "p-value"
+    | "test-statistic"
+    | string;
+};
+
+type AiStatsPayload = {
+  ai?: {
+    stats?: AiStat[];
+  };
+};
+
 /**
  * Real-time elapsed timer component for search progress
  */
-function SearchElapsedTimer({ startTime, isRunning }: { startTime: number; isRunning: boolean }) {
+function SearchElapsedTimer({
+  startTime,
+  isRunning,
+}: {
+  startTime: number;
+  isRunning: boolean;
+}) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -103,7 +178,9 @@ function SearchElapsedTimer({ startTime, isRunning }: { startTime: number; isRun
 
   return (
     <span>
-      {minutes > 0 ? `${minutes} мин. ${remainingSeconds} сек.` : `${seconds} сек.`}
+      {minutes > 0
+        ? `${minutes} мин. ${remainingSeconds} сек.`
+        : `${seconds} сек.`}
     </span>
   );
 }
@@ -253,6 +330,9 @@ export default function ArticlesSection({
     left: number;
     right: number;
   } | null>(null);
+  const [arrowPositionClass, setArrowPositionClass] = useState<string | null>(
+    null,
+  );
 
   // Сортировка
   const [sortBy, setSortBy] = useState<
@@ -267,56 +347,76 @@ export default function ArticlesSection({
   const [yearToFilter, setYearToFilter] = useState<number | null>(null);
 
   // ============ WebSocket for search progress ============
-  const handleSearchProgressEvent = useCallback(
-    (event: any) => {
-      if (event.type !== "search:progress") return;
-      const data = event.payload as SearchProgressEvent;
+  const handleSearchProgressEvent = useCallback((event: unknown) => {
+    if (!event || typeof event !== "object") return;
+    const socketEvent = event as Partial<SearchProgressSocketEvent>;
+    if (
+      socketEvent.type !== "search:progress" ||
+      !socketEvent.payload ||
+      typeof socketEvent.payload !== "object"
+    ) {
+      return;
+    }
+    const data = socketEvent.payload as SearchProgressEvent;
 
-      const elapsed = Date.now() - searchStartTimeRef.current;
+    const elapsed = Date.now() - searchStartTimeRef.current;
 
-      const stageLabels: Record<string, string> = {
-        searching: "Отправляем запрос в базы данных...",
-        searching_source: `Поиск в ${(data.source || "").toUpperCase()}...`,
-        search_complete: `Найдено ${data.collected || 0} статей (${data.totalFound || 0} всего в базах)`,
-        relevance_filter: `AI-проверка релевантности: ${data.processed || 0}/${data.total || 0}...`,
-        relevance_filter_done: `Проверка завершена: оставлено ${data.kept || 0} из ${data.total || 0} (${data.removed || 0} отфильтровано)`,
-        saving: `Сохраняем в базу: ${data.saved || 0}/${data.total || 0}...`,
-        saved: `Сохранено ${data.added || 0} статей`,
-        enriching: `Обогащение метаданными Crossref...`,
-        translating: `Перевод статей: ${data.translated || 0}/${data.total || 0}...`,
-        detecting_stats: `Анализ статистики: ${data.analyzed || 0}/${data.total || 0} (найдена в ${data.found || 0})...`,
-        complete: data.message || "Готово!",
-      };
+    const stageLabels: Record<string, string> = {
+      searching: "Отправляем запрос в базы данных...",
+      searching_source: `Поиск в ${(data.source || "").toUpperCase()}...`,
+      search_complete: `Найдено ${data.collected || 0} статей (${data.totalFound || 0} всего в базах)`,
+      relevance_filter: `AI-проверка релевантности: ${data.processed || 0}/${data.total || 0}...`,
+      relevance_filter_done: `Проверка завершена: оставлено ${data.kept || 0} из ${data.total || 0} (${data.removed || 0} отфильтровано)`,
+      saving: `Сохраняем в базу: ${data.saved || 0}/${data.total || 0}...`,
+      saved: `Сохранено ${data.added || 0} статей`,
+      enriching: `Обогащение метаданными Crossref...`,
+      translating: `Перевод статей: ${data.translated || 0}/${data.total || 0}...`,
+      detecting_stats: `Анализ статистики: ${data.analyzed || 0}/${data.total || 0} (найдена в ${data.found || 0})...`,
+      complete: data.message || "Готово!",
+    };
 
-      // Estimate remaining time based on progress
-      let estimatedTotalMs: number | undefined;
-      if (data.stage === "relevance_filter" && data.processed && data.total && data.processed > 0) {
-        const rate = elapsed / data.processed;
-        estimatedTotalMs = rate * data.total;
-      } else if (data.stage === "saving" && data.saved && data.total && data.saved > 0) {
-        const rate = elapsed / data.saved;
-        estimatedTotalMs = rate * data.total;
-      } else if (data.stage === "translating" && data.translated && data.total && data.translated > 0) {
-        const rate = elapsed / data.translated;
-        estimatedTotalMs = rate * data.total;
-      }
+    // Estimate remaining time based on progress
+    let estimatedTotalMs: number | undefined;
+    if (
+      data.stage === "relevance_filter" &&
+      data.processed &&
+      data.total &&
+      data.processed > 0
+    ) {
+      const rate = elapsed / data.processed;
+      estimatedTotalMs = rate * data.total;
+    } else if (
+      data.stage === "saving" &&
+      data.saved &&
+      data.total &&
+      data.saved > 0
+    ) {
+      const rate = elapsed / data.saved;
+      estimatedTotalMs = rate * data.total;
+    } else if (
+      data.stage === "translating" &&
+      data.translated &&
+      data.total &&
+      data.translated > 0
+    ) {
+      const rate = elapsed / data.translated;
+      estimatedTotalMs = rate * data.total;
+    }
 
-      setSearchProgress({
-        stage: data.stage,
-        stageLabel: stageLabels[data.stage] || data.stage,
-        totalFound: data.totalFound,
-        collected: data.collected,
-        relevanceKept: data.kept,
-        relevanceRemoved: data.removed,
-        saved: data.saved || data.added,
-        translated: data.translated,
-        statsFound: data.found,
-        elapsedMs: elapsed,
-        estimatedTotalMs,
-      });
-    },
-    [],
-  );
+    setSearchProgress({
+      stage: data.stage,
+      stageLabel: stageLabels[data.stage] || data.stage,
+      totalFound: data.totalFound,
+      collected: data.collected,
+      relevanceKept: data.kept,
+      relevanceRemoved: data.removed,
+      saved: data.saved || data.added,
+      translated: data.translated,
+      statsFound: data.found,
+      elapsedMs: elapsed,
+      estimatedTotalMs,
+    });
+  }, []);
 
   useProjectWebSocket({
     projectId,
@@ -365,8 +465,8 @@ export default function ArticlesSection({
           total,
         });
       }
-    } catch (err: any) {
-      setError(err?.message || "Ошибка загрузки статей");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка загрузки статей");
     } finally {
       setLoading(false);
     }
@@ -405,11 +505,18 @@ export default function ArticlesSection({
 
       // Правая стрелка: центр между правым краем карточек и правым краем viewport
       const rightGapCenter = (gridRect.right + viewportWidth) / 2;
+      const leftPosition = leftGapCenter;
+      const rightPosition = viewportWidth - rightGapCenter;
+      const nextArrowPositionClass = ensureArticlesArrowPositionClass(
+        leftPosition,
+        rightPosition,
+      );
 
       setArrowPositions({
-        left: leftGapCenter,
-        right: viewportWidth - rightGapCenter,
+        left: leftPosition,
+        right: rightPosition,
       });
+      setArrowPositionClass(nextArrowPositionClass);
     }
 
     // Начальный расчёт
@@ -444,6 +551,14 @@ export default function ArticlesSection({
       resizeObserver.disconnect();
     };
   }, []);
+
+  useEffect(() => {
+    if (!arrowPositionClass) return;
+    document.body.classList.add(arrowPositionClass);
+    return () => {
+      document.body.classList.remove(arrowPositionClass);
+    };
+  }, [arrowPositionClass]);
 
   // Вычислить годы из пресета
   function getYearsFromPreset(): { yearFrom: number; yearTo: number } {
@@ -536,8 +651,8 @@ export default function ArticlesSection({
       setOk(res.message);
       setShowSearch(false);
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка поиска");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка поиска");
     } finally {
       setSearching(false);
       // Keep progress visible for 3 seconds after completion
@@ -627,8 +742,8 @@ export default function ArticlesSection({
       setMultiQueries([]);
       setSearchQuery("");
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка поиска");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка поиска");
     } finally {
       setSearching(false);
     }
@@ -683,8 +798,8 @@ export default function ArticlesSection({
       const totalCount = res.totalFound || 0;
       setAllArticlesCount(totalCount);
       setShowAllArticlesConfirm(true);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка получения количества статей");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка получения количества статей");
     } finally {
       setCountingArticles(false);
     }
@@ -742,8 +857,8 @@ export default function ArticlesSection({
       setShowSearch(false);
       setAllArticlesCount(null);
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка поиска");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка поиска");
     } finally {
       setSearching(false);
     }
@@ -783,7 +898,7 @@ export default function ArticlesSection({
       } else if (newStatus === "excluded") {
         toast.info("Статья исключена");
       }
-    } catch (err: any) {
+    } catch (err) {
       // Revert on error
       setArticles(previousArticles);
       setCounts((prev) => ({
@@ -791,7 +906,7 @@ export default function ArticlesSection({
         [newStatus]: Math.max(0, prev[newStatus as keyof typeof prev] - 1),
         [previousStatus]: (prev[previousStatus as keyof typeof prev] || 0) + 1,
       }));
-      toast.error("Ошибка обновления статуса", err?.message);
+      toast.error("Ошибка обновления статуса", getErrorMessage(err));
     }
   }
 
@@ -819,10 +934,10 @@ export default function ArticlesSection({
 
       toast.success(`${count} статей обновлено`, `Статус: ${status}`);
       await loadArticles(); // Reload to sync counts
-    } catch (err: any) {
+    } catch (err) {
       // Revert on error
       setArticles(previousArticles);
-      toast.error("Ошибка массового обновления", err?.message);
+      toast.error("Ошибка массового обновления", getErrorMessage(err));
     }
   }
 
@@ -837,8 +952,8 @@ export default function ArticlesSection({
       toast.success("Перевод завершён");
       setSelectedIds(new Set());
       await loadArticles();
-    } catch (err: any) {
-      toast.error("Ошибка перевода", err?.message);
+    } catch (err) {
+      toast.error("Ошибка перевода", getErrorMessage(err));
     } finally {
       setTranslating(false);
     }
@@ -856,8 +971,8 @@ export default function ArticlesSection({
       setOk(res.message);
       setSelectedIds(new Set());
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка обогащения");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка обогащения");
     } finally {
       setEnriching(false);
     }
@@ -901,8 +1016,8 @@ export default function ArticlesSection({
       });
       setSelectedIds(new Set());
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка AI анализа статистики");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка AI анализа статистики");
       setAiStatsProgress(null);
     } finally {
       setDetectingStats(false);
@@ -945,8 +1060,8 @@ export default function ArticlesSection({
       const res = await apiTranslateArticles(projectId);
       setOk(res.message);
       await loadArticles();
-    } catch (err: any) {
-      setError(err?.message || "Ошибка перевода");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка перевода");
     } finally {
       setTranslating(false);
     }
@@ -965,8 +1080,8 @@ export default function ArticlesSection({
         const updated = articles.find((a) => a.id === articleId);
         if (updated) setSelectedArticle(updated);
       }
-    } catch (err: any) {
-      setError(err?.message || "Ошибка перевода");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка перевода");
     } finally {
       setTranslatingOne(false);
     }
@@ -998,15 +1113,18 @@ export default function ArticlesSection({
       setOk(result.message);
       setShowConvertModal(false);
       setSelectedArticle(null);
-    } catch (err: any) {
-      setError(err?.message || "Ошибка создания документа");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка создания документа");
     } finally {
       setConvertingToDoc(false);
     }
   }
 
   // Функция подсветки статистики в тексте
-  function highlightStatistics(text: string, aiStats?: any): React.ReactNode {
+  function highlightStatistics(
+    text: string,
+    aiStats?: AiStatsPayload | null,
+  ): React.ReactNode {
     if (!highlightStats || !text) return text;
 
     // Паттерны для статистики (EN + RU) - расширенные
@@ -1095,7 +1213,7 @@ export default function ArticlesSection({
     }
 
     // Добавляем результаты AI-анализа (из stats_json.ai)
-    if (aiStats?.ai?.stats && Array.isArray(aiStats.ai.stats)) {
+    if (Array.isArray(aiStats?.ai?.stats)) {
       for (const stat of aiStats.ai.stats) {
         if (!stat.text) continue;
 
@@ -1353,23 +1471,14 @@ export default function ArticlesSection({
         </div>
       </div>
 
-      {error && (
-        <div className="alert" style={{ marginBottom: 12 }}>
-          {error}
-        </div>
-      )}
-      {ok && (
-        <div className="ok" style={{ marginBottom: 12 }}>
-          {ok}
-        </div>
-      )}
+      {error && <div className="alert articles-status-message">{error}</div>}
+      {ok && <div className="ok articles-status-message">{ok}</div>}
 
       {/* Форма поиска */}
       {showSearch && (
         <form
           onSubmit={multiQueries.length > 0 ? handleMultiSearch : handleSearch}
-          className="card search-form-card"
-          style={{ marginBottom: 16 }}
+          className="card search-form-card articles-search-form"
         >
           {/* Header */}
           <div className="search-form-header">
@@ -1387,16 +1496,18 @@ export default function ArticlesSection({
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <h3 style={{ margin: 0 }}>Поиск научных статей</h3>
+              <h3 className="search-form-title-heading">
+                Поиск научных статей
+              </h3>
             </div>
-            <label className="row gap" style={{ alignItems: "center" }}>
+            <label className="row gap search-multisearch-toggle">
               <input
                 type="checkbox"
                 checked={showMultiSearch}
                 onChange={(e) => setShowMultiSearch(e.target.checked)}
                 className="search-checkbox"
               />
-              <span className="muted" style={{ fontSize: 12 }}>
+              <span className="muted search-multisearch-label">
                 Мультипоиск
               </span>
             </label>
@@ -1445,37 +1556,20 @@ export default function ArticlesSection({
           <div className="stack">
             {/* Мультипоиск - список запросов */}
             {showMultiSearch && multiQueries.length > 0 && (
-              <div style={{ marginBottom: 12 }}>
-                <span className="muted" style={{ fontSize: 12 }}>
+              <div className="multi-query-list">
+                <span className="muted multi-query-list-title">
                   Запросы для мультипоиска:
                 </span>
-                <div
-                  style={{
-                    marginTop: 8,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 6,
-                  }}
-                >
+                <div className="multi-query-items">
                   {multiQueries.map((q, idx) => (
-                    <div
-                      key={q.id}
-                      className="row gap"
-                      style={{
-                        alignItems: "center",
-                        background: "rgba(0,0,0,0.2)",
-                        padding: "8px 12px",
-                        borderRadius: 8,
-                      }}
-                    >
-                      <span style={{ flex: 1, fontSize: 13 }}>
+                    <div key={q.id} className="row gap multi-query-item">
+                      <span className="multi-query-item-text">
                         <span className="muted">{idx + 1}.</span> {q.query}
                       </span>
                       <button
                         type="button"
                         onClick={() => removeMultiQuery(q.id)}
-                        className="btn secondary"
-                        style={{ padding: "2px 8px", fontSize: 12 }}
+                        className="btn secondary multi-query-remove-btn"
                       >
                         ✕
                       </button>
@@ -1485,8 +1579,8 @@ export default function ArticlesSection({
               </div>
             )}
 
-            <div className="row gap" style={{ alignItems: "flex-end" }}>
-              <label className="stack" style={{ flex: 1 }}>
+            <div className="row gap search-query-row">
+              <label className="stack search-query-field">
                 <span>
                   Поисковый запрос {multiQueries.length > 0 ? "" : "*"}
                 </span>
@@ -1499,12 +1593,12 @@ export default function ArticlesSection({
               </label>
 
               {/* Поле поиска PubMed */}
-              <label className="stack" style={{ minWidth: 180 }}>
+              <label className="stack search-field-filter">
                 <span>Искать в поле:</span>
                 <select
                   value={searchField}
                   onChange={(e) => setSearchField(e.target.value)}
-                  style={{ padding: "8px 12px" }}
+                  className="search-field-select"
                 >
                   {PUBMED_SEARCH_FIELDS.map((field) => (
                     <option key={field.value} value={field.value}>
@@ -1518,9 +1612,8 @@ export default function ArticlesSection({
                 <button
                   type="button"
                   onClick={addMultiQuery}
-                  className="btn secondary"
                   disabled={!searchQuery.trim()}
-                  style={{ padding: "10px 16px" }}
+                  className="btn secondary search-add-query-btn"
                   title="Добавить запрос в список"
                 >
                   + Добавить
@@ -1531,31 +1624,24 @@ export default function ArticlesSection({
             {/* Период публикации */}
             <div>
               <span className="muted">Период публикации:</span>
-              <div
-                className="row gap"
-                style={{ flexWrap: "wrap", marginTop: 6 }}
-              >
+              <div className="row gap search-option-list">
                 {DATE_PRESETS.map((preset) => (
-                  <label
-                    key={preset.id}
-                    className="row gap"
-                    style={{ alignItems: "center" }}
-                  >
+                  <label key={preset.id} className="row gap search-option-item">
                     <input
                       type="radio"
                       name="datePreset"
                       checked={datePreset === preset.id}
                       onChange={() => setDatePreset(preset.id)}
-                      style={{ width: "auto" }}
+                      className="search-option-input"
                     />
-                    <span style={{ fontSize: 13 }}>{preset.label}</span>
+                    <span className="search-option-label">{preset.label}</span>
                   </label>
                 ))}
               </div>
 
               {datePreset === "custom" && (
-                <div className="row gap" style={{ marginTop: 8 }}>
-                  <label className="stack" style={{ flex: 1 }}>
+                <div className="row gap search-custom-years">
+                  <label className="stack search-custom-year-field">
                     <span>Год от</span>
                     <input
                       type="number"
@@ -1567,7 +1653,7 @@ export default function ArticlesSection({
                       max={2100}
                     />
                   </label>
-                  <label className="stack" style={{ flex: 1 }}>
+                  <label className="stack search-custom-year-field">
                     <span>Год до</span>
                     <input
                       type="number"
@@ -1584,24 +1670,17 @@ export default function ArticlesSection({
             {/* Доступность текста */}
             <div>
               <span className="muted">Доступность текста:</span>
-              <div
-                className="row gap"
-                style={{ flexWrap: "wrap", marginTop: 6 }}
-              >
+              <div className="row gap search-option-list">
                 {TEXT_AVAILABILITY.map((opt) => (
-                  <label
-                    key={opt.id}
-                    className="row gap"
-                    style={{ alignItems: "center" }}
-                  >
+                  <label key={opt.id} className="row gap search-option-item">
                     <input
                       type="radio"
                       name="textAvailability"
                       checked={textAvailability === opt.id}
                       onChange={() => setTextAvailability(opt.id)}
-                      style={{ width: "auto" }}
+                      className="search-option-input"
                     />
-                    <span style={{ fontSize: 13 }}>{opt.label}</span>
+                    <span className="search-option-label">{opt.label}</span>
                   </label>
                 ))}
               </div>
@@ -1609,61 +1688,51 @@ export default function ArticlesSection({
 
             {/* Тип публикации */}
             <div>
-              <div
-                className="row gap"
-                style={{ alignItems: "center", marginBottom: 6 }}
-              >
+              <div className="row gap pub-types-header">
                 <span className="muted">Тип публикации:</span>
                 {pubTypes.length > 1 && (
-                  <div className="row gap" style={{ marginLeft: 12 }}>
-                    <label className="row gap" style={{ alignItems: "center" }}>
+                  <div className="row gap pub-types-logic">
+                    <label className="row gap search-option-item">
                       <input
                         type="radio"
                         name="pubTypesLogic"
                         checked={pubTypesLogic === "or"}
                         onChange={() => setPubTypesLogic("or")}
-                        style={{ width: "auto" }}
+                        className="search-option-input"
                       />
-                      <span style={{ fontSize: 12 }}>ИЛИ</span>
+                      <span className="search-option-sub-label">ИЛИ</span>
                     </label>
-                    <label className="row gap" style={{ alignItems: "center" }}>
+                    <label className="row gap search-option-item">
                       <input
                         type="radio"
                         name="pubTypesLogic"
                         checked={pubTypesLogic === "and"}
                         onChange={() => setPubTypesLogic("and")}
-                        style={{ width: "auto" }}
+                        className="search-option-input"
                       />
-                      <span style={{ fontSize: 12 }}>И</span>
+                      <span className="search-option-sub-label">И</span>
                     </label>
                   </div>
                 )}
               </div>
-              <div className="row gap" style={{ flexWrap: "wrap" }}>
+              <div className="row gap search-option-list">
                 {PUBLICATION_TYPES.map((pt) => (
-                  <label
-                    key={pt.id}
-                    className="row gap"
-                    style={{ alignItems: "center" }}
-                  >
+                  <label key={pt.id} className="row gap search-option-item">
                     <input
                       type="checkbox"
                       checked={pubTypes.includes(pt.id)}
                       onChange={() => togglePubType(pt.id)}
-                      style={{ width: "auto" }}
+                      className="search-option-input"
                     />
-                    <span style={{ fontSize: 13 }}>{pt.label}</span>
+                    <span className="search-option-label">{pt.label}</span>
                   </label>
                 ))}
               </div>
             </div>
 
             {/* Дополнительные опции */}
-            <div
-              className="row gap"
-              style={{ flexWrap: "wrap", alignItems: "center" }}
-            >
-              <label className="stack" style={{ minWidth: 180 }}>
+            <div className="row gap search-extra-options">
+              <label className="stack search-max-results-field">
                 <span>Макс. результатов на источник</span>
                 <select
                   value={maxResults}
@@ -1675,7 +1744,7 @@ export default function ArticlesSection({
                       setMaxResults(Number(val));
                     }
                   }}
-                  style={{ padding: "10px 12px", borderRadius: 10 }}
+                  className="search-max-results-select"
                   title="Лимит применяется к каждому выбранному источнику отдельно"
                 >
                   <option value={10}>10</option>
@@ -1687,17 +1756,14 @@ export default function ArticlesSection({
                 </select>
               </label>
 
-              <label
-                className="row gap"
-                style={{ alignItems: "center", marginTop: 20 }}
-              >
+              <label className="row gap search-translate-option">
                 <input
                   type="checkbox"
                   checked={translateAfterSearch}
                   onChange={(e) => setTranslateAfterSearch(e.target.checked)}
-                  style={{ width: "auto" }}
+                  className="search-option-input"
                 />
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="search-translate-option-label">
                   <svg
                     className="icon-sm"
                     fill="none"
@@ -1716,7 +1782,7 @@ export default function ArticlesSection({
               </label>
             </div>
 
-            <div className="row gap">
+            <div className="row gap search-form-actions">
               <button
                 className="btn search-submit-btn"
                 disabled={searching || searchSources.length === 0}
@@ -1745,68 +1811,108 @@ export default function ArticlesSection({
 
       {/* Search Progress Panel */}
       {searching && searchProgress && (
-        <div className="search-progress-panel" style={{
-          background: "var(--bg-secondary, #f8f9fa)",
-          border: "1px solid var(--border-color, #e2e8f0)",
-          borderRadius: "12px",
-          padding: "16px 20px",
-          marginBottom: "16px",
-          animation: "fadeIn 0.3s ease",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "10px" }}>
-            <div className="search-progress-spinner" style={{
-              width: "20px",
-              height: "20px",
-              border: "3px solid var(--border-color, #e2e8f0)",
-              borderTopColor: "var(--accent-color, #3b82f6)",
-              borderRadius: "50%",
-              animation: searchProgress.stage === "complete" ? "none" : "spin 1s linear infinite",
-            }} />
-            <span style={{ fontWeight: 600, fontSize: "14px" }}>
+        <div className="search-progress-panel">
+          <div className="search-progress-header">
+            <div
+              className={`search-progress-spinner ${
+                searchProgress.stage === "complete"
+                  ? "search-progress-spinner--stopped"
+                  : ""
+              }`}
+            />
+            <span className="search-progress-stage-label">
               {searchProgress.stageLabel}
             </span>
           </div>
 
           {/* Progress stages timeline */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", color: "var(--text-muted, #94a3b8)" }}>
+          <div className="search-progress-timeline">
             {searchProgress.totalFound !== undefined && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>Найдено в базах: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.totalFound}</strong> статей, собрано <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.collected || 0}</strong></span>
+              <div className="search-progress-timeline-item">
+                <span className="search-progress-check">&#10003;</span>
+                <span>
+                  Найдено в базах:{" "}
+                  <strong className="search-progress-value">
+                    {searchProgress.totalFound}
+                  </strong>{" "}
+                  статей, собрано{" "}
+                  <strong className="search-progress-value">
+                    {searchProgress.collected || 0}
+                  </strong>
+                </span>
               </div>
             )}
             {searchProgress.relevanceKept !== undefined && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>AI-проверка: оставлено <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.relevanceKept}</strong>, отфильтровано <strong style={{ color: "var(--warning-color, #f59e0b)" }}>{searchProgress.relevanceRemoved || 0}</strong></span>
+              <div className="search-progress-timeline-item">
+                <span className="search-progress-check">&#10003;</span>
+                <span>
+                  AI-проверка: оставлено{" "}
+                  <strong className="search-progress-value">
+                    {searchProgress.relevanceKept}
+                  </strong>
+                  , отфильтровано{" "}
+                  <strong className="search-progress-value-warning">
+                    {searchProgress.relevanceRemoved || 0}
+                  </strong>
+                </span>
               </div>
             )}
             {searchProgress.saved !== undefined && searchProgress.saved > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>Сохранено в базу: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.saved}</strong> статей</span>
+              <div className="search-progress-timeline-item">
+                <span className="search-progress-check">&#10003;</span>
+                <span>
+                  Сохранено в базу:{" "}
+                  <strong className="search-progress-value">
+                    {searchProgress.saved}
+                  </strong>{" "}
+                  статей
+                </span>
               </div>
             )}
-            {searchProgress.translated !== undefined && searchProgress.translated > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>Переведено: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.translated}</strong></span>
-              </div>
-            )}
-            {searchProgress.statsFound !== undefined && searchProgress.statsFound > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ color: "var(--success-color, #10b981)" }}>&#10003;</span>
-                <span>Статистика найдена в: <strong style={{ color: "var(--text-primary, #1e293b)" }}>{searchProgress.statsFound}</strong></span>
-              </div>
-            )}
+            {searchProgress.translated !== undefined &&
+              searchProgress.translated > 0 && (
+                <div className="search-progress-timeline-item">
+                  <span className="search-progress-check">&#10003;</span>
+                  <span>
+                    Переведено:{" "}
+                    <strong className="search-progress-value">
+                      {searchProgress.translated}
+                    </strong>
+                  </span>
+                </div>
+              )}
+            {searchProgress.statsFound !== undefined &&
+              searchProgress.statsFound > 0 && (
+                <div className="search-progress-timeline-item">
+                  <span className="search-progress-check">&#10003;</span>
+                  <span>
+                    Статистика найдена в:{" "}
+                    <strong className="search-progress-value">
+                      {searchProgress.statsFound}
+                    </strong>
+                  </span>
+                </div>
+              )}
           </div>
 
           {/* Timer */}
-          <div style={{ marginTop: "8px", fontSize: "11px", color: "var(--text-muted, #94a3b8)", display: "flex", justifyContent: "space-between" }}>
-            <SearchElapsedTimer startTime={searchStartTimeRef.current} isRunning={searchProgress.stage !== "complete"} />
-            {searchProgress.estimatedTotalMs && searchProgress.stage !== "complete" && (
-              <span>~{Math.ceil((searchProgress.estimatedTotalMs - searchProgress.elapsedMs) / 1000)} сек. осталось</span>
-            )}
+          <div className="search-progress-footer">
+            <SearchElapsedTimer
+              startTime={searchStartTimeRef.current}
+              isRunning={searchProgress.stage !== "complete"}
+            />
+            {searchProgress.estimatedTotalMs &&
+              searchProgress.stage !== "complete" && (
+                <span>
+                  ~
+                  {Math.ceil(
+                    (searchProgress.estimatedTotalMs -
+                      searchProgress.elapsedMs) /
+                      1000,
+                  )}{" "}
+                  сек. осталось
+                </span>
+              )}
           </div>
         </div>
       )}
@@ -2025,19 +2131,13 @@ export default function ArticlesSection({
         <div className="bulk-actions">
           <div className="row gap">
             <button
-              className="btn secondary"
+              className="btn secondary bulk-action-btn"
               onClick={() => handleBulkStatus("selected")}
               title="Добавить выбранные в отобранные"
               type="button"
-              style={{ padding: "4px 10px", fontSize: 12 }}
             >
               <svg
-                className="icon-sm"
-                style={{
-                  marginRight: 4,
-                  display: "inline",
-                  verticalAlign: "middle",
-                }}
+                className="icon-sm bulk-action-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2052,19 +2152,13 @@ export default function ArticlesSection({
               Отобрать
             </button>
             <button
-              className="btn secondary"
+              className="btn secondary bulk-action-btn"
               onClick={() => handleBulkStatus("excluded")}
               title="Исключить выбранные"
               type="button"
-              style={{ padding: "4px 10px", fontSize: 12 }}
             >
               <svg
-                className="icon-sm"
-                style={{
-                  marginRight: 4,
-                  display: "inline",
-                  verticalAlign: "middle",
-                }}
+                className="icon-sm bulk-action-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2079,20 +2173,14 @@ export default function ArticlesSection({
               Исключить
             </button>
             <button
-              className="btn secondary"
+              className="btn secondary bulk-action-btn"
               onClick={handleBulkTranslate}
               disabled={translating}
               title="Перевести выбранные"
               type="button"
-              style={{ padding: "4px 10px", fontSize: 12 }}
             >
               <svg
-                className="icon-sm"
-                style={{
-                  marginRight: 4,
-                  display: "inline",
-                  verticalAlign: "middle",
-                }}
+                className="icon-sm bulk-action-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2107,20 +2195,14 @@ export default function ArticlesSection({
               Перевести
             </button>
             <button
-              className="btn secondary"
+              className="btn secondary bulk-action-btn"
               onClick={handleEnrich}
               disabled={enriching}
               title="Обогатить данные через Crossref (DOI)"
               type="button"
-              style={{ padding: "4px 10px", fontSize: 12 }}
             >
               <svg
-                className="icon-sm"
-                style={{
-                  marginRight: 4,
-                  display: "inline",
-                  verticalAlign: "middle",
-                }}
+                className="icon-sm bulk-action-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2135,32 +2217,26 @@ export default function ArticlesSection({
               Crossref
             </button>
             <button
-              className="btn secondary"
+              className={`btn secondary bulk-action-btn bulk-action-ai-btn ${
+                detectingStats && aiStatsProgress
+                  ? "bulk-action-ai-btn--with-progress"
+                  : ""
+              }`}
               onClick={handleAIDetectStats}
               disabled={detectingStats}
               title="AI детекция статистики (OpenRouter)"
               type="button"
-              style={{
-                padding: "4px 10px",
-                fontSize: 12,
-                minWidth: aiStatsProgress ? 180 : undefined,
-              }}
             >
               {detectingStats && aiStatsProgress ? (
                 <>
-                  <span className="spinner-small" style={{ marginRight: 6 }} />
+                  <span className="spinner-small bulk-action-spinner" />
                   {aiStatsProgress.percent}% ({aiStatsProgress.analyzed}/
                   {aiStatsProgress.total})
                 </>
               ) : (
                 <>
                   <svg
-                    className="icon-sm"
-                    style={{
-                      marginRight: 4,
-                      display: "inline",
-                      verticalAlign: "middle",
-                    }}
+                    className="icon-sm bulk-action-icon"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -2178,19 +2254,13 @@ export default function ArticlesSection({
             </button>
             {viewStatus !== "candidate" && viewStatus !== "deleted" && (
               <button
-                className="btn secondary"
+                className="btn secondary bulk-action-btn"
                 onClick={() => handleBulkStatus("candidate")}
                 title="Вернуть в кандидаты"
                 type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
               >
                 <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
+                  className="icon-sm bulk-action-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -2207,19 +2277,13 @@ export default function ArticlesSection({
             )}
             {viewStatus !== "deleted" && (
               <button
-                className="btn secondary"
+                className="btn secondary bulk-action-btn"
                 onClick={() => handleBulkStatus("deleted")}
                 title="Удалить в корзину"
                 type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
               >
                 <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
+                  className="icon-sm bulk-action-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -2236,19 +2300,13 @@ export default function ArticlesSection({
             )}
             {viewStatus === "deleted" && (
               <button
-                className="btn secondary"
+                className="btn secondary bulk-action-btn"
                 onClick={() => handleBulkStatus("candidate")}
                 title="Восстановить из корзины"
                 type="button"
-                style={{ padding: "4px 10px", fontSize: 12 }}
               >
                 <svg
-                  className="icon-sm"
-                  style={{
-                    marginRight: 4,
-                    display: "inline",
-                    verticalAlign: "middle",
-                  }}
+                  className="icon-sm bulk-action-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -2322,32 +2380,24 @@ export default function ArticlesSection({
               <>
                 {prevStatus && (
                   <button
-                    className="articles-nav-arrow"
+                    className="articles-nav-arrow articles-nav-arrow--left"
                     onClick={() =>
                       setViewStatus(prevStatus as typeof viewStatus)
                     }
                     title={statusLabels[prevStatus]}
                     type="button"
-                    style={{
-                      left: arrowPositions.left,
-                      transform: "translate(-50%, -50%)",
-                    }}
                   >
                     ‹
                   </button>
                 )}
                 {nextStatus && (
                   <button
-                    className="articles-nav-arrow"
+                    className="articles-nav-arrow articles-nav-arrow--right"
                     onClick={() =>
                       setViewStatus(nextStatus as typeof viewStatus)
                     }
                     title={statusLabels[nextStatus]}
                     type="button"
-                    style={{
-                      right: arrowPositions.right,
-                      transform: "translate(50%, -50%)",
-                    }}
                   >
                     ›
                   </button>
@@ -2653,9 +2703,9 @@ export default function ArticlesSection({
                           "_blank",
                         );
                       }
-                    } catch (err: any) {
+                    } catch (err) {
                       alert(
-                        err.message ||
+                        getErrorMessage(err) ||
                           "PDF не найден. Попробуйте поискать на сайте журнала.",
                       );
                     }
@@ -2702,13 +2752,9 @@ export default function ArticlesSection({
                 )}
                 {canEdit && (
                   <button
-                    className="rabbit-link-btn"
+                    className="rabbit-link-btn rabbit-link-btn--document"
                     onClick={openConvertModal}
                     type="button"
-                    style={{
-                      background: "var(--accent-secondary)",
-                      color: "var(--text-primary)",
-                    }}
                     title="Добавить как документ проекта"
                   >
                     <svg
@@ -2839,21 +2885,12 @@ export default function ArticlesSection({
           onClick={() => setShowConvertModal(false)}
         >
           <div
-            className="rabbit-sidebar"
+            className="rabbit-sidebar article-convert-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: 500, padding: 24 }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 16,
-              }}
-            >
+            <div className="article-convert-header">
               <svg
-                className="icon-lg"
-                style={{ color: "var(--accent)" }}
+                className="icon-lg article-convert-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2865,21 +2902,14 @@ export default function ArticlesSection({
                   d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              <h3 style={{ margin: 0 }}>Добавить как документ</h3>
+              <h3 className="article-convert-title">Добавить как документ</h3>
             </div>
 
-            <p
-              style={{
-                marginBottom: 16,
-                color: "var(--text-secondary)",
-                lineHeight: 1.6,
-                fontSize: 14,
-              }}
-            >
+            <p className="article-convert-description">
               Статья будет добавлена как новый редактируемый документ проекта.
             </p>
 
-            <label className="stack" style={{ marginBottom: 16 }}>
+            <label className="stack article-convert-title-field">
               <span>Название документа</span>
               <input
                 type="text"
@@ -2891,23 +2921,16 @@ export default function ArticlesSection({
 
             {/* Опция импорта библиографии */}
             {selectedArticle.extracted_bibliography && (
-              <label
-                className="row gap"
-                style={{
-                  alignItems: "center",
-                  marginBottom: 16,
-                  cursor: "pointer",
-                }}
-              >
+              <label className="row gap article-convert-bib-option">
                 <input
                   type="checkbox"
                   checked={convertIncludeBibliography}
                   onChange={(e) =>
                     setConvertIncludeBibliography(e.target.checked)
                   }
-                  style={{ width: "auto" }}
+                  className="article-convert-bib-checkbox"
                 />
-                <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span className="article-convert-bib-label">
                   <svg
                     className="icon-sm"
                     fill="none"
@@ -2926,18 +2949,9 @@ export default function ArticlesSection({
               </label>
             )}
 
-            <div
-              className="muted"
-              style={{
-                fontSize: 12,
-                padding: 12,
-                background: "var(--bg-secondary)",
-                borderRadius: 8,
-                marginBottom: 24,
-              }}
-            >
+            <div className="muted article-convert-summary">
               <strong>Будет создано:</strong>
-              <ul style={{ margin: "8px 0 0 0", paddingLeft: 20 }}>
+              <ul className="article-convert-summary-list">
                 <li>Документ с метаданными статьи</li>
                 <li>Заготовка для основного текста</li>
                 {convertIncludeBibliography && (
@@ -2948,19 +2962,17 @@ export default function ArticlesSection({
 
             <div className="row gap">
               <button
-                className="btn"
                 onClick={handleConvertToDocument}
                 disabled={convertingToDoc || !convertDocTitle.trim()}
                 type="button"
-                style={{ flex: 1 }}
+                className="btn article-convert-action-btn"
               >
                 {convertingToDoc ? (
                   <>Создаём...</>
                 ) : (
                   <>
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 6 }}
+                      className="icon-sm article-convert-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -2977,10 +2989,9 @@ export default function ArticlesSection({
                 )}
               </button>
               <button
-                className="btn secondary"
                 onClick={() => setShowConvertModal(false)}
                 type="button"
-                style={{ flex: 1 }}
+                className="btn secondary article-convert-action-btn"
               >
                 Отмена
               </button>
@@ -2996,21 +3007,12 @@ export default function ArticlesSection({
           onClick={() => setShowAllArticlesConfirm(false)}
         >
           <div
-            className="rabbit-sidebar"
+            className="rabbit-sidebar article-search-all-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: 450, padding: 24 }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginBottom: 16,
-              }}
-            >
+            <div className="article-search-all-header">
               <svg
-                className="icon-lg"
-                style={{ color: "#fbbf24" }}
+                className="icon-lg article-search-all-icon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -3022,47 +3024,33 @@ export default function ArticlesSection({
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 />
               </svg>
-              <h3 style={{ margin: 0 }}>Загрузка всех статей</h3>
+              <h3 className="article-search-all-title">Загрузка всех статей</h3>
             </div>
 
-            <p
-              style={{
-                marginBottom: 16,
-                color: "var(--text-secondary)",
-                lineHeight: 1.6,
-              }}
-            >
+            <p className="article-search-all-description">
               По запросу <strong>"{searchQuery}"</strong> найдено примерно{" "}
               <strong>{allArticlesCount?.toLocaleString("ru-RU")}</strong>{" "}
               статей.
             </p>
 
-            <p
-              style={{
-                marginBottom: 24,
-                color: "var(--text-muted)",
-                fontSize: 13,
-              }}
-            >
+            <p className="article-search-all-warning">
               Загрузка большого количества статей может занять значительное
               время. Вы уверены, что хотите загрузить все?
             </p>
 
             <div className="row gap">
               <button
-                className="btn"
                 onClick={handleConfirmSearchAll}
                 disabled={searching}
                 type="button"
-                style={{ flex: 1 }}
+                className="btn article-search-all-action-btn"
               >
                 {searching ? (
                   <>Загрузка...</>
                 ) : (
                   <>
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 6 }}
+                      className="icon-sm article-search-all-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -3079,13 +3067,12 @@ export default function ArticlesSection({
                 )}
               </button>
               <button
-                className="btn secondary"
                 onClick={() => {
                   setShowAllArticlesConfirm(false);
                   setAllArticlesCount(null);
                 }}
                 type="button"
-                style={{ flex: 1 }}
+                className="btn secondary article-search-all-action-btn"
               >
                 Отмена
               </button>
@@ -3122,8 +3109,8 @@ export default function ArticlesSection({
               `${articleIds.length} ${articleIds.length === 1 ? "статья добавлена" : "статей добавлено"} в отобранные`,
             );
             loadArticles();
-          } catch (err: any) {
-            toast.error(err.message || "Ошибка при изменении статуса");
+          } catch (err) {
+            toast.error(getErrorMessage(err) || "Ошибка при изменении статуса");
           }
         }}
         onHighlightArticle={(articleId) => {
@@ -3132,7 +3119,10 @@ export default function ArticlesSection({
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "center" });
             el.classList.add("article-highlight-flash");
-            setTimeout(() => el.classList.remove("article-highlight-flash"), 2000);
+            setTimeout(
+              () => el.classList.remove("article-highlight-flash"),
+              2000,
+            );
           }
         }}
       />

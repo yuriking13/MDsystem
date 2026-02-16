@@ -1,8 +1,17 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import AnimatedBackground from "./AnimatedBackground";
 import { useAuth } from "../lib/AuthContext";
+import { isAppMobileViewport } from "../lib/responsive";
 
 interface ProjectInfo {
   name: string | null;
@@ -74,20 +83,47 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { token } = useAuth();
   const location = useLocation();
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return isAppMobileViewport(window.innerWidth);
+  });
   const [projectInfo, setProjectInfoState] =
     useState<ProjectInfo>(defaultProjectInfo);
-  const [articleCounts, setArticleCounts] =
+  const [projectInfoProjectId, setProjectInfoProjectId] = useState<
+    string | null
+  >(null);
+  const [articleCountsState, setArticleCountsState] =
     useState<ArticleCounts>(defaultArticleCounts);
-  const [articleViewStatus, setArticleViewStatus] =
+  const [articleCountsProjectId, setArticleCountsProjectId] = useState<
+    string | null
+  >(null);
+  const [articleViewStatusState, setArticleViewStatusState] =
     useState<ArticleViewStatus>("candidate");
+  const [articleViewStatusProjectId, setArticleViewStatusProjectId] = useState<
+    string | null
+  >(null);
+  const currentProjectIdRef = useRef<string | null>(null);
 
-  const setProjectInfo = (info: Partial<ProjectInfo>) => {
+  const setProjectInfo = useCallback((info: Partial<ProjectInfo>) => {
     setProjectInfoState((prev) => ({ ...prev, ...info }));
-  };
+    setProjectInfoProjectId(currentProjectIdRef.current);
+  }, []);
 
-  const clearProjectInfo = () => {
+  const clearProjectInfo = useCallback(() => {
     setProjectInfoState(defaultProjectInfo);
-  };
+    setProjectInfoProjectId(null);
+  }, []);
+
+  const setArticleCounts = useCallback((counts: ArticleCounts) => {
+    setArticleCountsState(counts);
+    setArticleCountsProjectId(currentProjectIdRef.current);
+  }, []);
+
+  const setArticleViewStatus = useCallback((status: ArticleViewStatus) => {
+    setArticleViewStatusState(status);
+    setArticleViewStatusProjectId(currentProjectIdRef.current);
+  }, []);
 
   // Don't show sidebar on login/register/admin pages
   const hideSidebar =
@@ -105,9 +141,37 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isGraphTab =
     location.pathname.match(/^\/projects\/[^/]+$/) &&
     searchParams.get("tab") === "graph";
+  const currentProjectId =
+    location.pathname.match(/^\/projects\/([^/]+)/)?.[1] ?? null;
+  currentProjectIdRef.current = currentProjectId;
+  const isProjectScopedRoute = /^\/projects\/[^/]+(?:\/|$)/.test(
+    location.pathname,
+  );
+  const projectInfoForCurrentRoute =
+    currentProjectId !== null && projectInfoProjectId === currentProjectId
+      ? projectInfo
+      : defaultProjectInfo;
+  const articleCountsForCurrentRoute =
+    currentProjectId !== null && articleCountsProjectId === currentProjectId
+      ? articleCountsState
+      : defaultArticleCounts;
+  const articleViewStatusForCurrentRoute =
+    currentProjectId !== null && articleViewStatusProjectId === currentProjectId
+      ? articleViewStatusState
+      : "candidate";
   const showAnimatedBg = !isDocumentEditor && !isGraphTab;
   const isFixedLayout = isDocumentEditor || isGraphTab;
   const shouldLockLayout = !hideSidebar && isFixedLayout;
+  const canUseMobileSidebar = isMobileViewport;
+
+  const toggleMobileSidebar = () => {
+    if (!canUseMobileSidebar) return;
+    setMobileSidebarOpen((prev) => !prev);
+  };
+
+  const closeMobileSidebar = () => {
+    setMobileSidebarOpen(false);
+  };
 
   // Lock body scroll for fixed layouts (editor, graph)
   useEffect(() => {
@@ -124,32 +188,160 @@ export default function AppLayout({ children }: AppLayoutProps) {
     };
   }, [shouldLockLayout]);
 
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => {
+      setIsMobileViewport(isAppMobileViewport(window.innerWidth));
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!isProjectScopedRoute) {
+      setProjectInfoState(defaultProjectInfo);
+      setProjectInfoProjectId(null);
+      setArticleCountsState(defaultArticleCounts);
+      setArticleCountsProjectId(null);
+      setArticleViewStatusState("candidate");
+      setArticleViewStatusProjectId(null);
+    }
+  }, [isProjectScopedRoute]);
+
+  useEffect(() => {
+    if (!isMobileViewport && mobileSidebarOpen) {
+      setMobileSidebarOpen(false);
+    }
+  }, [isMobileViewport, mobileSidebarOpen]);
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileSidebarOpen]);
+
+  useEffect(() => {
+    if (mobileSidebarOpen) {
+      document.body.classList.add("sidebar-modal-open");
+    } else {
+      document.body.classList.remove("sidebar-modal-open");
+    }
+    return () => {
+      document.body.classList.remove("sidebar-modal-open");
+    };
+  }, [mobileSidebarOpen]);
+
+  const projectContextValue = useMemo<ProjectContextType>(
+    () => ({
+      projectInfo: projectInfoForCurrentRoute,
+      setProjectInfo,
+      clearProjectInfo,
+      articleCounts: articleCountsForCurrentRoute,
+      setArticleCounts,
+      articleViewStatus: articleViewStatusForCurrentRoute,
+      setArticleViewStatus,
+    }),
+    [
+      articleCountsForCurrentRoute,
+      articleViewStatusForCurrentRoute,
+      clearProjectInfo,
+      projectInfoForCurrentRoute,
+      setArticleCounts,
+      setArticleViewStatus,
+      setProjectInfo,
+    ],
+  );
+
   if (hideSidebar) {
     return <>{children || <Outlet />}</>;
   }
 
   return (
-    <ProjectContext.Provider
-      value={{
-        projectInfo,
-        setProjectInfo,
-        clearProjectInfo,
-        articleCounts,
-        setArticleCounts,
-        articleViewStatus,
-        setArticleViewStatus,
-      }}
-    >
+    <ProjectContext.Provider value={projectContextValue}>
       {showAnimatedBg && <AnimatedBackground />}
       <div
         className={`app-layout${showAnimatedBg ? " app-layout-with-animated-bg" : ""}${isFixedLayout ? " app-layout-fixed" : ""}`}
       >
         <AppSidebar
-          projectName={projectInfo.name || undefined}
-          projectRole={projectInfo.role || undefined}
-          projectUpdatedAt={projectInfo.updatedAt || undefined}
+          sidebarId="app-primary-sidebar"
+          projectName={projectInfoForCurrentRoute.name || undefined}
+          projectRole={projectInfoForCurrentRoute.role || undefined}
+          projectUpdatedAt={projectInfoForCurrentRoute.updatedAt || undefined}
+          mobileOpen={mobileSidebarOpen}
+          mobileViewport={isMobileViewport}
+          onCloseMobile={closeMobileSidebar}
         />
+        {isFixedLayout && (
+          <button
+            type="button"
+            className="app-mobile-fab-toggle"
+            onClick={toggleMobileSidebar}
+            disabled={!canUseMobileSidebar}
+            aria-label={
+              mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
+            }
+            aria-controls="app-primary-sidebar"
+            aria-expanded={mobileSidebarOpen}
+          >
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+        )}
+        {mobileSidebarOpen && (
+          <button
+            className="app-sidebar-overlay"
+            type="button"
+            onClick={closeMobileSidebar}
+            aria-label="Закрыть меню навигации"
+            aria-controls="app-primary-sidebar"
+          />
+        )}
         <main className={`app-main${isFixedLayout ? " app-main-fixed" : ""}`}>
+          {!isFixedLayout && (
+            <div className="app-mobile-topbar">
+              <button
+                type="button"
+                className="app-mobile-nav-toggle"
+                onClick={toggleMobileSidebar}
+                disabled={!canUseMobileSidebar}
+                aria-label={
+                  mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
+                }
+                aria-controls="app-primary-sidebar"
+                aria-expanded={mobileSidebarOpen}
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+              <span className="app-mobile-topbar-title">
+                {isProjectScopedRoute && projectInfoForCurrentRoute.name
+                  ? projectInfoForCurrentRoute.name
+                  : "Scientiaiter"}
+              </span>
+            </div>
+          )}
           {children || <Outlet />}
         </main>
       </div>

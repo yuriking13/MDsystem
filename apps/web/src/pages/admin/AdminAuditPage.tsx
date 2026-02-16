@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "../../lib/errorUtils";
 import { apiAdminGetAudit, type AuditLogItem } from "../../lib/adminApi";
 import {
@@ -25,6 +25,16 @@ const ACTION_LABELS: Record<string, string> = {
   resolve_error: "Решение ошибки",
 };
 
+function formatAuditDetails(details: AuditLogItem["details"]): string {
+  if (!details || typeof details !== "object") {
+    return "—";
+  }
+  const detailsObject = details as Record<string, unknown>;
+  return Object.keys(detailsObject).length > 0
+    ? JSON.stringify(detailsObject).slice(0, 50)
+    : "—";
+}
+
 export default function AdminAuditPage() {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -36,7 +46,7 @@ export default function AdminAuditPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadLogs() {
+  const loadLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -53,11 +63,11 @@ export default function AdminAuditPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [actionFilter, page]);
 
   useEffect(() => {
     loadLogs();
-  }, [page, actionFilter]);
+  }, [loadLogs]);
 
   return (
     <div className="admin-page">
@@ -151,9 +161,7 @@ export default function AdminAuditPage() {
                       {!log.target_type && "—"}
                     </td>
                     <td className="admin-table-detail">
-                      {log.details && Object.keys(log.details).length > 0
-                        ? JSON.stringify(log.details).slice(0, 50)
-                        : "—"}
+                      {formatAuditDetails(log.details)}
                     </td>
                     <td className="mono">{log.ip_address || "—"}</td>
                   </tr>

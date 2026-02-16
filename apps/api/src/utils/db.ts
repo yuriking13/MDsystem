@@ -6,6 +6,16 @@ type Queryable = {
   query: (text: string, params?: unknown[]) => Promise<QueryResult>;
 };
 
+type FastifyPgLike = {
+  query?: Queryable["query"];
+  pool?: Queryable;
+};
+
+type FastifyInstanceWithDb = FastifyInstance & {
+  db?: Queryable;
+  pg?: FastifyPgLike;
+};
+
 let fallbackPool: Pool | null = null;
 
 function needsSsl(databaseUrl: string): boolean {
@@ -26,11 +36,13 @@ function getFallbackPool(): Pool {
 }
 
 export function getDb(fastify: FastifyInstance): Queryable {
-  const anyF = fastify as any;
+  const fastifyWithDb = fastify as FastifyInstanceWithDb;
 
-  if (anyF.db?.query) return anyF.db as Queryable;
-  if (anyF.pg?.query) return anyF.pg as Queryable;
-  if (anyF.pg?.pool?.query) return anyF.pg.pool as Queryable;
+  if (fastifyWithDb.db?.query) return fastifyWithDb.db;
+  if (fastifyWithDb.pg?.query) {
+    return { query: fastifyWithDb.pg.query };
+  }
+  if (fastifyWithDb.pg?.pool?.query) return fastifyWithDb.pg.pool;
 
   return getFallbackPool();
 }

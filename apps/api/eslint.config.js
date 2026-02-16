@@ -7,7 +7,7 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        project: "./tsconfig.json",
+        project: ["./tsconfig.json", "./tsconfig.eslint.json"],
       },
     },
     rules: {
@@ -53,6 +53,6 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["dist/**", "node_modules/**", "*.js"],
+    ignores: ["dist/**", "coverage/**", "node_modules/**", "**/*.js"],
   }
 );

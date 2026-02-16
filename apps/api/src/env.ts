@@ -85,7 +85,6 @@ export const env: Env = (() => {
   if (!parsed.success) {
     // Без утечки значений: показываем только факт/формат/длину
     const details = formatEnvIssues(parsed.error.issues);
-    // eslint-disable-next-line no-console
     console.error(
       [
         "❌ Invalid environment variables for thesis-api.",

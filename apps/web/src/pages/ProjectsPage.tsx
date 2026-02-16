@@ -13,7 +13,6 @@ import {
   IconTrash as TrashIcon,
   IconArrowRight as ArrowRightIcon,
   IconCalendar as CalendarIcon,
-  IconUsers as UserGroupIcon,
   IconClose as XMarkIcon,
 } from "../components/FlowbiteIcons";
 import { cn } from "../design-system/utils/cn";
@@ -121,7 +120,10 @@ export default function ProjectsPage() {
           <h1 className="page-title">Мои проекты</h1>
           <p className="page-subtitle">Научно-исследовательские проекты</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowCreate(true)}>
+        <button
+          className="btn-primary projects-create-btn"
+          onClick={() => setShowCreate(true)}
+        >
           <PlusIcon className="w-5 h-5" />
           Новый проект
         </button>
@@ -219,7 +221,10 @@ export default function ProjectsPage() {
           <p className="empty-state-desc">
             Создайте свой первый проект, чтобы начать работу
           </p>
-          <button className="btn-primary" onClick={() => setShowCreate(true)}>
+          <button
+            className="btn-primary projects-create-btn"
+            onClick={() => setShowCreate(true)}
+          >
             <PlusIcon className="w-5 h-5" />
             Создать проект
           </button>

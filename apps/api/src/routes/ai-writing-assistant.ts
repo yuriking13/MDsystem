@@ -30,6 +30,27 @@ const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
 const OPENROUTER_PRIMARY_MODEL = "openai/gpt-4o-mini";
 const OPENROUTER_FALLBACK_MODEL = "google/gemini-2.0-flash-001";
 
+type OpenRouterResponse = {
+  choices?: Array<{
+    message?: {
+      content?: string;
+    };
+  }>;
+};
+
+type PmcIdLookupResponse = {
+  records?: Array<{
+    pmcid?: string;
+  }>;
+};
+
+type UnpaywallResponse = {
+  best_oa_location?: {
+    url_for_pdf?: string;
+    url?: string;
+  };
+};
+
 // ===== Schemas =====
 
 const ImproveTextBodySchema = z.object({
@@ -114,7 +135,7 @@ async function callLLM(
         continue;
       }
 
-      const data = (await response.json()) as any;
+      const data = (await response.json()) as OpenRouterResponse;
       const content = data.choices?.[0]?.message?.content?.trim();
       if (content) {
         return content;
@@ -218,7 +239,7 @@ async function tryFindFullTextByDoi(
     });
     if (!response.ok) return { found: false };
 
-    const data = (await response.json()) as any;
+    const data = (await response.json()) as PmcIdLookupResponse;
     const record = data?.records?.[0];
     if (record?.pmcid) {
       // Found PMC ID - construct full text URL
@@ -232,7 +253,7 @@ async function tryFindFullTextByDoi(
       signal: AbortSignal.timeout(10000),
     });
     if (uwResponse.ok) {
-      const uwData = (await uwResponse.json()) as any;
+      const uwData = (await uwResponse.json()) as UnpaywallResponse;
       if (uwData?.best_oa_location?.url_for_pdf) {
         return { found: true, url: uwData.best_oa_location.url_for_pdf };
       }
@@ -242,7 +263,7 @@ async function tryFindFullTextByDoi(
     }
 
     return { found: false };
-  } catch (err) {
+  } catch {
     log.warn("Failed to lookup full text", { doi });
     return { found: false };
   }
@@ -258,7 +279,7 @@ async function tryFindFullTextByPmid(
     });
     if (!response.ok) return { found: false };
 
-    const data = (await response.json()) as any;
+    const data = (await response.json()) as PmcIdLookupResponse;
     const record = data?.records?.[0];
     if (record?.pmcid) {
       return {
@@ -522,7 +543,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
             cleanResponse = cleanResponse.slice(0, -3);
           }
           result = JSON.parse(cleanResponse.trim());
-        } catch (parseErr) {
+        } catch {
           log.warn("Failed to parse LLM response as JSON", {
             response: llmResponse.slice(0, 500),
           });
@@ -573,7 +594,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
             doiFullTextStatus.length > 0 ? doiFullTextStatus : undefined,
           mode,
         });
-      } catch (err: any) {
+      } catch (err) {
         log.error("AI text improvement failed", err, { projectId });
         return reply.code(500).send({
           error: "AI text improvement failed",
@@ -661,7 +682,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
           chartTitle: result.chartTitle || null,
           notes: result.notes || null,
         });
-      } catch (err: any) {
+      } catch (err) {
         log.error("AI table generation failed", err, { projectId });
         return reply.code(500).send({
           error: "AI table generation failed",
@@ -748,7 +769,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
           figureCaption: result.figureCaption || null,
           notes: result.notes || null,
         });
-      } catch (err: any) {
+      } catch (err) {
         log.error("AI illustration generation failed", err, { projectId });
         return reply.code(500).send({
           error: "AI illustration generation failed",
@@ -824,7 +845,7 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
           fullTextFound: fullTextResult.found,
           fullTextUrl: fullTextResult.url || null,
         });
-      } catch (err: any) {
+      } catch (err) {
         log.error("Full text lookup failed", err, {
           doi: doi || "",
           pmid: pmid || "",

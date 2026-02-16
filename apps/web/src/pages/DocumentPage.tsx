@@ -48,6 +48,7 @@ import {
   type Project,
   type ProjectStatistic,
   type DataClassification,
+  type StatisticConfigData,
   type ProjectFile,
   type DocumentVersion,
 } from "../lib/api";
@@ -70,6 +71,7 @@ import {
 import ChartFromTable, {
   CHART_TYPE_INFO,
   ChartCreatorModal,
+  type ChartConfig,
   type ChartType,
   type TableData,
 } from "../components/ChartFromTable";
@@ -101,43 +103,20 @@ function FilePickerItem({
   const renderIcon = () => {
     if (loadingThumb) {
       return (
-        <div
-          style={{
-            width: "100%",
-            height: 80,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0,0,0,0.2)",
-            borderRadius: 6,
-          }}
-        >
-          <IconRefresh
-            className="w-6 h-6 animate-spin"
-            style={{ color: "var(--text-muted)" }}
-          />
+        <div className="file-picker-thumb file-picker-thumb--loading">
+          <IconRefresh className="w-6 h-6 animate-spin file-picker-icon-muted" />
         </div>
       );
     }
 
     if (thumbnailUrl && file.category === "image") {
       return (
-        <div
-          style={{
-            width: "100%",
-            height: 80,
-            borderRadius: 6,
-            overflow: "hidden",
-            background: "rgba(0,0,0,0.2)",
-          }}
-        >
+        <div className="file-picker-thumb file-picker-thumb--image">
           <img
             src={thumbnailUrl}
             alt={file.name}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
+            className="file-picker-thumb-media"
+            onError={() => setThumbnailUrl(null)}
           />
         </div>
       );
@@ -145,35 +124,15 @@ function FilePickerItem({
 
     if (thumbnailUrl && file.category === "video") {
       return (
-        <div
-          style={{
-            width: "100%",
-            height: 80,
-            borderRadius: 6,
-            overflow: "hidden",
-            background: "rgba(0,0,0,0.4)",
-            position: "relative",
-          }}
-        >
+        <div className="file-picker-thumb file-picker-thumb--video">
           <video
             src={thumbnailUrl}
-            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            className="file-picker-thumb-media"
             muted
             preload="metadata"
           />
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <IconPlay
-              className="w-8 h-8"
-              style={{ color: "white", opacity: 0.9 }}
-            />
+          <div className="file-picker-video-overlay">
+            <IconPlay className="w-8 h-8 file-picker-icon-white" />
           </div>
         </div>
       );
@@ -181,87 +140,33 @@ function FilePickerItem({
 
     // Default icons for non-media files
     return (
-      <div
-        style={{
-          width: "100%",
-          height: 80,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(0,0,0,0.1)",
-          borderRadius: 6,
-        }}
-      >
+      <div className="file-picker-thumb file-picker-thumb--fallback">
         {file.category === "audio" && (
-          <IconMusicalNote
-            className="w-10 h-10"
-            style={{ color: "var(--accent)" }}
-          />
+          <IconMusicalNote className="w-10 h-10 file-picker-icon-accent" />
         )}
         {file.category === "document" && (
-          <IconDocument
-            className="w-10 h-10"
-            style={{ color: "var(--accent)" }}
-          />
+          <IconDocument className="w-10 h-10 file-picker-icon-accent" />
         )}
         {file.category === "other" && (
-          <IconDocumentPdf
-            className="w-10 h-10"
-            style={{ color: "var(--text-muted)" }}
-          />
+          <IconDocumentPdf className="w-10 h-10 file-picker-icon-muted" />
         )}
         {file.category === "image" && !thumbnailUrl && (
-          <IconPhoto className="w-10 h-10" style={{ color: "var(--accent)" }} />
+          <IconPhoto className="w-10 h-10 file-picker-icon-accent" />
         )}
         {file.category === "video" && !thumbnailUrl && (
-          <IconFilm className="w-10 h-10" style={{ color: "var(--accent)" }} />
+          <IconFilm className="w-10 h-10 file-picker-icon-accent" />
         )}
       </div>
     );
   };
 
   return (
-    <div
-      className="file-picker-item"
-      onClick={onSelect}
-      style={{
-        padding: 10,
-        background: "var(--bg-glass-light)",
-        border: "1px solid var(--border-glass)",
-        borderRadius: 8,
-        cursor: "pointer",
-        textAlign: "center",
-        transition: "all 0.2s",
-      }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.borderColor = "var(--accent)";
-        e.currentTarget.style.background = "rgba(75,116,255,0.1)";
-        e.currentTarget.style.transform = "translateY(-2px)";
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.borderColor = "var(--border-glass)";
-        e.currentTarget.style.background = "var(--bg-glass-light)";
-        e.currentTarget.style.transform = "translateY(0)";
-      }}
-    >
+    <div className="file-picker-item" onClick={onSelect}>
       {renderIcon()}
-      <div
-        style={{
-          fontSize: 11,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          marginTop: 8,
-          marginBottom: 2,
-          fontWeight: 500,
-        }}
-        title={file.name}
-      >
+      <div className="file-picker-name" title={file.name}>
         {file.name}
       </div>
-      <div className="muted" style={{ fontSize: 10 }}>
-        {file.sizeFormatted}
-      </div>
+      <div className="muted file-picker-size">{file.sizeFormatted}</div>
     </div>
   );
 }
@@ -417,13 +322,15 @@ export default function DocumentPage() {
   // Загрузка документа и проекта
   useEffect(() => {
     if (!projectId || !docId) return;
+    const currentProjectId = projectId;
+    const currentDocId = docId;
 
     async function load() {
       setLoading(true);
       try {
         const [docRes, projRes] = await Promise.all([
-          apiGetDocument(projectId!, docId!),
-          apiGetProject(projectId!),
+          apiGetDocument(currentProjectId, currentDocId),
+          apiGetProject(currentProjectId),
         ]);
         setDoc(docRes.document);
         setProject(projRes.project);
@@ -597,13 +504,13 @@ export default function DocumentPage() {
       tables: Array<{
         id: string;
         title?: string;
-        tableData: Record<string, any>;
+        tableData: TableData;
       }>;
       charts: Array<{
         id: string;
         title?: string;
-        config: Record<string, any>;
-        tableData?: Record<string, any>;
+        config: Record<string, unknown>;
+        tableData?: TableData;
       }>;
     } => {
       // Защита от undefined/null контента
@@ -617,13 +524,13 @@ export default function DocumentPage() {
       const tables: Array<{
         id: string;
         title?: string;
-        tableData: Record<string, any>;
+        tableData: TableData;
       }> = [];
       const charts: Array<{
         id: string;
         title?: string;
-        config: Record<string, any>;
-        tableData?: Record<string, any>;
+        config: Record<string, unknown>;
+        tableData?: TableData;
       }> = [];
 
       // Find tables - only those with valid statistic IDs
@@ -670,14 +577,30 @@ export default function DocumentPage() {
           chartEl.getAttribute("data-config");
 
         if (chartId) {
-          let config: Record<string, any> = {};
-          let tableData: Record<string, any> | undefined;
+          let config: Record<string, unknown> = {};
+          let tableData: TableData | undefined;
 
           if (chartDataStr) {
             try {
-              const parsed = JSON.parse(chartDataStr.replace(/&#39;/g, "'"));
-              config = parsed.config || parsed;
-              tableData = parsed.tableData;
+              const parsedUnknown: unknown = JSON.parse(
+                chartDataStr.replace(/&#39;/g, "'"),
+              );
+              if (parsedUnknown && typeof parsedUnknown === "object") {
+                const parsed = parsedUnknown as {
+                  config?: Record<string, unknown>;
+                  tableData?: TableData;
+                };
+                config =
+                  parsed.config || (parsedUnknown as Record<string, unknown>);
+
+                if (
+                  parsed.tableData &&
+                  Array.isArray(parsed.tableData.headers) &&
+                  Array.isArray(parsed.tableData.rows)
+                ) {
+                  tableData = parsed.tableData;
+                }
+              }
             } catch {
               // ignore parse errors
             }
@@ -806,10 +729,10 @@ export default function DocumentPage() {
         if (tables.length > 0 || charts.length > 0) {
           // Push updated table data back to Statistics so external views stay in sync
           const tableUpdates = tables
-            .filter((t) => t.id && Array.isArray((t.tableData as any)?.headers))
+            .filter((t) => t.id && Array.isArray(t.tableData?.headers))
             .map(async (t) => {
               try {
-                const td = t.tableData as TableData;
+                const td = t.tableData;
                 const headers = td.headers || [];
                 const cols = Math.max(
                   headers.length,
@@ -824,10 +747,14 @@ export default function DocumentPage() {
                 const yColumn = dataColumns[1] ?? dataColumns[0] ?? 0;
 
                 const existingStat = statistics.find((s) => s.id === t.id);
-                const baseConfig =
-                  (existingStat?.config as Record<string, any>) || {};
+                const baseConfig = (existingStat?.config || {}) as Record<
+                  string,
+                  unknown
+                >;
                 const chartType =
-                  baseConfig.type || existingStat?.chart_type || "bar";
+                  typeof baseConfig.type === "string"
+                    ? baseConfig.type
+                    : existingStat?.chart_type || "bar";
 
                 await apiUpdateStatistic(projectId, t.id, {
                   tableData: td,
@@ -1638,7 +1565,7 @@ export default function DocumentPage() {
       data: {
         title?: string;
         description?: string;
-        config?: Record<string, any>;
+        config?: StatisticConfigData;
         tableData?: TableData;
         dataClassification?: DataClassification;
         chartType?: string;
@@ -1692,7 +1619,7 @@ export default function DocumentPage() {
 
   // Автосохранение новой таблицы в Статистику
   const handleTableCreated = useCallback(
-    async (tableData: { rows: number; cols: number; data: any[][] }) => {
+    async (tableData: { rows: number; cols: number; data: unknown[][] }) => {
       if (!projectId || !docId) return undefined;
 
       // Подготовим данные и дефолтную конфигурацию графика, чтобы карточка в статистике сразу была рабочей
@@ -1928,15 +1855,7 @@ export default function DocumentPage() {
   }
 
   return (
-    <div
-      className="document-page-container"
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        overflow: "hidden",
-      }}
-    >
+    <div className="document-page-container">
       <EditorHeader
         title={title}
         onTitleChange={setTitle}
@@ -1950,69 +1869,27 @@ export default function DocumentPage() {
         isVersionHistoryOpen={showVersionHistory}
       />
 
-      <div
-        style={{
-          flex: 1,
-          minHeight: 0,
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
-      >
+      <div className="document-page-main">
         {showVersionHistory && (
-          <div
-            className="version-history-panel"
-            style={{
-              padding: 16,
-              background: "var(--bg-secondary)",
-              borderRadius: 8,
-              border: "1px solid var(--border-color)",
-              flexShrink: 0,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 12,
-              }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: 14,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+          <div className="version-history-panel">
+            <div className="version-history-header">
+              <h3 className="version-history-title">
                 <IconClock className="icon-md" />
                 История версий документа
               </h3>
               <button
-                className="btn secondary"
+                className="btn secondary version-history-close-btn"
                 onClick={() => setShowVersionHistory(false)}
-                style={{ padding: "4px 8px" }}
+                type="button"
               >
                 <IconClose className="icon-sm" />
               </button>
             </div>
 
             {/* Create manual version */}
-            <div
-              style={{
-                display: "flex",
-                gap: 8,
-                marginBottom: 16,
-                alignItems: "flex-end",
-              }}
-            >
-              <div style={{ flex: 1 }}>
-                <label
-                  className="muted"
-                  style={{ fontSize: 11, display: "block", marginBottom: 4 }}
-                >
+            <div className="version-history-create-row">
+              <div className="version-history-note-group">
+                <label className="muted version-history-note-label">
                   Комментарий к версии (необязательно)
                 </label>
                 <input
@@ -2020,140 +1897,96 @@ export default function DocumentPage() {
                   value={versionNote}
                   onChange={(e) => setVersionNote(e.target.value)}
                   placeholder="Например: Добавлены графики исследования"
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: 6,
-                  }}
+                  className="version-history-note-input"
                 />
               </div>
               <button
-                className="btn"
+                className="btn version-history-create-btn"
                 onClick={createManualVersion}
                 disabled={creatingVersion}
-                style={{ whiteSpace: "nowrap" }}
+                type="button"
               >
-                <IconPlus className="icon-sm" style={{ marginRight: 4 }} />
+                <IconPlus className="icon-sm version-history-btn-icon" />
                 {creatingVersion ? "Сохранение..." : "Сохранить версию"}
               </button>
             </div>
 
             {/* Versions list */}
             {loadingVersions ? (
-              <div
-                className="muted"
-                style={{ textAlign: "center", padding: 20 }}
-              >
+              <div className="muted version-history-state">
                 Загрузка истории версий...
               </div>
             ) : versions.length === 0 ? (
-              <div
-                className="muted"
-                style={{ textAlign: "center", padding: 20 }}
-              >
+              <div className="muted version-history-state">
                 Нет сохранённых версий. Версии создаются автоматически при
                 значительных изменениях или вручную.
               </div>
             ) : (
-              <div style={{ maxHeight: 300, overflowY: "auto" }}>
-                {versions.map((v) => (
-                  <div
-                    key={v.id}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "10px 12px",
-                      borderBottom: "1px solid var(--border-color)",
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <span style={{ fontWeight: 500 }}>
-                          Версия {v.version_number}
-                        </span>
-                        <span
-                          className="id-badge"
-                          style={{
-                            fontSize: 10,
-                            padding: "2px 6px",
-                            background:
-                              v.version_type === "manual"
-                                ? "rgba(75, 116, 255, 0.2)"
-                                : v.version_type === "exit"
-                                  ? "rgba(251, 191, 36, 0.2)"
-                                  : "rgba(100, 116, 139, 0.2)",
-                            color:
-                              v.version_type === "manual"
-                                ? "#4b74ff"
-                                : v.version_type === "exit"
-                                  ? "#fbbf24"
-                                  : "#64748b",
-                          }}
-                        >
-                          {v.version_type === "manual"
-                            ? "Ручная"
-                            : v.version_type === "exit"
-                              ? "При выходе"
-                              : "Авто"}
-                        </span>
+              <div className="version-history-list">
+                {versions.map((v) => {
+                  const versionType =
+                    v.version_type === "manual"
+                      ? "manual"
+                      : v.version_type === "exit"
+                        ? "exit"
+                        : "auto";
+                  return (
+                    <div key={v.id} className="version-history-item">
+                      <div>
+                        <div className="version-history-item-header">
+                          <span className="version-history-item-number">
+                            Версия {v.version_number}
+                          </span>
+                          <span
+                            className={`id-badge version-history-type-badge version-history-type-badge--${versionType}`}
+                          >
+                            {versionType === "manual"
+                              ? "Ручная"
+                              : versionType === "exit"
+                                ? "При выходе"
+                                : "Авто"}
+                          </span>
+                        </div>
+                        <div className="muted version-history-meta-primary">
+                          {new Date(v.created_at).toLocaleString("ru-RU")}
+                          {v.version_note && <span> — {v.version_note}</span>}
+                        </div>
+                        <div className="muted version-history-meta-secondary">
+                          {v.content_length
+                            ? `${Math.round(v.content_length / 1000)}K символов`
+                            : ""}
+                          {v.created_by_email && ` • ${v.created_by_email}`}
+                        </div>
                       </div>
-                      <div
-                        className="muted"
-                        style={{ fontSize: 11, marginTop: 4 }}
+                      <button
+                        className="btn secondary version-history-restore-btn"
+                        onClick={() => restoreVersion(v.id)}
+                        disabled={!!restoringVersion}
+                        title="Восстановить эту версию"
+                        type="button"
                       >
-                        {new Date(v.created_at).toLocaleString("ru-RU")}
-                        {v.version_note && <span> — {v.version_note}</span>}
-                      </div>
-                      <div
-                        className="muted"
-                        style={{ fontSize: 10, marginTop: 2 }}
-                      >
-                        {v.content_length
-                          ? `${Math.round(v.content_length / 1000)}K символов`
-                          : ""}
-                        {v.created_by_email && ` • ${v.created_by_email}`}
-                      </div>
+                        {restoringVersion === v.id ? (
+                          "Восстановление..."
+                        ) : (
+                          <>
+                            <IconUndo className="icon-sm version-history-btn-icon" />
+                            Восстановить
+                          </>
+                        )}
+                      </button>
                     </div>
-                    <button
-                      className="btn secondary"
-                      onClick={() => restoreVersion(v.id)}
-                      disabled={!!restoringVersion}
-                      style={{ padding: "6px 12px", fontSize: 12 }}
-                      title="Восстановить эту версию"
-                    >
-                      {restoringVersion === v.id ? (
-                        "Восстановление..."
-                      ) : (
-                        <>
-                          <IconUndo
-                            className="icon-sm"
-                            style={{ marginRight: 4 }}
-                          />
-                          Восстановить
-                        </>
-                      )}
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
         )}
 
         {error && (
-          <div className="alert" style={{ marginBottom: 12, flexShrink: 0 }}>
-            {error}
-          </div>
+          <div className="alert document-page-error-alert">{error}</div>
         )}
 
-        <div style={{ flex: 1, minHeight: 0 }}>
+        <div className="document-editor-layout">
           <EditorLayoutWrapper
             headings={headings}
             onNavigateToHeading={handleNavigateHeading}
@@ -2208,8 +2041,7 @@ export default function DocumentPage() {
           onClick={() => setShowImportModal(false)}
         >
           <div
-            className="modal-content"
-            style={{ maxWidth: 800 }}
+            className="modal-content document-import-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
@@ -2222,18 +2054,15 @@ export default function DocumentPage() {
               </button>
             </div>
             <div className="modal-body">
-              <p className="muted" style={{ marginBottom: 16, fontSize: 13 }}>
+              <p className="muted document-import-hint">
                 Выберите что вставить: таблицу с данными или график
               </p>
 
-              <div style={{ maxHeight: 500, overflow: "auto" }}>
+              <div className="document-import-scroll">
                 {loadingStats ? (
                   <div className="muted">Загрузка...</div>
                 ) : statistics.length === 0 ? (
-                  <div
-                    className="muted"
-                    style={{ textAlign: "center", padding: 40 }}
-                  >
+                  <div className="muted document-import-empty">
                     Нет доступных данных.
                     <br />
                     Создайте их в разделе Статистика проекта.
@@ -2250,81 +2079,33 @@ export default function DocumentPage() {
                         <div
                           key={stat.id}
                           className="import-stat-item-expanded"
-                          style={{
-                            background: "rgba(0,0,0,0.2)",
-                            borderRadius: 12,
-                            padding: 16,
-                            marginBottom: 16,
-                          }}
                         >
-                          <div
-                            className="import-stat-header"
-                            style={{ marginBottom: 12 }}
-                          >
-                            <div
-                              className="import-stat-title"
-                              style={{ fontSize: 15, fontWeight: 600 }}
-                            >
+                          <div className="import-stat-header import-stat-header-spaced">
+                            <div className="import-stat-title import-stat-title-strong">
                               {stat.title || "Без названия"}
                             </div>
                             {stat.description && (
-                              <div
-                                className="import-stat-desc muted"
-                                style={{ fontSize: 12, marginTop: 4 }}
-                              >
+                              <div className="import-stat-desc muted import-stat-desc-muted">
                                 {stat.description}
                               </div>
                             )}
                           </div>
 
-                          <div
-                            className="row gap"
-                            style={{ alignItems: "flex-start" }}
-                          >
+                          <div className="row gap import-stat-content-row">
                             {/* Таблица */}
                             {tableData && (
-                              <div
-                                style={{
-                                  flex: 1,
-                                  background: "white",
-                                  borderRadius: 8,
-                                  padding: 12,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: 11,
-                                    color: "#64748b",
-                                    marginBottom: 8,
-                                  }}
-                                >
+                              <div className="import-stat-table-card">
+                                <div className="import-stat-preview-label">
                                   Таблица ({tableData.rows?.length || 0} строк)
                                 </div>
-                                <div
-                                  style={{
-                                    maxHeight: 150,
-                                    overflow: "auto",
-                                    fontSize: 11,
-                                  }}
-                                >
-                                  <table
-                                    style={{
-                                      width: "100%",
-                                      borderCollapse: "collapse",
-                                      color: "#1e293b",
-                                    }}
-                                  >
+                                <div className="import-stat-table-scroll">
+                                  <table className="import-stat-preview-table">
                                     <thead>
                                       <tr>
                                         {tableData.headers?.map((h, i) => (
                                           <th
                                             key={i}
-                                            style={{
-                                              border: "1px solid #d1d5db",
-                                              padding: "4px 8px",
-                                              background: "#f3f4f6",
-                                              fontWeight: 600,
-                                            }}
+                                            className="import-stat-preview-th"
                                           >
                                             {h}
                                           </th>
@@ -2339,10 +2120,7 @@ export default function DocumentPage() {
                                             {row.map((cell, j) => (
                                               <td
                                                 key={j}
-                                                style={{
-                                                  border: "1px solid #d1d5db",
-                                                  padding: "4px 8px",
-                                                }}
+                                                className="import-stat-preview-td"
                                               >
                                                 {cell}
                                               </td>
@@ -2355,11 +2133,7 @@ export default function DocumentPage() {
                                             colSpan={
                                               tableData.headers?.length || 1
                                             }
-                                            style={{
-                                              textAlign: "center",
-                                              color: "#64748b",
-                                              padding: 4,
-                                            }}
+                                            className="import-stat-preview-more"
                                           >
                                             ... ещё{" "}
                                             {(tableData.rows?.length || 0) - 5}{" "}
@@ -2371,9 +2145,9 @@ export default function DocumentPage() {
                                   </table>
                                 </div>
                                 <button
-                                  className="btn secondary"
-                                  style={{ marginTop: 12, width: "100%" }}
+                                  className="btn secondary import-stat-action-btn"
                                   onClick={() => handleInsertTable(stat)}
+                                  type="button"
                                 >
                                   📋 Вставить таблицу
                                 </button>
@@ -2382,34 +2156,23 @@ export default function DocumentPage() {
 
                             {/* График */}
                             {stat.config && tableData && (
-                              <div
-                                style={{
-                                  flex: 1,
-                                  background: "rgba(0,0,0,0.3)",
-                                  borderRadius: 8,
-                                  padding: 12,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    fontSize: 11,
-                                    color: "#64748b",
-                                    marginBottom: 8,
-                                  }}
-                                >
+                              <div className="import-stat-chart-card">
+                                <div className="import-stat-preview-label">
                                   {chartInfo?.name || "График"}
                                 </div>
-                                <div style={{ height: 150 }}>
+                                <div className="import-stat-chart-preview">
                                   <ChartFromTable
                                     tableData={tableData}
-                                    config={stat.config as any}
+                                    config={
+                                      stat.config as unknown as ChartConfig
+                                    }
                                     height={150}
                                   />
                                 </div>
                                 <button
-                                  className="btn"
-                                  style={{ marginTop: 12, width: "100%" }}
+                                  className="btn import-stat-action-btn"
                                   onClick={() => handleInsertStatistic(stat)}
+                                  type="button"
                                 >
                                   📊 Вставить график
                                 </button>
@@ -2440,19 +2203,11 @@ export default function DocumentPage() {
       {showFileModal && (
         <div className="modal-backdrop" onClick={() => setShowFileModal(false)}>
           <div
-            className="modal-content"
-            style={{ maxWidth: 800 }}
+            className="modal-content document-file-modal"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h3
-                className="modal-title"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+              <h3 className="modal-title document-file-modal-title">
                 <IconFolder className="w-5 h-5" />
                 Вставить файл из проекта
               </h3>
@@ -2466,54 +2221,27 @@ export default function DocumentPage() {
             </div>
             <div className="modal-body">
               {/* Поиск по названию файла */}
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ position: "relative" }}>
-                  <IconSearch
-                    className="w-5 h-5"
-                    style={{
-                      position: "absolute",
-                      left: 12,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      color: "var(--text-muted)",
-                      pointerEvents: "none",
-                    }}
-                  />
+              <div className="document-file-search-wrap">
+                <div className="document-file-search-input-wrap">
+                  <IconSearch className="w-5 h-5 document-file-search-icon" />
                   <input
                     type="text"
                     placeholder="Поиск по названию файла..."
                     value={fileSearch}
                     onChange={(e) => setFileSearch(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px 10px 40px",
-                      borderRadius: 8,
-                      border: "1px solid var(--border-glass)",
-                      background: "var(--bg-glass-light)",
-                      color: "var(--text-primary)",
-                      fontSize: 14,
-                    }}
+                    className="document-file-search-input"
                   />
                 </div>
               </div>
 
               {/* Фильтр по типу */}
-              <div
-                className="row gap"
-                style={{ marginBottom: 16, flexWrap: "wrap" }}
-              >
+              <div className="row gap document-file-filter-row">
                 {(["all", "image", "video", "audio", "document"] as const).map(
                   (cat) => (
                     <button
                       key={cat}
-                      className={`btn ${fileFilter === cat ? "" : "secondary"}`}
+                      className={`btn document-file-filter-btn ${fileFilter === cat ? "" : "secondary"}`}
                       onClick={() => setFileFilter(cat)}
-                      style={{
-                        fontSize: 12,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
                       type="button"
                     >
                       {cat === "all" && (
@@ -2552,18 +2280,12 @@ export default function DocumentPage() {
               </div>
 
               {loadingFiles ? (
-                <div style={{ textAlign: "center", padding: 40 }}>
+                <div className="document-file-state">
                   <div className="muted">Загрузка файлов...</div>
                 </div>
               ) : filteredFiles.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 40 }}>
-                  <IconFolder
-                    className="w-12 h-12"
-                    style={{
-                      color: "var(--text-muted)",
-                      margin: "0 auto 12px",
-                    }}
-                  />
+                <div className="document-file-state">
+                  <IconFolder className="w-12 h-12 document-file-empty-icon" />
                   <div className="muted">
                     {projectFiles.length === 0
                       ? 'Нет загруженных файлов. Загрузите файлы во вкладке "Файлы" проекта.'
@@ -2573,25 +2295,16 @@ export default function DocumentPage() {
                   </div>
                 </div>
               ) : (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns:
-                      "repeat(auto-fill, minmax(140px, 1fr))",
-                    gap: 12,
-                    maxHeight: 450,
-                    overflow: "auto",
-                    padding: 4,
-                  }}
-                >
-                  {filteredFiles.map((file) => (
-                    <FilePickerItem
-                      key={file.id}
-                      file={file}
-                      projectId={projectId!}
-                      onSelect={() => handleInsertFile(file)}
-                    />
-                  ))}
+                <div className="document-file-grid">
+                  {projectId &&
+                    filteredFiles.map((file) => (
+                      <FilePickerItem
+                        key={file.id}
+                        file={file}
+                        projectId={projectId}
+                        onSelect={() => handleInsertFile(file)}
+                      />
+                    ))}
                 </div>
               )}
             </div>

@@ -9,8 +9,9 @@ import * as Solid from "@heroicons/react/24/solid";
 type IconProps = {
   className?: string;
   size?: "sm" | "md" | "lg";
-  style?: React.CSSProperties;
 };
+
+type WrappedIconProps = IconProps & React.SVGProps<SVGSVGElement>;
 
 const sizeMap: Record<string, string> = {
   sm: "w-4 h-4",
@@ -18,16 +19,15 @@ const sizeMap: Record<string, string> = {
   lg: "w-6 h-6",
 };
 
-function wrap(Component: React.ComponentType<any>) {
+function wrap(Component: React.ComponentType<React.SVGProps<SVGSVGElement>>) {
   return function WrappedIcon({
     className,
     size = "md",
-    style,
     ...rest
-  }: IconProps) {
+  }: WrappedIconProps) {
     const sizeClass = sizeMap[size] || sizeMap.md;
     const finalClass = className ? `${sizeClass} ${className}` : sizeClass;
-    return <Component className={finalClass} style={style} {...rest} />;
+    return <Component className={finalClass} {...rest} />;
   };
 }
 

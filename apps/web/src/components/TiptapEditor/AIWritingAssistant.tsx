@@ -19,6 +19,7 @@ import {
   type AIGenerateTableResponse,
   type AIGenerateIllustrationResponse,
 } from "../../lib/api";
+import { getErrorMessage } from "../../lib/errorUtils";
 import {
   IconSparkles,
   IconClose,
@@ -48,6 +49,14 @@ type AssistantMode =
   | "illustration" // Illustration generation
   | "illustration_loading"
   | "illustration_results";
+
+type TableTypeOption = "comparison" | "summary" | "data" | "auto";
+type IllustrationTypeOption =
+  | "diagram"
+  | "flowchart"
+  | "schema"
+  | "infographic"
+  | "auto";
 
 interface AIWritingAssistantProps {
   editor: Editor;
@@ -98,6 +107,18 @@ function sanitizeSvg(svgCode: string): string {
   }
 }
 
+function isTableTypeOption(value: string): value is TableTypeOption {
+  return ["comparison", "summary", "data", "auto"].includes(value);
+}
+
+function isIllustrationTypeOption(
+  value: string,
+): value is IllustrationTypeOption {
+  return ["diagram", "flowchart", "schema", "infographic", "auto"].includes(
+    value,
+  );
+}
+
 // ===== Component =====
 
 export default function AIWritingAssistant({
@@ -127,16 +148,13 @@ export default function AIWritingAssistant({
   // Table mode state
   const [tableResult, setTableResult] =
     useState<AIGenerateTableResponse | null>(null);
-  const [tableType, setTableType] = useState<
-    "comparison" | "summary" | "data" | "auto"
-  >("auto");
+  const [tableType, setTableType] = useState<TableTypeOption>("auto");
 
   // Illustration mode state
   const [illustrationResult, setIllustrationResult] =
     useState<AIGenerateIllustrationResponse | null>(null);
-  const [illustrationType, setIllustrationType] = useState<
-    "diagram" | "flowchart" | "schema" | "infographic" | "auto"
-  >("auto");
+  const [illustrationType, setIllustrationType] =
+    useState<IllustrationTypeOption>("auto");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -219,8 +237,8 @@ export default function AIWritingAssistant({
         }
 
         setMode("improve_results");
-      } catch (err: any) {
-        setError(err.message || "Ошибка при улучшении текста");
+      } catch (err) {
+        setError(getErrorMessage(err) || "Ошибка при улучшении текста");
         setMode("improve");
       }
     },
@@ -331,8 +349,8 @@ export default function AIWritingAssistant({
 
       setTableResult(response);
       setMode("table_results");
-    } catch (err: any) {
-      setError(err.message || "Ошибка генерации таблицы");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка генерации таблицы");
       setMode("table");
     }
   }, [getSelection, projectId, tableType, documentTitle]);
@@ -414,8 +432,8 @@ export default function AIWritingAssistant({
 
       setIllustrationResult(response);
       setMode("illustration_results");
-    } catch (err: any) {
-      setError(err.message || "Ошибка генерации иллюстрации");
+    } catch (err) {
+      setError(getErrorMessage(err) || "Ошибка генерации иллюстрации");
       setMode("illustration");
     }
   }, [getSelection, projectId, illustrationType, documentTitle]);
@@ -451,7 +469,7 @@ export default function AIWritingAssistant({
         .chain()
         .focus()
         .insertContent(
-          `<p style="text-align: center; font-style: italic; font-size: 12pt;">${illustrationResult.figureCaption}</p>`,
+          `<p class="ai-figure-caption">${illustrationResult.figureCaption}</p>`,
         )
         .run();
     }
@@ -806,7 +824,7 @@ export default function AIWritingAssistant({
                     ref={fileInputRef}
                     type="file"
                     accept=".txt,.html,.htm"
-                    style={{ display: "none" }}
+                    className="ai-hidden-file-input"
                     onChange={handleFileUpload}
                   />
                 </div>
@@ -882,7 +900,11 @@ export default function AIWritingAssistant({
         <select
           className="ai-assistant-select"
           value={tableType}
-          onChange={(e) => setTableType(e.target.value as any)}
+          onChange={(e) => {
+            if (isTableTypeOption(e.target.value)) {
+              setTableType(e.target.value);
+            }
+          }}
         >
           <option value="auto">Автоматически</option>
           <option value="comparison">Сравнительная</option>
@@ -1015,7 +1037,11 @@ export default function AIWritingAssistant({
         <select
           className="ai-assistant-select"
           value={illustrationType}
-          onChange={(e) => setIllustrationType(e.target.value as any)}
+          onChange={(e) => {
+            if (isIllustrationTypeOption(e.target.value)) {
+              setIllustrationType(e.target.value);
+            }
+          }}
         >
           <option value="auto">Автоматически</option>
           <option value="diagram">Диаграмма</option>

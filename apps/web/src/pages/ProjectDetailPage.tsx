@@ -42,14 +42,17 @@ import {
   type ResearchProtocol,
   type ProjectStatistic,
   type DataClassification,
+  type StatisticConfigData,
   type ProjectFile,
   type FileCategory,
   type ExtractedArticleMetadata,
+  type UpdateProjectData,
 } from "../lib/api";
 import { useProjectWebSocket } from "../lib/useProjectWebSocket";
 import { useAuth } from "../lib/AuthContext";
 import {
   CHART_TYPE_INFO,
+  type ChartConfig,
   type ChartType,
   type TableData,
 } from "../components/ChartFromTable";
@@ -141,17 +144,16 @@ function generateTableHtml(tableData: TableData, title?: string): string {
   if (title) {
     html += `<p><strong>${escapeHtml(title)}</strong></p>\n`;
   }
-  html +=
-    '<table border="1" style="border-collapse: collapse; width: 100%;">\n';
+  html += '<table border="1" cellpadding="8" cellspacing="0" width="100%">\n';
   html += "<thead><tr>";
   for (const header of tableData.headers) {
-    html += `<th style="padding: 8px; background: #f5f5f5;">${escapeHtml(header)}</th>`;
+    html += `<th bgcolor="#f5f5f5">${escapeHtml(header)}</th>`;
   }
   html += "</tr></thead>\n<tbody>\n";
   for (const row of tableData.rows) {
     html += "<tr>";
     for (const cell of row) {
-      html += `<td style="padding: 8px;">${escapeHtml(cell)}</td>`;
+      html += `<td>${escapeHtml(cell)}</td>`;
     }
     html += "</tr>\n";
   }
@@ -162,7 +164,7 @@ function generateTableHtml(tableData: TableData, title?: string): string {
 // Sample data templates for each chart type
 const CHART_SAMPLE_DATA: Record<
   ChartType,
-  { title: string; tableData: TableData; config: Record<string, any> }
+  { title: string; tableData: TableData; config: StatisticConfigData }
 > = {
   bar: {
     title: "Сравнение групп пациентов",
@@ -983,7 +985,7 @@ export default function ProjectDetailPage() {
   // Обновить метаданные в модальном окне
   function updateImportMetadata(
     field: keyof ExtractedArticleMetadata,
-    value: any,
+    value: unknown,
   ) {
     if (!fileImportModal) return;
     setFileImportModal({
@@ -1065,7 +1067,7 @@ export default function ProjectDetailPage() {
     setSaving(true);
     setError(null);
     try {
-      const updateData: Record<string, any> = {
+      const updateData: UpdateProjectData = {
         name: editName.trim(),
         citationStyle,
       };
@@ -1148,8 +1150,10 @@ export default function ProjectDetailPage() {
             await apiDeleteStatistic(id, statId, true); // force=true
             setStatistics(statistics.filter((s) => s.id !== statId));
             setOk("Элемент удалён принудительно");
-          } catch (forceErr: any) {
-            setError(forceErr?.message || "Ошибка принудительного удаления");
+          } catch (forceErr) {
+            setError(
+              getErrorMessage(forceErr) || "Ошибка принудительного удаления",
+            );
           }
         }
       } else {
@@ -1163,8 +1167,8 @@ export default function ProjectDetailPage() {
     updates: {
       title?: string;
       description?: string;
-      config?: Record<string, any>;
-      tableData?: Record<string, any>;
+      config?: Record<string, unknown>;
+      tableData?: Record<string, unknown>;
       dataClassification?: DataClassification;
       chartType?: string;
     },
@@ -1563,19 +1567,14 @@ export default function ProjectDetailPage() {
 
   return (
     <div
-      className={isGraphTab ? "project-detail-fullwidth" : "container"}
-      style={isGraphTab ? undefined : { maxWidth: 1100 }}
+      className={
+        isGraphTab
+          ? "project-detail-fullwidth"
+          : "container project-detail-container"
+      }
     >
-      {error && (
-        <div className="alert" style={{ marginBottom: 12 }}>
-          {error}
-        </div>
-      )}
-      {ok && (
-        <div className="ok" style={{ marginBottom: 12 }}>
-          {ok}
-        </div>
-      )}
+      {error && <div className="alert project-status-message">{error}</div>}
+      {ok && <div className="ok project-status-message">{ok}</div>}
 
       {/* Tab Content */}
       <div className="tab-content">
@@ -1611,8 +1610,7 @@ export default function ProjectDetailPage() {
             {showCreateDoc && (
               <form
                 onSubmit={handleCreateDocument}
-                className="search-form-card"
-                style={{ margin: 0 }}
+                className="search-form-card documents-create-form"
               >
                 <div className="stack">
                   <label className="stack">
@@ -1768,8 +1766,7 @@ export default function ProjectDetailPage() {
                         type="button"
                       >
                         <svg
-                          className="icon-sm"
-                          style={{ marginRight: 4 }}
+                          className="icon-sm statistics-btn-icon"
                           fill="none"
                           stroke="currentColor"
                           strokeWidth={1.5}
@@ -1815,22 +1812,14 @@ export default function ProjectDetailPage() {
 
             {/* Библиография и экспорт */}
             <div className="bibliography-export-card">
-              <div className="row space" style={{ marginBottom: 12 }}>
-                <h4
-                  style={{
-                    margin: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
+              <div className="row space bibliography-header-row">
+                <h4 className="bibliography-title-row">
                   <svg
-                    className="icon-md"
+                    className="icon-md bibliography-title-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
                     viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
                   >
                     <path
                       strokeLinecap="round"
@@ -1844,14 +1833,11 @@ export default function ProjectDetailPage() {
               </div>
 
               {/* Экспорт документа */}
-              <div style={{ marginBottom: 16 }}>
-                <div
-                  className="muted"
-                  style={{ fontSize: 11, marginBottom: 8 }}
-                >
+              <div className="bibliography-export-section">
+                <div className="muted bibliography-section-label">
                   Экспорт документа проекта
                 </div>
-                <div className="row gap" style={{ flexWrap: "wrap" }}>
+                <div className="row gap bibliography-actions-row">
                   <button
                     className="btn"
                     onClick={() => {
@@ -1865,8 +1851,7 @@ export default function ProjectDetailPage() {
                     title="Выбрать главы для экспорта"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -1888,8 +1873,7 @@ export default function ProjectDetailPage() {
                     title="Объединённый документ с общим списком литературы"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -1961,8 +1945,7 @@ export default function ProjectDetailPage() {
                     title="Печать в PDF"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -1983,8 +1966,7 @@ export default function ProjectDetailPage() {
                     type="button"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2002,22 +1984,11 @@ export default function ProjectDetailPage() {
               </div>
 
               {/* Библиография */}
-              <div
-                style={{
-                  borderTop: "1px solid rgba(255,255,255,0.1)",
-                  paddingTop: 16,
-                }}
-              >
-                <div
-                  className="muted"
-                  style={{ fontSize: 11, marginBottom: 8 }}
-                >
+              <div className="bibliography-divider">
+                <div className="muted bibliography-section-label">
                   Список литературы
                 </div>
-                <div
-                  className="row gap"
-                  style={{ marginBottom: 12, flexWrap: "wrap" }}
-                >
+                <div className="row gap bibliography-actions-row">
                   <button
                     className="btn secondary"
                     onClick={() => refreshBibliography(false)}
@@ -2026,8 +1997,7 @@ export default function ProjectDetailPage() {
                     title="Обновить список литературы"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2070,8 +2040,7 @@ export default function ProjectDetailPage() {
                     title="Экспорт только списка литературы в Word"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2111,8 +2080,7 @@ export default function ProjectDetailPage() {
                     title="Экспорт только списка литературы в PDF"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2148,8 +2116,7 @@ export default function ProjectDetailPage() {
                     title="Экспорт только списка литературы в TXT"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -2165,29 +2132,19 @@ export default function ProjectDetailPage() {
                   </button>
                 </div>
 
-                <div style={{ marginTop: 12 }}>
-                  <div className="row space" style={{ marginBottom: 8 }}>
-                    <div className="row gap" style={{ alignItems: "center" }}>
+                <div className="bibliography-meta-wrap">
+                  <div className="row space bibliography-meta-row">
+                    <div className="row gap bibliography-meta-info">
                       <span className="muted">
                         Всего источников: {bibliography.length}
                       </span>
                       {(updatingBibliography || loadingBib) && (
-                        <span
-                          className="muted"
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                            fontSize: 11,
-                            color: "#3b82f6",
-                          }}
-                        >
+                        <span className="muted bibliography-updating-badge">
                           <svg
-                            className="icon-sm loading-spinner"
+                            className="icon-sm loading-spinner bibliography-updating-spinner"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"
-                            style={{ width: 12, height: 12 }}
                           >
                             <path
                               strokeLinecap="round"
@@ -2202,10 +2159,7 @@ export default function ProjectDetailPage() {
                       {bibliographyLastUpdated > 0 &&
                         !updatingBibliography &&
                         !loadingBib && (
-                          <span
-                            className="muted"
-                            style={{ fontSize: 10, opacity: 0.6 }}
-                          >
+                          <span className="muted bibliography-updated-at">
                             обновлено{" "}
                             {new Date(
                               bibliographyLastUpdated,
@@ -2217,15 +2171,13 @@ export default function ProjectDetailPage() {
                         )}
                     </div>
                     <button
-                      className="btn secondary"
+                      className="btn secondary bibliography-copy-btn"
                       onClick={handleCopyBibliography}
                       disabled={bibliography.length === 0}
-                      style={{ padding: "4px 10px", fontSize: 12 }}
                       type="button"
                     >
                       <svg
-                        className="icon-sm"
-                        style={{ marginRight: 4 }}
+                        className="icon-sm statistics-btn-icon"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={1.5}
@@ -2242,30 +2194,13 @@ export default function ProjectDetailPage() {
                   </div>
 
                   {loadingBib && bibliography.length === 0 ? (
-                    <div
-                      className="muted"
-                      style={{ textAlign: "center", padding: 24 }}
-                    >
+                    <div className="muted bibliography-loading-state">
                       Загрузка списка литературы...
                     </div>
                   ) : bibliography.length === 0 ? (
-                    <div
-                      className="empty-state-bibliography"
-                      style={{
-                        textAlign: "center",
-                        padding: "24px 16px",
-                        background: "rgba(255,255,255,0.03)",
-                        borderRadius: 8,
-                      }}
-                    >
+                    <div className="empty-state-bibliography">
                       <svg
-                        className="icon-lg"
-                        style={{
-                          width: 32,
-                          height: 32,
-                          margin: "0 auto 8px",
-                          opacity: 0.3,
-                        }}
+                        className="icon-lg empty-state-bibliography-icon"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -2277,7 +2212,7 @@ export default function ProjectDetailPage() {
                           d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                         />
                       </svg>
-                      <div className="muted" style={{ fontSize: 13 }}>
+                      <div className="muted empty-state-bibliography-text">
                         Нет цитат. Добавьте цитаты в документы проекта.
                       </div>
                     </div>
@@ -2309,7 +2244,7 @@ export default function ProjectDetailPage() {
                       ref={fileInputRef}
                       type="file"
                       onChange={handleFileUpload}
-                      style={{ display: "none" }}
+                      className="file-upload-input-hidden"
                       accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.svg,.webp"
                     />
                     <button
@@ -2319,8 +2254,7 @@ export default function ProjectDetailPage() {
                       type="button"
                     >
                       <svg
-                        className="w-4 h-4"
-                        style={{ marginRight: 6 }}
+                        className="w-4 h-4 files-upload-icon"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={1.5}
@@ -2363,17 +2297,9 @@ export default function ProjectDetailPage() {
             </div>
 
             {!storageConfigured && (
-              <div
-                className="card"
-                style={{ marginBottom: 16, padding: 40, textAlign: "center" }}
-              >
+              <div className="card storage-not-configured-card">
                 <svg
-                  style={{
-                    width: 48,
-                    height: 48,
-                    margin: "0 auto 16px",
-                    opacity: 0.5,
-                  }}
+                  className="storage-not-configured-svg"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={1}
@@ -2385,8 +2311,10 @@ export default function ProjectDetailPage() {
                     d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"
                   />
                 </svg>
-                <h3 style={{ margin: "0 0 8px 0" }}>Хранилище не настроено</h3>
-                <p className="muted" style={{ margin: 0 }}>
+                <h3 className="storage-not-configured-title">
+                  Хранилище не настроено
+                </h3>
+                <p className="muted storage-not-configured-text">
                   Для загрузки файлов необходимо настроить подключение к Yandex
                   Object Storage.
                   <br />
@@ -2398,22 +2326,13 @@ export default function ProjectDetailPage() {
             {storageConfigured && (
               <>
                 {/* Фильтр по категориям (video/audio temporarily disabled) */}
-                <div
-                  className="row gap"
-                  style={{ marginBottom: 16, flexWrap: "wrap" }}
-                >
+                <div className="row gap files-category-row">
                   {(["all", "document", "image"] as const).map((cat) => (
                     <button
                       key={cat}
-                      className={`btn ${filesCategory === cat ? "" : "secondary"}`}
+                      className={`btn files-category-btn ${filesCategory === cat ? "" : "secondary"}`}
                       onClick={() => setFilesCategory(cat)}
                       type="button"
-                      style={{
-                        fontSize: 13,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
                     >
                       {cat === "all" && (
                         <>
@@ -2474,21 +2393,13 @@ export default function ProjectDetailPage() {
                 </div>
 
                 {loadingFiles ? (
-                  <div style={{ textAlign: "center", padding: 40 }}>
+                  <div className="files-loading-state">
                     <div className="muted">Загрузка файлов...</div>
                   </div>
                 ) : files.length === 0 ? (
-                  <div
-                    className="card"
-                    style={{ textAlign: "center", padding: 40 }}
-                  >
+                  <div className="card files-empty-card">
                     <svg
-                      style={{
-                        width: 48,
-                        height: 48,
-                        margin: "0 auto 16px",
-                        opacity: 0.5,
-                      }}
+                      className="files-empty-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1}
@@ -2500,8 +2411,8 @@ export default function ProjectDetailPage() {
                         d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
                       />
                     </svg>
-                    <h3 style={{ margin: "0 0 8px 0" }}>Нет файлов</h3>
-                    <p className="muted" style={{ margin: 0 }}>
+                    <h3 className="files-empty-title">Нет файлов</h3>
+                    <p className="muted files-empty-text">
                       {canEdit
                         ? "Загрузите файлы с помощью кнопки выше"
                         : "В этом проекте пока нет файлов"}
@@ -2522,13 +2433,12 @@ export default function ProjectDetailPage() {
                       return (
                         <div
                           key={file.id}
-                          className={`file-card card ${canPreview ? "clickable" : ""}`}
+                          className={`file-card card ${canPreview ? "clickable file-card--previewable" : "file-card--static"}`}
                           onClick={
                             canPreview
                               ? () => handlePreviewFile(file)
                               : undefined
                           }
-                          style={{ cursor: canPreview ? "pointer" : "default" }}
                         >
                           {/* Превью для изображений */}
                           {isImage && (
@@ -2800,35 +2710,27 @@ export default function ProjectDetailPage() {
                       <img
                         src={previewUrl}
                         alt={previewFile.name}
-                        style={{
-                          maxWidth: "100%",
-                          maxHeight: "70vh",
-                          objectFit: "contain",
-                        }}
+                        className="file-preview-media-image"
                       />
                     )}
                     {previewFile.category === "video" && (
                       <video
                         src={previewUrl}
                         controls
-                        style={{ maxWidth: "100%", maxHeight: "70vh" }}
+                        className="file-preview-media-video"
                       />
                     )}
                     {previewFile.category === "audio" && (
                       <audio
                         src={previewUrl}
                         controls
-                        style={{ width: "100%" }}
+                        className="file-preview-media-audio"
                       />
                     )}
                     {previewFile.mimeType === "application/pdf" && (
                       <iframe
                         src={previewUrl}
-                        style={{
-                          width: "100%",
-                          height: "70vh",
-                          border: "none",
-                        }}
+                        className="file-preview-pdf"
                         title={previewFile.name}
                       />
                     )}
@@ -2843,8 +2745,7 @@ export default function ProjectDetailPage() {
                       type="button"
                     >
                       <svg
-                        className="w-4 h-4"
-                        style={{ marginRight: 6 }}
+                        className="w-4 h-4 file-preview-download-icon"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={1.5}
@@ -2870,15 +2771,11 @@ export default function ProjectDetailPage() {
                 onClick={() => setFileImportModal(null)}
               >
                 <div
-                  className="modal-content"
+                  className="modal-content file-import-modal"
                   onClick={(e) => e.stopPropagation()}
-                  style={{ maxWidth: 700, maxHeight: "90vh", overflow: "auto" }}
                 >
                   <div className="modal-header">
-                    <h3
-                      className="modal-title"
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
+                    <h3 className="modal-title file-import-title">
                       <svg
                         className="w-5 h-5"
                         fill="none"
@@ -2915,30 +2812,19 @@ export default function ProjectDetailPage() {
                     </button>
                   </div>
                   <div className="modal-body">
-                    <div
-                      className="row space"
-                      style={{ fontSize: 13, marginBottom: 16 }}
-                    >
+                    <div className="row space file-import-file-row">
                       <span className="muted">
                         Файл: <strong>{fileImportModal.fileName}</strong>
                       </span>
                       {fileImportModal.cached && (
-                        <span
-                          style={{
-                            fontSize: 11,
-                            padding: "2px 8px",
-                            background: "var(--bg-tertiary)",
-                            borderRadius: 4,
-                            color: "var(--text-muted)",
-                          }}
-                        >
+                        <span className="file-import-cached-badge">
                           ⚡ Из кэша
                         </span>
                       )}
                     </div>
 
                     {/* Заголовок */}
-                    <label className="stack" style={{ marginBottom: 12 }}>
+                    <label className="stack file-import-field">
                       <span>Заголовок статьи *</span>
                       <input
                         type="text"
@@ -2952,7 +2838,7 @@ export default function ProjectDetailPage() {
                     </label>
 
                     {/* Авторы */}
-                    <label className="stack" style={{ marginBottom: 12 }}>
+                    <label className="stack file-import-field">
                       <span>Авторы</span>
                       <input
                         type="text"
@@ -2972,9 +2858,9 @@ export default function ProjectDetailPage() {
                       />
                     </label>
 
-                    <div className="row gap" style={{ marginBottom: 12 }}>
+                    <div className="row gap file-import-metadata-row">
                       {/* Год */}
-                      <label className="stack" style={{ flex: 1 }}>
+                      <label className="stack file-import-field--flex-1">
                         <span>Год</span>
                         <input
                           type="number"
@@ -2992,7 +2878,7 @@ export default function ProjectDetailPage() {
                       </label>
 
                       {/* DOI */}
-                      <label className="stack" style={{ flex: 2 }}>
+                      <label className="stack file-import-field--flex-2">
                         <span>DOI</span>
                         <input
                           type="text"
@@ -3006,7 +2892,7 @@ export default function ProjectDetailPage() {
                     </div>
 
                     {/* Журнал */}
-                    <label className="stack" style={{ marginBottom: 12 }}>
+                    <label className="stack file-import-field">
                       <span>Журнал</span>
                       <input
                         type="text"
@@ -3021,9 +2907,9 @@ export default function ProjectDetailPage() {
                       />
                     </label>
 
-                    <div className="row gap" style={{ marginBottom: 12 }}>
+                    <div className="row gap file-import-metadata-row">
                       {/* Том */}
-                      <label className="stack" style={{ flex: 1 }}>
+                      <label className="stack file-import-field--flex-1">
                         <span>Том</span>
                         <input
                           type="text"
@@ -3039,7 +2925,7 @@ export default function ProjectDetailPage() {
                       </label>
 
                       {/* Выпуск */}
-                      <label className="stack" style={{ flex: 1 }}>
+                      <label className="stack file-import-field--flex-1">
                         <span>Выпуск</span>
                         <input
                           type="text"
@@ -3055,7 +2941,7 @@ export default function ProjectDetailPage() {
                       </label>
 
                       {/* Страницы */}
-                      <label className="stack" style={{ flex: 1 }}>
+                      <label className="stack file-import-field--flex-1">
                         <span>Страницы</span>
                         <input
                           type="text"
@@ -3072,7 +2958,7 @@ export default function ProjectDetailPage() {
                     </div>
 
                     {/* Аннотация */}
-                    <label className="stack" style={{ marginBottom: 12 }}>
+                    <label className="stack file-import-field">
                       <span>Аннотация</span>
                       <textarea
                         value={fileImportModal.metadata.abstract || ""}
@@ -3084,26 +2970,18 @@ export default function ProjectDetailPage() {
                         }
                         placeholder="Текст аннотации..."
                         rows={4}
-                        style={{ resize: "vertical" }}
+                        className="file-import-abstract"
                       />
                     </label>
 
                     {/* Библиография */}
                     {fileImportModal.metadata.bibliography &&
                       fileImportModal.metadata.bibliography.length > 0 && (
-                        <div style={{ marginBottom: 16 }}>
-                          <div
-                            className="row space"
-                            style={{ marginBottom: 8 }}
-                          >
-                            <span style={{ fontWeight: 500 }}>
+                        <div className="file-import-bibliography">
+                          <div className="row space file-import-bibliography-header">
+                            <span className="file-import-bibliography-title">
                               <svg
-                                className="w-4 h-4"
-                                style={{
-                                  display: "inline",
-                                  marginRight: 6,
-                                  verticalAlign: "middle",
-                                }}
+                                className="w-4 h-4 file-import-bibliography-icon"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth={1.5}
@@ -3120,31 +2998,15 @@ export default function ProjectDetailPage() {
                               ссылок)
                             </span>
                           </div>
-                          <div
-                            style={{
-                              maxHeight: 150,
-                              overflow: "auto",
-                              border: "1px solid var(--border)",
-                              borderRadius: 8,
-                              padding: 12,
-                              fontSize: 12,
-                            }}
-                          >
+                          <div className="file-import-bibliography-list">
                             {fileImportModal.metadata.bibliography
                               .slice(0, 10)
                               .map((ref, idx) => (
                                 <div
                                   key={idx}
-                                  style={{
-                                    marginBottom: 8,
-                                    paddingBottom: 8,
-                                    borderBottom:
-                                      idx < 9
-                                        ? "1px solid var(--border)"
-                                        : "none",
-                                  }}
+                                  className="file-import-bibliography-item"
                                 >
-                                  <div style={{ fontWeight: 500 }}>
+                                  <div className="file-import-bibliography-item-title">
                                     {idx + 1}. {ref.title || "Без названия"}
                                   </div>
                                   {ref.authors && (
@@ -3168,10 +3030,7 @@ export default function ProjectDetailPage() {
                               </div>
                             )}
                           </div>
-                          <div
-                            className="muted"
-                            style={{ fontSize: 11, marginTop: 8 }}
-                          >
+                          <div className="muted file-import-bibliography-note">
                             ℹ️ Библиография будет сохранена вместе со статьёй
                           </div>
                         </div>
@@ -3180,37 +3039,22 @@ export default function ProjectDetailPage() {
                     {/* Статус импорта */}
                     {/* Note: "Документ проекта" option temporarily disabled */}
                     {
-                      <div style={{ marginBottom: 16 }}>
-                        <span
-                          style={{
-                            fontWeight: 500,
-                            marginBottom: 8,
-                            display: "block",
-                          }}
-                        >
+                      <div className="file-import-status-block">
+                        <span className="file-import-status-title">
                           Добавить в:
                         </span>
                         <div className="row gap">
-                          <label
-                            className="row gap"
-                            style={{ alignItems: "center", cursor: "pointer" }}
-                          >
+                          <label className="row gap file-import-status-option">
                             <input
                               type="radio"
                               name="importStatus"
                               checked={importStatus === "selected"}
                               onChange={() => setImportStatus("selected")}
-                              style={{ width: "auto" }}
+                              className="file-import-status-input"
                             />
                             <span>
                               <svg
-                                className="w-4 h-4"
-                                style={{
-                                  display: "inline",
-                                  marginRight: 4,
-                                  verticalAlign: "middle",
-                                  color: "#4ade80",
-                                }}
+                                className="w-4 h-4 file-import-status-icon file-import-status-icon--selected"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth={1.5}
@@ -3225,26 +3069,17 @@ export default function ProjectDetailPage() {
                               Отобранные
                             </span>
                           </label>
-                          <label
-                            className="row gap"
-                            style={{ alignItems: "center", cursor: "pointer" }}
-                          >
+                          <label className="row gap file-import-status-option">
                             <input
                               type="radio"
                               name="importStatus"
                               checked={importStatus === "candidate"}
                               onChange={() => setImportStatus("candidate")}
-                              style={{ width: "auto" }}
+                              className="file-import-status-input"
                             />
                             <span>
                               <svg
-                                className="w-4 h-4"
-                                style={{
-                                  display: "inline",
-                                  marginRight: 4,
-                                  verticalAlign: "middle",
-                                  color: "#fbbf24",
-                                }}
+                                className="w-4 h-4 file-import-status-icon file-import-status-icon--candidate"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth={1.5}
@@ -3263,21 +3098,13 @@ export default function ProjectDetailPage() {
                       </div>
                     }
 
-                    <div
-                      className="muted"
-                      style={{
-                        fontSize: 11,
-                        padding: 12,
-                        background: "var(--bg-secondary)",
-                        borderRadius: 8,
-                      }}
-                    >
+                    <div className="muted file-import-warning-note">
                       <strong>ℹ️ Важно:</strong> При удалении файла из проекта
                       статья останется в базе статей.
                     </div>
                   </div>
                   <div className="modal-footer">
-                    <div className="row gap" style={{ flex: 1 }}>
+                    <div className="row gap file-import-footer-actions">
                       {fileImportModal.cached && (
                         <button
                           className="btn secondary"
@@ -3295,8 +3122,7 @@ export default function ProjectDetailPage() {
                           title="Повторно проанализировать файл с помощью AI"
                         >
                           <svg
-                            className="w-4 h-4"
-                            style={{ marginRight: 4 }}
+                            className="w-4 h-4 file-import-action-icon"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth={1.5}
@@ -3332,8 +3158,7 @@ export default function ProjectDetailPage() {
                       ) : (
                         <>
                           <svg
-                            className="w-4 h-4"
-                            style={{ marginRight: 6 }}
+                            className="w-4 h-4 file-import-submit-icon"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth={1.5}
@@ -3364,14 +3189,7 @@ export default function ProjectDetailPage() {
           <div className="statistics-page">
             <div className="statistics-header">
               <div>
-                <h5
-                  className="statistics-header-title"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
+                <h5 className="statistics-header-title statistics-header-title-row">
                   Статистика проекта
                   {/* WebSocket индикатор */}
                   <span
@@ -3380,22 +3198,13 @@ export default function ProjectDetailPage() {
                         ? "Real-time синхронизация активна"
                         : "Нет real-time соединения"
                     }
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      backgroundColor: wsConnected ? "#4ade80" : "#6b7280",
-                      animation: wsConnected ? "pulse 2s infinite" : "none",
-                    }}
+                    className={`statistics-ws-indicator ${wsConnected ? "statistics-ws-indicator--online" : ""}`}
                   />
                 </h5>
-                <div className="muted" style={{ fontSize: 13 }}>
+                <div className="muted statistics-header-subtitle">
                   Графики и таблицы из документов проекта
                   {wsConnected && (
-                    <span style={{ color: "#4ade80", marginLeft: 8 }}>
-                      • Live
-                    </span>
+                    <span className="statistics-live-badge">• Live</span>
                   )}
                 </div>
               </div>
@@ -3407,8 +3216,7 @@ export default function ProjectDetailPage() {
                     type="button"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -3428,8 +3236,7 @@ export default function ProjectDetailPage() {
                     type="button"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -3451,8 +3258,7 @@ export default function ProjectDetailPage() {
                   type="button"
                 >
                   <svg
-                    className="icon-sm"
-                    style={{ marginRight: 4 }}
+                    className="icon-sm statistics-btn-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
@@ -3490,8 +3296,7 @@ export default function ProjectDetailPage() {
                   title="Удалить статистики без данных"
                 >
                   <svg
-                    className="icon-sm"
-                    style={{ marginRight: 4 }}
+                    className="icon-sm statistics-btn-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
@@ -3511,14 +3316,13 @@ export default function ProjectDetailPage() {
             {/* Быстрое создание - кнопка открывает модал */}
             <div className="chart-types-selector">
               <div className="chart-types-header">
-                <h4 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <h4 className="chart-types-title-row">
                   <svg
-                    className="icon-md"
+                    className="icon-md chart-types-title-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
                     viewBox="0 0 24 24"
-                    style={{ color: "var(--accent)" }}
                   >
                     <path
                       strokeLinecap="round"
@@ -3532,15 +3336,14 @@ export default function ProjectDetailPage() {
                   Создайте таблицу с данными, затем визуализируйте её
                 </span>
               </div>
-              <div className="row gap" style={{ marginTop: 12 }}>
+              <div className="row gap chart-types-actions-row">
                 <button
                   className="btn"
                   onClick={() => setShowCreateStatistic(true)}
                   type="button"
                 >
                   <svg
-                    className="icon-sm"
-                    style={{ marginRight: 4 }}
+                    className="icon-sm statistics-btn-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
@@ -3555,7 +3358,7 @@ export default function ProjectDetailPage() {
                   Создать таблицу/график
                 </button>
               </div>
-              <div className="chart-types-grid" style={{ marginTop: 16 }}>
+              <div className="chart-types-grid chart-types-grid-spaced">
                 {(
                   [
                     "bar",
@@ -3588,7 +3391,7 @@ export default function ProjectDetailPage() {
                   return (
                     <div
                       key={type}
-                      className={`chart-type-card ${isCreating ? "creating" : ""}`}
+                      className={`chart-type-card ${isCreating ? "creating" : ""} ${creatingChartType && !isCreating ? "chart-type-card--dimmed" : ""} ${isCreating || creatingChartType ? "chart-type-card--busy" : ""}`}
                       title={`Создать ${info?.name || type}: ${info?.description || ""}`}
                       onClick={async () => {
                         if (!id || isCreating || creatingChartType) return;
@@ -3608,11 +3411,6 @@ export default function ProjectDetailPage() {
                         } finally {
                           setCreatingChartType(null);
                         }
-                      }}
-                      style={{
-                        cursor:
-                          isCreating || creatingChartType ? "wait" : "pointer",
-                        opacity: creatingChartType && !isCreating ? 0.5 : 1,
                       }}
                     >
                       <span className="chart-type-icon">
@@ -3635,12 +3433,11 @@ export default function ProjectDetailPage() {
               <div className="statistics-empty">
                 <div className="statistics-empty-icon">
                   <svg
-                    className="icon-lg"
+                    className="icon-lg statistics-empty-main-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}
                     viewBox="0 0 24 24"
-                    style={{ width: 48, height: 48, opacity: 0.5 }}
                   >
                     <path
                       strokeLinecap="round"
@@ -3657,15 +3454,14 @@ export default function ProjectDetailPage() {
                 </p>
                 {documents.length > 0 && (
                   <button
-                    className="btn"
+                    className="btn statistics-empty-open-doc-btn"
                     onClick={() =>
                       nav(`/projects/${id}/documents/${documents[0].id}`)
                     }
-                    style={{ marginTop: 16 }}
+                    type="button"
                   >
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4 }}
+                      className="icon-sm statistics-btn-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -3699,29 +3495,15 @@ export default function ProjectDetailPage() {
                   const usedInDocIds = stat.used_in_documents || [];
                   const usedInDocuments = usedInDocIds
                     .map((docId) => documents.find((d) => d.id === docId))
-                    .filter(Boolean);
+                    .filter((doc): doc is Document => Boolean(doc));
 
                   return (
                     <div
                       key={stat.id}
-                      className="stat-card"
-                      style={
-                        !isValidId
-                          ? { border: "2px solid #ff6b6b", opacity: 0.7 }
-                          : undefined
-                      }
+                      className={`stat-card ${!isValidId ? "stat-card--invalid" : ""}`}
                     >
                       {!isValidId && (
-                        <div
-                          style={{
-                            padding: "8px 12px",
-                            background: "#ff6b6b",
-                            color: "white",
-                            fontSize: "12px",
-                            borderRadius: "4px 4px 0 0",
-                            marginBottom: "8px",
-                          }}
-                        >
+                        <div className="stat-invalid-banner">
                           ⚠️ Поврежденная запись: невалидный ID. Редактирование
                           недоступно, но можно удалить.
                         </div>
@@ -3767,19 +3549,19 @@ export default function ProjectDetailPage() {
                             </h4>
                             {usedInDocuments.length > 0 ? (
                               <div className="stat-card-documents">
-                                {usedInDocuments.map((doc, i) => (
+                                {usedInDocuments.map((doc) => (
                                   <span
-                                    key={doc!.id}
+                                    key={doc.id}
                                     className="stat-card-document"
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       nav(
-                                        `/projects/${id}/documents/${doc!.id}`,
+                                        `/projects/${id}/documents/${doc.id}`,
                                       );
                                     }}
                                     title="Открыть документ"
                                   >
-                                    📄 {doc!.title}
+                                    📄 {doc.title}
                                   </span>
                                 ))}
                               </div>
@@ -3808,10 +3590,10 @@ export default function ProjectDetailPage() {
                         {!showAsTable &&
                           tableData &&
                           stat.config &&
-                          stat.config.type && (
+                          typeof stat.config.type === "string" && (
                             <ChartFromTable
                               tableData={tableData}
-                              config={stat.config as any}
+                              config={stat.config as unknown as ChartConfig}
                               height={180}
                               theme="dark"
                             />
@@ -3820,11 +3602,9 @@ export default function ProjectDetailPage() {
                         {/* Если нет конфигурации в режиме графика */}
                         {!showAsTable &&
                           tableData &&
-                          (!stat.config || !stat.config.type) && (
-                            <div
-                              className="stat-no-data"
-                              style={{ color: "#ff6b6b" }}
-                            >
+                          (!stat.config ||
+                            typeof stat.config.type !== "string") && (
+                            <div className="stat-no-data stat-no-data--error">
                               ⚠️ Конфигурация графика отсутствует или повреждена
                             </div>
                           )}
@@ -3887,8 +3667,7 @@ export default function ProjectDetailPage() {
                           disabled={!isValidId}
                         >
                           <svg
-                            className="icon-sm"
-                            style={{ marginRight: 4 }}
+                            className="icon-sm statistics-btn-icon"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth={1.5}
@@ -3967,8 +3746,7 @@ export default function ProjectDetailPage() {
                           title="Копировать график/таблицу"
                         >
                           <svg
-                            className="icon-sm"
-                            style={{ marginRight: 4 }}
+                            className="icon-sm statistics-btn-icon"
                             fill="none"
                             stroke="currentColor"
                             strokeWidth={1.5}
@@ -4031,9 +3809,9 @@ export default function ProjectDetailPage() {
             )}
 
             {/* Модальное окно создания новой статистики */}
-            {showCreateStatistic && (
+            {showCreateStatistic && id && (
               <CreateStatisticModal
-                projectId={id!}
+                projectId={id}
                 onClose={() => setShowCreateStatistic(false)}
                 onCreated={(newStat) => {
                   setStatistics([...statistics, newStat]);
@@ -4063,11 +3841,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4079,10 +3856,9 @@ export default function ProjectDetailPage() {
                 <h4>Команда проекта</h4>
                 {isOwner && !showInvite && (
                   <button
-                    className="btn"
+                    className="btn settings-invite-btn"
                     onClick={() => setShowInvite(true)}
                     type="button"
-                    style={{ marginLeft: "auto", fontSize: 13 }}
                   >
                     + Пригласить
                   </button>
@@ -4092,8 +3868,7 @@ export default function ProjectDetailPage() {
                 {showInvite && (
                   <form
                     onSubmit={handleInvite}
-                    className="card"
-                    style={{ marginBottom: 16 }}
+                    className="card settings-invite-form"
                   >
                     <div className="stack">
                       <label className="stack">
@@ -4110,7 +3885,15 @@ export default function ProjectDetailPage() {
                         <span>Роль</span>
                         <select
                           value={inviteRole}
-                          onChange={(e) => setInviteRole(e.target.value as any)}
+                          onChange={(e) => {
+                            const nextRole = e.target.value;
+                            if (
+                              nextRole === "viewer" ||
+                              nextRole === "editor"
+                            ) {
+                              setInviteRole(nextRole);
+                            }
+                          }}
                         >
                           <option value="viewer">
                             Читатель (только просмотр)
@@ -4149,7 +3932,7 @@ export default function ProjectDetailPage() {
                   </div>
                   {members.map((m) => (
                     <div className="trow" key={m.user_id}>
-                      <div className="mono" style={{ fontSize: 13 }}>
+                      <div className="mono settings-member-email">
                         {m.email} {m.user_id === user?.id && "(вы)"}
                       </div>
                       <div>
@@ -4163,12 +3946,11 @@ export default function ProjectDetailPage() {
                       <div>
                         {isOwner && m.role !== "owner" && (
                           <button
-                            className="btn secondary"
+                            className="btn secondary settings-member-remove-btn"
                             onClick={() =>
                               handleRemoveMember(m.user_id, m.email)
                             }
                             type="button"
-                            style={{ fontSize: 12, padding: "6px 10px" }}
                           >
                             Удалить
                           </button>
@@ -4184,11 +3966,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4225,11 +4006,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4288,11 +4068,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4366,11 +4145,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4475,11 +4253,10 @@ export default function ProjectDetailPage() {
             <div className="settings-card">
               <div className="settings-card-header">
                 <svg
-                  className="icon-md"
+                  className="icon-md settings-card-header-icon"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
-                  style={{ color: "var(--accent)" }}
                 >
                   <path
                     strokeLinecap="round"
@@ -4566,8 +4343,7 @@ export default function ProjectDetailPage() {
                   ) : (
                     <>
                       <svg
-                        className="icon-sm"
-                        style={{ marginRight: 6 }}
+                        className="icon-sm settings-save-icon"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={1.5}
@@ -4596,19 +4372,11 @@ export default function ProjectDetailPage() {
           onClick={() => setShowChapterSelectModal(false)}
         >
           <div
-            className="modal-content"
+            className="modal-content chapter-export-modal"
             onClick={(e) => e.stopPropagation()}
-            style={{ maxWidth: 500 }}
           >
             <div className="modal-header">
-              <h3
-                className="modal-title"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+              <h3 className="modal-title chapter-export-title">
                 <svg
                   className="icon-md"
                   fill="none"
@@ -4645,55 +4413,31 @@ export default function ProjectDetailPage() {
               </button>
             </div>
             <div className="modal-body">
-              <div style={{ marginBottom: 12, display: "flex", gap: 8 }}>
+              <div className="chapter-export-actions">
                 <button
-                  className="btn secondary"
+                  className="btn secondary chapter-export-toggle-btn"
                   onClick={() =>
                     setSelectedChaptersForExport(
                       new Set(documents.map((d) => d.id)),
                     )
                   }
                   type="button"
-                  style={{ fontSize: 12 }}
                 >
                   Выбрать все
                 </button>
                 <button
-                  className="btn secondary"
+                  className="btn secondary chapter-export-toggle-btn"
                   onClick={() => setSelectedChaptersForExport(new Set())}
                   type="button"
-                  style={{ fontSize: 12 }}
                 >
                   Снять все
                 </button>
               </div>
-              <div
-                style={{
-                  maxHeight: 300,
-                  overflowY: "auto",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                }}
-              >
+              <div className="chapter-export-list">
                 {documents.map((doc, idx) => (
                   <label
                     key={doc.id}
-                    className="chapter-select-item"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 12,
-                      padding: "10px 12px",
-                      background: selectedChaptersForExport.has(doc.id)
-                        ? "rgba(75, 116, 255, 0.1)"
-                        : "var(--bg-secondary)",
-                      borderRadius: 8,
-                      cursor: "pointer",
-                      border: selectedChaptersForExport.has(doc.id)
-                        ? "1px solid var(--accent)"
-                        : "1px solid transparent",
-                    }}
+                    className={`chapter-select-item ${selectedChaptersForExport.has(doc.id) ? "chapter-select-item--selected" : ""}`}
                   >
                     <input
                       type="checkbox"
@@ -4707,13 +4451,13 @@ export default function ProjectDetailPage() {
                         }
                         setSelectedChaptersForExport(newSet);
                       }}
-                      style={{ width: 18, height: 18 }}
+                      className="chapter-select-checkbox"
                     />
                     <div>
-                      <div style={{ fontWeight: 500 }}>
+                      <div className="chapter-select-title">
                         {idx + 1}. {doc.title}
                       </div>
-                      <div className="muted" style={{ fontSize: 11 }}>
+                      <div className="muted chapter-select-meta">
                         {doc.content
                           ? `${doc.content.length} символов`
                           : "Пусто"}
@@ -4724,32 +4468,18 @@ export default function ProjectDetailPage() {
               </div>
             </div>
             {/* Опция включения данных графиков */}
-            <div
-              style={{
-                padding: "12px 20px",
-                borderTop: "1px solid var(--border-color)",
-                background: "var(--bg-secondary)",
-              }}
-            >
-              <label
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 10,
-                  cursor: "pointer",
-                }}
-              >
+            <div className="chapter-export-option">
+              <label className="chapter-export-option-label">
                 <input
                   type="checkbox"
                   checked={includeChartDataTables}
                   onChange={(e) => setIncludeChartDataTables(e.target.checked)}
-                  style={{ width: 18, height: 18, marginTop: 2 }}
+                  className="chapter-export-option-checkbox"
                 />
                 <div>
-                  <div style={{ fontWeight: 500, fontSize: 13 }}>
+                  <div className="chapter-export-option-title">
                     <svg
-                      className="icon-sm"
-                      style={{ marginRight: 4, verticalAlign: "middle" }}
+                      className="icon-sm chapter-export-option-icon"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth={1.5}
@@ -4763,7 +4493,7 @@ export default function ProjectDetailPage() {
                     </svg>
                     Включить данные графиков
                   </div>
-                  <div className="muted" style={{ fontSize: 11, marginTop: 4 }}>
+                  <div className="muted chapter-export-option-help">
                     Добавляет таблицы с исходными данными под каждым графиком.
                     Используйте их для создания редактируемых графиков в Word.
                   </div>
@@ -4771,13 +4501,8 @@ export default function ProjectDetailPage() {
               </label>
             </div>
 
-            <div
-              className="modal-footer"
-              style={{
-                justifyContent: "space-between",
-              }}
-            >
-              <span className="muted" style={{ fontSize: 12 }}>
+            <div className="modal-footer chapter-export-footer">
+              <span className="muted chapter-export-count">
                 Выбрано: {selectedChaptersForExport.size} из {documents.length}
               </span>
               <div className="row gap">
@@ -4795,8 +4520,7 @@ export default function ProjectDetailPage() {
                   type="button"
                 >
                   <svg
-                    className="icon-sm"
-                    style={{ marginRight: 4 }}
+                    className="icon-sm statistics-btn-icon"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.5}

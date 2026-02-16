@@ -53,6 +53,10 @@ interface MissingArticleInfo {
   source: "reference" | "cited_by";
 }
 
+type MissingPmidRow = {
+  pmid: string;
+};
+
 // Лимит на количество импортируемых статей
 const IMPORT_LIMIT = 1000;
 
@@ -125,12 +129,13 @@ async function getMissingArticles(projectId: string): Promise<{
   const totalAvailable = parseInt(totalResult.rows[0].total, 10);
 
   // Собираем PMIDs цитирующих статей (уже отсортированы по частоте)
-  const missingPmids: MissingArticleInfo[] = citedByPmids.rows.map(
-    (row: any) => ({
-      pmid: row.pmid,
+  const missingPmids: MissingArticleInfo[] = citedByPmids.rows.map((row) => {
+    const typedRow = row as MissingPmidRow;
+    return {
+      pmid: typedRow.pmid,
       source: "cited_by" as const,
-    }),
-  );
+    };
+  });
 
   // DOIs не импортируем - они из references
   return {
@@ -307,7 +312,10 @@ async function importFromCrossref(
   while (queue.length > 0 || inProgress.size > 0) {
     // Запускаем новые запросы
     while (queue.length > 0 && inProgress.size < CROSSREF_PARALLEL) {
-      const doi = queue.shift()!;
+      const doi = queue.shift();
+      if (!doi) {
+        continue;
+      }
 
       const promise = (async () => {
         try {
@@ -396,7 +404,7 @@ async function updateImportProgress(
 
   // WebSocket оповещение
   broadcastToProject(projectId, {
-    type: "embedding:import-progress" as any,
+    type: "embedding:import-progress",
     projectId,
     payload: {
       jobId,
@@ -464,7 +472,9 @@ export async function runImportMissingArticles(
         totalDois,
       });
 
-      const pmidList = missingPmids.map((m) => m.pmid!);
+      const pmidList = missingPmids
+        .map((m) => m.pmid)
+        .filter((pmid): pmid is string => typeof pmid === "string");
       const pubmedResult = await importFromPubMed(
         pmidList,
         pubmedApiKey,
@@ -514,7 +524,9 @@ export async function runImportMissingArticles(
         totalDois,
       });
 
-      const doiList = missingDois.map((m) => m.doi!);
+      const doiList = missingDois
+        .map((m) => m.doi)
+        .filter((doi): doi is string => typeof doi === "string");
       const crossrefResult = await importFromCrossref(
         doiList,
         (imported, skipped, errors) => {

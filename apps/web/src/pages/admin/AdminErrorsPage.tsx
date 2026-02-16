@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getErrorMessage } from "../../lib/errorUtils";
 import {
   apiAdminGetErrors,
@@ -37,6 +37,9 @@ function ErrorDetailModal({
 }: ErrorDetailModalProps) {
   const [notes, setNotes] = useState("");
   const [resolving, setResolving] = useState(false);
+  const resolvedAtLabel = error.resolved_at
+    ? formatDate(error.resolved_at)
+    : "—";
 
   async function handleResolve() {
     setResolving(true);
@@ -111,7 +114,7 @@ function ErrorDetailModal({
               </div>
             )}
 
-            {error.request_body && (
+            {error.request_body != null && (
               <div className="admin-error-detail-item full-width">
                 <span className="admin-error-detail-label">Request body</span>
                 <pre className="admin-error-body">
@@ -124,7 +127,7 @@ function ErrorDetailModal({
               <>
                 <div className="admin-error-detail-item">
                   <span className="admin-error-detail-label">Решено</span>
-                  <span>{formatDate(error.resolved_at!)}</span>
+                  <span>{resolvedAtLabel}</span>
                 </div>
                 <div className="admin-error-detail-item">
                   <span className="admin-error-detail-label">Кем решено</span>
@@ -182,7 +185,7 @@ export default function AdminErrorsPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedError, setSelectedError] = useState<ErrorLogItem | null>(null);
 
-  async function loadErrors() {
+  const loadErrors = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -201,18 +204,16 @@ export default function AdminErrorsPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [page, resolvedFilter, typeFilter]);
 
   useEffect(() => {
     loadErrors();
-  }, [page, resolvedFilter, typeFilter]);
+  }, [loadErrors]);
 
   function handleErrorResolved() {
     setSelectedError(null);
     loadErrors();
   }
-
-  const unresolvedCount = errors.filter((e) => !e.resolved).length;
 
   return (
     <div className="admin-page">
@@ -248,7 +249,7 @@ export default function AdminErrorsPage() {
           <select
             value={resolvedFilter}
             onChange={(e) => {
-              setResolvedFilter(e.target.value as any);
+              setResolvedFilter(e.target.value as "true" | "false" | "all");
               setPage(1);
             }}
           >

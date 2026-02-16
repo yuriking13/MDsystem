@@ -29,10 +29,14 @@ interface RateLimitStore {
 const memoryStores = new Map<string, Map<string, RateLimitStore>>();
 
 function getMemoryStore(name: string): Map<string, RateLimitStore> {
-  if (!memoryStores.has(name)) {
-    memoryStores.set(name, new Map());
+  const existingStore = memoryStores.get(name);
+  if (existingStore) {
+    return existingStore;
   }
-  return memoryStores.get(name)!;
+
+  const newStore = new Map<string, RateLimitStore>();
+  memoryStores.set(name, newStore);
+  return newStore;
 }
 
 /**

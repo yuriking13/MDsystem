@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Editor } from "@tiptap/react";
+import type { Node as ProseMirrorNode } from "prosemirror-model";
 import type { CitationStyle } from "../../lib/api";
 import { STYLE_CONFIGS } from "./TiptapEditor";
 import { editorEvents } from "../../lib/editorEvents";
@@ -72,6 +73,30 @@ const FONT_FAMILIES = [
   { name: "Courier New", value: "'Courier New', monospace" },
 ];
 
+const FONT_OPTION_CLASS_MAP: Record<string, string> = {
+  "'Times New Roman', Times, serif": "toolbar-font-option--times",
+  "'Arial', sans-serif": "toolbar-font-option--arial",
+  "'Georgia', serif": "toolbar-font-option--georgia",
+  "'Verdana', sans-serif": "toolbar-font-option--verdana",
+  "'Roboto', sans-serif": "toolbar-font-option--roboto",
+  "'Open Sans', sans-serif": "toolbar-font-option--open-sans",
+  "'Lato', sans-serif": "toolbar-font-option--lato",
+  "'Montserrat', sans-serif": "toolbar-font-option--montserrat",
+  "'PT Sans', sans-serif": "toolbar-font-option--pt-sans",
+  "'PT Serif', serif": "toolbar-font-option--pt-serif",
+  "'Courier New', monospace": "toolbar-font-option--courier",
+};
+
+const CELL_COLOR_SWATCH_CLASS_MAP: Record<string, string> = {
+  "": "toolbar-cell-color-swatch--none",
+  "rgba(59, 130, 246, 0.15)": "toolbar-cell-color-swatch--blue",
+  "rgba(34, 197, 94, 0.15)": "toolbar-cell-color-swatch--green",
+  "rgba(234, 179, 8, 0.15)": "toolbar-cell-color-swatch--yellow",
+  "rgba(239, 68, 68, 0.15)": "toolbar-cell-color-swatch--red",
+  "rgba(168, 85, 247, 0.15)": "toolbar-cell-color-swatch--purple",
+  "rgba(100, 116, 139, 0.15)": "toolbar-cell-color-swatch--gray",
+};
+
 interface TiptapToolbarProps {
   editor: Editor;
   onInsertCitation?: () => void;
@@ -93,6 +118,14 @@ interface TiptapToolbarProps {
   onToggleAIAssistant?: () => void;
   showAIAssistant?: boolean;
 }
+
+type ToolbarChain = ReturnType<Editor["chain"]> & {
+  setFontSize: (fontSize: string) => ToolbarChain;
+  unsetFontSize: () => ToolbarChain;
+  toggleIndent: () => ToolbarChain;
+  setRowHeight: (height: number) => ToolbarChain;
+  deleteRowHeight: () => ToolbarChain;
+};
 
 export default function TiptapToolbar({
   editor,
@@ -205,6 +238,17 @@ export default function TiptapToolbar({
     }
   };
 
+  const getToolbarChain = () => editor.chain().focus() as ToolbarChain;
+
+  const getFontOptionClass = (fontFamily: string): string =>
+    FONT_OPTION_CLASS_MAP[fontFamily] ?? "toolbar-font-option--default";
+
+  const getLockedActionClass = (locked: boolean): string =>
+    locked ? "toolbar-dropdown-item--locked" : "";
+
+  const getCellColorSwatchClass = (color: string): string =>
+    CELL_COLOR_SWATCH_CLASS_MAP[color] ?? "toolbar-cell-color-swatch--none";
+
   return (
     <div className="tiptap-toolbar">
       {hasSidebarToggles && (
@@ -272,15 +316,12 @@ export default function TiptapToolbar({
         }
         onChange={(e) => {
           if (e.target.value) {
-            (editor.chain().focus() as any)
-              .setFontSize(`${e.target.value}pt`)
-              .run();
+            getToolbarChain().setFontSize(`${e.target.value}pt`).run();
           } else {
-            (editor.chain().focus() as any).unsetFontSize().run();
+            getToolbarChain().unsetFontSize().run();
           }
         }}
-        className="toolbar-select"
-        style={{ width: 52 }}
+        className="toolbar-select toolbar-select--font-size"
         title="Размер шрифта"
       >
         <option value="">Размер</option>
@@ -301,8 +342,7 @@ export default function TiptapToolbar({
             editor.chain().focus().unsetFontFamily().run();
           }
         }}
-        className="toolbar-select"
-        style={{ width: 100 }}
+        className="toolbar-select toolbar-select--font-family"
         title="Шрифт"
       >
         <option value="">Шрифт</option>
@@ -310,7 +350,7 @@ export default function TiptapToolbar({
           <option
             key={font.name}
             value={font.value}
-            style={{ fontFamily: font.value }}
+            className={getFontOptionClass(font.value)}
           >
             {font.name}
           </option>
@@ -343,7 +383,7 @@ export default function TiptapToolbar({
       </button>
       <button
         className="toolbar-btn"
-        onClick={() => (editor.chain().focus() as any).toggleIndent().run()}
+        onClick={() => getToolbarChain().toggleIndent().run()}
         title="Отступ первой строки (Tab)"
       >
         ⇥
@@ -379,7 +419,7 @@ export default function TiptapToolbar({
       </button>
 
       {/* Insert Table */}
-      <div style={{ position: "relative" }} ref={tableMenuRef}>
+      <div className="toolbar-menu-wrap" ref={tableMenuRef}>
         <button
           className="toolbar-btn"
           onClick={() => {
@@ -414,7 +454,7 @@ export default function TiptapToolbar({
       {/* Edit Table (when in table) */}
       {isInTable && (
         <>
-          <div style={{ position: "relative" }} ref={tableEditMenuRef}>
+          <div className="toolbar-menu-wrap" ref={tableEditMenuRef}>
             <button
               className="toolbar-btn active-subtle"
               onClick={() => {
@@ -435,8 +475,7 @@ export default function TiptapToolbar({
                         onOpenTableEditor();
                         setShowTableEditMenu(false);
                       }}
-                      className="toolbar-dropdown-item accent"
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+                      className="toolbar-dropdown-item toolbar-dropdown-item--row-action accent"
                     >
                       <IconArrowsExpand size="sm" /> Редактор таблицы
                     </button>
@@ -453,8 +492,9 @@ export default function TiptapToolbar({
                     editor.chain().focus().addRowBefore().run();
                     setShowTableEditMenu(false);
                   }}
-                  className="toolbar-dropdown-item"
-                  style={{ opacity: isInHeaderRow() ? 0.5 : 1 }}
+                  className={`toolbar-dropdown-item ${getLockedActionClass(
+                    isInHeaderRow(),
+                  )}`}
                   title={
                     isInHeaderRow()
                       ? "Нельзя добавить строку выше заголовка"
@@ -481,8 +521,9 @@ export default function TiptapToolbar({
                     editor.chain().focus().deleteRow().run();
                     setShowTableEditMenu(false);
                   }}
-                  className="toolbar-dropdown-item danger"
-                  style={{ opacity: isInHeaderRow() ? 0.5 : 1 }}
+                  className={`toolbar-dropdown-item danger ${getLockedActionClass(
+                    isInHeaderRow(),
+                  )}`}
                   title={
                     isInHeaderRow() ? "Нельзя удалить строку заголовка" : ""
                   }
@@ -566,9 +607,7 @@ export default function TiptapToolbar({
                         Math.min(500, Number(height)),
                       );
                       if (isNaN(numHeight)) return;
-                      (editor.chain().focus() as any)
-                        .setRowHeight(numHeight)
-                        .run();
+                      getToolbarChain().setRowHeight(numHeight).run();
                       setShowTableEditMenu(false);
                     }
                   }}
@@ -578,7 +617,7 @@ export default function TiptapToolbar({
                 </button>
                 <button
                   onClick={() => {
-                    (editor.chain().focus() as any).deleteRowHeight().run();
+                    getToolbarChain().deleteRowHeight().run();
                     setShowTableEditMenu(false);
                   }}
                   className="toolbar-dropdown-item"
@@ -593,8 +632,7 @@ export default function TiptapToolbar({
                     editor.chain().focus().deleteTable().run();
                     setShowTableEditMenu(false);
                   }}
-                  className="toolbar-dropdown-item danger"
-                  style={{ display: "flex", alignItems: "center", gap: 6 }}
+                  className="toolbar-dropdown-item toolbar-dropdown-item--row-action danger"
                 >
                   <IconTrash size="sm" /> Удалить таблицу
                 </button>
@@ -607,7 +645,7 @@ export default function TiptapToolbar({
                         // Get the table HTML from the editor
                         const { state } = editor;
                         const { from } = state.selection;
-                        let tableNode: any = null;
+                        let tableNode: ProseMirrorNode | null = null;
 
                         state.doc.nodesBetween(
                           0,
@@ -624,10 +662,11 @@ export default function TiptapToolbar({
                         if (tableNode) {
                           const div = document.createElement("div");
                           const tableEl = document.createElement("table");
+                          const activeTableNode = tableNode as ProseMirrorNode;
 
-                          tableNode.content.forEach((row: any) => {
+                          activeTableNode.forEach((row: ProseMirrorNode) => {
                             const tr = document.createElement("tr");
-                            row.content?.forEach((cell: any) => {
+                            row.forEach((cell: ProseMirrorNode) => {
                               const cellEl = document.createElement(
                                 cell?.type?.name === "tableHeader"
                                   ? "th"
@@ -644,8 +683,7 @@ export default function TiptapToolbar({
                         }
                         setShowTableEditMenu(false);
                       }}
-                      className="toolbar-dropdown-item success"
-                      style={{ display: "flex", alignItems: "center", gap: 6 }}
+                      className="toolbar-dropdown-item toolbar-dropdown-item--row-action success"
                     >
                       <IconChartBar size="sm" /> Создать график
                     </button>
@@ -656,7 +694,7 @@ export default function TiptapToolbar({
           </div>
 
           {/* Table Cell Color Menu */}
-          <div style={{ position: "relative" }} ref={tableColorMenuRef}>
+          <div className="toolbar-menu-wrap" ref={tableColorMenuRef}>
             <button
               className="toolbar-btn active-subtle"
               onClick={() => {
@@ -669,24 +707,18 @@ export default function TiptapToolbar({
               <IconPaintBrush size="sm" />
             </button>
             {showTableColorMenu && (
-              <div className="toolbar-dropdown" style={{ minWidth: 180 }}>
+              <div className="toolbar-dropdown toolbar-dropdown--table-color">
                 <div className="toolbar-dropdown-label">Цвет ячейки</div>
                 {CELL_COLORS.map((color) => (
                   <button
                     key={color.name}
                     onClick={() => applyCellColor(color.value)}
-                    className="toolbar-dropdown-item"
-                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                    className="toolbar-dropdown-item toolbar-dropdown-item--color-option"
                   >
                     <span
-                      style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: 3,
-                        border: "1px solid rgba(255,255,255,0.2)",
-                        background: color.value || "white",
-                        display: "inline-block",
-                      }}
+                      className={`toolbar-cell-color-swatch ${getCellColorSwatchClass(
+                        color.value,
+                      )}`}
                     />
                     {color.name}
                   </button>
@@ -697,10 +729,9 @@ export default function TiptapToolbar({
                 <div className="toolbar-dropdown-label">
                   Выравнивание текста в ячейке
                 </div>
-                <div style={{ display: "flex", gap: 4, padding: "0 4px" }}>
+                <div className="toolbar-align-controls">
                   <button
-                    className="toolbar-btn"
-                    style={{ flex: 1 }}
+                    className="toolbar-btn toolbar-align-btn"
                     onClick={() => {
                       editor
                         .chain()
@@ -714,8 +745,7 @@ export default function TiptapToolbar({
                     <IconBarsLeft size="sm" />
                   </button>
                   <button
-                    className="toolbar-btn"
-                    style={{ flex: 1 }}
+                    className="toolbar-btn toolbar-align-btn"
                     onClick={() => {
                       editor
                         .chain()
@@ -729,8 +759,7 @@ export default function TiptapToolbar({
                     <IconBarsCenter size="sm" />
                   </button>
                   <button
-                    className="toolbar-btn"
-                    style={{ flex: 1 }}
+                    className="toolbar-btn toolbar-align-btn"
                     onClick={() => {
                       editor
                         .chain()
@@ -750,10 +779,9 @@ export default function TiptapToolbar({
                 <div className="toolbar-dropdown-label">
                   Вертикальное выравнивание
                 </div>
-                <div style={{ display: "flex", gap: 4, padding: "0 4px" }}>
+                <div className="toolbar-align-controls">
                   <button
-                    className="toolbar-btn"
-                    style={{ flex: 1 }}
+                    className="toolbar-btn toolbar-align-btn"
                     onClick={() => {
                       editor
                         .chain()
@@ -767,8 +795,7 @@ export default function TiptapToolbar({
                     <IconAlignTop size="sm" />
                   </button>
                   <button
-                    className="toolbar-btn"
-                    style={{ flex: 1 }}
+                    className="toolbar-btn toolbar-align-btn"
                     onClick={() => {
                       editor
                         .chain()
@@ -782,8 +809,7 @@ export default function TiptapToolbar({
                     <IconAlignMiddle size="sm" />
                   </button>
                   <button
-                    className="toolbar-btn"
-                    style={{ flex: 1 }}
+                    className="toolbar-btn toolbar-align-btn"
                     onClick={() => {
                       editor
                         .chain()
@@ -927,14 +953,7 @@ export default function TiptapToolbar({
       )}
 
       {/* Style indicator and page settings */}
-      <div
-        style={{
-          marginLeft: "auto",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
+      <div className="toolbar-tail">
         {onOpenPageSettings && (
           <button
             className="toolbar-btn"

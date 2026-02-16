@@ -1,0 +1,30 @@
+{
+  "viewportWidths": [360, 390, 768, 1024, 1280, 1440, 1920],
+  "userRoutes": {
+    "auth": ["/login", "/register"],
+    "shell": ["/projects", "/settings", "/docs"],
+    "projectTabs": [
+      "articles",
+      "documents",
+      "files",
+      "statistics",
+      "settings",
+      "graph"
+    ],
+    "projectDocumentRoutePattern": "^/projects/[^/]+/documents/[^/]+$",
+    "projectGraphRoutePattern": "^/projects/[^/]+\\?tab=graph$"
+  },
+  "adminRoutes": [
+    "/admin",
+    "/admin/users",
+    "/admin/projects",
+    "/admin/articles",
+    "/admin/activity",
+    "/admin/sessions",
+    "/admin/jobs",
+    "/admin/errors",
+    "/admin/audit",
+    "/admin/system",
+    "/admin/settings"
+  ]
+}

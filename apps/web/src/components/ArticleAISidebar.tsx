@@ -150,11 +150,15 @@ export default function ArticleAISidebar({
           totalAnalyzed: result.totalAnalyzed,
         };
         setInternalMessages((prev) => [...prev, assistantMessage]);
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errMessage =
+          err instanceof Error
+            ? err.message
+            : "Не удалось получить ответ от AI";
         const errorMessage: AIMessage = {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: `Ошибка: ${err.message || "Не удалось получить ответ от AI"}`,
+          content: `Ошибка: ${errMessage}`,
           timestamp: new Date(),
           status: "error",
         };
@@ -612,15 +616,14 @@ export default function ArticleAISidebar({
                           {onAddToSelected && (
                             <button
                               className="article-ai-add-all-btn"
-                              onClick={() =>
-                                onAddToSelected(
-                                  msg
-                                    .suggestedArticles!.filter(
-                                      (a) => a.status === "candidate",
-                                    )
-                                    .map((a) => a.id),
+                              onClick={() => {
+                                const candidateIds = (
+                                  msg.suggestedArticles ?? []
                                 )
-                              }
+                                  .filter((a) => a.status === "candidate")
+                                  .map((a) => a.id);
+                                onAddToSelected(candidateIds);
+                              }}
                               type="button"
                               title="Добавить все рекомендованные в отобранные"
                             >
@@ -769,22 +772,13 @@ export default function ArticleAISidebar({
                 </div>
                 <div className="article-ai-message-content">
                   <div className="article-ai-loading">
-                    <span
-                      className="animate-bounce"
-                      style={{ animationDelay: "0ms" }}
-                    >
+                    <span className="animate-bounce article-ai-loading-dot article-ai-loading-dot--1">
                       .
                     </span>
-                    <span
-                      className="animate-bounce"
-                      style={{ animationDelay: "150ms" }}
-                    >
+                    <span className="animate-bounce article-ai-loading-dot article-ai-loading-dot--2">
                       .
                     </span>
-                    <span
-                      className="animate-bounce"
-                      style={{ animationDelay: "300ms" }}
-                    >
+                    <span className="animate-bounce article-ai-loading-dot article-ai-loading-dot--3">
                       .
                     </span>
                   </div>

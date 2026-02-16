@@ -75,14 +75,18 @@ const API_RATE_LIMITS: Record<string, RateLimiterConfig> = {
 };
 
 function getRateLimiter(apiName: string): TokenBucketRateLimiter {
-  if (!rateLimiters.has(apiName)) {
-    const config = API_RATE_LIMITS[apiName] || {
-      tokensPerSecond: 5,
-      maxTokens: 10,
-    };
-    rateLimiters.set(apiName, new TokenBucketRateLimiter(config));
+  const existingLimiter = rateLimiters.get(apiName);
+  if (existingLimiter) {
+    return existingLimiter;
   }
-  return rateLimiters.get(apiName)!;
+
+  const config = API_RATE_LIMITS[apiName] || {
+    tokensPerSecond: 5,
+    maxTokens: 10,
+  };
+  const limiter = new TokenBucketRateLimiter(config);
+  rateLimiters.set(apiName, limiter);
+  return limiter;
 }
 
 // ============================================================
@@ -104,14 +108,18 @@ const CIRCUIT_BREAKER_CONFIG = {
 };
 
 function getCircuitBreaker(apiName: string): CircuitBreakerState {
-  if (!circuitBreakers.has(apiName)) {
-    circuitBreakers.set(apiName, {
-      failures: 0,
-      lastFailure: 0,
-      state: "closed",
-    });
+  const existingBreaker = circuitBreakers.get(apiName);
+  if (existingBreaker) {
+    return existingBreaker;
   }
-  return circuitBreakers.get(apiName)!;
+
+  const breaker: CircuitBreakerState = {
+    failures: 0,
+    lastFailure: 0,
+    state: "closed",
+  };
+  circuitBreakers.set(apiName, breaker);
+  return breaker;
 }
 
 function recordSuccess(apiName: string): void {

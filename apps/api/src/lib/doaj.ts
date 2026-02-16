@@ -191,8 +191,8 @@ export async function doajSearch(args: {
       total: data.total || 0,
       items,
     };
-  } catch (error: any) {
-    log.error("Search error", error as Error);
+  } catch (error) {
+    log.error("Search error", error);
     throw error;
   }
 }

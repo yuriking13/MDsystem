@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAdminAuth } from "../../lib/AdminContext";
+import { isAdminMobileViewport } from "../../lib/responsive";
 import "../../styles/admin.css";
 import {
   IconUsers,
@@ -27,6 +28,61 @@ export default function AdminLayout() {
   const { admin, logout } = useAdminAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return isAdminMobileViewport(window.innerWidth);
+  });
+  const canUseMobileSidebar = isMobileViewport;
+
+  const toggleMobileSidebar = () => {
+    if (!canUseMobileSidebar) return;
+    setMobileSidebarOpen((prev) => !prev);
+  };
+
+  const closeMobileSidebar = () => {
+    setMobileSidebarOpen(false);
+  };
+
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => {
+      setIsMobileViewport(isAdminMobileViewport(window.innerWidth));
+    };
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport && mobileSidebarOpen) {
+      setMobileSidebarOpen(false);
+    }
+  }, [isMobileViewport, mobileSidebarOpen]);
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileSidebarOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [mobileSidebarOpen]);
+
+  useEffect(() => {
+    if (mobileSidebarOpen) {
+      document.body.classList.add("sidebar-modal-open");
+    } else {
+      document.body.classList.remove("sidebar-modal-open");
+    }
+    return () => document.body.classList.remove("sidebar-modal-open");
+  }, [mobileSidebarOpen]);
 
   const sidebarItems: SidebarItem[] = [
     { path: "/admin", label: "Дашборд", icon: <IconChartBar /> },
@@ -49,14 +105,31 @@ export default function AdminLayout() {
     return location.pathname.startsWith(path);
   }
 
+  const showSidebarLabels = isMobileViewport || sidebarOpen;
+  const currentSectionLabel =
+    sidebarItems.find((item) => isActive(item.path))?.label ?? "Админ-панель";
+
   return (
     <div className="admin-layout">
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          className="admin-sidebar-overlay"
+          aria-label="Закрыть меню навигации"
+          aria-controls="admin-primary-sidebar"
+          onClick={closeMobileSidebar}
+        />
+      )}
+
       {/* Sidebar */}
-      <aside className={`admin-sidebar ${sidebarOpen ? "open" : "collapsed"}`}>
+      <aside
+        id="admin-primary-sidebar"
+        className={`admin-sidebar ${sidebarOpen ? "open" : "collapsed"} ${mobileSidebarOpen ? "mobile-open" : ""}`}
+      >
         <div className="admin-sidebar-header">
           <div className="admin-logo">
             <IconShield size="lg" className="admin-logo-icon" />
-            {sidebarOpen && <span>Scientiaiter Admin</span>}
+            {showSidebarLabels && <span>Scientiaiter Admin</span>}
           </div>
           <button
             className="admin-sidebar-toggle"
@@ -93,10 +166,11 @@ export default function AdminLayout() {
               key={item.path}
               to={item.path}
               className={`admin-nav-item ${isActive(item.path) ? "active" : ""}`}
-              title={!sidebarOpen ? item.label : undefined}
+              title={!showSidebarLabels ? item.label : undefined}
+              onClick={closeMobileSidebar}
             >
               <span className="admin-nav-icon">{item.icon}</span>
-              {sidebarOpen && (
+              {showSidebarLabels && (
                 <>
                   <span className="admin-nav-label">{item.label}</span>
                   {item.badge !== undefined && (
@@ -104,7 +178,7 @@ export default function AdminLayout() {
                   )}
                 </>
               )}
-              {!sidebarOpen && item.badge !== undefined && (
+              {!showSidebarLabels && item.badge !== undefined && (
                 <span className="admin-nav-badge-dot"></span>
               )}
             </Link>
@@ -112,23 +186,34 @@ export default function AdminLayout() {
         </nav>
 
         <div className="admin-sidebar-footer">
-          <Link to="/projects" className="admin-nav-item admin-back-to-app">
+          <Link
+            to="/projects"
+            className="admin-nav-item admin-back-to-app"
+            onClick={closeMobileSidebar}
+          >
             <span className="admin-nav-icon">
               <IconArrowLeft />
             </span>
-            {sidebarOpen && (
+            {showSidebarLabels && (
               <span className="admin-nav-label">Вернуться в приложение</span>
             )}
           </Link>
 
           <div className="admin-user-info">
-            {sidebarOpen && admin && (
+            {showSidebarLabels && admin && (
               <div className="admin-user-details">
                 <span className="admin-user-email">{admin.email}</span>
                 <span className="admin-user-role">Администратор</span>
               </div>
             )}
-            <button className="admin-logout-btn" onClick={logout} title="Выйти">
+            <button
+              className="admin-logout-btn"
+              onClick={() => {
+                closeMobileSidebar();
+                logout();
+              }}
+              title="Выйти"
+            >
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -149,6 +234,33 @@ export default function AdminLayout() {
 
       {/* Main Content */}
       <main className="admin-main">
+        <div className="admin-mobile-topbar">
+          <button
+            type="button"
+            className="admin-mobile-nav-toggle"
+            onClick={toggleMobileSidebar}
+            disabled={!canUseMobileSidebar}
+            aria-label={
+              mobileSidebarOpen ? "Закрыть навигацию" : "Открыть навигацию"
+            }
+            aria-controls="admin-primary-sidebar"
+            aria-expanded={mobileSidebarOpen}
+          >
+            <svg
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
+          </button>
+          <span className="admin-mobile-title">{currentSectionLabel}</span>
+        </div>
         <Outlet />
       </main>
     </div>

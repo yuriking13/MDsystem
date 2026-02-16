@@ -227,8 +227,8 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
                 : 0,
           },
         };
-      } catch (error: any) {
-        fastify.log.error("Methodology analysis error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Methodology analysis error");
         return reply.code(500).send({
           error: "Failed to analyze methodologies",
         });
@@ -306,8 +306,8 @@ export const methodologyClustersRoutes: FastifyPluginCallback = (
           rctPercentage:
             total > 0 ? (parseInt(row.rct_count) / total) * 100 : 0,
         };
-      } catch (error: any) {
-        fastify.log.error("Methodology stats error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Methodology stats error");
         return reply.code(500).send({
           error: "Failed to get methodology stats",
         });

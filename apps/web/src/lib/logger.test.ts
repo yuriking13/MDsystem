@@ -2,14 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createLogger } from "./logger";
 
 describe("logger", () => {
-  const originalEnv = import.meta.env.PROD;
-  let consoleSpy: ReturnType<typeof vi.spyOn>;
+  let debugSpy: ReturnType<typeof vi.spyOn>;
+  let infoSpy: ReturnType<typeof vi.spyOn>;
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+  let errorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    consoleSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
-    vi.spyOn(console, "info").mockImplementation(() => {});
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+    infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -30,7 +32,7 @@ describe("logger", () => {
       const logger = createLogger("my-component");
       logger.warn("test message");
 
-      expect(console.warn).toHaveBeenCalledWith(
+      expect(warnSpy).toHaveBeenCalledWith(
         expect.stringContaining("[my-component]"),
       );
     });
@@ -39,9 +41,7 @@ describe("logger", () => {
       const logger = createLogger("test");
       logger.warn("test message");
 
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining("[WARN]"),
-      );
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("[WARN]"));
     });
   });
 
@@ -50,28 +50,28 @@ describe("logger", () => {
       const logger = createLogger("test");
       logger.debug("debug message");
 
-      expect(console.debug).toHaveBeenCalled();
+      expect(debugSpy).toHaveBeenCalled();
     });
 
     it("should call console.info for info level", () => {
       const logger = createLogger("test");
       logger.info("info message");
 
-      expect(console.info).toHaveBeenCalled();
+      expect(infoSpy).toHaveBeenCalled();
     });
 
     it("should call console.warn for warn level", () => {
       const logger = createLogger("test");
       logger.warn("warn message");
 
-      expect(console.warn).toHaveBeenCalled();
+      expect(warnSpy).toHaveBeenCalled();
     });
 
     it("should call console.error for error level", () => {
       const logger = createLogger("test");
       logger.error("error message");
 
-      expect(console.error).toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalled();
     });
   });
 
@@ -82,14 +82,14 @@ describe("logger", () => {
 
       logger.info("message with data", testData);
 
-      expect(console.info).toHaveBeenCalledWith(expect.any(String), testData);
+      expect(infoSpy).toHaveBeenCalledWith(expect.any(String), testData);
     });
 
     it("should handle undefined data", () => {
       const logger = createLogger("test");
       logger.info("message without data");
 
-      expect(console.info).toHaveBeenCalledWith(expect.any(String));
+      expect(infoSpy).toHaveBeenCalledWith(expect.any(String));
     });
   });
 
@@ -100,7 +100,7 @@ describe("logger", () => {
 
       logger.error("error occurred", error);
 
-      expect(console.error).toHaveBeenCalledWith(
+      expect(errorSpy).toHaveBeenCalledWith(
         expect.any(String),
         error,
         undefined,
@@ -114,11 +114,7 @@ describe("logger", () => {
 
       logger.error("error occurred", error, data);
 
-      expect(console.error).toHaveBeenCalledWith(
-        expect.any(String),
-        error,
-        data,
-      );
+      expect(errorSpy).toHaveBeenCalledWith(expect.any(String), error, data);
     });
   });
 });

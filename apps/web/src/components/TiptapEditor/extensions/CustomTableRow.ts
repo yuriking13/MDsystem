@@ -1,5 +1,7 @@
 import { Plugin } from "prosemirror-state";
 import TableRow from "@tiptap/extension-table-row";
+import type { CommandProps } from "@tiptap/react";
+import { getInlineStyleValue } from "./inlineStyleUtils";
 
 const createRowId = () =>
   `row-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -12,8 +14,8 @@ export const CustomTableRow = TableRow.extend({
         default: null,
         parseHTML: (element) => {
           // Parse from data-attribute first (more reliable), then fallback to style
-          const dataHeight = element.getAttribute('data-row-height');
-          const styleHeight = element.style.height;
+          const dataHeight = element.getAttribute("data-row-height");
+          const styleHeight = getInlineStyleValue(element, "height");
           const rawHeight = dataHeight || styleHeight;
           if (!rawHeight) return null;
           const parsed = parseInt(rawHeight, 10);
@@ -26,8 +28,8 @@ export const CustomTableRow = TableRow.extend({
           // Enforce minimum height of 10px when rendering
           const safeHeight = Math.max(10, attributes.rowHeight);
           return {
-            'data-row-height': String(safeHeight),
-            style: `height: ${safeHeight}px; min-height: ${safeHeight}px;`,
+            "data-row-height": String(safeHeight),
+            height: String(safeHeight),
           };
         },
       },
@@ -78,7 +80,7 @@ export const CustomTableRow = TableRow.extend({
       ...this.parent?.(),
       setRowHeight:
         (height: number) =>
-        ({ state, dispatch }: any) => {
+        ({ state, dispatch }: CommandProps) => {
           const safeHeight = Math.max(10, Math.round(height));
           const { $from } = state.selection;
           // Walk up the depth to find the tableRow node
@@ -100,7 +102,7 @@ export const CustomTableRow = TableRow.extend({
         },
       deleteRowHeight:
         () =>
-        ({ state, dispatch }: any) => {
+        ({ state, dispatch }: CommandProps) => {
           const { $from } = state.selection;
           for (let d = $from.depth; d > 0; d--) {
             const node = $from.node(d);
