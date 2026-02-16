@@ -274,6 +274,9 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(
           document.querySelector(".app-mobile-topbar-title")?.textContent,
         ).toBe("Проект Альфа");
+        expect(
+          document.querySelector(".sidebar-project-name")?.textContent,
+        ).toBe("Проект Альфа");
       });
     },
   );
@@ -308,6 +311,9 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(
           document.querySelector(".app-mobile-topbar-title")?.textContent,
         ).toBe("Проект Альфа");
+        expect(
+          document.querySelector(".sidebar-project-name")?.textContent,
+        ).toBe("Проект Альфа");
       });
     },
   );
@@ -332,6 +338,7 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(
           document.querySelector(".app-mobile-topbar-title")?.textContent,
         ).toBe("Scientiaiter");
+        expect(document.querySelector(".sidebar-project-name")).toBeNull();
       });
     },
   );
