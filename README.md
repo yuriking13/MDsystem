@@ -38,6 +38,8 @@ The repository enforces strict quality gates for TypeScript and UI code:
 Run all checks from the workspace root:
 
 - Repository guard checks: `pnpm run quality:repo`
+- Remove WEB JS mirrors: `pnpm run clean:js-mirrors`
+- Check WEB JS mirrors only: `pnpm run check:js-mirrors`
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
