@@ -1598,6 +1598,8 @@ export function generatePrintHtml(
     }
     .title-page h1 { font-size: 24pt; }
     .toc { page-break-after: always; }
+    .print-centered-title { text-align: center; }
+    .toc-list { list-style: none; padding: 0; }
     .chapter { page-break-before: always; }
     .bibliography { page-break-before: always; }
     .bib-item { 
@@ -1605,8 +1607,30 @@ export function generatePrintHtml(
       text-indent: -1cm;
       padding-left: 1cm;
     }
+    .pdf-hint-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #1e40af;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+      z-index: 10000;
+      font-family: sans-serif;
+    }
+    .pdf-hint-button {
+      margin-left: 20px;
+      padding: 5px 15px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background: #fff;
+      color: #1e40af;
+    }
     @media print {
       body { padding: 0; }
+      .no-print { display: none !important; }
     }
   `;
 
@@ -1632,8 +1656,8 @@ export function generatePrintHtml(
   // TOC
   html += `
   <div class="toc">
-    <h1 style="text-align: center;">СОДЕРЖАНИЕ</h1>
-    <ul style="list-style: none; padding: 0;">
+    <h1 class="print-centered-title">СОДЕРЖАНИЕ</h1>
+    <ul class="toc-list">
 `;
   documents.forEach((doc, idx) => {
     html += `      <li>${idx + 1}. ${escapeHtml(doc.title)}</li>\n`;
@@ -1663,7 +1687,7 @@ export function generatePrintHtml(
   if (bibliography.length > 0) {
     html += `
   <div class="bibliography">
-    <h1 style="text-align: center;">СПИСОК ЛИТЕРАТУРЫ</h1>
+    <h1 class="print-centered-title">СПИСОК ЛИТЕРАТУРЫ</h1>
 `;
     bibliography.forEach((item) => {
       html += `    <div class="bib-item">${item.number}. ${escapeHtml(item.formatted)}</div>\n`;
@@ -1716,10 +1740,11 @@ export function exportToPdf(
       setTimeout(() => {
         // Добавляем подсказку для пользователя
         const hint = printWindow.document.createElement("div");
+        hint.className = "no-print";
         hint.innerHTML = `
-          <div style="position: fixed; top: 0; left: 0; right: 0; background: #1e40af; color: white; padding: 10px; text-align: center; z-index: 10000; font-family: sans-serif;">
+          <div class="pdf-hint-banner">
             💡 Для сохранения как PDF: выберите "Сохранить как PDF" в качестве принтера
-            <button onclick="this.parentElement.remove(); window.print();" style="margin-left: 20px; padding: 5px 15px; cursor: pointer; border: none; border-radius: 4px; background: white; color: #1e40af;">
+            <button onclick="this.parentElement.remove(); window.print();" class="pdf-hint-button">
               Печать / Сохранить PDF
             </button>
           </div>
@@ -1773,6 +1798,27 @@ export function exportBibliographyToPdf(
       text-indent: -1cm;
       padding-left: 1cm;
     }
+    .pdf-hint-banner {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: #1e40af;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+      z-index: 10000;
+      font-family: sans-serif;
+    }
+    .pdf-hint-button {
+      margin-left: 20px;
+      padding: 5px 15px;
+      cursor: pointer;
+      border: none;
+      border-radius: 4px;
+      background: #fff;
+      color: #1e40af;
+    }
     @media print {
       body { padding: 0; }
       .no-print { display: none !important; }
@@ -1797,9 +1843,9 @@ export function exportBibliographyToPdf(
         const hint = printWindow.document.createElement("div");
         hint.className = "no-print";
         hint.innerHTML = `
-          <div style="position: fixed; top: 0; left: 0; right: 0; background: #1e40af; color: white; padding: 10px; text-align: center; z-index: 10000; font-family: sans-serif;">
+          <div class="pdf-hint-banner">
             💡 Для сохранения как PDF: выберите "Сохранить как PDF" в качестве принтера
-            <button onclick="this.parentElement.remove(); window.print();" style="margin-left: 20px; padding: 5px 15px; cursor: pointer; border: none; border-radius: 4px; background: white; color: #1e40af;">
+            <button onclick="this.parentElement.remove(); window.print();" class="pdf-hint-button">
               Печать / Сохранить PDF
             </button>
           </div>
