@@ -1076,7 +1076,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             ? Math.round(rowHeight)
             : 0;
         const heightAttrs = safeHeight
-          ? ` data-row-height="${safeHeight}" style="height: ${safeHeight}px; min-height: ${safeHeight}px;"`
+          ? ` data-row-height="${safeHeight}" height="${safeHeight}"`
           : "";
         html += `<tr${heightAttrs}>`;
         for (let c = 0; c < cols; c++) {

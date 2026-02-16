@@ -29,7 +29,7 @@ export const CustomTableRow = TableRow.extend({
           const safeHeight = Math.max(10, attributes.rowHeight);
           return {
             "data-row-height": String(safeHeight),
-            style: `height: ${safeHeight}px; min-height: ${safeHeight}px;`,
+            height: String(safeHeight),
           };
         },
       },
