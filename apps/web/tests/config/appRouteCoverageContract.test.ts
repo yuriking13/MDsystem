@@ -5,6 +5,15 @@ import { describe, expect, it } from "vitest";
 const appSource = readFileSync(resolve(process.cwd(), "src/App.tsx"), "utf8");
 
 describe("app route coverage contract", () => {
+  it("keeps auth and admin guard wrappers around protected route trees", () => {
+    expect(appSource).toMatch(
+      /<Route[\s\S]*?element=\{[\s\S]*?<RequireAuth>[\s\S]*?<AppLayout \/>[\s\S]*?<\/RequireAuth>[\s\S]*?\}[\s\S]*?>/,
+    );
+    expect(appSource).toMatch(
+      /<Route[\s\S]*?path="\/admin"[\s\S]*?element=\{[\s\S]*?<RequireAdmin>[\s\S]*?<AdminLayout \/>[\s\S]*?<\/RequireAdmin>[\s\S]*?\}[\s\S]*?>/,
+    );
+  });
+
   it("keeps authenticated app routes for core product flows", () => {
     expect(appSource).toMatch(
       /<Route path="\/projects" element={<ProjectsPage \/>} \/>/,
@@ -47,6 +56,12 @@ describe("app route coverage contract", () => {
   it("keeps wildcard fallback route to root redirect", () => {
     expect(appSource).toMatch(
       /<Route path="\*" element={<Navigate to="\/" replace \/>} \/>/,
+    );
+  });
+
+  it("keeps root redirect dependent on auth token", () => {
+    expect(appSource).toMatch(
+      /<Route[\s\S]*?path="\/"[\s\S]*?element={<Navigate to=\{token \? "\/projects" : "\/login"\} replace \/>}[\s\S]*?\/>/,
     );
   });
 });
