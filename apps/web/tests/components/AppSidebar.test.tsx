@@ -13,7 +13,15 @@ vi.mock("../../src/lib/AuthContext", () => ({
   }),
 }));
 
-function renderSidebar(mobileViewport: boolean) {
+function renderSidebar({
+  mobileViewport,
+  mobileOpen = false,
+  onCloseMobile,
+}: {
+  mobileViewport: boolean;
+  mobileOpen?: boolean;
+  onCloseMobile?: () => void;
+}) {
   return render(
     <MemoryRouter
       initialEntries={["/projects/project-1?tab=articles"]}
@@ -22,7 +30,13 @@ function renderSidebar(mobileViewport: boolean) {
       <Routes>
         <Route
           path="/projects/:id"
-          element={<AppSidebar mobileViewport={mobileViewport} />}
+          element={
+            <AppSidebar
+              mobileViewport={mobileViewport}
+              mobileOpen={mobileOpen}
+              onCloseMobile={onCloseMobile}
+            />
+          }
         />
       </Routes>
     </MemoryRouter>,
@@ -36,15 +50,40 @@ describe("AppSidebar mobile collapse behavior", () => {
   });
 
   it("hides desktop collapse toggle on mobile viewport", () => {
-    renderSidebar(true);
+    renderSidebar({ mobileViewport: true });
 
     expect(screen.queryByTitle("Свернуть")).not.toBeInTheDocument();
     expect(screen.queryByTitle("Развернуть")).not.toBeInTheDocument();
   });
 
+  it("applies mobile open class when mobileOpen prop is true", () => {
+    const { rerender } = renderSidebar({
+      mobileViewport: true,
+      mobileOpen: false,
+    });
+
+    expect(document.querySelector(".app-sidebar--open")).toBeNull();
+
+    rerender(
+      <MemoryRouter
+        initialEntries={["/projects/project-1?tab=articles"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <Routes>
+          <Route
+            path="/projects/:id"
+            element={<AppSidebar mobileViewport mobileOpen />}
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(document.querySelector(".app-sidebar--open")).not.toBeNull();
+  });
+
   it("keeps labels visible on mobile after desktop collapsed state", async () => {
     const user = userEvent.setup();
-    const { rerender } = renderSidebar(false);
+    const { rerender } = renderSidebar({ mobileViewport: false });
 
     const collapseButton = screen.getByTitle("Свернуть");
     await user.click(collapseButton);
@@ -69,7 +108,7 @@ describe("AppSidebar mobile collapse behavior", () => {
 
   it("restores collapsed desktop shell after returning from mobile viewport", async () => {
     const user = userEvent.setup();
-    const { rerender } = renderSidebar(false);
+    const { rerender } = renderSidebar({ mobileViewport: false });
 
     await user.click(screen.getByTitle("Свернуть"));
     expect(document.body.classList.contains("sidebar-collapsed")).toBe(true);
@@ -109,12 +148,26 @@ describe("AppSidebar mobile collapse behavior", () => {
 
   it("removes sidebar-collapsed class on unmount", async () => {
     const user = userEvent.setup();
-    const { unmount } = renderSidebar(false);
+    const { unmount } = renderSidebar({ mobileViewport: false });
 
     await user.click(screen.getByTitle("Свернуть"));
     expect(document.body.classList.contains("sidebar-collapsed")).toBe(true);
 
     unmount();
     expect(document.body.classList.contains("sidebar-collapsed")).toBe(false);
+  });
+
+  it("calls onCloseMobile after mobile navigation item click", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+    });
+
+    await user.click(screen.getByText("Документы"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
   });
 });
