@@ -264,6 +264,10 @@ describe("AppLayout mobile sidebar behavior", () => {
       const { unmount } = renderAppLayout(route);
 
       expect(screen.getByText(pageLabel)).toBeInTheDocument();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(false);
       const toggleButton = screen.getByRole("button", {
         name: "Открыть навигацию",
       });
@@ -292,15 +296,19 @@ describe("AppLayout mobile sidebar behavior", () => {
 
       unmount();
       document.body.classList.remove("sidebar-modal-open");
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(false);
     }
   });
 
   it.each([
-    ["/projects/p1/documents/d1", "Document editor page"],
-    ["/projects/p1?tab=graph", "Project details page"],
+    ["/projects/p1/documents/d1", "Document editor page", true],
+    ["/projects/p1?tab=graph", "Project details page", true],
   ])(
     "opens fixed-layout drawer only on mobile widths for %s",
-    async (route, pageLabel) => {
+    async (route, pageLabel, shouldLockLayout) => {
       const user = userEvent.setup();
 
       for (const width of targetViewportWidths) {
@@ -309,6 +317,12 @@ describe("AppLayout mobile sidebar behavior", () => {
         const { unmount } = renderAppLayout(route);
 
         expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(shouldLockLayout);
+        expect(document.body.classList.contains("layout-fixed")).toBe(
+          shouldLockLayout,
+        );
         const toggleButton = screen.getByRole("button", {
           name: "Открыть навигацию",
         });
@@ -337,6 +351,10 @@ describe("AppLayout mobile sidebar behavior", () => {
 
         unmount();
         document.body.classList.remove("sidebar-modal-open");
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
       }
     },
   );
