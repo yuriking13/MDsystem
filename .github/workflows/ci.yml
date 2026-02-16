@@ -51,7 +51,7 @@ jobs:
         run: pnpm --filter api exec prisma generate
 
       - name: Lint API (zero warning budget)
-        run: pnpm --filter api run lint --max-warnings 0
+        run: pnpm --filter api lint
 
       - name: Typecheck API
         run: pnpm --filter api typecheck
@@ -97,7 +97,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Lint WEB (zero warning budget)
-        run: pnpm --filter web run lint --max-warnings 0
+        run: pnpm --filter web lint
 
       - name: Typecheck WEB
         run: pnpm --filter web typecheck

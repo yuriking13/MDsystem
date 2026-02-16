@@ -7,7 +7,7 @@
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r run lint",
-    "lint:fix": "pnpm -r run lint --fix",
+    "lint:fix": "pnpm -r run lint:fix",
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r run test",
     "test:coverage": "pnpm -r run test:coverage",
