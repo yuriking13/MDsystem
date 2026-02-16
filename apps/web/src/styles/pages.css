@@ -39,9 +39,26 @@
 }
 
 @media (max-width: 768px) {
+  .page-container {
+    padding: 16px 12px;
+  }
+
   .project-detail-container {
     margin-top: 16px;
     margin-bottom: 16px;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .project-card {
+    padding: 14px;
+  }
+
+  .project-card-actions {
+    margin-top: 12px;
   }
 }
 
@@ -379,7 +396,7 @@
 
 .projects-grid {
   @apply grid gap-4;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
 }
 
 .project-card {
