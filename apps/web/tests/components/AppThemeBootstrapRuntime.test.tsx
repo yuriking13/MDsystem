@@ -8,6 +8,11 @@ const authState = {
   token: null as string | null,
 };
 
+const adminState = {
+  token: null as string | null,
+  loading: false,
+};
+
 vi.mock("../../src/components/OnboardingTour", () => ({
   default: () => null,
 }));
@@ -29,9 +34,17 @@ vi.mock("../../src/lib/AuthContext", () => ({
 }));
 
 vi.mock("../../src/lib/AdminContext", () => ({
-  RequireAdmin: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
+  RequireAdmin: ({ children }: { children: React.ReactNode }) => {
+    if (adminState.loading) {
+      return <div>Admin Loading</div>;
+    }
+
+    return adminState.token ? (
+      <>{children}</>
+    ) : (
+      <Navigate to="/admin/login" replace />
+    );
+  },
 }));
 
 vi.mock("../../src/components/AppLayout", () => ({
@@ -142,6 +155,8 @@ function createThemeStorage(theme: string | null): Storage {
 describe("App theme bootstrap runtime", () => {
   beforeEach(() => {
     authState.token = null;
+    adminState.token = null;
+    adminState.loading = false;
     vi.unstubAllGlobals();
     localStorage.clear();
     document.documentElement.classList.remove("light-theme", "dark");
@@ -423,6 +438,44 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it("keeps admin login route accessible even with admin token", async () => {
+    const storage = createThemeStorage(null);
+    vi.stubGlobal("localStorage", storage);
+    adminState.token = "admin-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/login"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+    });
+  });
+
+  it("redirects unauthenticated admin route to admin login", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    adminState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/settings"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+    });
+  });
+
   it("redirects unknown route through root redirect to login when unauthenticated", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
@@ -564,6 +617,7 @@ describe("App theme bootstrap runtime", () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
     authState.token = null;
+    adminState.token = "admin-token";
 
     render(
       <MemoryRouter
@@ -584,6 +638,7 @@ describe("App theme bootstrap runtime", () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
     authState.token = null;
+    adminState.token = "admin-token";
 
     render(
       <MemoryRouter
@@ -604,6 +659,7 @@ describe("App theme bootstrap runtime", () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
     authState.token = null;
+    adminState.token = "admin-token";
 
     render(
       <MemoryRouter
@@ -624,6 +680,7 @@ describe("App theme bootstrap runtime", () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
     authState.token = null;
+    adminState.token = "admin-token";
 
     render(
       <MemoryRouter
@@ -644,6 +701,7 @@ describe("App theme bootstrap runtime", () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
     authState.token = null;
+    adminState.token = "admin-token";
 
     render(
       <MemoryRouter
@@ -674,6 +732,7 @@ describe("App theme bootstrap runtime", () => {
       const storage = createThemeStorage("dark");
       vi.stubGlobal("localStorage", storage);
       authState.token = null;
+      adminState.token = "admin-token";
 
       render(
         <MemoryRouter
