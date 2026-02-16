@@ -1085,6 +1085,8 @@
   .settings-provider-actions .btn {
     width: 100%;
     justify-content: center;
+    white-space: normal;
+    line-height: 1.3;
   }
 
   .settings-provider-input {
