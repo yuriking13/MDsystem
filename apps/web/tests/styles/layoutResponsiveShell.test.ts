@@ -48,6 +48,18 @@ describe("responsive shell css regressions", () => {
     );
   });
 
+  it("keeps drawer footers safe-area padded on mobile app/admin shells", () => {
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.sidebar-footer\s*\{[\s\S]*?padding-bottom:\s*calc\(12px \+ env\(safe-area-inset-bottom,\s*0px\)\);/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar\s*\{[\s\S]*?padding-bottom:\s*env\(safe-area-inset-bottom,\s*0px\);/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar-footer\s*\{[\s\S]*?padding-bottom:\s*calc\(16px \+ env\(safe-area-inset-bottom,\s*0px\)\);/,
+    );
+  });
+
   it("keeps fixed-route shell topbar hidden and overlay fullscreen on mobile", () => {
     expect(appLayoutCss).toMatch(
       /\.app-main-fixed \.app-mobile-topbar\s*\{[\s\S]*?display:\s*none !important;/,
@@ -141,6 +153,9 @@ describe("responsive shell css regressions", () => {
     );
     expect(adminCss).toMatch(
       /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar\.collapsed\s*\{[\s\S]*?width:\s*min\(280px,\s*88vw\);/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar\.collapsed \.admin-logo span\s*\{[\s\S]*?display:\s*inline;/,
     );
     expect(adminCss).toMatch(
       /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-sidebar-overlay\s*\{[\s\S]*?display:\s*block;[\s\S]*?position:\s*fixed;[\s\S]*?inset:\s*0;[\s\S]*?z-index:\s*90;/,
