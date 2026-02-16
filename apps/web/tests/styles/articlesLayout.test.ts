@@ -26,10 +26,26 @@ describe("articles section layout css regressions", () => {
     );
   });
 
+  it("keeps article grid horizontal paddings at zero to match header width", () => {
+    expect(articlesCss).toMatch(
+      /\.articles-grid\s*\{[^}]*padding:\s*16px\s+0;[^}]*\}/s,
+    );
+    expect(articlesCss).toMatch(
+      /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.articles-grid\s*\{[\s\S]*?padding:\s*12px\s+0;/,
+    );
+  });
+
   it("falls back to a single-column grid on mobile widths", () => {
     expect(articlesCss).toMatch(
       /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.articles-grid\s*\{[\s\S]*?grid-template-columns:\s*1fr;/,
     );
+  });
+
+  it("uses 60px only as the content-gutter upper bound token", () => {
+    expect(articlesCss).toMatch(
+      /--articles-content-gutter:\s*clamp\(16px,\s*3\.8vw,\s*60px\);/,
+    );
+    expect(articlesCss.match(/\b60px\b/g) ?? []).toHaveLength(1);
   });
 
   it("keeps AI sidebar and FAB safe-area aware by default", () => {
