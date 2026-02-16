@@ -13,6 +13,8 @@ import {
   APP_FIXED_ROUTE_CASES,
   APP_NON_FIXED_ROUTE_CASES,
   PROJECT_CONTEXT_RESET_DESTINATION_CASES,
+  PRIMARY_DESKTOP_TEST_WIDTH,
+  PRIMARY_MOBILE_TEST_WIDTH,
   MOBILE_VIEWPORT_WIDTHS,
   PROJECT_TAB_CASES,
   PROJECT_TABS,
@@ -29,6 +31,8 @@ describe("responsive matrix test fixtures", () => {
   it("keeps mobile viewport widths as a subset of target widths", () => {
     expect(APP_DRAWER_MAX_WIDTH).toBe(768);
     expect(ADMIN_DRAWER_MAX_WIDTH).toBe(900);
+    expect(PRIMARY_MOBILE_TEST_WIDTH).toBe(390);
+    expect(PRIMARY_DESKTOP_TEST_WIDTH).toBe(1280);
     expect(MOBILE_VIEWPORT_WIDTHS).toEqual([360, 390, APP_DRAWER_MAX_WIDTH]);
     expect(DESKTOP_VIEWPORT_WIDTHS).toEqual([1024, 1280, 1440, 1920]);
     expect(APP_DRAWER_BOUNDARY_CASES).toEqual([

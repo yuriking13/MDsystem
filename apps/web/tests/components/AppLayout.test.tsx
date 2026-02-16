@@ -20,6 +20,8 @@ import {
   APP_FIXED_ROUTE_CASES,
   APP_NON_FIXED_ROUTE_CASES,
   MOBILE_VIEWPORT_WIDTHS,
+  PRIMARY_DESKTOP_TEST_WIDTH,
+  PRIMARY_MOBILE_TEST_WIDTH,
   PROJECT_CONTEXT_RESET_DESTINATION_CASES,
   PROJECT_TAB_CASES,
   PROJECT_TABS,
@@ -386,7 +388,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     document.body.classList.remove("sidebar-modal-open");
     document.body.classList.remove("layout-fixed");
     document.documentElement.classList.remove("layout-fixed");
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
   });
 
   it("keeps the required responsive viewport matrix", () => {
@@ -489,7 +491,7 @@ describe("AppLayout mobile sidebar behavior", () => {
 
   it("keeps project context title stable across local rerenders", async () => {
     const user = userEvent.setup();
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     renderAppLayout("/projects/p1/context-persistence");
 
     await waitFor(() => {
@@ -512,7 +514,7 @@ describe("AppLayout mobile sidebar behavior", () => {
 
   it("keeps project context counts and status stable across local rerenders", async () => {
     const user = userEvent.setup();
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     renderAppLayout("/projects/p1/context-data-persistence");
 
     await waitFor(() => {
@@ -545,7 +547,7 @@ describe("AppLayout mobile sidebar behavior", () => {
 
   it("keeps destination project context when previous route cleanup runs", async () => {
     const user = userEvent.setup();
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     renderAppLayout("/projects/p1/context-cleanup-source");
 
     await waitFor(() => {
@@ -1455,7 +1457,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
 
     act(() => {
-      setViewportWidth(1280);
+      setViewportWidth(PRIMARY_DESKTOP_TEST_WIDTH);
     });
 
     await waitFor(() => {

@@ -16,6 +16,8 @@ import {
   ADMIN_DRAWER_MAX_WIDTH,
   ADMIN_RESPONSIVE_ROUTE_CASES,
   MOBILE_VIEWPORT_WIDTHS,
+  PRIMARY_DESKTOP_TEST_WIDTH,
+  PRIMARY_MOBILE_TEST_WIDTH,
   TARGET_VIEWPORT_WIDTHS,
 } from "../utils/responsiveMatrix";
 import { setViewportWidth } from "../utils/viewport";
@@ -61,7 +63,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
     document.body.classList.remove("sidebar-modal-open");
     document.body.classList.remove("layout-fixed");
     document.documentElement.classList.remove("layout-fixed");
-    setViewportWidth(1280);
+    setViewportWidth(PRIMARY_DESKTOP_TEST_WIDTH);
   });
 
   it("keeps the required responsive viewport matrix", () => {
@@ -94,7 +96,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
     expect(screen.queryByText("Scientiaiter Admin")).not.toBeInTheDocument();
 
     act(() => {
-      setViewportWidth(390);
+      setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     });
 
     await waitFor(() => {
@@ -111,7 +113,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
     expect(screen.queryByText("Scientiaiter Admin")).not.toBeInTheDocument();
 
     act(() => {
-      setViewportWidth(390);
+      setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     });
 
     await waitFor(() => {
@@ -119,7 +121,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
     });
 
     act(() => {
-      setViewportWidth(1280);
+      setViewportWidth(PRIMARY_DESKTOP_TEST_WIDTH);
     });
 
     await waitFor(() => {
@@ -130,7 +132,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
 
   it("adds and removes body modal class when mobile sidebar opens/closes", async () => {
     const user = userEvent.setup();
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     renderAdminLayout();
 
     const toggleButton = screen.getByLabelText("Открыть навигацию");
@@ -151,7 +153,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
 
   it("closes mobile sidebar when clicking overlay", async () => {
     const user = userEvent.setup();
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     renderAdminLayout();
 
     const toggleButton = screen.getByLabelText("Открыть навигацию");
@@ -421,7 +423,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
 
   it("cleans up body modal class on unmount", async () => {
     const user = userEvent.setup();
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     const { unmount } = renderAdminLayout();
 
     await user.click(screen.getByLabelText("Открыть навигацию"));
@@ -433,7 +435,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
 
   it("closes mobile sidebar when navigating to another admin section", async () => {
     const user = userEvent.setup();
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     renderAdminLayout();
 
     await user.click(screen.getByLabelText("Открыть навигацию"));
@@ -451,7 +453,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
 
   it("closes mobile sidebar when leaving admin to app projects route", async () => {
     const user = userEvent.setup();
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     renderAdminLayout();
 
     await user.click(screen.getByLabelText("Открыть навигацию"));
@@ -472,14 +474,14 @@ describe("AdminLayout responsive sidebar behavior", () => {
 
   it("closes mobile sidebar when resizing to desktop viewport", async () => {
     const user = userEvent.setup();
-    setViewportWidth(390);
+    setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
     renderAdminLayout();
 
     await user.click(screen.getByLabelText("Открыть навигацию"));
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
 
     act(() => {
-      setViewportWidth(1280);
+      setViewportWidth(PRIMARY_DESKTOP_TEST_WIDTH);
     });
 
     await waitFor(() => {
@@ -526,7 +528,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
   )(
     "shows current section label in mobile topbar for %s",
     (route, pageLabel, expectedMobileTitle) => {
-      setViewportWidth(390);
+      setViewportWidth(PRIMARY_MOBILE_TEST_WIDTH);
       renderAdminLayout(route);
 
       expect(screen.getByText(pageLabel)).toBeInTheDocument();
