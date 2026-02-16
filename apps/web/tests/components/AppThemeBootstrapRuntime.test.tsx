@@ -531,6 +531,25 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it("keeps register route publicly accessible for unauthenticated user", async () => {
+    const storage = createThemeStorage(null);
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/register"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Register Page")).toBeInTheDocument();
+    });
+  });
+
   it("keeps admin login route accessible without main app auth", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
@@ -702,6 +721,25 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it("redirects unauthenticated settings route to login page", async () => {
+    const storage = createThemeStorage(null);
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/settings"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
   it("renders project detail page inside authenticated app layout", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
@@ -721,6 +759,29 @@ describe("App theme bootstrap runtime", () => {
       expect(screen.getByText("Project Detail Page")).toBeInTheDocument();
     });
   });
+
+  it.each(["/projects/p1?tab=graph", "/projects/p1?tab=settings"])(
+    "renders project detail page with query-tab route %s",
+    async (routeWithTab) => {
+      const storage = createThemeStorage("dark");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = "auth-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={[routeWithTab]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("App Layout")).toBeInTheDocument();
+        expect(screen.getByText("Project Detail Page")).toBeInTheDocument();
+      });
+    },
+  );
 
   it("renders document editor page inside authenticated app layout", async () => {
     const storage = createThemeStorage("light");
