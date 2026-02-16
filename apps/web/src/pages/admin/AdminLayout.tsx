@@ -32,6 +32,16 @@ export default function AdminLayout() {
     if (typeof window === "undefined") return false;
     return window.innerWidth <= 900;
   });
+  const canUseMobileSidebar = isMobileViewport;
+
+  const toggleMobileSidebar = () => {
+    if (!canUseMobileSidebar) return;
+    setMobileSidebarOpen((prev) => !prev);
+  };
+
+  const closeMobileSidebar = () => {
+    setMobileSidebarOpen(false);
+  };
 
   useEffect(() => {
     setMobileSidebarOpen(false);
@@ -105,7 +115,7 @@ export default function AdminLayout() {
           type="button"
           className="admin-sidebar-overlay"
           aria-label="Закрыть навигацию"
-          onClick={() => setMobileSidebarOpen(false)}
+          onClick={closeMobileSidebar}
         />
       )}
 
@@ -154,7 +164,7 @@ export default function AdminLayout() {
               to={item.path}
               className={`admin-nav-item ${isActive(item.path) ? "active" : ""}`}
               title={!showSidebarLabels ? item.label : undefined}
-              onClick={() => setMobileSidebarOpen(false)}
+              onClick={closeMobileSidebar}
             >
               <span className="admin-nav-icon">{item.icon}</span>
               {showSidebarLabels && (
@@ -176,7 +186,7 @@ export default function AdminLayout() {
           <Link
             to="/projects"
             className="admin-nav-item admin-back-to-app"
-            onClick={() => setMobileSidebarOpen(false)}
+            onClick={closeMobileSidebar}
           >
             <span className="admin-nav-icon">
               <IconArrowLeft />
@@ -196,7 +206,7 @@ export default function AdminLayout() {
             <button
               className="admin-logout-btn"
               onClick={() => {
-                setMobileSidebarOpen(false);
+                closeMobileSidebar();
                 logout();
               }}
               title="Выйти"
@@ -225,7 +235,7 @@ export default function AdminLayout() {
           <button
             type="button"
             className="admin-mobile-nav-toggle"
-            onClick={() => setMobileSidebarOpen((prev) => !prev)}
+            onClick={toggleMobileSidebar}
             aria-label="Открыть навигацию"
             aria-expanded={mobileSidebarOpen}
           >
