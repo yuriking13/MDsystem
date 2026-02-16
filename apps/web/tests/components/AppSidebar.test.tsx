@@ -499,6 +499,29 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(darkRadio?.checked).toBe(true);
   });
 
+  it("falls back to dark theme classes for unsupported persisted preference", () => {
+    localStorage.setItem("theme", "solarized");
+    renderSidebar({ mobileViewport: false });
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.documentElement.classList.contains("light-theme")).toBe(
+      false,
+    );
+    expect(document.body.classList.contains("dark")).toBe(true);
+    expect(document.body.classList.contains("light-theme")).toBe(false);
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio?.checked).toBe(false);
+    expect(darkRadio?.checked).toBe(true);
+  });
+
   it("cleans stale opposite theme classes when syncing persisted theme", () => {
     document.documentElement.classList.add("light-theme");
     document.body.classList.add("light-theme");
