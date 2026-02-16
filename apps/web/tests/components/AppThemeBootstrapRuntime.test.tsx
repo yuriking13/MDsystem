@@ -245,6 +245,28 @@ describe("App theme bootstrap runtime", () => {
     expect(storage.getItem).toHaveBeenCalledWith("theme");
   });
 
+  it("falls back to dark theme for unsupported persisted value on protected app route", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/projects"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Projects Page")).toBeInTheDocument();
+    });
+    expect(storage.getItem).toHaveBeenCalledWith("theme");
+  });
+
   it("applies persisted dark theme and clears stale light classes", async () => {
     document.documentElement.classList.add("light-theme");
     document.body.classList.add("light-theme");
