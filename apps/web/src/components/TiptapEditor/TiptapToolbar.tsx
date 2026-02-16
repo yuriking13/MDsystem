@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Editor } from "@tiptap/react";
+import type { Node as ProseMirrorNode } from "prosemirror-model";
 import type { CitationStyle } from "../../lib/api";
 import { STYLE_CONFIGS } from "./TiptapEditor";
 import { editorEvents } from "../../lib/editorEvents";
@@ -93,6 +94,14 @@ interface TiptapToolbarProps {
   onToggleAIAssistant?: () => void;
   showAIAssistant?: boolean;
 }
+
+type ToolbarChain = ReturnType<Editor["chain"]> & {
+  setFontSize: (fontSize: string) => ToolbarChain;
+  unsetFontSize: () => ToolbarChain;
+  toggleIndent: () => ToolbarChain;
+  setRowHeight: (height: number) => ToolbarChain;
+  deleteRowHeight: () => ToolbarChain;
+};
 
 export default function TiptapToolbar({
   editor,
@@ -204,6 +213,8 @@ export default function TiptapToolbar({
       editor.chain().focus().setLink({ href: url }).run();
     }
   };
+
+  const getToolbarChain = () => editor.chain().focus() as ToolbarChain;
 
   const fontSizeSelectStyle: React.CSSProperties = { width: 52 };
   const fontFamilySelectStyle: React.CSSProperties = { width: 100 };
@@ -320,11 +331,9 @@ export default function TiptapToolbar({
         }
         onChange={(e) => {
           if (e.target.value) {
-            (editor.chain().focus() as any)
-              .setFontSize(`${e.target.value}pt`)
-              .run();
+            getToolbarChain().setFontSize(`${e.target.value}pt`).run();
           } else {
-            (editor.chain().focus() as any).unsetFontSize().run();
+            getToolbarChain().unsetFontSize().run();
           }
         }}
         className="toolbar-select"
@@ -391,7 +400,7 @@ export default function TiptapToolbar({
       </button>
       <button
         className="toolbar-btn"
-        onClick={() => (editor.chain().focus() as any).toggleIndent().run()}
+        onClick={() => getToolbarChain().toggleIndent().run()}
         title="Отступ первой строки (Tab)"
       >
         ⇥
@@ -614,9 +623,7 @@ export default function TiptapToolbar({
                         Math.min(500, Number(height)),
                       );
                       if (isNaN(numHeight)) return;
-                      (editor.chain().focus() as any)
-                        .setRowHeight(numHeight)
-                        .run();
+                      getToolbarChain().setRowHeight(numHeight).run();
                       setShowTableEditMenu(false);
                     }
                   }}
@@ -626,7 +633,7 @@ export default function TiptapToolbar({
                 </button>
                 <button
                   onClick={() => {
-                    (editor.chain().focus() as any).deleteRowHeight().run();
+                    getToolbarChain().deleteRowHeight().run();
                     setShowTableEditMenu(false);
                   }}
                   className="toolbar-dropdown-item"
@@ -655,7 +662,7 @@ export default function TiptapToolbar({
                         // Get the table HTML from the editor
                         const { state } = editor;
                         const { from } = state.selection;
-                        let tableNode: any = null;
+                        let tableNode: ProseMirrorNode | null = null;
 
                         state.doc.nodesBetween(
                           0,
@@ -672,10 +679,11 @@ export default function TiptapToolbar({
                         if (tableNode) {
                           const div = document.createElement("div");
                           const tableEl = document.createElement("table");
+                          const activeTableNode = tableNode as ProseMirrorNode;
 
-                          tableNode.content.forEach((row: any) => {
+                          activeTableNode.forEach((row: ProseMirrorNode) => {
                             const tr = document.createElement("tr");
-                            row.content?.forEach((cell: any) => {
+                            row.forEach((cell: ProseMirrorNode) => {
                               const cellEl = document.createElement(
                                 cell?.type?.name === "tableHeader"
                                   ? "th"
