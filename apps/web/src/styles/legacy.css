@@ -10176,8 +10176,10 @@ input:focus::placeholder {
   flex: 1;
   max-width: 1320px;
   margin: 0 auto;
-  padding: calc(40px + env(safe-area-inset-top, 0px)) 24px
-    calc(40px + env(safe-area-inset-bottom, 0px));
+  padding: calc(40px + env(safe-area-inset-top, 0px))
+    calc(24px + env(safe-area-inset-right, 0px))
+    calc(40px + env(safe-area-inset-bottom, 0px))
+    calc(24px + env(safe-area-inset-left, 0px));
   width: 100%;
   position: relative;
   z-index: 1;
@@ -10587,13 +10589,14 @@ input:focus::placeholder {
 }
 
 .auth-footer {
-  padding: 16px;
+  padding: 16px calc(16px + env(safe-area-inset-right, 0px))
+    calc(16px + env(safe-area-inset-bottom, 0px))
+    calc(16px + env(safe-area-inset-left, 0px));
   text-align: center;
   font-size: 14px;
   color: var(--text-muted);
   line-height: 1.4;
   overflow-wrap: anywhere;
-  padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
 }
 
 .auth-footer a {
@@ -10609,8 +10612,10 @@ input:focus::placeholder {
 
 @media (max-width: 768px) {
   .auth-container {
-    padding: calc(20px + env(safe-area-inset-top, 0px)) 16px
-      calc(20px + env(safe-area-inset-bottom, 0px));
+    padding: calc(20px + env(safe-area-inset-top, 0px))
+      calc(16px + env(safe-area-inset-right, 0px))
+      calc(20px + env(safe-area-inset-bottom, 0px))
+      calc(16px + env(safe-area-inset-left, 0px));
   }
 
   .auth-grid {
@@ -10654,8 +10659,10 @@ input:focus::placeholder {
 
 @media (max-width: 480px) {
   .auth-container {
-    padding: calc(14px + env(safe-area-inset-top, 0px)) 12px
-      calc(14px + env(safe-area-inset-bottom, 0px));
+    padding: calc(14px + env(safe-area-inset-top, 0px))
+      calc(12px + env(safe-area-inset-right, 0px))
+      calc(14px + env(safe-area-inset-bottom, 0px))
+      calc(12px + env(safe-area-inset-left, 0px));
   }
 
   .auth-form-card {
@@ -10675,7 +10682,9 @@ input:focus::placeholder {
 
   .auth-footer {
     font-size: 12px;
-    padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+    padding: 12px calc(12px + env(safe-area-inset-right, 0px))
+      calc(12px + env(safe-area-inset-bottom, 0px))
+      calc(12px + env(safe-area-inset-left, 0px));
   }
 
   .auth-options .auth-link {
