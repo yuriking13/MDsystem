@@ -385,6 +385,49 @@ describe("AppLayout mobile sidebar behavior", () => {
   );
 
   it.each([
+    ["/projects", "Projects page"],
+    ["/settings", "Settings page"],
+    ["/docs", "Docs page"],
+  ])(
+    "uses topbar nav toggle (without FAB) on non-fixed route %s across width matrix",
+    (route, pageLabel) => {
+      for (const width of targetViewportWidths) {
+        setViewportWidth(width);
+        const { unmount } = renderAppLayout(route);
+
+        expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        expect(document.querySelector(".app-mobile-topbar")).not.toBeNull();
+        expect(document.querySelector(".app-mobile-nav-toggle")).not.toBeNull();
+        expect(document.querySelector(".app-mobile-fab-toggle")).toBeNull();
+        expect(document.querySelector(".app-main-fixed")).toBeNull();
+
+        unmount();
+      }
+    },
+  );
+
+  it.each([
+    ["/projects/p1/documents/d1", "Document editor page"],
+    ["/projects/p1?tab=graph", "Project details page"],
+  ])(
+    "uses fixed-route FAB toggle (without topbar nav) on %s across width matrix",
+    (route, pageLabel) => {
+      for (const width of targetViewportWidths) {
+        setViewportWidth(width);
+        const { unmount } = renderAppLayout(route);
+
+        expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        expect(document.querySelector(".app-mobile-topbar")).toBeNull();
+        expect(document.querySelector(".app-mobile-nav-toggle")).toBeNull();
+        expect(document.querySelector(".app-mobile-fab-toggle")).not.toBeNull();
+        expect(document.querySelector(".app-main-fixed")).not.toBeNull();
+
+        unmount();
+      }
+    },
+  );
+
+  it.each([
     ["/projects/p1/documents/d1", "Document editor page"],
     ["/projects/p1?tab=graph", "Project details page"],
   ])(
