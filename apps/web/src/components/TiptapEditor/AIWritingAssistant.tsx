@@ -469,7 +469,7 @@ export default function AIWritingAssistant({
         .chain()
         .focus()
         .insertContent(
-          `<p style="text-align: center; font-style: italic; font-size: 12pt;">${illustrationResult.figureCaption}</p>`,
+          `<p class="ai-figure-caption">${illustrationResult.figureCaption}</p>`,
         )
         .run();
     }

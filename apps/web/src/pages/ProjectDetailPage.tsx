@@ -142,17 +142,16 @@ function generateTableHtml(tableData: TableData, title?: string): string {
   if (title) {
     html += `<p><strong>${escapeHtml(title)}</strong></p>\n`;
   }
-  html +=
-    '<table border="1" style="border-collapse: collapse; width: 100%;">\n';
+  html += '<table border="1" cellpadding="8" cellspacing="0" width="100%">\n';
   html += "<thead><tr>";
   for (const header of tableData.headers) {
-    html += `<th style="padding: 8px; background: #f5f5f5;">${escapeHtml(header)}</th>`;
+    html += `<th bgcolor="#f5f5f5">${escapeHtml(header)}</th>`;
   }
   html += "</tr></thead>\n<tbody>\n";
   for (const row of tableData.rows) {
     html += "<tr>";
     for (const cell of row) {
-      html += `<td style="padding: 8px;">${escapeHtml(cell)}</td>`;
+      html += `<td>${escapeHtml(cell)}</td>`;
     }
     html += "</tr>\n";
   }

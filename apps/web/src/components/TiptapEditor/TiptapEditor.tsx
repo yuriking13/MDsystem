@@ -1064,7 +1064,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       for (let c = 0; c < cols; c++) {
         const w = widths?.[c] || 100;
         const pct = ((w / totalWidth) * 100).toFixed(2);
-        html += `<col style="width: ${pct}%;" />`;
+        html += `<col width="${pct}%"/>`;
       }
       html += "</colgroup>";
 
