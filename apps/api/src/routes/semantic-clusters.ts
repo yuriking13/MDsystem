@@ -55,6 +55,67 @@ const smartSemanticSearchSchema = z.object({
   includeGapAnalysis: z.boolean().optional(),
 });
 
+type SemanticNeighborRow = {
+  article_id: string;
+  title_en: string | null;
+  title_ru: string | null;
+  year: number | null;
+  similarity: string | number;
+  cluster_id: string | null;
+  cluster_name: string | null;
+  cluster_color: string | null;
+  has_direct_citation: boolean;
+};
+
+type GapAnalysisRow = {
+  article1_id: string;
+  article2_id: string;
+  similarity: string | number;
+  article1_title: string | null;
+  article1_year: number | null;
+  article2_title: string | null;
+  article2_year: number | null;
+};
+
+type SmartSearchRow = {
+  id: string;
+  title_en: string | null;
+  title_ru: string | null;
+  abstract_en: string | null;
+  year: number | null;
+  authors: string[] | null;
+  journal: string | null;
+  doi: string | null;
+  pmid: string | null;
+  status: string;
+  similarity: string | number;
+  cluster_id: string | null;
+  cluster_name: string | null;
+  cluster_color: string | null;
+};
+
+type SmartSearchArticle = {
+  id: string;
+  title: string | null;
+  titleEn: string | null;
+  abstract: string | null;
+  year: number | null;
+  authors: string[] | null;
+  journal: string | null;
+  doi: string | null;
+  pmid: string | null;
+  status: string;
+  similarity: number;
+  clusterId: string | null;
+  clusterName: string | null;
+  clusterColor: string | null;
+};
+
+type ClusterSearchGroup = {
+  cluster: { id: string; name: string | null; color: string | null };
+  articles: SmartSearchArticle[];
+};
+
 export const semanticClustersRoutes: FastifyPluginCallback = (
   fastify,
   _opts,
@@ -198,9 +259,11 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
               const generatedName = await generateClusterName(titles, apiKey);
               clusterName = generatedName.ru;
               clusterNameEn = generatedName.en;
-            } catch (err: any) {
+            } catch (err) {
+              const errorMessage =
+                err instanceof Error ? err.message : String(err);
               fastify.log.warn(
-                `Failed to generate cluster name: ${err?.message || err}`,
+                `Failed to generate cluster name: ${errorMessage}`,
               );
             }
           }
@@ -282,8 +345,8 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
                 : 0,
           },
         };
-      } catch (error: any) {
-        fastify.log.error("Semantic clustering error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Semantic clustering error");
         return reply.code(500).send({
           error: "Failed to create semantic clusters",
           message: "Internal server error",
@@ -585,14 +648,15 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
           ],
         );
 
+        const neighborRows = neighbors.rows as SemanticNeighborRow[];
         return {
           articleId,
-          neighbors: neighbors.rows.map((row: any) => ({
+          neighbors: neighborRows.map((row) => ({
             articleId: row.article_id,
             title: row.title_ru || row.title_en,
             titleEn: row.title_en,
             year: row.year,
-            similarity: parseFloat(row.similarity),
+            similarity: parseFloat(String(row.similarity)),
             clusterId: row.cluster_id,
             clusterName: row.cluster_name,
             clusterColor: row.cluster_color,
@@ -600,8 +664,8 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
           })),
           threshold,
         };
-      } catch (error: any) {
-        fastify.log.error("Get semantic neighbors error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Get semantic neighbors error");
         return reply.code(500).send({
           error: "Failed to get semantic neighbors",
           message: "Internal server error",
@@ -717,8 +781,9 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
           [projectId, threshold, limit],
         );
 
+        const gapRows = gaps.rows as GapAnalysisRow[];
         return {
-          gaps: gaps.rows.map((row: any) => ({
+          gaps: gapRows.map((row) => ({
             article1: {
               id: row.article1_id,
               title: row.article1_title,
@@ -729,18 +794,18 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
               title: row.article2_title,
               year: row.article2_year,
             },
-            similarity: parseFloat(row.similarity),
+            similarity: parseFloat(String(row.similarity)),
             reason: generateGapReason(
-              parseFloat(row.similarity),
+              parseFloat(String(row.similarity)),
               row.article1_year,
               row.article2_year,
             ),
           })),
           threshold,
-          totalGaps: gaps.rows.length,
+          totalGaps: gapRows.length,
         };
-      } catch (error: any) {
-        fastify.log.error("Gap analysis error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Gap analysis error");
         return reply.code(500).send({
           error: "Failed to perform gap analysis",
           message: "Internal server error",
@@ -802,7 +867,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
 
         // Базовый запрос с опциональной фильтрацией по кластеру
         let clusterFilter = "";
-        const params: any[] = [
+        const params: unknown[] = [
           `[${queryEmbedding.join(",")}]`,
           projectId,
           threshold,
@@ -875,14 +940,12 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         );
 
         // Группируем результаты по кластерам
-        const resultsByCluster: Record<
-          string,
-          { cluster: any; articles: any[] }
-        > = {};
-        const unclusteredResults: any[] = [];
+        const resultsByCluster: Record<string, ClusterSearchGroup> = {};
+        const unclusteredResults: SmartSearchArticle[] = [];
+        const resultRows = results.rows as SmartSearchRow[];
 
-        for (const row of results.rows) {
-          const article = {
+        for (const row of resultRows) {
+          const article: SmartSearchArticle = {
             id: row.id,
             title: row.title_ru || row.title_en,
             titleEn: row.title_en,
@@ -893,7 +956,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
             doi: row.doi,
             pmid: row.pmid,
             status: row.status,
-            similarity: parseFloat(row.similarity),
+            similarity: parseFloat(String(row.similarity)),
             clusterId: row.cluster_id,
             clusterName: row.cluster_name,
             clusterColor: row.cluster_color,
@@ -918,7 +981,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
 
         return {
           query,
-          results: results.rows.map((row: any) => ({
+          results: resultRows.map((row) => ({
             id: row.id,
             title: row.title_ru || row.title_en,
             titleEn: row.title_en,
@@ -929,18 +992,18 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
             doi: row.doi,
             pmid: row.pmid,
             status: row.status,
-            similarity: parseFloat(row.similarity),
+            similarity: parseFloat(String(row.similarity)),
             clusterId: row.cluster_id,
             clusterName: row.cluster_name,
             clusterColor: row.cluster_color,
           })),
           resultsByCluster: Object.values(resultsByCluster),
           unclusteredResults,
-          totalFound: results.rows.length,
+          totalFound: resultRows.length,
           threshold,
         };
-      } catch (error: any) {
-        fastify.log.error("Smart semantic search error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Smart semantic search error");
         return reply.code(500).send({
           error: "Failed to perform smart semantic search",
           message: "Internal server error",
@@ -978,8 +1041,8 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         );
 
         return { success: true };
-      } catch (error: any) {
-        fastify.log.error("Delete semantic clusters error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Delete semantic clusters error");
         return reply.code(500).send({
           error: "Failed to delete semantic clusters",
           message: "Internal server error",
