@@ -9,9 +9,12 @@ import {
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import AdminLayout from "../../src/pages/admin/AdminLayout";
+import {
+  MOBILE_VIEWPORT_WIDTHS,
+  TARGET_VIEWPORT_WIDTHS,
+} from "../utils/responsiveMatrix";
 
 const mockLogout = vi.fn();
-const targetViewportWidths = [360, 390, 768, 1024, 1280, 1440, 1920];
 
 vi.mock("../../src/lib/AdminContext", () => ({
   useAdminAuth: () => ({
@@ -65,7 +68,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
   });
 
   it("keeps the required responsive viewport matrix", () => {
-    expect(targetViewportWidths).toEqual([
+    expect(TARGET_VIEWPORT_WIDTHS).toEqual([
       360, 390, 768, 1024, 1280, 1440, 1920,
     ]);
   });
@@ -226,7 +229,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
     },
   );
 
-  it.each([360, 390, 768])(
+  it.each(MOBILE_VIEWPORT_WIDTHS)(
     "toggles admin mobile sidebar open and closed via same button at %ipx",
     async (width) => {
       const user = userEvent.setup();
@@ -274,7 +277,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
     async (route, pageLabel) => {
       const user = userEvent.setup();
 
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         const shouldOpenOnToggle = width <= 900;
         setViewportWidth(width);
         const { unmount } = renderAdminLayout(route);
@@ -450,7 +453,7 @@ describe("AdminLayout responsive sidebar behavior", () => {
   ])(
     "keeps mobile topbar title consistent for %s across target mobile widths",
     (route, pageLabel, expectedMobileTitle) => {
-      for (const width of [360, 390, 768]) {
+      for (const width of MOBILE_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAdminLayout(route);
 

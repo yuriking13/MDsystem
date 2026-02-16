@@ -10,9 +10,12 @@ import userEvent from "@testing-library/user-event";
 import { useEffect, useRef, useState } from "react";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout, { useProjectContext } from "../../src/components/AppLayout";
+import {
+  MOBILE_VIEWPORT_WIDTHS,
+  TARGET_VIEWPORT_WIDTHS,
+} from "../utils/responsiveMatrix";
 
 const mockLogout = vi.fn();
-const targetViewportWidths = [360, 390, 768, 1024, 1280, 1440, 1920];
 const mockAuthState = {
   token: "test-token",
   user: { email: "user@example.com" } as { email: string } | null,
@@ -384,7 +387,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   });
 
   it("keeps the required responsive viewport matrix", () => {
-    expect(targetViewportWidths).toEqual([
+    expect(TARGET_VIEWPORT_WIDTHS).toEqual([
       360, 390, 768, 1024, 1280, 1440, 1920,
     ]);
   });
@@ -538,7 +541,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     });
   });
 
-  it.each([360, 390, 768])(
+  it.each(MOBILE_VIEWPORT_WIDTHS)(
     "shows project name in mobile topbar when project context provides one at %ipx",
     async (width) => {
       setViewportWidth(width);
@@ -562,7 +565,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   ])(
     "resets mobile topbar title to app default after navigating to %s",
     async (destinationLinkLabel, destinationPageLabel) => {
-      for (const width of [360, 390, 768]) {
+      for (const width of MOBILE_VIEWPORT_WIDTHS) {
         const user = userEvent.setup();
         setViewportWidth(width);
         const { unmount } = renderAppLayout("/projects/p1/context-title");
@@ -587,7 +590,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([360, 390, 768])(
+  it.each(MOBILE_VIEWPORT_WIDTHS)(
     "keeps project title when navigating between project-scoped non-fixed routes at %ipx",
     async (width) => {
       const user = userEvent.setup();
@@ -614,7 +617,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([360, 390, 768])(
+  it.each(MOBILE_VIEWPORT_WIDTHS)(
     "preserves project title across graph tab round-trip at %ipx",
     async (width) => {
       const user = userEvent.setup();
@@ -651,7 +654,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([360, 390, 768])(
+  it.each(MOBILE_VIEWPORT_WIDTHS)(
     "resets project title when switching to a different project at %ipx",
     async (width) => {
       const user = userEvent.setup();
@@ -685,7 +688,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([360, 390, 768])(
+  it.each(MOBILE_VIEWPORT_WIDTHS)(
     "updates title when switching to another project route with context metadata at %ipx",
     async (width) => {
       const user = userEvent.setup();
@@ -732,7 +735,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([360, 390, 768])(
+  it.each(MOBILE_VIEWPORT_WIDTHS)(
     "does not leak second-project context when returning to first project at %ipx",
     async (width) => {
       const user = userEvent.setup();
@@ -774,7 +777,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([360, 390, 768])(
+  it.each(MOBILE_VIEWPORT_WIDTHS)(
     "shows mobile navigation trigger on app shell routes at %ipx",
     (width) => {
       setViewportWidth(width);
@@ -794,7 +797,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([360, 390, 768])(
+  it.each(MOBILE_VIEWPORT_WIDTHS)(
     "toggles mobile sidebar open and closed via same topbar button at %ipx",
     async (width) => {
       const user = userEvent.setup();
@@ -861,7 +864,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   ])("opens drawer only on mobile widths for %s", async (route, pageLabel) => {
     const user = userEvent.setup();
 
-    for (const width of targetViewportWidths) {
+    for (const width of TARGET_VIEWPORT_WIDTHS) {
       const shouldOpen = width <= 768;
       setViewportWidth(width);
       const { unmount } = renderAppLayout(route);
@@ -926,7 +929,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     async (route, pageLabel, shouldLockLayout) => {
       const user = userEvent.setup();
 
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         const shouldOpen = width <= 768;
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
@@ -993,7 +996,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   ])(
     "uses topbar nav toggle (without FAB) on non-fixed route %s across width matrix",
     (route, pageLabel) => {
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -1014,7 +1017,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   ])(
     "uses fixed-route FAB toggle (without topbar nav) on %s across width matrix",
     (route, pageLabel) => {
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -1038,7 +1041,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       mockAuthState.token = null;
       mockAuthState.user = null;
 
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -1082,7 +1085,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       mockAuthState.token = null;
       mockAuthState.user = null;
 
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(`/projects/p1?tab=${tab}`);
 
@@ -1161,7 +1164,7 @@ describe("AppLayout mobile sidebar behavior", () => {
     async (tab) => {
       const user = userEvent.setup();
 
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         const shouldOpen = width <= 768;
         const shouldLockLayout = tab === "graph";
         setViewportWidth(width);
@@ -1419,7 +1422,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   ])(
     "hides app shell on %s across target viewport widths",
     (route, pageLabel) => {
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -1469,7 +1472,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   ])(
     "hides app shell for %s across target viewport widths",
     (route, pageLabel) => {
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -1520,7 +1523,7 @@ describe("AppLayout mobile sidebar behavior", () => {
       mockAuthState.token = null;
       mockAuthState.user = null;
 
-      for (const width of targetViewportWidths) {
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
 
@@ -1602,7 +1605,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   });
 
   it("keeps document editor route in fixed layout on all target widths", () => {
-    for (const width of targetViewportWidths) {
+    for (const width of TARGET_VIEWPORT_WIDTHS) {
       setViewportWidth(width);
       const { unmount } = renderAppLayout("/projects/p1/documents/d1");
 
@@ -1621,7 +1624,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   });
 
   it("keeps graph tab route in fixed layout on all target widths", () => {
-    for (const width of targetViewportWidths) {
+    for (const width of TARGET_VIEWPORT_WIDTHS) {
       setViewportWidth(width);
       const { unmount } = renderAppLayout("/projects/p1?tab=graph");
 
