@@ -2163,81 +2163,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontSize: 9,
     fontWeight: 600,
   };
-  const semanticClustersPanelStyle: React.CSSProperties = {
-    padding: "12px 20px",
-    borderBottom: "1px solid var(--border-glass)",
-    background:
-      "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(34, 197, 94, 0.05))",
-  };
-  const semanticClustersHeaderStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  };
-  const semanticClustersTitleStyle: React.CSSProperties = { fontWeight: 600 };
-  const semanticClustersSubtitleStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--text-muted)",
-  };
-  const semanticClustersActionsStyle: React.CSSProperties = {
-    marginLeft: "auto",
-    display: "flex",
-    gap: 8,
-  };
-  const semanticClustersActionButtonStyle: React.CSSProperties = {
-    fontSize: 10,
-    padding: "2px 6px",
-  };
-  const semanticClustersDeleteButtonStyle: React.CSSProperties = {
-    ...semanticClustersActionButtonStyle,
-    color: "#ef4444",
-  };
-  const semanticClusterSettingsStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 16,
-    marginBottom: 12,
-    padding: 12,
-    background: "var(--bg-secondary)",
-    borderRadius: 8,
-  };
-  const semanticClusterSettingGroupStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  };
-  const semanticClusterSettingLabelStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--text-muted)",
-  };
-  const semanticClusterSettingInputStyle: React.CSSProperties = {
-    width: 50,
-    padding: "4px 6px",
-    borderRadius: 4,
-    border: "1px solid var(--border-glass)",
-    background: "var(--bg-primary)",
-    color: "inherit",
-    fontSize: 11,
-  };
-  const semanticClusterSimilarityRangeStyle: React.CSSProperties = {
-    width: 60,
-  };
-  const semanticClusterSimilarityValueStyle: React.CSSProperties = {
-    fontSize: 11,
-  };
-  const semanticClusterCheckboxLabelStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    fontSize: 11,
-    cursor: "pointer",
-  };
-  const semanticClusterListStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 8,
-  };
   const semanticClusterDetailsButtonBaseStyle: React.CSSProperties = {
     position: "absolute",
     top: 4,
@@ -2253,25 +2178,11 @@ export default function CitationGraph({ projectId }: Props) {
     alignItems: "center",
     justifyContent: "center",
   };
-  const semanticClusterHeaderRowStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    width: "100%",
-    paddingRight: 20,
-  };
   const semanticClusterDotBaseStyle: React.CSSProperties = {
     width: 10,
     height: 10,
     borderRadius: "50%",
     flexShrink: 0,
-  };
-  const semanticClusterNameStyle: React.CSSProperties = {
-    fontWeight: 600,
-    flex: 1,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
   };
   const semanticClusterCountBaseStyle: React.CSSProperties = {
     padding: "2px 6px",
@@ -2288,16 +2199,6 @@ export default function CitationGraph({ projectId }: Props) {
   };
   const semanticClusterKeywordsBaseStyle: React.CSSProperties = {
     fontSize: 9,
-  };
-  const semanticClusterEmptyHintStyle: React.CSSProperties = {
-    textAlign: "center",
-    padding: 16,
-    color: "var(--text-muted)",
-    fontSize: 12,
-  };
-  const semanticClusterEmptyWarningStyle: React.CSSProperties = {
-    marginBottom: 8,
-    color: "#f59e0b",
   };
   const gapPanelStyle: React.CSSProperties = {
     padding: "10px 16px",
@@ -4203,28 +4104,26 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Semantic Clusters Panel */}
         {showSemanticClustersPanel && (
-          <div className="graph-filters" style={semanticClustersPanelStyle}>
-            <div style={semanticClustersHeaderStyle}>
+          <div className="graph-filters graph-semantic-clusters-panel">
+            <div className="graph-semantic-clusters-header">
               <IconGraph size="sm" />
-              <span style={semanticClustersTitleStyle}>
+              <span className="graph-semantic-clusters-title">
                 🔮 Семантические кластеры
               </span>
-              <span style={semanticClustersSubtitleStyle}>
+              <span className="graph-semantic-clusters-subtitle">
                 (группировка по смыслу)
               </span>
-              <div style={semanticClustersActionsStyle}>
+              <div className="graph-semantic-clusters-actions">
                 {semanticClusters.length > 0 && (
                   <button
-                    className="btn secondary"
-                    style={semanticClustersActionButtonStyle}
+                    className="btn secondary graph-semantic-clusters-action-btn"
                     onClick={() => filterBySemanticCluster(null)}
                   >
                     Сбросить
                   </button>
                 )}
                 <button
-                  className="btn secondary"
-                  style={semanticClustersActionButtonStyle}
+                  className="btn secondary graph-semantic-clusters-action-btn"
                   onClick={handleCreateSemanticClusters}
                   disabled={creatingSemanticClusters}
                 >
@@ -4236,8 +4135,7 @@ export default function CitationGraph({ projectId }: Props) {
                 </button>
                 {semanticClusters.length > 0 && (
                   <button
-                    className="btn secondary"
-                    style={semanticClustersDeleteButtonStyle}
+                    className="btn secondary graph-semantic-clusters-action-btn graph-semantic-clusters-delete-btn"
                     onClick={handleDeleteSemanticClusters}
                   >
                     Удалить
@@ -4248,9 +4146,9 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Настройки кластеризации */}
             {semanticClusters.length === 0 && (
-              <div style={semanticClusterSettingsStyle}>
-                <div style={semanticClusterSettingGroupStyle}>
-                  <label style={semanticClusterSettingLabelStyle}>
+              <div className="graph-semantic-cluster-settings">
+                <div className="graph-semantic-cluster-setting-group">
+                  <label className="graph-semantic-cluster-setting-label">
                     Кластеров:
                   </label>
                   <input
@@ -4264,11 +4162,11 @@ export default function CitationGraph({ projectId }: Props) {
                         numClusters: parseInt(e.target.value) || 5,
                       }))
                     }
-                    style={semanticClusterSettingInputStyle}
+                    className="graph-semantic-cluster-setting-input"
                   />
                 </div>
-                <div style={semanticClusterSettingGroupStyle}>
-                  <label style={semanticClusterSettingLabelStyle}>
+                <div className="graph-semantic-cluster-setting-group">
+                  <label className="graph-semantic-cluster-setting-label">
                     Мин. размер:
                   </label>
                   <input
@@ -4282,11 +4180,11 @@ export default function CitationGraph({ projectId }: Props) {
                         minClusterSize: parseInt(e.target.value) || 3,
                       }))
                     }
-                    style={semanticClusterSettingInputStyle}
+                    className="graph-semantic-cluster-setting-input"
                   />
                 </div>
-                <div style={semanticClusterSettingGroupStyle}>
-                  <label style={semanticClusterSettingLabelStyle}>
+                <div className="graph-semantic-cluster-setting-group">
+                  <label className="graph-semantic-cluster-setting-label">
                     Порог схожести:
                   </label>
                   <input
@@ -4301,16 +4199,16 @@ export default function CitationGraph({ projectId }: Props) {
                         similarityThreshold: parseFloat(e.target.value),
                       }))
                     }
-                    style={semanticClusterSimilarityRangeStyle}
+                    className="graph-semantic-cluster-similarity-range"
                   />
-                  <span style={semanticClusterSimilarityValueStyle}>
+                  <span className="graph-semantic-cluster-similarity-value">
                     {(
                       semanticClusterSettings.similarityThreshold * 100
                     ).toFixed(0)}
                     %
                   </span>
                 </div>
-                <label style={semanticClusterCheckboxLabelStyle}>
+                <label className="graph-semantic-cluster-checkbox-label">
                   <input
                     type="checkbox"
                     checked={semanticClusterSettings.generateNames}
@@ -4328,7 +4226,7 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Список кластеров */}
             {semanticClusters.length > 0 && (
-              <div style={semanticClusterListStyle}>
+              <div className="graph-semantic-cluster-list">
                 {semanticClusters.map((cluster) => (
                   <div
                     key={cluster.id}
@@ -4362,9 +4260,9 @@ export default function CitationGraph({ projectId }: Props) {
                     >
                       ⓘ
                     </button>
-                    <div style={semanticClusterHeaderRowStyle}>
+                    <div className="graph-semantic-cluster-header-row">
                       <span style={getSemanticClusterDotStyle(cluster.color)} />
-                      <span style={semanticClusterNameStyle}>
+                      <span className="graph-semantic-cluster-name">
                         {cluster.name}
                       </span>
                       <span
@@ -4402,10 +4300,10 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Подсказка про embeddings */}
             {semanticClusters.length === 0 && !creatingSemanticClusters && (
-              <div style={semanticClusterEmptyHintStyle}>
+              <div className="graph-semantic-cluster-empty-hint">
                 {embeddingStats && embeddingStats.withEmbeddings < 10 ? (
                   <>
-                    <div style={semanticClusterEmptyWarningStyle}>
+                    <div className="graph-semantic-cluster-empty-warning">
                       ⚠️ Недостаточно embeddings для кластеризации
                     </div>
                     <div>

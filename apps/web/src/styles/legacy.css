@@ -6179,6 +6179,128 @@ input:focus::placeholder {
   color: var(--text-muted);
 }
 
+.graph-semantic-clusters-panel {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-glass);
+  background: linear-gradient(
+    135deg,
+    rgba(99, 102, 241, 0.05),
+    rgba(34, 197, 94, 0.05)
+  );
+}
+
+.graph-semantic-clusters-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.graph-semantic-clusters-title {
+  font-weight: 600;
+}
+
+.graph-semantic-clusters-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-semantic-clusters-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.graph-semantic-clusters-action-btn {
+  font-size: 10px;
+  padding: 2px 6px;
+}
+
+.graph-semantic-clusters-delete-btn {
+  color: #ef4444;
+}
+
+.graph-semantic-cluster-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.graph-semantic-cluster-setting-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-semantic-cluster-setting-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-semantic-cluster-setting-input {
+  width: 50px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-primary);
+  color: inherit;
+  font-size: 11px;
+}
+
+.graph-semantic-cluster-similarity-range {
+  width: 60px;
+}
+
+.graph-semantic-cluster-similarity-value {
+  font-size: 11px;
+}
+
+.graph-semantic-cluster-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.graph-semantic-cluster-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.graph-semantic-cluster-header-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding-right: 20px;
+}
+
+.graph-semantic-cluster-name {
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-semantic-cluster-empty-hint {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.graph-semantic-cluster-empty-warning {
+  margin-bottom: 8px;
+  color: #f59e0b;
+}
+
 .graph-advanced-panel {
   display: flex;
   flex-wrap: wrap;
