@@ -2231,100 +2231,17 @@ export default function CitationGraph({ projectId }: Props) {
     fontWeight: 600,
     fontSize: 11,
   };
-  const clusterDetailModalStyle: React.CSSProperties = {
-    maxWidth: 700,
-    maxHeight: "80vh",
-    overflow: "hidden",
-    display: "flex",
-    flexDirection: "column",
-  };
-  const clusterDetailHeaderStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 16,
-  };
   const clusterDetailColorDotBaseStyle: React.CSSProperties = {
     width: 24,
     height: 24,
     borderRadius: "50%",
     flexShrink: 0,
   };
-  const clusterDetailTitleStyle: React.CSSProperties = {
-    margin: 0,
-    fontSize: 18,
-  };
-  const clusterDetailMetaStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: "var(--text-muted)",
-    marginTop: 4,
-  };
-  const clusterDetailKeywordsSectionStyle: React.CSSProperties = {
-    marginBottom: 16,
-  };
-  const clusterDetailKeywordsLabelStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: "var(--text-muted)",
-    marginBottom: 6,
-  };
-  const clusterDetailKeywordsWrapStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 6,
-  };
   const clusterDetailCentralCardBaseStyle: React.CSSProperties = {
     marginBottom: 16,
     padding: 12,
     background: "var(--bg-tertiary)",
     borderRadius: 8,
-  };
-  const clusterDetailCentralLabelStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--text-muted)",
-    marginBottom: 4,
-  };
-  const clusterDetailCentralTitleStyle: React.CSSProperties = {
-    fontSize: 13,
-    fontWeight: 500,
-  };
-  const clusterDetailListHeaderStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: "var(--text-muted)",
-    marginBottom: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  };
-  const clusterDetailListHeaderActionsStyle: React.CSSProperties = {
-    display: "flex",
-    gap: 8,
-  };
-  const clusterDetailHeaderButtonStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: 11,
-    borderRadius: 4,
-    border: "1px solid var(--border-glass)",
-    background: "var(--bg-secondary)",
-    color: "var(--text-secondary)",
-    cursor: "pointer",
-  };
-  const clusterDetailListContainerStyle: React.CSSProperties = {
-    flex: 1,
-    overflow: "auto",
-    border: "1px solid var(--border-glass)",
-    borderRadius: 8,
-  };
-  const clusterDetailLoadingStyle: React.CSSProperties = {
-    padding: 20,
-    textAlign: "center",
-    color: "var(--text-muted)",
-  };
-  const clusterDetailItemCheckboxStyle: React.CSSProperties = {
-    width: 16,
-    height: 16,
-    marginTop: 4,
-    cursor: "pointer",
-    accentColor: "#3b82f6",
   };
   const clusterDetailItemIndexBaseStyle: React.CSSProperties = {
     minWidth: 24,
@@ -2337,22 +2254,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontWeight: 600,
     flexShrink: 0,
   };
-  const clusterDetailItemContentStyle: React.CSSProperties = {
-    flex: 1,
-    minWidth: 0,
-  };
-  const clusterDetailItemTitleRowStyle: React.CSSProperties = {
-    fontSize: 13,
-    fontWeight: 500,
-    marginBottom: 4,
-    lineHeight: 1.4,
-    display: "flex",
-    alignItems: "flex-start",
-    gap: 8,
-  };
-  const clusterDetailItemTitleTextStyle: React.CSSProperties = {
-    flex: 1,
-  };
   const clusterDetailStatusBadgeBaseStyle: React.CSSProperties = {
     fontSize: 9,
     padding: "2px 6px",
@@ -2360,38 +2261,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontWeight: 600,
     textTransform: "uppercase",
     flexShrink: 0,
-  };
-  const clusterDetailAuthorsStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--text-muted)",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  };
-  const clusterDetailYearStyle: React.CSSProperties = {
-    fontSize: 10,
-    color: "var(--text-muted)",
-    background: "var(--bg-secondary)",
-    padding: "2px 6px",
-    borderRadius: 4,
-    marginTop: 4,
-    display: "inline-block",
-  };
-  const clusterDetailSelectedActionsStyle: React.CSSProperties = {
-    marginTop: 12,
-    padding: 12,
-    background: "rgba(59, 130, 246, 0.1)",
-    borderRadius: 8,
-    border: "1px solid rgba(59, 130, 246, 0.3)",
-  };
-  const clusterDetailSelectedMetaStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: "var(--text-secondary)",
-    marginBottom: 10,
-  };
-  const clusterDetailSelectedButtonsStyle: React.CSSProperties = {
-    display: "flex",
-    gap: 8,
   };
   const clusterDetailSelectedButtonBaseStyle: React.CSSProperties = {
     flex: 1,
@@ -2405,20 +2274,6 @@ export default function CitationGraph({ projectId }: Props) {
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-  };
-  const clusterDetailFooterActionsStyle: React.CSSProperties = {
-    marginTop: 16,
-    display: "flex",
-    gap: 10,
-  };
-  const clusterDetailCloseButtonStyle: React.CSSProperties = {
-    padding: "10px 16px",
-    borderRadius: 8,
-    border: "1px solid var(--border-glass)",
-    background: "var(--bg-secondary)",
-    color: "var(--text-primary)",
-    cursor: "pointer",
-    fontSize: 13,
   };
   const helpModalStyle: React.CSSProperties = {
     maxWidth: 600,
@@ -4777,9 +4632,8 @@ export default function CitationGraph({ projectId }: Props) {
             onClick={() => setClusterDetailModal(null)}
           >
             <div
-              className="node-info-modal"
+              className="node-info-modal cluster-detail-modal"
               onClick={(e) => e.stopPropagation()}
-              style={clusterDetailModalStyle}
             >
               <button
                 className="node-info-modal-close"
@@ -4788,17 +4642,17 @@ export default function CitationGraph({ projectId }: Props) {
                 <IconClose size="md" />
               </button>
 
-              <div style={clusterDetailHeaderStyle}>
+              <div className="cluster-detail-header">
                 <div
                   style={getClusterDetailColorDotStyle(
                     clusterDetailModal.cluster.color,
                   )}
                 />
                 <div>
-                  <h3 style={clusterDetailTitleStyle}>
+                  <h3 className="cluster-detail-title">
                     {clusterDetailModal.cluster.name}
                   </h3>
-                  <div style={clusterDetailMetaStyle}>
+                  <div className="cluster-detail-meta">
                     {clusterDetailModal.cluster.articleCount} статей в кластере
                   </div>
                 </div>
@@ -4806,11 +4660,11 @@ export default function CitationGraph({ projectId }: Props) {
 
               {/* Keywords */}
               {clusterDetailModal.cluster.keywords.length > 0 && (
-                <div style={clusterDetailKeywordsSectionStyle}>
-                  <div style={clusterDetailKeywordsLabelStyle}>
+                <div className="cluster-detail-keywords-section">
+                  <div className="cluster-detail-keywords-label">
                     Ключевые слова:
                   </div>
-                  <div style={clusterDetailKeywordsWrapStyle}>
+                  <div className="cluster-detail-keywords-wrap">
                     {clusterDetailModal.cluster.keywords.map(
                       (kw: string, i: number) => (
                         <span
@@ -4834,38 +4688,38 @@ export default function CitationGraph({ projectId }: Props) {
                     clusterDetailModal.cluster.color,
                   )}
                 >
-                  <div style={clusterDetailCentralLabelStyle}>
+                  <div className="cluster-detail-central-label">
                     ⭐ Центральная статья кластера:
                   </div>
-                  <div style={clusterDetailCentralTitleStyle}>
+                  <div className="cluster-detail-central-title">
                     {clusterDetailModal.cluster.centralArticleTitle}
                   </div>
                 </div>
               )}
 
               {/* Articles List */}
-              <div style={clusterDetailListHeaderStyle}>
+              <div className="cluster-detail-list-header">
                 <span>Все статьи кластера:</span>
-                <div style={clusterDetailListHeaderActionsStyle}>
+                <div className="cluster-detail-list-header-actions">
                   <button
                     onClick={selectAllClusterArticles}
-                    style={clusterDetailHeaderButtonStyle}
+                    className="cluster-detail-header-button"
                   >
                     Выбрать все
                   </button>
                   {selectedClusterArticles.size > 0 && (
                     <button
                       onClick={deselectAllClusterArticles}
-                      style={clusterDetailHeaderButtonStyle}
+                      className="cluster-detail-header-button"
                     >
                       Снять выбор ({selectedClusterArticles.size})
                     </button>
                   )}
                 </div>
               </div>
-              <div style={clusterDetailListContainerStyle}>
+              <div className="cluster-detail-list-container">
                 {loadingClusterDetails ? (
-                  <div style={clusterDetailLoadingStyle}>
+                  <div className="cluster-detail-loading">
                     Загрузка статей...
                   </div>
                 ) : (
@@ -4905,7 +4759,7 @@ export default function CitationGraph({ projectId }: Props) {
                               toggleClusterArticleSelection(article.id)
                             }
                             onClick={(e) => e.stopPropagation()}
-                            style={clusterDetailItemCheckboxStyle}
+                            className="cluster-detail-item-checkbox"
                           />
                           <span
                             onClick={() => {
@@ -4952,10 +4806,10 @@ export default function CitationGraph({ projectId }: Props) {
                                 setSelectedNodeForDisplay(node);
                               }
                             }}
-                            style={clusterDetailItemContentStyle}
+                            className="cluster-detail-item-content"
                           >
-                            <div style={clusterDetailItemTitleRowStyle}>
-                              <span style={clusterDetailItemTitleTextStyle}>
+                            <div className="cluster-detail-item-title-row">
+                              <span className="cluster-detail-item-title-text">
                                 {article.title}
                               </span>
                               {/* Status badge */}
@@ -4968,12 +4822,12 @@ export default function CitationGraph({ projectId }: Props) {
                               </span>
                             </div>
                             {article.authors && (
-                              <div style={clusterDetailAuthorsStyle}>
+                              <div className="cluster-detail-authors">
                                 {article.authors}
                               </div>
                             )}
                             {article.year && (
-                              <span style={clusterDetailYearStyle}>
+                              <span className="cluster-detail-year">
                                 {article.year}
                               </span>
                             )}
@@ -4987,12 +4841,12 @@ export default function CitationGraph({ projectId }: Props) {
 
               {/* Actions for selected articles */}
               {selectedClusterArticles.size > 0 && (
-                <div style={clusterDetailSelectedActionsStyle}>
-                  <div style={clusterDetailSelectedMetaStyle}>
+                <div className="cluster-detail-selected-actions">
+                  <div className="cluster-detail-selected-meta">
                     Выбрано статей:{" "}
                     <strong>{selectedClusterArticles.size}</strong>
                   </div>
-                  <div style={clusterDetailSelectedButtonsStyle}>
+                  <div className="cluster-detail-selected-buttons">
                     <button
                       onClick={() => handleAddClusterArticles("selected")}
                       disabled={addingFromCluster}
@@ -5030,7 +4884,7 @@ export default function CitationGraph({ projectId }: Props) {
               )}
 
               {/* Actions */}
-              <div style={clusterDetailFooterActionsStyle}>
+              <div className="cluster-detail-footer-actions">
                 <button
                   onClick={() => {
                     // Filter graph to show only this cluster
@@ -5045,7 +4899,7 @@ export default function CitationGraph({ projectId }: Props) {
                 </button>
                 <button
                   onClick={() => setClusterDetailModal(null)}
-                  style={clusterDetailCloseButtonStyle}
+                  className="cluster-detail-close-button"
                 >
                   Закрыть
                 </button>
