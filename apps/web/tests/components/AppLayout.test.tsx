@@ -74,6 +74,37 @@ function renderAppLayout(initialPath = "/projects") {
             }
           />
           <Route path="/admin" element={<div>Admin route content</div>} />
+          <Route path="/admin/users" element={<div>Admin users content</div>} />
+          <Route
+            path="/admin/projects"
+            element={<div>Admin projects content</div>}
+          />
+          <Route
+            path="/admin/articles"
+            element={<div>Admin articles content</div>}
+          />
+          <Route
+            path="/admin/activity"
+            element={<div>Admin activity content</div>}
+          />
+          <Route
+            path="/admin/sessions"
+            element={<div>Admin sessions content</div>}
+          />
+          <Route path="/admin/jobs" element={<div>Admin jobs content</div>} />
+          <Route
+            path="/admin/errors"
+            element={<div>Admin errors content</div>}
+          />
+          <Route path="/admin/audit" element={<div>Admin audit content</div>} />
+          <Route
+            path="/admin/system"
+            element={<div>Admin system content</div>}
+          />
+          <Route
+            path="/admin/settings"
+            element={<div>Admin settings content</div>}
+          />
           <Route path="/login" element={<div>Login page</div>} />
           <Route path="/register" element={<div>Register page</div>} />
         </Route>
@@ -415,6 +446,40 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
     expect(document.querySelector(".animated-bg")).toBeNull();
   });
+
+  it.each([
+    ["/admin", "Admin route content"],
+    ["/admin/users", "Admin users content"],
+    ["/admin/projects", "Admin projects content"],
+    ["/admin/articles", "Admin articles content"],
+    ["/admin/activity", "Admin activity content"],
+    ["/admin/sessions", "Admin sessions content"],
+    ["/admin/jobs", "Admin jobs content"],
+    ["/admin/errors", "Admin errors content"],
+    ["/admin/audit", "Admin audit content"],
+    ["/admin/system", "Admin system content"],
+    ["/admin/settings", "Admin settings content"],
+  ])(
+    "hides app shell for %s across target viewport widths",
+    (route, pageLabel) => {
+      for (const width of targetViewportWidths) {
+        setViewportWidth(width);
+        const { unmount } = renderAppLayout(route);
+
+        expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Открыть навигацию" }),
+        ).not.toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Закрыть навигацию" }),
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+        expect(document.querySelector(".animated-bg")).toBeNull();
+
+        unmount();
+      }
+    },
+  );
 
   it("hides sidebar shell when user is not authenticated", () => {
     mockAuthState.token = null;
