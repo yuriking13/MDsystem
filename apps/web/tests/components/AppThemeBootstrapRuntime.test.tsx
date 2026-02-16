@@ -483,6 +483,25 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it("redirects unauthenticated document editor route to login page", async () => {
+    const storage = createThemeStorage(null);
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/projects/p1/documents/d1"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
   it("renders admin dashboard index for /admin route", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
@@ -520,6 +539,26 @@ describe("App theme bootstrap runtime", () => {
     await waitFor(() => {
       expect(screen.getByText("Admin Layout")).toBeInTheDocument();
       expect(screen.getByText("Admin Users Page")).toBeInTheDocument();
+    });
+  });
+
+  it("renders admin settings route under admin layout", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/settings"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+      expect(screen.getByText("Admin Settings Page")).toBeInTheDocument();
     });
   });
 });
