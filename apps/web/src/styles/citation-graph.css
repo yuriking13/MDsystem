@@ -716,8 +716,8 @@
 /* Graph MiniMap */
 .graph-minimap {
   position: absolute;
-  bottom: 16px;
-  right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  right: calc(16px + env(safe-area-inset-right, 0px));
   z-index: 10;
   background: var(--graph-toolbar-bg);
   backdrop-filter: blur(8px);
@@ -730,8 +730,8 @@
 /* Graph Legend */
 .graph-legend {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: calc(16px + env(safe-area-inset-left, 0px));
   z-index: 10;
   background: var(--graph-toolbar-bg);
   backdrop-filter: blur(8px);
@@ -775,8 +775,8 @@
 
 .graph-legend-container {
   position: absolute;
-  bottom: 16px;
-  left: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  left: calc(16px + env(safe-area-inset-left, 0px));
   z-index: 10;
 }
 
