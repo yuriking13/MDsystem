@@ -522,6 +522,29 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(darkRadio?.checked).toBe(true);
   });
 
+  it("allows switching to light after unsupported persisted preference fallback", async () => {
+    localStorage.setItem("theme", "solarized");
+    renderSidebar({ mobileViewport: false });
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio).not.toBeNull();
+    fireEvent.click(lightRadio!);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        true,
+      );
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+      expect(document.body.classList.contains("light-theme")).toBe(true);
+      expect(document.body.classList.contains("dark")).toBe(false);
+      expect(lightRadio?.checked).toBe(true);
+    });
+  });
+
   it("cleans stale opposite theme classes when syncing persisted theme", () => {
     document.documentElement.classList.add("light-theme");
     document.body.classList.add("light-theme");
