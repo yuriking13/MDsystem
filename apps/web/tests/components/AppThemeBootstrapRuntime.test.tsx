@@ -546,6 +546,47 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it("falls back to dark theme for unsupported persisted value on authenticated docs route", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/docs"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Documentation Page")).toBeInTheDocument();
+    });
+  });
+
+  it("falls back to dark theme for unsupported persisted value on unauthenticated docs route", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/docs"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
   it("redirects unauthenticated projects route to login page", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
