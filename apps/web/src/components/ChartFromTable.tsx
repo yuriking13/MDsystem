@@ -484,21 +484,19 @@ export default function ChartFromTable({
   height,
   theme = "light",
 }: Props) {
-  const chartContainerStyle: React.CSSProperties = {
-    width: width || "100%",
-    height: height || 300,
-  };
-
-  const chartErrorStyle: React.CSSProperties = {
-    ...chartContainerStyle,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#ff6b6b",
-  };
+  const chartHeight = height ?? 300;
+  const chartWidth = width;
+  const chartContainerClassName =
+    chartHeight <= 280
+      ? "chart-from-table-container chart-from-table-container--compact"
+      : "chart-from-table-container";
+  const chartErrorClassName =
+    chartHeight <= 280
+      ? "chart-from-table-error chart-from-table-error--compact"
+      : "chart-from-table-error";
 
   const renderChartError = (message: string) => (
-    <div style={chartErrorStyle}>
+    <div className={chartErrorClassName}>
       <div>{message}</div>
     </div>
   );
@@ -585,8 +583,6 @@ export default function ChartFromTable({
     },
   };
 
-  const style = chartContainerStyle;
-
   // Обработка разных типов графиков
   if (type === "histogram") {
     // Гистограмма - берём все числовые значения из первой колонки данных
@@ -623,9 +619,11 @@ export default function ChartFromTable({
     };
 
     return (
-      <div style={style}>
+      <div className={chartContainerClassName}>
         <Bar
           data={chartData}
+          width={chartWidth}
+          height={chartHeight}
           options={{
             ...baseOptions,
             scales: axisScales,
@@ -663,9 +661,11 @@ export default function ChartFromTable({
     const chartData = { labels, datasets };
 
     return (
-      <div style={style}>
+      <div className={chartContainerClassName}>
         <Bar
           data={chartData}
+          width={chartWidth}
+          height={chartHeight}
           options={{
             ...baseOptions,
             scales: {
@@ -744,9 +744,11 @@ export default function ChartFromTable({
     };
 
     return (
-      <div style={style}>
+      <div className={chartContainerClassName}>
         <Bar
           data={boxChartData}
+          width={chartWidth}
+          height={chartHeight}
           options={{
             ...baseOptions,
             indexAxis: "y" as const,
@@ -816,9 +818,11 @@ export default function ChartFromTable({
     };
 
     return (
-      <div style={style}>
+      <div className={chartContainerClassName}>
         <Scatter
           data={chartData}
+          width={chartWidth}
+          height={chartHeight}
           options={{
             ...baseOptions,
             scales: {
@@ -902,8 +906,13 @@ export default function ChartFromTable({
     }[type] || Bar;
 
   return (
-    <div style={style}>
-      <ChartComponent data={chartData} options={options} />
+    <div className={chartContainerClassName}>
+      <ChartComponent
+        data={chartData}
+        options={options}
+        width={chartWidth}
+        height={chartHeight}
+      />
     </div>
   );
 }
@@ -1084,78 +1093,6 @@ export function ChartCreatorModal({
     "doughnut",
   ];
 
-  const classificationCardStyle: React.CSSProperties = {
-    marginBottom: 16,
-    padding: 12,
-  };
-  const classificationHeaderStyle: React.CSSProperties = { marginBottom: 8 };
-  const classificationTitleStyle: React.CSSProperties = { fontSize: 13 };
-  const classificationMethodStyle: React.CSSProperties = { fontSize: 11 };
-  const classificationControlsStyle: React.CSSProperties = {
-    flexWrap: "wrap",
-    gap: 8,
-  };
-  const classificationSelectStyle: React.CSSProperties = {
-    padding: "6px 10px",
-    fontSize: 12,
-    width: "auto",
-  };
-  const recommendedTypesStyle: React.CSSProperties = {
-    marginTop: 8,
-    fontSize: 11,
-  };
-  const recommendedTypeButtonStyle: React.CSSProperties = {
-    cursor: "pointer",
-    marginRight: 4,
-  };
-  const settingsRowStyle: React.CSSProperties = {
-    marginBottom: 16,
-    alignItems: "flex-start",
-  };
-  const settingsColumnStyle: React.CSSProperties = { flex: 1 };
-  const fieldStackStyle: React.CSSProperties = { marginBottom: 12 };
-  const chartTypeToggleStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: 10,
-  };
-  const chartTypeButtonsWrapStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 4,
-  };
-  const chartTypeHintStyle: React.CSSProperties = { marginBottom: 12 };
-  const histogramRangeStyle: React.CSSProperties = { width: "100%" };
-  const dataColumnsSectionStyle: React.CSSProperties = { marginBottom: 12 };
-  const dataColumnsWrapStyle: React.CSSProperties = {
-    marginTop: 6,
-    flexWrap: "wrap",
-  };
-  const dataColumnLabelStyle: React.CSSProperties = { alignItems: "center" };
-  const dataColumnCheckboxStyle: React.CSSProperties = { width: "auto" };
-  const dataColumnTextStyle: React.CSSProperties = { fontSize: 13 };
-  const previewPanelStyle: React.CSSProperties = {
-    flex: 1,
-    background: "rgba(0,0,0,0.2)",
-    borderRadius: 12,
-    padding: 16,
-  };
-  const previewTitleStyle: React.CSSProperties = {
-    marginBottom: 8,
-    fontSize: 12,
-  };
-  const previewEmptyStyle: React.CSSProperties = {
-    textAlign: "center",
-    padding: 40,
-  };
-
-  const getChartTypeButtonStyle = (
-    isRecommended: boolean,
-  ): React.CSSProperties => ({
-    padding: "6px 10px",
-    fontSize: 11,
-    border: isRecommended ? "2px solid var(--success)" : undefined,
-  });
-
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div
@@ -1182,16 +1119,16 @@ export function ChartCreatorModal({
         </div>
         <div className="modal-body">
           {/* Классификация данных */}
-          <div className="card" style={classificationCardStyle}>
-            <div className="row space" style={classificationHeaderStyle}>
-              <strong style={classificationTitleStyle}>
+          <div className="card chart-creator-classification-card">
+            <div className="row space chart-creator-classification-header">
+              <strong className="chart-creator-classification-title">
                 📊 Классификация данных
               </strong>
-              <span className="muted" style={classificationMethodStyle}>
+              <span className="muted chart-creator-classification-method">
                 Рекомендуемый метод: {recommendedMethod}
               </span>
             </div>
-            <div className="row gap" style={classificationControlsStyle}>
+            <div className="row gap chart-creator-classification-controls">
               <select
                 value={variableType}
                 onChange={(e) =>
@@ -1199,7 +1136,7 @@ export function ChartCreatorModal({
                     e.target.value as "quantitative" | "qualitative",
                   )
                 }
-                style={classificationSelectStyle}
+                className="chart-creator-classification-select"
               >
                 <option value="quantitative">Количественные</option>
                 <option value="qualitative">Качественные</option>
@@ -1209,7 +1146,7 @@ export function ChartCreatorModal({
                 onChange={(e) =>
                   setSubType(e.target.value as DataClassification["subType"])
                 }
-                style={classificationSelectStyle}
+                className="chart-creator-classification-select"
               >
                 {variableType === "quantitative" ? (
                   <>
@@ -1238,7 +1175,7 @@ export function ChartCreatorModal({
                       setIsNormalDistribution(undefined);
                     else setIsNormalDistribution(e.target.value === "yes");
                   }}
-                  style={classificationSelectStyle}
+                  className="chart-creator-classification-select"
                 >
                   <option value="">Распределение неизвестно</option>
                   <option value="yes">Нормальное распределение</option>
@@ -1247,14 +1184,13 @@ export function ChartCreatorModal({
               )}
             </div>
             {recommendedTypes.length > 0 && (
-              <div style={recommendedTypesStyle}>
+              <div className="chart-creator-recommended-types">
                 <span className="muted">Рекомендуемые графики: </span>
                 {recommendedTypes.map((t) => (
                   <button
                     key={t}
                     onClick={() => setChartType(t)}
-                    className={`id-badge ${chartType === t ? "stats-q3" : ""}`}
-                    style={recommendedTypeButtonStyle}
+                    className={`id-badge chart-creator-recommended-chip ${chartType === t ? "stats-q3" : ""}`}
                   >
                     {CHART_TYPE_INFO[t].icon} {CHART_TYPE_INFO[t].name}
                   </button>
@@ -1263,21 +1199,20 @@ export function ChartCreatorModal({
             )}
           </div>
 
-          <div className="row gap" style={settingsRowStyle}>
+          <div className="row gap chart-creator-settings-row">
             {/* Настройки */}
-            <div style={settingsColumnStyle}>
-              <label className="stack" style={fieldStackStyle}>
+            <div className="chart-creator-settings-column">
+              <label className="stack chart-creator-field-stack">
                 <div className="row space">
                   <span>Тип графика</span>
                   <button
-                    className="btn secondary"
-                    style={chartTypeToggleStyle}
+                    className="btn secondary chart-creator-toggle-info-btn"
                     onClick={() => setShowTypeInfo(!showTypeInfo)}
                   >
                     {showTypeInfo ? "Скрыть подсказки" : "❓ Подсказки"}
                   </button>
                 </div>
-                <div style={chartTypeButtonsWrapStyle}>
+                <div className="chart-creator-type-buttons-wrap">
                   {allChartTypes.map((t) => {
                     const info = CHART_TYPE_INFO[t] ?? {
                       name: String(t),
@@ -1287,11 +1222,14 @@ export function ChartCreatorModal({
                     return (
                       <button
                         key={t}
-                        className={`btn ${chartType === t ? "" : "secondary"}`}
+                        className={`btn chart-creator-type-btn ${
+                          chartType === t ? "" : "secondary"
+                        } ${
+                          recommendedTypes.includes(t)
+                            ? "chart-creator-type-btn--recommended"
+                            : ""
+                        }`}
                         onClick={() => setChartType(t)}
-                        style={getChartTypeButtonStyle(
-                          recommendedTypes.includes(t),
-                        )}
                         title={info.description}
                       >
                         {info.icon}{" "}
@@ -1319,12 +1257,12 @@ export function ChartCreatorModal({
               </label>
 
               {showTypeInfo && (
-                <div style={chartTypeHintStyle}>
+                <div className="chart-creator-type-hint-wrap">
                   <ChartTypeHint type={chartType} />
                 </div>
               )}
 
-              <label className="stack" style={fieldStackStyle}>
+              <label className="stack chart-creator-field-stack">
                 <span>Заголовок графика</span>
                 <input
                   value={title}
@@ -1335,7 +1273,7 @@ export function ChartCreatorModal({
 
               {chartType === "scatter" ? (
                 <>
-                  <label className="stack" style={fieldStackStyle}>
+                  <label className="stack chart-creator-field-stack">
                     <span>Ось X</span>
                     <select
                       value={xColumn}
@@ -1348,7 +1286,7 @@ export function ChartCreatorModal({
                       ))}
                     </select>
                   </label>
-                  <label className="stack" style={fieldStackStyle}>
+                  <label className="stack chart-creator-field-stack">
                     <span>Ось Y</span>
                     <select
                       value={yColumn}
@@ -1364,7 +1302,7 @@ export function ChartCreatorModal({
                 </>
               ) : chartType === "histogram" ? (
                 <>
-                  <label className="stack" style={fieldStackStyle}>
+                  <label className="stack chart-creator-field-stack">
                     <span>Колонка данных</span>
                     <select
                       value={dataColumns[0] || 1}
@@ -1377,7 +1315,7 @@ export function ChartCreatorModal({
                       ))}
                     </select>
                   </label>
-                  <label className="stack" style={fieldStackStyle}>
+                  <label className="stack chart-creator-field-stack">
                     <span>Количество интервалов (bins): {bins}</span>
                     <input
                       type="range"
@@ -1385,13 +1323,13 @@ export function ChartCreatorModal({
                       max={20}
                       value={bins}
                       onChange={(e) => setBins(Number(e.target.value))}
-                      style={histogramRangeStyle}
+                      className="chart-creator-histogram-range"
                     />
                   </label>
                 </>
               ) : (
                 <>
-                  <label className="stack" style={fieldStackStyle}>
+                  <label className="stack chart-creator-field-stack">
                     <span>Колонка меток (X)</span>
                     <select
                       value={labelColumn}
@@ -1405,24 +1343,23 @@ export function ChartCreatorModal({
                     </select>
                   </label>
 
-                  <div style={dataColumnsSectionStyle}>
+                  <div className="chart-creator-data-columns-section">
                     <span className="muted">Колонки данных (Y)</span>
-                    <div className="row gap" style={dataColumnsWrapStyle}>
+                    <div className="row gap chart-creator-data-columns-wrap">
                       {tableData.headers.map(
                         (h, i) =>
                           i !== labelColumn && (
                             <label
                               key={i}
-                              className="row gap"
-                              style={dataColumnLabelStyle}
+                              className="row gap chart-creator-data-column-label"
                             >
                               <input
                                 type="checkbox"
                                 checked={dataColumns.includes(i)}
                                 onChange={() => toggleDataColumn(i)}
-                                style={dataColumnCheckboxStyle}
+                                className="chart-creator-data-column-checkbox"
                               />
-                              <span style={dataColumnTextStyle}>
+                              <span className="chart-creator-data-column-text">
                                 {h || `Колонка ${i + 1}`}
                               </span>
                             </label>
@@ -1435,8 +1372,8 @@ export function ChartCreatorModal({
             </div>
 
             {/* Превью */}
-            <div style={previewPanelStyle}>
-              <div className="muted" style={previewTitleStyle}>
+            <div className="chart-creator-preview-panel">
+              <div className="muted chart-creator-preview-title">
                 Предпросмотр:
               </div>
               {chartType === "scatter" ||
@@ -1449,7 +1386,7 @@ export function ChartCreatorModal({
                   theme="dark"
                 />
               ) : (
-                <div className="muted" style={previewEmptyStyle}>
+                <div className="muted chart-creator-preview-empty">
                   Выберите хотя бы одну колонку данных
                 </div>
               )}

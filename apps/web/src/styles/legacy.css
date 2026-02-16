@@ -2678,6 +2678,145 @@ input:focus::placeholder {
   overflow-y: auto;
 }
 
+.chart-from-table-container {
+  width: 100%;
+  height: 300px;
+}
+
+.chart-from-table-container--compact {
+  height: 280px;
+}
+
+.chart-from-table-error {
+  width: 100%;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff6b6b;
+}
+
+.chart-from-table-error--compact {
+  height: 280px;
+}
+
+.chart-creator-classification-card {
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
+.chart-creator-classification-header {
+  margin-bottom: 8px;
+}
+
+.chart-creator-classification-title {
+  font-size: 13px;
+}
+
+.chart-creator-classification-method {
+  font-size: 11px;
+}
+
+.chart-creator-classification-controls {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chart-creator-classification-select {
+  padding: 6px 10px;
+  font-size: 12px;
+  width: auto;
+}
+
+.chart-creator-recommended-types {
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+.chart-creator-recommended-chip {
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.chart-creator-settings-row {
+  margin-bottom: 16px;
+  align-items: flex-start;
+}
+
+.chart-creator-settings-column {
+  flex: 1;
+}
+
+.chart-creator-field-stack {
+  margin-bottom: 12px;
+}
+
+.chart-creator-toggle-info-btn {
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+.chart-creator-type-buttons-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chart-creator-type-btn {
+  padding: 6px 10px;
+  font-size: 11px;
+}
+
+.chart-creator-type-btn--recommended {
+  border: 2px solid var(--success);
+}
+
+.chart-creator-type-hint-wrap {
+  margin-bottom: 12px;
+}
+
+.chart-creator-histogram-range {
+  width: 100%;
+}
+
+.chart-creator-data-columns-section {
+  margin-bottom: 12px;
+}
+
+.chart-creator-data-columns-wrap {
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.chart-creator-data-column-label {
+  align-items: center;
+}
+
+.chart-creator-data-column-checkbox {
+  width: auto;
+}
+
+.chart-creator-data-column-text {
+  font-size: 13px;
+}
+
+.chart-creator-preview-panel {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.chart-creator-preview-title {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.chart-creator-preview-empty {
+  text-align: center;
+  padding: 40px;
+}
+
 .statistic-modal-title {
   display: flex;
   align-items: center;
