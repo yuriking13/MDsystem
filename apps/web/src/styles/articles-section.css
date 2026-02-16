@@ -2307,7 +2307,7 @@
     bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     padding: 10px 14px;
     font-size: 13px;
-    max-width: calc(100vw - 32px);
+    max-width: calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
   }
 
   .article-ai-sidebar {
@@ -2358,7 +2358,7 @@
     padding: 9px 12px;
     gap: 6px;
     border-radius: 14px;
-    max-width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
   }
 
   .article-ai-fab-label {
