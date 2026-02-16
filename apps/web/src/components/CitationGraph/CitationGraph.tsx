@@ -100,7 +100,13 @@ import ArticleCard, {
   type ArticleData,
 } from "../ArticleCard";
 // GraphSidebar removed - controls are in the header
-import { formatTime, adjustBrightness, useDebounce } from "./utils";
+import {
+  formatTime,
+  adjustBrightness,
+  useDebounce,
+  getGraphNodeColors,
+  getGraphBackgroundColors,
+} from "./utils";
 import type { GraphNodeWithCoords, ClusterArticleDetail } from "../../types";
 
 type Props = {
@@ -497,54 +503,23 @@ export default function CitationGraph({ projectId }: Props) {
     return () => clearInterval(interval);
   }, [isLightTheme]);
 
-  // Предвычисленные цвета для текущей темы (включая цвета узлов)
+  // Предвычисленные цвета для текущей темы (из CSS токенов)
   const graphColors = useMemo(() => {
-    // Пастельные цвета для светлой темы (тёплая палитра Papaya Whip)
-    const pastelColors = {
-      citing: "#F5BA5C", // золотой
-      selected: "#A3D9A5", // мятно-зелёный
-      excluded: "#E8A59A", // тёплый коралл
-      candidatePubmed: "#D99A3A", // насыщенный золотой
-      candidateDoaj: "#FFEFD5", // кремовый (papaya whip)
-      candidateWiley: "#C4A6D4", // лавандовый
-      reference: "#FFD48A", // светло-золотой
-      related: "#B8D4D0", // серо-мятный
-      aiFound: "#C87D2A", // тёплый янтарный
-      pvalue: "#FFE4B8", // бледно-золотой
-      default: "#E0D6CA", // тёплый нейтральный
-    };
-
-    // Яркие цвета для тёмной темы
-    const vibrantColors = {
-      citing: "#ec4899", // pink
-      selected: "#22c55e", // bright green
-      excluded: "#ef4444", // red
-      candidatePubmed: "#3b82f6", // blue
-      candidateDoaj: "#eab308", // yellow
-      candidateWiley: "#8b5cf6", // violet
-      reference: "#f97316", // orange
-      related: "#06b6d4", // cyan
-      aiFound: "#00ffff", // bright cyan
-      pvalue: "#fbbf24", // golden
-      default: "#6b7280", // gray
-    };
-
-    const nodeColors = isLightTheme ? pastelColors : vibrantColors;
+    const nodeColors = getGraphNodeColors();
+    const backgroundColors = getGraphBackgroundColors();
 
     return {
-      bg: isLightTheme ? "#FDFCFB" : "#0b0f19",
-      bgFullscreen: isLightTheme ? "#FFF8EC" : "#050810",
-      linkColor: isLightTheme
-        ? "rgba(140, 122, 107, 0.4)"
-        : "rgba(100, 130, 180, 0.25)",
+      bg: backgroundColors.normal,
+      bgFullscreen: backgroundColors.fullscreen,
+      linkColor: backgroundColors.linkColor,
       strokeColor: isLightTheme
-        ? "rgba(107, 92, 77, 0.2)"
+        ? "rgba(59, 130, 246, 0.28)"
         : "rgba(255, 255, 255, 0.15)",
       clusterStrokeColor: isLightTheme
-        ? "rgba(107, 92, 77, 0.35)"
+        ? "rgba(29, 78, 216, 0.32)"
         : "rgba(255, 255, 255, 0.3)",
       textColor: isLightTheme
-        ? "rgba(45, 31, 16, 0.8)"
+        ? "rgba(15, 23, 42, 0.8)"
         : "rgba(255, 255, 255, 0.7)",
       shadowAlpha: isLightTheme ? "40" : "60",
       // Цвета узлов
@@ -2234,32 +2209,67 @@ export default function CitationGraph({ projectId }: Props) {
   };
   const LEGEND_DOT_COLOR_CLASS_MAP: Record<string, string> = {
     "#ec4899": "legend-dot--pink",
+    "#0ea5e9": "legend-dot--pink",
     "#3b82f6": "legend-dot--blue",
+    "#2563eb": "legend-dot--blue",
     "#f97316": "legend-dot--orange",
+    "#38bdf8": "legend-dot--orange",
     "#06b6d4": "legend-dot--cyan",
+    "#14b8a6": "legend-dot--cyan",
     "#fbbf24": "legend-dot--amber",
+    "#f59e0b": "legend-dot--amber",
   };
   const LEGEND_VALUE_COLOR_CLASS_MAP: Record<string, string> = {
     "#ec4899": "legend-value--pink",
+    "#0ea5e9": "legend-value--pink",
     "#3b82f6": "legend-value--blue",
+    "#2563eb": "legend-value--blue",
     "#f97316": "legend-value--orange",
+    "#38bdf8": "legend-value--orange",
     "#06b6d4": "legend-value--cyan",
+    "#14b8a6": "legend-value--cyan",
     "#fbbf24": "legend-value--amber",
+    "#f59e0b": "legend-value--amber",
   };
   const CLUSTER_COLOR_CLASS_MAP: Record<string, string> = {
     "#6366f1": "cluster-color--indigo",
+    "#818cf8": "cluster-color--indigo",
+    "#a5b4fc": "cluster-color--indigo",
     "#22c55e": "cluster-color--green",
+    "#34d399": "cluster-color--green",
+    "#86efac": "cluster-color--green",
     "#f59e0b": "cluster-color--amber",
+    "#fbbf24": "cluster-color--amber",
+    "#fcd34d": "cluster-color--amber",
     "#ec4899": "cluster-color--pink",
+    "#f472b6": "cluster-color--pink",
+    "#f9a8d4": "cluster-color--pink",
     "#06b6d4": "cluster-color--cyan",
+    "#38bdf8": "cluster-color--cyan",
+    "#67e8f9": "cluster-color--cyan",
     "#8b5cf6": "cluster-color--violet",
+    "#a78bfa": "cluster-color--violet",
+    "#c4b5fd": "cluster-color--violet",
     "#f97316": "cluster-color--orange",
+    "#fb923c": "cluster-color--orange",
+    "#fdba74": "cluster-color--orange",
     "#14b8a6": "cluster-color--teal",
+    "#2dd4bf": "cluster-color--teal",
+    "#5eead4": "cluster-color--teal",
     "#ef4444": "cluster-color--red",
+    "#f87171": "cluster-color--red",
+    "#fda4af": "cluster-color--red",
     "#84cc16": "cluster-color--lime",
+    "#a3e635": "cluster-color--lime",
+    "#bef264": "cluster-color--lime",
     "#a855f7": "cluster-color--purple",
     "#3b82f6": "cluster-color--blue",
+    "#2563eb": "cluster-color--blue",
+    "#60a5fa": "cluster-color--blue",
+    "#93c5fd": "cluster-color--blue",
   };
+  const normalizeColorKey = (color: string): string =>
+    color.trim().toLowerCase();
 
   const getGraphHeaderBadgeClassName = (background: string): string =>
     `graph-header-badge ${GRAPH_HEADER_BADGE_CLASS_MAP[background] ?? "graph-header-badge--accent"}`;
@@ -2297,7 +2307,7 @@ export default function CitationGraph({ projectId }: Props) {
   ): string =>
     `graph-semantic-cluster-details-button${selected ? " graph-semantic-cluster-details-button--selected" : ""}`;
   const getSemanticClusterDotClassName = (color: string): string =>
-    `graph-semantic-cluster-dot ${CLUSTER_COLOR_CLASS_MAP[color] ?? "cluster-color--blue"}`;
+    `graph-semantic-cluster-dot ${CLUSTER_COLOR_CLASS_MAP[normalizeColorKey(color)] ?? "cluster-color--blue"}`;
   const getSemanticClusterCountBadgeClassName = (selected: boolean): string =>
     `graph-semantic-cluster-count${selected ? " graph-semantic-cluster-count--selected" : ""}`;
   const getSemanticClusterCentralTitleClassName = (selected: boolean): string =>
@@ -2316,9 +2326,9 @@ export default function CitationGraph({ projectId }: Props) {
     return "graph-gap-similarity graph-gap-similarity--low";
   };
   const getLegendDotClassName = (background: string): string =>
-    `legend-dot ${LEGEND_DOT_COLOR_CLASS_MAP[background] ?? "legend-dot--blue"}`;
+    `legend-dot ${LEGEND_DOT_COLOR_CLASS_MAP[normalizeColorKey(background)] ?? "legend-dot--blue"}`;
   const getLegendValueClassName = (color: string): string =>
-    `legend-value ${LEGEND_VALUE_COLOR_CLASS_MAP[color] ?? "legend-value--blue"}`;
+    `legend-value ${LEGEND_VALUE_COLOR_CLASS_MAP[normalizeColorKey(color)] ?? "legend-value--blue"}`;
   const getGraphHoverCardClassName = (x: number, y: number): string =>
     `graph-hover-card ${ensureGraphHoverCardPositionClass(x, y)}`;
   const getAiMessageBubbleClassName = (role: "user" | "assistant"): string =>
@@ -2351,7 +2361,7 @@ export default function CitationGraph({ projectId }: Props) {
     return "Низко";
   };
   const getClusterDetailColorDotClassName = (color: string): string =>
-    `cluster-detail-color-dot ${CLUSTER_COLOR_CLASS_MAP[color] ?? "cluster-color--blue"}`;
+    `cluster-detail-color-dot ${CLUSTER_COLOR_CLASS_MAP[normalizeColorKey(color)] ?? "cluster-color--blue"}`;
   const getClusterKeywordClassName = (): string =>
     "cluster-detail-keyword-chip";
   const getClusterCentralCardClassName = (): string =>
@@ -2393,17 +2403,23 @@ export default function CitationGraph({ projectId }: Props) {
   };
   const HELP_LEGEND_DOT_COLOR_CLASS_MAP: Record<string, string> = {
     "#22c55e": "help-legend-dot--green",
+    "#16a34a": "help-legend-dot--green",
     "#3b82f6": "help-legend-dot--blue",
+    "#2563eb": "help-legend-dot--blue",
     "#eab308": "help-legend-dot--yellow",
+    "#93c5fd": "help-legend-dot--yellow",
     "#8b5cf6": "help-legend-dot--violet",
+    "#6366f1": "help-legend-dot--violet",
     "#ef4444": "help-legend-dot--red",
     "#f97316": "help-legend-dot--orange",
+    "#38bdf8": "help-legend-dot--orange",
     "#ec4899": "help-legend-dot--pink",
+    "#0ea5e9": "help-legend-dot--pink",
   };
   const getHelpIconClassName = (color: string): string =>
-    `help-icon ${HELP_ICON_COLOR_CLASS_MAP[color] ?? "help-icon--blue"}`;
+    `help-icon ${HELP_ICON_COLOR_CLASS_MAP[normalizeColorKey(color)] ?? "help-icon--blue"}`;
   const getHelpLegendDotClassName = (color: string): string =>
-    `help-legend-dot ${HELP_LEGEND_DOT_COLOR_CLASS_MAP[color] ?? "help-legend-dot--blue"}`;
+    `help-legend-dot ${HELP_LEGEND_DOT_COLOR_CLASS_MAP[normalizeColorKey(color)] ?? "help-legend-dot--blue"}`;
   const getGraphExportMenuClassName = (isOpen: boolean): string =>
     `graph-export-dropdown-menu ${isOpen ? "graph-export-dropdown-menu--open" : ""}`;
 
@@ -3621,25 +3637,39 @@ export default function CitationGraph({ projectId }: Props) {
                 stats.levelCounts.level0 !== undefined &&
                 stats.levelCounts.level0 > 0 && (
                   <div className="graph-stat-item">
-                    <span className={getLegendDotClassName("#ec4899")}></span>
+                    <span
+                      className={getLegendDotClassName(graphColors.citing)}
+                    ></span>
                     <span>Цитируют:</span>
-                    <span className={getLegendValueClassName("#ec4899")}>
+                    <span
+                      className={getLegendValueClassName(graphColors.citing)}
+                    >
                       {stats.levelCounts.level0}
                     </span>
                   </div>
                 )}
               <div className="graph-stat-item">
-                <span className={getLegendDotClassName("#3b82f6")}></span>
+                <span
+                  className={getLegendDotClassName(graphColors.candidatePubmed)}
+                ></span>
                 <span>В проекте:</span>
-                <span className={getLegendValueClassName("#3b82f6")}>
+                <span
+                  className={getLegendValueClassName(
+                    graphColors.candidatePubmed,
+                  )}
+                >
                   {stats.levelCounts.level1}
                 </span>
               </div>
               {depth >= 2 && (
                 <div className="graph-stat-item">
-                  <span className={getLegendDotClassName("#f97316")}></span>
+                  <span
+                    className={getLegendDotClassName(graphColors.reference)}
+                  ></span>
                   <span>Ссылки:</span>
-                  <span className={getLegendValueClassName("#f97316")}>
+                  <span
+                    className={getLegendValueClassName(graphColors.reference)}
+                  >
                     {stats.levelCounts.level2}
                   </span>
                 </div>
@@ -3648,9 +3678,13 @@ export default function CitationGraph({ projectId }: Props) {
                 stats.levelCounts.level3 !== undefined &&
                 stats.levelCounts.level3 > 0 && (
                   <div className="graph-stat-item">
-                    <span className={getLegendDotClassName("#06b6d4")}></span>
+                    <span
+                      className={getLegendDotClassName(graphColors.related)}
+                    ></span>
                     <span>Связанные:</span>
-                    <span className={getLegendValueClassName("#06b6d4")}>
+                    <span
+                      className={getLegendValueClassName(graphColors.related)}
+                    >
                       {stats.levelCounts.level3}
                     </span>
                   </div>
@@ -3661,9 +3695,11 @@ export default function CitationGraph({ projectId }: Props) {
           {/* P-value статьи - кнопка добавления */}
           {pValueArticlesCount > 0 && (
             <div className="graph-stat-item graph-pvalue-stat-item">
-              <span className={getLegendDotClassName("#fbbf24")}></span>
+              <span
+                className={getLegendDotClassName(graphColors.pvalue)}
+              ></span>
               <span>С P-value:</span>
-              <span className={getLegendValueClassName("#fbbf24")}>
+              <span className={getLegendValueClassName(graphColors.pvalue)}>
                 {pValueArticlesCount}
               </span>
               <button
@@ -3765,7 +3801,7 @@ export default function CitationGraph({ projectId }: Props) {
                     // Только легкое свечение для AI-найденных
                     if (isAIFound) {
                       ctx.shadowColor = isLightTheme
-                        ? "rgba(0, 180, 220, 0.5)"
+                        ? "rgba(37, 99, 235, 0.45)"
                         : "rgba(0, 212, 255, 0.6)";
                       ctx.shadowBlur = 12;
                     } else if (clusterColor) {
@@ -3775,7 +3811,7 @@ export default function CitationGraph({ projectId }: Props) {
                     } else if (citedByCount > 200) {
                       // Очень тонкое свечение для самых цитируемых
                       ctx.shadowColor = isLightTheme
-                        ? "rgba(100, 150, 200, 0.2)"
+                        ? "rgba(59, 130, 246, 0.22)"
                         : "rgba(100, 150, 200, 0.3)";
                       ctx.shadowBlur = isLightTheme ? 3 : 4;
                     }
@@ -3802,7 +3838,9 @@ export default function CitationGraph({ projectId }: Props) {
 
                     // Обводка для AI-найденных (заметнее, но не кричащо)
                     if (isAIFound) {
-                      ctx.strokeStyle = "rgba(0, 212, 255, 0.6)";
+                      ctx.strokeStyle = isLightTheme
+                        ? "rgba(37, 99, 235, 0.55)"
+                        : "rgba(0, 212, 255, 0.6)";
                       ctx.lineWidth = 1.5;
                       ctx.beginPath();
                       ctx.arc(nodeX, nodeY, size, 0, 2 * Math.PI);
@@ -4658,45 +4696,59 @@ export default function CitationGraph({ projectId }: Props) {
                   <div className="help-color-legend-wrap">
                     <div className="help-legend-item-row">
                       <span
-                        className={getHelpLegendDotClassName("#22c55e")}
+                        className={getHelpLegendDotClassName(
+                          graphColors.selected,
+                        )}
                       ></span>
-                      <span>Зелёный — отобранные статьи</span>
+                      <span>Отобранные статьи</span>
                     </div>
                     <div className="help-legend-item-row">
                       <span
-                        className={getHelpLegendDotClassName("#3b82f6")}
+                        className={getHelpLegendDotClassName(
+                          graphColors.candidatePubmed,
+                        )}
                       ></span>
-                      <span>Синий — PubMed (кандидаты)</span>
+                      <span>PubMed (кандидаты)</span>
                     </div>
                     <div className="help-legend-item-row">
                       <span
-                        className={getHelpLegendDotClassName("#eab308")}
+                        className={getHelpLegendDotClassName(
+                          graphColors.candidateDoaj,
+                        )}
                       ></span>
-                      <span>Жёлтый — DOAJ (кандидаты)</span>
+                      <span>DOAJ (кандидаты)</span>
                     </div>
                     <div className="help-legend-item-row">
                       <span
-                        className={getHelpLegendDotClassName("#8b5cf6")}
+                        className={getHelpLegendDotClassName(
+                          graphColors.candidateWiley,
+                        )}
                       ></span>
-                      <span>Фиолетовый — Wiley (кандидаты)</span>
+                      <span>Wiley (кандидаты)</span>
                     </div>
                     <div className="help-legend-item-row">
                       <span
-                        className={getHelpLegendDotClassName("#ef4444")}
+                        className={getHelpLegendDotClassName(
+                          graphColors.excluded,
+                        )}
                       ></span>
-                      <span>Красный — исключённые</span>
+                      <span>Исключённые</span>
                     </div>
                     <div className="help-legend-item-row">
                       <span
-                        className={getHelpLegendDotClassName("#f97316")}
+                        className={getHelpLegendDotClassName(
+                          graphColors.reference,
+                        )}
                       ></span>
-                      <span>Оранжевый — ссылки (references)</span>
+                      <span>Ссылки (references)</span>
                     </div>
                     <div className="help-legend-item-row">
                       <span
-                        className={getHelpLegendDotClassName("#ec4899")}
+                        className={getHelpLegendDotClassName(
+                          graphColors.citing,
+                        )}
                       ></span>
-                      <span>Розовый — статьи, цитирующие вашу базу</span>
+                      <span>Статьи, цитирующие вашу базу</span>
                     </div>
                   </div>
                 </div>

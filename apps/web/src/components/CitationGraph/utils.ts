@@ -65,13 +65,13 @@ export function getLevelColor(level: number): string {
   const colors = getGraphNodeColors();
   switch (level) {
     case 0:
-      return colors.citing; // Розовый для цитирующих
+      return colors.citing; // Цитирующие статьи
     case 1:
-      return colors.candidatePubmed; // Синий для статей в проекте
+      return colors.candidatePubmed; // Статьи в проекте
     case 2:
-      return colors.reference; // Оранжевый для references
+      return colors.reference; // References
     case 3:
-      return colors.related; // Голубой для связанных работ
+      return colors.related; // Связанные работы
     default:
       return colors.default;
   }
@@ -164,16 +164,16 @@ export const CLUSTER_COLORS = [
  * Пастельные цвета для кластеров (светлая тема)
  */
 export const CLUSTER_COLORS_PASTEL = [
-  "#93c5fd", // Pastel Blue
-  "#86efac", // Pastel Green
-  "#fcd34d", // Pastel Amber
-  "#fda4af", // Pastel Rose
-  "#c4b5fd", // Pastel Violet
-  "#f9a8d4", // Pastel Pink
-  "#5eead4", // Pastel Teal
-  "#bef264", // Pastel Lime
-  "#fdba74", // Pastel Orange
-  "#a5b4fc", // Pastel Indigo
+  "#93c5fd", // Cool Blue
+  "#60a5fa", // Sky Blue
+  "#34d399", // Mint Green
+  "#fbbf24", // Warm Amber
+  "#f87171", // Soft Red
+  "#a78bfa", // Soft Violet
+  "#38bdf8", // Cyan
+  "#2dd4bf", // Teal
+  "#f59e0b", // Orange Amber
+  "#818cf8", // Indigo
 ];
 
 /**

@@ -795,6 +795,15 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+.light-theme .graph-legend-panel,
+[data-theme="light"] .graph-legend-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(239, 246, 255, 0.95) 100%);
+  border: 1px solid rgba(191, 219, 254, 0.75);
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
 .graph-legend-panel--horizontal {
   padding: 10px 16px;
 }
@@ -882,6 +891,11 @@
   white-space: nowrap;
 }
 
+.light-theme .graph-legend-item-label,
+[data-theme="light"] .graph-legend-item-label {
+  color: #1e293b;
+}
+
 .graph-legend-item-label--compact {
   font-size: 12px;
 }
@@ -889,6 +903,11 @@
 .graph-legend-item-count {
   color: rgba(148, 163, 184, 0.8);
   font-size: 12px;
+}
+
+.light-theme .graph-legend-item-count,
+[data-theme="light"] .graph-legend-item-count {
+  color: #64748b;
 }
 
 .graph-legend-item-count--compact {
@@ -934,13 +953,45 @@
 }
 
 .graph-legend-theme-light {
-  --graph-legend-selected: #c6ddcd;
-  --graph-legend-candidate: #acdbeb;
-  --graph-legend-excluded: #fabaae;
-  --graph-legend-citing: #fc9dbf;
-  --graph-legend-reference: #f9d7b2;
-  --graph-legend-related: #c7dbda;
-  --graph-legend-pvalue: #fbd6e6;
+  --graph-legend-selected: #22c55e;
+  --graph-legend-candidate: #3b82f6;
+  --graph-legend-excluded: #ef4444;
+  --graph-legend-citing: #0ea5e9;
+  --graph-legend-reference: #38bdf8;
+  --graph-legend-related: #14b8a6;
+  --graph-legend-pvalue: #f59e0b;
+}
+
+.light-theme .quick-stats,
+[data-theme="light"] .quick-stats {
+  background: rgba(239, 246, 255, 0.8);
+}
+
+.light-theme .select-input,
+[data-theme="light"] .select-input {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.light-theme .toolbar-search-input,
+[data-theme="light"] .toolbar-search-input,
+.light-theme .toolbar-select,
+[data-theme="light"] .toolbar-select {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.light-theme .node-lang-toggle,
+[data-theme="light"] .node-lang-toggle {
+  background: rgba(239, 246, 255, 0.75);
+}
+
+.light-theme .node-quick-links,
+[data-theme="light"] .node-quick-links {
+  background: rgba(239, 246, 255, 0.72);
+}
+
+.light-theme .node-quick-link,
+[data-theme="light"] .node-quick-link {
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .graph-sidebar {

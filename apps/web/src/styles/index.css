@@ -9,17 +9,17 @@
 
 /* Register custom primary color scale for Tailwind v4 utilities */
 @theme {
-  --color-primary-50: #FFFDF9;
-  --color-primary-100: #FFF8EC;
-  --color-primary-200: #FFEFD5;
-  --color-primary-300: #FFE4B8;
-  --color-primary-400: #FFD48A;
-  --color-primary-500: #F5BA5C;
-  --color-primary-600: #D99A3A;
-  --color-primary-700: #B87A20;
-  --color-primary-800: #8C5A10;
-  --color-primary-900: #5C3A08;
-  --color-primary-950: #3D2604;
+  --color-primary-50: #EFF6FF;
+  --color-primary-100: #DBEAFE;
+  --color-primary-200: #BFDBFE;
+  --color-primary-300: #93C5FD;
+  --color-primary-400: #60A5FA;
+  --color-primary-500: #3B82F6;
+  --color-primary-600: #2563EB;
+  --color-primary-700: #1D4ED8;
+  --color-primary-800: #1E40AF;
+  --color-primary-900: #1E3A8A;
+  --color-primary-950: #172554;
 }
 
 /* ===== DESIGN TOKENS & CSS VARIABLES ===== */
@@ -65,11 +65,11 @@
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
     
-    /* Light Theme Colors — Papaya Whip */
-    --color-primary: 200 125 42; /* #C87D2A */
+    /* Light Theme Colors — Blue/Neutral */
+    --color-primary: 37 99 235; /* #2563EB */
     --color-primary-foreground: 255 255 255;
     
-    --color-secondary: 140 122 107; /* #8C7A6B */
+    --color-secondary: 59 130 246; /* #3B82F6 */
     --color-secondary-foreground: 255 255 255;
     
     --color-success: 21 128 61; /* #15803D */
@@ -84,28 +84,28 @@
     --color-info: 14 116 144; /* #0E7490 */
     --color-info-foreground: 255 255 255;
     
-    /* Background Colors — Papaya Whip */
-    --color-background: 255 255 255;
-    --color-background-secondary: 255 239 213; /* #FFEFD5 */
-    --color-background-tertiary: 255 248 236; /* #FFF8EC */
+    /* Background Colors — Neutral blue-white */
+    --color-background: 248 251 255; /* #F8FBFF */
+    --color-background-secondary: 240 247 255; /* #F0F7FF */
+    --color-background-tertiary: 234 243 255; /* #EAF3FF */
     
     /* Surface Colors */
     --color-surface: 255 255 255;
-    --color-surface-hover: 255 248 236; /* #FFF8EC */
-    --color-surface-active: 255 239 213; /* #FFEFD5 */
+    --color-surface-hover: 243 248 255; /* #F3F8FF */
+    --color-surface-active: 231 240 255; /* #E7F0FF */
     
-    /* Border Colors — warm */
-    --color-border: 224 214 202; /* #E0D6CA */
-    --color-border-hover: 196 181 163; /* #C4B5A3 */
+    /* Border Colors */
+    --color-border: 191 219 254; /* #BFDBFE */
+    --color-border-hover: 147 197 253; /* #93C5FD */
     
-    /* Text Colors — warm */
-    --color-text-primary: 45 31 16; /* #2D1F10 */
-    --color-text-secondary: 107 87 68; /* #6B5744 */
-    --color-text-tertiary: 140 122 107; /* #8C7A6B */
-    --color-text-disabled: 196 181 163; /* #C4B5A3 */
+    /* Text Colors */
+    --color-text-primary: 15 23 42; /* #0F172A */
+    --color-text-secondary: 51 65 85; /* #334155 */
+    --color-text-tertiary: 100 116 139; /* #64748B */
+    --color-text-disabled: 148 163 184; /* #94A3B8 */
     
     /* Overlay */
-    --color-overlay: 45 31 16 / 0.4;
+    --color-overlay: 15 23 42 / 0.28;
   }
 
   [data-theme="dark"] {
@@ -171,8 +171,8 @@
 
   body.light-theme,
   [data-theme="light"] body {
-    background-color: #FDFCFB;
-    color: #2D1F10;
+    background-color: #F8FBFF;
+    color: #0F172A;
   }
 
   h1, h2, h3, h4, h5, h6 {
