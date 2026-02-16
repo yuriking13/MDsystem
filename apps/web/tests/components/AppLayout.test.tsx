@@ -53,6 +53,8 @@ function ProjectContextTitlePage() {
     <div>
       <div>Project context title page</div>
       <Link to="/settings">Go settings</Link>
+      <Link to="/projects">Go projects</Link>
+      <Link to="/docs">Go docs</Link>
     </div>
   );
 }
@@ -217,27 +219,35 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([360, 390, 768])(
-    "resets mobile topbar title to app default outside project routes at %ipx",
-    async (width) => {
-      const user = userEvent.setup();
-      setViewportWidth(width);
-      renderAppLayout("/projects/p1/context-title");
+  it.each([
+    ["Go settings", "Settings page"],
+    ["Go projects", "Projects page"],
+    ["Go docs", "Docs page"],
+  ])(
+    "resets mobile topbar title to app default after navigating to %s",
+    async (destinationLinkLabel, destinationPageLabel) => {
+      for (const width of [360, 390, 768]) {
+        const user = userEvent.setup();
+        setViewportWidth(width);
+        const { unmount } = renderAppLayout("/projects/p1/context-title");
 
-      await waitFor(() => {
-        expect(
-          document.querySelector(".app-mobile-topbar-title")?.textContent,
-        ).toBe("Проект Альфа");
-      });
+        await waitFor(() => {
+          expect(
+            document.querySelector(".app-mobile-topbar-title")?.textContent,
+          ).toBe("Проект Альфа");
+        });
 
-      await user.click(screen.getByText("Go settings"));
+        await user.click(screen.getByText(destinationLinkLabel));
 
-      await waitFor(() => {
-        expect(screen.getByText("Settings page")).toBeInTheDocument();
-        expect(
-          document.querySelector(".app-mobile-topbar-title")?.textContent,
-        ).toBe("Scientiaiter");
-      });
+        await waitFor(() => {
+          expect(screen.getByText(destinationPageLabel)).toBeInTheDocument();
+          expect(
+            document.querySelector(".app-mobile-topbar-title")?.textContent,
+          ).toBe("Scientiaiter");
+        });
+
+        unmount();
+      }
     },
   );
 
