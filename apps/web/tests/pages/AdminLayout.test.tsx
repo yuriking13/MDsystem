@@ -49,6 +49,7 @@ function renderAdminLayout(initialPath = "/admin") {
           <Route path="system" element={<div>System page</div>} />
           <Route path="settings" element={<div>Settings page</div>} />
         </Route>
+        <Route path="/projects" element={<div>App projects page</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -224,6 +225,27 @@ describe("AdminLayout responsive sidebar behavior", () => {
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(
         false,
       );
+    });
+  });
+
+  it("closes mobile sidebar when leaving admin to app projects route", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(390);
+    renderAdminLayout();
+
+    await user.click(screen.getByLabelText("Открыть навигацию"));
+    expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+
+    await user.click(screen.getByText("Вернуться в приложение"));
+
+    await waitFor(() => {
+      expect(screen.getByText("App projects page")).toBeInTheDocument();
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+        false,
+      );
+      expect(
+        screen.queryByLabelText("Открыть навигацию"),
+      ).not.toBeInTheDocument();
     });
   });
 
