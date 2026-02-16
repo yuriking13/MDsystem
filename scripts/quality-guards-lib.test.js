@@ -224,3 +224,57 @@ test("runQualityGuards accepts 100vh declarations with 100dvh fallback", () => {
   );
   assert.equal(viewportViolation, undefined);
 });
+
+test("runQualityGuards accepts fallback after multiline CSS comment block", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/styles/viewport-comment.css"),
+    [
+      ".ok-comment-block {",
+      "  height: 100vh;",
+      "  /*",
+      "   * dynamic viewport fallback for mobile browsers",
+      "   */",
+      "  height: 100dvh;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const viewportViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-css-100vh-without-dvh-fallback",
+  );
+  assert.equal(viewportViolation, undefined);
+});
+
+test("runQualityGuards requires matching property for 100dvh fallback", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/styles/viewport-mismatch.css"),
+    [
+      ".bad-mismatch {",
+      "  min-height: 100vh;",
+      "  height: 100dvh;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const viewportViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-css-100vh-without-dvh-fallback",
+  );
+  assert.ok(viewportViolation);
+  assert.equal(viewportViolation.violations.length, 1);
+  assert.equal(viewportViolation.violations[0].line, 2);
+  assert.match(viewportViolation.violations[0].snippet, /min-height:\s*100vh/);
+});
