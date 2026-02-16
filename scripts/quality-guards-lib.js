@@ -270,7 +270,8 @@ function collectWebLayoutMobileBreakpointLiteralViolations(workspaceRoot) {
     }
 
     const source = fs.readFileSync(filePath, "utf8");
-    const matcher = /innerWidth\s*[<>]=?/g;
+    const matcher =
+      /(?:(?:window\.)?innerWidth\s*[<>]=?\s*[^\s;,)]+|[^\s;,(]+\s*[<>]=?\s*(?:window\.)?innerWidth)/g;
     let match = matcher.exec(source);
 
     while (match) {

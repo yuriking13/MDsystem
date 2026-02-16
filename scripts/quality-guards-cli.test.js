@@ -210,3 +210,29 @@ test("quality-guards check mode reports layout breakpoint literal remediation ti
     /Tip: in AppLayout\/AdminLayout call helpers from `apps\/web\/src\/lib\/responsive\.ts` instead of comparing `window\.innerWidth` directly/,
   );
 });
+
+test("quality-guards check mode reports tip for reverse-order layout breakpoint comparisons", () => {
+  const workspaceRoot = createTempWorkspace();
+  const appLayoutPath = path.join(
+    workspaceRoot,
+    "apps/web/src/components/AppLayout.tsx",
+  );
+  const adminLayoutPath = path.join(
+    workspaceRoot,
+    "apps/web/src/pages/admin/AdminLayout.tsx",
+  );
+
+  writeFile(appLayoutPath, "const mobile = APP_MAX >= window.innerWidth;");
+  writeFile(adminLayoutPath, "const desktop = ADMIN_MAX < window.innerWidth;");
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: in AppLayout\/AdminLayout call helpers from `apps\/web\/src\/lib\/responsive\.ts` instead of comparing `window\.innerWidth` directly/,
+  );
+});

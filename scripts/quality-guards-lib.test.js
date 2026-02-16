@@ -351,6 +351,43 @@ test("runQualityGuards blocks innerWidth comparisons even with constants", () =>
   assert.equal(layoutBreakpointViolation.violations.length, 2);
 });
 
+test("runQualityGuards blocks reverse-order innerWidth comparisons in layout files", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/components/AppLayout.tsx"),
+    [
+      "import { APP_MOBILE_MAX_WIDTH } from '../lib/responsive';",
+      "export function AppLayout() {",
+      "  const isMobile = APP_MOBILE_MAX_WIDTH >= window.innerWidth;",
+      "  return isMobile ? null : null;",
+      "}",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/pages/admin/AdminLayout.tsx"),
+    [
+      "import { ADMIN_MOBILE_MAX_WIDTH } from '../../lib/responsive';",
+      "export function AdminLayout() {",
+      "  const isDesktop = ADMIN_MOBILE_MAX_WIDTH < window.innerWidth;",
+      "  return isDesktop ? null : null;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutBreakpointViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-mobile-breakpoint-literals",
+  );
+  assert.ok(layoutBreakpointViolation);
+  assert.equal(layoutBreakpointViolation.violations.length, 2);
+});
+
 test("runQualityGuards accepts shared responsive helpers in layout files", () => {
   const workspaceRoot = createWorkspaceFixture();
 
