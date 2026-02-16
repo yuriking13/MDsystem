@@ -1503,7 +1503,7 @@
 /* Floating Action Button */
 .article-ai-fab {
   position: fixed;
-  bottom: 24px;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   right: 24px;
   z-index: 100;
   display: flex;
@@ -2287,7 +2287,7 @@
 @media (max-width: 768px) {
   .article-ai-fab {
     right: 16px;
-    bottom: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     padding: 10px 14px;
     font-size: 13px;
     max-width: calc(100vw - 32px);
@@ -2327,7 +2327,7 @@
 @media (max-width: 640px) {
   .article-ai-fab {
     right: 12px;
-    bottom: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     padding: 9px 12px;
     gap: 6px;
     border-radius: 14px;

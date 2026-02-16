@@ -886,7 +886,7 @@ html.layout-fixed #root {
     align-items: center;
     gap: 12px;
     min-height: 56px;
-    padding: 10px 16px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     background: rgba(10, 22, 40, 0.9);
@@ -896,7 +896,7 @@ html.layout-fixed #root {
   .app-mobile-fab-toggle {
     position: fixed;
     left: 12px;
-    top: 12px;
+    top: calc(12px + env(safe-area-inset-top, 0px));
     z-index: 42;
     display: inline-flex;
     align-items: center;
