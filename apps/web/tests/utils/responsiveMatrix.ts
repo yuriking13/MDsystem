@@ -15,6 +15,44 @@ export const PROJECT_TAB_CASES = [
 
 export const PROJECT_TABS = PROJECT_TAB_CASES.map((item) => item.tab);
 
+export const APP_NON_FIXED_ROUTE_CASES = [
+  { route: "/projects", pageLabel: "Projects page" },
+  { route: "/settings", pageLabel: "Settings page" },
+  { route: "/docs", pageLabel: "Docs page" },
+] as const;
+
+export const APP_FIXED_ROUTE_CASES = [
+  {
+    route: "/projects/p1/documents/d1",
+    pageLabel: "Document editor page",
+    shouldLockLayout: true,
+  },
+  {
+    route: "/projects/p1?tab=graph",
+    pageLabel: "Project details page",
+    shouldLockLayout: true,
+  },
+] as const;
+
+export const APP_AUTH_ROUTE_CASES = [
+  { route: "/login", pageLabel: "Login page" },
+  { route: "/register", pageLabel: "Register page" },
+] as const;
+
+export const APP_ADMIN_NO_SHELL_ROUTE_CASES = [
+  { route: "/admin", pageLabel: "Admin route content" },
+  { route: "/admin/users", pageLabel: "Admin users content" },
+  { route: "/admin/projects", pageLabel: "Admin projects content" },
+  { route: "/admin/articles", pageLabel: "Admin articles content" },
+  { route: "/admin/activity", pageLabel: "Admin activity content" },
+  { route: "/admin/sessions", pageLabel: "Admin sessions content" },
+  { route: "/admin/jobs", pageLabel: "Admin jobs content" },
+  { route: "/admin/errors", pageLabel: "Admin errors content" },
+  { route: "/admin/audit", pageLabel: "Admin audit content" },
+  { route: "/admin/system", pageLabel: "Admin system content" },
+  { route: "/admin/settings", pageLabel: "Admin settings content" },
+] as const;
+
 export const ADMIN_RESPONSIVE_ROUTE_CASES = [
   {
     route: "/admin",

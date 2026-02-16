@@ -11,6 +11,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout, { useProjectContext } from "../../src/components/AppLayout";
 import {
+  APP_ADMIN_NO_SHELL_ROUTE_CASES,
+  APP_AUTH_ROUTE_CASES,
+  APP_FIXED_ROUTE_CASES,
+  APP_NON_FIXED_ROUTE_CASES,
   MOBILE_VIEWPORT_WIDTHS,
   PROJECT_TAB_CASES,
   PROJECT_TABS,
@@ -408,6 +412,35 @@ describe("AppLayout mobile sidebar behavior", () => {
         (item) => item.tab,
       ),
     ).toEqual(["graph"]);
+  });
+
+  it("keeps required app route coverage for responsive shell checks", () => {
+    expect(APP_NON_FIXED_ROUTE_CASES.map(({ route }) => route)).toEqual([
+      "/projects",
+      "/settings",
+      "/docs",
+    ]);
+    expect(APP_FIXED_ROUTE_CASES.map(({ route }) => route)).toEqual([
+      "/projects/p1/documents/d1",
+      "/projects/p1?tab=graph",
+    ]);
+    expect(APP_AUTH_ROUTE_CASES.map(({ route }) => route)).toEqual([
+      "/login",
+      "/register",
+    ]);
+    expect(APP_ADMIN_NO_SHELL_ROUTE_CASES.map(({ route }) => route)).toEqual([
+      "/admin",
+      "/admin/users",
+      "/admin/projects",
+      "/admin/articles",
+      "/admin/activity",
+      "/admin/sessions",
+      "/admin/jobs",
+      "/admin/errors",
+      "/admin/audit",
+      "/admin/system",
+      "/admin/settings",
+    ]);
   });
 
   it("toggles body modal class and closes on Escape", async () => {
@@ -875,76 +908,72 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    ["/projects", "Projects page"],
-    ["/settings", "Settings page"],
-    ["/docs", "Docs page"],
-  ])("opens drawer only on mobile widths for %s", async (route, pageLabel) => {
-    const user = userEvent.setup();
+  it.each(APP_NON_FIXED_ROUTE_CASES)(
+    "opens drawer only on mobile widths for $route",
+    async ({ route, pageLabel }) => {
+      const user = userEvent.setup();
 
-    for (const width of TARGET_VIEWPORT_WIDTHS) {
-      const shouldOpen = width <= 768;
-      setViewportWidth(width);
-      const { unmount } = renderAppLayout(route);
+      for (const width of TARGET_VIEWPORT_WIDTHS) {
+        const shouldOpen = width <= 768;
+        setViewportWidth(width);
+        const { unmount } = renderAppLayout(route);
 
-      expect(screen.getByText(pageLabel)).toBeInTheDocument();
-      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
-        false,
-      );
-      expect(document.body.classList.contains("layout-fixed")).toBe(false);
-      const toggleButton = screen.getByRole("button", {
-        name: "Открыть навигацию",
-      });
-      expect(toggleButton).toHaveAttribute(
-        "aria-controls",
-        "app-primary-sidebar",
-      );
-      if (shouldOpen) {
-        expect(toggleButton).toBeEnabled();
-      } else {
-        expect(toggleButton).toBeDisabled();
-      }
-      await user.click(toggleButton);
-
-      await waitFor(() => {
-        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
-          shouldOpen,
-        );
-        expect(document.querySelector(".app-sidebar--open") !== null).toBe(
-          shouldOpen,
-        );
-        expect(document.querySelector(".app-sidebar-overlay") !== null).toBe(
-          shouldOpen,
-        );
-        const overlayButton = screen.queryByRole("button", {
-          name: "Закрыть меню навигации",
+        expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
+        const toggleButton = screen.getByRole("button", {
+          name: "Открыть навигацию",
         });
+        expect(toggleButton).toHaveAttribute(
+          "aria-controls",
+          "app-primary-sidebar",
+        );
         if (shouldOpen) {
-          expect(overlayButton).toBeInTheDocument();
-          expect(overlayButton).toHaveAttribute(
-            "aria-controls",
-            "app-primary-sidebar",
-          );
+          expect(toggleButton).toBeEnabled();
         } else {
-          expect(overlayButton).not.toBeInTheDocument();
+          expect(toggleButton).toBeDisabled();
         }
-      });
+        await user.click(toggleButton);
 
-      unmount();
-      document.body.classList.remove("sidebar-modal-open");
-      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
-        false,
-      );
-      expect(document.body.classList.contains("layout-fixed")).toBe(false);
-    }
-  });
+        await waitFor(() => {
+          expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+            shouldOpen,
+          );
+          expect(document.querySelector(".app-sidebar--open") !== null).toBe(
+            shouldOpen,
+          );
+          expect(document.querySelector(".app-sidebar-overlay") !== null).toBe(
+            shouldOpen,
+          );
+          const overlayButton = screen.queryByRole("button", {
+            name: "Закрыть меню навигации",
+          });
+          if (shouldOpen) {
+            expect(overlayButton).toBeInTheDocument();
+            expect(overlayButton).toHaveAttribute(
+              "aria-controls",
+              "app-primary-sidebar",
+            );
+          } else {
+            expect(overlayButton).not.toBeInTheDocument();
+          }
+        });
 
-  it.each([
-    ["/projects/p1/documents/d1", "Document editor page", true],
-    ["/projects/p1?tab=graph", "Project details page", true],
-  ])(
-    "opens fixed-layout drawer only on mobile widths for %s",
-    async (route, pageLabel, shouldLockLayout) => {
+        unmount();
+        document.body.classList.remove("sidebar-modal-open");
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
+      }
+    },
+  );
+
+  it.each(APP_FIXED_ROUTE_CASES)(
+    "opens fixed-layout drawer only on mobile widths for $route",
+    async ({ route, pageLabel, shouldLockLayout }) => {
       const user = userEvent.setup();
 
       for (const width of TARGET_VIEWPORT_WIDTHS) {
@@ -1007,13 +1036,9 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    ["/projects", "Projects page"],
-    ["/settings", "Settings page"],
-    ["/docs", "Docs page"],
-  ])(
-    "uses topbar nav toggle (without FAB) on non-fixed route %s across width matrix",
-    (route, pageLabel) => {
+  it.each(APP_NON_FIXED_ROUTE_CASES)(
+    "uses topbar nav toggle (without FAB) on non-fixed route $route across width matrix",
+    ({ route, pageLabel }) => {
       for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
@@ -1029,12 +1054,9 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    ["/projects/p1/documents/d1", "Document editor page"],
-    ["/projects/p1?tab=graph", "Project details page"],
-  ])(
-    "uses fixed-route FAB toggle (without topbar nav) on %s across width matrix",
-    (route, pageLabel) => {
+  it.each(APP_FIXED_ROUTE_CASES)(
+    "uses fixed-route FAB toggle (without topbar nav) on $route across width matrix",
+    ({ route, pageLabel }) => {
       for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
@@ -1050,12 +1072,9 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
-  it.each([
-    ["/projects/p1/documents/d1", "Document editor page"],
-    ["/projects/p1?tab=graph", "Project details page"],
-  ])(
-    "hides app shell for unauthenticated fixed-layout route %s across width matrix",
-    (route, pageLabel) => {
+  it.each(APP_FIXED_ROUTE_CASES)(
+    "hides app shell for unauthenticated fixed-layout route $route across width matrix",
+    ({ route, pageLabel }) => {
       mockAuthState.token = null;
       mockAuthState.user = null;
 
@@ -1413,12 +1432,9 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(document.querySelector(".animated-bg")).toBeNull();
   });
 
-  it.each([
-    ["/login", "Login page"],
-    ["/register", "Register page"],
-  ])(
-    "hides app shell on %s across target viewport widths",
-    (route, pageLabel) => {
+  it.each(APP_AUTH_ROUTE_CASES)(
+    "hides app shell on $route across target viewport widths",
+    ({ route, pageLabel }) => {
       for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
@@ -1454,21 +1470,9 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(document.querySelector(".animated-bg")).toBeNull();
   });
 
-  it.each([
-    ["/admin", "Admin route content"],
-    ["/admin/users", "Admin users content"],
-    ["/admin/projects", "Admin projects content"],
-    ["/admin/articles", "Admin articles content"],
-    ["/admin/activity", "Admin activity content"],
-    ["/admin/sessions", "Admin sessions content"],
-    ["/admin/jobs", "Admin jobs content"],
-    ["/admin/errors", "Admin errors content"],
-    ["/admin/audit", "Admin audit content"],
-    ["/admin/system", "Admin system content"],
-    ["/admin/settings", "Admin settings content"],
-  ])(
-    "hides app shell for %s across target viewport widths",
-    (route, pageLabel) => {
+  it.each(APP_ADMIN_NO_SHELL_ROUTE_CASES)(
+    "hides app shell for $route across target viewport widths",
+    ({ route, pageLabel }) => {
       for (const width of TARGET_VIEWPORT_WIDTHS) {
         setViewportWidth(width);
         const { unmount } = renderAppLayout(route);
@@ -1510,13 +1514,9 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(document.querySelector(".animated-bg")).toBeNull();
   });
 
-  it.each([
-    ["/projects", "Projects page"],
-    ["/settings", "Settings page"],
-    ["/docs", "Docs page"],
-  ])(
-    "hides app shell for unauthenticated users on %s across width matrix",
-    (route, pageLabel) => {
+  it.each(APP_NON_FIXED_ROUTE_CASES)(
+    "hides app shell for unauthenticated users on $route across width matrix",
+    ({ route, pageLabel }) => {
       mockAuthState.token = null;
       mockAuthState.user = null;
 
@@ -1640,12 +1640,9 @@ describe("AppLayout mobile sidebar behavior", () => {
     }
   });
 
-  it.each([
-    ["/projects/p1/documents/d1", "Document editor page"],
-    ["/projects/p1?tab=graph", "Project details page"],
-  ])(
-    "cleans fixed layout and sidebar modal state when leaving %s",
-    async (route, pageLabel) => {
+  it.each(APP_FIXED_ROUTE_CASES)(
+    "cleans fixed layout and sidebar modal state when leaving $route",
+    async ({ route, pageLabel }) => {
       const user = userEvent.setup();
       renderAppLayout(route);
 
