@@ -304,6 +304,39 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each([
+    ["light", "/projects", "Projects Page"],
+    ["light", "/settings", "Settings Page"],
+    ["light", "/docs", "Documentation Page"],
+    ["dark", "/projects", "Projects Page"],
+    ["dark", "/settings", "Settings Page"],
+    ["dark", "/docs", "Documentation Page"],
+  ] as const)(
+    "applies %s theme bootstrap on %s route",
+    async (persistedTheme, route, expectedPageText) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = "auth-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(document.documentElement.getAttribute("data-theme")).toBe(
+          persistedTheme,
+        );
+        expect(screen.getByText("App Layout")).toBeInTheDocument();
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+    },
+  );
+
   it("redirects unauthenticated docs route to login page", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
