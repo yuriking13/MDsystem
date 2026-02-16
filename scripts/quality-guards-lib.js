@@ -141,7 +141,7 @@ function runGuardCheck(check, workspaceRoot, fileCache) {
   return violations;
 }
 
-function collectWebJsMirrors(workspaceRoot, fileCache) {
+function collectWebJsMirrors(workspaceRoot) {
   const webSrcRoot = path.join(workspaceRoot, "apps/web/src");
   const jsMirrors = collectJsMirrorFiles(webSrcRoot);
 
@@ -166,8 +166,8 @@ function collectWebSourceJsFiles(workspaceRoot, fileCache) {
   }));
 }
 
-function cleanupWebJsMirrors(workspaceRoot, fileCache) {
-  const mirrors = collectWebJsMirrors(workspaceRoot, fileCache);
+function cleanupWebJsMirrors(workspaceRoot) {
+  const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
     fs.rmSync(path.join(workspaceRoot, mirror.file));
   }
@@ -183,7 +183,7 @@ function runQualityGuards(options = {}) {
 
   let removedWebJsMirrors = [];
   if (autoCleanWebJsMirrors) {
-    removedWebJsMirrors = cleanupWebJsMirrors(workspaceRoot, fileCache);
+    removedWebJsMirrors = cleanupWebJsMirrors(workspaceRoot);
     fileCache.clear();
   }
 
@@ -196,7 +196,7 @@ function runQualityGuards(options = {}) {
     }
   }
 
-  const jsMirrorViolations = collectWebJsMirrors(workspaceRoot, fileCache);
+  const jsMirrorViolations = collectWebJsMirrors(workspaceRoot);
   if (jsMirrorViolations.length > 0) {
     allViolations.push({ check: webJsMirrorCheck, violations: jsMirrorViolations });
   }
