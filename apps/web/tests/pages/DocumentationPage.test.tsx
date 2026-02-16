@@ -334,4 +334,32 @@ describe("DocumentationPage menu + submenu", () => {
     expect(firstTab).toHaveAttribute("aria-selected", "true");
     expect(firstTab).toHaveFocus();
   });
+
+  it("supports horizontal arrow keys for submenu navigation parity", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    await user.click(screen.getByRole("button", { name: "Команда" }));
+
+    const firstTab = screen.getByRole("tab", { name: "Роли и права" });
+    const secondTab = screen.getByRole("tab", {
+      name: "Приглашение участников",
+    });
+    const lastTab = screen.getByRole("tab", {
+      name: "Синхронизация в реальном времени",
+    });
+
+    firstTab.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(secondTab).toHaveAttribute("aria-selected", "true");
+    expect(secondTab).toHaveFocus();
+
+    await user.keyboard("{ArrowLeft}");
+    expect(firstTab).toHaveAttribute("aria-selected", "true");
+    expect(firstTab).toHaveFocus();
+
+    await user.keyboard("{ArrowLeft}");
+    expect(lastTab).toHaveAttribute("aria-selected", "true");
+    expect(lastTab).toHaveFocus();
+  });
 });
