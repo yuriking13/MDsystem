@@ -561,4 +561,44 @@ describe("App theme bootstrap runtime", () => {
       expect(screen.getByText("Admin Settings Page")).toBeInTheDocument();
     });
   });
+
+  it("renders parameterized admin user route under admin layout", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/users/user-42"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+      expect(screen.getByText("Admin Users Page")).toBeInTheDocument();
+    });
+  });
+
+  it("renders parameterized admin project route under admin layout", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/projects/project-777"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+      expect(screen.getByText("Admin Projects Page")).toBeInTheDocument();
+    });
+  });
 });
