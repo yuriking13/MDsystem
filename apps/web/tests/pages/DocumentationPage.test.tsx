@@ -423,4 +423,40 @@ describe("DocumentationPage menu + submenu", () => {
       }),
     ).toBeInTheDocument();
   });
+
+  it("keeps exactly one active submenu tab after section/topic switches", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const checkSingleActiveTab = () => {
+      const tabs = screen.getAllByRole("tab");
+      const activeTabs = tabs.filter(
+        (tab) => tab.getAttribute("aria-selected") === "true",
+      );
+      expect(activeTabs).toHaveLength(1);
+
+      for (const tab of tabs) {
+        const isActive = tab === activeTabs[0];
+        expect(tab).toHaveAttribute("tabindex", isActive ? "0" : "-1");
+      }
+    };
+
+    checkSingleActiveTab();
+
+    await user.click(screen.getByRole("button", { name: "База статей" }));
+    checkSingleActiveTab();
+
+    await user.click(
+      screen.getByRole("tab", { name: "AI и автоматическое обогащение" }),
+    );
+    checkSingleActiveTab();
+
+    await user.click(screen.getByRole("button", { name: "API ключи" }));
+    checkSingleActiveTab();
+
+    await user.click(
+      screen.getByRole("tab", { name: "Безопасность и типовые ошибки" }),
+    );
+    checkSingleActiveTab();
+  });
 });
