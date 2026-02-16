@@ -2457,6 +2457,23 @@
     width: 100%;
   }
 
+  .admin-export-actions,
+  .admin-header-actions,
+  .admin-user-actions,
+  .admin-cleanup-actions {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .admin-export-actions .btn,
+  .admin-header-actions .btn,
+  .admin-user-actions .btn,
+  .admin-cleanup-actions .btn {
+    flex: 1 1 140px;
+    min-width: 0;
+    justify-content: center;
+  }
+
   .admin-project-item {
     flex-wrap: wrap;
     align-items: flex-start;
