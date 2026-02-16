@@ -51,6 +51,7 @@ function renderAppLayout(initialPath = "/projects") {
             }
           />
           <Route path="/settings" element={<div>Settings page</div>} />
+          <Route path="/docs" element={<div>Docs page</div>} />
           <Route
             path="/projects/:id"
             element={
@@ -71,6 +72,7 @@ function renderAppLayout(initialPath = "/projects") {
           />
           <Route path="/admin" element={<div>Admin route content</div>} />
           <Route path="/login" element={<div>Login page</div>} />
+          <Route path="/register" element={<div>Register page</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -83,6 +85,8 @@ describe("AppLayout mobile sidebar behavior", () => {
     mockAuthState.token = "test-token";
     mockAuthState.user = { email: "user@example.com" };
     document.body.classList.remove("sidebar-modal-open");
+    document.body.classList.remove("layout-fixed");
+    document.documentElement.classList.remove("layout-fixed");
     setViewportWidth(390);
   });
 
@@ -103,6 +107,66 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(screen.getByText("Projects page")).toBeInTheDocument();
     expect(document.querySelector(".animated-bg")).not.toBeNull();
   });
+
+  it.each([360, 390, 768])(
+    "shows mobile navigation trigger on app shell routes at %ipx",
+    (width) => {
+      setViewportWidth(width);
+      renderAppLayout("/docs");
+
+      expect(screen.getByText("Docs page")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Открыть навигацию" }),
+      ).toBeInTheDocument();
+    },
+  );
+
+  it.each([1024, 1280, 1440, 1920])(
+    "keeps mobile sidebar closed on desktop widths at %ipx",
+    async (width) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/settings");
+
+      expect(screen.getByText("Settings page")).toBeInTheDocument();
+
+      await user.click(
+        screen.getByRole("button", { name: "Открыть навигацию" }),
+      );
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          false,
+        );
+        expect(document.querySelector(".app-sidebar--open")).toBeNull();
+      });
+    },
+  );
+
+  it.each([
+    ["articles", false],
+    ["documents", false],
+    ["files", false],
+    ["statistics", false],
+    ["settings", false],
+    ["graph", true],
+  ])(
+    "renders /projects/:id?tab=%s shell behavior correctly on mobile",
+    (tab, shouldLockLayout) => {
+      renderAppLayout(`/projects/p1?tab=${tab}`);
+
+      expect(screen.getByText("Project details page")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Открыть навигацию" }),
+      ).toBeInTheDocument();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        shouldLockLayout,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(
+        shouldLockLayout,
+      );
+    },
+  );
 
   it("closes mobile sidebar when route changes", async () => {
     const user = userEvent.setup();
@@ -143,6 +207,17 @@ describe("AppLayout mobile sidebar behavior", () => {
     renderAppLayout("/login");
 
     expect(screen.getByText("Login page")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Открыть навигацию" }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+    expect(document.querySelector(".animated-bg")).toBeNull();
+  });
+
+  it("hides sidebar shell on register route", () => {
+    renderAppLayout("/register");
+
+    expect(screen.getByText("Register page")).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Открыть навигацию" }),
     ).not.toBeInTheDocument();
