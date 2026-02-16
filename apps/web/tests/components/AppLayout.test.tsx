@@ -234,7 +234,13 @@ function ProjectContextCleanupSourcePage() {
 }
 
 function ProjectContextCleanupTargetPage() {
-  const { setProjectInfo } = useProjectContext();
+  const {
+    setProjectInfo,
+    setArticleCounts,
+    setArticleViewStatus,
+    articleCounts,
+    articleViewStatus,
+  } = useProjectContext();
   const [counter, setCounter] = useState(0);
   const initializedRef = useRef(false);
 
@@ -246,12 +252,24 @@ function ProjectContextCleanupTargetPage() {
       role: "viewer",
       updatedAt: "2026-02-16T04:00:00.000Z",
     });
-  }, [setProjectInfo]);
+    setArticleCounts({
+      candidate: 6,
+      selected: 4,
+      excluded: 2,
+      deleted: 0,
+      total: 12,
+    });
+    setArticleViewStatus("selected");
+  }, [setArticleCounts, setArticleViewStatus, setProjectInfo]);
 
   return (
     <div>
       <div>Project context cleanup target page</div>
       <div data-testid="context-cleanup-target-counter">{String(counter)}</div>
+      <div data-testid="context-cleanup-target-selected">
+        {String(articleCounts.selected)}
+      </div>
+      <div data-testid="context-cleanup-target-status">{articleViewStatus}</div>
       <button type="button" onClick={() => setCounter((prev) => prev + 1)}>
         Bump cleanup target local state
       </button>
@@ -488,6 +506,12 @@ describe("AppLayout mobile sidebar behavior", () => {
       expect(
         document.querySelector(".app-mobile-topbar-title")?.textContent,
       ).toBe("Проект Зета");
+      expect(
+        screen.getByTestId("context-cleanup-target-selected"),
+      ).toHaveTextContent("4");
+      expect(
+        screen.getByTestId("context-cleanup-target-status"),
+      ).toHaveTextContent("selected");
     });
 
     await user.click(screen.getByText("Bump cleanup target local state"));
@@ -499,6 +523,12 @@ describe("AppLayout mobile sidebar behavior", () => {
       expect(
         document.querySelector(".app-mobile-topbar-title")?.textContent,
       ).toBe("Проект Зета");
+      expect(
+        screen.getByTestId("context-cleanup-target-selected"),
+      ).toHaveTextContent("4");
+      expect(
+        screen.getByTestId("context-cleanup-target-status"),
+      ).toHaveTextContent("selected");
     });
   });
 
