@@ -2138,7 +2138,7 @@ input:focus::placeholder {
 
 /* Settings dropdown */
 .settings-dropdown {
-  min-width: min(200px, calc(100vw - 24px));
+  min-width: min(200px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
 }
 
 .dropdown-row {
@@ -2240,7 +2240,7 @@ input:focus::placeholder {
   border: 1px solid var(--border-glass-light);
   border-radius: 12px;
   padding: 8px;
-  min-width: min(180px, calc(100vw - 24px));
+  min-width: min(180px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
   z-index: 1000;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
@@ -5955,7 +5955,7 @@ input:focus::placeholder {
   border: 1px solid var(--border-glass);
   border-radius: 8px;
   padding: 4px;
-  min-width: min(140px, calc(100vw - 24px));
+  min-width: min(140px, calc(100vw - 24px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
   z-index: 1000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   display: none;
