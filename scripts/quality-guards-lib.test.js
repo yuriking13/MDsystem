@@ -189,3 +189,38 @@ test("runQualityGuards blocks 100vh declarations without 100dvh fallback", () =>
   assert.equal(viewportViolation.violations[0].line, 13);
   assert.match(viewportViolation.violations[0].snippet, /max-height:\s*100vh/);
 });
+
+test("runQualityGuards accepts 100vh declarations with 100dvh fallback", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/styles/viewport-ok.css"),
+    [
+      ".ok-height {",
+      "  height: 100vh !important;",
+      "  /* fallback for dynamic mobile bars */",
+      "  height: 100dvh !important;",
+      "}",
+      "",
+      ".ok-min-height {",
+      "  min-height: 100vh;",
+      "  min-height: 100dvh;",
+      "}",
+      "",
+      ".ok-max-height {",
+      "  max-height: 100vh;",
+      "  max-height: 100dvh;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const viewportViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-css-100vh-without-dvh-fallback",
+  );
+  assert.equal(viewportViolation, undefined);
+});

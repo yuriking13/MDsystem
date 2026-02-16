@@ -158,3 +158,26 @@ test("quality-guards check mode reports 100vh fallback remediation tip", () => {
     /Tip: after any `height\|min-height\|max-height: 100vh`, add the same property with `100dvh` on the next line/,
   );
 });
+
+test("quality-guards check mode passes when 100vh fallback is present", () => {
+  const workspaceRoot = createTempWorkspace();
+  const cssFilePath = path.join(workspaceRoot, "apps/web/src/styles/viewport.css");
+
+  writeFile(
+    cssFilePath,
+    [
+      ".ok {",
+      "  min-height: 100vh;",
+      "  min-height: 100dvh;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 0);
+  assert.doesNotMatch(result.stderr, /100vh fallback remediation tip/);
+});
