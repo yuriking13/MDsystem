@@ -103,6 +103,45 @@ function getChartBackgroundClass(backgroundColor: string): string {
   return CHART_BACKGROUND_CLASS_MAP[backgroundColor] ?? "chart-node-bg-white";
 }
 
+const CHART_SWATCH_COLOR_CLASS_MAP: Record<string, string> = {
+  "rgba(75, 116, 255, 0.8)": "chart-node-color-swatch--default-1",
+  "rgba(74, 222, 128, 0.8)": "chart-node-color-swatch--default-2",
+  "rgba(255, 107, 107, 0.8)": "chart-node-color-swatch--default-3",
+  "rgba(251, 191, 36, 0.8)": "chart-node-color-swatch--default-4",
+  "rgba(168, 85, 247, 0.8)": "chart-node-color-swatch--default-5",
+  "rgba(236, 72, 153, 0.8)": "chart-node-color-swatch--default-6",
+  "rgba(59, 130, 246, 0.8)": "chart-node-color-swatch--cool-1",
+  "rgba(34, 211, 238, 0.8)": "chart-node-color-swatch--cool-2",
+  "rgba(99, 102, 241, 0.8)": "chart-node-color-swatch--cool-3",
+  "rgba(139, 92, 246, 0.8)": "chart-node-color-swatch--cool-4",
+  "rgba(6, 182, 212, 0.8)": "chart-node-color-swatch--cool-5",
+  "rgba(79, 70, 229, 0.8)": "chart-node-color-swatch--cool-6",
+  "rgba(239, 68, 68, 0.8)": "chart-node-color-swatch--warm-1",
+  "rgba(249, 115, 22, 0.8)": "chart-node-color-swatch--warm-2",
+  "rgba(234, 179, 8, 0.8)": "chart-node-color-swatch--warm-3",
+  "rgba(251, 146, 60, 0.8)": "chart-node-color-swatch--warm-4",
+  "rgba(220, 38, 38, 0.8)": "chart-node-color-swatch--warm-5",
+  "rgba(245, 158, 11, 0.8)": "chart-node-color-swatch--warm-6",
+  "rgba(30, 41, 59, 0.9)": "chart-node-color-swatch--mono-1",
+  "rgba(51, 65, 85, 0.8)": "chart-node-color-swatch--mono-2",
+  "rgba(71, 85, 105, 0.7)": "chart-node-color-swatch--mono-3",
+  "rgba(100, 116, 139, 0.6)": "chart-node-color-swatch--mono-4",
+  "rgba(148, 163, 184, 0.5)": "chart-node-color-swatch--mono-5",
+  "rgba(203, 213, 225, 0.4)": "chart-node-color-swatch--mono-6",
+  "rgba(0, 63, 92, 0.8)": "chart-node-color-swatch--scientific-1",
+  "rgba(47, 75, 124, 0.8)": "chart-node-color-swatch--scientific-2",
+  "rgba(102, 81, 145, 0.8)": "chart-node-color-swatch--scientific-3",
+  "rgba(160, 81, 149, 0.8)": "chart-node-color-swatch--scientific-4",
+  "rgba(212, 80, 135, 0.8)": "chart-node-color-swatch--scientific-5",
+  "rgba(249, 93, 106, 0.8)": "chart-node-color-swatch--scientific-6",
+};
+
+function getSwatchColorClass(color: string): string {
+  return (
+    CHART_SWATCH_COLOR_CLASS_MAP[color] ?? "chart-node-color-swatch--default-1"
+  );
+}
+
 // React component for rendering the chart
 function ChartNodeView({
   node,
@@ -212,10 +251,6 @@ function ChartNodeView({
       : "chart-node-header--tinted"
   }`;
   const contentClassName = `chart-node-content ${chartBackgroundClass}`;
-
-  const getSwatchStyle = (color: string): React.CSSProperties => ({
-    backgroundColor: color,
-  });
 
   return (
     <NodeViewWrapper
@@ -329,8 +364,9 @@ function ChartNodeView({
                 .map((color, i) => (
                   <div
                     key={i}
-                    className="chart-node-color-swatch"
-                    style={getSwatchStyle(color)}
+                    className={`chart-node-color-swatch ${getSwatchColorClass(
+                      color,
+                    )}`}
                   />
                 ))}
             </div>
