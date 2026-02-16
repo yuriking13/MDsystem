@@ -90,6 +90,12 @@ const webLayoutTestViewportLiteralCheck = {
     "AppLayout/AdminLayout responsive tests should use shared viewport constants instead of numeric setViewportWidth literals",
 };
 
+const webLayoutTestBreakpointLiteralCheck = {
+  name: "web-layout-test-breakpoint-literals",
+  description:
+    "AppLayout/AdminLayout responsive tests should use shared breakpoint helpers instead of direct width comparisons",
+};
+
 const REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
   "src/lib/responsive.test.ts",
   "tests/components/AppLayout.test.tsx",
@@ -483,6 +489,36 @@ function collectWebLayoutTestViewportLiteralViolations(workspaceRoot) {
   return violations;
 }
 
+function collectWebLayoutTestBreakpointLiteralViolations(workspaceRoot) {
+  const layoutTestFiles = [
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+  ];
+  const violations = [];
+
+  for (const filePath of layoutTestFiles) {
+    if (!fs.existsSync(filePath)) {
+      continue;
+    }
+
+    const source = fs.readFileSync(filePath, "utf8");
+    const matcher =
+      /(?:(?:width|viewportWidth)\s*[<>]=?\s*(?:APP_DRAWER_MAX_WIDTH|ADMIN_DRAWER_MAX_WIDTH|\d+)|(?:APP_DRAWER_MAX_WIDTH|ADMIN_DRAWER_MAX_WIDTH|\d+)\s*[<>]=?\s*(?:width|viewportWidth))/g;
+    let match = matcher.exec(source);
+
+    while (match) {
+      violations.push({
+        file: path.relative(workspaceRoot, filePath).replaceAll(path.sep, "/"),
+        line: lineForIndex(source, match.index),
+        snippet: match[0],
+      });
+      match = matcher.exec(source);
+    }
+  }
+
+  return violations;
+}
+
 function cleanupWebJsMirrors(workspaceRoot) {
   const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
@@ -573,6 +609,15 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webLayoutTestBreakpointLiteralViolations =
+    collectWebLayoutTestBreakpointLiteralViolations(workspaceRoot);
+  if (webLayoutTestBreakpointLiteralViolations.length > 0) {
+    allViolations.push({
+      check: webLayoutTestBreakpointLiteralCheck,
+      violations: webLayoutTestBreakpointLiteralViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
@@ -585,6 +630,7 @@ module.exports = {
   webLayoutMobileBreakpointLiteralCheck,
   webResponsiveTestScriptCoverageCheck,
   webLayoutTestViewportLiteralCheck,
+  webLayoutTestBreakpointLiteralCheck,
   runQualityGuards,
   lineForIndex,
 };

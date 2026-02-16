@@ -41,6 +41,7 @@ The repository enforces strict quality gates for TypeScript and UI code:
 - `apps/web/package.json` script `test:responsive` must include the required responsive regression suite list (guarded by `tests/config/responsiveSuiteContract.test.ts`).
 - `apps/web/package.json` script `test:responsive` must keep the canonical target order (no unexpected/duplicate/reordered suites).
 - `apps/web/tests/components/AppLayout.test.tsx` and `apps/web/tests/pages/AdminLayout.test.tsx` must avoid numeric `setViewportWidth(...)` literals and use shared responsive fixtures/constants.
+- `apps/web/tests/components/AppLayout.test.tsx` and `apps/web/tests/pages/AdminLayout.test.tsx` must derive mobile/open expectations with `isAppMobileViewport` / `isAdminMobileViewport` rather than direct width comparisons.
 
 Run all checks from the workspace root:
 

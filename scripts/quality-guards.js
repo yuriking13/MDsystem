@@ -88,6 +88,16 @@ function main() {
         "\n[quality-guards] Tip: in AppLayout/AdminLayout test suites use shared viewport constants/helpers from `tests/utils/responsiveMatrix.ts` instead of numeric setViewportWidth(...) literals.",
       );
     }
+
+    if (
+      allViolations.some(
+        ({ check }) => check.name === "web-layout-test-breakpoint-literals",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: in AppLayout/AdminLayout test suites derive mobile/open expectations via `isAppMobileViewport` / `isAdminMobileViewport` instead of direct width comparisons.",
+      );
+    }
   }
 
   process.exit(1);

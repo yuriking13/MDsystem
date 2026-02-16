@@ -786,3 +786,66 @@ test("runQualityGuards accepts layout responsive tests using shared viewport con
   );
   assert.equal(layoutViewportLiteralViolation, undefined);
 });
+
+test("runQualityGuards blocks direct breakpoint comparisons in layout responsive tests", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    [
+      "const shouldOpen = width <= 768;",
+      "export const value = shouldOpen;",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+    [
+      "const shouldOpen = width <= ADMIN_DRAWER_MAX_WIDTH;",
+      "export const value = shouldOpen;",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutBreakpointLiteralViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-test-breakpoint-literals",
+  );
+  assert.ok(layoutBreakpointLiteralViolation);
+  assert.equal(layoutBreakpointLiteralViolation.violations.length, 2);
+});
+
+test("runQualityGuards accepts helper-based breakpoint semantics in layout responsive tests", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    [
+      "import { isAppMobileViewport } from '../../src/lib/responsive';",
+      "const shouldOpen = isAppMobileViewport(width);",
+      "export const value = shouldOpen;",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+    [
+      "import { isAdminMobileViewport } from '../../src/lib/responsive';",
+      "const shouldOpen = isAdminMobileViewport(width);",
+      "export const value = shouldOpen;",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const layoutBreakpointLiteralViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-test-breakpoint-literals",
+  );
+  assert.equal(layoutBreakpointLiteralViolation, undefined);
+});
