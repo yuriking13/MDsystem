@@ -2418,6 +2418,19 @@
     font-size: 12px;
   }
 
+  .admin-table-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .admin-action-btn {
+    min-width: 32px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .admin-table-message,
   .admin-table-detail,
   .admin-table-title,
