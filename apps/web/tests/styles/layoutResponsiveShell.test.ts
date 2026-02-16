@@ -63,6 +63,15 @@ describe("responsive shell css regressions", () => {
     );
   });
 
+  it("keeps admin login layout stacked on narrow screens", () => {
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*800px\)\s*\{[\s\S]*?\.admin-login-container\s*\{[\s\S]*?grid-template-columns:\s*1fr;/,
+    );
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*800px\)\s*\{[\s\S]*?\.admin-login-info\s*\{[\s\S]*?display:\s*none;/,
+    );
+  });
+
   it("keeps admin modal overlay safe-area and modal height fallback", () => {
     expect(adminCss).toMatch(
       /\.admin-modal-overlay\s*\{[\s\S]*?padding:\s*calc\(1rem \+ env\(safe-area-inset-top,\s*0px\)\)\s*calc\(1rem \+ env\(safe-area-inset-right,\s*0px\)\)\s*calc\(1rem \+ env\(safe-area-inset-bottom,\s*0px\)\)\s*calc\(1rem \+ env\(safe-area-inset-left,\s*0px\)\);/,
