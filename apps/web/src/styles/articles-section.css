@@ -1244,6 +1244,22 @@
 }
 
 @media (max-width: 640px) {
+  .search-progress-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .search-progress-stage-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .search-progress-footer {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
   .search-form-header {
     flex-wrap: wrap;
     gap: 10px;
