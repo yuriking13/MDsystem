@@ -6332,6 +6332,140 @@ input:focus::placeholder {
   color: #f59e0b;
 }
 
+.graph-gap-panel {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-glass);
+  background: linear-gradient(
+    135deg,
+    rgba(245, 158, 11, 0.05),
+    rgba(239, 68, 68, 0.05)
+  );
+}
+
+.graph-gap-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.graph-gap-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-gap-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.graph-gap-subtitle {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.graph-gap-filters-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  background: var(--bg-secondary);
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.graph-gap-filter-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-gap-filter-select {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: inherit;
+  cursor: pointer;
+  min-width: 70px;
+}
+
+.graph-gap-limit-select {
+  min-width: 55px;
+}
+
+.graph-gap-separator {
+  color: var(--text-muted);
+}
+
+.graph-gap-limit-label {
+  margin-left: 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-gap-results-wrap {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 12px;
+}
+
+.graph-gap-result-card {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.graph-gap-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.graph-gap-reason {
+  font-size: 9px;
+  color: var(--text-muted);
+  max-width: 60%;
+}
+
+.graph-gap-pair {
+  display: flex;
+  gap: 8px;
+}
+
+.graph-gap-article-col {
+  flex: 1;
+  cursor: pointer;
+}
+
+.graph-gap-article-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.graph-gap-article-year {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.graph-gap-arrow {
+  color: #f59e0b;
+  padding: 0 8px;
+}
+
+.graph-gap-empty {
+  text-align: center;
+  padding: 16px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 .graph-advanced-panel {
   display: flex;
   flex-wrap: wrap;

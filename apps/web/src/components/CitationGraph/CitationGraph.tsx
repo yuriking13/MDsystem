@@ -2200,65 +2200,6 @@ export default function CitationGraph({ projectId }: Props) {
   const semanticClusterKeywordsBaseStyle: React.CSSProperties = {
     fontSize: 9,
   };
-  const gapPanelStyle: React.CSSProperties = {
-    padding: "10px 16px",
-    borderBottom: "1px solid var(--border-glass)",
-    background:
-      "linear-gradient(135deg, rgba(245, 158, 11, 0.05), rgba(239, 68, 68, 0.05))",
-  };
-  const gapHeaderStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    flexWrap: "wrap",
-  };
-  const gapTitleWrapStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  };
-  const gapTitleStyle: React.CSSProperties = {
-    fontWeight: 600,
-    fontSize: 13,
-  };
-  const gapSubtitleStyle: React.CSSProperties = {
-    fontSize: 10,
-    color: "var(--text-muted)",
-  };
-  const gapFiltersWrapStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    marginLeft: "auto",
-    background: "var(--bg-secondary)",
-    padding: "6px 10px",
-    borderRadius: 8,
-  };
-  const gapFilterLabelStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--text-muted)",
-  };
-  const gapFilterSelectStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: 12,
-    borderRadius: 4,
-    border: "1px solid var(--border-color)",
-    background: "var(--bg-primary)",
-    color: "inherit",
-    cursor: "pointer",
-    minWidth: 70,
-  };
-  const gapLimitSelectStyle: React.CSSProperties = {
-    ...gapFilterSelectStyle,
-    minWidth: 55,
-  };
-  const gapSeparatorStyle: React.CSSProperties = {
-    color: "var(--text-muted)",
-  };
-  const gapLimitLabelStyle: React.CSSProperties = {
-    ...gapFilterLabelStyle,
-    marginLeft: 4,
-  };
   const gapAnalyzeButtonBaseStyle: React.CSSProperties = {
     fontSize: 12,
     padding: "6px 16px",
@@ -2268,54 +2209,6 @@ export default function CitationGraph({ projectId }: Props) {
     transition: "all 0.2s ease",
     fontWeight: 500,
     whiteSpace: "nowrap",
-  };
-  const gapResultsWrapStyle: React.CSSProperties = {
-    maxHeight: 200,
-    overflowY: "auto",
-    marginTop: 12,
-  };
-  const gapResultCardStyle: React.CSSProperties = {
-    padding: 10,
-    marginBottom: 8,
-    background: "var(--bg-secondary)",
-    borderRadius: 6,
-    fontSize: 11,
-  };
-  const gapResultHeaderStyle: React.CSSProperties = {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  };
-  const gapReasonStyle: React.CSSProperties = {
-    fontSize: 9,
-    color: "var(--text-muted)",
-    maxWidth: "60%",
-  };
-  const gapPairStyle: React.CSSProperties = { display: "flex", gap: 8 };
-  const gapArticleColStyle: React.CSSProperties = {
-    flex: 1,
-    cursor: "pointer",
-  };
-  const gapArticleTitleStyle: React.CSSProperties = {
-    fontWeight: 500,
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  };
-  const gapArticleYearStyle: React.CSSProperties = {
-    fontSize: 9,
-    color: "var(--text-muted)",
-  };
-  const gapArrowStyle: React.CSSProperties = {
-    color: "#f59e0b",
-    padding: "0 8px",
-  };
-  const gapEmptyStyle: React.CSSProperties = {
-    textAlign: "center",
-    padding: 16,
-    color: "var(--text-muted)",
-    fontSize: 12,
   };
   const statsLinkValueStyle: React.CSSProperties = { color: "#10b981" };
   const pvalueStatItemStyle: React.CSSProperties = { marginLeft: "auto" };
@@ -4308,19 +4201,19 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Gap Analysis Panel */}
         {showGapAnalysis && (
-          <div className="graph-filters" style={gapPanelStyle}>
-            <div style={gapHeaderStyle}>
-              <div style={gapTitleWrapStyle}>
+          <div className="graph-filters graph-gap-panel">
+            <div className="graph-gap-header">
+              <div className="graph-gap-title-wrap">
                 <IconLinkChain size="sm" />
-                <span style={gapTitleStyle}>🔍 Анализ пробелов</span>
-                <span style={gapSubtitleStyle}>
+                <span className="graph-gap-title">🔍 Анализ пробелов</span>
+                <span className="graph-gap-subtitle">
                   (похожие статьи без цитирований)
                 </span>
               </div>
 
               {/* Фильтры - компактная версия */}
-              <div style={gapFiltersWrapStyle}>
-                <span style={gapFilterLabelStyle}>Годы:</span>
+              <div className="graph-gap-filters-wrap">
+                <span className="graph-gap-filter-label">Годы:</span>
                 <select
                   value={gapYearFrom || ""}
                   onChange={(e) =>
@@ -4328,7 +4221,7 @@ export default function CitationGraph({ projectId }: Props) {
                       e.target.value ? parseInt(e.target.value, 10) : undefined,
                     )
                   }
-                  style={gapFilterSelectStyle}
+                  className="graph-gap-filter-select"
                 >
                   <option value="">с...</option>
                   {Array.from(
@@ -4342,7 +4235,7 @@ export default function CitationGraph({ projectId }: Props) {
                       </option>
                     ))}
                 </select>
-                <span style={gapSeparatorStyle}>—</span>
+                <span className="graph-gap-separator">—</span>
                 <select
                   value={gapYearTo || ""}
                   onChange={(e) =>
@@ -4350,7 +4243,7 @@ export default function CitationGraph({ projectId }: Props) {
                       e.target.value ? parseInt(e.target.value, 10) : undefined,
                     )
                   }
-                  style={gapFilterSelectStyle}
+                  className="graph-gap-filter-select"
                 >
                   <option value="">по...</option>
                   {Array.from(
@@ -4365,11 +4258,11 @@ export default function CitationGraph({ projectId }: Props) {
                     ))}
                 </select>
 
-                <span style={gapLimitLabelStyle}>Лимит:</span>
+                <span className="graph-gap-limit-label">Лимит:</span>
                 <select
                   value={gapLimit}
                   onChange={(e) => setGapLimit(parseInt(e.target.value, 10))}
-                  style={gapLimitSelectStyle}
+                  className="graph-gap-filter-select graph-gap-limit-select"
                 >
                   <option value={20}>20</option>
                   <option value={50}>50</option>
@@ -4389,36 +4282,36 @@ export default function CitationGraph({ projectId }: Props) {
             </div>
 
             {gapAnalysisResults.length > 0 ? (
-              <div style={gapResultsWrapStyle}>
+              <div className="graph-gap-results-wrap">
                 {gapAnalysisResults.map((gap, idx) => (
-                  <div key={idx} style={gapResultCardStyle}>
-                    <div style={gapResultHeaderStyle}>
+                  <div key={idx} className="graph-gap-result-card">
+                    <div className="graph-gap-result-header">
                       <span style={getGapSimilarityStyle(gap.similarity)}>
                         {(gap.similarity * 100).toFixed(0)}% схожесть
                       </span>
-                      <span style={gapReasonStyle}>{gap.reason}</span>
+                      <span className="graph-gap-reason">{gap.reason}</span>
                     </div>
-                    <div style={gapPairStyle}>
+                    <div className="graph-gap-pair">
                       <div
-                        style={gapArticleColStyle}
+                        className="graph-gap-article-col"
                         onClick={() => highlightSemanticResult(gap.article1.id)}
                       >
-                        <div style={gapArticleTitleStyle}>
+                        <div className="graph-gap-article-title">
                           {gap.article1.title?.slice(0, 50)}...
                         </div>
-                        <div style={gapArticleYearStyle}>
+                        <div className="graph-gap-article-year">
                           {gap.article1.year || "N/A"}
                         </div>
                       </div>
-                      <div style={gapArrowStyle}>↔</div>
+                      <div className="graph-gap-arrow">↔</div>
                       <div
-                        style={gapArticleColStyle}
+                        className="graph-gap-article-col"
                         onClick={() => highlightSemanticResult(gap.article2.id)}
                       >
-                        <div style={gapArticleTitleStyle}>
+                        <div className="graph-gap-article-title">
                           {gap.article2.title?.slice(0, 50)}...
                         </div>
-                        <div style={gapArticleYearStyle}>
+                        <div className="graph-gap-article-year">
                           {gap.article2.year || "N/A"}
                         </div>
                       </div>
@@ -4427,7 +4320,7 @@ export default function CitationGraph({ projectId }: Props) {
                 ))}
               </div>
             ) : (
-              <div style={gapEmptyStyle}>
+              <div className="graph-gap-empty">
                 {loadingGapAnalysis
                   ? "Анализируем связи..."
                   : "Не найдено статей с высокой схожестью без цитирований"}
