@@ -12,13 +12,12 @@ describe("Logger Utils", () => {
   let originalEnv: string | undefined;
   let consoleLogSpy: MockInstance;
   let consoleErrorSpy: MockInstance;
-  let consoleWarnSpy: MockInstance;
 
   beforeEach(() => {
     originalEnv = process.env.NODE_ENV;
     consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
   });
 
   afterEach(() => {
