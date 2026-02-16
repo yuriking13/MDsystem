@@ -2315,6 +2315,7 @@
     width: 100%;
     height: 100vh;
     height: 100dvh;
+    padding-right: 0;
   }
 
   .articles-page-main--shifted {
