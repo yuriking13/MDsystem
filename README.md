@@ -26,3 +26,23 @@ pnpm install
 ## Build
 
 pnpm -r build
+
+## Quality checks
+
+The repository enforces strict quality gates for TypeScript and UI code:
+
+- no explicit `any` typings in API and web TypeScript files;
+- no inline JSX style literals (`style={{ ... }}`) in the web app;
+- no direct DOM style mutations (`.style.*` / `setAttribute("style", ...)`) in web source.
+
+Run all checks from the workspace root:
+
+- Lint: `pnpm lint`
+- Typecheck: `pnpm typecheck`
+- Tests: `pnpm test`
+- Coverage: `pnpm test:coverage`
+- Build: `pnpm build`
+
+The guard script can also be run directly:
+
+- `pnpm run quality:guards`
