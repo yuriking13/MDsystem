@@ -31,6 +31,26 @@ const generateEmbeddingsBodySchema = z.object({
   importMissingArticles: z.boolean().default(false), // Импортировать недостающие статьи
 });
 
+type SemanticSearchResultRow = {
+  id: string;
+  title_en: string | null;
+  title_ru: string | null;
+  abstract_en: string | null;
+  year: number | null;
+  authors: string[] | null;
+  journal: string | null;
+  doi: string | null;
+  pmid: string | null;
+  status: string;
+  similarity: string | number;
+};
+
+type SemanticNeighborRow = {
+  source_id: string;
+  target_id: string;
+  similarity: string | number;
+};
+
 export const semanticSearchRoutes: FastifyPluginCallback = (
   fastify,
   _opts,
@@ -162,24 +182,27 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
 
         return {
           query,
-          results: results.rows.map((row: any) => ({
-            id: row.id,
-            title: row.title_ru || row.title_en,
-            titleEn: row.title_en,
-            abstract: row.abstract_en,
-            year: row.year,
-            authors: row.authors,
-            journal: row.journal,
-            doi: row.doi,
-            pmid: row.pmid,
-            status: row.status,
-            similarity: parseFloat(row.similarity),
-          })),
+          results: results.rows.map((row) => {
+            const typedRow = row as SemanticSearchResultRow;
+            return {
+              id: typedRow.id,
+              title: typedRow.title_ru || typedRow.title_en,
+              titleEn: typedRow.title_en,
+              abstract: typedRow.abstract_en,
+              year: typedRow.year,
+              authors: typedRow.authors,
+              journal: typedRow.journal,
+              doi: typedRow.doi,
+              pmid: typedRow.pmid,
+              status: typedRow.status,
+              similarity: parseFloat(String(typedRow.similarity)),
+            };
+          }),
           totalFound: results.rows.length,
           threshold,
         };
-      } catch (error: any) {
-        fastify.log.error("Semantic search error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Semantic search error");
         return reply.code(500).send({
           error: "Failed to perform semantic search",
           message: "Internal server error",
@@ -414,8 +437,8 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           errors: 0,
           message: "Embedding generation started",
         };
-      } catch (error: any) {
-        fastify.log.error("Generate embeddings error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Generate embeddings error");
         return reply.code(500).send({
           error: "Failed to start embedding generation",
           message: "Internal server error",
@@ -471,8 +494,8 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           startedAt: job.started_at,
           completedAt: job.completed_at,
         };
-      } catch (error: any) {
-        fastify.log.error("Get embedding job error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Get embedding job error");
         return reply.code(500).send({
           error: "Failed to get job status",
           message: "Internal server error",
@@ -519,8 +542,8 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         }
 
         return { success: true, jobId, status: "cancelled" };
-      } catch (error: any) {
-        fastify.log.error("Cancel embedding job error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Cancel embedding job error");
         return reply.code(500).send({
           error: "Failed to cancel job",
           message: "Internal server error",
@@ -575,8 +598,8 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
             completedAt: job.completed_at,
           })),
         };
-      } catch (error: any) {
-        fastify.log.error("Get embedding jobs error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Get embedding jobs error");
         return reply.code(500).send({
           error: "Failed to get jobs",
           message: "Internal server error",
@@ -650,8 +673,8 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
           totalAvailable: totalMissingCited, // Всего доступно
           importLimit: IMPORT_LIMIT,
         };
-      } catch (error: any) {
-        fastify.log.error("Missing articles stats error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Missing articles stats error");
         return reply.code(500).send({
           error: "Failed to get missing articles stats",
           message: "Internal server error",
@@ -784,8 +807,8 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
                 100
               : 0,
         };
-      } catch (error: any) {
-        fastify.log.error("Embedding stats error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Embedding stats error");
         return reply.code(500).send({
           error: "Failed to get embedding stats",
           message: "Internal server error",
@@ -897,17 +920,20 @@ export const semanticSearchRoutes: FastifyPluginCallback = (
         }
 
         return {
-          edges: neighbors.rows.map((row: any) => ({
-            source: row.source_id,
-            target: row.target_id,
-            similarity: parseFloat(row.similarity),
-          })),
+          edges: neighbors.rows.map((row) => {
+            const typedRow = row as SemanticNeighborRow;
+            return {
+              source: typedRow.source_id,
+              target: typedRow.target_id,
+              similarity: parseFloat(String(typedRow.similarity)),
+            };
+          }),
           articleStats,
           threshold,
           totalEdges: neighbors.rows.length,
         };
-      } catch (error: any) {
-        fastify.log.error("Semantic neighbors error:", error);
+      } catch (error) {
+        fastify.log.error({ err: error }, "Semantic neighbors error");
         return reply.code(500).send({
           error: "Failed to get semantic neighbors",
           message: "Internal server error",
