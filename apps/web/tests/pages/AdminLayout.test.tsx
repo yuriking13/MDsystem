@@ -167,6 +167,10 @@ describe("AdminLayout responsive sidebar behavior", () => {
       renderAdminLayout();
 
       const toggleButton = screen.getByLabelText("Открыть навигацию");
+      expect(toggleButton).toHaveAttribute(
+        "aria-controls",
+        "admin-primary-sidebar",
+      );
       if (shouldOpenOnToggle) {
         expect(toggleButton).toBeEnabled();
       } else {
@@ -249,6 +253,10 @@ describe("AdminLayout responsive sidebar behavior", () => {
 
         expect(screen.getByText(pageLabel)).toBeInTheDocument();
         const toggleButton = screen.getByLabelText("Открыть навигацию");
+        expect(toggleButton).toHaveAttribute(
+          "aria-controls",
+          "admin-primary-sidebar",
+        );
         if (shouldOpenOnToggle) {
           expect(toggleButton).toBeEnabled();
         } else {

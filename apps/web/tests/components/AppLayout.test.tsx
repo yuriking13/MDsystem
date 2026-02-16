@@ -234,6 +234,10 @@ describe("AppLayout mobile sidebar behavior", () => {
       const toggleButton = screen.getByRole("button", {
         name: "Открыть навигацию",
       });
+      expect(toggleButton).toHaveAttribute(
+        "aria-controls",
+        "app-primary-sidebar",
+      );
       expect(toggleButton).toBeDisabled();
 
       await user.click(toggleButton);
@@ -263,6 +267,10 @@ describe("AppLayout mobile sidebar behavior", () => {
       const toggleButton = screen.getByRole("button", {
         name: "Открыть навигацию",
       });
+      expect(toggleButton).toHaveAttribute(
+        "aria-controls",
+        "app-primary-sidebar",
+      );
       if (shouldOpen) {
         expect(toggleButton).toBeEnabled();
       } else {
@@ -304,6 +312,10 @@ describe("AppLayout mobile sidebar behavior", () => {
         const toggleButton = screen.getByRole("button", {
           name: "Открыть навигацию",
         });
+        expect(toggleButton).toHaveAttribute(
+          "aria-controls",
+          "app-primary-sidebar",
+        );
         if (shouldOpen) {
           expect(toggleButton).toBeEnabled();
         } else {
@@ -383,6 +395,10 @@ describe("AppLayout mobile sidebar behavior", () => {
         const toggleButton = screen.getByRole("button", {
           name: "Открыть навигацию",
         });
+        expect(toggleButton).toHaveAttribute(
+          "aria-controls",
+          "app-primary-sidebar",
+        );
         if (shouldOpen) {
           expect(toggleButton).toBeEnabled();
         } else {
