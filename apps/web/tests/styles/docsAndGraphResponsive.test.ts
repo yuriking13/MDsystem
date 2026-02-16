@@ -12,6 +12,21 @@ const graphCss = readFileSync(
 );
 
 describe("docs and citation-graph responsive css regressions", () => {
+  it("keeps mobile page container safe-area padding for core pages", () => {
+    expect(pagesCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.page-container\s*\{[\s\S]*?padding:\s*16px calc\(12px \+ env\(safe-area-inset-right,\s*0px\)\)\s*calc\(16px \+ env\(safe-area-inset-bottom,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+  });
+
+  it("keeps project detail fullwidth shell overflow-safe for graph/editor tabs", () => {
+    expect(pagesCss).toMatch(
+      /\.project-detail-fullwidth\s*\{[\s\S]*?max-width:\s*100%;[\s\S]*?height:\s*100%;[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;[\s\S]*?overflow:\s*hidden;/,
+    );
+    expect(pagesCss).toMatch(
+      /\.project-detail-fullwidth \.tab-content\s*\{[\s\S]*?flex:\s*1;[\s\S]*?min-height:\s*0;[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;[\s\S]*?overflow:\s*hidden;/,
+    );
+  });
+
   it("keeps docs nav safe-area paddings and constrained item width at tablet breakpoint", () => {
     expect(pagesCss).toMatch(
       /@media\s*\(max-width:\s*1024px\)\s*\{[\s\S]*?\.docs-nav\s*\{[\s\S]*?padding:\s*6px calc\(6px \+ env\(safe-area-inset-right,\s*0px\)\)\s*6px\s*calc\(6px \+ env\(safe-area-inset-left,\s*0px\)\);/,
