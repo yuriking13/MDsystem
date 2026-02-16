@@ -39,6 +39,24 @@ describe("responsive shell css regressions", () => {
     );
   });
 
+  it("keeps mobile app sidebar width constrained and consistent when collapsed", () => {
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-sidebar\s*\{[\s\S]*?width:\s*min\(240px,\s*88vw\);/,
+    );
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-sidebar--collapsed\s*\{[\s\S]*?width:\s*min\(240px,\s*88vw\);/,
+    );
+  });
+
+  it("keeps fixed-route shell topbar hidden and overlay fullscreen on mobile", () => {
+    expect(appLayoutCss).toMatch(
+      /\.app-main-fixed \.app-mobile-topbar\s*\{[\s\S]*?display:\s*none !important;/,
+    );
+    expect(appLayoutCss).toMatch(
+      /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-sidebar-overlay\s*\{[\s\S]*?position:\s*fixed;[\s\S]*?inset:\s*0;[\s\S]*?z-index:\s*40;[\s\S]*?display:\s*block;/,
+    );
+  });
+
   it("keeps mobile app topbar and fixed-route FAB safe-area offsets", () => {
     expect(appLayoutCss).toMatch(
       /@media\s*\(max-width:\s*768px\)\s*\{[\s\S]*?\.app-mobile-topbar\s*\{[\s\S]*?padding:\s*calc\(10px \+ env\(safe-area-inset-top,\s*0px\)\)\s*calc\(16px \+ env\(safe-area-inset-right,\s*0px\)\)\s*10px\s*calc\(16px \+ env\(safe-area-inset-left,\s*0px\)\);/,
