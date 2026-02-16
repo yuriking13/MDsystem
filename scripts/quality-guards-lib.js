@@ -972,6 +972,30 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
   }
 
   const violations = [];
+  const allowedTopLevelKeys = new Set([
+    "viewportWidths",
+    "userRoutes",
+    "adminRoutes",
+  ]);
+  for (const key of Object.keys(parsedConfig)) {
+    if (!allowedTopLevelKeys.has(key)) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: `unexpected-manual-matrix-key:${key}`,
+      });
+    }
+  }
+  for (const key of allowedTopLevelKeys) {
+    if (!(key in parsedConfig)) {
+      violations.push({
+        file: relativeFile,
+        line: 1,
+        snippet: `missing-manual-matrix-key:${key}`,
+      });
+    }
+  }
+
   const requiredViewportWidths = [360, 390, 768, 1024, 1280, 1440, 1920];
   const requiredUserRouteArrays = {
     auth: ["/login", "/register"],
@@ -1056,6 +1080,23 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
       snippet: "invalid-user-routes:expected-object",
     });
   } else {
+    const allowedUserRoutesKeys = new Set([
+      "auth",
+      "shell",
+      "projectTabs",
+      "projectDocumentRoutePattern",
+      "projectGraphRoutePattern",
+    ]);
+    for (const key of Object.keys(userRoutes)) {
+      if (!allowedUserRoutesKeys.has(key)) {
+        violations.push({
+          file: relativeFile,
+          line: 1,
+          snippet: `unexpected-user-routes-key:${key}`,
+        });
+      }
+    }
+
     const userRouteArrayFields = [
       "auth",
       "shell",

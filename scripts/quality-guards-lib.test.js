@@ -1629,6 +1629,66 @@ test("runQualityGuards reports manual matrix route list and pattern mismatches",
   );
 });
 
+test("runQualityGuards reports unexpected or missing manual matrix keys", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH),
+    JSON.stringify(
+      {
+        viewportWidths: [360, 390, 768, 1024, 1280, 1440, 1920],
+        userRoutes: {
+          auth: ["/login", "/register"],
+          shell: ["/projects", "/settings", "/docs"],
+          projectTabs: [
+            "articles",
+            "documents",
+            "files",
+            "statistics",
+            "settings",
+            "graph",
+          ],
+          projectDocumentRoutePattern: "^/projects/[^/]+/documents/[^/]+$",
+          projectGraphRoutePattern: "^/projects/[^/]+\\?tab=graph$",
+          extraUserRoutesField: "unexpected",
+        },
+        unexpectedTopLevelField: true,
+      },
+      null,
+      2,
+    ),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const manualMatrixViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-manual-matrix-config",
+  );
+  assert.ok(manualMatrixViolation);
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "unexpected-manual-matrix-key:unexpectedTopLevelField",
+      ),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("missing-manual-matrix-key:adminRoutes"),
+    ),
+  );
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "unexpected-user-routes-key:extraUserRoutesField",
+      ),
+    ),
+  );
+});
+
 test("runQualityGuards accepts valid responsive manual matrix config entries", () => {
   const workspaceRoot = createWorkspaceFixture();
 
