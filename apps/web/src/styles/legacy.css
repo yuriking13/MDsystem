@@ -7277,6 +7277,140 @@ input:focus::placeholder {
   font-size: 13px;
 }
 
+.help-modal {
+  max-width: 600px;
+}
+
+.help-title {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.help-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.help-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-primary);
+}
+
+.help-icon--blue {
+  color: #3b82f6;
+}
+
+.help-icon--green {
+  color: #10b981;
+}
+
+.help-icon--indigo {
+  color: #6366f1;
+}
+
+.help-icon--amber {
+  color: #f59e0b;
+}
+
+.help-icon--pink {
+  color: #ec4899;
+}
+
+.help-icon--violet {
+  color: #8b5cf6;
+}
+
+.help-section-paragraph {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+}
+
+.help-color-legend-wrap {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.help-legend-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.help-legend-dot--green {
+  background: #22c55e;
+}
+
+.help-legend-dot--blue {
+  background: #3b82f6;
+}
+
+.help-legend-dot--yellow {
+  background: #eab308;
+}
+
+.help-legend-dot--violet {
+  background: #8b5cf6;
+}
+
+.help-legend-dot--red {
+  background: #ef4444;
+}
+
+.help-legend-dot--orange {
+  background: #f97316;
+}
+
+.help-legend-dot--pink {
+  background: #ec4899;
+}
+
+.help-actions-list {
+  margin-top: 6px;
+  color: var(--text-secondary);
+}
+
+.help-action-row {
+  margin: 4px 0;
+}
+
+.help-divider-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-glass);
+}
+
+.help-close-button {
+  margin-top: 24px;
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
 /* Graph canvas area */
 .graph-canvas-area {
   flex: 1;

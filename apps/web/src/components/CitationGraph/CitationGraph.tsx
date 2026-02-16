@@ -2275,76 +2275,6 @@ export default function CitationGraph({ projectId }: Props) {
     justifyContent: "center",
     gap: 6,
   };
-  const helpModalStyle: React.CSSProperties = {
-    maxWidth: 600,
-  };
-  const helpTitleStyle: React.CSSProperties = {
-    marginTop: 0,
-    marginBottom: 20,
-    fontSize: 18,
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-  };
-  const helpContentStyle: React.CSSProperties = {
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    fontSize: 14,
-    lineHeight: 1.6,
-  };
-  const helpSectionHeadingStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    color: "var(--text-primary)",
-  };
-  const helpSectionParagraphStyle: React.CSSProperties = {
-    margin: "6px 0 0",
-    color: "var(--text-secondary)",
-  };
-  const helpColorLegendWrapStyle: React.CSSProperties = {
-    marginTop: 8,
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-    color: "var(--text-secondary)",
-  };
-  const helpLegendItemRowStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-  };
-  const helpLegendDotBaseStyle: React.CSSProperties = {
-    width: 12,
-    height: 12,
-    borderRadius: "50%",
-    flexShrink: 0,
-  };
-  const helpActionsListStyle: React.CSSProperties = {
-    marginTop: 6,
-    color: "var(--text-secondary)",
-  };
-  const helpActionRowStyle: React.CSSProperties = {
-    margin: "4px 0",
-  };
-  const helpDividerSectionStyle: React.CSSProperties = {
-    marginTop: 16,
-    paddingTop: 16,
-    borderTop: "1px solid var(--border-glass)",
-  };
-  const helpCloseButtonStyle: React.CSSProperties = {
-    marginTop: 24,
-    width: "100%",
-    padding: "12px",
-    background: "var(--accent)",
-    color: "white",
-    border: "none",
-    borderRadius: 8,
-    fontSize: 14,
-    fontWeight: 500,
-    cursor: "pointer",
-  };
 
   const getGraphContainerStyle = (
     fullscreen: boolean,
@@ -2699,13 +2629,27 @@ export default function CitationGraph({ projectId }: Props) {
     fontSize: 13,
     fontWeight: 500,
   });
-  const getHelpIconStyle = (color: string): React.CSSProperties => ({
-    color,
-  });
-  const getHelpLegendDotStyle = (color: string): React.CSSProperties => ({
-    ...helpLegendDotBaseStyle,
-    background: color,
-  });
+  const HELP_ICON_COLOR_CLASS_MAP: Record<string, string> = {
+    "#3b82f6": "help-icon--blue",
+    "#10b981": "help-icon--green",
+    "#6366f1": "help-icon--indigo",
+    "#f59e0b": "help-icon--amber",
+    "#ec4899": "help-icon--pink",
+    "#8b5cf6": "help-icon--violet",
+  };
+  const HELP_LEGEND_DOT_COLOR_CLASS_MAP: Record<string, string> = {
+    "#22c55e": "help-legend-dot--green",
+    "#3b82f6": "help-legend-dot--blue",
+    "#eab308": "help-legend-dot--yellow",
+    "#8b5cf6": "help-legend-dot--violet",
+    "#ef4444": "help-legend-dot--red",
+    "#f97316": "help-legend-dot--orange",
+    "#ec4899": "help-legend-dot--pink",
+  };
+  const getHelpIconClassName = (color: string): string =>
+    `help-icon ${HELP_ICON_COLOR_CLASS_MAP[color] ?? "help-icon--blue"}`;
+  const getHelpLegendDotClassName = (color: string): string =>
+    `help-legend-dot ${HELP_LEGEND_DOT_COLOR_CLASS_MAP[color] ?? "help-legend-dot--blue"}`;
   const getGraphExportMenuClassName = (isOpen: boolean): string =>
     `graph-export-dropdown-menu ${isOpen ? "graph-export-dropdown-menu--open" : ""}`;
 
@@ -4915,9 +4859,8 @@ export default function CitationGraph({ projectId }: Props) {
             onClick={() => setShowHelpModal(false)}
           >
             <div
-              className="node-info-modal"
+              className="node-info-modal help-modal"
               onClick={(e) => e.stopPropagation()}
-              style={helpModalStyle}
             >
               <button
                 className="node-info-modal-close"
@@ -4926,111 +4869,131 @@ export default function CitationGraph({ projectId }: Props) {
                 <IconClose className="icon-md" />
               </button>
 
-              <h3 style={helpTitleStyle}>
-                <IconInfoCircle size="md" style={getHelpIconStyle("#3b82f6")} />
+              <h3 className="help-title">
+                <IconInfoCircle
+                  size="md"
+                  className={getHelpIconClassName("#3b82f6")}
+                />
                 Как работает граф цитирований
               </h3>
 
-              <div style={helpContentStyle}>
+              <div className="help-content">
                 <div>
-                  <div style={helpSectionHeadingStyle}>
+                  <div className="help-section-heading">
                     <IconCircleStack
                       size="sm"
-                      style={getHelpIconStyle("#3b82f6")}
+                      className={getHelpIconClassName("#3b82f6")}
                     />
                     <strong>Узлы (статьи)</strong>
                   </div>
-                  <p style={helpSectionParagraphStyle}>
+                  <p className="help-section-paragraph">
                     Каждый узел — это статья. Размер узла зависит от количества
                     цитирований: чем больше цитирований, тем крупнее узел.
                   </p>
                 </div>
 
                 <div>
-                  <div style={helpSectionHeadingStyle}>
+                  <div className="help-section-heading">
                     <IconArrowRight
                       size="sm"
-                      style={getHelpIconStyle("#3b82f6")}
+                      className={getHelpIconClassName("#3b82f6")}
                     />
                     <strong>Стрелки (связи)</strong>
                   </div>
-                  <p style={helpSectionParagraphStyle}>
+                  <p className="help-section-paragraph">
                     Стрелки показывают направление цитирования: от цитирующей
                     статьи к цитируемой.
                   </p>
                 </div>
 
                 <div>
-                  <div style={helpSectionHeadingStyle}>
+                  <div className="help-section-heading">
                     <IconAdjustments
                       size="sm"
-                      style={getHelpIconStyle("#3b82f6")}
+                      className={getHelpIconClassName("#3b82f6")}
                     />
                     <strong>Цвета узлов</strong>
                   </div>
-                  <div style={helpColorLegendWrapStyle}>
-                    <div style={helpLegendItemRowStyle}>
-                      <span style={getHelpLegendDotStyle("#22c55e")}></span>
+                  <div className="help-color-legend-wrap">
+                    <div className="help-legend-item-row">
+                      <span
+                        className={getHelpLegendDotClassName("#22c55e")}
+                      ></span>
                       <span>Зелёный — отобранные статьи</span>
                     </div>
-                    <div style={helpLegendItemRowStyle}>
-                      <span style={getHelpLegendDotStyle("#3b82f6")}></span>
+                    <div className="help-legend-item-row">
+                      <span
+                        className={getHelpLegendDotClassName("#3b82f6")}
+                      ></span>
                       <span>Синий — PubMed (кандидаты)</span>
                     </div>
-                    <div style={helpLegendItemRowStyle}>
-                      <span style={getHelpLegendDotStyle("#eab308")}></span>
+                    <div className="help-legend-item-row">
+                      <span
+                        className={getHelpLegendDotClassName("#eab308")}
+                      ></span>
                       <span>Жёлтый — DOAJ (кандидаты)</span>
                     </div>
-                    <div style={helpLegendItemRowStyle}>
-                      <span style={getHelpLegendDotStyle("#8b5cf6")}></span>
+                    <div className="help-legend-item-row">
+                      <span
+                        className={getHelpLegendDotClassName("#8b5cf6")}
+                      ></span>
                       <span>Фиолетовый — Wiley (кандидаты)</span>
                     </div>
-                    <div style={helpLegendItemRowStyle}>
-                      <span style={getHelpLegendDotStyle("#ef4444")}></span>
+                    <div className="help-legend-item-row">
+                      <span
+                        className={getHelpLegendDotClassName("#ef4444")}
+                      ></span>
                       <span>Красный — исключённые</span>
                     </div>
-                    <div style={helpLegendItemRowStyle}>
-                      <span style={getHelpLegendDotStyle("#f97316")}></span>
+                    <div className="help-legend-item-row">
+                      <span
+                        className={getHelpLegendDotClassName("#f97316")}
+                      ></span>
                       <span>Оранжевый — ссылки (references)</span>
                     </div>
-                    <div style={helpLegendItemRowStyle}>
-                      <span style={getHelpLegendDotStyle("#ec4899")}></span>
+                    <div className="help-legend-item-row">
+                      <span
+                        className={getHelpLegendDotClassName("#ec4899")}
+                      ></span>
                       <span>Розовый — статьи, цитирующие вашу базу</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <div style={helpSectionHeadingStyle}>
-                    <IconPlay size="sm" style={getHelpIconStyle("#3b82f6")} />
+                  <div className="help-section-heading">
+                    <IconPlay
+                      size="sm"
+                      className={getHelpIconClassName("#3b82f6")}
+                    />
                     <strong>Действия</strong>
                   </div>
-                  <div style={helpActionsListStyle}>
-                    <p style={helpActionRowStyle}>
+                  <div className="help-actions-list">
+                    <p className="help-action-row">
                       • <strong>Клик</strong> — показать информацию о статье
                     </p>
-                    <p style={helpActionRowStyle}>
+                    <p className="help-action-row">
                       • <strong>Alt + клик</strong> — открыть статью в
                       PubMed/DOI
                     </p>
-                    <p style={helpActionRowStyle}>
+                    <p className="help-action-row">
                       • <strong>Перетаскивание</strong> — перемещать узлы
                     </p>
-                    <p style={helpActionRowStyle}>
+                    <p className="help-action-row">
                       • <strong>Колёсико мыши</strong> — масштабирование
                     </p>
                   </div>
                 </div>
 
                 <div>
-                  <div style={helpSectionHeadingStyle}>
+                  <div className="help-section-heading">
                     <IconRefresh
                       size="sm"
-                      style={getHelpIconStyle("#3b82f6")}
+                      className={getHelpIconClassName("#3b82f6")}
                     />
                     <strong>Загрузка связей</strong>
                   </div>
-                  <p style={helpSectionParagraphStyle}>
+                  <p className="help-section-paragraph">
                     Нажмите «Обновить связи» для загрузки информации о ссылках и
                     цитированиях. Для PubMed статей данные берутся из PubMed
                     API, для DOAJ/Wiley — из Crossref по DOI. Это позволяет
@@ -5039,12 +5002,15 @@ export default function CitationGraph({ projectId }: Props) {
                 </div>
 
                 {/* Семантический поиск */}
-                <div style={helpDividerSectionStyle}>
-                  <div style={helpSectionHeadingStyle}>
-                    <IconSearch size="sm" style={getHelpIconStyle("#10b981")} />
+                <div className="help-divider-section">
+                  <div className="help-section-heading">
+                    <IconSearch
+                      size="sm"
+                      className={getHelpIconClassName("#10b981")}
+                    />
                     <strong>Семантический поиск (Сем.)</strong>
                   </div>
-                  <p style={helpSectionParagraphStyle}>
+                  <p className="help-section-paragraph">
                     Поиск статей по смыслу с помощью AI-эмбеддингов. Находит
                     похожие статьи даже без прямых цитирований. Сначала создайте
                     эмбеддинги для статей, затем используйте поиск.
@@ -5053,11 +5019,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Семантические кластеры */}
                 <div>
-                  <div style={helpSectionHeadingStyle}>
-                    <IconGraph size="sm" style={getHelpIconStyle("#6366f1")} />
+                  <div className="help-section-heading">
+                    <IconGraph
+                      size="sm"
+                      className={getHelpIconClassName("#6366f1")}
+                    />
                     <strong>Семантические кластеры (Кластеры)</strong>
                   </div>
-                  <p style={helpSectionParagraphStyle}>
+                  <p className="help-section-paragraph">
                     Автоматическая группировка статей по тематике с помощью
                     K-Means кластеризации эмбеддингов. Каждый кластер получает
                     название, цвет и центральную (наиболее типичную) статью.
@@ -5067,14 +5036,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Gap Analysis */}
                 <div>
-                  <div style={helpSectionHeadingStyle}>
+                  <div className="help-section-heading">
                     <IconExclamation
                       size="sm"
-                      style={getHelpIconStyle("#f59e0b")}
+                      className={getHelpIconClassName("#f59e0b")}
                     />
                     <strong>Анализ пробелов (Gaps)</strong>
                   </div>
-                  <p style={helpSectionParagraphStyle}>
+                  <p className="help-section-paragraph">
                     Находит "мосты" между кластерами — статьи, которые
                     семантически близки к нескольким тематическим группам.
                     Помогает выявить междисциплинарные работы и потенциальные
@@ -5084,11 +5053,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* Методологический фильтр */}
                 <div>
-                  <div style={helpSectionHeadingStyle}>
-                    <IconFilter size="sm" style={getHelpIconStyle("#ec4899")} />
+                  <div className="help-section-heading">
+                    <IconFilter
+                      size="sm"
+                      className={getHelpIconClassName("#ec4899")}
+                    />
                     <strong>Методологический фильтр (Метод.)</strong>
                   </div>
-                  <p style={helpSectionParagraphStyle}>
+                  <p className="help-section-paragraph">
                     Фильтрация статей по типу исследования: мета-анализы, РКИ
                     (рандомизированные контролируемые исследования),
                     систематические обзоры, когортные исследования и другие. Тип
@@ -5098,14 +5070,14 @@ export default function CitationGraph({ projectId }: Props) {
 
                 {/* AI рекомендации */}
                 <div>
-                  <div style={helpSectionHeadingStyle}>
+                  <div className="help-section-heading">
                     <IconSparkles
                       size="sm"
-                      style={getHelpIconStyle("#8b5cf6")}
+                      className={getHelpIconClassName("#8b5cf6")}
                     />
                     <strong>AI-помощник</strong>
                   </div>
-                  <p style={helpSectionParagraphStyle}>
+                  <p className="help-section-paragraph">
                     Умный поиск статей с помощью нейросетей. Опишите, что ищете,
                     и AI найдёт релевантные статьи в вашем графе, а также
                     предложит рекомендации по улучшению обзора.
@@ -5115,7 +5087,7 @@ export default function CitationGraph({ projectId }: Props) {
 
               <button
                 onClick={() => setShowHelpModal(false)}
-                style={helpCloseButtonStyle}
+                className="help-close-button"
               >
                 Понятно
               </button>
