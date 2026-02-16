@@ -2156,94 +2156,12 @@ export default function CitationGraph({ projectId }: Props) {
     }
   };
 
-  const graphLoadingMessageStyle: React.CSSProperties = {
-    padding: 40,
-    textAlign: "center",
-  };
-  const graphLoadingSpinnerStyle: React.CSSProperties = {
-    margin: "0 auto 16px",
-    width: 32,
-    height: 32,
-  };
-  const graphErrorAlertStyle: React.CSSProperties = { margin: 20 };
-  const graphMainAreaStyle: React.CSSProperties = {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    overflow: "hidden",
-  };
-  const graphHeaderTitleWrapStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    marginRight: 8,
-  };
-  const graphHeaderTitleStyle: React.CSSProperties = {
-    fontWeight: 600,
-    fontSize: 14,
-  };
-  const graphYearRangeStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-  };
-  const graphYearFromInputStyle: React.CSSProperties = { width: 70 };
-  const graphYearToInputStyle: React.CSSProperties = { width: 60 };
-  const graphYearSeparatorStyle: React.CSSProperties = {
-    color: "var(--text-muted)",
-    fontSize: 11,
-  };
-  const graphLangToggleStyle: React.CSSProperties = { padding: 0 };
-  const graphLangButtonStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: 11,
-  };
-  const graphHeaderSpacerStyle: React.CSSProperties = { flex: 1 };
-  const graphHeaderActionButtonStyle: React.CSSProperties = {
-    padding: "5px 10px",
-    fontSize: 11,
-    display: "flex",
-    alignItems: "center",
-  };
-  const graphHeaderActionButtonWithGapStyle: React.CSSProperties = {
-    ...graphHeaderActionButtonStyle,
-    gap: 4,
-  };
-  const graphHeaderActionLabelStyle: React.CSSProperties = { marginLeft: 4 };
   const graphHeaderBadgeBaseStyle: React.CSSProperties = {
     color: "white",
     borderRadius: 10,
     padding: "1px 5px",
     fontSize: 9,
     fontWeight: 600,
-  };
-  const graphExportDropdownWrapStyle: React.CSSProperties = {
-    position: "relative",
-  };
-  const graphExportMenuStyle: React.CSSProperties = {
-    position: "absolute",
-    right: 0,
-    top: "100%",
-    marginTop: 4,
-    background: "var(--bg-secondary)",
-    border: "1px solid var(--border-glass)",
-    borderRadius: 8,
-    padding: 4,
-    minWidth: 140,
-    zIndex: 1000,
-    boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-  };
-  const graphExportMenuItemStyle: React.CSSProperties = {
-    display: "block",
-    width: "100%",
-    padding: "6px 10px",
-    textAlign: "left",
-    background: "none",
-    border: "none",
-    color: "inherit",
-    cursor: "pointer",
-    fontSize: 12,
-    borderRadius: 4,
   };
   const graphAdvancedPanelStyle: React.CSSProperties = {
     display: "flex",
@@ -3763,16 +3681,14 @@ export default function CitationGraph({ projectId }: Props) {
     ...helpLegendDotBaseStyle,
     background: color,
   });
-  const getGraphExportMenuStyle = (isOpen: boolean): React.CSSProperties => ({
-    ...graphExportMenuStyle,
-    display: isOpen ? "block" : "none",
-  });
+  const getGraphExportMenuClassName = (isOpen: boolean): string =>
+    `graph-export-dropdown-menu ${isOpen ? "graph-export-dropdown-menu--open" : ""}`;
 
   if (loading) {
     return (
       <div className="graph-container">
-        <div className="muted" style={graphLoadingMessageStyle}>
-          <div className="loading-spinner" style={graphLoadingSpinnerStyle} />
+        <div className="muted graph-loading-message">
+          <div className="loading-spinner graph-loading-spinner" />
           Загрузка графа цитирований...
         </div>
       </div>
@@ -3782,9 +3698,7 @@ export default function CitationGraph({ projectId }: Props) {
   if (error) {
     return (
       <div className="graph-container">
-        <div className="alert" style={graphErrorAlertStyle}>
-          {error}
-        </div>
+        <div className="alert graph-error-alert">{error}</div>
       </div>
     );
   }
@@ -3796,13 +3710,13 @@ export default function CitationGraph({ projectId }: Props) {
       style={getGraphContainerStyle(isFullscreen)}
     >
       {/* Main Content Area */}
-      <div style={graphMainAreaStyle}>
+      <div className="graph-main-area">
         {/* Compact Header Panel with Dropdowns - horizontal layout */}
         <div className="graph-header-filters">
           {/* Title */}
-          <div style={graphHeaderTitleWrapStyle}>
+          <div className="graph-header-title-wrap">
             <IconGraph size="md" className="text-accent" />
-            <span style={graphHeaderTitleStyle}>Граф</span>
+            <span className="graph-header-title-text">Граф</span>
           </div>
 
           {/* Depth Dropdown */}
@@ -3850,7 +3764,7 @@ export default function CitationGraph({ projectId }: Props) {
           </select>
 
           {/* Year Range */}
-          <div style={graphYearRangeStyle}>
+          <div className="graph-year-range">
             <input
               type="number"
               placeholder="Год от"
@@ -3862,10 +3776,9 @@ export default function CitationGraph({ projectId }: Props) {
                   : undefined;
                 if (val !== yearFrom) setYearFrom(val);
               }}
-              className="graph-compact-input"
-              style={graphYearFromInputStyle}
+              className="graph-compact-input graph-year-input graph-year-input--from"
             />
-            <span style={graphYearSeparatorStyle}>—</span>
+            <span className="graph-year-separator">—</span>
             <input
               type="number"
               placeholder="До"
@@ -3875,8 +3788,7 @@ export default function CitationGraph({ projectId }: Props) {
                 const val = yearToInput ? parseInt(yearToInput, 10) : undefined;
                 if (val !== yearTo) setYearTo(val);
               }}
-              className="graph-compact-input"
-              style={graphYearToInputStyle}
+              className="graph-compact-input graph-year-input graph-year-input--to"
             />
           </div>
 
@@ -3905,30 +3817,31 @@ export default function CitationGraph({ projectId }: Props) {
           </select>
 
           {/* Lang Toggle */}
-          <div className="lang-toggle" style={graphLangToggleStyle}>
+          <div className="lang-toggle graph-header-lang-toggle">
             <button
-              className={globalLang === "en" ? "active" : ""}
               onClick={() => setGlobalLang("en")}
-              style={graphLangButtonStyle}
+              className={`graph-header-lang-button ${
+                globalLang === "en" ? "active" : ""
+              }`}
             >
               EN
             </button>
             <button
-              className={globalLang === "ru" ? "active" : ""}
               onClick={() => setGlobalLang("ru")}
-              style={graphLangButtonStyle}
+              className={`graph-header-lang-button ${
+                globalLang === "ru" ? "active" : ""
+              }`}
             >
               RU
             </button>
           </div>
 
           {/* Spacer */}
-          <div style={graphHeaderSpacerStyle} />
+          <div className="graph-header-spacer" />
 
           {/* Actions */}
           <button
-            className="btn secondary"
-            style={graphHeaderActionButtonStyle}
+            className="btn secondary graph-header-action-btn"
             onClick={handleFetchReferences}
             disabled={fetchingRefs || !!fetchJobStatus?.isRunning}
           >
@@ -3936,15 +3849,14 @@ export default function CitationGraph({ projectId }: Props) {
               size="sm"
               className={fetchingRefs ? "animate-spin" : ""}
             />
-            <span style={graphHeaderActionLabelStyle}>
+            <span className="graph-header-action-label">
               {fetchingRefs ? "..." : "Связи"}
             </span>
           </button>
 
           {/* Рекомендации */}
           <button
-            className="btn secondary"
-            style={graphHeaderActionButtonWithGapStyle}
+            className="btn secondary graph-header-action-btn graph-header-action-btn--with-gap"
             onClick={loadRecommendations}
             disabled={loadingRecommendations}
             title="Рекомендации по улучшению графа"
@@ -3959,8 +3871,9 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* Семантический поиск */}
           <button
-            className={showSemanticSearch ? "btn primary" : "btn secondary"}
-            style={graphHeaderActionButtonWithGapStyle}
+            className={`${
+              showSemanticSearch ? "btn primary" : "btn secondary"
+            } graph-header-action-btn graph-header-action-btn--with-gap`}
             onClick={() => {
               setShowSemanticSearch(!showSemanticSearch);
               if (!showSemanticSearch) {
@@ -3976,10 +3889,9 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* Анализ методологий */}
           <button
-            className={
+            className={`${
               showMethodologyClusters ? "btn primary" : "btn secondary"
-            }
-            style={graphHeaderActionButtonWithGapStyle}
+            } graph-header-action-btn graph-header-action-btn--with-gap`}
             onClick={() => {
               if (
                 !showMethodologyClusters &&
@@ -3999,10 +3911,9 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* Семантические кластеры */}
           <button
-            className={
+            className={`${
               showSemanticClustersPanel ? "btn primary" : "btn secondary"
-            }
-            style={graphHeaderActionButtonWithGapStyle}
+            } graph-header-action-btn graph-header-action-btn--with-gap`}
             onClick={() => {
               if (!showSemanticClustersPanel && semanticClusters.length === 0) {
                 loadSemanticClusters();
@@ -4023,8 +3934,9 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* Gap Analysis */}
           <button
-            className={showGapAnalysis ? "btn primary" : "btn secondary"}
-            style={graphHeaderActionButtonWithGapStyle}
+            className={`${
+              showGapAnalysis ? "btn primary" : "btn secondary"
+            } graph-header-action-btn graph-header-action-btn--with-gap`}
             onClick={() => {
               if (!showGapAnalysis && gapAnalysisResults.length === 0) {
                 handleGapAnalysis();
@@ -4046,8 +3958,7 @@ export default function CitationGraph({ projectId }: Props) {
 
           {/* Экспорт */}
           <div
-            className="dropdown"
-            style={graphExportDropdownWrapStyle}
+            className="dropdown graph-export-dropdown-wrap"
             ref={exportDropdownRef}
           >
             <button
@@ -4057,32 +3968,28 @@ export default function CitationGraph({ projectId }: Props) {
             >
               <IconDownload size="sm" />
             </button>
-            <div style={getGraphExportMenuStyle(showExportMenu)}>
+            <div className={getGraphExportMenuClassName(showExportMenu)}>
               <button
                 onClick={() => handleExport("json")}
                 className="graph-export-menu-item"
-                style={graphExportMenuItemStyle}
               >
                 JSON
               </button>
               <button
                 onClick={() => handleExport("graphml")}
                 className="graph-export-menu-item"
-                style={graphExportMenuItemStyle}
               >
                 GraphML
               </button>
               <button
                 onClick={() => handleExport("cytoscape")}
                 className="graph-export-menu-item"
-                style={graphExportMenuItemStyle}
               >
                 Cytoscape
               </button>
               <button
                 onClick={() => handleExport("gexf")}
                 className="graph-export-menu-item"
-                style={graphExportMenuItemStyle}
               >
                 GEXF (Gephi)
               </button>
@@ -4108,10 +4015,11 @@ export default function CitationGraph({ projectId }: Props) {
           <button
             onClick={() => setShowAIAssistant(!showAIAssistant)}
             className={
-              showAIAssistant ? "graph-compact-btn-active" : "graph-compact-btn"
+              showAIAssistant
+                ? "graph-compact-btn-active graph-header-action-btn--with-gap"
+                : "graph-compact-btn graph-header-action-btn--with-gap"
             }
             title="AI Ассистент"
-            style={graphHeaderActionButtonWithGapStyle}
           >
             <IconSparkles size="sm" />
             AI

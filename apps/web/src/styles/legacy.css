@@ -5802,6 +5802,123 @@ input:focus::placeholder {
   flex-shrink: 0;
 }
 
+.graph-loading-message {
+  padding: 40px;
+  text-align: center;
+}
+
+.graph-loading-spinner {
+  margin: 0 auto 16px;
+  width: 32px;
+  height: 32px;
+}
+
+.graph-error-alert {
+  margin: 20px;
+}
+
+.graph-main-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.graph-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 8px;
+}
+
+.graph-header-title-text {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.graph-year-range {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.graph-year-input--from {
+  width: 70px !important;
+}
+
+.graph-year-input--to {
+  width: 60px !important;
+}
+
+.graph-year-separator {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.graph-header-lang-toggle {
+  padding: 0 !important;
+}
+
+.graph-header-lang-toggle .graph-header-lang-button {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.graph-header-spacer {
+  flex: 1;
+}
+
+.graph-header-action-btn {
+  padding: 5px 10px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+}
+
+.graph-header-action-btn--with-gap {
+  gap: 4px;
+}
+
+.graph-header-action-label {
+  margin-left: 4px;
+}
+
+.graph-export-dropdown-wrap {
+  position: relative;
+}
+
+.graph-export-dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 4px;
+  min-width: 140px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: none;
+}
+
+.graph-export-dropdown-menu--open {
+  display: block;
+}
+
+.graph-export-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
 /* Graph area - no strict borders, expansive canvas */
 .graph-container > div:last-child {
   border: none;
