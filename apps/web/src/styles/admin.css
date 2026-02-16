@@ -2431,5 +2431,15 @@
     min-width: 0;
     width: 100%;
   }
+
+  .admin-jobs-summary {
+    gap: 8px;
+  }
+
+  .admin-job-summary-item {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding: 12px 10px;
+  }
 }
 
