@@ -37,6 +37,9 @@
     "*": [
       "pnpm run quality:guards:check"
     ],
+    "scripts/*.js": [
+      "pnpm run quality:guards:test"
+    ],
     "*.{ts,tsx}": [
       "prettier --write --ignore-unknown"
     ],
