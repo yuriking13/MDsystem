@@ -54,6 +54,24 @@ describe("responsive shell css regressions", () => {
     );
   });
 
+  it("keeps admin auth/loading shell with 100dvh and safe-area padding", () => {
+    expect(adminCss).toMatch(
+      /\.admin-loading\s*\{[\s\S]*?min-height:\s*100vh;[\s\S]*?min-height:\s*100dvh;/,
+    );
+    expect(adminCss).toMatch(
+      /\.admin-login-page\s*\{[\s\S]*?min-height:\s*100vh;[\s\S]*?min-height:\s*100dvh;[\s\S]*?padding:\s*calc\(20px \+ env\(safe-area-inset-top,\s*0px\)\)\s*calc\(20px \+ env\(safe-area-inset-right,\s*0px\)\)\s*calc\(20px \+ env\(safe-area-inset-bottom,\s*0px\)\)\s*calc\(20px \+ env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+  });
+
+  it("keeps admin modal overlay safe-area and modal height fallback", () => {
+    expect(adminCss).toMatch(
+      /\.admin-modal-overlay\s*\{[\s\S]*?padding:\s*calc\(1rem \+ env\(safe-area-inset-top,\s*0px\)\)\s*calc\(1rem \+ env\(safe-area-inset-right,\s*0px\)\)\s*calc\(1rem \+ env\(safe-area-inset-bottom,\s*0px\)\)\s*calc\(1rem \+ env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+    expect(adminCss).toMatch(
+      /\.admin-modal\s*\{[\s\S]*?max-height:\s*90vh;[\s\S]*?max-height:\s*90dvh;/,
+    );
+  });
+
   it("keeps admin mobile main/topbar safe-area-aware paddings", () => {
     expect(adminCss).toMatch(
       /@media\s*\(max-width:\s*900px\)\s*\{[\s\S]*?\.admin-main,[\s\S]*?padding:\s*16px calc\(16px \+ env\(safe-area-inset-right,\s*0px\)\)\s*calc\(16px \+ env\(safe-area-inset-bottom,\s*0px\)\)\s*calc\(16px \+ env\(safe-area-inset-left,\s*0px\)\);/,
