@@ -208,7 +208,7 @@ describe("AppLayout mobile sidebar behavior", () => {
   });
 
   it("uses fixed layout shell for graph tab route", () => {
-    renderAppLayout("/projects/p1?tab=graph");
+    const { unmount } = renderAppLayout("/projects/p1?tab=graph");
 
     expect(screen.getByText("Project details page")).toBeInTheDocument();
     expect(document.documentElement.classList.contains("layout-fixed")).toBe(
@@ -221,5 +221,11 @@ describe("AppLayout mobile sidebar behavior", () => {
       screen.getByRole("button", { name: "Открыть навигацию" }),
     ).toBeInTheDocument();
     expect(document.querySelector(".app-mobile-topbar")).toBeNull();
+
+    unmount();
+    expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+      false,
+    );
+    expect(document.body.classList.contains("layout-fixed")).toBe(false);
   });
 });
