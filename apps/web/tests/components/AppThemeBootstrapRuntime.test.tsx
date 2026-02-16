@@ -302,4 +302,43 @@ describe("App theme bootstrap runtime", () => {
       expect(screen.getByText("Login Page")).toBeInTheDocument();
     });
   });
+
+  it("redirects unauthenticated projects route to login page", async () => {
+    const storage = createThemeStorage(null);
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/projects"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
+  it("renders settings page inside authenticated app layout", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/settings"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Settings Page")).toBeInTheDocument();
+    });
+  });
 });
