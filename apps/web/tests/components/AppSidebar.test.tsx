@@ -170,4 +170,32 @@ describe("AppSidebar mobile collapse behavior", () => {
 
     expect(onCloseMobile).toHaveBeenCalledTimes(1);
   });
+
+  it("does not close mobile drawer when toggling articles root item", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+    });
+
+    await user.click(screen.getByText("База статей"));
+
+    expect(onCloseMobile).not.toHaveBeenCalled();
+  });
+
+  it("closes mobile drawer when selecting article status submenu item", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+    });
+
+    await user.click(screen.getByText("Кандидаты"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
+  });
 });
