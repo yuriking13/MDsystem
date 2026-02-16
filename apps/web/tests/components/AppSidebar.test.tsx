@@ -243,6 +243,24 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(onCloseMobile).toHaveBeenCalledTimes(1);
   });
 
+  it("updates project tab query and closes mobile drawer on tab navigation", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+      initialPath: "/projects/project-1?tab=articles",
+    });
+
+    await user.click(screen.getByText("Документы"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("sidebar-location").textContent).toBe(
+      "/projects/project-1?tab=documents",
+    );
+  });
+
   it("calls onCloseMobile when opening docs from main mobile navigation", async () => {
     const user = userEvent.setup();
     const onCloseMobile = vi.fn();
@@ -326,6 +344,24 @@ describe("AppSidebar mobile collapse behavior", () => {
     await user.click(screen.getByText("База статей"));
 
     expect(onCloseMobile).not.toHaveBeenCalled();
+  });
+
+  it("switches to articles tab without closing drawer when clicking articles root from another tab", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+      initialPath: "/projects/project-1?tab=documents",
+    });
+
+    await user.click(screen.getByText("База статей"));
+
+    expect(onCloseMobile).not.toHaveBeenCalled();
+    expect(screen.getByTestId("sidebar-location").textContent).toBe(
+      "/projects/project-1?tab=articles",
+    );
   });
 
   it("closes mobile drawer when selecting article status submenu item", async () => {
