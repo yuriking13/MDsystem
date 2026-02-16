@@ -541,6 +541,7 @@ body {
     radial-gradient(ellipse at 50% 90%, var(--bg-gradient-3) 0%, transparent 45%);
   color: var(--text-primary);
   min-height: 100vh;
+  min-height: 100dvh;
   transition: background var(--transition-slow) ease, color var(--transition-normal) ease;
   overflow-x: hidden;
 }

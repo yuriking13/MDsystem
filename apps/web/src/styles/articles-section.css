@@ -1571,6 +1571,7 @@
   right: 0;
   width: 420px;
   height: 100vh;
+  height: 100dvh;
   z-index: 200;
   display: flex;
   flex-direction: column;
