@@ -25,6 +25,7 @@ const REQUIRED_RESPONSIVE_TEST_FILES = [
   "tests/utils/responsiveMatrix.test.ts",
   "tests/utils/viewport.test.ts",
   "tests/config/responsiveSuiteContract.test.ts",
+  "tests/config/responsiveTestConventions.test.ts",
 ] as const;
 
 function extractVitestTargets(command: string): string[] {

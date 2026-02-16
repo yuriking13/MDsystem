@@ -482,6 +482,7 @@ test("runQualityGuards accepts complete web test:responsive script coverage", ()
     "tests/utils/responsiveMatrix.test.ts",
     "tests/utils/viewport.test.ts",
     "tests/config/responsiveSuiteContract.test.ts",
+    "tests/config/responsiveTestConventions.test.ts",
   ];
 
   writeFile(
@@ -528,6 +529,7 @@ test("runQualityGuards blocks web test:responsive script without clean-js-mirror
     "tests/utils/responsiveMatrix.test.ts",
     "tests/utils/viewport.test.ts",
     "tests/config/responsiveSuiteContract.test.ts",
+    "tests/config/responsiveTestConventions.test.ts",
   ];
 
   writeFile(
@@ -577,6 +579,7 @@ test("runQualityGuards blocks duplicate test targets in web test:responsive scri
     "tests/utils/responsiveMatrix.test.ts",
     "tests/utils/viewport.test.ts",
     "tests/config/responsiveSuiteContract.test.ts",
+    "tests/config/responsiveTestConventions.test.ts",
     "tests/components/AppLayout.test.tsx",
   ];
 

@@ -279,7 +279,7 @@ test("quality-guards check mode reports responsive suite tip when pre-step is mi
         name: "web",
         scripts: {
           "test:responsive":
-            "vitest run src/lib/responsive.test.ts tests/components/AppLayout.test.tsx tests/pages/AdminLayout.test.tsx tests/components/AppSidebar.test.tsx tests/styles/articlesLayout.test.ts tests/styles/legacyResponsiveSafeguards.test.ts tests/styles/layoutResponsiveShell.test.ts tests/styles/docsAndGraphResponsive.test.ts tests/styles/projectsAndSettingsResponsive.test.ts tests/styles/adminPagesResponsive.test.ts tests/styles/authResponsive.test.ts tests/utils/responsiveMatrix.test.ts tests/utils/viewport.test.ts tests/config/responsiveSuiteContract.test.ts",
+            "vitest run src/lib/responsive.test.ts tests/components/AppLayout.test.tsx tests/pages/AdminLayout.test.tsx tests/components/AppSidebar.test.tsx tests/styles/articlesLayout.test.ts tests/styles/legacyResponsiveSafeguards.test.ts tests/styles/layoutResponsiveShell.test.ts tests/styles/docsAndGraphResponsive.test.ts tests/styles/projectsAndSettingsResponsive.test.ts tests/styles/adminPagesResponsive.test.ts tests/styles/authResponsive.test.ts tests/utils/responsiveMatrix.test.ts tests/utils/viewport.test.ts tests/config/responsiveSuiteContract.test.ts tests/config/responsiveTestConventions.test.ts",
         },
       },
       null,

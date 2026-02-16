@@ -99,6 +99,7 @@ const REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
   "tests/utils/responsiveMatrix.test.ts",
   "tests/utils/viewport.test.ts",
   "tests/config/responsiveSuiteContract.test.ts",
+  "tests/config/responsiveTestConventions.test.ts",
 ];
 
 function walkFiles(rootDir, extensions) {
