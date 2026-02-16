@@ -10,25 +10,14 @@ import ChartFromTable, {
 } from "./ChartFromTable";
 import { type ProjectStatistic } from "../lib/api";
 
-const iconAccentMarginStyle: React.CSSProperties = {
-  marginRight: 6,
-  color: "var(--accent)",
-};
-const iconMarginRight4NoShrinkStyle: React.CSSProperties = {
-  marginRight: 4,
-  flexShrink: 0,
-};
-const iconMarginRight4Style: React.CSSProperties = { marginRight: 4 };
-
 // SVG Icons (Flowbite/Heroicons style)
 const ChartBarIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm edit-stat-icon-accent-gap-6"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconAccentMarginStyle}
   >
     <path
       strokeLinecap="round"
@@ -40,12 +29,11 @@ const ChartBarIcon = () => (
 
 const TableIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm edit-stat-icon-accent-gap-6"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconAccentMarginStyle}
   >
     <path
       strokeLinecap="round"
@@ -57,12 +45,11 @@ const TableIcon = () => (
 
 const BeakerIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm edit-stat-icon-accent-gap-6"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconAccentMarginStyle}
   >
     <path
       strokeLinecap="round"
@@ -90,12 +77,11 @@ const CloseIcon = () => (
 
 const LightBulbIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm edit-stat-icon-accent-gap-6"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconAccentMarginStyle}
   >
     <path
       strokeLinecap="round"
@@ -107,12 +93,11 @@ const LightBulbIcon = () => (
 
 const QuantitativeIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm edit-stat-icon-gap-4-no-shrink"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconMarginRight4NoShrinkStyle}
   >
     <path
       strokeLinecap="round"
@@ -124,12 +109,11 @@ const QuantitativeIcon = () => (
 
 const QualitativeIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm edit-stat-icon-gap-4-no-shrink"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconMarginRight4NoShrinkStyle}
   >
     <path
       strokeLinecap="round"
@@ -146,12 +130,11 @@ const QualitativeIcon = () => (
 
 const SaveIcon = () => (
   <svg
-    className="icon-sm"
+    className="icon-sm edit-stat-icon-gap-4"
     fill="none"
     stroke="currentColor"
     strokeWidth={1.5}
     viewBox="0 0 24 24"
-    style={iconMarginRight4Style}
   >
     <path
       strokeLinecap="round"
@@ -163,12 +146,11 @@ const SaveIcon = () => (
 
 const SpinnerIcon = () => (
   <svg
-    className="icon-sm loading-spinner"
+    className="icon-sm loading-spinner edit-stat-icon-gap-4"
     fill="none"
     stroke="currentColor"
     strokeWidth={2}
     viewBox="0 0 24 24"
-    style={iconMarginRight4Style}
   >
     <path
       strokeLinecap="round"
@@ -390,155 +372,18 @@ export default function StatisticEditModal({
     "doughnut",
   ];
 
-  const chartTabLayoutStyle: React.CSSProperties = { alignItems: "flex-start" };
-  const leftPanelStyle: React.CSSProperties = { flex: 1 };
-  const fieldSpacingStyle: React.CSSProperties = { marginBottom: 12 };
-  const descriptionTextareaStyle: React.CSSProperties = {
-    resize: "vertical",
-  };
-  const typeLabelStyle: React.CSSProperties = {
-    display: "block",
-    marginBottom: 8,
-  };
-  const typeButtonsWrapStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 4,
-  };
-  const dataColumnsWrapStyle: React.CSSProperties = {
-    marginTop: 6,
-    flexWrap: "wrap",
-  };
-  const alignCenterStyle: React.CSSProperties = { alignItems: "center" };
-  const checkboxWidthAutoStyle: React.CSSProperties = { width: "auto" };
-  const dataColumnLabelStyle: React.CSSProperties = { fontSize: 13 };
-  const previewPanelStyle: React.CSSProperties = {
-    flex: 1,
-    background: "rgba(0,0,0,0.2)",
-    borderRadius: 12,
-    padding: 16,
-  };
-  const previewTitleStyle: React.CSSProperties = {
-    marginBottom: 8,
-    fontSize: 12,
-  };
-  const previewEmptyStyle: React.CSSProperties = {
-    textAlign: "center",
-    padding: 40,
-  };
-
-  const tableHeaderRowStyle: React.CSSProperties = { marginBottom: 12 };
-  const tableActionButtonStyle: React.CSSProperties = {
-    padding: "6px 12px",
-    fontSize: 12,
-  };
-  const tableContainerStyle: React.CSSProperties = {
-    maxHeight: 400,
-    overflowY: "auto",
-  };
-  const tableStyle: React.CSSProperties = { width: "100%" };
-  const rowIndexHeaderStyle: React.CSSProperties = { width: 40 };
-  const fullWidthInputStyle: React.CSSProperties = { flex: 1 };
-  const removeColumnButtonStyle: React.CSSProperties = {
-    padding: "2px 6px",
-    fontSize: 10,
-  };
-  const centerTextStyle: React.CSSProperties = { textAlign: "center" };
-  const centeredRowStyle: React.CSSProperties = {
-    alignItems: "center",
-    justifyContent: "center",
-  };
-  const removeRowButtonStyle: React.CSSProperties = {
-    padding: "1px 4px",
-    fontSize: 9,
-  };
-  const tableHintCardStyle: React.CSSProperties = {
-    marginTop: 16,
-    padding: 12,
-  };
-  const tableHintTextStyle: React.CSSProperties = {
-    fontSize: 12,
-    display: "flex",
-    alignItems: "center",
-  };
-
-  const classificationCardStyle: React.CSSProperties = {
-    padding: 12,
-    marginBottom: 16,
-  };
-  const classificationHeaderStyle: React.CSSProperties = { marginBottom: 8 };
-  const classificationTitleStyle: React.CSSProperties = {
-    fontSize: 13,
-    display: "flex",
-    alignItems: "center",
-  };
-  const classificationMethodStyle: React.CSSProperties = { fontSize: 11 };
-  const classificationFieldsWrapStyle: React.CSSProperties = {
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 12,
-  };
-  const classificationFieldStyle: React.CSSProperties = { minWidth: 200 };
-  const classificationLabelStyle: React.CSSProperties = { fontSize: 11 };
-  const recommendedWrapStyle: React.CSSProperties = {
-    marginTop: 6,
-    flexWrap: "wrap",
-  };
-  const explanationGridStyle: React.CSSProperties = {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-  };
-  const explanationCardStyle: React.CSSProperties = { padding: 14 };
-  const explanationHeadingStyle: React.CSSProperties = {
-    margin: "0 0 8px 0",
-    fontSize: 13,
-    display: "flex",
-    alignItems: "center",
-  };
-  const explanationBodyStyle: React.CSSProperties = {
-    fontSize: 11,
-    margin: 0,
-    lineHeight: 1.5,
-  };
-
-  const saveButtonStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-  };
-
-  const getChartTypeButtonStyle = (
+  const getChartTypeButtonClassName = (
     isSelected: boolean,
     isRecommended: boolean,
-  ): React.CSSProperties => ({
-    padding: "6px 10px",
-    fontSize: 11,
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    background: isSelected ? "var(--success)" : undefined,
-    borderColor: isSelected
-      ? "var(--success)"
-      : isRecommended
-        ? "var(--success)"
-        : undefined,
-    border:
-      isRecommended && !isSelected ? "2px solid var(--success)" : undefined,
-  });
+  ): string =>
+    `btn edit-stat-chart-type-button ${
+      isSelected ? "edit-stat-chart-type-button--selected" : "secondary"
+    } ${isRecommended ? "edit-stat-chart-type-button--recommended" : ""}`;
 
-  const getRecommendedTypeButtonStyle = (
-    isSelected: boolean,
-  ): React.CSSProperties => ({
-    cursor: "pointer",
-    padding: "4px 10px",
-    fontSize: 11,
-    display: "flex",
-    alignItems: "center",
-    gap: 4,
-    background: isSelected ? "var(--success)" : "rgba(74, 222, 128, 0.15)",
-    borderColor: "var(--success)",
-    color: isSelected ? "white" : "var(--success)",
-  });
+  const getRecommendedTypeButtonClassName = (isSelected: boolean): string =>
+    `btn edit-stat-recommended-type-button ${
+      isSelected ? "edit-stat-recommended-type-button--selected" : ""
+    }`;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -583,9 +428,9 @@ export default function StatisticEditModal({
 
           {/* Chart Type Tab */}
           {activeTab === "chart" && (
-            <div className="row gap" style={chartTabLayoutStyle}>
-              <div style={leftPanelStyle}>
-                <label className="stack" style={fieldSpacingStyle}>
+            <div className="row gap edit-stat-chart-layout">
+              <div className="edit-stat-left-panel">
+                <label className="stack edit-stat-field-spacing">
                   <span>Заголовок</span>
                   <input
                     value={title}
@@ -594,22 +439,22 @@ export default function StatisticEditModal({
                   />
                 </label>
 
-                <label className="stack" style={fieldSpacingStyle}>
+                <label className="stack edit-stat-field-spacing">
                   <span>Описание</span>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Необязательное описание..."
                     rows={2}
-                    style={descriptionTextareaStyle}
+                    className="edit-stat-description-textarea"
                   />
                 </label>
 
-                <div style={fieldSpacingStyle}>
-                  <span className="muted" style={typeLabelStyle}>
+                <div className="edit-stat-field-spacing">
+                  <span className="muted edit-stat-type-label">
                     Тип графика
                   </span>
-                  <div style={typeButtonsWrapStyle}>
+                  <div className="edit-stat-type-buttons-wrap">
                     {allChartTypes.map((t) => {
                       const info = CHART_TYPE_INFO[t] ?? {
                         name: String(t),
@@ -621,12 +466,11 @@ export default function StatisticEditModal({
                       return (
                         <button
                           key={t}
-                          className={`btn ${isSelected ? "" : "secondary"}`}
-                          onClick={() => setChartType(t)}
-                          style={getChartTypeButtonStyle(
+                          className={getChartTypeButtonClassName(
                             isSelected,
                             isRecommended,
                           )}
+                          onClick={() => setChartType(t)}
                           title={info.description}
                         >
                           {info.icon}{" "}
@@ -641,7 +485,7 @@ export default function StatisticEditModal({
 
                 {chartType === "scatter" ? (
                   <>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack edit-stat-field-spacing">
                       <span>Ось X</span>
                       <select
                         value={xColumn}
@@ -654,7 +498,7 @@ export default function StatisticEditModal({
                         ))}
                       </select>
                     </label>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack edit-stat-field-spacing">
                       <span>Ось Y</span>
                       <select
                         value={yColumn}
@@ -670,7 +514,7 @@ export default function StatisticEditModal({
                   </>
                 ) : chartType === "histogram" ? (
                   <>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack edit-stat-field-spacing">
                       <span>Колонка данных</span>
                       <select
                         value={dataColumns[0] || 1}
@@ -685,7 +529,7 @@ export default function StatisticEditModal({
                         ))}
                       </select>
                     </label>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack edit-stat-field-spacing">
                       <span>Количество интервалов (bins): {bins}</span>
                       <input
                         type="range"
@@ -698,7 +542,7 @@ export default function StatisticEditModal({
                   </>
                 ) : (
                   <>
-                    <label className="stack" style={fieldSpacingStyle}>
+                    <label className="stack edit-stat-field-spacing">
                       <span>Колонка меток (X)</span>
                       <select
                         value={labelColumn}
@@ -711,24 +555,23 @@ export default function StatisticEditModal({
                         ))}
                       </select>
                     </label>
-                    <div style={fieldSpacingStyle}>
+                    <div className="edit-stat-field-spacing">
                       <span className="muted">Колонки данных (Y)</span>
-                      <div className="row gap" style={dataColumnsWrapStyle}>
+                      <div className="row gap edit-stat-data-columns-wrap">
                         {tableData?.headers.map(
                           (h, i) =>
                             i !== labelColumn && (
                               <label
                                 key={i}
-                                className="row gap"
-                                style={alignCenterStyle}
+                                className="row gap edit-stat-align-center"
                               >
                                 <input
                                   type="checkbox"
                                   checked={dataColumns.includes(i)}
                                   onChange={() => toggleDataColumn(i)}
-                                  style={checkboxWidthAutoStyle}
+                                  className="edit-stat-checkbox-auto"
                                 />
-                                <span style={dataColumnLabelStyle}>
+                                <span className="edit-stat-data-column-label">
                                   {h || `Колонка ${i + 1}`}
                                 </span>
                               </label>
@@ -741,8 +584,8 @@ export default function StatisticEditModal({
               </div>
 
               {/* Preview */}
-              <div style={previewPanelStyle}>
-                <div className="muted" style={previewTitleStyle}>
+              <div className="edit-stat-preview-panel">
+                <div className="muted edit-stat-preview-title">
                   Предпросмотр:
                 </div>
                 {tableData &&
@@ -756,7 +599,7 @@ export default function StatisticEditModal({
                     theme="dark"
                   />
                 ) : (
-                  <div className="muted" style={previewEmptyStyle}>
+                  <div className="muted edit-stat-preview-empty">
                     Выберите колонки данных
                   </div>
                 )}
@@ -767,51 +610,47 @@ export default function StatisticEditModal({
           {/* Table Data Tab */}
           {activeTab === "table" && tableData && (
             <div>
-              <div className="row space" style={tableHeaderRowStyle}>
+              <div className="row space edit-stat-table-header-row">
                 <span className="muted">
                   {tableData.rows.length} строк × {tableData.headers.length}{" "}
                   колонок
                 </span>
                 <div className="row gap">
                   <button
-                    className="btn secondary"
+                    className="btn secondary edit-stat-table-action-btn"
                     onClick={addColumn}
-                    style={tableActionButtonStyle}
                   >
                     + Колонка
                   </button>
                   <button
-                    className="btn secondary"
+                    className="btn secondary edit-stat-table-action-btn"
                     onClick={addRow}
-                    style={tableActionButtonStyle}
                   >
                     + Строка
                   </button>
                 </div>
               </div>
 
-              <div style={tableContainerStyle}>
-                <table className="chart-source-table" style={tableStyle}>
+              <div className="edit-stat-table-container">
+                <table className="chart-source-table edit-stat-table">
                   <thead>
                     <tr>
-                      <th style={rowIndexHeaderStyle}>#</th>
+                      <th className="edit-stat-row-index-header">#</th>
                       {tableData.headers.map((h: string, i: number) => (
                         <th key={i}>
-                          <div className="row gap" style={alignCenterStyle}>
+                          <div className="row gap edit-stat-align-center">
                             <input
                               type="text"
                               value={h}
                               onChange={(e) =>
                                 handleHeaderChange(i, e.target.value)
                               }
-                              className="chart-data-input header-input"
-                              style={fullWidthInputStyle}
+                              className="chart-data-input header-input edit-stat-full-width-input"
                             />
                             {tableData.headers.length > 2 && (
                               <button
-                                className="btn secondary"
+                                className="btn secondary edit-stat-remove-column-btn"
                                 onClick={() => removeColumn(i)}
-                                style={removeColumnButtonStyle}
                                 title="Удалить колонку"
                               >
                                 ✕
@@ -825,14 +664,13 @@ export default function StatisticEditModal({
                   <tbody>
                     {tableData.rows.map((row: string[], ri: number) => (
                       <tr key={ri}>
-                        <td style={centerTextStyle}>
-                          <div className="row gap" style={centeredRowStyle}>
+                        <td className="edit-stat-center-text">
+                          <div className="row gap edit-stat-centered-row">
                             <span className="muted">{ri + 1}</span>
                             {tableData.rows.length > 1 && (
                               <button
-                                className="btn secondary"
+                                className="btn secondary edit-stat-remove-row-btn"
                                 onClick={() => removeRow(ri)}
-                                style={removeRowButtonStyle}
                                 title="Удалить строку"
                               >
                                 ✕
@@ -858,8 +696,8 @@ export default function StatisticEditModal({
                 </table>
               </div>
 
-              <div className="card" style={tableHintCardStyle}>
-                <div className="muted" style={tableHintTextStyle}>
+              <div className="card edit-stat-table-hint-card">
+                <div className="muted edit-stat-table-hint-text">
                   <LightBulbIcon />
                   Подсказка: Изменения в таблице автоматически отразятся на
                   графике
@@ -871,20 +709,20 @@ export default function StatisticEditModal({
           {/* Classification Tab */}
           {activeTab === "classification" && (
             <div>
-              <div className="card" style={classificationCardStyle}>
-                <div className="row space" style={classificationHeaderStyle}>
-                  <strong style={classificationTitleStyle}>
+              <div className="card edit-stat-classification-card">
+                <div className="row space edit-stat-classification-header">
+                  <strong className="edit-stat-classification-title">
                     <ChartBarIcon />
                     Классификация данных
                   </strong>
-                  <span className="muted" style={classificationMethodStyle}>
+                  <span className="muted edit-stat-classification-method">
                     Рекомендуемый метод: {recommendedMethod}
                   </span>
                 </div>
 
-                <div className="row gap" style={classificationFieldsWrapStyle}>
-                  <label className="stack" style={classificationFieldStyle}>
-                    <span className="muted" style={classificationLabelStyle}>
+                <div className="row gap edit-stat-classification-fields">
+                  <label className="stack edit-stat-classification-field">
+                    <span className="muted edit-stat-classification-label">
                       Тип переменной
                     </span>
                     <select
@@ -900,8 +738,8 @@ export default function StatisticEditModal({
                     </select>
                   </label>
 
-                  <label className="stack" style={classificationFieldStyle}>
-                    <span className="muted" style={classificationLabelStyle}>
+                  <label className="stack edit-stat-classification-field">
+                    <span className="muted edit-stat-classification-label">
                       Подтип
                     </span>
                     <select
@@ -928,8 +766,8 @@ export default function StatisticEditModal({
                   </label>
 
                   {variableType === "quantitative" && (
-                    <label className="stack" style={classificationFieldStyle}>
-                      <span className="muted" style={classificationLabelStyle}>
+                    <label className="stack edit-stat-classification-field">
+                      <span className="muted edit-stat-classification-label">
                         Распределение
                       </span>
                       <select
@@ -957,10 +795,10 @@ export default function StatisticEditModal({
 
                 {recommendedTypes.length > 0 && (
                   <div>
-                    <span className="muted" style={classificationLabelStyle}>
+                    <span className="muted edit-stat-classification-label">
                       Рекомендуемые типы графиков:{" "}
                     </span>
-                    <div className="row gap" style={recommendedWrapStyle}>
+                    <div className="row gap edit-stat-recommended-wrap">
                       {recommendedTypes.map((t) => {
                         const info = CHART_TYPE_INFO[t] ?? {
                           name: String(t),
@@ -974,8 +812,9 @@ export default function StatisticEditModal({
                               setChartType(t);
                               setActiveTab("chart");
                             }}
-                            className="btn"
-                            style={getRecommendedTypeButtonStyle(isSelected)}
+                            className={getRecommendedTypeButtonClassName(
+                              isSelected,
+                            )}
                           >
                             {info.icon} {info.name}
                           </button>
@@ -987,24 +826,24 @@ export default function StatisticEditModal({
               </div>
 
               {/* Explanation cards */}
-              <div style={explanationGridStyle}>
-                <div className="card" style={explanationCardStyle}>
-                  <h5 style={explanationHeadingStyle}>
+              <div className="edit-stat-explanation-grid">
+                <div className="card edit-stat-explanation-card">
+                  <h5 className="edit-stat-explanation-heading">
                     <QuantitativeIcon />
                     Количественные данные
                   </h5>
-                  <p className="muted" style={explanationBodyStyle}>
+                  <p className="muted edit-stat-explanation-body">
                     <strong>Непрерывные:</strong> возраст, рост, вес, давление
                     <br />
                     <strong>Дискретные:</strong> количество детей, число визитов
                   </p>
                 </div>
-                <div className="card" style={explanationCardStyle}>
-                  <h5 style={explanationHeadingStyle}>
+                <div className="card edit-stat-explanation-card">
+                  <h5 className="edit-stat-explanation-heading">
                     <QualitativeIcon />
                     Качественные данные
                   </h5>
-                  <p className="muted" style={explanationBodyStyle}>
+                  <p className="muted edit-stat-explanation-body">
                     <strong>Номинальные:</strong> группа крови, пол
                     <br />
                     <strong>Дихотомические:</strong> да/нет, жив/умер
@@ -1023,10 +862,9 @@ export default function StatisticEditModal({
             Отмена
           </button>
           <button
-            className="btn-primary"
+            className="btn-primary edit-stat-save-btn"
             onClick={handleSave}
             disabled={saving || !title.trim()}
-            style={saveButtonStyle}
           >
             {saving ? (
               <>

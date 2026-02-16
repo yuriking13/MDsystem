@@ -2666,6 +2666,237 @@ input:focus::placeholder {
   overflow-y: auto;
 }
 
+.edit-stat-icon-accent-gap-6 {
+  margin-right: 6px;
+  color: var(--accent);
+}
+
+.edit-stat-icon-gap-4-no-shrink {
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.edit-stat-icon-gap-4 {
+  margin-right: 4px;
+}
+
+.edit-stat-chart-layout {
+  align-items: flex-start;
+}
+
+.edit-stat-left-panel {
+  flex: 1;
+}
+
+.edit-stat-field-spacing {
+  margin-bottom: 12px;
+}
+
+.edit-stat-description-textarea {
+  resize: vertical;
+}
+
+.edit-stat-type-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.edit-stat-type-buttons-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.edit-stat-chart-type-button {
+  padding: 6px 10px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.edit-stat-chart-type-button--selected {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.edit-stat-chart-type-button--recommended:not(.edit-stat-chart-type-button--selected) {
+  border: 2px solid var(--success);
+}
+
+.edit-stat-data-columns-wrap {
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.edit-stat-align-center {
+  align-items: center;
+}
+
+.edit-stat-checkbox-auto {
+  width: auto;
+}
+
+.edit-stat-data-column-label {
+  font-size: 13px;
+}
+
+.edit-stat-preview-panel {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.edit-stat-preview-title {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.edit-stat-preview-empty {
+  text-align: center;
+  padding: 40px;
+}
+
+.edit-stat-table-header-row {
+  margin-bottom: 12px;
+}
+
+.edit-stat-table-action-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.edit-stat-table-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.edit-stat-table {
+  width: 100%;
+}
+
+.edit-stat-row-index-header {
+  width: 40px;
+}
+
+.edit-stat-full-width-input {
+  flex: 1;
+}
+
+.edit-stat-remove-column-btn {
+  padding: 2px 6px;
+  font-size: 10px;
+}
+
+.edit-stat-center-text {
+  text-align: center;
+}
+
+.edit-stat-centered-row {
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-stat-remove-row-btn {
+  padding: 1px 4px;
+  font-size: 9px;
+}
+
+.edit-stat-table-hint-card {
+  margin-top: 16px;
+  padding: 12px;
+}
+
+.edit-stat-table-hint-text {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.edit-stat-classification-card {
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.edit-stat-classification-header {
+  margin-bottom: 8px;
+}
+
+.edit-stat-classification-title {
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.edit-stat-classification-method {
+  font-size: 11px;
+}
+
+.edit-stat-classification-fields {
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.edit-stat-classification-field {
+  min-width: 200px;
+}
+
+.edit-stat-classification-label {
+  font-size: 11px;
+}
+
+.edit-stat-recommended-wrap {
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.edit-stat-recommended-type-button {
+  cursor: pointer;
+  padding: 4px 10px;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(74, 222, 128, 0.15);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.edit-stat-recommended-type-button--selected {
+  background: var(--success);
+  color: #fff;
+}
+
+.edit-stat-explanation-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.edit-stat-explanation-card {
+  padding: 14px;
+}
+
+.edit-stat-explanation-heading {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.edit-stat-explanation-body {
+  font-size: 11px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.edit-stat-save-btn {
+  display: flex;
+  align-items: center;
+}
+
 .create-statistic-modal {
   max-width: 1000px;
   max-height: 90vh;

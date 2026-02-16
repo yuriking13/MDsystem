@@ -131,11 +131,14 @@ test("runQualityGuards enforces style prop usage outside allowlist", () => {
   const workspaceRoot = createWorkspaceFixture();
 
   writeFile(
-    path.join(workspaceRoot, "apps/web/src/components/StatisticEditModal.tsx"),
+    path.join(
+      workspaceRoot,
+      "apps/web/src/components/CitationGraph/CitationGraph.tsx",
+    ),
     [
-      "export function StatisticEditModal() {",
+      "export function CitationGraph() {",
       "  const styleObj = { opacity: 0.9 };",
-      "  return <div style={styleObj}>Edit</div>;",
+      "  return <div style={styleObj}>Graph</div>;",
       "}",
     ].join("\n"),
   );
