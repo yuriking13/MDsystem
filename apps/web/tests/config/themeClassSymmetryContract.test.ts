@@ -31,6 +31,10 @@ describe("theme class symmetry contract", () => {
 
   it("keeps sidebar mount sync cleaning stale opposite classes", () => {
     expect(sidebarSource).toMatch(
+      /const shouldBeDark = theme !== "light";[\s\S]*?setIsDark\(shouldBeDark\);/,
+    );
+
+    expect(sidebarSource).toMatch(
       /if\s*\(shouldBeDark\)\s*\{[\s\S]*?document\.documentElement\.setAttribute\("data-theme", "dark"\);[\s\S]*?document\.documentElement\.classList\.add\("dark"\);[\s\S]*?document\.documentElement\.classList\.remove\("light-theme"\);[\s\S]*?document\.body\.classList\.add\("dark"\);[\s\S]*?document\.body\.classList\.remove\("light-theme"\);/,
     );
 
