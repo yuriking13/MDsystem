@@ -1,13 +1,19 @@
-import { prisma } from '../../db.js';
-import { pubmedFetchAll, type PubMedFilters } from '../../lib/pubmed.js';
-import { extractStats, hasAnyStats } from '../../lib/stats.js';
-import type { PubmedSearchJobPayload } from '../types.js';
+import { prisma } from "../../db.js";
+import type { Prisma } from "@prisma/client";
+import { pubmedFetchAll, type PubMedFilters } from "../../lib/pubmed.js";
+import { extractStats, hasAnyStats } from "../../lib/stats.js";
+import type { PubmedSearchJobPayload } from "../types.js";
 
 export async function runPubmedSearchJob(payload: PubmedSearchJobPayload) {
-  const query = await prisma.searchQuery.findUnique({ where: { id: payload.queryId } });
+  const query = await prisma.searchQuery.findUnique({
+    where: { id: payload.queryId },
+  });
   if (!query) return;
 
-  await prisma.searchQuery.update({ where: { id: query.id }, data: { status: 'running' } });
+  await prisma.searchQuery.update({
+    where: { id: query.id },
+    data: { status: "running" },
+  });
 
   try {
     const filters = query.filters as PubMedFilters | null;
@@ -19,18 +25,24 @@ export async function runPubmedSearchJob(payload: PubmedSearchJobPayload) {
         publishedFrom: filters?.publishedFrom,
         publishedTo: filters?.publishedTo,
         freeFullTextOnly: filters?.freeFullTextOnly ?? true,
-        publicationTypes: filters?.publicationTypes ?? []
+        publicationTypes: filters?.publicationTypes ?? [],
       },
       batchSize: 200,
       throttleMs: 120,
-      maxTotal: 5000
+      maxTotal: 5000,
     });
 
     for (const it of result.items) {
       const stats = extractStats(it.abstract);
       const hasStats = hasAnyStats(stats);
-      
-      const authorsList = it.authors ? it.authors.split(',').map(s => s.trim()).filter(Boolean) : [];
+      const statsJson = stats as unknown as Prisma.InputJsonValue;
+
+      const authorsList = it.authors
+        ? it.authors
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
+        : [];
 
       // Upsert article by DOI if possible, else by PMID
       let article;
@@ -40,28 +52,28 @@ export async function runPubmedSearchJob(payload: PubmedSearchJobPayload) {
           create: {
             doi: it.doi,
             pmid: it.pmid,
-            titleEn: it.title || '(no title)',
+            titleEn: it.title || "(no title)",
             abstractEn: it.abstract,
             authors: authorsList,
             journal: it.journal,
             year: it.year,
             url: it.url,
-            source: 'pubmed',
+            source: "pubmed",
             publicationTypes: it.studyTypes ?? [],
-            statsJson: stats as any,
-            hasStats
+            statsJson,
+            hasStats,
           },
           update: {
             pmid: it.pmid ?? undefined,
-            titleEn: it.title || '(no title)',
+            titleEn: it.title || "(no title)",
             abstractEn: it.abstract,
             authors: authorsList,
             journal: it.journal,
             year: it.year,
             url: it.url,
-            statsJson: stats as any,
-            hasStats
-          }
+            statsJson,
+            hasStats,
+          },
         });
       } else {
         article = await prisma.article.upsert({
@@ -69,48 +81,59 @@ export async function runPubmedSearchJob(payload: PubmedSearchJobPayload) {
           create: {
             pmid: it.pmid,
             doi: it.doi,
-            titleEn: it.title || '(no title)',
+            titleEn: it.title || "(no title)",
             abstractEn: it.abstract,
             authors: authorsList,
             journal: it.journal,
             year: it.year,
             url: it.url,
-            source: 'pubmed',
+            source: "pubmed",
             publicationTypes: it.studyTypes ?? [],
-            statsJson: stats as any,
-            hasStats
+            statsJson,
+            hasStats,
           },
           update: {
             doi: it.doi ?? undefined,
-            titleEn: it.title || '(no title)',
+            titleEn: it.title || "(no title)",
             abstractEn: it.abstract,
             authors: authorsList,
             journal: it.journal,
             year: it.year,
             url: it.url,
-            statsJson: stats as any,
-            hasStats
-          }
+            statsJson,
+            hasStats,
+          },
         });
       }
 
       await prisma.projectArticle.upsert({
-        where: { projectId_articleId: { projectId: payload.projectId, articleId: article.id } },
+        where: {
+          projectId_articleId: {
+            projectId: payload.projectId,
+            articleId: article.id,
+          },
+        },
         create: {
           projectId: payload.projectId,
           articleId: article.id,
-          status: 'candidate',
-          sourceQuery: query.topic // using topic as source query string
+          status: "candidate",
+          sourceQuery: query.topic, // using topic as source query string
         },
         update: {
-          sourceQuery: query.topic
-        }
+          sourceQuery: query.topic,
+        },
       });
     }
 
-    await prisma.searchQuery.update({ where: { id: query.id }, data: { status: 'done' } });
-  } catch (e: any) {
-    await prisma.searchQuery.update({ where: { id: query.id }, data: { status: 'error' } });
+    await prisma.searchQuery.update({
+      where: { id: query.id },
+      data: { status: "done" },
+    });
+  } catch (e) {
+    await prisma.searchQuery.update({
+      where: { id: query.id },
+      data: { status: "error" },
+    });
     throw e;
   }
 }
