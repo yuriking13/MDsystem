@@ -68,6 +68,31 @@ describe("AdminLayout responsive sidebar behavior", () => {
     });
   });
 
+  it("restores collapsed desktop labels state after mobile round-trip", async () => {
+    const user = userEvent.setup();
+    renderAdminLayout();
+
+    await user.click(screen.getByTitle("Свернуть"));
+    expect(screen.queryByText("Scientiaiter Admin")).not.toBeInTheDocument();
+
+    act(() => {
+      setViewportWidth(390);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Scientiaiter Admin")).toBeInTheDocument();
+    });
+
+    act(() => {
+      setViewportWidth(1280);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Scientiaiter Admin")).not.toBeInTheDocument();
+      expect(screen.getByTitle("Развернуть")).toBeInTheDocument();
+    });
+  });
+
   it("adds and removes body modal class when mobile sidebar opens/closes", async () => {
     const user = userEvent.setup();
     setViewportWidth(390);
