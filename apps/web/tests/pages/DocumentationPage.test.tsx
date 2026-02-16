@@ -277,4 +277,38 @@ describe("DocumentationPage menu + submenu", () => {
     expect(firstTab).toHaveAttribute("aria-selected", "true");
     expect(firstTab).toHaveFocus();
   });
+
+  it("updates section aria-current and roving tabIndex after topic change", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const overviewSection = screen.getByRole("button", {
+      name: "Обзор платформы",
+    });
+    const filesSection = screen.getByRole("button", { name: "Файлы" });
+
+    expect(overviewSection).toHaveAttribute("aria-current", "page");
+    expect(filesSection).not.toHaveAttribute("aria-current");
+
+    await user.click(filesSection);
+
+    expect(filesSection).toHaveAttribute("aria-current", "page");
+    expect(overviewSection).not.toHaveAttribute("aria-current");
+
+    const activeTab = screen.getByRole("tab", {
+      name: "Загрузка и организация",
+    });
+    const inactiveTab = screen.getByRole("tab", {
+      name: "Анализ файлов и импорт в статьи",
+    });
+
+    expect(activeTab).toHaveAttribute("tabindex", "0");
+    expect(inactiveTab).toHaveAttribute("tabindex", "-1");
+
+    activeTab.focus();
+    expect(activeTab).toHaveFocus();
+    await user.keyboard("{ArrowDown}");
+    expect(activeTab).toHaveAttribute("tabindex", "-1");
+    expect(inactiveTab).toHaveAttribute("tabindex", "0");
+  });
 });
