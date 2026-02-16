@@ -386,4 +386,36 @@ describe("DocumentationPage menu + submenu", () => {
       screen.getByRole("heading", { level: 2, name: "API ключи" }),
     ).toBeInTheDocument();
   });
+
+  it("keeps manual tab click priority after keyboard navigation sequence", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    await user.click(screen.getByRole("button", { name: "Настройки проекта" }));
+
+    const firstTab = screen.getByRole("tab", {
+      name: "Тип и подтип исследования",
+    });
+    const secondTab = screen.getByRole("tab", {
+      name: "Протокол и проверки качества",
+    });
+    const thirdTab = screen.getByRole("tab", {
+      name: "Библиографический стиль и формат вывода",
+    });
+
+    firstTab.focus();
+    await user.keyboard("{ArrowDown}");
+    expect(secondTab).toHaveAttribute("aria-selected", "true");
+
+    await user.click(thirdTab);
+    expect(thirdTab).toHaveAttribute("aria-selected", "true");
+    expect(thirdTab).toHaveFocus();
+    expect(secondTab).toHaveAttribute("aria-selected", "false");
+    expect(
+      screen.getByRole("heading", {
+        level: 3,
+        name: "Библиографический стиль и формат вывода",
+      }),
+    ).toBeInTheDocument();
+  });
 });
