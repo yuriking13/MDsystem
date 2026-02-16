@@ -179,5 +179,8 @@ test("quality-guards check mode passes when 100vh fallback is present", () => {
   });
 
   assert.equal(result.status, 0);
-  assert.doesNotMatch(result.stderr, /100vh fallback remediation tip/);
+  assert.doesNotMatch(
+    result.stderr,
+    /Tip: after any `height\|min-height\|max-height: 100vh`, add the same property with `100dvh` on the next line/,
+  );
 });
