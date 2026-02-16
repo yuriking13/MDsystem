@@ -463,6 +463,38 @@ test("quality-guards check mode reports inline viewport array remediation tip fo
   );
 });
 
+test("quality-guards check mode reports route matrix coverage remediation tip for tests", () => {
+  const workspaceRoot = createTempWorkspace();
+  const appLayoutTestPath = path.join(
+    workspaceRoot,
+    "apps/web/tests/components/AppLayout.test.tsx",
+  );
+  const adminLayoutTestPath = path.join(
+    workspaceRoot,
+    "apps/web/tests/pages/AdminLayout.test.tsx",
+  );
+
+  writeFile(
+    appLayoutTestPath,
+    "describe('AppLayout', () => { it('placeholder', () => {}); });",
+  );
+  writeFile(
+    adminLayoutTestPath,
+    "describe('AdminLayout', () => { it('placeholder', () => {}); });",
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep AppLayout\/AdminLayout responsive suites iterating required route matrices/,
+  );
+});
+
 test("quality-guards check mode reports responsive suite tip when configured target file is missing", () => {
   const workspaceRoot = createTempWorkspace();
   const webPackagePath = path.join(workspaceRoot, "apps/web/package.json");

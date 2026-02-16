@@ -102,6 +102,12 @@ const webLayoutTestInlineViewportArrayCheck = {
     "AppLayout/AdminLayout responsive tests should use shared viewport matrix constants instead of inline numeric arrays",
 };
 
+const webLayoutTestRouteMatrixCoverageCheck = {
+  name: "web-layout-test-route-matrix-coverage",
+  description:
+    "AppLayout/AdminLayout responsive tests should keep required route+viewport matrix coverage from responsive fixtures",
+};
+
 const webResponsiveTargetConfigCheck = {
   name: "web-responsive-target-config",
   description:
@@ -656,6 +662,101 @@ function collectWebLayoutTestInlineViewportArrayViolations(workspaceRoot) {
   return violations;
 }
 
+function collectWebLayoutTestRouteMatrixCoverageViolations(workspaceRoot) {
+  const appLayoutTestPath = path.join(
+    workspaceRoot,
+    "apps/web/tests/components/AppLayout.test.tsx",
+  );
+  const adminLayoutTestPath = path.join(
+    workspaceRoot,
+    "apps/web/tests/pages/AdminLayout.test.tsx",
+  );
+  const violations = [];
+
+  const appRelativeFile = path
+    .relative(workspaceRoot, appLayoutTestPath)
+    .replaceAll(path.sep, "/");
+  if (fs.existsSync(appLayoutTestPath)) {
+    const appSource = fs.readFileSync(appLayoutTestPath, "utf8");
+    const appRequirements = [
+      {
+        id: "app-non-fixed-routes-target-width-loop",
+        pattern:
+          /it\.each\(APP_NON_FIXED_ROUTE_CASES\)[\s\S]*?for\s*\(\s*const\s+\w+\s+of\s+TARGET_VIEWPORT_WIDTHS\s*\)/,
+      },
+      {
+        id: "app-fixed-routes-target-width-loop",
+        pattern:
+          /it\.each\(APP_FIXED_ROUTE_CASES\)[\s\S]*?for\s*\(\s*const\s+\w+\s+of\s+TARGET_VIEWPORT_WIDTHS\s*\)/,
+      },
+      {
+        id: "app-project-tabs-target-width-loop",
+        pattern:
+          /it\.each\(PROJECT_TABS\)[\s\S]*?for\s*\(\s*const\s+\w+\s+of\s+TARGET_VIEWPORT_WIDTHS\s*\)/,
+      },
+      {
+        id: "app-auth-routes-target-width-loop",
+        pattern:
+          /it\.each\(APP_AUTH_ROUTE_CASES\)[\s\S]*?for\s*\(\s*const\s+\w+\s+of\s+TARGET_VIEWPORT_WIDTHS\s*\)/,
+      },
+      {
+        id: "app-admin-no-shell-routes-target-width-loop",
+        pattern:
+          /it\.each\(APP_ADMIN_NO_SHELL_ROUTE_CASES\)[\s\S]*?for\s*\(\s*const\s+\w+\s+of\s+TARGET_VIEWPORT_WIDTHS\s*\)/,
+      },
+    ];
+
+    for (const requirement of appRequirements) {
+      if (!requirement.pattern.test(appSource)) {
+        violations.push({
+          file: appRelativeFile,
+          line: 1,
+          snippet: `missing-route-matrix-coverage:${requirement.id}`,
+        });
+      }
+    }
+  }
+
+  const adminRelativeFile = path
+    .relative(workspaceRoot, adminLayoutTestPath)
+    .replaceAll(path.sep, "/");
+  if (fs.existsSync(adminLayoutTestPath)) {
+    const adminSource = fs.readFileSync(adminLayoutTestPath, "utf8");
+    const adminRequirements = [
+      {
+        id: "admin-routes-map-case",
+        pattern:
+          /ADMIN_RESPONSIVE_ROUTE_CASES\.map\(\(\{\s*route,\s*pageLabel\s*\}\)\s*=>\s*\[/,
+      },
+      {
+        id: "admin-routes-target-width-loop",
+        pattern: /for\s*\(\s*const\s+\w+\s+of\s+TARGET_VIEWPORT_WIDTHS\s*\)/,
+      },
+      {
+        id: "admin-mobile-title-map-case",
+        pattern:
+          /ADMIN_RESPONSIVE_ROUTE_CASES\.map\(\(\{\s*route,\s*pageLabel,\s*mobileTitle\s*\}\)\s*=>\s*\[/,
+      },
+      {
+        id: "admin-mobile-title-mobile-width-loop",
+        pattern: /for\s*\(\s*const\s+\w+\s+of\s+MOBILE_VIEWPORT_WIDTHS\s*\)/,
+      },
+    ];
+
+    for (const requirement of adminRequirements) {
+      if (!requirement.pattern.test(adminSource)) {
+        violations.push({
+          file: adminRelativeFile,
+          line: 1,
+          snippet: `missing-route-matrix-coverage:${requirement.id}`,
+        });
+      }
+    }
+  }
+
+  return violations;
+}
+
 function collectWebResponsiveTargetConfigViolations(workspaceRoot) {
   const configPath = path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH);
   if (!fs.existsSync(configPath)) {
@@ -862,6 +963,15 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webLayoutTestRouteMatrixCoverageViolations =
+    collectWebLayoutTestRouteMatrixCoverageViolations(workspaceRoot);
+  if (webLayoutTestRouteMatrixCoverageViolations.length > 0) {
+    allViolations.push({
+      check: webLayoutTestRouteMatrixCoverageCheck,
+      violations: webLayoutTestRouteMatrixCoverageViolations,
+    });
+  }
+
   const webResponsiveTargetConfigViolations =
     collectWebResponsiveTargetConfigViolations(workspaceRoot);
   if (webResponsiveTargetConfigViolations.length > 0) {
@@ -885,6 +995,7 @@ module.exports = {
   webLayoutTestViewportLiteralCheck,
   webLayoutTestBreakpointLiteralCheck,
   webLayoutTestInlineViewportArrayCheck,
+  webLayoutTestRouteMatrixCoverageCheck,
   webResponsiveTargetConfigCheck,
   DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
   WEB_RESPONSIVE_TARGETS_CONFIG_PATH,

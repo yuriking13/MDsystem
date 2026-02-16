@@ -1146,6 +1146,123 @@ test("runQualityGuards accepts shared viewport matrix constants in layout respon
   assert.equal(layoutInlineArrayViolation, undefined);
 });
 
+test("runQualityGuards blocks layout responsive suites missing required route matrix loops", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    [
+      "describe('AppLayout', () => {",
+      "  it('placeholder', () => {",
+      "    expect(true).toBe(true);",
+      "  });",
+      "});",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+    [
+      "describe('AdminLayout', () => {",
+      "  it('placeholder', () => {",
+      "    expect(true).toBe(true);",
+      "  });",
+      "});",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const routeMatrixViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-test-route-matrix-coverage",
+  );
+  assert.ok(routeMatrixViolation);
+  assert.ok(
+    routeMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "missing-route-matrix-coverage:app-non-fixed-routes-target-width-loop",
+      ),
+    ),
+  );
+  assert.ok(
+    routeMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes(
+        "missing-route-matrix-coverage:admin-routes-target-width-loop",
+      ),
+    ),
+  );
+});
+
+test("runQualityGuards accepts layout responsive suites with required route matrix loops", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
+    [
+      "it.each(APP_NON_FIXED_ROUTE_CASES)('x', () => {",
+      "  for (const width of TARGET_VIEWPORT_WIDTHS) {",
+      "    void width;",
+      "  }",
+      "});",
+      "it.each(APP_FIXED_ROUTE_CASES)('x', () => {",
+      "  for (const width of TARGET_VIEWPORT_WIDTHS) {",
+      "    void width;",
+      "  }",
+      "});",
+      "it.each(PROJECT_TABS)('x', () => {",
+      "  for (const width of TARGET_VIEWPORT_WIDTHS) {",
+      "    void width;",
+      "  }",
+      "});",
+      "it.each(APP_AUTH_ROUTE_CASES)('x', () => {",
+      "  for (const width of TARGET_VIEWPORT_WIDTHS) {",
+      "    void width;",
+      "  }",
+      "});",
+      "it.each(APP_ADMIN_NO_SHELL_ROUTE_CASES)('x', () => {",
+      "  for (const width of TARGET_VIEWPORT_WIDTHS) {",
+      "    void width;",
+      "  }",
+      "});",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
+    [
+      "it.each(ADMIN_RESPONSIVE_ROUTE_CASES.map(({ route, pageLabel }) => [route, pageLabel]))(",
+      "  'x',",
+      "  () => {",
+      "    for (const width of TARGET_VIEWPORT_WIDTHS) {",
+      "      void width;",
+      "    }",
+      "  },",
+      ");",
+      "it.each(ADMIN_RESPONSIVE_ROUTE_CASES.map(({ route, pageLabel, mobileTitle }) => [route, pageLabel, mobileTitle]))(",
+      "  'x',",
+      "  () => {",
+      "    for (const width of MOBILE_VIEWPORT_WIDTHS) {",
+      "      void width;",
+      "    }",
+      "  },",
+      ");",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const routeMatrixViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-layout-test-route-matrix-coverage",
+  );
+  assert.equal(routeMatrixViolation, undefined);
+});
+
 test("runQualityGuards reports invalid responsive target config entries", () => {
   const workspaceRoot = createWorkspaceFixture();
 

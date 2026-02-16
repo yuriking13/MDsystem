@@ -68,4 +68,34 @@ describe("responsive layout test conventions", () => {
       /(it|test)\.each\(\s*\[[^\]]*\d/,
     );
   });
+
+  it("keeps AppLayout suite exercising required route matrices across target widths", () => {
+    expect(appLayoutSuiteSource).toMatch(
+      /it\.each\(APP_NON_FIXED_ROUTE_CASES\)/,
+    );
+    expect(appLayoutSuiteSource).toMatch(/it\.each\(APP_FIXED_ROUTE_CASES\)/);
+    expect(appLayoutSuiteSource).toMatch(/it\.each\(PROJECT_TABS\)/);
+    expect(appLayoutSuiteSource).toMatch(/it\.each\(APP_AUTH_ROUTE_CASES\)/);
+    expect(appLayoutSuiteSource).toMatch(
+      /it\.each\(APP_ADMIN_NO_SHELL_ROUTE_CASES\)/,
+    );
+    expect(appLayoutSuiteSource).toMatch(
+      /for\s*\(\s*const\s+\w+\s+of\s+TARGET_VIEWPORT_WIDTHS\s*\)/,
+    );
+  });
+
+  it("keeps AdminLayout suite exercising route and title matrices across shared widths", () => {
+    expect(adminLayoutSuiteSource).toMatch(
+      /it\.each\(\s*ADMIN_RESPONSIVE_ROUTE_CASES\.map\(\(\{\s*route,\s*pageLabel\s*\}\)\s*=>\s*\[/,
+    );
+    expect(adminLayoutSuiteSource).toMatch(
+      /it\.each\(\s*ADMIN_RESPONSIVE_ROUTE_CASES\.map\(\(\{\s*route,\s*pageLabel,\s*mobileTitle\s*\}\)\s*=>\s*\[/,
+    );
+    expect(adminLayoutSuiteSource).toMatch(
+      /for\s*\(\s*const\s+\w+\s+of\s+TARGET_VIEWPORT_WIDTHS\s*\)/,
+    );
+    expect(adminLayoutSuiteSource).toMatch(
+      /for\s*\(\s*const\s+\w+\s+of\s+MOBILE_VIEWPORT_WIDTHS\s*\)/,
+    );
+  });
 });

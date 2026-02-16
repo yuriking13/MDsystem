@@ -111,6 +111,16 @@ function main() {
 
     if (
       allViolations.some(
+        ({ check }) => check.name === "web-layout-test-route-matrix-coverage",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: keep AppLayout/AdminLayout responsive suites iterating required route matrices (`APP_NON_FIXED_ROUTE_CASES`, `APP_FIXED_ROUTE_CASES`, `PROJECT_TABS`, `APP_AUTH_ROUTE_CASES`, `APP_ADMIN_NO_SHELL_ROUTE_CASES`, `ADMIN_RESPONSIVE_ROUTE_CASES`) across shared viewport constants.",
+      );
+    }
+
+    if (
+      allViolations.some(
         ({ check }) => check.name === "web-responsive-target-config",
       )
     ) {
