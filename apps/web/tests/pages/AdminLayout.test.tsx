@@ -38,6 +38,15 @@ function renderAdminLayout(initialPath = "/admin") {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<div>Admin dashboard</div>} />
           <Route path="users" element={<div>Users page</div>} />
+          <Route path="projects" element={<div>Projects page</div>} />
+          <Route path="articles" element={<div>Articles page</div>} />
+          <Route path="activity" element={<div>Activity page</div>} />
+          <Route path="sessions" element={<div>Sessions page</div>} />
+          <Route path="jobs" element={<div>Jobs page</div>} />
+          <Route path="errors" element={<div>Errors page</div>} />
+          <Route path="audit" element={<div>Audit page</div>} />
+          <Route path="system" element={<div>System page</div>} />
+          <Route path="settings" element={<div>Settings page</div>} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -154,13 +163,28 @@ describe("AdminLayout responsive sidebar behavior", () => {
     });
   });
 
-  it("shows the current section label in mobile topbar", () => {
-    setViewportWidth(390);
-    renderAdminLayout("/admin/users");
+  it.each([
+    ["/admin", "Admin dashboard", "Дашборд"],
+    ["/admin/users", "Users page", "Пользователи"],
+    ["/admin/projects", "Projects page", "Проекты"],
+    ["/admin/articles", "Articles page", "Статьи"],
+    ["/admin/activity", "Activity page", "Активность"],
+    ["/admin/sessions", "Sessions page", "Сессии"],
+    ["/admin/jobs", "Jobs page", "Задачи"],
+    ["/admin/errors", "Errors page", "Ошибки"],
+    ["/admin/audit", "Audit page", "Аудит"],
+    ["/admin/system", "System page", "Система"],
+    ["/admin/settings", "Settings page", "Настройки"],
+  ])(
+    "shows current section label in mobile topbar for %s",
+    (route, pageLabel, expectedMobileTitle) => {
+      setViewportWidth(390);
+      renderAdminLayout(route);
 
-    expect(screen.getByText("Users page")).toBeInTheDocument();
-    const mobileTitle = document.querySelector(".admin-mobile-title");
-    expect(mobileTitle).not.toBeNull();
-    expect(mobileTitle?.textContent).toBe("Пользователи");
-  });
+      expect(screen.getByText(pageLabel)).toBeInTheDocument();
+      const mobileTitle = document.querySelector(".admin-mobile-title");
+      expect(mobileTitle).not.toBeNull();
+      expect(mobileTitle?.textContent).toBe(expectedMobileTitle);
+    },
+  );
 });
