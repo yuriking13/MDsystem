@@ -30,6 +30,15 @@ function main() {
     }
   }
 
+  if (
+    checkOnly &&
+    allViolations.some(({ check }) => check.name === "web-js-mirrors")
+  ) {
+    console.error(
+      "\n[quality-guards] Tip: run `pnpm --filter web run clean:js-mirrors` to remove JS mirrors, then re-run checks.",
+    );
+  }
+
   process.exit(1);
 }
 
