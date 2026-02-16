@@ -236,6 +236,51 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
+  it.each([
+    "articles",
+    "documents",
+    "files",
+    "statistics",
+    "settings",
+    "graph",
+  ])(
+    "keeps /projects/:id?tab=%s route usable across all target widths",
+    async (tab) => {
+      const user = userEvent.setup();
+
+      for (const width of targetViewportWidths) {
+        const shouldOpen = width <= 768;
+        const shouldLockLayout = tab === "graph";
+        setViewportWidth(width);
+        const { unmount } = renderAppLayout(`/projects/p1?tab=${tab}`);
+
+        expect(screen.getByText("Project details page")).toBeInTheDocument();
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(shouldLockLayout);
+        expect(document.body.classList.contains("layout-fixed")).toBe(
+          shouldLockLayout,
+        );
+
+        await user.click(
+          screen.getByRole("button", { name: "Открыть навигацию" }),
+        );
+
+        await waitFor(() => {
+          expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+            shouldOpen,
+          );
+          expect(document.querySelector(".app-sidebar--open") !== null).toBe(
+            shouldOpen,
+          );
+        });
+
+        unmount();
+        document.body.classList.remove("sidebar-modal-open");
+      }
+    },
+  );
+
   it("closes mobile sidebar when route changes", async () => {
     const user = userEvent.setup();
     renderAppLayout();
