@@ -57,6 +57,7 @@ function ProjectContextTitlePage() {
       <Link to="/docs">Go docs</Link>
       <Link to="/projects/p1?tab=documents">Go project documents</Link>
       <Link to="/projects/p1?tab=graph">Go project graph</Link>
+      <Link to="/projects/p2?tab=documents">Go another project</Link>
     </div>
   );
 }
@@ -307,6 +308,30 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(
           document.querySelector(".app-mobile-topbar-title")?.textContent,
         ).toBe("Проект Альфа");
+      });
+    },
+  );
+
+  it.each([360, 390, 768])(
+    "resets project title when switching to a different project at %ipx",
+    async (width) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/projects/p1/context-title");
+
+      await waitFor(() => {
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Проект Альфа");
+      });
+
+      await user.click(screen.getByText("Go another project"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Project details page")).toBeInTheDocument();
+        expect(
+          document.querySelector(".app-mobile-topbar-title")?.textContent,
+        ).toBe("Scientiaiter");
       });
     },
   );

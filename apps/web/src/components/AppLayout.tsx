@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import AnimatedBackground from "./AnimatedBackground";
@@ -85,6 +91,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     useState<ArticleCounts>(defaultArticleCounts);
   const [articleViewStatus, setArticleViewStatus] =
     useState<ArticleViewStatus>("candidate");
+  const previousProjectIdRef = useRef<string | null>(null);
 
   const setProjectInfo = (info: Partial<ProjectInfo>) => {
     setProjectInfoState((prev) => ({ ...prev, ...info }));
@@ -110,6 +117,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isGraphTab =
     location.pathname.match(/^\/projects\/[^/]+$/) &&
     searchParams.get("tab") === "graph";
+  const currentProjectId =
+    location.pathname.match(/^\/projects\/([^/]+)/)?.[1] ?? null;
   const isProjectScopedRoute = /^\/projects\/[^/]+(?:\/|$)/.test(
     location.pathname,
   );
@@ -161,6 +170,19 @@ export default function AppLayout({ children }: AppLayoutProps) {
       setProjectInfoState(defaultProjectInfo);
     }
   }, [isProjectScopedRoute]);
+
+  useEffect(() => {
+    if (previousProjectIdRef.current === null) {
+      previousProjectIdRef.current = currentProjectId;
+      return;
+    }
+
+    if (previousProjectIdRef.current !== currentProjectId) {
+      setProjectInfoState(defaultProjectInfo);
+    }
+
+    previousProjectIdRef.current = currentProjectId;
+  }, [currentProjectId]);
 
   useEffect(() => {
     if (!isMobileViewport && mobileSidebarOpen) {
