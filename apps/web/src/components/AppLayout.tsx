@@ -90,10 +90,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const [projectInfoProjectId, setProjectInfoProjectId] = useState<
     string | null
   >(null);
-  const [articleCounts, setArticleCounts] =
+  const [articleCountsState, setArticleCountsState] =
     useState<ArticleCounts>(defaultArticleCounts);
-  const [articleViewStatus, setArticleViewStatus] =
+  const [articleCountsProjectId, setArticleCountsProjectId] = useState<
+    string | null
+  >(null);
+  const [articleViewStatusState, setArticleViewStatusState] =
     useState<ArticleViewStatus>("candidate");
+  const [articleViewStatusProjectId, setArticleViewStatusProjectId] = useState<
+    string | null
+  >(null);
   const currentProjectIdRef = useRef<string | null>(null);
 
   const setProjectInfo = (info: Partial<ProjectInfo>) => {
@@ -104,6 +110,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const clearProjectInfo = () => {
     setProjectInfoState(defaultProjectInfo);
     setProjectInfoProjectId(null);
+  };
+
+  const setArticleCounts = (counts: ArticleCounts) => {
+    setArticleCountsState(counts);
+    setArticleCountsProjectId(currentProjectIdRef.current);
+  };
+
+  const setArticleViewStatus = (status: ArticleViewStatus) => {
+    setArticleViewStatusState(status);
+    setArticleViewStatusProjectId(currentProjectIdRef.current);
   };
 
   // Don't show sidebar on login/register/admin pages
@@ -132,6 +148,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
     currentProjectId !== null && projectInfoProjectId === currentProjectId
       ? projectInfo
       : defaultProjectInfo;
+  const articleCountsForCurrentRoute =
+    currentProjectId !== null && articleCountsProjectId === currentProjectId
+      ? articleCountsState
+      : defaultArticleCounts;
+  const articleViewStatusForCurrentRoute =
+    currentProjectId !== null && articleViewStatusProjectId === currentProjectId
+      ? articleViewStatusState
+      : "candidate";
   const showAnimatedBg = !isDocumentEditor && !isGraphTab;
   const isFixedLayout = isDocumentEditor || isGraphTab;
   const shouldLockLayout = !hideSidebar && isFixedLayout;
@@ -179,6 +203,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
     if (!isProjectScopedRoute) {
       setProjectInfoState(defaultProjectInfo);
       setProjectInfoProjectId(null);
+      setArticleCountsState(defaultArticleCounts);
+      setArticleCountsProjectId(null);
+      setArticleViewStatusState("candidate");
+      setArticleViewStatusProjectId(null);
     }
   }, [isProjectScopedRoute]);
 
@@ -220,9 +248,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
         projectInfo: projectInfoForCurrentRoute,
         setProjectInfo,
         clearProjectInfo,
-        articleCounts,
+        articleCounts: articleCountsForCurrentRoute,
         setArticleCounts,
-        articleViewStatus,
+        articleViewStatus: articleViewStatusForCurrentRoute,
         setArticleViewStatus,
       }}
     >

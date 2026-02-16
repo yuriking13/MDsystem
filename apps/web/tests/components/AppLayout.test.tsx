@@ -36,7 +36,8 @@ function setViewportWidth(width: number) {
 }
 
 function ProjectContextTitlePage() {
-  const { setProjectInfo } = useProjectContext();
+  const { setProjectInfo, setArticleCounts, setArticleViewStatus } =
+    useProjectContext();
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -47,7 +48,15 @@ function ProjectContextTitlePage() {
       role: "owner",
       updatedAt: "2026-02-15T00:00:00.000Z",
     });
-  }, [setProjectInfo]);
+    setArticleCounts({
+      candidate: 11,
+      selected: 17,
+      excluded: 5,
+      deleted: 2,
+      total: 33,
+    });
+    setArticleViewStatus("selected");
+  }, [setArticleCounts, setArticleViewStatus, setProjectInfo]);
 
   return (
     <div>
@@ -57,14 +66,15 @@ function ProjectContextTitlePage() {
       <Link to="/docs">Go docs</Link>
       <Link to="/projects/p1?tab=documents">Go project documents</Link>
       <Link to="/projects/p1?tab=graph">Go project graph</Link>
-      <Link to="/projects/p2?tab=documents">Go another project</Link>
+      <Link to="/projects/p2?tab=articles">Go another project</Link>
       <Link to="/projects/p2/context-title">Go project beta context</Link>
     </div>
   );
 }
 
 function ProjectContextTitlePageBeta() {
-  const { setProjectInfo } = useProjectContext();
+  const { setProjectInfo, setArticleCounts, setArticleViewStatus } =
+    useProjectContext();
   const initializedRef = useRef(false);
 
   useEffect(() => {
@@ -75,12 +85,38 @@ function ProjectContextTitlePageBeta() {
       role: "viewer",
       updatedAt: "2026-02-16T00:00:00.000Z",
     });
-  }, [setProjectInfo]);
+    setArticleCounts({
+      candidate: 42,
+      selected: 3,
+      excluded: 1,
+      deleted: 0,
+      total: 46,
+    });
+    setArticleViewStatus("candidate");
+  }, [setArticleCounts, setArticleViewStatus, setProjectInfo]);
 
   return (
     <div>
       <div>Project context title page beta</div>
       <Link to="/projects/p2?tab=documents">Go project two documents</Link>
+    </div>
+  );
+}
+
+function ProjectDetailsContextPage() {
+  const { projectInfo, articleCounts, articleViewStatus } = useProjectContext();
+
+  return (
+    <div>
+      <div>Project details page</div>
+      <div data-testid="project-context-name">{projectInfo.name ?? "null"}</div>
+      <div data-testid="project-context-selected-count">
+        {String(articleCounts.selected)}
+      </div>
+      <div data-testid="project-context-status">{articleViewStatus}</div>
+      <Link to="/projects">Back to projects</Link>
+      <Link to="/projects/p1?tab=documents">Go documents tab</Link>
+      <Link to="/projects/p1?tab=graph">Go graph tab</Link>
     </div>
   );
 }
@@ -114,17 +150,7 @@ function renderAppLayout(initialPath = "/projects") {
             path="/projects/p2/context-title"
             element={<ProjectContextTitlePageBeta />}
           />
-          <Route
-            path="/projects/:id"
-            element={
-              <div>
-                <div>Project details page</div>
-                <Link to="/projects">Back to projects</Link>
-                <Link to="/projects/p1?tab=documents">Go documents tab</Link>
-                <Link to="/projects/p1?tab=graph">Go graph tab</Link>
-              </div>
-            }
-          />
+          <Route path="/projects/:id" element={<ProjectDetailsContextPage />} />
           <Route
             path="/projects/:id/documents/:docId"
             element={
@@ -365,6 +391,15 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(
           document.querySelector(".app-mobile-topbar-title")?.textContent,
         ).toBe("Scientiaiter");
+        expect(screen.getByTestId("project-context-name")).toHaveTextContent(
+          "null",
+        );
+        expect(
+          screen.getByTestId("project-context-selected-count"),
+        ).toHaveTextContent("0");
+        expect(screen.getByTestId("project-context-status")).toHaveTextContent(
+          "candidate",
+        );
         expect(document.querySelector(".sidebar-project-name")).toBeNull();
       });
     },
@@ -401,6 +436,15 @@ describe("AppLayout mobile sidebar behavior", () => {
         expect(
           document.querySelector(".app-mobile-topbar-title")?.textContent,
         ).toBe("Проект Бета");
+        expect(screen.getByTestId("project-context-name")).toHaveTextContent(
+          "Проект Бета",
+        );
+        expect(
+          screen.getByTestId("project-context-selected-count"),
+        ).toHaveTextContent("3");
+        expect(screen.getByTestId("project-context-status")).toHaveTextContent(
+          "candidate",
+        );
         expect(
           document.querySelector(".sidebar-project-name")?.textContent,
         ).toBe("Проект Бета");
