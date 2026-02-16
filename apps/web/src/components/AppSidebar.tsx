@@ -276,18 +276,20 @@ export default function AppSidebar({
         className,
       )}
     >
-      {/* Collapse Button - Center of right edge */}
-      <button
-        className="sidebar-collapse-toggle"
-        onClick={() => setCollapsed(!collapsed)}
-        title={isCollapsedView ? "Развернуть" : "Свернуть"}
-      >
-        {isCollapsedView ? (
-          <ChevronRightIcon className="w-4 h-4" />
-        ) : (
-          <ChevronLeftIcon className="w-4 h-4" />
-        )}
-      </button>
+      {/* Collapse Button - desktop only */}
+      {!mobileViewport && (
+        <button
+          className="sidebar-collapse-toggle"
+          onClick={() => setCollapsed(!collapsed)}
+          title={isCollapsedView ? "Развернуть" : "Свернуть"}
+        >
+          {isCollapsedView ? (
+            <ChevronRightIcon className="w-4 h-4" />
+          ) : (
+            <ChevronLeftIcon className="w-4 h-4" />
+          )}
+        </button>
+      )}
 
       {/* Logo / Brand */}
       <div className="sidebar-header">
