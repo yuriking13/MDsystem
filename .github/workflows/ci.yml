@@ -50,8 +50,8 @@ jobs:
       - name: Generate Prisma Client
         run: pnpm --filter api exec prisma generate
 
-      - name: Lint API (blocking warning budget)
-        run: pnpm --filter api exec eslint src --ext .ts --max-warnings 53
+      - name: Lint API (zero warning budget)
+        run: pnpm --filter api run lint --max-warnings 0
 
       - name: Typecheck API
         run: pnpm --filter api typecheck
@@ -96,8 +96,8 @@ jobs:
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Lint WEB (blocking warning budget)
-        run: pnpm --filter web exec eslint src --ext .ts,.tsx --max-warnings 89
+      - name: Lint WEB (zero warning budget)
+        run: pnpm --filter web run lint --max-warnings 0
 
       - name: Typecheck WEB
         run: pnpm --filter web typecheck
