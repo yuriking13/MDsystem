@@ -218,6 +218,33 @@ describe("App theme bootstrap runtime", () => {
     expect(storage.getItem).toHaveBeenCalledWith("theme");
   });
 
+  it("falls back to dark theme for unsupported persisted theme value", async () => {
+    document.documentElement.classList.add("light-theme");
+    document.body.classList.add("light-theme");
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+
+    render(
+      <MemoryRouter
+        initialEntries={["/login"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      expect(document.documentElement.classList.contains("dark")).toBe(true);
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("dark")).toBe(true);
+      expect(document.body.classList.contains("light-theme")).toBe(false);
+    });
+    expect(storage.getItem).toHaveBeenCalledWith("theme");
+  });
+
   it("applies persisted dark theme and clears stale light classes", async () => {
     document.documentElement.classList.add("light-theme");
     document.body.classList.add("light-theme");
