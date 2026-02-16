@@ -61,6 +61,23 @@ const webJsSourceCheck = {
   description: "JavaScript/JSX source files are not allowed in apps/web/src",
 };
 
+const WEB_STYLE_PROP_ALLOWLIST = new Set([
+  "apps/web/src/components/CitationGraph/CitationGraph.tsx",
+  "apps/web/src/components/CitationGraph/GraphSidebar.tsx",
+  "apps/web/src/components/CitationGraph/NodeInfoPanel.tsx",
+  "apps/web/src/components/ChartFromTable.tsx",
+  "apps/web/src/components/CreateStatisticModal.tsx",
+  "apps/web/src/components/FlowbiteIcons.tsx",
+  "apps/web/src/components/StatisticEditModal.tsx",
+  "apps/web/src/components/TiptapEditor/TiptapToolbar.tsx",
+]);
+
+const webStylePropCheck = {
+  name: "web-style-prop-outside-allowlist",
+  description:
+    "style={...} usage is allowed only in explicitly allowlisted legacy files",
+};
+
 function walkFiles(rootDir, extensions) {
   const output = [];
   const queue = [rootDir];
@@ -166,6 +183,34 @@ function collectWebSourceJsFiles(workspaceRoot, fileCache) {
   }));
 }
 
+function collectWebStylePropViolations(workspaceRoot, fileCache) {
+  const webSrcRoot = path.join(workspaceRoot, "apps/web/src");
+  const tsxFiles = getCachedFiles(webSrcRoot, new Set([".tsx"]), fileCache);
+
+  const violations = [];
+  for (const filePath of tsxFiles) {
+    const relativeFile = path.relative(workspaceRoot, filePath).replaceAll(path.sep, "/");
+    if (WEB_STYLE_PROP_ALLOWLIST.has(relativeFile)) {
+      continue;
+    }
+
+    const source = fs.readFileSync(filePath, "utf8");
+    const matcher = /style=\{/g;
+    let match = matcher.exec(source);
+
+    while (match) {
+      violations.push({
+        file: relativeFile,
+        line: lineForIndex(source, match.index),
+        snippet: match[0],
+      });
+      match = matcher.exec(source);
+    }
+  }
+
+  return violations;
+}
+
 function cleanupWebJsMirrors(workspaceRoot) {
   const mirrors = collectWebJsMirrors(workspaceRoot);
   for (const mirror of mirrors) {
@@ -209,6 +254,17 @@ function runQualityGuards(options = {}) {
     });
   }
 
+  const webStylePropViolations = collectWebStylePropViolations(
+    workspaceRoot,
+    fileCache,
+  );
+  if (webStylePropViolations.length > 0) {
+    allViolations.push({
+      check: webStylePropCheck,
+      violations: webStylePropViolations,
+    });
+  }
+
   return { removedWebJsMirrors, allViolations };
 }
 
@@ -216,6 +272,7 @@ module.exports = {
   checks,
   webJsMirrorCheck,
   webJsSourceCheck,
+  webStylePropCheck,
   runQualityGuards,
   lineForIndex,
 };

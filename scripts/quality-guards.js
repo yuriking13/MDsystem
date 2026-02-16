@@ -42,6 +42,16 @@ function main() {
         "\n[quality-guards] Tip: remove JavaScript files from apps/web/src or migrate them to TypeScript.",
       );
     }
+
+    if (
+      allViolations.some(
+        ({ check }) => check.name === "web-style-prop-outside-allowlist",
+      )
+    ) {
+      console.error(
+        "\n[quality-guards] Tip: move styles to CSS classes; style={...} is temporarily allowlisted only for legacy hotspot files.",
+      );
+    }
   }
 
   process.exit(1);

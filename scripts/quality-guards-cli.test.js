@@ -108,3 +108,32 @@ test("quality-guards check mode prints both remediation tips when needed", () =>
     /Tip: remove JavaScript files from apps\/web\/src or migrate them to TypeScript/,
   );
 });
+
+test("quality-guards check mode reports style-prop allowlist remediation tip", () => {
+  const workspaceRoot = createTempWorkspace();
+  const styleLeakPath = path.join(
+    workspaceRoot,
+    "apps/web/src/components/style-leak.tsx",
+  );
+
+  writeFile(
+    styleLeakPath,
+    [
+      "export function StyleLeak() {",
+      "  const styleObj = { opacity: 0.8 };",
+      "  return <div style={styleObj}>Leak</div>;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: move styles to CSS classes; style=\{\.\.\.\} is temporarily allowlisted only for legacy hotspot files/,
+  );
+});

@@ -126,3 +126,39 @@ test("runQualityGuards reports standalone js/jsx files in web source", () => {
   assert.equal(fs.existsSync(mjsSourcePath), true);
   assert.equal(fs.existsSync(cjsSourcePath), true);
 });
+
+test("runQualityGuards enforces style prop usage outside allowlist", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/components/FlowbiteIcons.tsx"),
+    [
+      "export function FlowbiteIcons() {",
+      "  const styleObj = { opacity: 0.9 };",
+      "  return <svg style={styleObj}></svg>;",
+      "}",
+    ].join("\n"),
+  );
+
+  writeFile(
+    path.join(workspaceRoot, "apps/web/src/components/InlineStyleLeak.tsx"),
+    [
+      "export function InlineStyleLeak() {",
+      "  const styleObj = { opacity: 0.9 };",
+      "  return <div style={styleObj}>Leak</div>;",
+      "}",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const stylePropViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-style-prop-outside-allowlist",
+  );
+  assert.ok(stylePropViolation);
+  assert.equal(stylePropViolation.violations.length, 1);
+  assert.match(stylePropViolation.violations[0].file, /InlineStyleLeak\.tsx$/);
+});
