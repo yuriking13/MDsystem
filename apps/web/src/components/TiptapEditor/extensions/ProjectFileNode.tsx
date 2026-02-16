@@ -1,4 +1,9 @@
-import { Node, mergeAttributes, type Editor } from "@tiptap/react";
+import {
+  Node,
+  mergeAttributes,
+  type Editor,
+  type NodeViewProps,
+} from "@tiptap/react";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import React, { useEffect, useState } from "react";
 import { apiGetFileDownloadUrl } from "../../../lib/api";
@@ -26,11 +31,7 @@ function ProjectFileNodeView({
   node,
   updateAttributes,
   deleteNode,
-}: {
-  node: any;
-  updateAttributes: (attrs: Partial<ProjectFileNodeAttrs>) => void;
-  deleteNode: () => void;
-}) {
+}: Pick<NodeViewProps, "node" | "updateAttributes" | "deleteNode">) {
   const attrs = node.attrs as ProjectFileNodeAttrs;
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

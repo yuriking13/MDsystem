@@ -1,4 +1,9 @@
-import { Node, mergeAttributes, type Editor } from "@tiptap/react";
+import {
+  Node,
+  mergeAttributes,
+  type Editor,
+  type NodeViewProps,
+} from "@tiptap/react";
 import { ReactNodeViewRenderer, NodeViewWrapper } from "@tiptap/react";
 import React, { useMemo, useState } from "react";
 import ChartFromTable, {
@@ -87,10 +92,7 @@ export interface ChartNodeAttrs {
 function ChartNodeView({
   node,
   updateAttributes,
-}: {
-  node: any;
-  updateAttributes: (attrs: Partial<ChartNodeAttrs>) => void;
-}) {
+}: Pick<NodeViewProps, "node" | "updateAttributes">) {
   const attrs = node.attrs as ChartNodeAttrs;
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(
