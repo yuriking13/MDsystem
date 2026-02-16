@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import React from "react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Outlet } from "react-router-dom";
 import App from "../../src/App";
 
 const authState = {
@@ -34,7 +34,12 @@ vi.mock("../../src/lib/AdminContext", () => ({
 }));
 
 vi.mock("../../src/components/AppLayout", () => ({
-  default: () => <div>App Layout</div>,
+  default: () => (
+    <div>
+      <div>App Layout</div>
+      <Outlet />
+    </div>
+  ),
 }));
 
 vi.mock("../../src/pages/LoginPage", () => ({
@@ -130,6 +135,7 @@ function createThemeStorage(theme: string | null): Storage {
 
 describe("App theme bootstrap runtime", () => {
   beforeEach(() => {
+    authState.token = null;
     vi.unstubAllGlobals();
     localStorage.clear();
     document.documentElement.classList.remove("light-theme", "dark");
@@ -216,5 +222,44 @@ describe("App theme bootstrap runtime", () => {
       expect(document.body.classList.contains("light-theme")).toBe(false);
     });
     expect(storage.getItem).toHaveBeenCalledWith("theme");
+  });
+
+  it("redirects unauthenticated root route to login page", async () => {
+    const storage = createThemeStorage(null);
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
+  it("redirects authenticated root route into projects page under app layout", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Projects Page")).toBeInTheDocument();
+    });
   });
 });
