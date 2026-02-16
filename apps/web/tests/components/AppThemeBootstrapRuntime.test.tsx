@@ -288,6 +288,33 @@ describe("App theme bootstrap runtime", () => {
     expect(storage.getItem).toHaveBeenCalledWith("theme");
   });
 
+  it.each([
+    ["/admin/login", "Admin Login Page"],
+    ["/admin/settings", "Admin Settings Page"],
+  ] as const)(
+    "falls back to dark theme for unsupported persisted value on %s",
+    async (route, expectedPageText) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = route === "/admin/settings" ? "admin-token" : null;
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+      expect(storage.getItem).toHaveBeenCalledWith("theme");
+    },
+  );
+
   it("applies persisted dark theme and clears stale light classes", async () => {
     document.documentElement.classList.add("light-theme");
     document.body.classList.add("light-theme");
