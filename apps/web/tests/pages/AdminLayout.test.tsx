@@ -59,6 +59,8 @@ describe("AdminLayout responsive sidebar behavior", () => {
   beforeEach(() => {
     mockLogout.mockReset();
     document.body.classList.remove("sidebar-modal-open");
+    document.body.classList.remove("layout-fixed");
+    document.documentElement.classList.remove("layout-fixed");
     setViewportWidth(1280);
   });
 
@@ -167,6 +169,10 @@ describe("AdminLayout responsive sidebar behavior", () => {
       renderAdminLayout();
 
       const toggleButton = screen.getByLabelText("Открыть навигацию");
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(false);
       expect(toggleButton).toHaveAttribute(
         "aria-controls",
         "admin-primary-sidebar",
@@ -194,6 +200,10 @@ describe("AdminLayout responsive sidebar behavior", () => {
           "aria-expanded",
           shouldOpenOnToggle ? "true" : "false",
         );
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
       });
     },
   );
@@ -252,6 +262,10 @@ describe("AdminLayout responsive sidebar behavior", () => {
         const { unmount } = renderAdminLayout(route);
 
         expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
         const toggleButton = screen.getByLabelText("Открыть навигацию");
         expect(toggleButton).toHaveAttribute(
           "aria-controls",
@@ -292,10 +306,18 @@ describe("AdminLayout responsive sidebar behavior", () => {
           } else {
             expect(overlayButton).not.toBeInTheDocument();
           }
+          expect(
+            document.documentElement.classList.contains("layout-fixed"),
+          ).toBe(false);
+          expect(document.body.classList.contains("layout-fixed")).toBe(false);
         });
 
         unmount();
         document.body.classList.remove("sidebar-modal-open");
+        expect(
+          document.documentElement.classList.contains("layout-fixed"),
+        ).toBe(false);
+        expect(document.body.classList.contains("layout-fixed")).toBe(false);
       }
     },
   );
