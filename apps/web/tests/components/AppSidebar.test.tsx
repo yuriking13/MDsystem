@@ -14,10 +14,12 @@ vi.mock("../../src/lib/AuthContext", () => ({
 }));
 
 function renderSidebar({
+  sidebarId,
   mobileViewport,
   mobileOpen = false,
   onCloseMobile,
 }: {
+  sidebarId?: string;
   mobileViewport: boolean;
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
@@ -32,12 +34,15 @@ function renderSidebar({
           path="/projects/:id"
           element={
             <AppSidebar
+              sidebarId={sidebarId}
               mobileViewport={mobileViewport}
               mobileOpen={mobileOpen}
               onCloseMobile={onCloseMobile}
             />
           }
         />
+        <Route path="/projects" element={<div>Projects route</div>} />
+        <Route path="/settings" element={<div>Settings route</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -54,6 +59,12 @@ describe("AppSidebar mobile collapse behavior", () => {
 
     expect(screen.queryByTitle("Свернуть")).not.toBeInTheDocument();
     expect(screen.queryByTitle("Развернуть")).not.toBeInTheDocument();
+  });
+
+  it("applies custom sidebar id when provided", () => {
+    renderSidebar({ mobileViewport: true, sidebarId: "test-mobile-sidebar" });
+
+    expect(document.getElementById("test-mobile-sidebar")).not.toBeNull();
   });
 
   it("applies mobile open class when mobileOpen prop is true", () => {
@@ -167,6 +178,48 @@ describe("AppSidebar mobile collapse behavior", () => {
     });
 
     await user.click(screen.getByText("Документы"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onCloseMobile when returning to projects in mobile drawer", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+    });
+
+    await user.click(screen.getByText("К проектам"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onCloseMobile when opening profile settings in mobile drawer", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+    });
+
+    await user.click(screen.getByTitle("Перейти в настройки"));
+
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onCloseMobile when logging out from mobile drawer", async () => {
+    const user = userEvent.setup();
+    const onCloseMobile = vi.fn();
+    renderSidebar({
+      mobileViewport: true,
+      mobileOpen: true,
+      onCloseMobile,
+    });
+
+    await user.click(screen.getByText("Выйти"));
 
     expect(onCloseMobile).toHaveBeenCalledTimes(1);
   });
