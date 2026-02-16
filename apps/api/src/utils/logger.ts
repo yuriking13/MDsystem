@@ -1,6 +1,6 @@
 /**
  * Централизованный логгер для воркеров и фоновых задач
- * 
+ *
  * Используйте вместо console.log/console.error:
  * - logger.info('message', { data })
  * - logger.error('message', error, { data })
@@ -8,7 +8,11 @@
  * - logger.debug('message', { data })
  */
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = "debug" | "info" | "warn" | "error";
+
+type ErrorWithCode = Error & {
+  code?: unknown;
+};
 
 interface LogEntry {
   level: LogLevel;
@@ -30,37 +34,45 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   error: 3,
 };
 
-const currentLevel: LogLevel = (process.env.LOG_LEVEL as LogLevel) || 
-  (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
+const currentLevel: LogLevel =
+  (process.env.LOG_LEVEL as LogLevel) ||
+  (process.env.NODE_ENV === "production" ? "info" : "debug");
 
 function shouldLog(level: LogLevel): boolean {
   return LOG_LEVELS[level] >= LOG_LEVELS[currentLevel];
 }
 
+function extractErrorCode(error: Error): string | undefined {
+  const maybeCode = (error as ErrorWithCode).code;
+  if (typeof maybeCode === "string") return maybeCode;
+  if (typeof maybeCode === "number") return String(maybeCode);
+  return undefined;
+}
+
 function formatEntry(entry: LogEntry): string {
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === "production") {
     // JSON format для production (легче парсить)
     return JSON.stringify(entry);
   }
-  
+
   // Человекочитаемый формат для development
-  const prefix = entry.context ? `[${entry.context}]` : '';
+  const prefix = entry.context ? `[${entry.context}]` : "";
   const levelBadge = `[${entry.level.toUpperCase()}]`;
-  const time = entry.timestamp.split('T')[1]?.slice(0, 12) || entry.timestamp;
-  
+  const time = entry.timestamp.split("T")[1]?.slice(0, 12) || entry.timestamp;
+
   let msg = `${time} ${levelBadge}${prefix} ${entry.message}`;
-  
+
   if (entry.data && Object.keys(entry.data).length > 0) {
     msg += ` ${JSON.stringify(entry.data)}`;
   }
-  
+
   if (entry.error) {
     msg += `\n  Error: ${entry.error.message}`;
-    if (entry.error.stack && process.env.NODE_ENV !== 'production') {
+    if (entry.error.stack && process.env.NODE_ENV !== "production") {
       msg += `\n  Stack: ${entry.error.stack}`;
     }
   }
-  
+
   return msg;
 }
 
@@ -68,7 +80,7 @@ function log(
   level: LogLevel,
   message: string,
   dataOrError?: Record<string, unknown> | Error,
-  additionalData?: Record<string, unknown>
+  additionalData?: Record<string, unknown>,
 ): void {
   if (!shouldLog(level)) return;
 
@@ -82,7 +94,7 @@ function log(
     entry.error = {
       message: dataOrError.message,
       stack: dataOrError.stack,
-      code: (dataOrError as any).code,
+      code: extractErrorCode(dataOrError),
     };
     if (additionalData) {
       entry.data = additionalData;
@@ -92,12 +104,12 @@ function log(
   }
 
   const formatted = formatEntry(entry);
-  
+
   switch (level) {
-    case 'error':
+    case "error":
       console.error(formatted);
       break;
-    case 'warn':
+    case "warn":
       console.warn(formatted);
       break;
     default:
@@ -111,9 +123,9 @@ function log(
 export function createLogger(context: string) {
   return {
     debug: (message: string, data?: Record<string, unknown>) => {
-      if (!shouldLog('debug')) return;
+      if (!shouldLog("debug")) return;
       const entry: LogEntry = {
-        level: 'debug',
+        level: "debug",
         timestamp: new Date().toISOString(),
         message,
         context,
@@ -123,9 +135,9 @@ export function createLogger(context: string) {
     },
 
     info: (message: string, data?: Record<string, unknown>) => {
-      if (!shouldLog('info')) return;
+      if (!shouldLog("info")) return;
       const entry: LogEntry = {
-        level: 'info',
+        level: "info",
         timestamp: new Date().toISOString(),
         message,
         context,
@@ -135,9 +147,9 @@ export function createLogger(context: string) {
     },
 
     warn: (message: string, data?: Record<string, unknown>) => {
-      if (!shouldLog('warn')) return;
+      if (!shouldLog("warn")) return;
       const entry: LogEntry = {
-        level: 'warn',
+        level: "warn",
         timestamp: new Date().toISOString(),
         message,
         context,
@@ -146,10 +158,14 @@ export function createLogger(context: string) {
       console.warn(formatEntry(entry));
     },
 
-    error: (message: string, error?: Error | unknown, data?: Record<string, unknown>) => {
-      if (!shouldLog('error')) return;
+    error: (
+      message: string,
+      error?: Error | unknown,
+      data?: Record<string, unknown>,
+    ) => {
+      if (!shouldLog("error")) return;
       const entry: LogEntry = {
-        level: 'error',
+        level: "error",
         timestamp: new Date().toISOString(),
         message,
         context,
@@ -159,7 +175,7 @@ export function createLogger(context: string) {
         entry.error = {
           message: error.message,
           stack: error.stack,
-          code: (error as any).code,
+          code: extractErrorCode(error),
         };
       } else if (error) {
         entry.error = { message: String(error) };
@@ -171,12 +187,23 @@ export function createLogger(context: string) {
 
 // Глобальный логгер
 export const logger = {
-  debug: (message: string, data?: Record<string, unknown>) => log('debug', message, data),
-  info: (message: string, data?: Record<string, unknown>) => log('info', message, data),
-  warn: (message: string, data?: Record<string, unknown>) => log('warn', message, data),
-  error: (message: string, error?: Error | unknown, data?: Record<string, unknown>) => 
-    log('error', message, error instanceof Error ? error : undefined, 
-        error instanceof Error ? data : { ...(data || {}), error: String(error) }),
+  debug: (message: string, data?: Record<string, unknown>) =>
+    log("debug", message, data),
+  info: (message: string, data?: Record<string, unknown>) =>
+    log("info", message, data),
+  warn: (message: string, data?: Record<string, unknown>) =>
+    log("warn", message, data),
+  error: (
+    message: string,
+    error?: Error | unknown,
+    data?: Record<string, unknown>,
+  ) =>
+    log(
+      "error",
+      message,
+      error instanceof Error ? error : undefined,
+      error instanceof Error ? data : { ...(data || {}), error: String(error) },
+    ),
 };
 
 export default logger;
