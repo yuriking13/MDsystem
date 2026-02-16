@@ -90,6 +90,11 @@ describe("light theme blue/white palette safeguards", () => {
     expect(pagesCss).toMatch(/\.docs-subnav\s*\{/);
     expect(pagesCss).toMatch(/\.docs-subnav-list\s*\{/);
     expect(pagesCss).toMatch(/\.docs-subnav-item\.active\s*\{/);
+    expect(pagesCss).toMatch(/\.doc-nav-item:focus-visible\s*\{/);
+    expect(pagesCss).toMatch(/\.docs-subnav-item:focus-visible\s*\{/);
+    expect(pagesCss).toMatch(
+      /box-shadow:\s*0 0 0 2px rgba\(37,\s*99,\s*235,\s*0\.2\);/,
+    );
     expect(pagesCss).toMatch(
       /@media\s*\(max-width:\s*1024px\)\s*\{[\s\S]*?\.docs-subnav-list\s*\{/,
     );

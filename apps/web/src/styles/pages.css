@@ -903,6 +903,11 @@
   color: var(--accent);
 }
 
+.doc-nav-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.24);
+}
+
 .doc-nav-item-icon {
   width: 20px;
   height: 20px;
@@ -952,6 +957,13 @@
   background: rgba(37, 99, 235, 0.08);
   color: var(--accent);
   font-weight: 600;
+}
+
+.docs-subnav-item:focus-visible {
+  outline: none;
+  border-color: rgba(37, 99, 235, 0.5);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  color: var(--text-primary);
 }
 
 .docs-content {
