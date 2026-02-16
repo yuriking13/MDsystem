@@ -2418,6 +2418,18 @@
     font-size: 12px;
   }
 
+  .admin-table-message,
+  .admin-table-detail,
+  .admin-table-title,
+  .admin-progress-text,
+  .admin-error-preview {
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+
   .admin-search-form {
     width: 100%;
   }
