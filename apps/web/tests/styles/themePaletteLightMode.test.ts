@@ -18,6 +18,22 @@ const pagesCss = readFileSync(
   resolve(process.cwd(), "src/styles/pages.css"),
   "utf8",
 );
+const appLayoutCss = readFileSync(
+  resolve(process.cwd(), "src/styles/app-layout.css"),
+  "utf8",
+);
+const articlesSectionCss = readFileSync(
+  resolve(process.cwd(), "src/styles/articles-section.css"),
+  "utf8",
+);
+const adminCss = readFileSync(
+  resolve(process.cwd(), "src/styles/admin.css"),
+  "utf8",
+);
+const themeSwitcherCss = readFileSync(
+  resolve(process.cwd(), "src/styles/theme-switcher.css"),
+  "utf8",
+);
 const graphComponent = readFileSync(
   resolve(process.cwd(), "src/components/CitationGraph/CitationGraph.tsx"),
   "utf8",
@@ -79,6 +95,33 @@ describe("light theme blue/white palette safeguards", () => {
     );
   });
 
+  it("keeps mobile light-theme controls aligned in layout and admin shells", () => {
+    expect(appLayoutCss).toMatch(
+      /\.light-theme \.app-mobile-fab-toggle,[\s\S]*?border-color:\s*rgba\(191,\s*219,\s*254,\s*0\.95\);[\s\S]*?color:\s*#0f172a;/,
+    );
+    expect(appLayoutCss).toMatch(
+      /\.light-theme \.app-mobile-nav-toggle,[\s\S]*?color:\s*#334155;/,
+    );
+    expect(adminCss).toMatch(
+      /\.light-theme \.admin-mobile-topbar,[\s\S]*?border-bottom-color:\s*rgba\(191,\s*219,\s*254,\s*0\.9\);/,
+    );
+    expect(adminCss).toMatch(
+      /\.light-theme \.admin-mobile-nav-toggle:hover,[\s\S]*?border-color:\s*rgba\(37,\s*99,\s*235,\s*0\.45\);/,
+    );
+  });
+
+  it("keeps article actions and theme switcher light accents on blue palette", () => {
+    expect(articlesSectionCss).toMatch(
+      /\.light-theme \.article-actions,[\s\S]*?border-top:\s*1px solid rgba\(37,\s*99,\s*235,\s*0\.15\);/,
+    );
+    expect(articlesSectionCss).toMatch(
+      /\.light-theme \.bulk-actions,[\s\S]*?background-color:\s*rgba\(37,\s*99,\s*235,\s*0\.06\);/,
+    );
+    expect(themeSwitcherCss).toMatch(
+      /\.light-theme \.theme-switcher,[\s\S]*?--c-content:\s*#1E293B;/,
+    );
+  });
+
   it("keeps graph component free from legacy warm pastel constants", () => {
     expect(graphComponent).not.toMatch(/const pastelColors\s*=\s*\{/);
     expect(graphComponent).not.toMatch(/#FDFCFB/);
@@ -123,7 +166,16 @@ describe("light theme blue/white palette safeguards", () => {
   });
 
   it("keeps key style files free from removed warm palette literals", () => {
-    const styleBundle = [indexCss, legacyCss, graphCss, pagesCss].join("\n");
+    const styleBundle = [
+      indexCss,
+      legacyCss,
+      graphCss,
+      pagesCss,
+      appLayoutCss,
+      articlesSectionCss,
+      adminCss,
+      themeSwitcherCss,
+    ].join("\n");
     const removedWarmTokens = [
       /#C87D2A/,
       /#D99A3A/,
