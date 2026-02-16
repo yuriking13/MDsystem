@@ -33,11 +33,8 @@ jobs:
       - name: Install dependencies (frozen lockfile)
         run: pnpm install --frozen-lockfile
 
-      - name: Run repository quality guards (strict check mode)
-        run: pnpm run quality:guards:check
-
-      - name: Run repository quality guard unit tests
-        run: pnpm run quality:guards:test
+      - name: Run repository quality checks
+        run: pnpm run quality:repo
 
   api-quality:
     name: API quality gates

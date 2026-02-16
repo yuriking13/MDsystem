@@ -7,6 +7,7 @@
     "quality:guards": "node scripts/quality-guards.js",
     "quality:guards:check": "node scripts/quality-guards.js --check",
     "quality:guards:test": "node --test scripts/quality-guards-lib.test.js scripts/js-mirror-utils.test.js",
+    "quality:repo": "pnpm run quality:guards:check && pnpm run quality:guards:test",
     "dev": "pnpm -r dev",
     "build": "pnpm run quality:guards:check && pnpm -r build",
     "lint": "pnpm run quality:guards:check && pnpm -r run lint",
