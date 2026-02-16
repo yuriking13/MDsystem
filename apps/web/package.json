@@ -9,7 +9,7 @@
     "build": "pnpm run clean:js-mirrors && tsc -p tsconfig.json && vite build",
     "typecheck": "pnpm run clean:js-mirrors && tsc -p tsconfig.json --noEmit",
     "preview": "vite preview",
-    "lint": "pnpm run clean:js-mirrors && eslint . --ext .ts,.tsx",
+    "lint": "pnpm run clean:js-mirrors && eslint . --ext .ts,.tsx --max-warnings 0",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "test": "pnpm run clean:js-mirrors && vitest run",
     "test:watch": "vitest",
