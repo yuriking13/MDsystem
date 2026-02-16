@@ -47,6 +47,24 @@ function renderAppLayout(initialPath = "/projects") {
             }
           />
           <Route path="/settings" element={<div>Settings page</div>} />
+          <Route
+            path="/projects/:id"
+            element={
+              <div>
+                <div>Project details page</div>
+                <Link to="/projects">Back to projects</Link>
+              </div>
+            }
+          />
+          <Route
+            path="/projects/:id/documents/:docId"
+            element={
+              <div>
+                <div>Document editor page</div>
+                <Link to="/projects">Back to projects</Link>
+              </div>
+            }
+          />
           <Route path="/login" element={<div>Login page</div>} />
         </Route>
       </Routes>
@@ -115,5 +133,51 @@ describe("AppLayout mobile sidebar behavior", () => {
       screen.queryByRole("button", { name: "Открыть навигацию" }),
     ).not.toBeInTheDocument();
     expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+  });
+
+  it("toggles layout-fixed classes for document editor route lifecycle", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderAppLayout("/projects/p1/documents/d1");
+
+    expect(screen.getByText("Document editor page")).toBeInTheDocument();
+    expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+      true,
+    );
+    expect(document.body.classList.contains("layout-fixed")).toBe(true);
+    expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Открыть навигацию" }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByText("Back to projects"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Projects page")).toBeInTheDocument();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(false);
+    });
+
+    unmount();
+    expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+      false,
+    );
+    expect(document.body.classList.contains("layout-fixed")).toBe(false);
+  });
+
+  it("uses fixed layout shell for graph tab route", () => {
+    renderAppLayout("/projects/p1?tab=graph");
+
+    expect(screen.getByText("Project details page")).toBeInTheDocument();
+    expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+      true,
+    );
+    expect(document.body.classList.contains("layout-fixed")).toBe(true);
+    expect(document.querySelector(".app-layout-fixed")).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: "Открыть навигацию" }),
+    ).toBeInTheDocument();
+    expect(document.querySelector(".app-mobile-topbar")).toBeNull();
   });
 });
