@@ -2130,7 +2130,7 @@ input:focus::placeholder {
 
 /* Settings dropdown */
 .settings-dropdown {
-  min-width: 200px;
+  min-width: min(200px, calc(100vw - 24px));
 }
 
 .dropdown-row {
@@ -2840,7 +2840,7 @@ input:focus::placeholder {
 }
 
 .edit-stat-classification-field {
-  min-width: 200px;
+  min-width: min(200px, 100%);
 }
 
 .edit-stat-classification-label {
@@ -3084,7 +3084,7 @@ input:focus::placeholder {
 }
 
 .create-stat-classification-field {
-  min-width: 200px;
+  min-width: min(200px, 100%);
 }
 
 .create-stat-classification-field-label {
