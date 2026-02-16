@@ -1468,6 +1468,32 @@ describe("AppLayout mobile sidebar behavior", () => {
     });
   });
 
+  it("enables mobile drawer toggle when resizing from desktop to mobile boundary", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(APP_DRAWER_MAX_WIDTH + 1);
+    renderAppLayout("/settings");
+
+    const toggleButton = screen.getByRole("button", {
+      name: "Открыть навигацию",
+    });
+    expect(toggleButton).toBeDisabled();
+
+    act(() => {
+      setViewportWidth(APP_DRAWER_MAX_WIDTH);
+    });
+
+    await waitFor(() => {
+      expect(toggleButton).toBeEnabled();
+    });
+
+    await user.click(toggleButton);
+
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+      expect(document.querySelector(".app-sidebar--open")).not.toBeNull();
+    });
+  });
+
   it("hides sidebar shell on login route", () => {
     renderAppLayout("/login");
 

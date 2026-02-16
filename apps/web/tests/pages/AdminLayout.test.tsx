@@ -446,6 +446,34 @@ describe("AdminLayout responsive sidebar behavior", () => {
     });
   });
 
+  it("enables admin mobile toggle when resizing from desktop to mobile boundary", async () => {
+    const user = userEvent.setup();
+    setViewportWidth(ADMIN_DRAWER_MAX_WIDTH + 1);
+    renderAdminLayout("/admin/users");
+
+    const toggleButton = screen.getByRole("button", {
+      name: "Открыть навигацию",
+    });
+    expect(toggleButton).toBeDisabled();
+
+    act(() => {
+      setViewportWidth(ADMIN_DRAWER_MAX_WIDTH);
+    });
+
+    await waitFor(() => {
+      expect(toggleButton).toBeEnabled();
+    });
+
+    await user.click(toggleButton);
+
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+      expect(
+        document.querySelector(".admin-sidebar.mobile-open"),
+      ).not.toBeNull();
+    });
+  });
+
   it.each(
     ADMIN_RESPONSIVE_ROUTE_CASES.map(({ route, pageLabel, mobileTitle }) => [
       route,
