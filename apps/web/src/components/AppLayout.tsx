@@ -238,6 +238,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             type="button"
             onClick={closeMobileSidebar}
             aria-label="Закрыть меню навигации"
+            aria-controls="app-primary-sidebar"
           />
         )}
         <main className={`app-main${isFixedLayout ? " app-main-fixed" : ""}`}>

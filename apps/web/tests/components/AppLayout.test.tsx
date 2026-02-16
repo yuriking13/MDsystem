@@ -147,8 +147,13 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(toggleButton).toBeEnabled();
     await user.click(toggleButton);
     expect(document.body.classList.contains("sidebar-modal-open")).toBe(true);
+    const overlayButton = screen.getByLabelText("Закрыть меню навигации");
+    expect(overlayButton).toHaveAttribute(
+      "aria-controls",
+      "app-primary-sidebar",
+    );
 
-    await user.click(screen.getByLabelText("Закрыть меню навигации"));
+    await user.click(overlayButton);
 
     await waitFor(() => {
       expect(document.body.classList.contains("sidebar-modal-open")).toBe(

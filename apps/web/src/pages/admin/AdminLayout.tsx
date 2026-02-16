@@ -115,6 +115,7 @@ export default function AdminLayout() {
           type="button"
           className="admin-sidebar-overlay"
           aria-label="Закрыть меню навигации"
+          aria-controls="admin-primary-sidebar"
           onClick={closeMobileSidebar}
         />
       )}
