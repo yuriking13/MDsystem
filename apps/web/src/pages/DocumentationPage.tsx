@@ -865,6 +865,9 @@ export default function DocumentationPage(): React.JSX.Element {
                     setActiveTopicId(section.topics[0].id);
                   }}
                   className={`doc-nav-item ${activeSection.id === section.id ? "active" : ""}`}
+                  aria-current={
+                    activeSection.id === section.id ? "page" : undefined
+                  }
                 >
                   <span className="doc-nav-item-icon">{section.icon}</span>
                   {section.title}
@@ -881,7 +884,10 @@ export default function DocumentationPage(): React.JSX.Element {
                     className={`docs-subnav-item ${activeTopic.id === topic.id ? "active" : ""}`}
                     onClick={() => setActiveTopicId(topic.id)}
                     role="tab"
+                    id={`docs-tab-${topic.id}`}
+                    aria-controls={`docs-panel-${topic.id}`}
                     aria-selected={activeTopic.id === topic.id}
+                    tabIndex={activeTopic.id === topic.id ? 0 : -1}
                   >
                     {topic.title}
                   </button>
@@ -902,7 +908,12 @@ export default function DocumentationPage(): React.JSX.Element {
                 подменю, чтобы получить пошаговое объяснение.
               </div>
 
-              <article className="docs-topic-card">
+              <article
+                id={`docs-panel-${activeTopic.id}`}
+                className="docs-topic-card"
+                role="tabpanel"
+                aria-labelledby={`docs-tab-${activeTopic.id}`}
+              >
                 <h3 className="docs-topic-title">{activeTopic.title}</h3>
                 <p className="docs-topic-summary">{activeTopic.summary}</p>
                 <div className="docs-topic-content">{activeTopic.content}</div>

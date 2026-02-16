@@ -57,6 +57,9 @@ describe("DocumentationPage menu + submenu", () => {
         "Если вы используете платформу впервые, начните с этого порядка действий.",
       ),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Обзор платформы" }),
+    ).toHaveAttribute("aria-current", "page");
   });
 
   it("switches section and updates submenu/content", async () => {
@@ -218,5 +221,23 @@ describe("DocumentationPage menu + submenu", () => {
     await user.click(screen.getByRole("link", { name: "← К проектам" }));
 
     expect(screen.getByText("Projects route")).toBeInTheDocument();
+  });
+
+  it("connects active submenu tab with topic panel semantics", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    await user.click(screen.getByRole("button", { name: "Граф цитирований" }));
+    await user.click(screen.getByRole("tab", { name: "Работа с узлами" }));
+
+    const activeTab = screen.getByRole("tab", { name: "Работа с узлами" });
+    const panel = screen.getByRole("tabpanel");
+    const controlsId = activeTab.getAttribute("aria-controls");
+
+    expect(activeTab).toHaveAttribute("aria-selected", "true");
+    expect(activeTab).toHaveAttribute("tabindex", "0");
+    expect(controlsId).toBeTruthy();
+    expect(panel).toHaveAttribute("id", controlsId);
+    expect(panel).toHaveAttribute("aria-labelledby", activeTab.id);
   });
 });
