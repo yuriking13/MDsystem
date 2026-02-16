@@ -11,6 +11,7 @@ import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import AppLayout from "../../src/components/AppLayout";
 
 const mockLogout = vi.fn();
+const targetViewportWidths = [360, 390, 768, 1024, 1280, 1440, 1920];
 const mockAuthState = {
   token: "test-token",
   user: { email: "user@example.com" } as { email: string } | null,
@@ -225,6 +226,28 @@ describe("AppLayout mobile sidebar behavior", () => {
     expect(document.querySelector(".animated-bg")).toBeNull();
   });
 
+  it.each([
+    ["/login", "Login page"],
+    ["/register", "Register page"],
+  ])(
+    "hides app shell on %s across target viewport widths",
+    (route, pageLabel) => {
+      for (const width of targetViewportWidths) {
+        setViewportWidth(width);
+        const { unmount } = renderAppLayout(route);
+
+        expect(screen.getByText(pageLabel)).toBeInTheDocument();
+        expect(
+          screen.queryByRole("button", { name: "Открыть навигацию" }),
+        ).not.toBeInTheDocument();
+        expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+        expect(document.querySelector(".animated-bg")).toBeNull();
+
+        unmount();
+      }
+    },
+  );
+
   it("hides sidebar shell on admin route", () => {
     renderAppLayout("/admin");
 
@@ -302,5 +325,44 @@ describe("AppLayout mobile sidebar behavior", () => {
       false,
     );
     expect(document.body.classList.contains("layout-fixed")).toBe(false);
+  });
+
+  it("keeps document editor route in fixed layout on all target widths", () => {
+    for (const width of targetViewportWidths) {
+      setViewportWidth(width);
+      const { unmount } = renderAppLayout("/projects/p1/documents/d1");
+
+      expect(screen.getByText("Document editor page")).toBeInTheDocument();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        true,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(true);
+
+      unmount();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(false);
+    }
+  });
+
+  it("keeps graph tab route in fixed layout on all target widths", () => {
+    for (const width of targetViewportWidths) {
+      setViewportWidth(width);
+      const { unmount } = renderAppLayout("/projects/p1?tab=graph");
+
+      expect(screen.getByText("Project details page")).toBeInTheDocument();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        true,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(true);
+      expect(document.querySelector(".animated-bg")).toBeNull();
+
+      unmount();
+      expect(document.documentElement.classList.contains("layout-fixed")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("layout-fixed")).toBe(false);
+    }
   });
 });
