@@ -129,7 +129,8 @@ describe("AdminLayout responsive sidebar behavior", () => {
       setViewportWidth(width);
       renderAdminLayout();
 
-      await user.click(screen.getByLabelText("Открыть навигацию"));
+      const toggleButton = screen.getByLabelText("Открыть навигацию");
+      await user.click(toggleButton);
 
       await waitFor(() => {
         expect(document.body.classList.contains("sidebar-modal-open")).toBe(
@@ -139,6 +140,10 @@ describe("AdminLayout responsive sidebar behavior", () => {
         expect(sidebar).not.toBeNull();
         expect(sidebar?.classList.contains("mobile-open")).toBe(
           shouldOpenOnToggle,
+        );
+        expect(toggleButton).toHaveAttribute(
+          "aria-expanded",
+          shouldOpenOnToggle ? "true" : "false",
         );
       });
     },
