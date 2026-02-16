@@ -5919,6 +5919,155 @@ input:focus::placeholder {
   border-radius: 4px;
 }
 
+.graph-advanced-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border-glass);
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.05),
+    rgba(139, 92, 246, 0.05)
+  );
+}
+
+.graph-advanced-limit-button {
+  padding: 4px 10px;
+  font-size: 10px;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.graph-clustering-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.graph-clustering-select {
+  padding: 4px 8px;
+  font-size: 11px;
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.graph-load-more-button {
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+.graph-load-more-icon {
+  margin-right: 4px;
+}
+
+.graph-limits-info {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-unlimited-info {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-success);
+  font-weight: 600;
+}
+
+.graph-progress-panel {
+  padding: 16px 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.1),
+    rgba(139, 92, 246, 0.1)
+  );
+  border-bottom: 1px solid var(--border-glass);
+}
+
+.graph-progress-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.graph-progress-title-wrap {
+  flex: 1;
+}
+
+.graph-progress-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.graph-progress-phase {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.graph-progress-time {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.graph-progress-cancel-button {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+
+.graph-progress-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.graph-progress-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.graph-progress-hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #fbbf24;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.graph-progress-stale-hint {
+  color: #f97316;
+}
+
+.graph-refs-message {
+  margin: 8px 20px;
+  padding: 12px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(59, 130, 246, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.graph-import-message {
+  margin: 8px 20px;
+  padding: 12px;
+  font-size: 13px;
+}
+
 /* Graph area - no strict borders, expansive canvas */
 .graph-container > div:last-child {
   border: none;

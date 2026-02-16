@@ -2163,122 +2163,6 @@ export default function CitationGraph({ projectId }: Props) {
     fontSize: 9,
     fontWeight: 600,
   };
-  const graphAdvancedPanelStyle: React.CSSProperties = {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: 16,
-    padding: "12px 20px",
-    borderBottom: "1px solid var(--border-glass)",
-    alignItems: "center",
-    background:
-      "linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05))",
-  };
-  const graphAdvancedLimitButtonStyle: React.CSSProperties = {
-    padding: "4px 10px",
-    fontSize: 10,
-    marginLeft: 8,
-    whiteSpace: "nowrap",
-  };
-  const graphClusteringLabelStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    fontSize: 12,
-    cursor: "pointer",
-  };
-  const graphClusteringSelectStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: 11,
-    border: "1px solid var(--border-glass)",
-    borderRadius: 6,
-    background: "var(--bg-secondary)",
-    color: "var(--text-primary)",
-  };
-  const graphLoadMoreButtonStyle: React.CSSProperties = {
-    padding: "6px 12px",
-    fontSize: 11,
-  };
-  const graphLoadMoreIconStyle: React.CSSProperties = { marginRight: 4 };
-  const graphLimitsInfoStyle: React.CSSProperties = {
-    marginLeft: "auto",
-    fontSize: 11,
-    color: "var(--text-muted)",
-  };
-  const graphUnlimitedInfoStyle: React.CSSProperties = {
-    marginLeft: "auto",
-    fontSize: 11,
-    color: "var(--text-success)",
-    fontWeight: 600,
-  };
-  const graphProgressPanelStyle: React.CSSProperties = {
-    padding: "16px 20px",
-    background:
-      "linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1))",
-    borderBottom: "1px solid var(--border-glass)",
-  };
-  const graphProgressHeaderStyle: React.CSSProperties = {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    marginBottom: 10,
-  };
-  const graphProgressTitleWrapStyle: React.CSSProperties = { flex: 1 };
-  const graphProgressTitleStyle: React.CSSProperties = {
-    fontWeight: 600,
-    fontSize: 13,
-    color: "var(--text-primary)",
-  };
-  const graphProgressPhaseStyle: React.CSSProperties = {
-    fontSize: 11,
-    color: "var(--text-muted)",
-    marginTop: 2,
-  };
-  const graphProgressTimeStyle: React.CSSProperties = {
-    fontSize: 12,
-    color: "var(--text-muted)",
-  };
-  const graphProgressCancelButtonStyle: React.CSSProperties = {
-    padding: "4px 8px",
-    fontSize: 11,
-  };
-  const graphProgressTrackStyle: React.CSSProperties = {
-    height: 6,
-    background: "rgba(255,255,255,0.1)",
-    borderRadius: 3,
-    overflow: "hidden",
-    marginBottom: 10,
-  };
-  const graphProgressFooterStyle: React.CSSProperties = {
-    display: "flex",
-    justifyContent: "space-between",
-    fontSize: 11,
-    color: "var(--text-muted)",
-  };
-  const graphProgressHintStyle: React.CSSProperties = {
-    marginTop: 10,
-    fontSize: 11,
-    color: "#fbbf24",
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-  };
-  const graphProgressStaleHintStyle: React.CSSProperties = { color: "#f97316" };
-  const graphRefsMessageStyle: React.CSSProperties = {
-    margin: "8px 20px",
-    padding: 12,
-    fontSize: 13,
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    background: "rgba(59, 130, 246, 0.15)",
-    borderRadius: 8,
-    border: "1px solid rgba(59, 130, 246, 0.3)",
-  };
-  const graphImportMessageStyle: React.CSSProperties = {
-    margin: "8px 20px",
-    padding: 12,
-    fontSize: 13,
-  };
   const semanticPanelStyle: React.CSSProperties = {
     padding: "12px 20px",
     borderBottom: "1px solid var(--border-glass)",
@@ -4028,7 +3912,7 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Advanced Settings Panel */}
         {showAdvancedSettings && (
-          <div className="graph-filters" style={graphAdvancedPanelStyle}>
+          <div className="graph-filters graph-advanced-panel">
             {/* Max Nodes Slider */}
             <div className="graph-filter-group">
               <div className="graph-filter-label">
@@ -4053,8 +3937,9 @@ export default function CitationGraph({ projectId }: Props) {
               />
               <button
                 onClick={() => setUnlimitedNodes(!unlimitedNodes)}
-                className={unlimitedNodes ? "btn primary" : "btn secondary"}
-                style={graphAdvancedLimitButtonStyle}
+                className={`${
+                  unlimitedNodes ? "btn primary" : "btn secondary"
+                } graph-advanced-limit-button`}
                 title="Без ограничений"
               >
                 ∞
@@ -4086,8 +3971,9 @@ export default function CitationGraph({ projectId }: Props) {
               />
               <button
                 onClick={() => setUnlimitedLinks(!unlimitedLinks)}
-                className={unlimitedLinks ? "btn primary" : "btn secondary"}
-                style={graphAdvancedLimitButtonStyle}
+                className={`${
+                  unlimitedLinks ? "btn primary" : "btn secondary"
+                } graph-advanced-limit-button`}
                 title="Без ограничений"
               >
                 ∞
@@ -4096,7 +3982,7 @@ export default function CitationGraph({ projectId }: Props) {
 
             {/* Clustering Toggle */}
             <div className="graph-filter-group">
-              <label style={graphClusteringLabelStyle}>
+              <label className="graph-clustering-label">
                 <input
                   type="checkbox"
                   checked={enableClustering}
@@ -4111,7 +3997,7 @@ export default function CitationGraph({ projectId }: Props) {
                   onChange={(e) =>
                     setClusterBy(e.target.value as typeof clusterBy)
                   }
-                  style={graphClusteringSelectStyle}
+                  className="graph-clustering-select"
                 >
                   <option value="auto">Авто</option>
                   <option value="year">По годам</option>
@@ -4123,29 +4009,24 @@ export default function CitationGraph({ projectId }: Props) {
             {/* Load More Button */}
             {canLoadMore && !unlimitedNodes && maxNodes < 5000 && (
               <button
-                className="btn secondary"
-                style={graphLoadMoreButtonStyle}
+                className="btn secondary graph-load-more-button"
                 onClick={handleLoadMore}
                 title="Загрузить больше связанных статей"
               >
-                <IconPlus
-                  size="sm"
-                  className="icon-sm"
-                  style={graphLoadMoreIconStyle}
-                />
+                <IconPlus size="sm" className="icon-sm graph-load-more-icon" />
                 Загрузить больше (+1000)
               </button>
             )}
 
             {/* Current Limits Info */}
             {currentLimits && !unlimitedNodes && !unlimitedLinks && (
-              <div style={graphLimitsInfoStyle}>
+              <div className="graph-limits-info">
                 Текущие лимиты: {currentLimits.maxExtraNodes} узлов,{" "}
                 {currentLimits.maxLinksPerNode} связей/узел
               </div>
             )}
             {(unlimitedNodes || unlimitedLinks) && (
-              <div style={graphUnlimitedInfoStyle}>
+              <div className="graph-unlimited-info">
                 ∞ Без ограничений{" "}
                 {unlimitedNodes && unlimitedLinks
                   ? ""
@@ -4159,42 +4040,38 @@ export default function CitationGraph({ projectId }: Props) {
 
         {/* Progress Bar */}
         {fetchJobStatus?.isRunning && (
-          <div style={graphProgressPanelStyle}>
-            <div style={graphProgressHeaderStyle}>
+          <div className="graph-progress-panel">
+            <div className="graph-progress-header">
               <div className="loading-spinner" />
-              <div style={graphProgressTitleWrapStyle}>
-                <span style={graphProgressTitleStyle}>
+              <div className="graph-progress-title-wrap">
+                <span className="graph-progress-title">
                   Загрузка связей (PubMed + Crossref)...
                 </span>
                 {fetchJobStatus.currentPhase && (
-                  <div style={graphProgressPhaseStyle}>
+                  <div className="graph-progress-phase">
                     {fetchJobStatus.currentPhase}
                     {fetchJobStatus.phaseProgress &&
                       ` — ${fetchJobStatus.phaseProgress}`}
                   </div>
                 )}
               </div>
-              <span style={graphProgressTimeStyle}>
+              <span className="graph-progress-time">
                 {formatTime(fetchJobStatus.elapsedSeconds)}
               </span>
               <button
                 onClick={handleCancelFetch}
-                className="btn secondary"
-                style={graphProgressCancelButtonStyle}
+                className="btn secondary graph-progress-cancel-button"
                 title="Отменить загрузку"
               >
                 ✕ Отмена
               </button>
             </div>
 
-            <div
-              className="progress-bar-animated"
-              style={graphProgressTrackStyle}
-            >
+            <div className="progress-bar-animated graph-progress-track">
               <div style={getGraphProgressFillStyle(fetchJobStatus.progress)} />
             </div>
 
-            <div style={graphProgressFooterStyle}>
+            <div className="graph-progress-footer">
               <span>
                 Статей: {fetchJobStatus.processedArticles || 0} /{" "}
                 {fetchJobStatus.totalArticles || "?"}
@@ -4202,13 +4079,13 @@ export default function CitationGraph({ projectId }: Props) {
               <span>{fetchJobStatus.progress}% завершено</span>
             </div>
 
-            <div style={graphProgressHintStyle}>
+            <div className="graph-progress-hint">
               <IconInfoCircle size="sm" />
               <span>
                 Загрузка выполняется в фоне. Граф обновится автоматически.
                 {fetchJobStatus.secondsSinceProgress != null &&
                   fetchJobStatus.secondsSinceProgress > 30 && (
-                    <span style={graphProgressStaleHintStyle}>
+                    <span className="graph-progress-stale-hint">
                       {" "}
                       (нет обновлений {fetchJobStatus.secondsSinceProgress} сек
                       — возможно, сервер PubMed медленно отвечает)
@@ -4220,7 +4097,7 @@ export default function CitationGraph({ projectId }: Props) {
         )}
 
         {refsMessage && (
-          <div className="info" style={graphRefsMessageStyle}>
+          <div className="info graph-refs-message">
             {refsMessage.startsWith("crossref:") ? (
               <>
                 <IconLinkChain size="sm" className="text-blue-400" />
@@ -4239,9 +4116,7 @@ export default function CitationGraph({ projectId }: Props) {
         )}
 
         {importMessage && (
-          <div className="ok" style={graphImportMessageStyle}>
-            {importMessage}
-          </div>
+          <div className="ok graph-import-message">{importMessage}</div>
         )}
 
         {/* Semantic Search Panel */}
