@@ -154,6 +154,36 @@ describe("AdminLayout responsive sidebar behavior", () => {
     },
   );
 
+  it.each([360, 390, 768])(
+    "toggles admin mobile sidebar open and closed via same button at %ipx",
+    async (width) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAdminLayout();
+
+      const toggleButton = screen.getByRole("button", {
+        name: "Открыть навигацию",
+      });
+      await user.click(toggleButton);
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          true,
+        );
+        expect(toggleButton).toHaveAttribute("aria-label", "Закрыть навигацию");
+      });
+
+      await user.click(toggleButton);
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          false,
+        );
+        expect(toggleButton).toHaveAttribute("aria-label", "Открыть навигацию");
+      });
+    },
+  );
+
   it.each([
     ["/admin", "Admin dashboard"],
     ["/admin/users", "Users page"],

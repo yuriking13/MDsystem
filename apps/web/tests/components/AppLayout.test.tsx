@@ -158,6 +158,36 @@ describe("AppLayout mobile sidebar behavior", () => {
     },
   );
 
+  it.each([360, 390, 768])(
+    "toggles mobile sidebar open and closed via same topbar button at %ipx",
+    async (width) => {
+      const user = userEvent.setup();
+      setViewportWidth(width);
+      renderAppLayout("/projects");
+
+      const toggleButton = screen.getByRole("button", {
+        name: "Открыть навигацию",
+      });
+      await user.click(toggleButton);
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          true,
+        );
+        expect(toggleButton).toHaveAttribute("aria-label", "Закрыть навигацию");
+      });
+
+      await user.click(toggleButton);
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          false,
+        );
+        expect(toggleButton).toHaveAttribute("aria-label", "Открыть навигацию");
+      });
+    },
+  );
+
   it.each([1024, 1280, 1440, 1920])(
     "keeps mobile sidebar closed on desktop widths at %ipx",
     async (width) => {
