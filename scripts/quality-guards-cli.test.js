@@ -54,3 +54,22 @@ test("quality-guards default mode auto-cleans mirrors", () => {
   assert.match(result.stdout, /Removed 1 JS mirror file\(s\)/);
   assert.equal(fs.existsSync(jsMirrorPath), false);
 });
+
+test("quality-guards check mode reports standalone js source file tip", () => {
+  const workspaceRoot = createTempWorkspace();
+  const jsSourcePath = path.join(workspaceRoot, "apps/web/src/lib/legacy-helper.js");
+
+  writeFile(jsSourcePath, "export const legacy = true;");
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: remove JavaScript files from apps\/web\/src or migrate them to TypeScript/,
+  );
+  assert.equal(fs.existsSync(jsSourcePath), true);
+});

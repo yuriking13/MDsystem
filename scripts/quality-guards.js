@@ -30,13 +30,18 @@ function main() {
     }
   }
 
-  if (
-    checkOnly &&
-    allViolations.some(({ check }) => check.name === "web-js-mirrors")
-  ) {
-    console.error(
-      "\n[quality-guards] Tip: run `pnpm --filter web run clean:js-mirrors` to remove JS mirrors, then re-run checks.",
-    );
+  if (checkOnly) {
+    if (allViolations.some(({ check }) => check.name === "web-js-mirrors")) {
+      console.error(
+        "\n[quality-guards] Tip: run `pnpm --filter web run clean:js-mirrors` to remove JS mirrors, then re-run checks.",
+      );
+    }
+
+    if (allViolations.some(({ check }) => check.name === "web-js-source-files")) {
+      console.error(
+        "\n[quality-guards] Tip: remove JavaScript files from apps/web/src or migrate them to TypeScript.",
+      );
+    }
   }
 
   process.exit(1);
