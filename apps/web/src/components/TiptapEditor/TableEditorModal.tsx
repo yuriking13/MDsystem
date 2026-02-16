@@ -106,6 +106,74 @@ const rowsToData = (rows: Record<string, unknown>[], cols: number) => {
   });
 };
 
+const ROW_HEIGHT_CLASS_PREFIX = "tabulator-row-height-";
+const rowHeightRuleCache = new Set<number>();
+let rowHeightStyleSheet: CSSStyleSheet | null = null;
+
+const clampRowHeight = (height: number) => Math.max(10, Math.min(500, height));
+
+const getRowHeightClassName = (height: number) =>
+  `${ROW_HEIGHT_CLASS_PREFIX}${Math.round(clampRowHeight(height))}`;
+
+const ensureRowHeightStyleSheet = (): CSSStyleSheet | null => {
+  if (rowHeightStyleSheet) return rowHeightStyleSheet;
+  if (typeof document === "undefined") return null;
+
+  const styleEl = document.createElement("style");
+  styleEl.id = "tabulator-row-height-rules";
+  document.head.appendChild(styleEl);
+  rowHeightStyleSheet = styleEl.sheet as CSSStyleSheet | null;
+  return rowHeightStyleSheet;
+};
+
+const clearRowHeightClass = (el: HTMLElement) => {
+  const heightClasses: string[] = [];
+  el.classList.forEach((className) => {
+    if (className.startsWith(ROW_HEIGHT_CLASS_PREFIX)) {
+      heightClasses.push(className);
+    }
+  });
+  if (heightClasses.length > 0) {
+    el.classList.remove(...heightClasses);
+  }
+};
+
+const ensureRowHeightRule = (height: number): string => {
+  const safeHeight = Math.round(clampRowHeight(height));
+  const className = getRowHeightClassName(safeHeight);
+  if (rowHeightRuleCache.has(safeHeight)) {
+    return className;
+  }
+
+  const sheet = ensureRowHeightStyleSheet();
+  if (sheet) {
+    sheet.insertRule(
+      `.tabulator-container .tabulator-row.${className}{height:${safeHeight}px;min-height:${safeHeight}px;}`,
+      sheet.cssRules.length,
+    );
+  }
+
+  rowHeightRuleCache.add(safeHeight);
+  return className;
+};
+
+const applyRowHeightClass = (el: HTMLElement, height: number) => {
+  clearRowHeightClass(el);
+  el.classList.add(ensureRowHeightRule(height));
+};
+
+const readRowHeightFromClass = (el: HTMLElement): number | null => {
+  for (const className of Array.from(el.classList)) {
+    if (!className.startsWith(ROW_HEIGHT_CLASS_PREFIX)) continue;
+    const rawHeight = className.slice(ROW_HEIGHT_CLASS_PREFIX.length);
+    const parsed = parseInt(rawHeight, 10);
+    if (!Number.isNaN(parsed) && parsed >= 10) {
+      return clampRowHeight(parsed);
+    }
+  }
+  return null;
+};
+
 export const TableEditorModal: React.FC<TableEditorModalProps> = ({
   open,
   initialData,
@@ -138,14 +206,13 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
   const applyRowHeight = useCallback((rowIdx: number, height: number) => {
     const table = tableRef.current;
     if (!table) return;
-    const safeHeight = Math.max(10, Math.min(500, height));
+    const safeHeight = clampRowHeight(height);
     const rows = table.getRows();
     const row = rows[rowIdx];
     if (row) {
       const el = row.getElement();
       if (el) {
-        el.style.height = `${safeHeight}px`;
-        el.style.minHeight = `${safeHeight}px`;
+        applyRowHeightClass(el, safeHeight);
       }
     }
   }, []);
@@ -240,9 +307,8 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
             if (typeof h === "number" && h >= 10 && rows[idx]) {
               const el = rows[idx].getElement();
               if (el) {
-                const safeHeight = Math.max(10, Math.min(500, Math.round(h)));
-                el.style.height = `${safeHeight}px`;
-                el.style.minHeight = `${safeHeight}px`;
+                const safeHeight = clampRowHeight(Math.round(h));
+                applyRowHeightClass(el, safeHeight);
                 try {
                   rows[idx].revalidate?.();
                 } catch (err) {
@@ -359,8 +425,7 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
     rows.forEach((row) => {
       const el = row.getElement();
       if (el) {
-        el.style.height = "";
-        el.style.minHeight = "";
+        clearRowHeightClass(el);
       }
     });
     if (selectedRowIdx !== null) {
@@ -386,13 +451,10 @@ export const TableEditorModal: React.FC<TableEditorModalProps> = ({
       const el = row.getElement();
       if (!el) return 30;
 
-      // Priority 1: Use explicitly set inline style (most reliable)
-      const styleHeight = el.style.height;
-      if (styleHeight) {
-        const parsed = parseInt(styleHeight, 10);
-        if (!Number.isNaN(parsed) && parsed >= 10) {
-          return Math.max(10, Math.min(500, parsed));
-        }
+      // Priority 1: Use explicit row-height class
+      const classHeight = readRowHeightFromClass(el);
+      if (typeof classHeight === "number") {
+        return classHeight;
       }
 
       // Priority 2: Fall back to offsetHeight if style not set
