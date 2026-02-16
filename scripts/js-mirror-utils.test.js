@@ -50,3 +50,15 @@ test("collectJsMirrorFiles traverses nested directories", () => {
   assert.equal(mirrors.length, 1);
   assert.equal(path.relative(rootDir, mirrors[0]), "a/b/c/component.js");
 });
+
+test("collectJsMirrorFiles supports custom source extensions", () => {
+  const rootDir = createTempDir();
+  writeFile(path.join(rootDir, "feature/custom.mts"));
+  writeFile(path.join(rootDir, "feature/custom.js"));
+
+  const mirrors = collectJsMirrorFiles(rootDir, [".mts"]).map((filePath) =>
+    path.relative(rootDir, filePath),
+  );
+
+  assert.deepEqual(mirrors, ["feature/custom.js"]);
+});
