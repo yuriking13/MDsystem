@@ -476,6 +476,25 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it("shows admin loading state while guard is resolving", async () => {
+    const storage = createThemeStorage("dark");
+    vi.stubGlobal("localStorage", storage);
+    adminState.loading = true;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/settings"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Admin Loading")).toBeInTheDocument();
+    });
+  });
+
   it("redirects unknown route through root redirect to login when unauthenticated", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
