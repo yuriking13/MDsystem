@@ -145,6 +145,37 @@ describe("AppLayout mobile sidebar behavior", () => {
   );
 
   it.each([
+    ["/projects", "Projects page"],
+    ["/settings", "Settings page"],
+    ["/docs", "Docs page"],
+  ])("opens drawer only on mobile widths for %s", async (route, pageLabel) => {
+    const user = userEvent.setup();
+
+    for (const width of targetViewportWidths) {
+      const shouldOpen = width <= 768;
+      setViewportWidth(width);
+      const { unmount } = renderAppLayout(route);
+
+      expect(screen.getByText(pageLabel)).toBeInTheDocument();
+      await user.click(
+        screen.getByRole("button", { name: "Открыть навигацию" }),
+      );
+
+      await waitFor(() => {
+        expect(document.body.classList.contains("sidebar-modal-open")).toBe(
+          shouldOpen,
+        );
+        expect(document.querySelector(".app-sidebar--open") !== null).toBe(
+          shouldOpen,
+        );
+      });
+
+      unmount();
+      document.body.classList.remove("sidebar-modal-open");
+    }
+  });
+
+  it.each([
     ["articles", false],
     ["documents", false],
     ["files", false],
