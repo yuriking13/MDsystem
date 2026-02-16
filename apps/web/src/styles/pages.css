@@ -62,6 +62,28 @@
   }
 }
 
+@media (max-width: 480px) {
+  .project-card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .project-card-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .project-action-open {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .project-action-delete {
+    min-width: 36px;
+    min-height: 36px;
+  }
+}
+
 /* Project Page Header */
 .project-page-header {
   @apply mb-6;
