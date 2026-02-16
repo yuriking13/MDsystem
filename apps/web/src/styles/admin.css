@@ -2235,7 +2235,7 @@
 
 @media (max-width: 900px) {
   .admin-sidebar {
-    width: 280px;
+    width: min(280px, 88vw);
     transform: translateX(-100%);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -2246,7 +2246,7 @@
   }
 
   .admin-sidebar.collapsed {
-    width: 280px;
+    width: min(280px, 88vw);
   }
 
   .admin-sidebar.collapsed .admin-logo span {

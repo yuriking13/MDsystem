@@ -1012,6 +1012,7 @@ html.layout-fixed #root {
 
   .app-sidebar {
     @apply fixed left-0 top-0 z-50;
+    width: min(240px, 88vw);
     @apply -translate-x-full;
     transition: transform 150ms cubic-bezier(0.4, 0, 0.2, 1);
     will-change: transform;
@@ -1023,7 +1024,7 @@ html.layout-fixed #root {
   }
 
   .app-sidebar--collapsed {
-    width: 240px;
+    width: min(240px, 88vw);
   }
 
   .sidebar-footer {
