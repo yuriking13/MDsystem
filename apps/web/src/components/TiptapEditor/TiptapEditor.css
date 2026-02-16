@@ -2983,6 +2983,33 @@ body.tiptap-row-resize-active {
   padding: 0 16px 12px;
 }
 
+.table-caption-container,
+.figure-caption-container {
+  user-select: none;
+  pointer-events: none;
+  color: var(--text-primary, #1e293b);
+  font-size: 14px;
+}
+
+.table-caption-container {
+  text-align: left;
+  margin-bottom: 8px;
+}
+
+.figure-caption-container {
+  text-align: center;
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.editor-caption-number {
+  font-weight: 700;
+}
+
+.editor-caption-title {
+  font-weight: 400;
+}
+
 /* Toolbar AI button styles */
 .toolbar-btn-wide.ai-btn {
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(99, 102, 241, 0.15));
