@@ -639,3 +639,30 @@ test("quality-guards check mode reports responsive manual matrix remediation tip
     /Tip: keep `apps\/web\/tests\/config\/responsiveManualMatrix\.json` aligned with the required manual QA viewport\+route matrix and valid regex patterns/,
   );
 });
+
+test("quality-guards check mode reports manual matrix tip when config is missing but contract requires it", () => {
+  const workspaceRoot = createTempWorkspace();
+
+  writeFile(
+    path.join(
+      workspaceRoot,
+      "apps/web/tests/config/responsiveManualMatrixContract.test.ts",
+    ),
+    [
+      "import { readFileSync } from 'node:fs';",
+      "readFileSync('tests/config/responsiveManualMatrix.json', 'utf8');",
+      "export {};",
+    ].join("\n"),
+  );
+
+  const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
+    cwd: workspaceRoot,
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 1);
+  assert.match(
+    result.stderr,
+    /Tip: keep `apps\/web\/tests\/config\/responsiveManualMatrix\.json` aligned with the required manual QA viewport\+route matrix and valid regex patterns/,
+  );
+});

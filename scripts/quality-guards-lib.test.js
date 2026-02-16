@@ -1423,6 +1423,37 @@ test("runQualityGuards ignores missing responsive manual matrix config file", ()
   assert.equal(manualMatrixViolation, undefined);
 });
 
+test("runQualityGuards reports missing responsive manual matrix config when contract references it", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(
+      workspaceRoot,
+      "apps/web/tests/config/responsiveManualMatrixContract.test.ts",
+    ),
+    [
+      "import { readFileSync } from 'node:fs';",
+      "readFileSync('tests/config/responsiveManualMatrix.json', 'utf8');",
+      "export {};",
+    ].join("\n"),
+  );
+
+  const result = runQualityGuards({
+    workspaceRoot,
+    autoCleanWebJsMirrors: false,
+  });
+
+  const manualMatrixViolation = result.allViolations.find(
+    (entry) => entry.check.name === "web-responsive-manual-matrix-config",
+  );
+  assert.ok(manualMatrixViolation);
+  assert.ok(
+    manualMatrixViolation.violations.some((violation) =>
+      violation.snippet.includes("missing-config:responsiveManualMatrix.json"),
+    ),
+  );
+});
+
 test("runQualityGuards reports invalid responsive manual matrix config entries", () => {
   const workspaceRoot = createWorkspaceFixture();
 

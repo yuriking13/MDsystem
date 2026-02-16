@@ -117,7 +117,7 @@ const webResponsiveTargetConfigCheck = {
 const webResponsiveManualMatrixConfigCheck = {
   name: "web-responsive-manual-matrix-config",
   description:
-    "apps/web/tests/config/responsiveManualMatrix.json must keep valid viewport and route matrix structure",
+    "apps/web/tests/config/responsiveManualMatrix.json must exist (when contract-enabled) and keep valid canonical viewport/route matrix structure",
 };
 
 const DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS = [
@@ -918,6 +918,29 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
     WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH,
   );
   if (!fs.existsSync(configPath)) {
+    const contractPath = path.join(
+      workspaceRoot,
+      "apps",
+      "web",
+      "tests",
+      "config",
+      "responsiveManualMatrixContract.test.ts",
+    );
+    if (fs.existsSync(contractPath)) {
+      const contractSource = fs.readFileSync(contractPath, "utf8");
+      if (contractSource.includes("responsiveManualMatrix.json")) {
+        return [
+          {
+            file: WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH.replaceAll(
+              path.sep,
+              "/",
+            ),
+            line: 1,
+            snippet: "missing-config:responsiveManualMatrix.json",
+          },
+        ];
+      }
+    }
     return [];
   }
 

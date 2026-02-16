@@ -44,7 +44,7 @@ The repository enforces strict quality gates for TypeScript and UI code:
 - `apps/web/tests/components/AppLayout.test.tsx` and `apps/web/tests/pages/AdminLayout.test.tsx` must derive mobile/open expectations with `isAppMobileViewport` / `isAdminMobileViewport` rather than direct width comparisons.
 - `apps/web/tests/components/AppLayout.test.tsx` and `apps/web/tests/pages/AdminLayout.test.tsx` must avoid inline numeric viewport arrays and iterate shared matrix constants (`TARGET_VIEWPORT_WIDTHS`, `MOBILE_VIEWPORT_WIDTHS`, etc.).
 - `apps/web/tests/components/AppLayout.test.tsx` and `apps/web/tests/pages/AdminLayout.test.tsx` must preserve route/viewport matrix loops for required responsive route fixtures (`APP_NON_FIXED_ROUTE_CASES`, `APP_FIXED_ROUTE_CASES`, `PROJECT_TABS`, `APP_AUTH_ROUTE_CASES`, `APP_ADMIN_NO_SHELL_ROUTE_CASES`, `ADMIN_RESPONSIVE_ROUTE_CASES`).
-- `apps/web/tests/config/responsiveManualMatrix.json` must remain a valid manual QA matrix config with canonical viewport/route lists and valid fixed-route regex patterns.
+- `apps/web/tests/config/responsiveManualMatrix.json` must exist (when `responsiveManualMatrixContract.test.ts` is active) and remain a valid manual QA matrix config with canonical viewport/route lists and valid fixed-route regex patterns.
 - `apps/web/tests/config/responsiveSuiteTargets.json` must retain required responsive core suites in canonical order (beyond basic uniqueness/shape validation).
 
 Run all checks from the workspace root:
