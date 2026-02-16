@@ -27,6 +27,15 @@ describe("documentation accessibility contract", () => {
     );
   });
 
+  it("keeps docs navigation controls explicitly non-submit buttons", () => {
+    expect(docsSource).toMatch(
+      /<button[\s\S]*?key=\{section\.id\}[\s\S]*?type="button"/,
+    );
+    expect(docsSource).toMatch(
+      /<button[\s\S]*?key=\{topic\.id\}[\s\S]*?type="button"/,
+    );
+  });
+
   it("keeps focus-visible affordances for keyboard navigation in docs styles", () => {
     expect(pagesCss).toMatch(/\.doc-nav-item:focus-visible\s*\{/);
     expect(pagesCss).toMatch(/\.docs-subnav-item:focus-visible\s*\{/);
