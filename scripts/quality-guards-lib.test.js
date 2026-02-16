@@ -8,12 +8,61 @@ const {
   DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
   WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
   lineForIndex,
+  readRequiredWebResponsiveTestTargets,
   runQualityGuards,
 } = require("./quality-guards-lib.js");
 
 function getDefaultResponsiveTargets() {
   return [...DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS];
 }
+
+test("readRequiredWebResponsiveTestTargets returns defaults when config is missing", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  const result = readRequiredWebResponsiveTestTargets(workspaceRoot);
+
+  assert.deepEqual(result, getDefaultResponsiveTargets());
+});
+
+test("readRequiredWebResponsiveTestTargets returns config targets when valid", () => {
+  const workspaceRoot = createWorkspaceFixture();
+  const configuredTargets = [
+    "tests/config/custom-a.test.ts",
+    "tests/config/custom-b.test.ts",
+  ];
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    JSON.stringify(configuredTargets, null, 2),
+  );
+
+  const result = readRequiredWebResponsiveTestTargets(workspaceRoot);
+
+  assert.deepEqual(result, configuredTargets);
+});
+
+test("readRequiredWebResponsiveTestTargets falls back to defaults for malformed config", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(
+    path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
+    "{not-valid-json",
+  );
+
+  const result = readRequiredWebResponsiveTestTargets(workspaceRoot);
+
+  assert.deepEqual(result, getDefaultResponsiveTargets());
+});
+
+test("readRequiredWebResponsiveTestTargets falls back to defaults for empty array config", () => {
+  const workspaceRoot = createWorkspaceFixture();
+
+  writeFile(path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH), "[]");
+
+  const result = readRequiredWebResponsiveTestTargets(workspaceRoot);
+
+  assert.deepEqual(result, getDefaultResponsiveTargets());
+});
 
 function writeFile(filePath, content) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
