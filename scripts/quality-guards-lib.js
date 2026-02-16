@@ -1,5 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
+const { collectJsMirrorFiles } = require("./js-mirror-utils.js");
 
 const SKIP_DIRECTORIES = new Set([
   "node_modules",
@@ -137,26 +138,14 @@ function runGuardCheck(check, workspaceRoot, fileCache) {
 
 function collectWebJsMirrors(workspaceRoot, fileCache) {
   const webSrcRoot = path.join(workspaceRoot, "apps/web/src");
-  const jsFiles = getCachedFiles(webSrcRoot, new Set([".js"]), fileCache);
+  const jsMirrors = collectJsMirrorFiles(webSrcRoot);
+  fileCache.set(`${webSrcRoot}|.js`, jsMirrors);
 
-  const violations = [];
-  for (const jsFilePath of jsFiles) {
-    const modulePath = jsFilePath.slice(0, -3);
-    const hasTypeScriptSibling =
-      fs.existsSync(`${modulePath}.ts`) || fs.existsSync(`${modulePath}.tsx`);
-
-    if (!hasTypeScriptSibling) {
-      continue;
-    }
-
-    violations.push({
-      file: path.relative(workspaceRoot, jsFilePath),
-      line: 1,
-      snippet: "js-mirror-file",
-    });
-  }
-
-  return violations;
+  return jsMirrors.map((jsFilePath) => ({
+    file: path.relative(workspaceRoot, jsFilePath),
+    line: 1,
+    snippet: "js-mirror-file",
+  }));
 }
 
 function cleanupWebJsMirrors(workspaceRoot, fileCache) {
