@@ -768,7 +768,7 @@
 .settings-provider-input {
   flex: 1;
   width: 100%;
-  min-width: 220px;
+  min-width: min(220px, 100%);
   padding: 10px 14px;
   font-size: 13px;
 }
@@ -1003,6 +1003,15 @@
   .settings-provider-actions .btn {
     flex: 1 1 170px;
     justify-content: center;
+  }
+
+  .settings-provider-actions {
+    width: 100%;
+  }
+
+  .settings-provider-input {
+    flex: 1 1 100%;
+    min-width: 0;
   }
 }
 
