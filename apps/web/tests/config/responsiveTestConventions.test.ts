@@ -27,6 +27,20 @@ describe("responsive layout test conventions", () => {
     );
   });
 
+  it("keeps AppLayout suite anchored to shared width and boundary fixtures", () => {
+    expect(appLayoutSuiteSource).toContain("MOBILE_VIEWPORT_WIDTHS");
+    expect(appLayoutSuiteSource).toContain("DESKTOP_VIEWPORT_WIDTHS");
+    expect(appLayoutSuiteSource).toContain("TARGET_VIEWPORT_WIDTHS");
+    expect(appLayoutSuiteSource).toContain("APP_DRAWER_BOUNDARY_CASES");
+  });
+
+  it("keeps AdminLayout suite anchored to shared width and boundary fixtures", () => {
+    expect(adminLayoutSuiteSource).toContain("MOBILE_VIEWPORT_WIDTHS");
+    expect(adminLayoutSuiteSource).toContain("TARGET_VIEWPORT_WIDTHS");
+    expect(adminLayoutSuiteSource).toContain("ADMIN_DRAWER_VIEWPORT_CASES");
+    expect(adminLayoutSuiteSource).toContain("ADMIN_DRAWER_BOUNDARY_CASES");
+  });
+
   it("keeps AppLayout and AdminLayout suites bound to shared viewport matrices", () => {
     expect(appLayoutSuiteSource).toContain("TARGET_VIEWPORT_WIDTHS");
     expect(adminLayoutSuiteSource).toContain("TARGET_VIEWPORT_WIDTHS");
@@ -40,5 +54,18 @@ describe("responsive layout test conventions", () => {
   it("keeps layout suites aligned with shared mobile helper semantics", () => {
     expect(appLayoutSuiteSource).toContain("isAppMobileViewport");
     expect(adminLayoutSuiteSource).toContain("isAdminMobileViewport");
+  });
+
+  it("keeps layout suites free of inline numeric viewport arrays in loops", () => {
+    expect(appLayoutSuiteSource).not.toMatch(
+      /for\s*\(\s*const\s+\w+\s+of\s+\[[^\]]*\d/,
+    );
+    expect(adminLayoutSuiteSource).not.toMatch(
+      /for\s*\(\s*const\s+\w+\s+of\s+\[[^\]]*\d/,
+    );
+    expect(appLayoutSuiteSource).not.toMatch(/(it|test)\.each\(\s*\[[^\]]*\d/);
+    expect(adminLayoutSuiteSource).not.toMatch(
+      /(it|test)\.each\(\s*\[[^\]]*\d/,
+    );
   });
 });
