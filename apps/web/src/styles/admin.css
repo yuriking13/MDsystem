@@ -2432,6 +2432,33 @@
     width: 100%;
   }
 
+  .admin-project-item {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px 8px;
+  }
+
+  .admin-project-date {
+    width: 100%;
+    text-align: left;
+  }
+
+  .admin-session-item {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .admin-session-meta {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-storage-info {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
   .admin-activity-day {
     flex-wrap: wrap;
     gap: 8px;
