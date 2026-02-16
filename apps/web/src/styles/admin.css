@@ -2542,6 +2542,10 @@
     min-width: 0;
     padding: 12px 10px;
   }
+
+  .admin-job-summary-item:hover {
+    transform: none;
+  }
 }
 
 @media (max-width: 420px) {
