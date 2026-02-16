@@ -451,6 +451,12 @@ export default function CitationGraph({ projectId }: Props) {
   // Состояние добавления статей из кластера
   const [addingFromCluster, setAddingFromCluster] = useState(false);
 
+  useEffect(() => {
+    return () => {
+      resetGraphHoverCardStyles();
+    };
+  }, []);
+
   // === GAP ANALYSIS ===
   const [showGapAnalysis, setShowGapAnalysis] = useState(false);
   const [gapAnalysisResults, setGapAnalysisResults] = useState<
