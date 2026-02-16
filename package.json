@@ -12,6 +12,7 @@
     "check:js-mirrors": "pnpm --filter web run check:js-mirrors",
     "dev": "pnpm -r dev",
     "build": "pnpm run quality:repo && pnpm -r build",
+    "build:ci": "pnpm -r build",
     "lint": "pnpm run quality:repo && pnpm -r run lint",
     "lint:fix": "pnpm run quality:repo && pnpm -r run lint:fix",
     "typecheck": "pnpm run quality:repo && pnpm -r run typecheck",

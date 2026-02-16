@@ -167,7 +167,7 @@ jobs:
         run: pnpm --filter api exec prisma generate
 
       - name: Build workspace
-        run: pnpm build
+        run: pnpm run build:ci
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
