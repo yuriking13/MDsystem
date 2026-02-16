@@ -83,4 +83,22 @@ describe("docs and citation-graph responsive css regressions", () => {
       /@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*?\.graph-toolbar\s*\{[\s\S]*?max-width:\s*calc\(100% - 16px - env\(safe-area-inset-left,\s*0px\) - env\(safe-area-inset-right,\s*0px\)\);/,
     );
   });
+
+  it("keeps graph hover card width constrained by safe-area insets", () => {
+    expect(graphCss).toMatch(
+      /\.graph-hover-card\s*\{[\s\S]*?width:\s*min\(360px,\s*calc\(100vw - 24px - env\(safe-area-inset-left,\s*0px\) - env\(safe-area-inset-right,\s*0px\)\)\);[\s\S]*?max-width:\s*min\(360px,\s*calc\(100vw - 24px - env\(safe-area-inset-left,\s*0px\) - env\(safe-area-inset-right,\s*0px\)\)\);/,
+    );
+  });
+
+  it("keeps graph minimap and legends anchored with safe-area offsets", () => {
+    expect(graphCss).toMatch(
+      /\.graph-minimap\s*\{[\s\S]*?bottom:\s*calc\(16px \+ env\(safe-area-inset-bottom,\s*0px\)\);[\s\S]*?right:\s*calc\(16px \+ env\(safe-area-inset-right,\s*0px\)\);/,
+    );
+    expect(graphCss).toMatch(
+      /\.graph-legend\s*\{[\s\S]*?bottom:\s*calc\(16px \+ env\(safe-area-inset-bottom,\s*0px\)\);[\s\S]*?left:\s*calc\(16px \+ env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+    expect(graphCss).toMatch(
+      /\.graph-legend-container\s*\{[\s\S]*?bottom:\s*calc\(16px \+ env\(safe-area-inset-bottom,\s*0px\)\);[\s\S]*?left:\s*calc\(16px \+ env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+  });
 });
