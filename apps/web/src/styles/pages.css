@@ -1091,3 +1091,27 @@
     padding: 20px;
   }
 }
+
+@media (max-width: 480px) {
+  .docs-content-card {
+    padding: 16px;
+  }
+
+  .docs-nav .doc-nav-item {
+    font-size: 12px;
+    padding: 8px 10px;
+  }
+
+  .docs-feature-card {
+    padding: 12px;
+  }
+
+  .settings-provider-item {
+    padding: 12px;
+  }
+
+  .settings-provider-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
