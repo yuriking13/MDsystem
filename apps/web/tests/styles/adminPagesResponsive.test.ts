@@ -55,4 +55,10 @@ describe("admin page-level responsive css regressions", () => {
       /@media\s*\(max-width:\s*420px\)\s*\{[\s\S]*?\.admin-job-summary-item\s*\{[\s\S]*?flex-basis:\s*100%;/,
     );
   });
+
+  it("keeps admin login page safe-area padding at 640px", () => {
+    expect(adminCss).toMatch(
+      /@media\s*\(max-width:\s*640px\)\s*\{[\s\S]*?\.admin-login-page\s*\{[\s\S]*?padding:\s*calc\(12px \+ env\(safe-area-inset-top,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-right,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-bottom,\s*0px\)\)\s*calc\(12px \+ env\(safe-area-inset-left,\s*0px\)\);/,
+    );
+  });
 });

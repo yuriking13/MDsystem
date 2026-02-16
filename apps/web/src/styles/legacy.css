@@ -10675,7 +10675,7 @@ input:focus::placeholder {
 
   .auth-footer {
     font-size: 12px;
-    padding: 12px;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
   }
 
   .auth-options .auth-link {

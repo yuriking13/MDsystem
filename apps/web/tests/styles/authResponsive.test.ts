@@ -55,7 +55,7 @@ describe("auth page responsive css regressions", () => {
       /@media\s*\(max-width:\s*480px\)\s*\{[\s\S]*?\.auth-field input\s*\{[\s\S]*?padding:\s*12px 14px;[\s\S]*?border-radius:\s*12px;[\s\S]*?font-size:\s*14px;/,
     );
     expect(legacyCss).toMatch(
-      /@media\s*\(max-width:\s*480px\)\s*\{[\s\S]*?\.auth-footer\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?padding:\s*12px;/,
+      /@media\s*\(max-width:\s*480px\)\s*\{[\s\S]*?\.auth-footer\s*\{[\s\S]*?font-size:\s*12px;[\s\S]*?padding:\s*12px 12px calc\(12px \+ env\(safe-area-inset-bottom,\s*0px\)\);/,
     );
   });
 });
