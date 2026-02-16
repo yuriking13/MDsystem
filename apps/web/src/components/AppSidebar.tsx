@@ -82,6 +82,10 @@ export default function AppSidebar({
     } else {
       document.body.classList.remove("sidebar-collapsed");
     }
+
+    return () => {
+      document.body.classList.remove("sidebar-collapsed");
+    };
   }, [isCollapsedView]);
 
   // Check if we're inside a project
