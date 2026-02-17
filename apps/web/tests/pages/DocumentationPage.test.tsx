@@ -543,4 +543,45 @@ describe("DocumentationPage menu + submenu", () => {
       assertSingleCurrentSection();
     }
   });
+
+  it("keeps globally unique topic tab/panel ids across all sections", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const sectionTitles = [
+      "Обзор платформы",
+      "База статей",
+      "Документы",
+      "Файлы",
+      "Статистика",
+      "Граф цитирований",
+      "Команда",
+      "Настройки проекта",
+      "API ключи",
+    ];
+
+    const seenTabIds = new Set<string>();
+    const seenPanelIds = new Set<string>();
+
+    for (const sectionTitle of sectionTitles) {
+      await user.click(screen.getByRole("button", { name: sectionTitle }));
+
+      const tabs = screen.getAllByRole("tab");
+      for (const tab of tabs) {
+        const tabId = tab.id;
+        const panelId = tab.getAttribute("aria-controls");
+
+        expect(tabId).toMatch(/^docs-tab-/);
+        expect(panelId).toMatch(/^docs-panel-/);
+        expect(seenTabIds.has(tabId)).toBe(false);
+        expect(seenPanelIds.has(panelId ?? "")).toBe(false);
+
+        seenTabIds.add(tabId);
+        if (panelId) seenPanelIds.add(panelId);
+      }
+    }
+
+    expect(seenTabIds.size).toBeGreaterThanOrEqual(25);
+    expect(seenPanelIds.size).toBe(seenTabIds.size);
+  });
 });
