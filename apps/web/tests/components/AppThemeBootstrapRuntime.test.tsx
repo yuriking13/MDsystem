@@ -2406,6 +2406,51 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
+  it.each(["light", "dark"] as const)(
+    "keeps %s theme on authenticated project tab route with hash fragment",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = "auth-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={["/projects/p1?tab=graph#runtime-fragment"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("App Layout")).toBeInTheDocument();
+        expect(screen.getByText("Project Detail Page")).toBeInTheDocument();
+      });
+    },
+  );
+
+  it("falls back to dark theme on authenticated project tab route with hash fragment for unsupported preference", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/projects/p1?tab=graph#runtime-fragment"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Project Detail Page")).toBeInTheDocument();
+    });
+  });
+
   it.each([
     ["light", "/projects/p1", "Project Detail Page"],
     ["light", "/projects/p1/documents/d1", "Document Page"],
@@ -2569,6 +2614,49 @@ describe("App theme bootstrap runtime", () => {
       });
     },
   );
+
+  it.each(["light", "dark"] as const)(
+    "keeps %s theme while unauthenticated project tab route with hash redirects to login",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = null;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/projects/p1?tab=graph#runtime-fragment"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Login Page")).toBeInTheDocument();
+      });
+    },
+  );
+
+  it("falls back to dark theme while unauthenticated project tab route with hash redirects to login for unsupported preference", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/projects/p1?tab=graph#runtime-fragment"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
 
   it.each([
     "/projects/p1?tab=articles",
