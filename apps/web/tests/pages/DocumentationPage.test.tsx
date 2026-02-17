@@ -584,4 +584,32 @@ describe("DocumentationPage menu + submenu", () => {
     expect(seenTabIds.size).toBeGreaterThanOrEqual(25);
     expect(seenPanelIds.size).toBe(seenTabIds.size);
   });
+
+  it("updates section intro text for every selected documentation section", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const sectionTitles = [
+      "Обзор платформы",
+      "База статей",
+      "Документы",
+      "Файлы",
+      "Статистика",
+      "Граф цитирований",
+      "Команда",
+      "Настройки проекта",
+      "API ключи",
+    ];
+
+    const intros = new Set<string>();
+    for (const sectionTitle of sectionTitles) {
+      await user.click(screen.getByRole("button", { name: sectionTitle }));
+      const intro = document.querySelector(".doc-intro");
+      const introText = intro?.textContent?.trim() ?? "";
+      expect(introText.length).toBeGreaterThan(20);
+      intros.add(introText);
+    }
+
+    expect(intros.size).toBe(sectionTitles.length);
+  });
 });
