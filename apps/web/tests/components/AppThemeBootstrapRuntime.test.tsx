@@ -672,6 +672,94 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each(["light", "dark"] as const)(
+    "keeps %s theme on authenticated docs route with query + hash",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = "auth-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={["/docs?section=api#openrouter"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("App Layout")).toBeInTheDocument();
+        expect(screen.getByText("Documentation Page")).toBeInTheDocument();
+      });
+    },
+  );
+
+  it("falls back to dark theme on authenticated docs route with query + hash for unsupported preference", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = "auth-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/docs?section=api#openrouter"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("App Layout")).toBeInTheDocument();
+      expect(screen.getByText("Documentation Page")).toBeInTheDocument();
+    });
+  });
+
+  it.each(["light", "dark"] as const)(
+    "keeps %s theme while unauthenticated docs route with query + hash redirects to login",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = null;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/docs?section=api#openrouter"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Login Page")).toBeInTheDocument();
+      });
+    },
+  );
+
+  it("falls back to dark theme while unauthenticated docs route with query + hash redirects to login for unsupported preference", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    authState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/docs?section=api#openrouter"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("Login Page")).toBeInTheDocument();
+    });
+  });
+
   it("redirects unauthenticated projects route to login page", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
