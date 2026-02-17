@@ -111,6 +111,7 @@ function renderMainNavSidebar({
 
 describe("AppSidebar mobile collapse behavior", () => {
   beforeEach(() => {
+    vi.unstubAllGlobals();
     mockLogout.mockReset();
     localStorage.clear();
     document.body.classList.remove("sidebar-collapsed");
@@ -519,6 +520,44 @@ describe("AppSidebar mobile collapse behavior", () => {
     });
   });
 
+  it("persists theme selection to localStorage when switching radios", async () => {
+    const mockedStorage = {
+      getItem: vi.fn((key: string) => (key === "theme" ? "dark" : null)),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    } as unknown as Storage;
+    vi.stubGlobal("localStorage", mockedStorage);
+
+    renderSidebar({ mobileViewport: false });
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio).not.toBeNull();
+    expect(darkRadio).not.toBeNull();
+
+    fireEvent.click(lightRadio!);
+
+    await waitFor(() => {
+      expect(mockedStorage.setItem).toHaveBeenCalledWith("theme", "light");
+      expect(lightRadio?.checked).toBe(true);
+    });
+
+    fireEvent.click(darkRadio!);
+
+    await waitFor(() => {
+      expect(mockedStorage.setItem).toHaveBeenCalledWith("theme", "dark");
+      expect(darkRadio?.checked).toBe(true);
+    });
+  });
+
   it("initializes dark theme classes when no persisted preference exists", () => {
     renderSidebar({ mobileViewport: false });
 
@@ -630,7 +669,6 @@ describe("AppSidebar mobile collapse behavior", () => {
       expect(document.documentElement.classList.contains("dark")).toBe(false);
       expect(document.body.classList.contains("dark")).toBe(false);
       expect(mockedStorage.getItem).toHaveBeenCalledWith("theme");
-      vi.unstubAllGlobals();
     });
   });
 });
