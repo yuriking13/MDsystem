@@ -1168,6 +1168,59 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
+  it.each([
+    ["light", null],
+    ["light", "admin-token"],
+    ["dark", null],
+    ["dark", "admin-token"],
+  ] as const)(
+    "keeps %s theme on admin login route with query + hash (adminToken=%s)",
+    async (persistedTheme, adminToken) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = adminToken;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/login?next=/admin/settings#admin-signin"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([null, "admin-token"] as const)(
+    "falls back to dark theme on admin login route with query + hash for unsupported preference (adminToken=%s)",
+    async (adminToken) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = adminToken;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/login?next=/admin/settings#admin-signin"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
   it("redirects unauthenticated admin route to admin login", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
@@ -1186,6 +1239,96 @@ describe("App theme bootstrap runtime", () => {
       expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
       expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
       expect(screen.queryByText("Admin Settings Page")).not.toBeInTheDocument();
+    });
+  });
+
+  it.each(["light", "dark"] as const)(
+    "keeps %s theme on authorized admin settings route with query + hash",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = "admin-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/settings?panel=integrations#api-keys"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+        expect(screen.getByText("Admin Settings Page")).toBeInTheDocument();
+      });
+    },
+  );
+
+  it("falls back to dark theme on authorized admin settings route with query + hash for unsupported preference", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    adminState.token = "admin-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/settings?panel=integrations#api-keys"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+      expect(screen.getByText("Admin Settings Page")).toBeInTheDocument();
+    });
+  });
+
+  it.each(["light", "dark"] as const)(
+    "keeps %s theme while unauthorized admin settings route with query + hash redirects to admin login",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = null;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/settings?panel=integrations#api-keys"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
+  it("falls back to dark theme while unauthorized admin settings route with query + hash redirects to admin login for unsupported preference", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    adminState.token = null;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/settings?panel=integrations#api-keys"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+      expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
     });
   });
 
