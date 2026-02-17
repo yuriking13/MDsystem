@@ -1209,6 +1209,40 @@ describe("App theme bootstrap runtime", () => {
   );
 
   it.each([
+    ["light", null, null, "Login Page"],
+    ["light", null, "admin-token", "Login Page"],
+    ["light", "auth-token", null, "Projects Page"],
+    ["light", "auth-token", "admin-token", "Projects Page"],
+    ["dark", null, null, "Login Page"],
+    ["dark", null, "admin-token", "Login Page"],
+    ["dark", "auth-token", null, "Projects Page"],
+    ["dark", "auth-token", "admin-token", "Projects Page"],
+  ] as const)(
+    "keeps %s theme when unknown admin path falls back (authToken=%s, adminToken=%s)",
+    async (persistedTheme, authToken, adminToken, expectedPageText) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = authToken;
+      adminState.token = adminToken;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/unknown-light-dark-route"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([
     [null, null, "Login Page"],
     [null, "admin-token", "Login Page"],
     ["auth-token", null, "Projects Page"],
