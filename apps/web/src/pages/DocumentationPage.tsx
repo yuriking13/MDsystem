@@ -1,5 +1,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  IconArchive,
+  IconBookOpen,
+  IconChartBar,
+  IconChevronDown,
+  IconDocumentText,
+  IconFolderOpen,
+  IconKey,
+  IconSettings,
+  IconShare,
+  IconUsers,
+} from "../components/FlowbiteIcons";
 
 type DocSectionId =
   | "overview"
@@ -794,6 +806,21 @@ const DOC_SECTIONS: DocSection[] = [
   },
 ];
 
+const DOC_SECTION_ICON_COMPONENTS: Record<
+  DocSectionId,
+  React.ComponentType<{ className?: string }>
+> = {
+  overview: IconBookOpen,
+  articles: IconArchive,
+  documents: IconDocumentText,
+  files: IconFolderOpen,
+  statistics: IconChartBar,
+  graph: IconShare,
+  team: IconUsers,
+  settings: IconSettings,
+  "api-keys": IconKey,
+};
+
 export default function DocumentationPage(): React.JSX.Element {
   const [activeSectionId, setActiveSectionId] = useState<DocSectionId>(
     DOC_SECTIONS[0].id,
@@ -896,20 +923,11 @@ export default function DocumentationPage(): React.JSX.Element {
             ← К проектам
           </Link>
           <h1 className="docs-page-title">
-            <svg
-              className="icon-lg docs-icon-accent"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              viewBox="0 0 24 24"
+            <IconBookOpen
+              size="lg"
+              className="docs-icon-accent"
               aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-              />
-            </svg>
+            />
             Документация
           </h1>
         </div>
@@ -919,56 +937,78 @@ export default function DocumentationPage(): React.JSX.Element {
         <div className="docs-sidebar">
           <div className="card docs-sidebar-card">
             <nav className="docs-nav" aria-label="Разделы документации">
-              {DOC_SECTIONS.map((section) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  onClick={() => {
-                    setPendingFocusTopicId(null);
-                    setActiveSectionId(section.id);
-                    setActiveTopicId(section.topics[0].id);
-                  }}
-                  className={`doc-nav-item ${activeSection.id === section.id ? "active" : ""}`}
-                  aria-current={
-                    activeSection.id === section.id ? "page" : undefined
-                  }
-                >
-                  <span className="doc-nav-item-icon">{section.icon}</span>
-                  {section.title}
-                </button>
-              ))}
-            </nav>
+              {DOC_SECTIONS.map((section) => {
+                const isSectionActive = activeSection.id === section.id;
+                const SectionIcon = DOC_SECTION_ICON_COMPONENTS[section.id];
 
-            <div className="docs-subnav">
-              <div className="docs-subnav-title">Подменю раздела</div>
-              <div
-                className="docs-subnav-list"
-                role="tablist"
-                aria-orientation="vertical"
-              >
-                {activeSection.topics.map((topic, topicIndex) => (
-                  <button
-                    key={topic.id}
-                    type="button"
-                    className={`docs-subnav-item ${activeTopic.id === topic.id ? "active" : ""}`}
-                    onClick={() => {
-                      setPendingFocusTopicId(null);
-                      setActiveTopicId(topic.id);
-                    }}
-                    onKeyDown={(event) =>
-                      handleTopicTabKeyDown(event, topicIndex)
-                    }
-                    role="tab"
-                    id={`docs-tab-${topic.id}`}
-                    aria-controls={`docs-panel-${topic.id}`}
-                    aria-selected={activeTopic.id === topic.id}
-                    tabIndex={activeTopic.id === topic.id ? 0 : -1}
+                return (
+                  <div
+                    key={section.id}
+                    className={`docs-nav-group ${isSectionActive ? "active" : ""}`}
                   >
-                    {topic.title}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => {
+                        setPendingFocusTopicId(null);
+                        setActiveSectionId(section.id);
+                        setActiveTopicId(section.topics[0].id);
+                      }}
+                      className={`doc-nav-item ${isSectionActive ? "active" : ""}`}
+                      aria-current={isSectionActive ? "page" : undefined}
+                      aria-expanded={isSectionActive}
+                      aria-controls={`docs-subnav-${section.id}`}
+                    >
+                      <span className="doc-nav-item-icon">
+                        <SectionIcon className="doc-nav-icon-svg" />
+                      </span>
+                      <span className="doc-nav-item-label">
+                        {section.title}
+                      </span>
+                      <IconChevronDown
+                        className={`doc-nav-item-chevron ${isSectionActive ? "expanded" : ""}`}
+                        aria-hidden="true"
+                      />
+                    </button>
+
+                    {isSectionActive && (
+                      <div
+                        id={`docs-subnav-${section.id}`}
+                        className="docs-subnav"
+                      >
+                        <div
+                          className="docs-subnav-list"
+                          role="tablist"
+                          aria-orientation="vertical"
+                        >
+                          {activeSection.topics.map((topic, topicIndex) => (
+                            <button
+                              key={topic.id}
+                              type="button"
+                              className={`docs-subnav-item ${activeTopic.id === topic.id ? "active" : ""}`}
+                              onClick={() => {
+                                setPendingFocusTopicId(null);
+                                setActiveTopicId(topic.id);
+                              }}
+                              onKeyDown={(event) =>
+                                handleTopicTabKeyDown(event, topicIndex)
+                              }
+                              role="tab"
+                              id={`docs-tab-${topic.id}`}
+                              aria-controls={`docs-panel-${topic.id}`}
+                              aria-selected={activeTopic.id === topic.id}
+                              tabIndex={activeTopic.id === topic.id ? 0 : -1}
+                            >
+                              {topic.title}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
           </div>
         </div>
 
