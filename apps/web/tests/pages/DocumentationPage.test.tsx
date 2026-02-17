@@ -509,4 +509,38 @@ describe("DocumentationPage menu + submenu", () => {
       expect(panel).toHaveAttribute("aria-labelledby", activeTab?.id);
     }
   });
+
+  it("keeps exactly one section marked with aria-current", async () => {
+    const user = userEvent.setup();
+    renderDocumentationPage();
+
+    const sectionTitles = [
+      "Обзор платформы",
+      "База статей",
+      "Документы",
+      "Файлы",
+      "Статистика",
+      "Граф цитирований",
+      "Команда",
+      "Настройки проекта",
+      "API ключи",
+    ];
+
+    const assertSingleCurrentSection = () => {
+      const sectionButtons = sectionTitles.map((title) =>
+        screen.getByRole("button", { name: title }),
+      );
+      const currentButtons = sectionButtons.filter(
+        (button) => button.getAttribute("aria-current") === "page",
+      );
+      expect(currentButtons).toHaveLength(1);
+    };
+
+    assertSingleCurrentSection();
+
+    for (const sectionTitle of sectionTitles.slice(1)) {
+      await user.click(screen.getByRole("button", { name: sectionTitle }));
+      assertSingleCurrentSection();
+    }
+  });
 });
