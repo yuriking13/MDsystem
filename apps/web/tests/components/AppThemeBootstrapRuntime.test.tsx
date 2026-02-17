@@ -925,6 +925,59 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each([
+    ["light", null],
+    ["light", "auth-token"],
+    ["dark", null],
+    ["dark", "auth-token"],
+  ] as const)(
+    "keeps %s theme on login route with query + hash (token=%s)",
+    async (persistedTheme, token) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/login?next=/projects#signin"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Login Page")).toBeInTheDocument();
+        expect(screen.queryByText("App Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([null, "auth-token"] as const)(
+    "falls back to dark theme on login route with query + hash for unsupported preference (token=%s)",
+    async (token) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/login?next=/projects#signin"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText("Login Page")).toBeInTheDocument();
+        expect(screen.queryByText("App Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
   it("keeps register route publicly accessible regardless of auth token", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
@@ -962,6 +1015,59 @@ describe("App theme bootstrap runtime", () => {
       expect(screen.getByText("Register Page")).toBeInTheDocument();
     });
   });
+
+  it.each([
+    ["light", null],
+    ["light", "auth-token"],
+    ["dark", null],
+    ["dark", "auth-token"],
+  ] as const)(
+    "keeps %s theme on register route with query + hash (token=%s)",
+    async (persistedTheme, token) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/register?source=invite#create-account"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Register Page")).toBeInTheDocument();
+        expect(screen.queryByText("App Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([null, "auth-token"] as const)(
+    "falls back to dark theme on register route with query + hash for unsupported preference (token=%s)",
+    async (token) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/register?source=invite#create-account"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText("Register Page")).toBeInTheDocument();
+        expect(screen.queryByText("App Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
 
   it("keeps admin login route accessible without main app auth", async () => {
     const storage = createThemeStorage(null);
