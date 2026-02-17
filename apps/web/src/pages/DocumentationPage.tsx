@@ -947,6 +947,7 @@ export default function DocumentationPage(): React.JSX.Element {
                     className={`docs-nav-group ${isSectionActive ? "active" : ""}`}
                   >
                     <button
+                      key={section.id}
                       type="button"
                       onClick={() => {
                         setPendingFocusTopicId(null);
@@ -961,7 +962,9 @@ export default function DocumentationPage(): React.JSX.Element {
                       <span className="doc-nav-item-icon">
                         <SectionIcon className="doc-nav-icon-svg" />
                       </span>
-                      <span className="doc-nav-item-label">{section.title}</span>
+                      <span className="doc-nav-item-label">
+                        {section.title}
+                      </span>
                       <IconChevronDown
                         className={`doc-nav-item-chevron ${isSectionActive ? "expanded" : ""}`}
                         aria-hidden="true"
@@ -969,7 +972,10 @@ export default function DocumentationPage(): React.JSX.Element {
                     </button>
 
                     {isSectionActive && (
-                      <div id={`docs-subnav-${section.id}`} className="docs-subnav">
+                      <div
+                        id={`docs-subnav-${section.id}`}
+                        className="docs-subnav"
+                      >
                         <div
                           className="docs-subnav-list"
                           role="tablist"
