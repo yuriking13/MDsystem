@@ -319,6 +319,35 @@ describe("App theme bootstrap runtime", () => {
   );
 
   it.each([
+    ["/login", null, "Login Page"],
+    ["/login", "auth-token", "Login Page"],
+    ["/register", null, "Register Page"],
+    ["/register", "auth-token", "Register Page"],
+  ] as const)(
+    "falls back to dark theme for unsupported persisted value on public route %s (token=%s)",
+    async (route, token, expectedPageText) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+      expect(storage.getItem).toHaveBeenCalledWith("theme");
+    },
+  );
+
+  it.each([
     ["/admin/login", "Admin Login Page"],
     ["/admin/settings", "Admin Settings Page"],
   ] as const)(
