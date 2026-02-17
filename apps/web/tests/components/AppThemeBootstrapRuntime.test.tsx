@@ -481,6 +481,32 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each([
+    [null, "Login Page"],
+    ["auth-token", "Projects Page"],
+  ] as const)(
+    "falls back to dark theme for unsupported persisted value on root redirect (token=%s)",
+    async (token, expectedPageText) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+    },
+  );
+
   it("renders docs page inside authenticated app layout", async () => {
     const storage = createThemeStorage("light");
     vi.stubGlobal("localStorage", storage);
