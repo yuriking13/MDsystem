@@ -104,6 +104,14 @@ describe("manual smoke checklist contract", () => {
     );
   });
 
+  it("keeps sidebar light/dark theme toggle controls for smoke switching", () => {
+    expect(sidebarSource).toContain('name="theme-toggle"');
+    expect(sidebarSource).toContain('value="light"');
+    expect(sidebarSource).toContain('value="dark"');
+    expect(sidebarSource).toContain('localStorage.setItem("theme", "light")');
+    expect(sidebarSource).toContain('localStorage.setItem("theme", "dark")');
+  });
+
   it("keeps documentation page menu + submenu interaction shell", () => {
     expect(docsSource).toContain("const DOC_SECTIONS");
     expect(docsSource).toContain('className="docs-subnav"');
