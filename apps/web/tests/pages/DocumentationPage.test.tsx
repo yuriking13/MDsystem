@@ -366,6 +366,10 @@ describe("DocumentationPage menu + submenu", () => {
     await user.keyboard("{ArrowLeft}");
     expect(lastTab).toHaveAttribute("aria-selected", "true");
     expect(lastTab).toHaveFocus();
+
+    await user.keyboard("{ArrowRight}");
+    expect(firstTab).toHaveAttribute("aria-selected", "true");
+    expect(firstTab).toHaveFocus();
   });
 
   it("does not retain stale keyboard focus target after section switch", async () => {
