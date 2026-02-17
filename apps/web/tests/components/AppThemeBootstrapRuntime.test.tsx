@@ -967,6 +967,28 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
+  it("falls back to dark theme while admin guard is resolving with unsupported persisted value", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    adminState.loading = true;
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin/settings"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("Admin Loading")).toBeInTheDocument();
+      expect(screen.queryByText("Admin Login Page")).not.toBeInTheDocument();
+      expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+    });
+  });
+
   it("redirects unknown route through root redirect to login when unauthenticated", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
