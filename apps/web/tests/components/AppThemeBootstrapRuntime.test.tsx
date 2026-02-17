@@ -1243,17 +1243,21 @@ describe("App theme bootstrap runtime", () => {
   );
 
   it.each([
-    ["light", null, "Login Page"],
-    ["light", "auth-token", "Projects Page"],
-    ["dark", null, "Login Page"],
-    ["dark", "auth-token", "Projects Page"],
+    ["light", null, null, "Login Page"],
+    ["light", null, "admin-token", "Login Page"],
+    ["light", "auth-token", null, "Projects Page"],
+    ["light", "auth-token", "admin-token", "Projects Page"],
+    ["dark", null, null, "Login Page"],
+    ["dark", null, "admin-token", "Login Page"],
+    ["dark", "auth-token", null, "Projects Page"],
+    ["dark", "auth-token", "admin-token", "Projects Page"],
   ] as const)(
-    "keeps %s theme and bypasses admin loading guard on unknown admin path (authToken=%s)",
-    async (persistedTheme, authToken, expectedPageText) => {
+    "keeps %s theme and bypasses admin loading guard on unknown admin path (authToken=%s, adminToken=%s)",
+    async (persistedTheme, authToken, adminToken, expectedPageText) => {
       const storage = createThemeStorage(persistedTheme);
       vi.stubGlobal("localStorage", storage);
       authState.token = authToken;
-      adminState.token = null;
+      adminState.token = adminToken;
       adminState.loading = true;
 
       render(
@@ -1275,15 +1279,17 @@ describe("App theme bootstrap runtime", () => {
   );
 
   it.each([
-    [null, "Login Page"],
-    ["auth-token", "Projects Page"],
+    [null, null, "Login Page"],
+    [null, "admin-token", "Login Page"],
+    ["auth-token", null, "Projects Page"],
+    ["auth-token", "admin-token", "Projects Page"],
   ] as const)(
-    "falls back to dark theme and bypasses admin loading guard on unknown admin path for unsupported theme (authToken=%s)",
-    async (authToken, expectedPageText) => {
+    "falls back to dark theme and bypasses admin loading guard on unknown admin path for unsupported theme (authToken=%s, adminToken=%s)",
+    async (authToken, adminToken, expectedPageText) => {
       const storage = createThemeStorage("solarized");
       vi.stubGlobal("localStorage", storage);
       authState.token = authToken;
-      adminState.token = null;
+      adminState.token = adminToken;
       adminState.loading = true;
 
       render(
