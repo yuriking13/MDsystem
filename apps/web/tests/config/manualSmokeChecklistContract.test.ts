@@ -75,6 +75,9 @@ describe("manual smoke checklist contract", () => {
   it("keeps profile settings and back-to-project controls in sidebar shell", () => {
     expect(sidebarSource).toContain('title="Перейти в настройки"');
     expect(sidebarSource).toContain('navigate("/settings")');
+    expect(sidebarSource).toMatch(
+      /className="sidebar-user"[\s\S]*?type="button"/,
+    );
     expect(sidebarSource).toContain('title="Назад к проектам"');
     expect(sidebarSource).toContain("<span>К проектам</span>");
     expect(sidebarSource).toContain('navigate("/projects")');

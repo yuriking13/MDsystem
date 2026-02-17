@@ -327,6 +327,10 @@ describe("AppSidebar mobile collapse behavior", () => {
       "type",
       "button",
     );
+    expect(screen.getByTitle("Перейти в настройки")).toHaveAttribute(
+      "type",
+      "button",
+    );
     expect(screen.getByRole("button", { name: "Выйти" })).toHaveAttribute(
       "type",
       "button",
