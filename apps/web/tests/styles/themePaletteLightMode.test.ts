@@ -38,6 +38,10 @@ const graphComponent = readFileSync(
   resolve(process.cwd(), "src/components/CitationGraph/CitationGraph.tsx"),
   "utf8",
 );
+const graphUtils = readFileSync(
+  resolve(process.cwd(), "src/components/CitationGraph/utils.ts"),
+  "utf8",
+);
 
 describe("light theme blue/white palette safeguards", () => {
   it("keeps primary Tailwind scale on blue spectrum", () => {
@@ -149,6 +153,27 @@ describe("light theme blue/white palette safeguards", () => {
     );
     expect(graphComponent).toMatch(
       /bg:\s*backgroundColors\.normal,[\s\S]*bgFullscreen:\s*backgroundColors\.fullscreen,[\s\S]*linkColor:\s*backgroundColors\.linkColor,/,
+    );
+  });
+
+  it("keeps graph utility fallbacks aligned with blue/white light contract", () => {
+    expect(graphUtils).toMatch(
+      /citing:\s*getCSSVariable\("--graph-node-citing"\)\s*\|\|\s*"#0ea5e9"/,
+    );
+    expect(graphUtils).toMatch(
+      /reference:\s*getCSSVariable\("--graph-node-reference"\)\s*\|\|\s*"#38bdf8"/,
+    );
+    expect(graphUtils).toMatch(
+      /related:\s*getCSSVariable\("--graph-node-related"\)\s*\|\|\s*"#14b8a6"/,
+    );
+    expect(graphUtils).toMatch(
+      /normal:\s*getCSSVariable\("--graph-bg"\)\s*\|\|\s*\(lightTheme \? "#f8fbff" : "#0b0f19"\)/,
+    );
+    expect(graphUtils).toMatch(
+      /fullscreen:[\s\S]*?getCSSVariable\("--graph-bg-fullscreen"\)[\s\S]*?\(lightTheme \? "#f1f6ff" : "#050810"\)/,
+    );
+    expect(graphUtils).toMatch(
+      /lightTheme[\s\S]*?rgba\(37,\s*99,\s*235,\s*0\.22\)/,
     );
   });
 
