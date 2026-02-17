@@ -1210,9 +1210,13 @@ describe("App theme bootstrap runtime", () => {
 
   it.each([
     ["light", null, null, "Login Page"],
+    ["light", null, "admin-token", "Login Page"],
+    ["light", "auth-token", null, "Projects Page"],
     ["light", "auth-token", "admin-token", "Projects Page"],
     ["dark", null, "admin-token", "Login Page"],
+    ["dark", null, null, "Login Page"],
     ["dark", "auth-token", null, "Projects Page"],
+    ["dark", "auth-token", "admin-token", "Projects Page"],
   ] as const)(
     "keeps %s theme when unknown admin path with query falls back (authToken=%s, adminToken=%s)",
     async (persistedTheme, authToken, adminToken, expectedPageText) => {
