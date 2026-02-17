@@ -507,6 +507,60 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
+  it.each([
+    ["light", null, "Login Page"],
+    ["light", "auth-token", "Projects Page"],
+    ["dark", null, "Login Page"],
+    ["dark", "auth-token", "Projects Page"],
+  ] as const)(
+    "keeps %s theme on root redirect with query + hash (token=%s)",
+    async (persistedTheme, token, expectedPageText) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/?from=runtime-matrix#root-fragment"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([
+    [null, "Login Page"],
+    ["auth-token", "Projects Page"],
+  ] as const)(
+    "falls back to dark theme on root redirect with query + hash for unsupported preference (token=%s)",
+    async (token, expectedPageText) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/?from=runtime-matrix#root-fragment"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+    },
+  );
+
   it("renders docs page inside authenticated app layout", async () => {
     const storage = createThemeStorage("light");
     vi.stubGlobal("localStorage", storage);
