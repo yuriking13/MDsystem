@@ -1337,6 +1337,38 @@ describe("App theme bootstrap runtime", () => {
   );
 
   it.each([
+    "/projects/p1?tab=articles",
+    "/projects/p1?tab=documents",
+    "/projects/p1?tab=files",
+    "/projects/p1?tab=statistics",
+    "/projects/p1?tab=graph",
+    "/projects/p1?tab=team",
+    "/projects/p1?tab=settings",
+  ] as const)(
+    "falls back to dark theme for unsupported persisted value on project tab route %s",
+    async (routeWithTab) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = "auth-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={[routeWithTab]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText("App Layout")).toBeInTheDocument();
+        expect(screen.getByText("Project Detail Page")).toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([
     ["light", "/projects/p1", "Project Detail Page"],
     ["light", "/projects/p1/documents/d1", "Document Page"],
     ["dark", "/projects/p1", "Project Detail Page"],
