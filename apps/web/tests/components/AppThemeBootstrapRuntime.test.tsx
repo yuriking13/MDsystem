@@ -1297,10 +1297,23 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
-  it.each(["/projects/p1?tab=graph", "/projects/p1?tab=settings"])(
-    "renders project detail page with query-tab route %s",
-    async (routeWithTab) => {
-      const storage = createThemeStorage("dark");
+  it.each([
+    ["light", "/projects/p1?tab=articles"],
+    ["light", "/projects/p1?tab=documents"],
+    ["light", "/projects/p1?tab=files"],
+    ["light", "/projects/p1?tab=statistics"],
+    ["light", "/projects/p1?tab=graph"],
+    ["light", "/projects/p1?tab=settings"],
+    ["dark", "/projects/p1?tab=articles"],
+    ["dark", "/projects/p1?tab=documents"],
+    ["dark", "/projects/p1?tab=files"],
+    ["dark", "/projects/p1?tab=statistics"],
+    ["dark", "/projects/p1?tab=graph"],
+    ["dark", "/projects/p1?tab=settings"],
+  ] as const)(
+    "keeps %s theme on project tab route %s",
+    async (persistedTheme, routeWithTab) => {
+      const storage = createThemeStorage(persistedTheme);
       vi.stubGlobal("localStorage", storage);
       authState.token = "auth-token";
 
@@ -1314,6 +1327,7 @@ describe("App theme bootstrap runtime", () => {
       );
 
       await waitFor(() => {
+        expectThemeClasses(persistedTheme);
         expect(screen.getByText("App Layout")).toBeInTheDocument();
         expect(screen.getByText("Project Detail Page")).toBeInTheDocument();
       });
