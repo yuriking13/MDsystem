@@ -311,6 +311,40 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(onCloseMobile).toHaveBeenCalledTimes(1);
   });
 
+  it("uses explicit type button for project sidebar controls", () => {
+    renderSidebar({ mobileViewport: false });
+
+    expect(screen.getByTitle("Свернуть")).toHaveAttribute("type", "button");
+    expect(screen.getByRole("button", { name: "К проектам" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(screen.getByRole("button", { name: "База статей" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(screen.getByRole("button", { name: /^Кандидаты/ })).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(screen.getByRole("button", { name: "Выйти" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+  });
+
+  it("uses explicit type button for main sidebar navigation controls", () => {
+    renderMainNavSidebar({ mobileViewport: false });
+
+    expect(screen.getByRole("button", { name: "Проекты" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(
+      screen.getByRole("button", { name: "Документация" }),
+    ).toHaveAttribute("type", "button");
+  });
+
   it("calls onCloseMobile when opening profile settings in mobile drawer", async () => {
     const user = userEvent.setup();
     const onCloseMobile = vi.fn();
