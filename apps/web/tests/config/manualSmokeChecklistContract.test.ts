@@ -111,4 +111,11 @@ describe("manual smoke checklist contract", () => {
     expect(docsSource).toContain('role="tab"');
     expect(docsSource).toContain('role="tabpanel"');
   });
+
+  it("keeps docs header back-navigation action to projects", () => {
+    expect(docsSource).toContain(
+      '<Link to="/projects" className="btn secondary">',
+    );
+    expect(docsSource).toContain("← К проектам");
+  });
 });
