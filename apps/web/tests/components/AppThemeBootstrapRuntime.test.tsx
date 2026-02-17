@@ -1244,6 +1244,38 @@ describe("App theme bootstrap runtime", () => {
     ["dark", null, "admin-token", "Login Page"],
     ["dark", "auth-token", null, "Projects Page"],
   ] as const)(
+    "keeps %s theme when unknown nested admin path with query + hash falls back (authToken=%s, adminToken=%s)",
+    async (persistedTheme, authToken, adminToken, expectedPageText) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = authToken;
+      adminState.token = adminToken;
+
+      render(
+        <MemoryRouter
+          initialEntries={[
+            "/admin/unknown/path/deeper?from=runtime-matrix#runtime-fragment",
+          ]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([
+    ["light", null, null, "Login Page"],
+    ["light", "auth-token", "admin-token", "Projects Page"],
+    ["dark", null, "admin-token", "Login Page"],
+    ["dark", "auth-token", null, "Projects Page"],
+  ] as const)(
     "keeps %s theme when unknown nested admin path with hash falls back (authToken=%s, adminToken=%s)",
     async (persistedTheme, authToken, adminToken, expectedPageText) => {
       const storage = createThemeStorage(persistedTheme);
@@ -1698,6 +1730,38 @@ describe("App theme bootstrap runtime", () => {
       render(
         <MemoryRouter
           initialEntries={["/admin/unknown-path?from=runtime-matrix"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([
+    [null, null, "Login Page"],
+    [null, "admin-token", "Login Page"],
+    ["auth-token", null, "Projects Page"],
+    ["auth-token", "admin-token", "Projects Page"],
+  ] as const)(
+    "falls back to dark theme for unsupported value on unknown nested admin path with query + hash (authToken=%s, adminToken=%s)",
+    async (authToken, adminToken, expectedPageText) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = authToken;
+      adminState.token = adminToken;
+
+      render(
+        <MemoryRouter
+          initialEntries={[
+            "/admin/unknown/path/deeper?from=runtime-matrix#runtime-fragment",
+          ]}
           future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
         >
           <App />
