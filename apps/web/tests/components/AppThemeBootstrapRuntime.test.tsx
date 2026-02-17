@@ -2525,11 +2525,25 @@ describe("App theme bootstrap runtime", () => {
   it.each([
     ["light", "/projects"],
     ["light", "/projects/p1"],
+    ["light", "/projects/p1?tab=articles"],
+    ["light", "/projects/p1?tab=documents"],
+    ["light", "/projects/p1?tab=files"],
+    ["light", "/projects/p1?tab=statistics"],
+    ["light", "/projects/p1?tab=graph"],
+    ["light", "/projects/p1?tab=team"],
+    ["light", "/projects/p1?tab=settings"],
     ["light", "/projects/p1/documents/d1"],
     ["light", "/settings"],
     ["light", "/docs"],
     ["dark", "/projects"],
     ["dark", "/projects/p1"],
+    ["dark", "/projects/p1?tab=articles"],
+    ["dark", "/projects/p1?tab=documents"],
+    ["dark", "/projects/p1?tab=files"],
+    ["dark", "/projects/p1?tab=statistics"],
+    ["dark", "/projects/p1?tab=graph"],
+    ["dark", "/projects/p1?tab=team"],
+    ["dark", "/projects/p1?tab=settings"],
     ["dark", "/projects/p1/documents/d1"],
     ["dark", "/settings"],
     ["dark", "/docs"],
@@ -2551,6 +2565,37 @@ describe("App theme bootstrap runtime", () => {
 
       await waitFor(() => {
         expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Login Page")).toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([
+    "/projects/p1?tab=articles",
+    "/projects/p1?tab=documents",
+    "/projects/p1?tab=files",
+    "/projects/p1?tab=statistics",
+    "/projects/p1?tab=graph",
+    "/projects/p1?tab=team",
+    "/projects/p1?tab=settings",
+  ] as const)(
+    "falls back to dark theme while unsupported persisted value redirects unauthenticated project tab route %s to login",
+    async (route) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = null;
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
         expect(screen.getByText("Login Page")).toBeInTheDocument();
       });
     },
