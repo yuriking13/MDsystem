@@ -740,6 +740,67 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each([
+    ["light", "/login", null, "Login Page"],
+    ["light", "/login", "auth-token", "Login Page"],
+    ["dark", "/login", null, "Login Page"],
+    ["dark", "/login", "auth-token", "Login Page"],
+    ["light", "/register", null, "Register Page"],
+    ["light", "/register", "auth-token", "Register Page"],
+    ["dark", "/register", null, "Register Page"],
+    ["dark", "/register", "auth-token", "Register Page"],
+  ] as const)(
+    "keeps %s theme on public auth route %s (token=%s)",
+    async (persistedTheme, route, token, expectedPageText) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = token;
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([
+    ["light", null],
+    ["light", "admin-token"],
+    ["dark", null],
+    ["dark", "admin-token"],
+  ] as const)(
+    "keeps %s theme on admin login route (adminToken=%s)",
+    async (persistedTheme, adminToken) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = adminToken;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/login"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
   it("redirects unauthenticated admin route to admin login", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
