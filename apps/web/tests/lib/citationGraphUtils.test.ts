@@ -79,10 +79,13 @@ describe("CitationGraph utils", () => {
 
   it("falls back to defaults when graph CSS variables are absent", () => {
     const colors = getGraphNodeColors();
-    expect(colors.citing).toBe("#ec4899");
+    expect(colors.citing).toBe("#0ea5e9");
     expect(colors.candidatePubmed).toBe("#3b82f6");
-    expect(colors.reference).toBe("#f97316");
-    expect(colors.related).toBe("#06b6d4");
+    expect(colors.reference).toBe("#38bdf8");
+    expect(colors.related).toBe("#14b8a6");
+    expect(colors.aiFound).toBe("#22d3ee");
+    expect(colors.default).toBe("#64748b");
+    expect(colors.clusterDefault).toBe("#3b82f6");
   });
 
   it("returns graph background tokens from CSS variables", () => {

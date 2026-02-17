@@ -109,19 +109,19 @@ export function getCSSVariable(name: string): string {
  */
 export function getGraphNodeColors() {
   return {
-    citing: getCSSVariable("--graph-node-citing") || "#ec4899",
+    citing: getCSSVariable("--graph-node-citing") || "#0ea5e9",
     selected: getCSSVariable("--graph-node-selected") || "#22c55e",
     excluded: getCSSVariable("--graph-node-excluded") || "#ef4444",
     candidatePubmed:
       getCSSVariable("--graph-node-candidate-pubmed") || "#3b82f6",
     candidateDoaj: getCSSVariable("--graph-node-candidate-doaj") || "#eab308",
     candidateWiley: getCSSVariable("--graph-node-candidate-wiley") || "#8b5cf6",
-    reference: getCSSVariable("--graph-node-reference") || "#f97316",
-    related: getCSSVariable("--graph-node-related") || "#06b6d4",
-    aiFound: getCSSVariable("--graph-node-ai-found") || "#00ffff",
+    reference: getCSSVariable("--graph-node-reference") || "#38bdf8",
+    related: getCSSVariable("--graph-node-related") || "#14b8a6",
+    aiFound: getCSSVariable("--graph-node-ai-found") || "#22d3ee",
     pvalue: getCSSVariable("--graph-node-pvalue") || "#fbbf24",
-    default: getCSSVariable("--graph-node-default") || "#6b7280",
-    clusterDefault: getCSSVariable("--graph-cluster-default") || "#6366f1",
+    default: getCSSVariable("--graph-node-default") || "#64748b",
+    clusterDefault: getCSSVariable("--graph-cluster-default") || "#3b82f6",
   };
 }
 
