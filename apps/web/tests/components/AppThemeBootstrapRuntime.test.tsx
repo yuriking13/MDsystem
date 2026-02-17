@@ -1208,6 +1208,36 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
+  it.each([
+    [null, null, "Login Page"],
+    [null, "admin-token", "Login Page"],
+    ["auth-token", null, "Projects Page"],
+    ["auth-token", "admin-token", "Projects Page"],
+  ] as const)(
+    "falls back to dark theme for unsupported value on unknown admin path (authToken=%s, adminToken=%s)",
+    async (authToken, adminToken, expectedPageText) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = authToken;
+      adminState.token = adminToken;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/unknown-path"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
   it("renders settings page inside authenticated app layout", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
