@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
-type DocSection =
+type DocSectionId =
   | "overview"
   | "articles"
   | "documents"
@@ -12,179 +12,881 @@ type DocSection =
   | "settings"
   | "api-keys";
 
-const DOC_SECTIONS: { id: DocSection; title: string; icon: React.ReactNode }[] =
-  [
-    {
-      id: "overview",
-      title: "Обзор платформы",
-      icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "articles",
-      title: "База статей",
-      icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "documents",
-      title: "Документы",
-      icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "files",
-      title: "Файлы",
-      icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "statistics",
-      title: "Статистика",
-      icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "graph",
-      title: "Граф цитирований",
-      icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "team",
-      title: "Команда",
-      icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "settings",
-      title: "Настройки проекта",
-      icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      ),
-    },
-    {
-      id: "api-keys",
-      title: "API ключи",
-      icon: (
-        <svg
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z"
-          />
-        </svg>
-      ),
-    },
-  ];
+type DocTopic = {
+  id: string;
+  title: string;
+  summary: string;
+  content: React.ReactNode;
+};
 
-export default function DocumentationPage() {
-  const [activeSection, setActiveSection] = useState<DocSection>("overview");
+type DocSection = {
+  id: DocSectionId;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  topics: DocTopic[];
+};
+
+function DocIcon({
+  children,
+}: {
+  children: React.ReactNode;
+}): React.JSX.Element {
+  return (
+    <svg
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  );
+}
+
+const DOC_SECTIONS: DocSection[] = [
+  {
+    id: "overview",
+    title: "Обзор платформы",
+    description:
+      "Коротко о том, как устроена работа в системе: от создания проекта до готового отчёта.",
+    icon: (
+      <DocIcon>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75"
+        />
+      </DocIcon>
+    ),
+    topics: [
+      {
+        id: "overview-workflow",
+        title: "Основной сценарий работы",
+        summary:
+          "Если вы используете платформу впервые, начните с этого порядка действий.",
+        content: (
+          <ol className="docs-list docs-list--ordered">
+            <li>Создайте проект и задайте его тему.</li>
+            <li>Соберите статьи в разделе «База статей».</li>
+            <li>Отберите релевантные публикации в «Отобранные».</li>
+            <li>Напишите главы в разделе «Документы».</li>
+            <li>Добавьте таблицы/графики из раздела «Статистика».</li>
+            <li>Проверьте связи через «Граф цитирований».</li>
+            <li>Экспортируйте результат в Word/PDF.</li>
+          </ol>
+        ),
+      },
+      {
+        id: "overview-sections",
+        title: "Что делает каждый раздел",
+        summary:
+          "Быстрое объяснение всех вкладок, чтобы вы сразу понимали, где выполнять нужную задачу.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              <strong>База статей:</strong> поиск, фильтрация, перевод и отбор
+              литературы.
+            </li>
+            <li>
+              <strong>Документы:</strong> написание текста, цитаты, структура
+              глав.
+            </li>
+            <li>
+              <strong>Файлы:</strong> хранение PDF, изображений и других
+              материалов.
+            </li>
+            <li>
+              <strong>Статистика:</strong> таблицы и графики для вставки в
+              документы.
+            </li>
+            <li>
+              <strong>Граф цитирований:</strong> поиск связей и дополнительных
+              публикаций.
+            </li>
+            <li>
+              <strong>Настройки:</strong> команда, роли, тип исследования,
+              библиография, AI-функции.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "overview-best-practice",
+        title: "Практические советы",
+        summary:
+          "Рекомендации, которые помогают не потерять данные и быстрее получить результат.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              Сначала создавайте «Кандидатов», а в «Отобранные» переносите
+              только проверенные статьи.
+            </li>
+            <li>
+              Добавляйте в проект ключевые файлы (протокол, таблицы, скриншоты)
+              сразу, а не в конце работы.
+            </li>
+            <li>
+              Используйте единый стиль библиографии с самого начала проекта.
+            </li>
+            <li>
+              Перед экспортом откройте граф и проверьте, нет ли важных статей,
+              которые вы пропустили.
+            </li>
+          </ul>
+        ),
+      },
+    ],
+  },
+  {
+    id: "articles",
+    title: "База статей",
+    description:
+      "Главный рабочий раздел для поиска, отбора и анализа научных публикаций.",
+    icon: (
+      <DocIcon>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13"
+        />
+      </DocIcon>
+    ),
+    topics: [
+      {
+        id: "articles-search",
+        title: "Поиск и фильтры",
+        summary:
+          "Вы можете искать статьи в нескольких источниках и сразу ограничивать результаты по нужным условиям.",
+        content: (
+          <>
+            <ul className="docs-list">
+              <li>
+                <strong>Запрос:</strong> ключевые слова, фразы, логика AND/OR.
+              </li>
+              <li>
+                <strong>Источники:</strong> PubMed, DOAJ, Wiley.
+              </li>
+              <li>
+                <strong>Период:</strong> предустановки или свой диапазон лет.
+              </li>
+              <li>
+                <strong>Тип публикации:</strong> РКИ, обзор, мета-анализ и др.
+              </li>
+              <li>
+                <strong>Объём выдачи:</strong> от 10 до всех найденных.
+              </li>
+            </ul>
+            <p className="docs-inline-note">
+              Для серии похожих запросов используйте мультипоиск — это экономит
+              время и даёт более полное покрытие темы.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: "articles-statuses",
+        title: "Статусы и массовые действия",
+        summary:
+          "Статусы помогают быстро разделить полезные и неполезные статьи без потери истории.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              <strong>Кандидаты:</strong> новые или сомнительные публикации для
+              проверки.
+            </li>
+            <li>
+              <strong>Отобранные:</strong> финальные статьи для написания
+              работы.
+            </li>
+            <li>
+              <strong>Исключённые:</strong> нерелевантные записи (с причиной
+              исключения).
+            </li>
+            <li>
+              <strong>Корзина:</strong> временно удалённые материалы с
+              возможностью восстановить.
+            </li>
+            <li>
+              <strong>Групповые операции:</strong> перенос между статусами,
+              удаление, AI-обработка выделенного списка.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "articles-ai",
+        title: "AI и автоматическое обогащение",
+        summary:
+          "Платформа может автоматически переводить и улучшать метаданные статей.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              <strong>Перевод:</strong> заголовки и аннотации на русский язык.
+            </li>
+            <li>
+              <strong>Crossref/метаданные:</strong> DOI, журнал, цитируемость и
+              другие поля.
+            </li>
+            <li>
+              <strong>Статистические индикаторы:</strong> обнаружение p-value и
+              связанных показателей.
+            </li>
+            <li>
+              <strong>Подсветка важного:</strong> визуальное выделение статей с
+              сильными статистическими результатами.
+            </li>
+          </ul>
+        ),
+      },
+    ],
+  },
+  {
+    id: "documents",
+    title: "Документы",
+    description:
+      "Раздел для написания текста работы, цитирования и итогового экспорта.",
+    icon: (
+      <DocIcon>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+      </DocIcon>
+    ),
+    topics: [
+      {
+        id: "documents-create",
+        title: "Создание структуры работы",
+        summary:
+          "Документы можно использовать как главы: введение, методы, результаты и т.д.",
+        content: (
+          <ul className="docs-list">
+            <li>Создавайте отдельные документы под каждую часть работы.</li>
+            <li>Меняйте порядок документов — это влияет на общий экспорт.</li>
+            <li>
+              Давайте понятные названия (например: «1. Введение», «2. Методы»).
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "documents-editor",
+        title: "Редактор, цитаты и ссылки",
+        summary:
+          "Редактор поддерживает научный формат: заголовки, таблицы, ссылки, цитирование.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              Базовое форматирование: заголовки, списки, таблицы, выделения.
+            </li>
+            <li>
+              Вставка цитаты по кнопке «Цитата» из списка отобранных статей.
+            </li>
+            <li>
+              Автоматическая нумерация ссылок вида <strong>[1], [2]</strong>.
+            </li>
+            <li>
+              При удалении цитаты нумерация пересчитывается автоматически.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "documents-export",
+        title: "Экспорт и библиография",
+        summary:
+          "Вы можете экспортировать как отдельные главы, так и целую работу одним файлом.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              <strong>Word по главам:</strong> выбираете только нужные
+              документы.
+            </li>
+            <li>
+              <strong>Word общий:</strong> все документы в одном файле.
+            </li>
+            <li>
+              <strong>PDF:</strong> печатная версия через браузер.
+            </li>
+            <li>
+              Библиография формируется автоматически на основании фактических
+              цитирований в тексте.
+            </li>
+          </ul>
+        ),
+      },
+    ],
+  },
+  {
+    id: "files",
+    title: "Файлы",
+    description:
+      "Хранилище материалов проекта: статьи в PDF, изображения, таблицы и вспомогательные документы.",
+    icon: (
+      <DocIcon>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379"
+        />
+      </DocIcon>
+    ),
+    topics: [
+      {
+        id: "files-upload",
+        title: "Загрузка и организация",
+        summary:
+          "Файлы можно загружать вручную, фильтровать по категориям и быстро находить в списке.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              Поддерживаются популярные форматы: PDF, DOCX, XLSX, изображения,
+              аудио/видео.
+            </li>
+            <li>
+              Для порядка назначайте категории и используйте фильтр по
+              категории.
+            </li>
+            <li>
+              В карточке файла доступны действия: предпросмотр, скачивание,
+              удаление.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "files-analyze",
+        title: "Анализ файлов и импорт в статьи",
+        summary:
+          "Из загруженных документов можно извлекать библиографические данные и сразу добавлять их в базу статей.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              Команда «Анализ» извлекает заголовок, DOI/PMID и другие метаданные
+              из PDF/документа.
+            </li>
+            <li>
+              После анализа можно импортировать найденные материалы в
+              «Кандидаты» или «Отобранные».
+            </li>
+            <li>
+              Это удобно, если у вас уже есть локальная подборка литературы.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "files-documents",
+        title: "Использование файлов в тексте",
+        summary:
+          "Изображения и другие материалы можно вставлять в документы проекта.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              В редакторе документа используйте вставку файла из библиотеки
+              проекта.
+            </li>
+            <li>
+              Для рисунков автоматически формируется подпись (например, «Рисунок
+              1»).
+            </li>
+            <li>
+              При необходимости сначала откройте файл в предпросмотре и
+              проверьте качество перед вставкой.
+            </li>
+          </ul>
+        ),
+      },
+    ],
+  },
+  {
+    id: "statistics",
+    title: "Статистика",
+    description:
+      "Инструменты для создания таблиц и графиков, которые можно вставлять прямо в научный текст.",
+    icon: (
+      <DocIcon>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25"
+        />
+      </DocIcon>
+    ),
+    topics: [
+      {
+        id: "statistics-create",
+        title: "Создание таблиц и графиков",
+        summary:
+          "Можно создавать статистику с нуля или быстро запускать типовые шаблоны.",
+        content: (
+          <ul className="docs-list">
+            <li>Создайте запись статистики и заполните таблицу данных.</li>
+            <li>
+              Выберите формат визуализации: bar, line, scatter, pie, boxplot и
+              другие.
+            </li>
+            <li>Настройте подписи, легенду, цвета и отображаемые колонки.</li>
+          </ul>
+        ),
+      },
+      {
+        id: "statistics-manage",
+        title: "Управление и поддержка актуальности",
+        summary:
+          "Раздел позволяет редактировать, копировать и удалять статистические блоки, не ломая документ.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              Любую таблицу/график можно открыть снова и обновить без создания с
+              нуля.
+            </li>
+            <li>
+              Доступны быстрые действия: дублирование, удаление, очистка
+              временных данных.
+            </li>
+            <li>
+              Проверяйте, к каким документам привязан график, чтобы не удалить
+              нужный элемент.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "statistics-insert",
+        title: "Вставка в документы",
+        summary:
+          "Таблицы и графики вставляются в текст через кнопку «Статистика» в редакторе.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              В Word-экспорте таблицы сохраняются как таблицы, а графики
+              вставляются как изображения.
+            </li>
+            <li>
+              При обновлении исходной статистики рекомендуется обновить вставку
+              в документе.
+            </li>
+            <li>
+              Используйте понятные заголовки графиков — это важно для финальной
+              публикации.
+            </li>
+          </ul>
+        ),
+      },
+    ],
+  },
+  {
+    id: "graph",
+    title: "Граф цитирований",
+    description:
+      "Визуальный инструмент для поиска новых статей через связи цитирования и AI-подсказки.",
+    icon: (
+      <DocIcon>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+        />
+      </DocIcon>
+    ),
+    topics: [
+      {
+        id: "graph-build",
+        title: "Построение графа и глубина",
+        summary:
+          "Граф строится на основе ваших статей и цепочек их цитирований.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              Запустите загрузку связей — система соберёт references и citing
+              статьи.
+            </li>
+            <li>
+              Переключайте глубину, чтобы видеть только ближайшие или более
+              дальние связи.
+            </li>
+            <li>
+              Используйте фильтры по статусу, источнику, году и другим
+              параметрам.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "graph-nodes",
+        title: "Работа с узлами",
+        summary:
+          "Каждый узел — это статья. По клику открывается карточка с действиями.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              Из карточки можно добавить статью в «Кандидаты» или «Отобранные».
+            </li>
+            <li>Доступны DOI/PMID-ссылки для быстрого перехода к оригиналу.</li>
+            <li>
+              В легенде отображаются типы узлов (в проекте, ссылки, цитирующие,
+              исключённые и т.д.).
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "graph-ai",
+        title: "AI-поиск и семантические функции",
+        summary:
+          "В графе доступны AI-поиск похожих работ, семантические кластеры и поиск пробелов в литературе.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              <strong>AI Assistant:</strong> запрос естественным языком и
+              рекомендации статей.
+            </li>
+            <li>
+              <strong>Семантические кластеры:</strong> группировка статей по
+              смыслу, а не только по ссылкам.
+            </li>
+            <li>
+              <strong>Gap analysis:</strong> поиск перспективных, но
+              недооценённых направлений.
+            </li>
+            <li>
+              Кнопка «+ Добавить все» для статей с p-value ускоряет отбор.
+            </li>
+          </ul>
+        ),
+      },
+    ],
+  },
+  {
+    id: "team",
+    title: "Команда",
+    description:
+      "Совместная работа: приглашения, роли, контроль доступа и синхронизация изменений.",
+    icon: (
+      <DocIcon>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772"
+        />
+      </DocIcon>
+    ),
+    topics: [
+      {
+        id: "team-roles",
+        title: "Роли и права",
+        summary:
+          "Выдавайте доступ строго под задачу участника, чтобы избежать случайных правок.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              <strong>Owner:</strong> полный контроль проекта и участников.
+            </li>
+            <li>
+              <strong>Editor:</strong> рабочий доступ к статьям, документам,
+              графу и статистике.
+            </li>
+            <li>
+              <strong>Viewer:</strong> только просмотр без редактирования.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "team-invite",
+        title: "Приглашение участников",
+        summary: "Добавляйте коллег по email и сразу выбирайте им роль.",
+        content: (
+          <ol className="docs-list docs-list--ordered">
+            <li>Откройте настройки проекта → блок команды.</li>
+            <li>Введите email участника.</li>
+            <li>Выберите роль (Owner/Editor/Viewer).</li>
+            <li>Подтвердите приглашение.</li>
+          </ol>
+        ),
+      },
+      {
+        id: "team-live",
+        title: "Синхронизация в реальном времени",
+        summary:
+          "Изменения коллег приходят автоматически, поэтому команда работает как в одном общем рабочем пространстве.",
+        content: (
+          <ul className="docs-list">
+            <li>Индикатор Live показывает, что синхронизация активна.</li>
+            <li>
+              При потере соединения изменения сохраняются локально и
+              синхронизируются после восстановления.
+            </li>
+            <li>
+              Для важных разделов используйте договорённость по ответственным
+              редакторам.
+            </li>
+          </ul>
+        ),
+      },
+    ],
+  },
+  {
+    id: "settings",
+    title: "Настройки проекта",
+    description:
+      "Параметры исследования, стиль библиографии и AI-проверки качества.",
+    icon: (
+      <DocIcon>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827"
+        />
+      </DocIcon>
+    ),
+    topics: [
+      {
+        id: "settings-research",
+        title: "Тип и подтип исследования",
+        summary:
+          "Эти параметры влияют на рекомендации, подсказки AI и структуру проверки работы.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              Выберите тип: наблюдательное, экспериментальное, обзорное и др.
+            </li>
+            <li>
+              Уточните подтип для большей точности (например, когортное, РКИ).
+            </li>
+            <li>
+              При смене дизайна исследования обновите параметр, чтобы AI не
+              давал нерелевантные подсказки.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "settings-protocol",
+        title: "Протокол и проверки качества",
+        summary:
+          "Вы можете включить методологические проверки по выбранному протоколу.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              Протоколы: CARE, STROBE, CONSORT, PRISMA и другие (по
+              доступности).
+            </li>
+            <li>
+              AI-проверки помогают увидеть пропущенные разделы, риски ошибок
+              I/II рода и слабые места дизайна.
+            </li>
+            <li>
+              Используйте проверки как помощника, но финальное решение
+              оставляйте за исследователем.
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "settings-style",
+        title: "Библиографический стиль и формат вывода",
+        summary:
+          "Один проект = один базовый стиль ссылок, чтобы избежать хаоса в финальном документе.",
+        content: (
+          <ul className="docs-list">
+            <li>Поддерживаются стили: ГОСТ, APA, Vancouver.</li>
+            <li>
+              Стиль влияет на отображение ссылок и итогового списка литературы.
+            </li>
+            <li>
+              Если журнал требует другой стиль, переключите его до финального
+              экспорта.
+            </li>
+          </ul>
+        ),
+      },
+    ],
+  },
+  {
+    id: "api-keys",
+    title: "API ключи",
+    description:
+      "Подключение внешних сервисов для поиска, анализа и AI-функций платформы.",
+    icon: (
+      <DocIcon>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818"
+        />
+      </DocIcon>
+    ),
+    topics: [
+      {
+        id: "api-providers",
+        title: "Какие провайдеры доступны",
+        summary:
+          "В настройках аккаунта/проекта можно хранить ключи нескольких источников.",
+        content: (
+          <ul className="docs-list">
+            <li>
+              <strong>PubMed:</strong> расширение лимитов/инструментов поиска.
+            </li>
+            <li>
+              <strong>DOAJ:</strong> доступ к открытым журналам.
+            </li>
+            <li>
+              <strong>Wiley:</strong> доступ к публикациям издательства Wiley.
+            </li>
+            <li>
+              <strong>OpenRouter:</strong> AI-функции (перевод, помощники,
+              семантический анализ).
+            </li>
+          </ul>
+        ),
+      },
+      {
+        id: "api-openrouter",
+        title: "Настройка OpenRouter",
+        summary:
+          "OpenRouter нужен для большинства интеллектуальных функций платформы.",
+        content: (
+          <ol className="docs-list docs-list--ordered">
+            <li>
+              Зарегистрируйтесь на{" "}
+              <a
+                href="https://openrouter.ai"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                openrouter.ai
+              </a>
+              .
+            </li>
+            <li>Создайте API ключ в личном кабинете.</li>
+            <li>Вставьте ключ в разделе API ключей и сохраните настройки.</li>
+            <li>
+              Проверьте работу: например, запустите перевод аннотации статьи.
+            </li>
+          </ol>
+        ),
+      },
+      {
+        id: "api-security",
+        title: "Безопасность и типовые ошибки",
+        summary:
+          "Ключи не должны попадать в публичные документы и чаты. Если что-то не работает — начните с базовой проверки.",
+        content: (
+          <ul className="docs-list">
+            <li>Не публикуйте API-ключи в тексте документов и скриншотах.</li>
+            <li>
+              Если запросы не выполняются — проверьте срок действия ключа и
+              лимиты провайдера.
+            </li>
+            <li>
+              После обновления ключа повторите проблемное действие (поиск,
+              перевод, AI-анализ).
+            </li>
+          </ul>
+        ),
+      },
+    ],
+  },
+];
+
+export default function DocumentationPage(): React.JSX.Element {
+  const [activeSectionId, setActiveSectionId] = useState<DocSectionId>(
+    DOC_SECTIONS[0].id,
+  );
+
+  const activeSection = useMemo(
+    () =>
+      DOC_SECTIONS.find((section) => section.id === activeSectionId) ??
+      DOC_SECTIONS[0],
+    [activeSectionId],
+  );
+
+  const [activeTopicId, setActiveTopicId] = useState<string>(
+    DOC_SECTIONS[0].topics[0].id,
+  );
+  const [pendingFocusTopicId, setPendingFocusTopicId] = useState<string | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const sectionHasTopic = activeSection.topics.some(
+      (topic) => topic.id === activeTopicId,
+    );
+    if (!sectionHasTopic) {
+      setActiveTopicId(activeSection.topics[0].id);
+    }
+  }, [activeSection, activeTopicId]);
+
+  useEffect(() => {
+    if (!pendingFocusTopicId) return;
+    if (pendingFocusTopicId !== activeTopicId) {
+      setPendingFocusTopicId(null);
+      return;
+    }
+
+    const tab = document.getElementById(
+      `docs-tab-${pendingFocusTopicId}`,
+    ) as HTMLButtonElement | null;
+    tab?.focus();
+    setPendingFocusTopicId(null);
+  }, [activeTopicId, pendingFocusTopicId]);
+
+  const activeTopic = useMemo(
+    () =>
+      activeSection.topics.find((topic) => topic.id === activeTopicId) ??
+      activeSection.topics[0],
+    [activeSection, activeTopicId],
+  );
+
+  const activateTopicByIndex = (topicIndex: number): void => {
+    const topic = activeSection.topics[topicIndex];
+    if (!topic) return;
+
+    setActiveTopicId(topic.id);
+    setPendingFocusTopicId(topic.id);
+  };
+
+  const handleTopicTabKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    topicIndex: number,
+  ): void => {
+    const lastIndex = activeSection.topics.length - 1;
+    if (lastIndex < 0) return;
+
+    switch (event.key) {
+      case "ArrowDown":
+      case "ArrowRight": {
+        event.preventDefault();
+        const nextIndex = topicIndex >= lastIndex ? 0 : topicIndex + 1;
+        activateTopicByIndex(nextIndex);
+        break;
+      }
+      case "ArrowUp":
+      case "ArrowLeft": {
+        event.preventDefault();
+        const nextIndex = topicIndex <= 0 ? lastIndex : topicIndex - 1;
+        activateTopicByIndex(nextIndex);
+        break;
+      }
+      case "Home": {
+        event.preventDefault();
+        activateTopicByIndex(0);
+        break;
+      }
+      case "End": {
+        event.preventDefault();
+        activateTopicByIndex(lastIndex);
+        break;
+      }
+      default:
+        break;
+    }
+  };
 
   return (
     <div className="container docs-page">
@@ -200,6 +902,7 @@ export default function DocumentationPage() {
               stroke="currentColor"
               strokeWidth={1.5}
               viewBox="0 0 24 24"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -213,710 +916,87 @@ export default function DocumentationPage() {
       </div>
 
       <div className="docs-layout">
-        {/* Sidebar */}
         <div className="docs-sidebar">
           <div className="card docs-sidebar-card">
-            <nav className="docs-nav">
+            <nav className="docs-nav" aria-label="Разделы документации">
               {DOC_SECTIONS.map((section) => (
                 <button
                   key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`doc-nav-item ${activeSection === section.id ? "active" : ""}`}
+                  type="button"
+                  onClick={() => {
+                    setPendingFocusTopicId(null);
+                    setActiveSectionId(section.id);
+                    setActiveTopicId(section.topics[0].id);
+                  }}
+                  className={`doc-nav-item ${activeSection.id === section.id ? "active" : ""}`}
+                  aria-current={
+                    activeSection.id === section.id ? "page" : undefined
+                  }
                 >
                   <span className="doc-nav-item-icon">{section.icon}</span>
                   {section.title}
                 </button>
               ))}
             </nav>
+
+            <div className="docs-subnav">
+              <div className="docs-subnav-title">Подменю раздела</div>
+              <div
+                className="docs-subnav-list"
+                role="tablist"
+                aria-orientation="vertical"
+              >
+                {activeSection.topics.map((topic, topicIndex) => (
+                  <button
+                    key={topic.id}
+                    type="button"
+                    className={`docs-subnav-item ${activeTopic.id === topic.id ? "active" : ""}`}
+                    onClick={() => {
+                      setPendingFocusTopicId(null);
+                      setActiveTopicId(topic.id);
+                    }}
+                    onKeyDown={(event) =>
+                      handleTopicTabKeyDown(event, topicIndex)
+                    }
+                    role="tab"
+                    id={`docs-tab-${topic.id}`}
+                    aria-controls={`docs-panel-${topic.id}`}
+                    aria-selected={activeTopic.id === topic.id}
+                    tabIndex={activeTopic.id === topic.id ? 0 : -1}
+                  >
+                    {topic.title}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Content */}
         <div className="docs-content">
           <div className="card docs-content-card">
-            {activeSection === "overview" && <OverviewSection />}
-            {activeSection === "articles" && <ArticlesSection />}
-            {activeSection === "documents" && <DocumentsSection />}
-            {activeSection === "files" && <FilesSection />}
-            {activeSection === "statistics" && <StatisticsSection />}
-            {activeSection === "graph" && <GraphSection />}
-            {activeSection === "team" && <TeamSection />}
-            {activeSection === "settings" && <SettingsSection />}
-            {activeSection === "api-keys" && <ApiKeysSection />}
+            <section className="doc-section">
+              <h2>{activeSection.title}</h2>
+              <p className="doc-intro">{activeSection.description}</p>
+
+              <div className="doc-tip doc-tip--info">
+                Откройте нужный пункт в меню слева, затем выберите подпункт в
+                подменю, чтобы получить пошаговое объяснение.
+              </div>
+
+              <article
+                id={`docs-panel-${activeTopic.id}`}
+                className="docs-topic-card"
+                role="tabpanel"
+                aria-labelledby={`docs-tab-${activeTopic.id}`}
+              >
+                <h3 className="docs-topic-title">{activeTopic.title}</h3>
+                <p className="docs-topic-summary">{activeTopic.summary}</p>
+                <div className="docs-topic-content">{activeTopic.content}</div>
+              </article>
+            </section>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function OverviewSection() {
-  return (
-    <div className="doc-section">
-      <h2>Добро пожаловать в платформу для научных исследований</h2>
-
-      <p className="doc-intro">
-        Наша платформа помогает исследователям систематизировать работу с
-        научными статьями, создавать документы с автоматическим управлением
-        библиографией, визуализировать связи между публикациями и совместно
-        работать над проектами.
-      </p>
-
-      <h3>Ключевые возможности</h3>
-
-      <div className="features-grid docs-features-grid docs-features-grid-spaced">
-        <div className="feature-card docs-feature-card">
-          <h4 className="docs-feature-title">
-            <svg
-              width={20}
-              height={20}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              viewBox="0 0 24 24"
-              className="docs-color-blue"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            Поиск статей
-          </h4>
-          <p className="docs-feature-text">
-            Поиск в PubMed, DOAJ, Wiley с фильтрацией по типу публикации, году,
-            доступности текста
-          </p>
-        </div>
-
-        <div className="feature-card docs-feature-card">
-          <h4 className="docs-feature-title">
-            <svg
-              width={20}
-              height={20}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              viewBox="0 0 24 24"
-              className="docs-color-emerald"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-            Автоматическая библиография
-          </h4>
-          <p className="docs-feature-text">
-            Цитирование статей в документах с автоматическим формированием
-            списка литературы в ГОСТ, APA, Vancouver
-          </p>
-        </div>
-
-        <div className="feature-card docs-feature-card">
-          <h4 className="docs-feature-title">
-            <svg
-              width={20}
-              height={20}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              viewBox="0 0 24 24"
-              className="docs-color-violet"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
-              />
-            </svg>
-            Граф цитирований
-          </h4>
-          <p className="docs-feature-text">
-            Визуализация связей между статьями, поиск релевантных публикаций
-            через AI-ассистента
-          </p>
-        </div>
-
-        <div className="feature-card docs-feature-card">
-          <h4 className="docs-feature-title">
-            <svg
-              width={20}
-              height={20}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              viewBox="0 0 24 24"
-              className="docs-color-amber"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z"
-              />
-            </svg>
-            Статистика и графики
-          </h4>
-          <p className="docs-feature-text">
-            Создание таблиц и графиков с возможностью вставки в документы и
-            экспорта
-          </p>
-        </div>
-      </div>
-
-      <h3 className="docs-section-heading-lg">Быстрый старт</h3>
-      <ol className="docs-numbered-list">
-        <li>Создайте новый проект на странице «Проекты»</li>
-        <li>Перейдите в раздел «База статей» и выполните поиск</li>
-        <li>Отберите нужные статьи для работы</li>
-        <li>Создайте документы и вставляйте цитаты из отобранных статей</li>
-        <li>Экспортируйте готовую работу в Word или PDF</li>
-      </ol>
-    </div>
-  );
-}
-
-function ArticlesSection() {
-  return (
-    <div className="doc-section">
-      <h2>База статей</h2>
-
-      <p className="doc-intro">
-        База статей — центральное хранилище научных публикаций вашего проекта.
-        Здесь вы можете искать статьи, фильтровать их, переводить и управлять
-        статусами.
-      </p>
-
-      <h3>Поиск статей</h3>
-      <p>
-        Нажмите кнопку «Поиск статей» для открытия формы поиска. Доступные
-        параметры:
-      </p>
-      <ul>
-        <li>
-          <strong>Поисковый запрос</strong> — ключевые слова или фразы.
-          Поддерживаются операторы AND, OR
-        </li>
-        <li>
-          <strong>Источники</strong> — PubMed (медицинские статьи), DOAJ
-          (открытый доступ), Wiley
-        </li>
-        <li>
-          <strong>Период публикации</strong> — выберите готовый пресет или
-          укажите произвольные годы
-        </li>
-        <li>
-          <strong>Доступность текста</strong> — любой, полный текст, бесплатный
-          полный текст
-        </li>
-        <li>
-          <strong>Типы публикаций</strong> — мета-анализ, систематический обзор,
-          РКИ и др.
-        </li>
-        <li>
-          <strong>Максимум результатов</strong> — 10, 50, 100, 500, 1000 или все
-          статьи
-        </li>
-      </ul>
-
-      <div className="doc-tip doc-tip--info">
-        <strong>Совет:</strong> Используйте «Мультипоиск» для одновременного
-        выполнения нескольких запросов с одинаковыми фильтрами.
-      </div>
-
-      <h3 className="docs-section-heading">Статусы статей</h3>
-      <ul>
-        <li>
-          <strong>Кандидаты</strong> — новые найденные статьи, требующие
-          рассмотрения
-        </li>
-        <li>
-          <strong>Отобранные</strong> — статьи, одобренные для включения в
-          работу
-        </li>
-        <li>
-          <strong>Исключённые</strong> — статьи, не подходящие для работы
-        </li>
-        <li>
-          <strong>Корзина</strong> — удалённые статьи (можно восстановить)
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">Дополнительные функции</h3>
-      <ul>
-        <li>
-          <strong>Перевод</strong> — автоматический перевод заголовков и
-          аннотаций на русский язык
-        </li>
-        <li>
-          <strong>Crossref обогащение</strong> — получение дополнительных
-          метаданных (DOI, журнал, цитирования)
-        </li>
-        <li>
-          <strong>AI детекция статистики</strong> — поиск P-value и
-          статистических показателей в аннотациях
-        </li>
-        <li>
-          <strong>Подсветка статистики</strong> — цветовое выделение значимых
-          результатов
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">Формирование библиографии</h3>
-      <p>
-        Список литературы формируется автоматически из статей, которые вы
-        цитируете в документах. При вставке цитаты в документ статья получает
-        номер, который используется в тексте [1], [2] и т.д.
-      </p>
-      <p>
-        Нумерация обновляется динамически: если вы удалите цитату, номера
-        пересчитаются так, чтобы не было пропусков.
-      </p>
-    </div>
-  );
-}
-
-function DocumentsSection() {
-  return (
-    <div className="doc-section">
-      <h2>Документы</h2>
-
-      <p className="doc-intro">
-        Раздел «Документы» предназначен для написания глав вашей работы с
-        поддержкой цитирования, таблиц, графиков и форматирования.
-      </p>
-
-      <h3>Создание документа</h3>
-      <p>
-        Нажмите «Создать документ» и введите название главы. Документы можно
-        перетаскивать для изменения порядка — это влияет на структуру
-        экспортируемого файла.
-      </p>
-
-      <h3 className="docs-section-heading">Редактор документов</h3>
-      <p>Редактор поддерживает:</p>
-      <ul>
-        <li>
-          <strong>Форматирование</strong> — жирный, курсив, подчёркивание,
-          зачёркивание
-        </li>
-        <li>
-          <strong>Заголовки</strong> — H1, H2, H3 для структурирования текста
-        </li>
-        <li>
-          <strong>Списки</strong> — маркированные и нумерованные
-        </li>
-        <li>
-          <strong>Таблицы</strong> — создание и редактирование с настройкой
-          ширины столбцов
-        </li>
-        <li>
-          <strong>Ссылки</strong> — вставка гиперссылок
-        </li>
-        <li>
-          <strong>Цитаты</strong> — блочные цитаты и код
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">Вставка цитат</h3>
-      <p>
-        Нажмите кнопку «Цитата» в панели инструментов. Откроется окно выбора
-        статьи из отобранных в вашем проекте. После выбора в текст вставится
-        ссылка [N], а статья добавится в список литературы.
-      </p>
-
-      <h3 className="docs-section-heading">Импорт статистики</h3>
-      <p>
-        Кнопка «Статистика» позволяет вставить в документ таблицу или график из
-        раздела «Статистика». При экспорте в Word таблицы сохраняют
-        форматирование.
-      </p>
-
-      <h3 className="docs-section-heading">Нумерация таблиц и рисунков</h3>
-      <p>
-        Таблицы и рисунки автоматически нумеруются в порядке добавления в
-        документ. Заголовок таблицы отображается над ней («Таблица 1 —
-        Название»), а подпись к рисунку — под ним («Рисунок 1 — Название»).
-      </p>
-
-      <h3 className="docs-section-heading">Экспорт</h3>
-      <ul>
-        <li>
-          <strong>Word (главы)</strong> — выберите конкретные главы для экспорта
-          с их списком литературы
-        </li>
-        <li>
-          <strong>Word (объединённый)</strong> — экспорт всех глав в один
-          документ с общей библиографией
-        </li>
-        <li>
-          <strong>PDF</strong> — экспорт в PDF через диалог печати браузера
-        </li>
-      </ul>
-    </div>
-  );
-}
-
-function FilesSection() {
-  return (
-    <div className="doc-section">
-      <h2>Файлы</h2>
-
-      <p className="doc-intro">
-        Раздел «Файлы» предназначен для хранения вспомогательных материалов:
-        изображений, PDF-файлов, таблиц Excel и других документов.
-      </p>
-
-      <h3>Загрузка файлов</h3>
-      <p>
-        Нажмите «Загрузить файл» и выберите файл на компьютере. Поддерживаются
-        следующие форматы:
-      </p>
-      <ul>
-        <li>
-          <strong>Изображения</strong> — JPG, PNG, GIF, SVG, WebP
-        </li>
-        <li>
-          <strong>Документы</strong> — PDF, DOC, DOCX, XLS, XLSX
-        </li>
-        <li>
-          <strong>Видео</strong> — MP4, WebM
-        </li>
-        <li>
-          <strong>Аудио</strong> — MP3, WAV, OGG
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">Вставка в документы</h3>
-      <p>
-        Загруженные изображения можно вставлять в документы через кнопку «Файл»
-        в панели инструментов редактора. При выборе изображения оно
-        автоматически получит подпись «Рисунок N — Название».
-      </p>
-
-      <h3 className="docs-section-heading">Просмотр и скачивание</h3>
-      <p>
-        Кликните на файл для предпросмотра (доступен для изображений, видео,
-        аудио и PDF). Используйте кнопку скачивания для загрузки файла на
-        компьютер.
-      </p>
-    </div>
-  );
-}
-
-function StatisticsSection() {
-  return (
-    <div className="doc-section">
-      <h2>Статистика</h2>
-
-      <p className="doc-intro">
-        Раздел «Статистика» позволяет создавать таблицы данных и визуализировать
-        их в виде различных типов графиков.
-      </p>
-
-      <h3>Создание статистики</h3>
-      <p>
-        Нажмите «Создать таблицу/график» для открытия редактора. Введите данные
-        в табличной форме, затем выберите тип визуализации.
-      </p>
-
-      <h3 className="docs-section-heading">Типы графиков</h3>
-      <ul>
-        <li>
-          <strong>Столбчатая диаграмма</strong> — сравнение значений между
-          категориями
-        </li>
-        <li>
-          <strong>Гистограмма</strong> — распределение непрерывных данных
-        </li>
-        <li>
-          <strong>Stacked Bar</strong> — составные столбцы для анализа структуры
-        </li>
-        <li>
-          <strong>Круговая диаграмма</strong> — доли от целого
-        </li>
-        <li>
-          <strong>Линейный график</strong> — динамика изменений во времени
-        </li>
-        <li>
-          <strong>Boxplot</strong> — распределение с медианой и квартилями
-        </li>
-        <li>
-          <strong>Scatter</strong> — точечная диаграмма для корреляций
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">Настройка графиков</h3>
-      <p>
-        В редакторе можно настроить заголовок, подписи осей, выбрать колонки для
-        визуализации и цветовую схему. Изменения сохраняются автоматически.
-      </p>
-
-      <h3 className="docs-section-heading">Вставка в документы</h3>
-      <p>
-        Используйте кнопку «Статистика» в редакторе документа для выбора и
-        вставки таблицы или графика. При экспорте в Word таблицы сохраняют
-        структуру, а графики вставляются как изображения.
-      </p>
-    </div>
-  );
-}
-
-function GraphSection() {
-  return (
-    <div className="doc-section">
-      <h2>Граф цитирований</h2>
-
-      <p className="doc-intro">
-        Граф цитирований визуализирует связи между статьями вашего проекта и
-        релевантными публикациями из научных баз данных.
-      </p>
-
-      <h3>Как это работает</h3>
-      <ol>
-        <li>Статьи из вашего проекта отображаются в центре графа</li>
-        <li>
-          Нажмите «Связи» для загрузки информации о ссылках и цитированиях из
-          PubMed/Crossref
-        </li>
-        <li>
-          Выберите глубину: «+Ссылки» показывает статьи, на которые ссылаются
-          ваши публикации; «+Цитирующие» добавляет статьи, которые цитируют ваши
-          работы
-        </li>
-      </ol>
-
-      <h3 className="docs-section-heading">Цвета узлов</h3>
-      <ul>
-        <li>
-          <span className="docs-color-green">■</span> <strong>Зелёный</strong> —
-          отобранные статьи
-        </li>
-        <li>
-          <span className="docs-color-blue">■</span> <strong>Синий</strong> —
-          PubMed (кандидаты)
-        </li>
-        <li>
-          <span className="docs-color-yellow">■</span> <strong>Жёлтый</strong> —
-          DOAJ
-        </li>
-        <li>
-          <span className="docs-color-violet">■</span>{" "}
-          <strong>Фиолетовый</strong> — Wiley
-        </li>
-        <li>
-          <span className="docs-color-red">■</span> <strong>Красный</strong> —
-          исключённые
-        </li>
-        <li>
-          <span className="docs-color-orange">■</span>{" "}
-          <strong>Оранжевый</strong> — ссылки (references)
-        </li>
-        <li>
-          <span className="docs-color-pink">■</span> <strong>Розовый</strong> —
-          статьи, цитирующие ваши работы
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">AI-ассистент</h3>
-      <p>
-        Нажмите кнопку «AI» для открытия панели поиска. Опишите, какие статьи вы
-        ищете, и AI найдёт подходящие публикации среди связанных работ. Примеры
-        запросов:
-      </p>
-      <ul>
-        <li>«Найди мета-анализы по эффективности лечения»</li>
-        <li>«Статьи с высоким уровнем доказательности»</li>
-        <li>«РКИ за последние 5 лет»</li>
-      </ul>
-
-      <h3 className="docs-section-heading">Добавление статей</h3>
-      <p>
-        Кликните на интересующий узел для просмотра деталей. Используйте кнопки
-        «В Кандидаты» или «В Отобранные» для добавления статьи в проект.
-      </p>
-
-      <div className="doc-tip doc-tip--warning">
-        <strong>Кнопка P-value:</strong> Если среди связанных статей есть
-        публикации со значимыми результатами, вы можете добавить их все одним
-        кликом по кнопке «+ Добавить все» рядом со счётчиком P-value.
-      </div>
-    </div>
-  );
-}
-
-function TeamSection() {
-  return (
-    <div className="doc-section">
-      <h2>Команда</h2>
-
-      <p className="doc-intro">
-        Раздел «Команда» позволяет приглашать коллег для совместной работы над
-        проектом.
-      </p>
-
-      <h3>Роли участников</h3>
-      <ul>
-        <li>
-          <strong>Владелец (Owner)</strong> — полный доступ, может удалить
-          проект и изменять роли
-        </li>
-        <li>
-          <strong>Редактор (Editor)</strong> — может редактировать документы,
-          статьи и настройки
-        </li>
-        <li>
-          <strong>Читатель (Viewer)</strong> — только просмотр без возможности
-          редактирования
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">Приглашение участников</h3>
-      <p>
-        Введите email коллеги и выберите роль. Если пользователь ещё не
-        зарегистрирован, он получит приглашение при первом входе в систему.
-      </p>
-
-      <h3 className="docs-section-heading">Real-time синхронизация</h3>
-      <p>
-        Изменения в проекте синхронизируются в реальном времени через WebSocket.
-        Вы увидите зелёный индикатор «Live» когда соединение активно.
-      </p>
-    </div>
-  );
-}
-
-function SettingsSection() {
-  return (
-    <div className="doc-section">
-      <h2>Настройки проекта</h2>
-
-      <p className="doc-intro">
-        В настройках можно изменить название проекта, выбрать стиль
-        библиографии, указать тип исследования и включить AI-анализ.
-      </p>
-
-      <h3>Тип исследования</h3>
-      <p>
-        Выберите тип вашего исследования для получения релевантных рекомендаций:
-      </p>
-      <ul>
-        <li>
-          <strong>Описательное наблюдательное</strong> — клинические случаи,
-          серии случаев
-        </li>
-        <li>
-          <strong>Аналитическое наблюдательное</strong> — когортные,
-          случай-контроль, поперечные
-        </li>
-        <li>
-          <strong>Экспериментальное</strong> — РКИ, квазиэксперименты
-        </li>
-        <li>
-          <strong>Исследование второго порядка</strong> — систематические
-          обзоры, метаанализы
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">Протокол исследования</h3>
-      <p>Выберите стандарт отчётности для проверки структуры работы:</p>
-      <ul>
-        <li>
-          <strong>CARE</strong> — для клинических случаев
-        </li>
-        <li>
-          <strong>STROBE</strong> — для наблюдательных исследований
-        </li>
-        <li>
-          <strong>CONSORT</strong> — для рандомизированных исследований
-        </li>
-        <li>
-          <strong>PRISMA</strong> — для систематических обзоров
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">Стиль библиографии</h3>
-      <ul>
-        <li>
-          <strong>ГОСТ Р 7.0.5-2008</strong> — российский стандарт, шрифт 14pt,
-          интервал 1.5
-        </li>
-        <li>
-          <strong>APA 7th Edition</strong> — международный стандарт психологии
-        </li>
-        <li>
-          <strong>Vancouver</strong> — медицинский стиль с нумерованными
-          ссылками
-        </li>
-      </ul>
-
-      <h3 className="docs-section-heading">AI-анализ</h3>
-      <p>Включите AI-функции для автоматической проверки:</p>
-      <ul>
-        <li>
-          <strong>Анализ ошибок I и II рода</strong> — проверка статистических
-          выводов
-        </li>
-        <li>
-          <strong>Проверка соответствия протоколу</strong> — анализ структуры
-          работы
-        </li>
-      </ul>
-    </div>
-  );
-}
-
-function ApiKeysSection() {
-  return (
-    <div className="doc-section">
-      <h2>API ключи</h2>
-
-      <p className="doc-intro">
-        API ключи позволяют расширить возможности платформы, подключив внешние
-        сервисы.
-      </p>
-
-      <h3>OpenRouter</h3>
-      <p>
-        OpenRouter — это сервис доступа к различным AI-моделям (GPT-4, Claude, и
-        др.). Ключ используется для:
-      </p>
-      <ul>
-        <li>Перевода заголовков и аннотаций статей</li>
-        <li>AI-детекции статистики в аннотациях</li>
-        <li>AI-ассистента в графе цитирований</li>
-        <li>Проверки соответствия протоколу исследования</li>
-      </ul>
-
-      <h4 className="docs-subsection-heading">Как получить ключ OpenRouter:</h4>
-      <ol>
-        <li>
-          Зарегистрируйтесь на{" "}
-          <a
-            href="https://openrouter.ai"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            openrouter.ai
-          </a>
-        </li>
-        <li>Пополните баланс (минимум $5)</li>
-        <li>Перейдите в раздел Keys и создайте новый ключ</li>
-        <li>Скопируйте ключ и вставьте в настройках платформы</li>
-      </ol>
-
-      <div className="doc-tip doc-tip--info">
-        <strong>Безопасность:</strong> Ключи хранятся в зашифрованном виде и
-        используются только для запросов от вашего аккаунта.
-      </div>
-
-      <h3 className="docs-section-heading">Другие API ключи</h3>
-      <p>
-        В будущих версиях будет добавлена поддержка дополнительных сервисов для
-        работы с научными базами данных.
-      </p>
     </div>
   );
 }

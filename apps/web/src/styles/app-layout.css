@@ -944,20 +944,20 @@ html.layout-fixed #root {
   .light-theme .app-mobile-fab-toggle,
   [data-theme="light"] .app-mobile-fab-toggle {
     background: rgba(255, 255, 255, 0.95);
-    border-color: rgba(224, 214, 202, 0.95);
-    color: #2d1f10;
+  border-color: rgba(191, 219, 254, 0.95);
+  color: #0f172a;
   }
 
   .light-theme .app-mobile-fab-toggle:hover,
   [data-theme="light"] .app-mobile-fab-toggle:hover {
-    background: rgba(255, 248, 236, 1);
-    color: #2d1f10;
+  background: rgba(239, 246, 255, 1);
+  color: #0f172a;
   }
 
   .light-theme .app-mobile-topbar,
   [data-theme="light"] .app-mobile-topbar {
     background: rgba(255, 255, 255, 0.9);
-    border-bottom-color: rgba(224, 214, 202, 0.9);
+  border-bottom-color: rgba(191, 219, 254, 0.9);
   }
 
   .app-mobile-topbar-title {
@@ -973,7 +973,7 @@ html.layout-fixed #root {
 
   .light-theme .app-mobile-topbar-title,
   [data-theme="light"] .app-mobile-topbar-title {
-    color: #2d1f10;
+  color: #0f172a;
   }
 
   .app-mobile-nav-toggle {
@@ -1011,14 +1011,14 @@ html.layout-fixed #root {
   .light-theme .app-mobile-nav-toggle,
   [data-theme="light"] .app-mobile-nav-toggle {
     background: rgba(255, 255, 255, 0.95);
-    border-color: rgba(224, 214, 202, 0.95);
-    color: #6b5744;
+  border-color: rgba(191, 219, 254, 0.95);
+  color: #334155;
   }
 
   .light-theme .app-mobile-nav-toggle:hover,
   [data-theme="light"] .app-mobile-nav-toggle:hover {
-    background: rgba(255, 248, 236, 1);
-    color: #2d1f10;
+  background: rgba(239, 246, 255, 1);
+  color: #0f172a;
   }
 
   .app-sidebar-overlay {

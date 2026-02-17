@@ -243,11 +243,15 @@ export default function AppSidebar({
     if (shouldBeDark) {
       document.documentElement.setAttribute("data-theme", "dark");
       document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light-theme");
       document.body.classList.add("dark");
+      document.body.classList.remove("light-theme");
     } else {
       document.documentElement.setAttribute("data-theme", "light");
       document.documentElement.classList.add("light-theme");
+      document.documentElement.classList.remove("dark");
       document.body.classList.add("light-theme");
+      document.body.classList.remove("dark");
     }
   }, []);
 
@@ -285,6 +289,7 @@ export default function AppSidebar({
           className="sidebar-collapse-toggle"
           onClick={() => setCollapsed(!collapsed)}
           title={isCollapsedView ? "Развернуть" : "Свернуть"}
+          type="button"
         >
           {isCollapsedView ? (
             <ChevronRightIcon className="w-4 h-4" />
@@ -316,6 +321,7 @@ export default function AppSidebar({
               onCloseMobile?.();
             }}
             title="Назад к проектам"
+            type="button"
           >
             <ArrowLeftIcon className="w-4 h-4" />
             {showSidebarLabels && <span>К проектам</span>}
@@ -367,6 +373,7 @@ export default function AppSidebar({
                     isActive && "sidebar-nav-item--active",
                   )}
                   title={isCollapsedView ? item.label : undefined}
+                  type="button"
                 >
                   <Icon className="sidebar-nav-icon" />
                   {showSidebarLabels && (
@@ -416,6 +423,7 @@ export default function AppSidebar({
                                   ? `${statusItem.label} (${statusItem.count})`
                                   : undefined
                               }
+                              type="button"
                             >
                               {showSidebarLabels ? (
                                 <>
@@ -541,6 +549,7 @@ export default function AppSidebar({
             onCloseMobile?.();
           }}
           title="Выйти"
+          type="button"
         >
           <ArrowRightOnRectangleIcon className="sidebar-footer-icon" />
           {showSidebarLabels && (

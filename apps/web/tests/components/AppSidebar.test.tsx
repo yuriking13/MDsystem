@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 import AppSidebar from "../../src/components/AppSidebar";
@@ -111,8 +111,16 @@ function renderMainNavSidebar({
 
 describe("AppSidebar mobile collapse behavior", () => {
   beforeEach(() => {
+    vi.unstubAllGlobals();
     mockLogout.mockReset();
+    localStorage.clear();
     document.body.classList.remove("sidebar-collapsed");
+    document.body.classList.remove("light-theme");
+    document.body.classList.remove("dark");
+    document.documentElement.classList.remove("light-theme");
+    document.documentElement.classList.remove("dark");
+    document.documentElement.removeAttribute("data-theme");
+    document.documentElement.classList.remove("no-transitions");
   });
 
   it("hides desktop collapse toggle on mobile viewport", () => {
@@ -304,6 +312,44 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(onCloseMobile).toHaveBeenCalledTimes(1);
   });
 
+  it("uses explicit type button for project sidebar controls", () => {
+    renderSidebar({ mobileViewport: false });
+
+    expect(screen.getByTitle("Свернуть")).toHaveAttribute("type", "button");
+    expect(screen.getByRole("button", { name: "К проектам" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(screen.getByRole("button", { name: "База статей" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(screen.getByRole("button", { name: /^Кандидаты/ })).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(screen.getByTitle("Перейти в настройки")).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(screen.getByRole("button", { name: "Выйти" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+  });
+
+  it("uses explicit type button for main sidebar navigation controls", () => {
+    renderMainNavSidebar({ mobileViewport: false });
+
+    expect(screen.getByRole("button", { name: "Проекты" })).toHaveAttribute(
+      "type",
+      "button",
+    );
+    expect(
+      screen.getByRole("button", { name: "Документация" }),
+    ).toHaveAttribute("type", "button");
+  });
+
   it("calls onCloseMobile when opening profile settings in mobile drawer", async () => {
     const user = userEvent.setup();
     const onCloseMobile = vi.fn();
@@ -426,5 +472,236 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(screen.getByTestId("sidebar-location").textContent).toBe(
       "/projects/project-1?tab=articles",
     );
+  });
+
+  it("updates document theme classes and localStorage via theme switcher radios", async () => {
+    localStorage.setItem("theme", "dark");
+    renderSidebar({ mobileViewport: false });
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio).not.toBeNull();
+    expect(darkRadio).not.toBeNull();
+    expect(darkRadio?.checked).toBe(true);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+
+    fireEvent.click(lightRadio!);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        true,
+      );
+      expect(document.body.classList.contains("light-theme")).toBe(true);
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+      expect(document.body.classList.contains("dark")).toBe(false);
+      expect(lightRadio?.checked).toBe(true);
+    });
+
+    fireEvent.click(darkRadio!);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      expect(document.documentElement.classList.contains("dark")).toBe(true);
+      expect(document.body.classList.contains("dark")).toBe(true);
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        false,
+      );
+      expect(document.body.classList.contains("light-theme")).toBe(false);
+      expect(darkRadio?.checked).toBe(true);
+      expect(
+        document.documentElement.classList.contains("no-transitions"),
+      ).toBe(false);
+    });
+  });
+
+  it("clears no-transitions after rapid consecutive theme toggles", async () => {
+    localStorage.setItem("theme", "dark");
+    renderSidebar({ mobileViewport: false });
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio).not.toBeNull();
+    expect(darkRadio).not.toBeNull();
+
+    fireEvent.click(lightRadio!);
+    fireEvent.click(darkRadio!);
+    fireEvent.click(lightRadio!);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        true,
+      );
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+      expect(document.body.classList.contains("light-theme")).toBe(true);
+      expect(document.body.classList.contains("dark")).toBe(false);
+      expect(lightRadio?.checked).toBe(true);
+      expect(
+        document.documentElement.classList.contains("no-transitions"),
+      ).toBe(false);
+    });
+  });
+
+  it("persists theme selection to localStorage when switching radios", async () => {
+    const mockedStorage = {
+      getItem: vi.fn((key: string) => (key === "theme" ? "dark" : null)),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    } as unknown as Storage;
+    vi.stubGlobal("localStorage", mockedStorage);
+
+    renderSidebar({ mobileViewport: false });
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio).not.toBeNull();
+    expect(darkRadio).not.toBeNull();
+
+    fireEvent.click(lightRadio!);
+
+    await waitFor(() => {
+      expect(mockedStorage.setItem).toHaveBeenCalledWith("theme", "light");
+      expect(lightRadio?.checked).toBe(true);
+    });
+
+    fireEvent.click(darkRadio!);
+
+    await waitFor(() => {
+      expect(mockedStorage.setItem).toHaveBeenCalledWith("theme", "dark");
+      expect(darkRadio?.checked).toBe(true);
+    });
+  });
+
+  it("initializes dark theme classes when no persisted preference exists", () => {
+    renderSidebar({ mobileViewport: false });
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.body.classList.contains("dark")).toBe(true);
+    expect(document.body.classList.contains("light-theme")).toBe(false);
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio?.checked).toBe(false);
+    expect(darkRadio?.checked).toBe(true);
+  });
+
+  it("falls back to dark theme classes for unsupported persisted preference", () => {
+    localStorage.setItem("theme", "solarized");
+    renderSidebar({ mobileViewport: false });
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.documentElement.classList.contains("light-theme")).toBe(
+      false,
+    );
+    expect(document.body.classList.contains("dark")).toBe(true);
+    expect(document.body.classList.contains("light-theme")).toBe(false);
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio?.checked).toBe(false);
+    expect(darkRadio?.checked).toBe(true);
+  });
+
+  it("allows switching to light after unsupported persisted preference fallback", async () => {
+    localStorage.setItem("theme", "solarized");
+    renderSidebar({ mobileViewport: false });
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio).not.toBeNull();
+    fireEvent.click(lightRadio!);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        true,
+      );
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+      expect(document.body.classList.contains("light-theme")).toBe(true);
+      expect(document.body.classList.contains("dark")).toBe(false);
+      expect(
+        document.documentElement.classList.contains("no-transitions"),
+      ).toBe(false);
+      expect(lightRadio?.checked).toBe(true);
+    });
+  });
+
+  it("cleans stale opposite theme classes when syncing persisted theme", () => {
+    document.documentElement.classList.add("light-theme");
+    document.body.classList.add("light-theme");
+    document.documentElement.classList.add("dark");
+    document.body.classList.add("dark");
+
+    localStorage.setItem("theme", "dark");
+    renderSidebar({ mobileViewport: false });
+
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.body.classList.contains("dark")).toBe(true);
+    expect(document.documentElement.classList.contains("light-theme")).toBe(
+      false,
+    );
+    expect(document.body.classList.contains("light-theme")).toBe(false);
+  });
+
+  it("applies persisted light theme and clears stale dark classes on mount", () => {
+    document.documentElement.classList.add("light-theme");
+    document.body.classList.add("light-theme");
+    document.documentElement.classList.add("dark");
+    document.body.classList.add("dark");
+
+    const mockedStorage = {
+      getItem: vi.fn((key: string) => (key === "theme" ? "light" : null)),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+      key: vi.fn(),
+      length: 0,
+    } as unknown as Storage;
+    vi.stubGlobal("localStorage", mockedStorage);
+    renderSidebar({ mobileViewport: false });
+
+    return waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        true,
+      );
+      expect(document.body.classList.contains("light-theme")).toBe(true);
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+      expect(document.body.classList.contains("dark")).toBe(false);
+      expect(mockedStorage.getItem).toHaveBeenCalledWith("theme");
+    });
   });
 });

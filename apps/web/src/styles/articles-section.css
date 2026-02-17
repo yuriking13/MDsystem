@@ -390,7 +390,7 @@
   background-color: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(200, 125, 42, 0.12);
+  border-top: 1px solid rgba(37, 99, 235, 0.15);
 }
 
 .article-status-actions,
@@ -1174,8 +1174,8 @@
 
 .light-theme .bulk-actions,
 [data-theme="light"] .bulk-actions {
-  background-color: rgba(200, 125, 42, 0.05);
-  border-bottom: 1px solid rgba(200, 125, 42, 0.15);
+  background-color: rgba(37, 99, 235, 0.06);
+  border-bottom: 1px solid rgba(37, 99, 235, 0.16);
 }
 
 @media (max-width: 900px) {
