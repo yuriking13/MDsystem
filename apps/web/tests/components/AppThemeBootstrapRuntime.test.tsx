@@ -854,6 +854,41 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
+  it.each([
+    ["light", null, "/admin/settings"],
+    ["light", "auth-token", "/admin/settings"],
+    ["dark", null, "/admin/settings"],
+    ["dark", "auth-token", "/admin/settings"],
+    ["light", null, "/admin/users/user-42"],
+    ["light", "auth-token", "/admin/users/user-42"],
+    ["dark", null, "/admin/users/user-42"],
+    ["dark", "auth-token", "/admin/users/user-42"],
+  ] as const)(
+    "keeps %s theme when admin redirect triggers on %s (authToken=%s)",
+    async (persistedTheme, authToken, route) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = authToken;
+      adminState.token = null;
+      adminState.loading = false;
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Admin Login Page")).toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
   it("shows admin loading state while guard is resolving", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
