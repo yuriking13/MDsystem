@@ -112,6 +112,24 @@ describe("manual smoke checklist contract", () => {
     expect(sidebarSource).toContain('localStorage.setItem("theme", "dark")');
   });
 
+  it("keeps sidebar action buttons explicitly non-submit", () => {
+    expect(sidebarSource).toMatch(
+      /className="sidebar-collapse-toggle"[\s\S]*?type="button"/,
+    );
+    expect(sidebarSource).toMatch(
+      /className="sidebar-back-btn"[\s\S]*?type="button"/,
+    );
+    expect(sidebarSource).toMatch(
+      /className=\{cn\([\s\S]*?"sidebar-nav-item"[\s\S]*?type="button"/,
+    );
+    expect(sidebarSource).toMatch(
+      /className=\{cn\([\s\S]*?"sidebar-submenu-item"[\s\S]*?type="button"/,
+    );
+    expect(sidebarSource).toMatch(
+      /className="sidebar-footer-btn sidebar-logout-btn"[\s\S]*?type="button"/,
+    );
+  });
+
   it("keeps documentation page menu + submenu interaction shell", () => {
     expect(docsSource).toContain("const DOC_SECTIONS");
     expect(docsSource).toContain('className="docs-subnav"');
