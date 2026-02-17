@@ -1243,6 +1243,38 @@ describe("App theme bootstrap runtime", () => {
   );
 
   it.each([
+    ["light", null, "Login Page"],
+    ["light", "auth-token", "Projects Page"],
+    ["dark", null, "Login Page"],
+    ["dark", "auth-token", "Projects Page"],
+  ] as const)(
+    "keeps %s theme and bypasses admin loading guard on unknown admin path (authToken=%s)",
+    async (persistedTheme, authToken, expectedPageText) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = authToken;
+      adminState.token = null;
+      adminState.loading = true;
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin/unknown-path"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText(expectedPageText)).toBeInTheDocument();
+        expect(screen.queryByText("Admin Loading")).not.toBeInTheDocument();
+        expect(screen.queryByText("Admin Layout")).not.toBeInTheDocument();
+      });
+    },
+  );
+
+  it.each([
     [null, null, "Login Page"],
     [null, "admin-token", "Login Page"],
     ["auth-token", null, "Projects Page"],
