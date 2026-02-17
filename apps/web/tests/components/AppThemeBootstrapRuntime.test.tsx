@@ -1147,6 +1147,40 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each([
+    ["light", "/projects"],
+    ["light", "/projects/p1"],
+    ["light", "/projects/p1/documents/d1"],
+    ["light", "/settings"],
+    ["light", "/docs"],
+    ["dark", "/projects"],
+    ["dark", "/projects/p1"],
+    ["dark", "/projects/p1/documents/d1"],
+    ["dark", "/settings"],
+    ["dark", "/docs"],
+  ] as const)(
+    "keeps %s theme while unauthenticated protected route %s redirects to login",
+    async (persistedTheme, route) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      authState.token = null;
+
+      render(
+        <MemoryRouter
+          initialEntries={[route]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Login Page")).toBeInTheDocument();
+      });
+    },
+  );
+
   it("renders admin dashboard index for /admin route", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
