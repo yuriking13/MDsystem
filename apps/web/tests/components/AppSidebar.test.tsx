@@ -541,6 +541,9 @@ describe("AppSidebar mobile collapse behavior", () => {
       expect(document.documentElement.classList.contains("dark")).toBe(false);
       expect(document.body.classList.contains("light-theme")).toBe(true);
       expect(document.body.classList.contains("dark")).toBe(false);
+      expect(
+        document.documentElement.classList.contains("no-transitions"),
+      ).toBe(false);
       expect(lightRadio?.checked).toBe(true);
     });
   });
