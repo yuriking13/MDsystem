@@ -3303,10 +3303,11 @@ input:focus::placeholder {
 
 /* Page settings modal */
 .page-settings-modal {
-  max-width: 700px;
-  max-height: 90vh;
-  max-height: 90dvh;
+  width: min(92vw, 910px);
+  max-width: 910px;
+  max-height: min(90vh, 90dvh);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .page-settings-section {
@@ -3411,6 +3412,12 @@ input:focus::placeholder {
   grid-column: 1 / -1;
 }
 
+@media (max-width: 1024px) {
+  .page-settings-modal {
+    width: min(94vw, 860px);
+  }
+}
+
 @media (max-width: 768px) {
   .edit-stat-explanation-grid,
   .create-stat-explanation-grid,
@@ -3425,6 +3432,26 @@ input:focus::placeholder {
 
   .page-settings-panel {
     padding: 10px;
+  }
+
+  .page-settings-modal {
+    width: min(96vw, 640px);
+  }
+
+  .page-settings-style-btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: calc(50% - 4px);
+  }
+}
+
+@media (max-width: 520px) {
+  .page-settings-modal {
+    width: min(98vw, 460px);
+  }
+
+  .page-settings-style-btn {
+    flex-basis: 100%;
+    min-width: 100%;
   }
 }
 

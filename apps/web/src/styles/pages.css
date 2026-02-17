@@ -244,9 +244,14 @@
    ============================================================================= */
 
 .modal-backdrop {
-  @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+  @apply fixed inset-0 flex items-center justify-center p-4;
   @apply bg-black/60 backdrop-blur-sm;
+  z-index: 1200;
   animation: fadeIn 100ms ease-out;
+}
+
+.page-settings-backdrop {
+  z-index: 1300;
 }
 
 .modal-content {

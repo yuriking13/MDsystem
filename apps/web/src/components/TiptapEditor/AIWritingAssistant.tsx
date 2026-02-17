@@ -1132,23 +1132,36 @@ export default function AIWritingAssistant({
 
   // Main render
   return (
-    <div className="ai-assistant-overlay" ref={panelRef}>
-      {mode === "menu" && renderMenu()}
-      {mode === "improve" && renderImproveMode()}
-      {mode === "improve_loading" &&
-        renderLoading("Улучшаю текст... Это может занять 10-30 секунд.")}
-      {mode === "improve_results" && renderImproveResults()}
-      {mode === "improve_doi_check" && renderDOICheck()}
-      {mode === "table" && renderTableMode()}
-      {mode === "table_loading" &&
-        renderLoading("Генерирую таблицу... Это может занять 10-20 секунд.")}
-      {mode === "table_results" && renderTableResults()}
-      {mode === "illustration" && renderIllustrationMode()}
-      {mode === "illustration_loading" &&
-        renderLoading(
-          "Генерирую иллюстрацию... Это может занять 15-30 секунд.",
-        )}
-      {mode === "illustration_results" && renderIllustrationResults()}
-    </div>
+    <>
+      <button
+        type="button"
+        className="ai-assistant-backdrop"
+        onClick={onClose}
+        aria-label="Закрыть AI ассистент"
+      />
+      <div
+        className="ai-assistant-overlay"
+        ref={panelRef}
+        role="dialog"
+        aria-modal
+      >
+        {mode === "menu" && renderMenu()}
+        {mode === "improve" && renderImproveMode()}
+        {mode === "improve_loading" &&
+          renderLoading("Улучшаю текст... Это может занять 10-30 секунд.")}
+        {mode === "improve_results" && renderImproveResults()}
+        {mode === "improve_doi_check" && renderDOICheck()}
+        {mode === "table" && renderTableMode()}
+        {mode === "table_loading" &&
+          renderLoading("Генерирую таблицу... Это может занять 10-20 секунд.")}
+        {mode === "table_results" && renderTableResults()}
+        {mode === "illustration" && renderIllustrationMode()}
+        {mode === "illustration_loading" &&
+          renderLoading(
+            "Генерирую иллюстрацию... Это может занять 15-30 секунд.",
+          )}
+        {mode === "illustration_results" && renderIllustrationResults()}
+      </div>
+    </>
   );
 }

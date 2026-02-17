@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { getErrorMessage } from "../lib/errorUtils";
 import { useParams, useNavigate } from "react-router-dom";
+import { useProjectContext } from "../components/AppLayout";
 import { editorEvents } from "../lib/editorEvents";
 import TiptapEditor, {
   TiptapEditorHandle,
@@ -266,6 +267,7 @@ export default function DocumentPage() {
     docId: string;
   }>();
   const nav = useNavigate();
+  const { setProjectInfo } = useProjectContext();
 
   const [project, setProject] = useState<Project | null>(null);
   const [doc, setDoc] = useState<Document | null>(null);
@@ -334,6 +336,11 @@ export default function DocumentPage() {
         ]);
         setDoc(docRes.document);
         setProject(projRes.project);
+        setProjectInfo({
+          name: projRes.project.name,
+          role: projRes.project.role,
+          updatedAt: projRes.project.updated_at,
+        });
         setTitle(docRes.document.title);
         setContent(docRes.document.content || "");
         setCitationStyle(projRes.project.citation_style || "gost-r-7-0-5-2008");
@@ -351,7 +358,7 @@ export default function DocumentPage() {
     }
 
     load();
-  }, [projectId, docId]);
+  }, [projectId, docId, setProjectInfo]);
 
   // Извлечение ID цитат из HTML контента (как Set для быстрой проверки наличия)
   const parseCitationsFromContent = useCallback(

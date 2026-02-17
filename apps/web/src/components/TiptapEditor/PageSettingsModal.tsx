@@ -177,7 +177,7 @@ export default function PageSettingsModal({
   const styleRule = STYLE_RULES[citationStyle] || STYLE_RULES.gost;
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop page-settings-backdrop" onClick={onClose}>
       <div
         className="modal-content page-settings-modal"
         onClick={(e) => e.stopPropagation()}
