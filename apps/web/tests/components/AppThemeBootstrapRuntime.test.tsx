@@ -1539,6 +1539,51 @@ describe("App theme bootstrap runtime", () => {
     });
   });
 
+  it.each(["light", "dark"] as const)(
+    "keeps %s theme on authorized admin index route",
+    async (persistedTheme) => {
+      const storage = createThemeStorage(persistedTheme);
+      vi.stubGlobal("localStorage", storage);
+      adminState.token = "admin-token";
+
+      render(
+        <MemoryRouter
+          initialEntries={["/admin"]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expectThemeClasses(persistedTheme);
+        expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+        expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
+      });
+    },
+  );
+
+  it("falls back to dark theme for unsupported value on authorized admin index route", async () => {
+    const storage = createThemeStorage("solarized");
+    vi.stubGlobal("localStorage", storage);
+    adminState.token = "admin-token";
+
+    render(
+      <MemoryRouter
+        initialEntries={["/admin"]}
+        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+      >
+        <App />
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expectThemeClasses("dark");
+      expect(screen.getByText("Admin Layout")).toBeInTheDocument();
+      expect(screen.getByText("Admin Dashboard")).toBeInTheDocument();
+    });
+  });
+
   it("renders nested admin route for /admin/users", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
