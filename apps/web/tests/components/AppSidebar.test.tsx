@@ -520,6 +520,39 @@ describe("AppSidebar mobile collapse behavior", () => {
     });
   });
 
+  it("clears no-transitions after rapid consecutive theme toggles", async () => {
+    localStorage.setItem("theme", "dark");
+    renderSidebar({ mobileViewport: false });
+
+    const lightRadio = document.querySelector(
+      'input[name="theme-toggle"][value="light"]',
+    ) as HTMLInputElement | null;
+    const darkRadio = document.querySelector(
+      'input[name="theme-toggle"][value="dark"]',
+    ) as HTMLInputElement | null;
+
+    expect(lightRadio).not.toBeNull();
+    expect(darkRadio).not.toBeNull();
+
+    fireEvent.click(lightRadio!);
+    fireEvent.click(darkRadio!);
+    fireEvent.click(lightRadio!);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(document.documentElement.classList.contains("light-theme")).toBe(
+        true,
+      );
+      expect(document.documentElement.classList.contains("dark")).toBe(false);
+      expect(document.body.classList.contains("light-theme")).toBe(true);
+      expect(document.body.classList.contains("dark")).toBe(false);
+      expect(lightRadio?.checked).toBe(true);
+      expect(
+        document.documentElement.classList.contains("no-transitions"),
+      ).toBe(false);
+    });
+  });
+
   it("persists theme selection to localStorage when switching radios", async () => {
     const mockedStorage = {
       getItem: vi.fn((key: string) => (key === "theme" ? "dark" : null)),
