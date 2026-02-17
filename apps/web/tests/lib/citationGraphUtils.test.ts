@@ -105,6 +105,20 @@ describe("CitationGraph utils", () => {
     expect(background.linkColor).toBe("rgba(37, 99, 235, 0.22)");
   });
 
+  it("uses theme-aware background fallbacks when CSS variables are absent", () => {
+    const darkBackground = getGraphBackgroundColors();
+    expect(darkBackground.normal).toBe("#0b0f19");
+    expect(darkBackground.fullscreen).toBe("#050810");
+    expect(darkBackground.linkColor).toBe("rgba(100, 130, 180, 0.25)");
+
+    document.body.classList.add("light-theme");
+
+    const lightBackground = getGraphBackgroundColors();
+    expect(lightBackground.normal).toBe("#f8fbff");
+    expect(lightBackground.fullscreen).toBe("#f1f6ff");
+    expect(lightBackground.linkColor).toBe("rgba(37, 99, 235, 0.22)");
+  });
+
   it("maps graph level labels and level colors", () => {
     document.documentElement.style.setProperty(
       "--graph-node-citing",

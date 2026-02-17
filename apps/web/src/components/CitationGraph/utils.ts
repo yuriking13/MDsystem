@@ -129,11 +129,16 @@ export function getGraphNodeColors() {
  * Получить цвета фона графа из CSS-переменных
  */
 export function getGraphBackgroundColors() {
+  const lightTheme = isLightTheme();
   return {
-    normal: getCSSVariable("--graph-bg") || "#0b0f19",
-    fullscreen: getCSSVariable("--graph-bg-fullscreen") || "#050810",
+    normal:
+      getCSSVariable("--graph-bg") || (lightTheme ? "#f8fbff" : "#0b0f19"),
+    fullscreen:
+      getCSSVariable("--graph-bg-fullscreen") ||
+      (lightTheme ? "#f1f6ff" : "#050810"),
     linkColor:
-      getCSSVariable("--graph-link-color") || "rgba(100, 130, 180, 0.25)",
+      getCSSVariable("--graph-link-color") ||
+      (lightTheme ? "rgba(37, 99, 235, 0.22)" : "rgba(100, 130, 180, 0.25)"),
   };
 }
 
