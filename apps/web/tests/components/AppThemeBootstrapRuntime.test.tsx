@@ -2973,16 +2973,31 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
-  it.each(["light", "dark"] as const)(
-    "keeps %s theme on authenticated project tab route with hash fragment",
-    async (persistedTheme) => {
+  it.each([
+    ["light", "/projects/p1?tab=articles#runtime-fragment"],
+    ["light", "/projects/p1?tab=documents#runtime-fragment"],
+    ["light", "/projects/p1?tab=files#runtime-fragment"],
+    ["light", "/projects/p1?tab=statistics#runtime-fragment"],
+    ["light", "/projects/p1?tab=graph#runtime-fragment"],
+    ["light", "/projects/p1?tab=team#runtime-fragment"],
+    ["light", "/projects/p1?tab=settings#runtime-fragment"],
+    ["dark", "/projects/p1?tab=articles#runtime-fragment"],
+    ["dark", "/projects/p1?tab=documents#runtime-fragment"],
+    ["dark", "/projects/p1?tab=files#runtime-fragment"],
+    ["dark", "/projects/p1?tab=statistics#runtime-fragment"],
+    ["dark", "/projects/p1?tab=graph#runtime-fragment"],
+    ["dark", "/projects/p1?tab=team#runtime-fragment"],
+    ["dark", "/projects/p1?tab=settings#runtime-fragment"],
+  ] as const)(
+    "keeps %s theme on authenticated project tab route with hash fragment %s",
+    async (persistedTheme, routeWithHash) => {
       const storage = createThemeStorage(persistedTheme);
       vi.stubGlobal("localStorage", storage);
       authState.token = "auth-token";
 
       render(
         <MemoryRouter
-          initialEntries={["/projects/p1?tab=graph#runtime-fragment"]}
+          initialEntries={[routeWithHash]}
           future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
         >
           <App />
@@ -2997,26 +3012,37 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
-  it("falls back to dark theme on authenticated project tab route with hash fragment for unsupported preference", async () => {
-    const storage = createThemeStorage("solarized");
-    vi.stubGlobal("localStorage", storage);
-    authState.token = "auth-token";
+  it.each([
+    "/projects/p1?tab=articles#runtime-fragment",
+    "/projects/p1?tab=documents#runtime-fragment",
+    "/projects/p1?tab=files#runtime-fragment",
+    "/projects/p1?tab=statistics#runtime-fragment",
+    "/projects/p1?tab=graph#runtime-fragment",
+    "/projects/p1?tab=team#runtime-fragment",
+    "/projects/p1?tab=settings#runtime-fragment",
+  ] as const)(
+    "falls back to dark theme on authenticated project tab route with hash fragment %s for unsupported preference",
+    async (routeWithHash) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = "auth-token";
 
-    render(
-      <MemoryRouter
-        initialEntries={["/projects/p1?tab=graph#runtime-fragment"]}
-        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-      >
-        <App />
-      </MemoryRouter>,
-    );
+      render(
+        <MemoryRouter
+          initialEntries={[routeWithHash]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
 
-    await waitFor(() => {
-      expectThemeClasses("dark");
-      expect(screen.getByText("App Layout")).toBeInTheDocument();
-      expect(screen.getByText("Project Detail Page")).toBeInTheDocument();
-    });
-  });
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText("App Layout")).toBeInTheDocument();
+        expect(screen.getByText("Project Detail Page")).toBeInTheDocument();
+      });
+    },
+  );
 
   it.each([
     ["light", "/projects/p1", "Project Detail Page"],
@@ -3270,16 +3296,31 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
-  it.each(["light", "dark"] as const)(
-    "keeps %s theme while unauthenticated project tab route with hash redirects to login",
-    async (persistedTheme) => {
+  it.each([
+    ["light", "/projects/p1?tab=articles#runtime-fragment"],
+    ["light", "/projects/p1?tab=documents#runtime-fragment"],
+    ["light", "/projects/p1?tab=files#runtime-fragment"],
+    ["light", "/projects/p1?tab=statistics#runtime-fragment"],
+    ["light", "/projects/p1?tab=graph#runtime-fragment"],
+    ["light", "/projects/p1?tab=team#runtime-fragment"],
+    ["light", "/projects/p1?tab=settings#runtime-fragment"],
+    ["dark", "/projects/p1?tab=articles#runtime-fragment"],
+    ["dark", "/projects/p1?tab=documents#runtime-fragment"],
+    ["dark", "/projects/p1?tab=files#runtime-fragment"],
+    ["dark", "/projects/p1?tab=statistics#runtime-fragment"],
+    ["dark", "/projects/p1?tab=graph#runtime-fragment"],
+    ["dark", "/projects/p1?tab=team#runtime-fragment"],
+    ["dark", "/projects/p1?tab=settings#runtime-fragment"],
+  ] as const)(
+    "keeps %s theme while unauthenticated project tab route with hash %s redirects to login",
+    async (persistedTheme, routeWithHash) => {
       const storage = createThemeStorage(persistedTheme);
       vi.stubGlobal("localStorage", storage);
       authState.token = null;
 
       render(
         <MemoryRouter
-          initialEntries={["/projects/p1?tab=graph#runtime-fragment"]}
+          initialEntries={[routeWithHash]}
           future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
         >
           <App />
@@ -3293,25 +3334,36 @@ describe("App theme bootstrap runtime", () => {
     },
   );
 
-  it("falls back to dark theme while unauthenticated project tab route with hash redirects to login for unsupported preference", async () => {
-    const storage = createThemeStorage("solarized");
-    vi.stubGlobal("localStorage", storage);
-    authState.token = null;
+  it.each([
+    "/projects/p1?tab=articles#runtime-fragment",
+    "/projects/p1?tab=documents#runtime-fragment",
+    "/projects/p1?tab=files#runtime-fragment",
+    "/projects/p1?tab=statistics#runtime-fragment",
+    "/projects/p1?tab=graph#runtime-fragment",
+    "/projects/p1?tab=team#runtime-fragment",
+    "/projects/p1?tab=settings#runtime-fragment",
+  ] as const)(
+    "falls back to dark theme while unauthenticated project tab route with hash %s redirects to login for unsupported preference",
+    async (routeWithHash) => {
+      const storage = createThemeStorage("solarized");
+      vi.stubGlobal("localStorage", storage);
+      authState.token = null;
 
-    render(
-      <MemoryRouter
-        initialEntries={["/projects/p1?tab=graph#runtime-fragment"]}
-        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
-      >
-        <App />
-      </MemoryRouter>,
-    );
+      render(
+        <MemoryRouter
+          initialEntries={[routeWithHash]}
+          future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+        >
+          <App />
+        </MemoryRouter>,
+      );
 
-    await waitFor(() => {
-      expectThemeClasses("dark");
-      expect(screen.getByText("Login Page")).toBeInTheDocument();
-    });
-  });
+      await waitFor(() => {
+        expectThemeClasses("dark");
+        expect(screen.getByText("Login Page")).toBeInTheDocument();
+      });
+    },
+  );
 
   it.each([
     "/projects/p1?tab=articles",
