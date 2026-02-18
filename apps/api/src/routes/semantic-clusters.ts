@@ -16,6 +16,8 @@ import {
   getUserApiKey,
   checkProjectAccessPool,
 } from "../utils/project-access.js";
+import { cacheGet, cacheSet, TTL } from "../lib/redis.js";
+import { buildGapAnalysisCacheKey } from "../lib/semanticAutoPreparation.js";
 
 // Цвета для кластеров
 const CLUSTER_COLORS = [
@@ -707,6 +709,27 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
       }
 
       try {
+        const cacheKey = buildGapAnalysisCacheKey(
+          projectId,
+          threshold,
+          limit,
+          yearFrom,
+          yearTo,
+        );
+        const cached = await cacheGet<{
+          gaps: Array<{
+            article1: { id: string; title: string | null; year: number | null };
+            article2: { id: string; title: string | null; year: number | null };
+            similarity: number;
+            reason: string;
+          }>;
+          threshold: number;
+          totalGaps: number;
+        }>(cacheKey);
+        if (cached) {
+          return cached;
+        }
+
         // Строим фильтр по годам
         const yearFilter =
           yearFrom || yearTo
@@ -782,7 +805,7 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
         );
 
         const gapRows = gaps.rows as GapAnalysisRow[];
-        return {
+        const responsePayload = {
           gaps: gapRows.map((row) => ({
             article1: {
               id: row.article1_id,
@@ -804,6 +827,8 @@ export const semanticClustersRoutes: FastifyPluginCallback = (
           threshold,
           totalGaps: gapRows.length,
         };
+        await cacheSet(cacheKey, responsePayload, TTL.LONG);
+        return responsePayload;
       } catch (error) {
         fastify.log.error({ err: error }, "Gap analysis error");
         return reply.code(500).send({

@@ -7,7 +7,8 @@ import {
 import { decryptApiKey } from "../../utils/apiKeyCrypto.js";
 import { getCrossrefByDOI, extractEnrichedData } from "../../lib/crossref.js";
 import { createLogger } from "../../utils/logger.js";
-import type { GraphFetchJobPayload } from "../types.js";
+import { startBoss } from "../boss.js";
+import type { EmbeddingsJobPayload, GraphFetchJobPayload } from "../types.js";
 
 const log = createLogger("graph-fetch");
 
@@ -97,8 +98,66 @@ interface DoiArticleRow {
   source?: string | null;
 }
 
+async function enqueueAutoEmbeddingsJob(
+  payload: GraphFetchJobPayloadWithJobId,
+): Promise<void> {
+  const { projectId, userId, jobId: graphJobId } = payload;
+
+  const activeEmbeddingJob = await pool.query(
+    `SELECT id
+     FROM embedding_jobs
+     WHERE project_id = $1 AND status IN ('pending', 'running')
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [projectId],
+  );
+
+  if (activeEmbeddingJob.rows.length > 0) {
+    log.info("Auto-pipeline: active embeddings job already exists, skipping", {
+      projectId,
+      graphJobId,
+      embeddingJobId: activeEmbeddingJob.rows[0].id,
+    });
+    return;
+  }
+
+  const embeddingJobRes = await pool.query(
+    `INSERT INTO embedding_jobs (project_id, user_id, total, include_references, include_cited_by, status)
+     VALUES ($1, $2, 0, true, true, 'pending')
+     RETURNING id`,
+    [projectId, userId],
+  );
+  const embeddingJobId = String(embeddingJobRes.rows[0].id);
+
+  const boss = await startBoss();
+  const embeddingPayload: EmbeddingsJobPayload = {
+    projectId,
+    userId,
+    jobId: embeddingJobId,
+    articleIds: null,
+    includeReferences: true,
+    includeCitedBy: true,
+    importMissingArticles: true,
+    autoPipeline: true,
+  };
+  await boss.send("embeddings:generate", embeddingPayload);
+
+  log.info("Auto-pipeline: enqueued embeddings job", {
+    projectId,
+    graphJobId,
+    embeddingJobId,
+  });
+}
+
 export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
-  const { projectId, jobId, userId, selectedOnly, articleIds } = payload;
+  const {
+    projectId,
+    jobId,
+    userId,
+    selectedOnly,
+    articleIds,
+    autoPipeline,
+  } = payload;
   const startTime = Date.now();
 
   log.info("Starting graph fetch job", {
@@ -106,6 +165,7 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
     projectId,
     userId,
     selectedOnly,
+    autoPipeline: autoPipeline || false,
     articleCount: articleIds?.length || 0,
   });
 
@@ -205,6 +265,20 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
          WHERE id = $1`,
         [jobId],
       );
+
+      if (autoPipeline) {
+        try {
+          await enqueueAutoEmbeddingsJob(payload);
+        } catch (enqueueErr) {
+          log.error(
+            "Auto-pipeline enqueue failed after early completion",
+            enqueueErr instanceof Error
+              ? enqueueErr
+              : new Error(String(enqueueErr)),
+            { jobId, projectId },
+          );
+        }
+      }
       return;
     }
 
@@ -666,6 +740,20 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
       fetchedPmids,
       durationMs: elapsedMs,
     });
+
+    if (autoPipeline) {
+      try {
+        await enqueueAutoEmbeddingsJob(payload);
+      } catch (enqueueErr) {
+        log.error(
+          "Auto-pipeline enqueue failed after graph completion",
+          enqueueErr instanceof Error
+            ? enqueueErr
+            : new Error(String(enqueueErr)),
+          { jobId, projectId },
+        );
+      }
+    }
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : String(err);
     log.error(

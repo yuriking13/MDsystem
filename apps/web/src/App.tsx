@@ -11,6 +11,9 @@ import AppLayout from "./components/AppLayout";
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const PublicOfferPage = lazy(() => import("./pages/PublicOfferPage"));
+const ProjectFacesPage = lazy(() => import("./pages/ProjectFacesPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage"));
@@ -79,6 +82,9 @@ export default function App() {
             />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/offer" element={<PublicOfferPage />} />
+            <Route path="/project-faces" element={<ProjectFacesPage />} />
 
             {/* Authenticated Routes (with sidebar) */}
             <Route

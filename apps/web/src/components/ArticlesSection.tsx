@@ -372,6 +372,8 @@ export default function ArticlesSection({
       enriching: `Обогащение метаданными Crossref...`,
       translating: `Перевод статей: ${data.translated || 0}/${data.total || 0}...`,
       detecting_stats: `Анализ статистики: ${data.analyzed || 0}/${data.total || 0} (найдена в ${data.found || 0})...`,
+      auto_graph_pipeline:
+        "Запущена автоподготовка графа: связи → семантическое ядро → кластеры → gaps",
       complete: data.message || "Готово!",
     };
 
@@ -647,6 +649,7 @@ export default function ArticlesSection({
         filters,
         maxResults,
         searchSources,
+        true,
       );
       setOk(res.message);
       setShowSearch(false);
@@ -723,13 +726,16 @@ export default function ArticlesSection({
     let totalFound = 0;
 
     try {
-      for (const query of allQueries) {
+      for (let i = 0; i < allQueries.length; i++) {
+        const query = allQueries[i];
+        const isLastQuery = i === allQueries.length - 1;
         const res = await apiSearchArticles(
           projectId,
           query,
           filters,
           maxResults,
           searchSources,
+          isLastQuery,
         );
         results.push(`${query}: ${res.message}`);
         totalFound += res.added;
@@ -794,6 +800,7 @@ export default function ArticlesSection({
         filters,
         1,
         searchSources,
+        false,
       );
       const totalCount = res.totalFound || 0;
       setAllArticlesCount(totalCount);
@@ -852,6 +859,7 @@ export default function ArticlesSection({
         filters,
         10000,
         searchSources,
+        true,
       );
       setOk(res.message);
       setShowSearch(false);

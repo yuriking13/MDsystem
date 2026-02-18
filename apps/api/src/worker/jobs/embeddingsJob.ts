@@ -196,6 +196,7 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
     includeCitedBy = true,
     batchSize,
     importMissingArticles = false,
+    autoPipeline = false,
   } = payload;
   const startTime = Date.now();
   const effectiveBatchSize = Math.min(
@@ -208,6 +209,7 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
     projectId,
     userId,
     importMissingArticles,
+    autoPipeline,
   });
 
   try {
@@ -379,6 +381,21 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
         payload: { jobId, processed: 0, total: 0, errors: 0 },
         timestamp: Date.now(),
       });
+
+      if (autoPipeline) {
+        try {
+          const { runAutoSemanticPreparation } = await import(
+            "../../lib/semanticAutoPreparation.js"
+          );
+          await runAutoSemanticPreparation({ projectId });
+        } catch (err) {
+          log.warn("Auto semantic preparation failed after empty embeddings run", {
+            jobId,
+            projectId,
+            error: err,
+          });
+        }
+      }
       return;
     }
 
@@ -520,6 +537,21 @@ export async function runEmbeddingsJob(payload: EmbeddingsJobPayload) {
       total: totalArticles,
       errors,
     });
+
+    if (autoPipeline) {
+      try {
+        const { runAutoSemanticPreparation } = await import(
+          "../../lib/semanticAutoPreparation.js"
+        );
+        await runAutoSemanticPreparation({ projectId });
+      } catch (err) {
+        log.warn("Auto semantic preparation failed", {
+          jobId,
+          projectId,
+          error: err,
+        });
+      }
+    }
   } catch (err) {
     log.error("Embeddings job failed", err, { jobId });
 

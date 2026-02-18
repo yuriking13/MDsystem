@@ -637,6 +637,7 @@ export default function ProjectDetailPage() {
   const [protocolCustomName, setProtocolCustomName] = useState("");
   const [aiErrorAnalysisEnabled, setAiErrorAnalysisEnabled] = useState(false);
   const [aiProtocolCheckEnabled, setAiProtocolCheckEnabled] = useState(false);
+  const [autoGraphSyncEnabled, setAutoGraphSyncEnabled] = useState(false);
 
   // Статистика проекта
   const [statistics, setStatistics] = useState<ProjectStatistic[]>([]);
@@ -786,6 +787,7 @@ export default function ProjectDetailPage() {
       setAiProtocolCheckEnabled(
         pRes.project.ai_protocol_check_enabled || false,
       );
+      setAutoGraphSyncEnabled(pRes.project.auto_graph_sync_enabled || false);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {
@@ -1096,6 +1098,7 @@ export default function ProjectDetailPage() {
       // Всегда отправляем флаги
       updateData.aiErrorAnalysisEnabled = aiErrorAnalysisEnabled;
       updateData.aiProtocolCheckEnabled = aiProtocolCheckEnabled;
+      updateData.autoGraphSyncEnabled = autoGraphSyncEnabled;
 
       await apiUpdateProject(id, updateData);
       setOk("Настройки сохранены");
@@ -4243,6 +4246,57 @@ export default function ProjectDetailPage() {
                           Сначала выберите протокол исследования
                         </span>
                       )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Автоподготовка графа */}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <svg
+                  className="icon-md settings-card-header-icon"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 13h8m-8 4h6m5-8H5m14 0l-3-3m3 3l-3 3M5 17l3 3m-3-3l3-3"
+                  />
+                </svg>
+                <h4>Автоподготовка графа</h4>
+              </div>
+              <div className="settings-card-body">
+                <p className="settings-hint">
+                  После завершения поиска статей автоматически запускаются этапы
+                  подготовки графа: загрузка связей (PubMed + Crossref),
+                  построение семантического ядра, кластеризация и анализ gaps.
+                </p>
+                <div className="ai-options-stack">
+                  <div className="ai-option-card">
+                    <div className="ai-option-header">
+                      <label className="ai-option-toggle">
+                        <input
+                          type="checkbox"
+                          checked={autoGraphSyncEnabled}
+                          onChange={(e) =>
+                            setAutoGraphSyncEnabled(e.target.checked)
+                          }
+                        />
+                        <span className="toggle-slider"></span>
+                      </label>
+                      <div className="ai-option-title">
+                        <h5>Автоматически готовить граф после поиска</h5>
+                        <span className="ai-badge">Graph</span>
+                      </div>
+                    </div>
+                    <p className="ai-option-description">
+                      Если выключено, поиск статей и подготовка графа остаются
+                      раздельными процессами как сейчас.
                     </p>
                   </div>
                 </div>
