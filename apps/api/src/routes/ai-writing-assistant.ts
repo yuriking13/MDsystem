@@ -24,6 +24,7 @@ import { checkProjectAccessPool } from "../utils/project-access.js";
 import { getUserApiKey } from "../utils/project-access.js";
 import { createLogger } from "../utils/logger.js";
 import { rateLimits } from "../plugins/rate-limit.js";
+import { ExternalServiceError } from "../utils/typed-errors.js";
 
 const log = createLogger("ai-writing-assistant");
 const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
@@ -151,7 +152,10 @@ async function callLLM(
   log.error("LLM API request failed for all models", undefined, {
     errors: errors.join(" | "),
   });
-  throw new Error(`LLM API error: ${errors[0] || "unknown error"}`);
+  throw new ExternalServiceError(
+    "openrouter",
+    `LLM API error: ${errors[0] || "unknown error"}`,
+  );
 }
 
 // ===== Helper: Extract DOIs from text =====
@@ -263,8 +267,11 @@ async function tryFindFullTextByDoi(
     }
 
     return { found: false };
-  } catch {
-    log.warn("Failed to lookup full text", { doi });
+  } catch (error) {
+    log.warn("Failed to lookup full text", {
+      doi,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return { found: false };
   }
 }
@@ -289,7 +296,11 @@ async function tryFindFullTextByPmid(
     }
 
     return { found: false };
-  } catch {
+  } catch (error) {
+    log.warn("Failed to lookup full text by PMID", {
+      pmid,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return { found: false };
   }
 }
@@ -543,9 +554,10 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
             cleanResponse = cleanResponse.slice(0, -3);
           }
           result = JSON.parse(cleanResponse.trim());
-        } catch {
+        } catch (error) {
           log.warn("Failed to parse LLM response as JSON", {
             response: llmResponse.slice(0, 500),
+            error: error instanceof Error ? error.message : String(error),
           });
           // Fallback: treat as single variant
           result = {
@@ -666,7 +678,11 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
             cleanResponse = cleanResponse.slice(0, -3);
           }
           result = JSON.parse(cleanResponse.trim());
-        } catch {
+        } catch (error) {
+          log.warn("Failed to parse AI table JSON response", {
+            projectId,
+            error: error instanceof Error ? error.message : String(error),
+          });
           return reply.code(500).send({
             error: "Failed to parse AI response. Please try again.",
           });
@@ -754,7 +770,11 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
             cleanResponse = cleanResponse.slice(0, -3);
           }
           result = JSON.parse(cleanResponse.trim());
-        } catch {
+        } catch (error) {
+          log.warn("Failed to parse AI illustration JSON response", {
+            projectId,
+            error: error instanceof Error ? error.message : String(error),
+          });
           return reply.code(500).send({
             error: "Failed to parse AI response. Please try again.",
           });

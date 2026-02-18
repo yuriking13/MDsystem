@@ -1,7 +1,7 @@
 // apps/web/src/components/RequireAuth.tsx
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { getToken } from "../api/client";
+import { getToken } from "../lib/auth";
 
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const token = getToken();

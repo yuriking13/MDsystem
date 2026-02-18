@@ -44,6 +44,10 @@ import {
   calculateOffset,
   createPaginationMeta,
 } from "../../utils/pagination.js";
+import {
+  parseFirstJsonObject,
+  requestOpenRouterCompletion,
+} from "./ai-assistant.service.js";
 
 const log = createLogger("articles");
 
@@ -181,7 +185,12 @@ async function getUserApiKey(
   try {
     const { decryptApiKey } = await import("../../utils/apiKeyCrypto.js");
     return decryptApiKey(encrypted);
-  } catch {
+  } catch (error) {
+    log.error(
+      "Failed to decrypt user API key",
+      error instanceof Error ? error : undefined,
+      { userId, provider },
+    );
     return null;
   }
 }
@@ -466,7 +475,12 @@ async function addArticleToProject(
        WHERE table_name = 'project_articles' AND column_name = 'source_query'`,
     );
     hasSourceQuery = (checkCol.rowCount ?? 0) > 0;
-  } catch {
+  } catch (error) {
+    log.error(
+      "Failed to check project_articles.source_query column",
+      error instanceof Error ? error : undefined,
+      { projectId, articleId },
+    );
     hasSourceQuery = false;
   }
 
@@ -1603,7 +1617,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
            WHERE table_name = 'project_articles' AND column_name = 'source_query'`,
         );
         hasSourceQueryCol = (checkCol.rowCount ?? 0) > 0;
-      } catch {
+      } catch (error) {
+        log.error(
+          "Failed to check project_articles.source_query in list endpoint",
+          error instanceof Error ? error : undefined,
+          { projectId: paramsP.data.id },
+        );
         hasSourceQueryCol = false;
       }
 
@@ -2236,7 +2255,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               "Выполните SQL миграцию add_article_references.sql для добавления колонок reference_pmids и cited_by_pmids",
           });
         }
-      } catch {
+      } catch (error) {
+        log.error(
+          "Failed to check articles.reference_pmids before graph job",
+          error instanceof Error ? error : undefined,
+          { projectId: paramsP.data.id },
+        );
         return reply.code(500).send({ error: "Ошибка проверки схемы БД" });
       }
 
@@ -2792,8 +2816,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let wileyToken: string | undefined;
       try {
         wileyToken = (await getUserApiKey(userId, "wiley")) || undefined;
-      } catch {
-        // Нет токена - не проблема
+      } catch (error) {
+        log.error(
+          "Failed to load Wiley API key for article PDF source",
+          error instanceof Error ? error : undefined,
+          { projectId: paramsP.data.id, articleId: paramsP.data.articleId },
+        );
       }
 
       // Ищем источник PDF
@@ -2859,8 +2887,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let wileyToken: string | undefined;
       try {
         wileyToken = (await getUserApiKey(userId, "wiley")) || undefined;
-      } catch {
-        // Ignore - wileyToken will remain undefined
+      } catch (error) {
+        log.error(
+          "Failed to load Wiley API key for article PDF download",
+          error instanceof Error ? error : undefined,
+          { projectId: paramsP.data.id, articleId: paramsP.data.articleId },
+        );
       }
 
       // Ищем источник PDF
@@ -3620,59 +3652,33 @@ ${articlesForAI || "Нет статей с полными данными для 
 - Если ничего не найдено - верни пустой массив foundArticleIds
 - Лимит: до 50 наиболее релевантных статей`;
 
-        // Вызываем OpenRouter с Claude
-        const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
-
-        const res = await fetch(OPENROUTER_API, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${openrouterKey}`,
-            "HTTP-Referer": "https://mdsystem.app",
-          },
-          body: JSON.stringify({
-            model: "anthropic/claude-sonnet-4",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: message },
-            ],
-            temperature: 0.2,
-            max_tokens: 4000,
-          }),
+        const content = await requestOpenRouterCompletion({
+          apiKey: openrouterKey,
+          systemPrompt,
+          userPrompt: message,
+          model: "anthropic/claude-sonnet-4",
+          temperature: 0.2,
+          maxTokens: 4000,
+          referer: "https://mdsystem.app",
         });
 
-        if (!res.ok) {
-          const err = await res.text();
-          throw new Error(
-            `OpenRouter error ${res.status}: ${err.slice(0, 200)}`,
-          );
-        }
-
-        type OpenRouterResponse = {
-          choices: Array<{ message: { content: string } }>;
-        };
-        const data = (await res.json()) as OpenRouterResponse;
-        const content = data.choices?.[0]?.message?.content || "";
-
-        // Парсим JSON из ответа
-        let parsed: GraphAiAssistantParsed = {
-          response: content,
-          foundArticleIds: [],
-          foundArticlesInfo: [],
-        };
-        try {
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]) as GraphAiAssistantParsed;
-          }
-        } catch {
-          // Если не удалось распарсить - возвращаем как текст
-          parsed = {
+        const parsed = parseFirstJsonObject<GraphAiAssistantParsed>(
+          content,
+          {
             response: content,
             foundArticleIds: [],
             foundArticlesInfo: [],
-          };
-        }
+          },
+          (parseError) => {
+            log.warn("Graph AI assistant returned non-JSON payload", {
+              projectId: paramsP.data.id,
+              parseError:
+                parseError instanceof Error
+                  ? parseError.message
+                  : String(parseError),
+            });
+          },
+        );
 
         // Валидируем найденные ID - они должны быть из graphArticles
         const validIds = new Set((graphArticles || []).map((a) => a.id));
@@ -3961,58 +3967,33 @@ ${articlesForAI}
 • ID должны быть из предоставленного списка
 • Если ничего не найдено - suggestedArticleIds = []`;
 
-        // Вызываем OpenRouter с Claude
-        const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
-
-        const res = await fetch(OPENROUTER_API, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${openrouterKey}`,
-            "HTTP-Referer": "https://mdsystem.app",
-          },
-          body: JSON.stringify({
-            model: "anthropic/claude-sonnet-4",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: message },
-            ],
-            temperature: 0.2,
-            max_tokens: 4000,
-          }),
+        const content = await requestOpenRouterCompletion({
+          apiKey: openrouterKey,
+          systemPrompt,
+          userPrompt: message,
+          model: "anthropic/claude-sonnet-4",
+          temperature: 0.2,
+          maxTokens: 4000,
+          referer: "https://mdsystem.app",
         });
 
-        if (!res.ok) {
-          const err = await res.text();
-          throw new Error(
-            `OpenRouter error ${res.status}: ${err.slice(0, 200)}`,
-          );
-        }
-
-        type OpenRouterResponse = {
-          choices: Array<{ message: { content: string } }>;
-        };
-        const data = (await res.json()) as OpenRouterResponse;
-        const content = data.choices?.[0]?.message?.content || "";
-
-        // Парсим JSON из ответа
-        let parsed: ArticlesAiAssistantParsed = {
-          response: content,
-          suggestedArticleIds: [],
-          suggestedArticlesInfo: [],
-        };
-        try {
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]) as ArticlesAiAssistantParsed;
-          }
-        } catch {
-          parsed = {
+        const parsed = parseFirstJsonObject<ArticlesAiAssistantParsed>(
+          content,
+          {
             response: content,
             suggestedArticleIds: [],
             suggestedArticlesInfo: [],
-          };
-        }
+          },
+          (parseError) => {
+            log.warn("Articles AI assistant returned non-JSON payload", {
+              projectId: paramsP.data.id,
+              parseError:
+                parseError instanceof Error
+                  ? parseError.message
+                  : String(parseError),
+            });
+          },
+        );
 
         // Валидируем найденные ID
         const validIds = new Set(articles.map((a) => a.id));

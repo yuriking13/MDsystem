@@ -18,6 +18,10 @@ import {
 } from "../utils/project-access.js";
 import { cacheGet, cacheSet, TTL } from "../lib/redis.js";
 import { buildGapAnalysisCacheKey } from "../lib/semanticAutoPreparation.js";
+import { createLogger } from "../utils/logger.js";
+import { ExternalServiceError } from "../utils/typed-errors.js";
+
+const log = createLogger("semantic-clusters");
 
 // Цвета для кластеров
 const CLUSTER_COLORS = [
@@ -1367,7 +1371,10 @@ Focus on the main topic/theme that connects these articles.`;
   );
 
   if (!response.ok) {
-    throw new Error(`Failed to generate cluster name: ${response.status}`);
+    throw new ExternalServiceError(
+      "openrouter",
+      `Failed to generate cluster name: ${response.status}`,
+    );
   }
 
   const data = (await response.json()) as {
@@ -1381,8 +1388,10 @@ Focus on the main topic/theme that connects these articles.`;
     if (jsonMatch) {
       return JSON.parse(jsonMatch[0]);
     }
-  } catch {
-    // Fallback
+  } catch (error) {
+    log.warn("Failed to parse generated cluster name JSON", {
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 
   return { en: "Research Cluster", ru: "Исследовательский кластер" };
@@ -1429,7 +1438,10 @@ async function generateEmbedding(
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
+    throw new ExternalServiceError(
+      "openrouter",
+      `OpenRouter API error: ${response.status} - ${error}`,
+    );
   }
 
   const data = (await response.json()) as {
