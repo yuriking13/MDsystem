@@ -4,6 +4,10 @@ import { pool } from "../pg.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { rateLimits } from "../plugins/rate-limit.js";
 
+// Valid argon2 hash used to equalize timing for unknown users in login flow.
+const DUMMY_PASSWORD_HASH =
+  "$argon2id$v=19$m=65536,t=3,p=4$Zdm6OhtHz6IvYS/i2wTnSQ$cChsYAQ7NJ850QOyJ339yXzE36VuvCj1vllIcJkIIfg";
+
 export async function authRoutes(app: FastifyInstance) {
   // Rate limiting: 3 регистрации за час с одного IP
   app.post(
@@ -66,18 +70,22 @@ export async function authRoutes(app: FastifyInstance) {
         [body.email],
       );
 
-      if (!found.rowCount)
+      if (!found.rowCount) {
+        try {
+          await verifyPassword(DUMMY_PASSWORD_HASH, body.password);
+        } catch {
+          // Ignore: keep response identical for non-existent users.
+        }
         return reply.code(401).send({ error: "Invalid credentials" });
+      }
 
       const user = found.rows[0];
 
       if (user.is_blocked) {
-        return reply
-          .code(403)
-          .send({
-            error: "AccountBlocked",
-            message: "User account is blocked",
-          });
+        return reply.code(403).send({
+          error: "AccountBlocked",
+          message: "User account is blocked",
+        });
       }
 
       const ok = await verifyPassword(user.password_hash, body.password);

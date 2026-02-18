@@ -2,6 +2,12 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
+import {
+  OffsetPaginationSchema,
+  calculateOffset,
+  createPaginationMeta,
+  buildOrderByClause,
+} from "../utils/pagination.js";
 
 const CreateProjectSchema = z.object({
   name: z.string().min(1).max(500),
@@ -43,6 +49,13 @@ const ProjectIdSchema = z.object({
   id: z.string().uuid(),
 });
 
+const ListProjectsQuerySchema = OffsetPaginationSchema.extend({
+  sortBy: z
+    .enum(["updated_at", "created_at", "name"])
+    .optional()
+    .default("updated_at"),
+});
+
 async function hasAutoGraphSyncColumn(): Promise<boolean> {
   try {
     const res = await pool.query(
@@ -63,20 +76,46 @@ const plugin: FastifyPluginAsync = async (fastify) => {
   fastify.get(
     "/projects",
     { preHandler: [fastify.authenticate] },
-    async (request, _reply) => {
+    async (request, reply) => {
       const userId = getUserId(request);
+      const queryP = ListProjectsQuerySchema.safeParse(request.query ?? {});
+      if (!queryP.success) {
+        return reply.code(400).send({
+          error: "BadRequest",
+          message: queryP.error.message,
+        });
+      }
 
-      const res = await pool.query(
-        `SELECT p.id, p.name, p.description, p.created_at, p.updated_at,
-                pm.role
-         FROM projects p
-         JOIN project_members pm ON pm.project_id = p.id
-         WHERE pm.user_id = $1
-         ORDER BY p.updated_at DESC`,
-        [userId],
-      );
+      const { page, limit, sortBy, sortOrder } = queryP.data;
+      const offset = calculateOffset(page, limit);
+      const orderBy = buildOrderByClause(`p.${sortBy}`, sortOrder, "p.id");
 
-      return { projects: res.rows };
+      const [res, totalRes] = await Promise.all([
+        pool.query(
+          `SELECT p.id, p.name, p.description, p.created_at, p.updated_at,
+                  pm.role
+           FROM projects p
+           JOIN project_members pm ON pm.project_id = p.id
+           WHERE pm.user_id = $1
+           ORDER BY ${orderBy}
+           LIMIT $2 OFFSET $3`,
+          [userId, limit, offset],
+        ),
+        pool.query(
+          `SELECT COUNT(*)::int AS total
+           FROM projects p
+           JOIN project_members pm ON pm.project_id = p.id
+           WHERE pm.user_id = $1`,
+          [userId],
+        ),
+      ]);
+
+      const total = Number(totalRes.rows[0]?.total ?? 0);
+
+      return {
+        projects: res.rows,
+        pagination: createPaginationMeta(page, limit, total),
+      };
     },
   );
 
@@ -513,12 +552,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       if (access.rows[0].role !== "owner") {
-        return reply
-          .code(403)
-          .send({
-            error: "Forbidden",
-            message: "Only owner can remove members",
-          });
+        return reply.code(403).send({
+          error: "Forbidden",
+          message: "Only owner can remove members",
+        });
       }
 
       // Can't remove owner

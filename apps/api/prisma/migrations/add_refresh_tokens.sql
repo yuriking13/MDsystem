@@ -15,6 +15,10 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 -- Индекс для поиска токенов по user_id (для logout-all)
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_id ON refresh_tokens(user_id);
 
+-- Индекс для лимита активных сессий пользователя (ORDER BY created_at DESC)
+CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user_active_created
+ON refresh_tokens(user_id, revoked, created_at DESC);
+
 -- Индекс для поиска неотозванных токенов по хешу
 CREATE INDEX IF NOT EXISTS idx_refresh_tokens_active ON refresh_tokens(token_hash) WHERE revoked = false;
 

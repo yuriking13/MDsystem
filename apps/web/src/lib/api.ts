@@ -364,8 +364,31 @@ export type ProjectMember = {
   joined_at: string;
 };
 
-export async function apiGetProjects(): Promise<{ projects: Project[] }> {
-  return apiFetch<{ projects: Project[] }>("/api/projects");
+export type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+};
+
+export async function apiGetProjects(params?: {
+  page?: number;
+  limit?: number;
+  sortBy?: "updated_at" | "created_at" | "name";
+  sortOrder?: "asc" | "desc";
+}): Promise<{ projects: Project[]; pagination?: PaginationMeta }> {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.limit) query.set("limit", String(params.limit));
+  if (params?.sortBy) query.set("sortBy", params.sortBy);
+  if (params?.sortOrder) query.set("sortOrder", params.sortOrder);
+
+  const qs = query.toString();
+  return apiFetch<{ projects: Project[]; pagination?: PaginationMeta }>(
+    `/api/projects${qs ? `?${qs}` : ""}`,
+  );
 }
 
 export async function apiGetProject(id: string): Promise<{ project: Project }> {
@@ -493,6 +516,7 @@ export type ArticlesResponse = {
     deleted: number;
   };
   total: number;
+  pagination?: PaginationMeta;
   searchQueries?: string[]; // Уникальные поисковые запросы для фильтрации
 };
 
@@ -639,11 +663,21 @@ export async function apiGetArticles(
   status?: "candidate" | "selected" | "excluded" | "deleted",
   hasStats?: boolean,
   sourceQuery?: string,
+  pagination?: {
+    page?: number;
+    limit?: number;
+    sortBy?: "added_at" | "year" | "created_at";
+    sortOrder?: "asc" | "desc";
+  },
 ): Promise<ArticlesResponse> {
   const params = new URLSearchParams();
   if (status) params.set("status", status);
   if (hasStats) params.set("hasStats", "true");
   if (sourceQuery) params.set("sourceQuery", sourceQuery);
+  if (pagination?.page) params.set("page", String(pagination.page));
+  if (pagination?.limit) params.set("limit", String(pagination.limit));
+  if (pagination?.sortBy) params.set("sortBy", pagination.sortBy);
+  if (pagination?.sortOrder) params.set("sortOrder", pagination.sortOrder);
 
   const qs = params.toString();
   return apiFetch<ArticlesResponse>(

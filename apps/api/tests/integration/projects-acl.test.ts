@@ -54,6 +54,44 @@ async function buildProjectsApp(options: {
 
     if (
       text.startsWith(
+        "SELECT p.id, p.name, p.description, p.created_at, p.updated_at, pm.role FROM projects p JOIN project_members pm ON pm.project_id = p.id WHERE pm.user_id = $1 ORDER BY",
+      )
+    ) {
+      const rows = [
+        {
+          id: options.projectId,
+          name: "Project A",
+          description: null,
+          role: options.roleRef.current,
+          created_at: "2026-01-01T00:00:00.000Z",
+          updated_at: "2026-01-02T00:00:00.000Z",
+        },
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Project B",
+          description: null,
+          role: "viewer",
+          created_at: "2026-01-03T00:00:00.000Z",
+          updated_at: "2026-01-04T00:00:00.000Z",
+        },
+      ];
+
+      const limit = Number(params[1] ?? rows.length);
+      const offset = Number(params[2] ?? 0);
+      const pagedRows = rows.slice(offset, offset + limit);
+      return { rowCount: pagedRows.length, rows: pagedRows };
+    }
+
+    if (
+      text.startsWith(
+        "SELECT COUNT(*)::int AS total FROM projects p JOIN project_members pm ON pm.project_id = p.id WHERE pm.user_id = $1",
+      )
+    ) {
+      return { rowCount: 1, rows: [{ total: 2 }] };
+    }
+
+    if (
+      text.startsWith(
         "SELECT p.id, p.name, p.description, p.created_at, p.updated_at,",
       )
     ) {
@@ -247,6 +285,46 @@ describe("Projects ACL", () => {
       .filter((text) => text.startsWith("UPDATE projects SET"));
     expect(updateQueries).toHaveLength(1);
     expect(updateQueries[0]).not.toContain("auto_graph_sync_enabled =");
+
+    await app.close();
+  });
+
+  it("returns paginated project list", async () => {
+    const projectId = "12121212-1212-4121-8121-121212121212";
+    const userId = "34343434-3434-4343-8343-343434343434";
+    const roleRef: { current: "viewer" | "editor" | "owner" } = {
+      current: "owner",
+    };
+    const app = await buildProjectsApp({ projectId, userId, roleRef });
+
+    const token = app.jwt.sign({
+      sub: userId,
+      email: "owner@example.com",
+      type: "access",
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/projects?page=2&limit=1&sortBy=updated_at&sortOrder=desc",
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      projects: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+        },
+      ],
+      pagination: {
+        page: 2,
+        limit: 1,
+        total: 2,
+        totalPages: 2,
+        hasNext: false,
+        hasPrev: true,
+      },
+    });
 
     await app.close();
   });

@@ -87,6 +87,7 @@ type BlockStatusCacheEntry = {
 
 const BLOCK_STATUS_CACHE_TTL_MS = 10_000;
 const blockedStatusCache = new Map<string, BlockStatusCacheEntry>();
+const MAX_ACTIVE_REFRESH_TOKENS_PER_USER = 5;
 
 export default fp(async (app: FastifyInstance) => {
   await app.register(jwt, {
@@ -95,6 +96,45 @@ export default fp(async (app: FastifyInstance) => {
       expiresIn: env.ACCESS_TOKEN_EXPIRES,
     },
   });
+
+  /**
+   * Удаляем явно неактуальные refresh tokens пользователя
+   * (истёкшие и уже отозванные).
+   */
+  const cleanupUserRefreshTokens = async (userId: string): Promise<void> => {
+    await pool.query(
+      `DELETE FROM refresh_tokens
+       WHERE user_id = $1
+         AND (revoked = true OR expires_at < now())`,
+      [userId],
+    );
+  };
+
+  /**
+   * Ограничиваем число активных refresh tokens на пользователя.
+   * Сохраняем только самые свежие токены, остальные отзываем.
+   */
+  const enforceRefreshTokenLimit = async (
+    userId: string,
+    maxActiveTokens: number,
+  ): Promise<void> => {
+    await pool.query(
+      `WITH ranked AS (
+         SELECT id,
+                ROW_NUMBER() OVER (ORDER BY created_at DESC, id DESC) AS rn
+         FROM refresh_tokens
+         WHERE user_id = $1
+           AND revoked = false
+           AND expires_at > now()
+       )
+       UPDATE refresh_tokens rt
+       SET revoked = true
+       FROM ranked
+       WHERE rt.id = ranked.id
+         AND ranked.rn > $2`,
+      [userId, maxActiveTokens],
+    );
+  };
 
   /**
    * Генерация пары токенов (access + refresh)
@@ -123,6 +163,10 @@ export default fp(async (app: FastifyInstance) => {
        VALUES ($1, $2, $3)`,
       [userId, tokenHash, expiresAt],
     );
+
+    // Opportunistic cleanup + bounded active sessions per user.
+    await cleanupUserRefreshTokens(userId);
+    await enforceRefreshTokenLimit(userId, MAX_ACTIVE_REFRESH_TOKENS_PER_USER);
 
     return { accessToken, refreshToken };
   };
