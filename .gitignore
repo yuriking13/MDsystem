@@ -18,6 +18,12 @@ coverage
 # logs
 *.log
 
+# Playwright
+playwright-report
+test-results
+apps/web/playwright-report
+apps/web/test-results
+
 # OS
 .DS_Store
 Thumbs.db

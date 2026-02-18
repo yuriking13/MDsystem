@@ -544,6 +544,7 @@ export default function AppSidebar({
         {/* Logout */}
         <button
           className="sidebar-footer-btn sidebar-logout-btn"
+          data-testid="sidebar-logout-button"
           onClick={() => {
             handleLogout();
             onCloseMobile?.();

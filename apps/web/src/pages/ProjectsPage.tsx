@@ -122,6 +122,7 @@ export default function ProjectsPage() {
         </div>
         <button
           className="btn-primary projects-create-btn"
+          data-testid="projects-create-button"
           onClick={() => setShowCreate(true)}
         >
           <PlusIcon className="w-5 h-5" />
@@ -167,6 +168,7 @@ export default function ProjectsPage() {
                   <input
                     type="text"
                     className="form-input"
+                    data-testid="project-name-input"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
                     placeholder="например: Диссертация: Анализ терапии"
@@ -180,6 +182,7 @@ export default function ProjectsPage() {
                   </span>
                   <textarea
                     className="form-input form-textarea"
+                    data-testid="project-description-input"
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
                     placeholder="Краткое описание исследования"
@@ -198,6 +201,7 @@ export default function ProjectsPage() {
                 <button
                   type="submit"
                   className="btn-primary"
+                  data-testid="project-create-submit-button"
                   disabled={creating || !newName.trim()}
                 >
                   {creating ? "Создание…" : "Создать проект"}
@@ -223,6 +227,7 @@ export default function ProjectsPage() {
           </p>
           <button
             className="btn-primary projects-create-btn"
+            data-testid="projects-create-button"
             onClick={() => setShowCreate(true)}
           >
             <PlusIcon className="w-5 h-5" />
@@ -235,6 +240,7 @@ export default function ProjectsPage() {
             <article
               key={p.id}
               className="project-card"
+              data-testid={`project-card-${p.id}`}
               onClick={() => nav(`/projects/${p.id}`)}
             >
               <div className="project-card-header">
@@ -273,6 +279,7 @@ export default function ProjectsPage() {
               <div className="project-card-actions">
                 <button
                   className="project-action-open"
+                  data-testid={`project-open-${p.id}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     nav(`/projects/${p.id}`);

@@ -144,10 +144,77 @@ jobs:
           path: apps/web/coverage
           retention-days: 7
 
+  web-e2e:
+    name: WEB browser E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: [api-quality, web-quality]
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: mdsystem_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter api exec prisma generate
+
+      - name: Install Playwright browsers
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: Run Playwright critical flows
+        run: pnpm --filter web run e2e
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/mdsystem_test
+          API_KEY_ENCRYPTION_SECRET: test-api-key-secret-for-e2e-32chars
+          JWT_SECRET: test-jwt-secret-for-e2e-suite
+          JWT_ROTATION_MODE: stable
+          NODE_ENV: test
+          HOST: 127.0.0.1
+          PORT: 3000
+          CORS_ORIGIN: http://127.0.0.1:4173
+          CROSSREF_MAILTO: test@example.com
+          OTEL_ENABLED: "false"
+          VITE_SENTRY_ENABLED: "false"
+
+      - name: Upload Playwright artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-playwright-report
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+          retention-days: 7
+
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [api-quality, web-quality]
+    needs: [api-quality, web-quality, web-e2e]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

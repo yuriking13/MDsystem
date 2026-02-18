@@ -138,3 +138,9 @@ BASE_URL=http://127.0.0.1:3000 CONCURRENCY=10 DURATION_SEC=20 PATHS=/api/health 
 11. Observability check (Sentry/OTel/alerts) according to:
 
 `deploy/OBSERVABILITY_RUNBOOK.md`
+
+12. Optional browser E2E critical flows (Playwright):
+
+```bash
+DATABASE_URL=<db-url> JWT_SECRET=<jwt-secret> API_KEY_ENCRYPTION_SECRET=<enc-secret> CROSSREF_MAILTO=<email> pnpm run e2e:browser
+```
