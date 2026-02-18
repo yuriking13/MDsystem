@@ -86,4 +86,16 @@ describe("app route coverage contract", () => {
       /<Route[\s\S]*?path="\/"[\s\S]*?element={<Navigate to=\{token \? "\/projects" : "\/login"\} replace \/>}[\s\S]*?\/>/,
     );
   });
+
+  it("keeps public marketing pages routed without auth", () => {
+    expect(appSource).toMatch(
+      /<Route path="\/landing" element={<LandingPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="\/offer" element={<PublicOfferPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="\/project-faces" element={<ProjectFacesPage \/>} \/>/,
+    );
+  });
 });

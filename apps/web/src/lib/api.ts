@@ -351,6 +351,8 @@ export type Project = {
   // AI-анализ
   ai_error_analysis_enabled?: boolean;
   ai_protocol_check_enabled?: boolean;
+  // Автоподготовка графа после поиска
+  auto_graph_sync_enabled?: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -390,6 +392,7 @@ export type UpdateProjectData = {
   protocolCustomName?: string;
   aiErrorAnalysisEnabled?: boolean;
   aiProtocolCheckEnabled?: boolean;
+  autoGraphSyncEnabled?: boolean;
 };
 
 export async function apiUpdateProject(
@@ -594,10 +597,17 @@ export async function apiSearchArticles(
   filters?: SearchFilters,
   maxResults = 100,
   sources: SearchSource[] = ["pubmed"],
+  triggerAutoGraphSync = true,
 ): Promise<SearchResult> {
   return apiFetch<SearchResult>(`/api/projects/${projectId}/search`, {
     method: "POST",
-    body: JSON.stringify({ query, filters, maxResults, sources }),
+    body: JSON.stringify({
+      query,
+      filters,
+      maxResults,
+      sources,
+      triggerAutoGraphSync,
+    }),
   });
 }
 
