@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/root/MDsystem/apps/api
-ExecStart=/usr/bin/node /root/MDsystem/apps/api/dist/src/server.js
+ExecStart=/usr/bin/node /root/MDsystem/apps/api/dist/src/bootstrap.js
 Restart=always
 RestartSec=3
 

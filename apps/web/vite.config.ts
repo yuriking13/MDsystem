@@ -1,8 +1,41 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
+
+const sentryAuthToken = process.env.SENTRY_AUTH_TOKEN;
+const sentryOrg = process.env.SENTRY_ORG;
+const sentryProject = process.env.SENTRY_PROJECT;
+const sentryRelease =
+  process.env.SENTRY_RELEASE || process.env.VITE_SENTRY_RELEASE;
+
+if (!process.env.VITE_SENTRY_RELEASE && sentryRelease) {
+  process.env.VITE_SENTRY_RELEASE = sentryRelease;
+}
+
+const shouldUploadSourcemapsToSentry = Boolean(
+  sentryAuthToken && sentryOrg && sentryProject && sentryRelease,
+);
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    ...(shouldUploadSourcemapsToSentry
+      ? [
+          sentryVitePlugin({
+            authToken: sentryAuthToken,
+            org: sentryOrg,
+            project: sentryProject,
+            release: {
+              name: sentryRelease,
+            },
+            sourcemaps: {
+              assets: "./dist/**",
+            },
+            telemetry: false,
+          }),
+        ]
+      : []),
+  ],
   server: {
     port: 5173,
     proxy: {
@@ -73,6 +106,6 @@ export default defineConfig({
     // Настройки для лучшей совместимости и размера
     target: "es2020",
     // Source maps только для production debugging
-    sourcemap: false,
+    sourcemap: shouldUploadSourcemapsToSentry ? "hidden" : false,
   },
 });

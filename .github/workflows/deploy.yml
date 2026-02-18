@@ -31,6 +31,16 @@ jobs:
 
             pnpm --filter api exec prisma generate
 
+            export VITE_SENTRY_DSN="${{ secrets.VITE_SENTRY_DSN }}"
+            export VITE_SENTRY_ENABLED="${{ secrets.VITE_SENTRY_ENABLED }}"
+            export VITE_SENTRY_ENVIRONMENT="${{ secrets.VITE_SENTRY_ENVIRONMENT }}"
+            export VITE_SENTRY_RELEASE="${{ github.sha }}"
+            export VITE_SENTRY_TRACES_SAMPLE_RATE="${{ secrets.VITE_SENTRY_TRACES_SAMPLE_RATE }}"
+            export SENTRY_AUTH_TOKEN="${{ secrets.SENTRY_AUTH_TOKEN }}"
+            export SENTRY_ORG="${{ secrets.SENTRY_ORG }}"
+            export SENTRY_PROJECT="${{ secrets.SENTRY_PROJECT }}"
+            export SENTRY_RELEASE="${{ github.sha }}"
+
             pnpm --filter api build
             pnpm --filter web build
 
@@ -85,12 +95,24 @@ jobs:
             Environment="JWT_SECRET_PREVIOUS=${{ secrets.JWT_SECRET_PREVIOUS }}"
             Environment="JWT_SECRET_KID=k-current"
             Environment="JWT_SECRET_PREVIOUS_KID=k-previous"
+            Environment="JWT_ROTATION_MODE=${{ secrets.JWT_ROTATION_MODE }}"
+            Environment="JWT_ROTATION_STARTED_AT=${{ secrets.JWT_ROTATION_STARTED_AT }}"
+            Environment="JWT_ROTATION_WINDOW_MINUTES=${{ secrets.JWT_ROTATION_WINDOW_MINUTES }}"
             Environment="CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}"
             Environment="CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}"
             Environment="API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}"
             Environment="API_KEY_ENCRYPTION_SECRET_PREVIOUS=${{ secrets.API_KEY_ENCRYPTION_SECRET_PREVIOUS }}"
             Environment="CSP_REPORT_URI=${{ secrets.CSP_REPORT_URI }}"
             Environment="METRICS_SCRAPE_TOKEN=${{ secrets.METRICS_SCRAPE_TOKEN }}"
+            Environment="SENTRY_DSN=${{ secrets.SENTRY_DSN }}"
+            Environment="SENTRY_ENVIRONMENT=${{ secrets.SENTRY_ENVIRONMENT }}"
+            Environment="SENTRY_RELEASE=${{ github.sha }}"
+            Environment="SENTRY_TRACES_SAMPLE_RATE=${{ secrets.SENTRY_TRACES_SAMPLE_RATE }}"
+            Environment="OTEL_ENABLED=${{ secrets.OTEL_ENABLED }}"
+            Environment="OTEL_SERVICE_NAME=${{ secrets.OTEL_SERVICE_NAME }}"
+            Environment="OTEL_EXPORTER_OTLP_ENDPOINT=${{ secrets.OTEL_EXPORTER_OTLP_ENDPOINT }}"
+            Environment="OTEL_EXPORTER_OTLP_HEADERS=${{ secrets.OTEL_EXPORTER_OTLP_HEADERS }}"
+            Environment="OTEL_TRACES_SAMPLE_RATIO=${{ secrets.OTEL_TRACES_SAMPLE_RATIO }}"
             Environment="DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}"
             Environment="S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}"
             Environment="S3_REGION=${{ secrets.S3_REGION }}"

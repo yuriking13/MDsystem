@@ -8,6 +8,7 @@
 import fp from "fastify-plugin";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { getRedisClient, isRedisAvailable } from "../lib/redis.js";
+import { env } from "../env.js";
 
 interface RateLimitOptions {
   /** Максимум запросов в окне */
@@ -211,14 +212,14 @@ export function createRateLimiter(name: string, options: RateLimitOptions) {
 export const rateLimits = {
   /** Login: 5 попыток за 15 минут с одного IP */
   login: createRateLimiter("login", {
-    max: 5,
+    max: env.RATE_LIMIT_LOGIN_MAX,
     windowMs: 15 * 60 * 1000,
     message: "Too many login attempts. Please try again in 15 minutes.",
   }),
 
   /** Register: 3 регистрации за час с одного IP */
   register: createRateLimiter("register", {
-    max: 3,
+    max: env.RATE_LIMIT_REGISTER_MAX,
     windowMs: 60 * 60 * 1000,
     message: "Too many registration attempts. Please try again later.",
   }),

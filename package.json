@@ -21,6 +21,8 @@
     "test:coverage": "pnpm run quality:repo && pnpm -r run test:coverage",
     "perf:api:smoke": "node scripts/perf/basic-load-smoke.mjs",
     "e2e:smoke": "node scripts/e2e/critical-flows-smoke.mjs",
+    "e2e:browser": "pnpm --filter web run e2e",
+    "e2e:browser:install": "pnpm --filter web run e2e:install",
     "prepare": "husky || true",
     "db:cleanup": "cd apps/api && node -e \"require('child_process').execSync('psql ' + process.env.DATABASE_URL + ' -f prisma/migrations/cleanup_invalid_statistics.sql', {stdio: 'inherit'})\""
   },

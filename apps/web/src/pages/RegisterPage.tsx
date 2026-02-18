@@ -153,6 +153,7 @@ export default function RegisterPage() {
                   <input
                     type="email"
                     id="email"
+                    data-testid="register-email-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
@@ -169,6 +170,7 @@ export default function RegisterPage() {
                   <input
                     type="password"
                     id="password"
+                    data-testid="register-password-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -182,6 +184,7 @@ export default function RegisterPage() {
                   <label className="auth-checkbox">
                     <input
                       type="checkbox"
+                      data-testid="register-terms-checkbox"
                       checked={agreeTerms}
                       onChange={(e) => setAgreeTerms(e.target.checked)}
                     />
@@ -201,7 +204,12 @@ export default function RegisterPage() {
 
                 {error && <div className="auth-error">{error}</div>}
 
-                <button type="submit" className="auth-submit" disabled={busy}>
+                <button
+                  type="submit"
+                  className="auth-submit"
+                  data-testid="register-submit-button"
+                  disabled={busy}
+                >
                   {busy ? "Создание..." : "Создать аккаунт"}
                 </button>
 

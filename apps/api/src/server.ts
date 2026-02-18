@@ -6,6 +6,12 @@ import helmet from "@fastify/helmet";
 import compress from "@fastify/compress";
 
 import { env } from "./env.js";
+import {
+  captureBackendException,
+  isOtelEnabled,
+  isSentryEnabled,
+  shutdownObservability,
+} from "./observability/index.js";
 import authPlugin from "./auth.js";
 import { setupErrorHandler, setupNotFoundHandler } from "./utils/errors.js";
 
@@ -55,6 +61,14 @@ const app = Fastify({
   // Request timeout из env
   requestTimeout: env.REQUEST_TIMEOUT_MS,
 });
+
+app.log.info(
+  {
+    sentryEnabled: isSentryEnabled(),
+    otelEnabled: isOtelEnabled(),
+  },
+  "Observability initialized",
+);
 
 // Централизованная обработка ошибок
 setupErrorHandler(app);
@@ -195,6 +209,10 @@ const shutdown = async (signal: string) => {
     await stopWorkers();
     app.log.info("Workers stopped");
   } catch (err) {
+    captureBackendException(err, {
+      component: "workers",
+      mechanism: "shutdown",
+    });
     app.log.error({ err }, "Error stopping workers");
   }
 
@@ -203,6 +221,10 @@ const shutdown = async (signal: string) => {
     await closeCache();
     app.log.info("Cache closed");
   } catch (err) {
+    captureBackendException(err, {
+      component: "cache",
+      mechanism: "shutdown",
+    });
     app.log.error({ err }, "Error closing cache");
   }
 
@@ -211,8 +233,14 @@ const shutdown = async (signal: string) => {
     await app.close();
     app.log.info("Server closed");
   } catch (err) {
+    captureBackendException(err, {
+      component: "http-server",
+      mechanism: "shutdown",
+    });
     app.log.error({ err }, "Error closing server");
   }
+
+  await shutdownObservability();
 
   process.exit(0);
 };
@@ -227,10 +255,19 @@ app
 
     // Стартуем фоновые воркеры (pg-boss) для очередей
     startWorkers().catch((err) => {
+      captureBackendException(err, {
+        component: "workers",
+        mechanism: "startup",
+      });
       app.log.error({ err }, "Failed to start workers");
     });
   })
-  .catch((err) => {
+  .catch(async (err) => {
+    captureBackendException(err, {
+      component: "http-server",
+      mechanism: "startup",
+    });
     app.log.error(err);
+    await shutdownObservability();
     process.exit(1);
   });

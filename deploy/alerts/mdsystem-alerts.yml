@@ -1,0 +1,82 @@
+groups:
+  - name: mdsystem-api-alerts
+    interval: 30s
+    rules:
+      - alert: MDSystemApiHigh5xxErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status_code=~"5..",route!="/metrics"}[5m]))
+            /
+            clamp_min(sum(rate(http_requests_total{route!="/metrics"}[5m])), 0.001)
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: critical
+          service: mdsystem-api
+        annotations:
+          summary: "MDsystem API 5xx error rate is above 5%"
+          description: "5xx responses exceed 5% for 10m. Check API logs and recent deploys."
+
+      - alert: MDSystemApiLatencyP95High
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_request_duration_seconds_bucket{route!="/metrics"}[5m])) by (le)
+          ) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+          service: mdsystem-api
+        annotations:
+          summary: "MDsystem API p95 latency is above 1.5s"
+          description: "Sustained latency increase detected for 10m. Check DB pool, upstream APIs and worker load."
+
+      - alert: MDSystemApiHealthDegraded
+        expr: min_over_time(service_health_status{component="overall"}[5m]) < 1
+        for: 5m
+        labels:
+          severity: critical
+          service: mdsystem-api
+        annotations:
+          summary: "MDsystem API health is degraded"
+          description: "Internal health component reports unhealthy state for 5m."
+
+      - alert: MDSystemWorkersFailureDetected
+        expr: sum(worker_queue_jobs{status=~"failed|timeout"}) > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: mdsystem-api
+        annotations:
+          summary: "Worker failures detected in queue jobs"
+          description: "Graph-fetch or embeddings queues have failed/timeout jobs in the last 24h window."
+
+      - alert: MDSystemWorkersBacklogHigh
+        expr: sum(worker_queue_jobs{status=~"pending|running"}) > 200
+        for: 15m
+        labels:
+          severity: warning
+          service: mdsystem-api
+        annotations:
+          summary: "Worker queue backlog is high"
+          description: "Pending/running worker jobs are above 200 for 15m."
+
+      - alert: MDSystemMetricsScrapeTargetDown
+        expr: up{job="mdsystem-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: mdsystem-api
+        annotations:
+          summary: "Prometheus cannot scrape mdsystem-api /metrics"
+          description: "Scrape target is down for at least 2 minutes."
+
+      - alert: MDSystemMetricsCollectorErrors
+        expr: increase(metrics_collector_errors_total[15m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: mdsystem-api
+        annotations:
+          summary: "API metrics collectors are failing"
+          description: "Internal metrics refresh code reports collection errors."

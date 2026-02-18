@@ -1,5 +1,6 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { logClientError } from '../lib/adminApi';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { logClientError } from "../lib/adminApi";
+import { captureFrontendException } from "../lib/observability";
 
 interface Props {
   children: ReactNode;
@@ -24,20 +25,27 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     this.setState({ errorInfo });
-    
+
+    captureFrontendException(error, {
+      component: "react_error_boundary",
+      extra: {
+        componentStack: errorInfo.componentStack || undefined,
+      },
+    });
+
     // Log to server
     logClientError({
-      errorType: 'react_error_boundary',
+      errorType: "react_error_boundary",
       errorMessage: error.message,
       errorStack: error.stack,
       componentStack: errorInfo.componentStack || undefined,
       url: window.location.href,
       userAgent: navigator.userAgent,
     });
-    
+
     // Log to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
+    if (import.meta.env.DEV) {
+      console.error("ErrorBoundary caught an error:", error, errorInfo);
     }
   }
 
@@ -46,7 +54,7 @@ class ErrorBoundary extends Component<Props, State> {
   };
 
   handleGoHome = () => {
-    window.location.href = '/';
+    window.location.href = "/";
   };
 
   render() {
@@ -60,9 +68,12 @@ class ErrorBoundary extends Component<Props, State> {
           <div className="error-boundary-content">
             <div className="error-boundary-icon">⚠️</div>
             <h1>Что-то пошло не так</h1>
-            <p>Произошла непредвиденная ошибка. Мы уже работаем над её исправлением.</p>
-            
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            <p>
+              Произошла непредвиденная ошибка. Мы уже работаем над её
+              исправлением.
+            </p>
+
+            {import.meta.env.DEV && this.state.error && (
               <details className="error-boundary-details">
                 <summary>Подробности ошибки</summary>
                 <pre>{this.state.error.message}</pre>
@@ -72,7 +83,7 @@ class ErrorBoundary extends Component<Props, State> {
                 )}
               </details>
             )}
-            
+
             <div className="error-boundary-actions">
               <button onClick={this.handleReload} className="btn">
                 Перезагрузить страницу

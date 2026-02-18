@@ -145,6 +145,7 @@ export default function LoginPage() {
                   <input
                     type="email"
                     id="email"
+                    data-testid="login-email-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@example.com"
@@ -158,6 +159,7 @@ export default function LoginPage() {
                   <input
                     type="password"
                     id="password"
+                    data-testid="login-password-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
@@ -182,7 +184,12 @@ export default function LoginPage() {
 
                 {error && <div className="auth-error">{error}</div>}
 
-                <button type="submit" className="auth-submit" disabled={busy}>
+                <button
+                  type="submit"
+                  className="auth-submit"
+                  data-testid="login-submit-button"
+                  disabled={busy}
+                >
                   {busy ? "Вход..." : "Войти в аккаунт"}
                 </button>
 

@@ -54,6 +54,7 @@ Run all checks from the workspace root:
 - Lint: `pnpm lint`
 - Typecheck: `pnpm typecheck`
 - Tests: `pnpm test`
+- Browser E2E (Playwright): `pnpm --filter web run e2e`
 - Responsive matrix regression tests: `pnpm test:responsive`
 - Coverage: `pnpm test:coverage`
 - Build: `pnpm build`
@@ -113,3 +114,33 @@ Quick run for this focused suite:
 
 - Workspace root: `pnpm test:responsive`
 - Web app only: `pnpm --filter web run test:responsive`
+
+## Browser E2E (Playwright)
+
+Critical browser user-flow coverage lives in `apps/web/tests/e2e` and includes:
+
+- register/login
+- access token refresh + logout + logout-all
+- projects list -> project detail flow
+
+Install browser locally:
+
+```bash
+pnpm --filter web run e2e:install
+```
+
+Run browser E2E locally (requires PostgreSQL and valid API env):
+
+```bash
+DATABASE_URL=postgresql://test:test@127.0.0.1:5432/mdsystem_test \
+JWT_SECRET=test-jwt-secret-for-local-e2e \
+API_KEY_ENCRYPTION_SECRET=test-api-key-secret-for-local-e2e-12345 \
+CROSSREF_MAILTO=test@example.com \
+pnpm --filter web run e2e
+```
+
+## Operations runbooks
+
+- DB and deploy safety: `deploy/DB_RUNBOOK.md`
+- Observability and alerting: `deploy/OBSERVABILITY_RUNBOOK.md`
+- JWT rotation protocol: `deploy/JWT_ROTATION_RUNBOOK.md`

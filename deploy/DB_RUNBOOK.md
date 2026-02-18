@@ -40,15 +40,21 @@ If potentially destructive SQL is detected (`DROP/TRUNCATE/...`) and
 
 ## Security rotation notes (JWT + API key encryption)
 
-For zero-downtime secret rotation:
+JWT rotation is now strictly controlled by startup preflight checks.
 
-1. Deploy with both old and new secrets:
-   - `JWT_SECRET=<new>`
-   - `JWT_SECRET_PREVIOUS=<old>`
-   - `API_KEY_ENCRYPTION_SECRET=<new>`
-   - `API_KEY_ENCRYPTION_SECRET_PREVIOUS=<old>`
-2. Keep previous secrets during one access-token TTL + operational buffer.
-3. Remove `*_PREVIOUS` values on the next deploy after the rotation window.
+Use dedicated operational runbook:
+
+- `deploy/JWT_ROTATION_RUNBOOK.md`
+
+Key rule:
+
+- `JWT_SECRET_PREVIOUS` is valid only in `JWT_ROTATION_MODE=rotation` and only
+  inside `JWT_ROTATION_WINDOW_MINUTES`.
+
+API key encryption rotation still supports previous key fallback:
+
+- `API_KEY_ENCRYPTION_SECRET=<new>`
+- `API_KEY_ENCRYPTION_SECRET_PREVIOUS=<old>` (temporary during key migration)
 
 ## Manual Adminer execution order
 
@@ -106,6 +112,7 @@ Migration naming/versioning policy is documented in:
    - `POST /api/auth/verify-reset-token`
    - `POST /api/auth/reset-password`
 6. Prometheus can scrape `/metrics` with bearer token (`METRICS_SCRAPE_TOKEN`)
+   and alert rules are loaded (`deploy/alerts/mdsystem-alerts.yml`).
 7. Composite indexes are present:
 
    ```sql
@@ -126,4 +133,14 @@ Migration naming/versioning policy is documented in:
 
 ```bash
 BASE_URL=http://127.0.0.1:3000 CONCURRENCY=10 DURATION_SEC=20 PATHS=/api/health pnpm run perf:api:smoke
+```
+
+11. Observability check (Sentry/OTel/alerts) according to:
+
+`deploy/OBSERVABILITY_RUNBOOK.md`
+
+12. Optional browser E2E critical flows (Playwright):
+
+```bash
+DATABASE_URL=<db-url> JWT_SECRET=<jwt-secret> API_KEY_ENCRYPTION_SECRET=<enc-secret> CROSSREF_MAILTO=<email> pnpm run e2e:browser
 ```
