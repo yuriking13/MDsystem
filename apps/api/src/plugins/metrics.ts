@@ -12,9 +12,10 @@ import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import client from "prom-client";
 import crypto from "node:crypto";
 import { env } from "../env.js";
-import { getPoolStats } from "../pg.js";
+import { getPoolStats, pool } from "../pg.js";
 import { getAccessCacheStats } from "../utils/project-access.js";
 import { requireAdminAccess } from "../utils/require-admin.js";
+import { getRedisClient, isRedisConfigured } from "../lib/redis.js";
 
 // Создаём реестр метрик
 const register = new client.Registry();
@@ -80,6 +81,28 @@ const cacheSize = new client.Gauge({
   registers: [register],
 });
 
+// Operational Health Metrics
+const serviceHealthStatus = new client.Gauge({
+  name: "service_health_status",
+  help: "Service health status by component (1=healthy, 0=unhealthy)",
+  labelNames: ["component"],
+  registers: [register],
+});
+
+const workerQueueJobs = new client.Gauge({
+  name: "worker_queue_jobs",
+  help: "Worker jobs by queue and status in the last 24h",
+  labelNames: ["queue", "status"],
+  registers: [register],
+});
+
+const metricsCollectorErrorsTotal = new client.Counter({
+  name: "metrics_collector_errors_total",
+  help: "Total number of metrics collector refresh errors",
+  labelNames: ["collector"],
+  registers: [register],
+});
+
 // Business Metrics
 const articlesSearched = new client.Counter({
   name: "articles_searched_total",
@@ -141,6 +164,25 @@ function hasValidMetricsToken(request: FastifyRequest): boolean {
 
 // Plugin
 const metricsPlugin: FastifyPluginAsync = async (fastify) => {
+  type WorkerStatusRow = { status: string; total: string };
+  const workerFailureStatuses = new Set(["failed", "timeout"]);
+  const healthComponents = ["database", "cache", "workers", "overall"] as const;
+
+  const setHealthStatus = (component: string, healthy: boolean) => {
+    serviceHealthStatus.set({ component }, healthy ? 1 : 0);
+  };
+
+  const markCollectorError = (collector: string, error: unknown) => {
+    metricsCollectorErrorsTotal.inc({ collector });
+    fastify.log.warn(
+      {
+        collector,
+        err: error instanceof Error ? error : new Error(String(error)),
+      },
+      "Metrics collector refresh error",
+    );
+  };
+
   // Track active connections
   let connectionCount = 0;
 
@@ -177,7 +219,8 @@ const metricsPlugin: FastifyPluginAsync = async (fastify) => {
       dbPoolTotal.set(stats.total);
       dbPoolIdle.set(stats.idle);
       dbPoolWaiting.set(stats.waiting);
-    } catch {
+    } catch (error) {
+      markCollectorError("db_pool", error);
       // Pool might not be initialized yet
     }
   };
@@ -192,19 +235,118 @@ const metricsPlugin: FastifyPluginAsync = async (fastify) => {
       if (!isNaN(hitRate)) {
         cacheHitRate.set({ cache_name: "project_access" }, hitRate);
       }
-    } catch {
+    } catch (error) {
+      markCollectorError("project_access_cache", error);
       // Cache might not be initialized yet
     }
   };
 
-  // Initial update
-  updatePoolStats();
-  updateCacheStats();
+  const checkDatabaseHealth = async (): Promise<boolean> => {
+    try {
+      await pool.query("SELECT 1");
+      return true;
+    } catch (error) {
+      markCollectorError("health_database", error);
+      return false;
+    }
+  };
+
+  const checkCacheHealth = async (): Promise<boolean> => {
+    if (!isRedisConfigured()) {
+      return true;
+    }
+
+    try {
+      const redisClient = await getRedisClient();
+      if (!redisClient) {
+        // Redis fallback to in-memory cache is considered healthy.
+        return true;
+      }
+      await redisClient.ping();
+      return true;
+    } catch (error) {
+      markCollectorError("health_cache", error);
+      return false;
+    }
+  };
+
+  const updateWorkerStats = async (): Promise<boolean> => {
+    workerQueueJobs.reset();
+    let hasFailures = false;
+
+    try {
+      const [graphJobsResult, embeddingJobsResult] = await Promise.all([
+        pool.query(
+          `SELECT status, COUNT(*)::int AS total
+           FROM graph_fetch_jobs
+           WHERE created_at >= NOW() - INTERVAL '24 hours'
+           GROUP BY status`,
+        ),
+        pool.query(
+          `SELECT status, COUNT(*)::int AS total
+           FROM embedding_jobs
+           WHERE created_at >= NOW() - INTERVAL '24 hours'
+           GROUP BY status`,
+        ),
+      ]);
+
+      const applyRows = (queue: string, rows: WorkerStatusRow[]) => {
+        for (const row of rows) {
+          const total = Number(row.total);
+          if (Number.isNaN(total)) {
+            continue;
+          }
+          workerQueueJobs.set({ queue, status: row.status }, total);
+          if (workerFailureStatuses.has(row.status) && total > 0) {
+            hasFailures = true;
+          }
+        }
+      };
+
+      applyRows("graph_fetch", graphJobsResult.rows as WorkerStatusRow[]);
+      applyRows("embeddings", embeddingJobsResult.rows as WorkerStatusRow[]);
+      return !hasFailures;
+    } catch (error) {
+      markCollectorError("worker_jobs", error);
+      return false;
+    }
+  };
+
+  let refreshInFlight = false;
+  const refreshOperationalMetrics = async () => {
+    if (refreshInFlight) {
+      return;
+    }
+
+    refreshInFlight = true;
+    try {
+      updatePoolStats();
+      updateCacheStats();
+
+      const [dbHealthy, cacheHealthy, workersHealthy] = await Promise.all([
+        checkDatabaseHealth(),
+        checkCacheHealth(),
+        updateWorkerStats(),
+      ]);
+
+      setHealthStatus("database", dbHealthy);
+      setHealthStatus("cache", cacheHealthy);
+      setHealthStatus("workers", workersHealthy);
+      setHealthStatus("overall", dbHealthy && cacheHealthy && workersHealthy);
+    } finally {
+      refreshInFlight = false;
+    }
+  };
+
+  for (const component of healthComponents) {
+    serviceHealthStatus.set({ component }, 0);
+  }
+
+  await refreshOperationalMetrics();
 
   // Update every 15 seconds
   const intervalId = setInterval(() => {
-    updatePoolStats();
-    updateCacheStats();
+    void refreshOperationalMetrics();
   }, 15000);
 
   // Cleanup on close

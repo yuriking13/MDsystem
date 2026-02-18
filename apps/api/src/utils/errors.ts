@@ -22,6 +22,7 @@ import {
   InternalServerError,
   ServiceUnavailableError,
 } from "./typed-errors.js";
+import { captureBackendRequestException } from "../observability/index.js";
 
 // Re-export typed errors для обратной совместимости
 export { TypedAppError as AppError };
@@ -62,12 +63,31 @@ export function setupErrorHandler(app: FastifyInstance) {
       const requestWithUser = request as FastifyRequest & {
         user?: { sub?: string };
       };
+      const route = request.routeOptions?.url || request.url;
+      const userId = requestWithUser.user?.sub;
+
+      const captureIfServerError = (
+        errToCapture: unknown,
+        statusCodeToCapture: number,
+      ) => {
+        if (statusCodeToCapture < 500) {
+          return;
+        }
+        captureBackendRequestException(errToCapture, {
+          requestId: request.id,
+          route,
+          method: request.method,
+          statusCode: statusCodeToCapture,
+          userId,
+        });
+      };
+
       // Логируем ошибку с контекстом
       const logContext = {
         requestId: request.id,
         method: request.method,
-        url: request.url,
-        userId: requestWithUser.user?.sub,
+        url: route,
+        userId,
         errorCode:
           error instanceof TypedAppError ? error.code : error.code || "UNKNOWN",
         statusCode:
@@ -102,6 +122,7 @@ export function setupErrorHandler(app: FastifyInstance) {
         if (error.statusCode >= 500) {
           // Серверные ошибки - логируем полностью
           request.log.error({ ...logContext, err: error }, "Server error");
+          captureIfServerError(error, error.statusCode);
         } else if (error.statusCode >= 400) {
           // Клиентские ошибки - логируем как warning
           request.log.warn(logContext, error.message);
@@ -122,6 +143,7 @@ export function setupErrorHandler(app: FastifyInstance) {
 
       if (statusCode >= 500) {
         request.log.error({ ...logContext, err: error }, "Server error");
+        captureIfServerError(error, statusCode);
       } else if (statusCode >= 400) {
         request.log.warn(logContext, error.message);
       }

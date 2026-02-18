@@ -10,6 +10,8 @@ if [ -z "${METRICS_SCRAPE_TOKEN:-}" ]; then
   exit 1
 fi
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 echo "=== Installing Prometheus ==="
 apt-get update
 apt-get install -y prometheus prometheus-node-exporter
@@ -30,11 +32,19 @@ install -m 600 /dev/null /etc/prometheus/mdsystem-metrics.token
 printf "%s" "$METRICS_SCRAPE_TOKEN" > /etc/prometheus/mdsystem-metrics.token
 chown prometheus:prometheus /etc/prometheus/mdsystem-metrics.token
 
+# Install alert rules
+install -d -m 755 /etc/prometheus/rules
+cp "$SCRIPT_DIR/alerts/mdsystem-alerts.yml" /etc/prometheus/rules/mdsystem-alerts.yml
+chown prometheus:prometheus /etc/prometheus/rules/mdsystem-alerts.yml
+
 # Copy MDsystem config
 cat > /etc/prometheus/prometheus.yml << 'EOF'
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/rules/mdsystem-alerts.yml
 
 scrape_configs:
   - job_name: 'prometheus'

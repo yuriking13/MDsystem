@@ -104,6 +104,9 @@ export default fp(async (app: FastifyInstance) => {
     jwtSecretsByKid.set(env.JWT_SECRET_PREVIOUS_KID, env.JWT_SECRET_PREVIOUS);
     app.log.warn(
       {
+        rotationMode: env.JWT_ROTATION_MODE,
+        rotationStartedAt: env.JWT_ROTATION_STARTED_AT,
+        rotationWindowMinutes: env.JWT_ROTATION_WINDOW_MINUTES,
         activeKid: env.JWT_SECRET_KID,
         previousKid: env.JWT_SECRET_PREVIOUS_KID,
       },
