@@ -50,6 +50,8 @@ export default defineConfig({
         CORS_ORIGIN: "http://127.0.0.1:4173",
         CROSSREF_MAILTO:
           process.env.CROSSREF_MAILTO || "playwright@example.com",
+        RATE_LIMIT_LOGIN_MAX: process.env.RATE_LIMIT_LOGIN_MAX || "100",
+        RATE_LIMIT_REGISTER_MAX: process.env.RATE_LIMIT_REGISTER_MAX || "100",
         OTEL_ENABLED: "false",
         SENTRY_DSN: "",
       },

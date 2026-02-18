@@ -104,6 +104,13 @@ const EnvSchema = z
     // JWT tokens configuration
     ACCESS_TOKEN_EXPIRES: z.string().optional().default("15m"), // Access token lifetime
     REFRESH_TOKEN_EXPIRES: z.string().optional().default("7d"), // Refresh token lifetime
+    RATE_LIMIT_LOGIN_MAX: z.coerce.number().int().min(1).optional().default(5),
+    RATE_LIMIT_REGISTER_MAX: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional()
+      .default(3),
     METRICS_SCRAPE_TOKEN: z.preprocess(
       emptyStringToUndefined,
       z.string().min(20).optional(),
