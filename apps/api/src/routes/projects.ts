@@ -35,6 +35,8 @@ const UpdateProjectSchema = z.object({
   // AI-анализ
   aiErrorAnalysisEnabled: z.boolean().optional(),
   aiProtocolCheckEnabled: z.boolean().optional(),
+  // Автоподготовка графа после поиска
+  autoGraphSyncEnabled: z.boolean().optional(),
 });
 
 const ProjectIdSchema = z.object({
@@ -129,7 +131,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         `SELECT p.id, p.name, p.description, p.created_at, p.updated_at,
                 p.citation_style, pm.role,
                 p.research_type, p.research_subtype, p.research_protocol, p.protocol_custom_name,
-                p.ai_error_analysis_enabled, p.ai_protocol_check_enabled
+                p.ai_error_analysis_enabled, p.ai_protocol_check_enabled,
+                p.auto_graph_sync_enabled
          FROM projects p
          JOIN project_members pm ON pm.project_id = p.id
          WHERE p.id = $1 AND pm.user_id = $2`,
@@ -237,6 +240,10 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         updates.push(`ai_protocol_check_enabled = $${idx++}`);
         values.push(bodyP.data.aiProtocolCheckEnabled);
       }
+      if (bodyP.data.autoGraphSyncEnabled !== undefined) {
+        updates.push(`auto_graph_sync_enabled = $${idx++}`);
+        values.push(bodyP.data.autoGraphSyncEnabled);
+      }
 
       if (updates.length === 0) {
         return reply
@@ -251,7 +258,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         `UPDATE projects SET ${updates.join(", ")} WHERE id = $${idx}
          RETURNING id, name, description, citation_style, 
                    research_type, research_subtype, research_protocol, protocol_custom_name,
-                   ai_error_analysis_enabled, ai_protocol_check_enabled,
+                   ai_error_analysis_enabled, ai_protocol_check_enabled, auto_graph_sync_enabled,
                    created_at, updated_at`,
         values,
       );

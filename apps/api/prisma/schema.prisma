@@ -70,6 +70,7 @@ model Project {
   protocolCustomName     String?  @map("protocol_custom_name")
   aiErrorAnalysisEnabled Boolean? @default(false) @map("ai_error_analysis_enabled")
   aiProtocolCheckEnabled Boolean? @default(false) @map("ai_protocol_check_enabled")
+  autoGraphSyncEnabled   Boolean? @default(false) @map("auto_graph_sync_enabled")
 
   members    ProjectMember[]
   documents  Document[]

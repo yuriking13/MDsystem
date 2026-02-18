@@ -81,6 +81,7 @@ const SearchBodySchema = z.object({
     })
     .optional(),
   maxResults: z.number().int().min(1).max(10000).default(100),
+  triggerAutoGraphSync: z.boolean().optional().default(true),
 });
 
 const ArticleStatusSchema = z.object({
@@ -1370,6 +1371,114 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         await invalidateArticles(projectId);
       }
 
+      // ================================================================
+      // PHASE 5: AUTO GRAPH PIPELINE (optional project setting)
+      // ================================================================
+      let autoGraphPipelineStarted = false;
+      let autoGraphPipelineJobId: string | null = null;
+      const shouldTriggerAutoGraphSync = bodyP.data.triggerAutoGraphSync !== false;
+
+      if (shouldTriggerAutoGraphSync && added > 0) {
+        try {
+          const projectSettingsRes = await pool.query(
+            `SELECT auto_graph_sync_enabled FROM projects WHERE id = $1`,
+            [projectId],
+          );
+          const autoGraphSyncEnabled = Boolean(
+            projectSettingsRes.rows[0]?.auto_graph_sync_enabled,
+          );
+
+          if (autoGraphSyncEnabled) {
+            const runningJobRes = await pool.query(
+              `SELECT id FROM graph_fetch_jobs
+               WHERE project_id = $1 AND status IN ('pending', 'running')
+               ORDER BY created_at DESC
+               LIMIT 1`,
+              [projectId],
+            );
+
+            if (runningJobRes.rows.length > 0) {
+              autoGraphPipelineJobId = runningJobRes.rows[0].id;
+              sendProgress("auto_graph_pipeline", {
+                message:
+                  "Автоподготовка графа уже выполняется. Используется текущая фоновая задача.",
+                jobId: autoGraphPipelineJobId,
+              });
+            } else {
+              const totalArticlesRes = await pool.query(
+                `SELECT COUNT(*) AS cnt
+                 FROM articles a
+                 JOIN project_articles pa ON pa.article_id = a.id
+                 WHERE pa.project_id = $1
+                   AND pa.status != 'deleted'
+                   AND (a.pmid IS NOT NULL OR a.doi IS NOT NULL)`,
+                [projectId],
+              );
+              const totalArticles = parseInt(
+                totalArticlesRes.rows[0]?.cnt || "0",
+                10,
+              );
+
+              const jobRes = await pool.query(
+                `INSERT INTO graph_fetch_jobs (project_id, status, total_articles)
+                 VALUES ($1, 'pending', $2)
+                 RETURNING id`,
+                [projectId, totalArticles],
+              );
+              const jobId = String(jobRes.rows[0].id);
+
+              try {
+                const boss = await startBoss();
+                await boss.send("graph:fetch-references", {
+                  projectId,
+                  jobId,
+                  userId,
+                  selectedOnly: false,
+                  articleIds: null,
+                  autoPipeline: true,
+                });
+                autoGraphPipelineStarted = true;
+                autoGraphPipelineJobId = jobId;
+                sendProgress("auto_graph_pipeline", {
+                  message:
+                    "Запущена автоподготовка графа: связи → семантическое ядро → кластеры → gaps.",
+                  jobId,
+                });
+              } catch (enqueueErr) {
+                await pool.query(
+                  `UPDATE graph_fetch_jobs
+                   SET status = 'failed',
+                       completed_at = now(),
+                       error_message = $2
+                   WHERE id = $1`,
+                  [
+                    jobId,
+                    enqueueErr instanceof Error
+                      ? enqueueErr.message
+                      : String(enqueueErr),
+                  ],
+                );
+                log.error(
+                  "Auto graph pipeline enqueue error",
+                  enqueueErr instanceof Error
+                    ? enqueueErr
+                    : new Error(String(enqueueErr)),
+                  { projectId, jobId },
+                );
+              }
+            }
+          }
+        } catch (autoGraphErr) {
+          log.warn("Auto graph pipeline check failed", {
+            projectId,
+            error:
+              autoGraphErr instanceof Error
+                ? autoGraphErr.message
+                : String(autoGraphErr),
+          });
+        }
+      }
+
       // Build message with source breakdown
       let message = "";
       const sourceBreakdown: string[] = [];
@@ -1403,6 +1512,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (statsFound > 0) {
         message += `, найдена статистика в ${statsFound}`;
       }
+      if (autoGraphPipelineStarted && autoGraphPipelineJobId) {
+        message += `, запущена автоподготовка графа (job: ${autoGraphPipelineJobId})`;
+      }
 
       sendProgress("complete", { message });
 
@@ -1418,6 +1530,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         statsFound,
         sources: sourceResults,
         message,
+        autoGraphPipelineStarted,
+        autoGraphPipelineJobId,
       };
     },
   );
@@ -2177,6 +2291,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           userId,
           selectedOnly: selectedOnly || false,
           articleIds: articleIds || null,
+          autoPipeline: false,
         };
         fastify.log.info({ jobData }, "[fetch-references] Job data prepared");
 

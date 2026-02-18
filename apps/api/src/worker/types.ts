@@ -20,6 +20,8 @@ export interface GraphFetchJobPayload {
   selectedOnly?: boolean;
   /** Конкретные ID статей для обработки (опционально) */
   articleIds?: string[] | null;
+  /** Автопайплайн после поиска: затем запуск embeddings + semantic warmup */
+  autoPipeline?: boolean;
 }
 
 /**
@@ -35,6 +37,8 @@ export interface EmbeddingsJobPayload {
   batchSize?: number;
   /** Импортировать недостающие статьи из PubMed/Crossref перед генерацией */
   importMissingArticles?: boolean;
+  /** Запущено из авто-пайплайна после поиска */
+  autoPipeline?: boolean;
 }
 
 /**
