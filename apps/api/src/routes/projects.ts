@@ -43,6 +43,21 @@ const ProjectIdSchema = z.object({
   id: z.string().uuid(),
 });
 
+async function hasAutoGraphSyncColumn(): Promise<boolean> {
+  try {
+    const res = await pool.query(
+      `SELECT 1
+       FROM information_schema.columns
+       WHERE table_name = 'projects'
+         AND column_name = 'auto_graph_sync_enabled'
+       LIMIT 1`,
+    );
+    return (res.rowCount ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
 const plugin: FastifyPluginAsync = async (fastify) => {
   // GET /api/projects - list user's projects
   fastify.get(
@@ -127,12 +142,18 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           .send({ error: "BadRequest", message: "Invalid project ID" });
       }
 
+      const autoGraphSyncColumnExists = await hasAutoGraphSyncColumn();
+
       const res = await pool.query(
         `SELECT p.id, p.name, p.description, p.created_at, p.updated_at,
                 p.citation_style, pm.role,
                 p.research_type, p.research_subtype, p.research_protocol, p.protocol_custom_name,
                 p.ai_error_analysis_enabled, p.ai_protocol_check_enabled,
-                p.auto_graph_sync_enabled
+                ${
+                  autoGraphSyncColumnExists
+                    ? "p.auto_graph_sync_enabled"
+                    : "false AS auto_graph_sync_enabled"
+                }
          FROM projects p
          JOIN project_members pm ON pm.project_id = p.id
          WHERE p.id = $1 AND pm.user_id = $2`,
@@ -188,6 +209,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           .code(403)
           .send({ error: "Forbidden", message: "No edit access" });
       }
+
+      const autoGraphSyncColumnExists = await hasAutoGraphSyncColumn();
       const updates: string[] = [];
       const values: unknown[] = [];
       let idx = 1;
@@ -241,8 +264,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         values.push(bodyP.data.aiProtocolCheckEnabled);
       }
       if (bodyP.data.autoGraphSyncEnabled !== undefined) {
-        updates.push(`auto_graph_sync_enabled = $${idx++}`);
-        values.push(bodyP.data.autoGraphSyncEnabled);
+        if (autoGraphSyncColumnExists) {
+          updates.push(`auto_graph_sync_enabled = $${idx++}`);
+          values.push(bodyP.data.autoGraphSyncEnabled);
+        } else {
+          fastify.log.warn(
+            { projectId: paramsP.data.id, userId },
+            "Skipping auto_graph_sync_enabled update: column is missing",
+          );
+        }
       }
 
       if (updates.length === 0) {
@@ -254,11 +284,15 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       updates.push(`updated_at = now()`);
       values.push(paramsP.data.id);
 
+      const autoGraphSyncReturning = autoGraphSyncColumnExists
+        ? "auto_graph_sync_enabled"
+        : "false AS auto_graph_sync_enabled";
+
       const res = await pool.query(
         `UPDATE projects SET ${updates.join(", ")} WHERE id = $${idx}
          RETURNING id, name, description, citation_style, 
                    research_type, research_subtype, research_protocol, protocol_custom_name,
-                   ai_error_analysis_enabled, ai_protocol_check_enabled, auto_graph_sync_enabled,
+                   ai_error_analysis_enabled, ai_protocol_check_enabled, ${autoGraphSyncReturning},
                    created_at, updated_at`,
         values,
       );

@@ -57,6 +57,12 @@ jobs:
             echo "Applying user blocking migration..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_user_blocking.sql 2>/dev/null || echo "already exists"
 
+            echo "Applying project settings migration..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_project_settings.sql 2>/dev/null || echo "already exists"
+
+            echo "Applying auto graph sync setting migration..."
+            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_auto_graph_sync_setting.sql 2>/dev/null || echo "already exists"
+
             echo "Applying semantic search migration..."
             psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_search.sql 2>/dev/null || echo "already exists"
 

@@ -48,10 +48,12 @@ Run SQL scripts manually in Adminer when needed:
 4. `apps/api/prisma/migrations/add_file_extracted_metadata.sql`
 5. `apps/api/prisma/migrations/fix_admin_user.sql`
 6. `apps/api/prisma/migrations/add_user_blocking.sql`
-7. `apps/api/prisma/migrations/add_semantic_search.sql`
-8. `apps/api/prisma/migrations/add_semantic_clusters.sql`
-9. `apps/api/prisma/migrations/add_embedding_jobs.sql`
-10. `apps/api/prisma/migrations/add_refresh_tokens.sql`
+7. `apps/api/prisma/migrations/add_project_settings.sql`
+8. `apps/api/prisma/migrations/add_auto_graph_sync_setting.sql`
+9. `apps/api/prisma/migrations/add_semantic_search.sql`
+10. `apps/api/prisma/migrations/add_semantic_clusters.sql`
+11. `apps/api/prisma/migrations/add_embedding_jobs.sql`
+12. `apps/api/prisma/migrations/add_refresh_tokens.sql`
 
 ## Post-deploy validation
 

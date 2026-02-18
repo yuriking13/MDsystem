@@ -30,6 +30,7 @@ async function buildProjectsApp(options: {
   projectId: string;
   userId: string;
   roleRef: { current: "viewer" | "editor" | "owner" };
+  autoGraphSyncColumnExists?: boolean;
 }) {
   setTestEnv();
   queryMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
@@ -37,6 +38,46 @@ async function buildProjectsApp(options: {
 
     if (text.startsWith("SELECT is_blocked FROM users WHERE id = $1")) {
       return { rowCount: 1, rows: [{ is_blocked: false }] };
+    }
+
+    if (
+      text.startsWith(
+        "SELECT 1 FROM information_schema.columns WHERE table_name = 'projects' AND column_name = 'auto_graph_sync_enabled' LIMIT 1",
+      )
+    ) {
+      if (options.autoGraphSyncColumnExists === false) {
+        return { rowCount: 0, rows: [] };
+      }
+
+      return { rowCount: 1, rows: [{ "?column?": 1 }] };
+    }
+
+    if (
+      text.startsWith(
+        "SELECT p.id, p.name, p.description, p.created_at, p.updated_at,",
+      )
+    ) {
+      return {
+        rowCount: 1,
+        rows: [
+          {
+            id: options.projectId,
+            name: "Project",
+            description: null,
+            citation_style: "gost",
+            role: options.roleRef.current,
+            research_type: null,
+            research_subtype: null,
+            research_protocol: null,
+            protocol_custom_name: null,
+            ai_error_analysis_enabled: false,
+            ai_protocol_check_enabled: false,
+            auto_graph_sync_enabled: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ],
+      };
     }
 
     if (
@@ -68,6 +109,7 @@ async function buildProjectsApp(options: {
             protocol_custom_name: null,
             ai_error_analysis_enabled: false,
             ai_protocol_check_enabled: false,
+            auto_graph_sync_enabled: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
@@ -130,6 +172,81 @@ describe("Projects ACL", () => {
     expect(allowed.json()).toMatchObject({
       project: { id: projectId, role: "owner" },
     });
+
+    await app.close();
+  });
+
+  it("loads project when auto graph sync column is missing", async () => {
+    const projectId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    const userId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+    const roleRef: { current: "viewer" | "editor" | "owner" } = {
+      current: "owner",
+    };
+
+    const app = await buildProjectsApp({
+      projectId,
+      userId,
+      roleRef,
+      autoGraphSyncColumnExists: false,
+    });
+
+    const token = app.jwt.sign({
+      sub: userId,
+      email: "owner@example.com",
+      type: "access",
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/api/projects/${projectId}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      project: { id: projectId, auto_graph_sync_enabled: false },
+    });
+
+    await app.close();
+  });
+
+  it("updates project without touching missing auto graph sync column", async () => {
+    const projectId = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+    const userId = "ffffffff-ffff-4fff-8fff-ffffffffffff";
+    const roleRef: { current: "viewer" | "editor" | "owner" } = {
+      current: "owner",
+    };
+
+    const app = await buildProjectsApp({
+      projectId,
+      userId,
+      roleRef,
+      autoGraphSyncColumnExists: false,
+    });
+
+    const token = app.jwt.sign({
+      sub: userId,
+      email: "owner@example.com",
+      type: "access",
+    });
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: `/api/projects/${projectId}`,
+      headers: { authorization: `Bearer ${token}` },
+      payload: { name: "Updated project", autoGraphSyncEnabled: true },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      project: { id: projectId, role: "owner", auto_graph_sync_enabled: false },
+    });
+
+    const updateQueries = queryMock.mock.calls
+      .map(([sql]) => String(sql).replace(/\s+/g, " ").trim())
+      .filter((text) => text.startsWith("UPDATE projects SET"));
+    expect(updateQueries).toHaveLength(1);
+    expect(updateQueries[0]).not.toContain("auto_graph_sync_enabled =");
 
     await app.close();
   });
