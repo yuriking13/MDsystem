@@ -10,6 +10,8 @@
 import fp from "fastify-plugin";
 import type { FastifyPluginAsync, FastifyRequest, FastifyReply } from "fastify";
 import client from "prom-client";
+import crypto from "node:crypto";
+import { env } from "../env.js";
 import { getPoolStats } from "../pg.js";
 import { getAccessCacheStats } from "../utils/project-access.js";
 import { requireAdminAccess } from "../utils/require-admin.js";
@@ -98,6 +100,45 @@ export const metrics = {
   projectsCreated,
 };
 
+function pickHeaderValue(
+  value: string | string[] | undefined,
+): string | undefined {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return typeof value === "string" ? value : undefined;
+}
+
+function extractMetricsToken(request: FastifyRequest): string | undefined {
+  const authorization = pickHeaderValue(request.headers.authorization);
+  if (authorization?.toLowerCase().startsWith("bearer ")) {
+    return authorization.slice(7).trim();
+  }
+
+  const explicitToken = pickHeaderValue(request.headers["x-metrics-token"]);
+  return explicitToken?.trim();
+}
+
+function hasValidMetricsToken(request: FastifyRequest): boolean {
+  const expectedToken = env.METRICS_SCRAPE_TOKEN?.trim();
+  if (!expectedToken) {
+    return false;
+  }
+
+  const providedToken = extractMetricsToken(request);
+  if (!providedToken) {
+    return false;
+  }
+
+  const expected = Buffer.from(expectedToken, "utf8");
+  const provided = Buffer.from(providedToken, "utf8");
+  if (expected.length !== provided.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(expected, provided);
+}
+
 // Plugin
 const metricsPlugin: FastifyPluginAsync = async (fastify) => {
   // Track active connections
@@ -174,7 +215,14 @@ const metricsPlugin: FastifyPluginAsync = async (fastify) => {
   // Metrics endpoint
   fastify.get(
     "/metrics",
-    { preHandler: [requireAdminAccess] },
+    {
+      preHandler: async (request, reply) => {
+        if (hasValidMetricsToken(request)) {
+          return;
+        }
+        return requireAdminAccess(request, reply);
+      },
+    },
     async (_request, reply) => {
       reply.header("Content-Type", register.contentType);
       return register.metrics();

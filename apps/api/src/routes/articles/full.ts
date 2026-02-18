@@ -39,6 +39,15 @@ import { getUserId } from "../../utils/auth-helpers.js";
 import { createLogger } from "../../utils/logger.js";
 import { filterArticlesByRelevance } from "../../lib/ai-relevance-filter.js";
 import { broadcastToProject } from "../../websocket.js";
+import {
+  OffsetPaginationSchema,
+  calculateOffset,
+  createPaginationMeta,
+} from "../../utils/pagination.js";
+import {
+  parseFirstJsonObject,
+  requestOpenRouterCompletion,
+} from "./ai-assistant.service.js";
 
 const log = createLogger("articles");
 
@@ -114,17 +123,27 @@ const AddArticleByDoiSchema = z.object({
   status: z.enum(["candidate", "selected"]).optional().default("candidate"),
 });
 
-type ProjectArticlesQuery = {
-  status?: string;
-  hasStats?: string;
-  sourceQuery?: string;
-};
+const ProjectArticlesQuerySchema = OffsetPaginationSchema.extend({
+  status: z.enum(["candidate", "selected", "excluded", "deleted"]).optional(),
+  hasStats: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((value) => value === "true"),
+  sourceQuery: z.string().trim().min(1).max(1000).optional(),
+  sortBy: z
+    .enum(["added_at", "year", "created_at"])
+    .optional()
+    .default("added_at"),
+});
+
+type ProjectArticlesQuery = z.infer<typeof ProjectArticlesQuerySchema>;
 
 type ProjectArticlesListResponse = {
   articles: unknown[];
   searchQueries: string[];
   counts: Record<string, number>;
-  total: number | null;
+  total: number;
+  pagination: ReturnType<typeof createPaginationMeta>;
 };
 
 type GraphAiAssistantParsed = {
@@ -166,7 +185,12 @@ async function getUserApiKey(
   try {
     const { decryptApiKey } = await import("../../utils/apiKeyCrypto.js");
     return decryptApiKey(encrypted);
-  } catch {
+  } catch (error) {
+    log.error(
+      "Failed to decrypt user API key",
+      error instanceof Error ? error : undefined,
+      { userId, provider },
+    );
     return null;
   }
 }
@@ -451,7 +475,12 @@ async function addArticleToProject(
        WHERE table_name = 'project_articles' AND column_name = 'source_query'`,
     );
     hasSourceQuery = (checkCol.rowCount ?? 0) > 0;
-  } catch {
+  } catch (error) {
+    log.error(
+      "Failed to check project_articles.source_query column",
+      error instanceof Error ? error : undefined,
+      { projectId, articleId },
+    );
     hasSourceQuery = false;
   }
 
@@ -1376,7 +1405,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // ================================================================
       let autoGraphPipelineStarted = false;
       let autoGraphPipelineJobId: string | null = null;
-      const shouldTriggerAutoGraphSync = bodyP.data.triggerAutoGraphSync !== false;
+      const shouldTriggerAutoGraphSync =
+        bodyP.data.triggerAutoGraphSync !== false;
 
       if (shouldTriggerAutoGraphSync && added > 0) {
         try {
@@ -1554,19 +1584,24 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Project not found" });
       }
 
-      // Query params для фильтрации
-      const query = request.query as ProjectArticlesQuery;
-      const status = query.status; // candidate, selected, excluded
-      const hasStats = query.hasStats === "true";
-      const sourceQuery = query.sourceQuery; // Фильтр по поисковому запросу
+      // Query params для фильтрации + pagination
+      const queryP = ProjectArticlesQuerySchema.safeParse(request.query ?? {});
+      if (!queryP.success) {
+        return reply.code(400).send({
+          error: "BadRequest",
+          message: queryP.error.message,
+        });
+      }
+
+      const { status, hasStats, sourceQuery, page, limit, sortBy, sortOrder } =
+        queryP.data;
+      const offset = calculateOffset(page, limit);
 
       // Build cache key based on filters
-      const cacheKey = status
-        ? CACHE_KEYS.articlesStatus(
-            paramsP.data.id,
-            `${status}:${hasStats}:${sourceQuery || ""}`,
-          )
-        : CACHE_KEYS.articles(paramsP.data.id);
+      const cacheKey = CACHE_KEYS.articlesStatus(
+        paramsP.data.id,
+        `${status || "all"}:${hasStats}:${sourceQuery || ""}:p=${page}:l=${limit}:s=${sortBy}:${sortOrder}`,
+      );
 
       // Try cache first
       const cached = await cacheGet<ProjectArticlesListResponse>(cacheKey);
@@ -1582,13 +1617,56 @@ const plugin: FastifyPluginAsync = async (fastify) => {
            WHERE table_name = 'project_articles' AND column_name = 'source_query'`,
         );
         hasSourceQueryCol = (checkCol.rowCount ?? 0) > 0;
-      } catch {
+      } catch (error) {
+        log.error(
+          "Failed to check project_articles.source_query in list endpoint",
+          error instanceof Error ? error : undefined,
+          { projectId: paramsP.data.id },
+        );
         hasSourceQueryCol = false;
       }
 
-      let sql = `
-        SELECT 
-          a.id, a.doi, a.pmid, a.title_en, a.title_ru, 
+      const whereClauses: string[] = ["pa.project_id = $1"];
+      const params: unknown[] = [paramsP.data.id];
+      let paramIdx = 2;
+
+      if (status) {
+        whereClauses.push(`pa.status = $${paramIdx++}`);
+        params.push(status);
+      } else {
+        // По умолчанию не показываем удалённые
+        whereClauses.push(`pa.status != 'deleted'`);
+      }
+
+      if (hasStats) {
+        whereClauses.push(`a.has_stats = true`);
+      }
+
+      // Фильтр по поисковому запросу
+      if (hasSourceQueryCol && sourceQuery) {
+        whereClauses.push(`pa.source_query = $${paramIdx++}`);
+        params.push(sourceQuery);
+      }
+
+      const whereSql = whereClauses.join(" AND ");
+      const sortFieldMap: Record<
+        NonNullable<ProjectArticlesQuery["sortBy"]>,
+        string
+      > = {
+        added_at: "pa.added_at",
+        year: "a.year",
+        created_at: "a.created_at",
+      };
+      const orderDirection = sortOrder.toUpperCase();
+      const nullsClause = sortBy === "year" ? " NULLS LAST" : "";
+      const orderByClause = `${sortFieldMap[sortBy]} ${orderDirection}${nullsClause}, a.id ${orderDirection}`;
+
+      const limitParam = params.length + 1;
+      const offsetParam = params.length + 2;
+
+      const sql = `
+        SELECT
+          a.id, a.doi, a.pmid, a.title_en, a.title_ru,
           a.abstract_en, a.abstract_ru,
           a.authors, a.year, a.journal, a.url, a.source,
           a.has_stats, a.stats_json, a.stats_quality, a.publication_types,
@@ -1597,58 +1675,40 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           ${hasSourceQueryCol ? ", pa.source_query" : ""}
         FROM project_articles pa
         JOIN articles a ON a.id = pa.article_id
-        WHERE pa.project_id = $1
+        WHERE ${whereSql}
+        ORDER BY ${orderByClause}
+        LIMIT $${limitParam} OFFSET $${offsetParam}
       `;
-      const params: unknown[] = [paramsP.data.id];
-      let paramIdx = 2;
 
-      if (
-        status &&
-        ["candidate", "selected", "excluded", "deleted"].includes(status)
-      ) {
-        sql += ` AND pa.status = $${paramIdx++}`;
-        params.push(status);
-      } else if (!status) {
-        // По умолчанию не показываем удалённые
-        sql += ` AND pa.status != 'deleted'`;
-      }
-
-      if (hasStats) {
-        sql += ` AND a.has_stats = true`;
-      }
-
-      // Фильтр по поисковому запросу
-      if (hasSourceQueryCol && sourceQuery) {
-        sql += ` AND pa.source_query = $${paramIdx++}`;
-        params.push(sourceQuery);
-      }
-
-      sql += ` ORDER BY pa.added_at DESC`;
-
-      const res = await pool.query(sql, params);
-
-      // Подсчёт по статусам
-      const countsRes = await pool.query(
-        `SELECT status, COUNT(*)::int as count 
-         FROM project_articles 
-         WHERE project_id = $1 
-         GROUP BY status`,
-        [paramsP.data.id],
-      );
-
-      // Получить уникальные поисковые запросы
-      let searchQueries: string[] = [];
-      if (hasSourceQueryCol) {
-        const queriesRes = await pool.query(
-          `SELECT DISTINCT source_query FROM project_articles 
-           WHERE project_id = $1 AND source_query IS NOT NULL
-           ORDER BY source_query`,
+      const [res, totalRes, countsRes, queriesRes] = await Promise.all([
+        pool.query(sql, [...params, limit, offset]),
+        pool.query(
+          `SELECT COUNT(*)::int AS total
+           FROM project_articles pa
+           JOIN articles a ON a.id = pa.article_id
+           WHERE ${whereSql}`,
+          params,
+        ),
+        pool.query(
+          `SELECT status, COUNT(*)::int as count
+           FROM project_articles
+           WHERE project_id = $1
+           GROUP BY status`,
           [paramsP.data.id],
-        );
-        searchQueries = queriesRes.rows.map(
-          (r: { source_query: string }) => r.source_query,
-        );
-      }
+        ),
+        hasSourceQueryCol
+          ? pool.query(
+              `SELECT DISTINCT source_query FROM project_articles
+               WHERE project_id = $1 AND source_query IS NOT NULL
+               ORDER BY source_query`,
+              [paramsP.data.id],
+            )
+          : Promise.resolve({ rows: [] as Array<{ source_query: string }> }),
+      ]);
+
+      const searchQueries = queriesRes.rows.map(
+        (r: { source_query: string }) => r.source_query,
+      );
 
       const counts: Record<string, number> = {
         candidate: 0,
@@ -1660,11 +1720,13 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         counts[row.status] = row.count;
       }
 
+      const total = Number(totalRes.rows[0]?.total ?? 0);
       const result = {
         articles: res.rows,
         searchQueries,
         counts,
-        total: res.rowCount,
+        total,
+        pagination: createPaginationMeta(page, limit, total),
       };
 
       // Cache the result (short TTL since data changes frequently)
@@ -2193,7 +2255,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               "Выполните SQL миграцию add_article_references.sql для добавления колонок reference_pmids и cited_by_pmids",
           });
         }
-      } catch {
+      } catch (error) {
+        log.error(
+          "Failed to check articles.reference_pmids before graph job",
+          error instanceof Error ? error : undefined,
+          { projectId: paramsP.data.id },
+        );
         return reply.code(500).send({ error: "Ошибка проверки схемы БД" });
       }
 
@@ -2749,8 +2816,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let wileyToken: string | undefined;
       try {
         wileyToken = (await getUserApiKey(userId, "wiley")) || undefined;
-      } catch {
-        // Нет токена - не проблема
+      } catch (error) {
+        log.error(
+          "Failed to load Wiley API key for article PDF source",
+          error instanceof Error ? error : undefined,
+          { projectId: paramsP.data.id, articleId: paramsP.data.articleId },
+        );
       }
 
       // Ищем источник PDF
@@ -2816,8 +2887,12 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       let wileyToken: string | undefined;
       try {
         wileyToken = (await getUserApiKey(userId, "wiley")) || undefined;
-      } catch {
-        // Ignore - wileyToken will remain undefined
+      } catch (error) {
+        log.error(
+          "Failed to load Wiley API key for article PDF download",
+          error instanceof Error ? error : undefined,
+          { projectId: paramsP.data.id, articleId: paramsP.data.articleId },
+        );
       }
 
       // Ищем источник PDF
@@ -3577,59 +3652,33 @@ ${articlesForAI || "Нет статей с полными данными для 
 - Если ничего не найдено - верни пустой массив foundArticleIds
 - Лимит: до 50 наиболее релевантных статей`;
 
-        // Вызываем OpenRouter с Claude
-        const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
-
-        const res = await fetch(OPENROUTER_API, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${openrouterKey}`,
-            "HTTP-Referer": "https://mdsystem.app",
-          },
-          body: JSON.stringify({
-            model: "anthropic/claude-sonnet-4",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: message },
-            ],
-            temperature: 0.2,
-            max_tokens: 4000,
-          }),
+        const content = await requestOpenRouterCompletion({
+          apiKey: openrouterKey,
+          systemPrompt,
+          userPrompt: message,
+          model: "anthropic/claude-sonnet-4",
+          temperature: 0.2,
+          maxTokens: 4000,
+          referer: "https://mdsystem.app",
         });
 
-        if (!res.ok) {
-          const err = await res.text();
-          throw new Error(
-            `OpenRouter error ${res.status}: ${err.slice(0, 200)}`,
-          );
-        }
-
-        type OpenRouterResponse = {
-          choices: Array<{ message: { content: string } }>;
-        };
-        const data = (await res.json()) as OpenRouterResponse;
-        const content = data.choices?.[0]?.message?.content || "";
-
-        // Парсим JSON из ответа
-        let parsed: GraphAiAssistantParsed = {
-          response: content,
-          foundArticleIds: [],
-          foundArticlesInfo: [],
-        };
-        try {
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]) as GraphAiAssistantParsed;
-          }
-        } catch {
-          // Если не удалось распарсить - возвращаем как текст
-          parsed = {
+        const parsed = parseFirstJsonObject<GraphAiAssistantParsed>(
+          content,
+          {
             response: content,
             foundArticleIds: [],
             foundArticlesInfo: [],
-          };
-        }
+          },
+          (parseError) => {
+            log.warn("Graph AI assistant returned non-JSON payload", {
+              projectId: paramsP.data.id,
+              parseError:
+                parseError instanceof Error
+                  ? parseError.message
+                  : String(parseError),
+            });
+          },
+        );
 
         // Валидируем найденные ID - они должны быть из graphArticles
         const validIds = new Set((graphArticles || []).map((a) => a.id));
@@ -3918,58 +3967,33 @@ ${articlesForAI}
 • ID должны быть из предоставленного списка
 • Если ничего не найдено - suggestedArticleIds = []`;
 
-        // Вызываем OpenRouter с Claude
-        const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
-
-        const res = await fetch(OPENROUTER_API, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${openrouterKey}`,
-            "HTTP-Referer": "https://mdsystem.app",
-          },
-          body: JSON.stringify({
-            model: "anthropic/claude-sonnet-4",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: message },
-            ],
-            temperature: 0.2,
-            max_tokens: 4000,
-          }),
+        const content = await requestOpenRouterCompletion({
+          apiKey: openrouterKey,
+          systemPrompt,
+          userPrompt: message,
+          model: "anthropic/claude-sonnet-4",
+          temperature: 0.2,
+          maxTokens: 4000,
+          referer: "https://mdsystem.app",
         });
 
-        if (!res.ok) {
-          const err = await res.text();
-          throw new Error(
-            `OpenRouter error ${res.status}: ${err.slice(0, 200)}`,
-          );
-        }
-
-        type OpenRouterResponse = {
-          choices: Array<{ message: { content: string } }>;
-        };
-        const data = (await res.json()) as OpenRouterResponse;
-        const content = data.choices?.[0]?.message?.content || "";
-
-        // Парсим JSON из ответа
-        let parsed: ArticlesAiAssistantParsed = {
-          response: content,
-          suggestedArticleIds: [],
-          suggestedArticlesInfo: [],
-        };
-        try {
-          const jsonMatch = content.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]) as ArticlesAiAssistantParsed;
-          }
-        } catch {
-          parsed = {
+        const parsed = parseFirstJsonObject<ArticlesAiAssistantParsed>(
+          content,
+          {
             response: content,
             suggestedArticleIds: [],
             suggestedArticlesInfo: [],
-          };
-        }
+          },
+          (parseError) => {
+            log.warn("Articles AI assistant returned non-JSON payload", {
+              projectId: paramsP.data.id,
+              parseError:
+                parseError instanceof Error
+                  ? parseError.message
+                  : String(parseError),
+            });
+          },
+        );
 
         // Валидируем найденные ID
         const validIds = new Set(articles.map((a) => a.id));

@@ -29,8 +29,10 @@ vi.mock("../../src/plugins/rate-limit.js", () => ({
 }));
 
 type RefreshTokenState = {
+  id: string;
   userId: string;
   expiresAt: Date;
+  createdAt: Date;
   revoked: boolean;
 };
 
@@ -86,12 +88,66 @@ function createAuthDbState(options?: { blocked?: boolean }) {
         "INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)",
       )
     ) {
-      refreshTokens.set(String(params[1]), {
+      const tokenHash = String(params[1]);
+      refreshTokens.set(tokenHash, {
+        id: tokenHash,
         userId: String(params[0]),
         expiresAt: new Date(String(params[2])),
+        createdAt: new Date(),
         revoked: false,
       });
       return { rowCount: 1, rows: [] };
+    }
+
+    if (
+      text.startsWith(
+        "DELETE FROM refresh_tokens WHERE user_id = $1 AND (revoked = true OR expires_at < now())",
+      )
+    ) {
+      let deleted = 0;
+      for (const [tokenHash, token] of refreshTokens.entries()) {
+        if (
+          token.userId === params[0] &&
+          (token.revoked || token.expiresAt.getTime() < Date.now())
+        ) {
+          refreshTokens.delete(tokenHash);
+          deleted++;
+        }
+      }
+      return { rowCount: deleted, rows: [] };
+    }
+
+    if (
+      text.includes(
+        "ROW_NUMBER() OVER (ORDER BY created_at DESC, id DESC) AS rn",
+      ) &&
+      text.includes("UPDATE refresh_tokens rt SET revoked = true")
+    ) {
+      const userId = String(params[0]);
+      const maxActive = Number(params[1]);
+
+      const activeTokens = Array.from(refreshTokens.entries())
+        .filter(([, token]) => {
+          return (
+            token.userId === userId &&
+            !token.revoked &&
+            token.expiresAt.getTime() > Date.now()
+          );
+        })
+        .sort((a, b) => {
+          const byCreated = b[1].createdAt.getTime() - a[1].createdAt.getTime();
+          if (byCreated !== 0) return byCreated;
+          return b[0].localeCompare(a[0]);
+        });
+
+      let affected = 0;
+      for (const [, token] of activeTokens.slice(maxActive)) {
+        if (!token.revoked) {
+          token.revoked = true;
+          affected++;
+        }
+      }
+      return { rowCount: affected, rows: [] };
     }
 
     if (
@@ -215,7 +271,8 @@ describe("Auth critical flow", () => {
     expect(refreshRes.statusCode).toBe(200);
     const refreshPayload = refreshRes.json();
     expect(refreshPayload.refreshToken).not.toBe(firstRefreshToken);
-    expect(state.getTokenState(firstRefreshToken)?.revoked).toBe(true);
+    const firstTokenState = state.getTokenState(firstRefreshToken);
+    expect(firstTokenState === undefined || firstTokenState.revoked).toBe(true);
     expect(state.activeTokensCount()).toBe(1);
 
     const latestAccessToken = refreshPayload.accessToken as string;
@@ -255,6 +312,40 @@ describe("Auth critical flow", () => {
     expect(res.json()).toMatchObject({
       error: "AccountBlocked",
     });
+
+    await app.close();
+  });
+
+  it("limits active refresh tokens per user", async () => {
+    const state = createAuthDbState();
+    const app = await buildAuthApp(state);
+
+    for (let i = 0; i < 7; i++) {
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        payload: { email: state.user.email, password: "valid-password" },
+      });
+      expect(res.statusCode).toBe(200);
+    }
+
+    expect(state.activeTokensCount()).toBe(5);
+    await app.close();
+  });
+
+  it("runs password verification path for unknown users", async () => {
+    const state = createAuthDbState();
+    const app = await buildAuthApp(state);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "missing@example.com", password: "any-password" },
+    });
+
+    expect(res.statusCode).toBe(401);
+    expect(verifyPasswordMock).toHaveBeenCalledTimes(1);
+    expect(verifyPasswordMock.mock.calls[0][1]).toBe("any-password");
 
     await app.close();
   });

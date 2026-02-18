@@ -14,22 +14,23 @@ rule_files: []
 
 scrape_configs:
   # Prometheus self-monitoring
-  - job_name: 'prometheus'
+  - job_name: "prometheus"
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
 
   # MDsystem API metrics
-  - job_name: 'mdsystem-api'
+  - job_name: "mdsystem-api"
     static_configs:
-      - targets: ['localhost:3000']
-    metrics_path: '/metrics'
+      - targets: ["localhost:3000"]
+    metrics_path: "/metrics"
+    bearer_token_file: "/etc/prometheus/mdsystem-metrics.token"
     scrape_interval: 10s
 
   # Node Exporter (system metrics) - optional
   # Install: apt install prometheus-node-exporter
-  - job_name: 'node'
+  - job_name: "node"
     static_configs:
-      - targets: ['localhost:9100']
+      - targets: ["localhost:9100"]
 
   # PostgreSQL Exporter - optional
   # Install: apt install prometheus-postgres-exporter

@@ -78,23 +78,32 @@ await app.register(compress, {
   threshold: 1024, // Сжимать ответы больше 1KB
 });
 
+const productionCspDirectives: Record<string, string[]> = {
+  defaultSrc: ["'self'"],
+  scriptSrc: ["'self'"],
+  styleSrc: ["'self'"],
+  imgSrc: ["'self'", "data:", "https:"],
+  connectSrc: ["'self'", env.CORS_ORIGIN],
+  fontSrc: ["'self'"],
+  objectSrc: ["'none'"],
+  mediaSrc: ["'self'"],
+  frameSrc: ["'none'"],
+  frameAncestors: ["'none'"],
+  baseUri: ["'self'"],
+  formAction: ["'self'"],
+};
+
+if (env.CSP_REPORT_URI) {
+  productionCspDirectives.reportUri = [env.CSP_REPORT_URI];
+}
+
 // Security headers (Helmet)
 await app.register(helmet, {
   // Настроенный CSP для production
   contentSecurityPolicy:
     env.NODE_ENV === "production"
       ? {
-          directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https:"],
-            connectSrc: ["'self'", env.CORS_ORIGIN],
-            fontSrc: ["'self'"],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"],
-          },
+          directives: productionCspDirectives,
         }
       : false, // Отключаем CSP в dev для удобства
   crossOriginEmbedderPolicy: false, // Для совместимости с S3 файлами

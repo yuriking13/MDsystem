@@ -16,6 +16,7 @@ import {
 import { queryEmbeddingCache } from "../utils/embedding-cache.js";
 import { startBoss } from "../worker/boss.js";
 import type { EmbeddingsJobPayload } from "../worker/types.js";
+import { ExternalServiceError } from "../utils/typed-errors.js";
 
 const semanticSearchQuerySchema = z.object({
   query: z.string().min(1).max(1000),
@@ -973,7 +974,10 @@ async function generateEmbedding(
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`OpenRouter API error: ${response.status} - ${error}`);
+    throw new ExternalServiceError(
+      "openrouter",
+      `OpenRouter API error: ${response.status} - ${error}`,
+    );
   }
 
   const data = (await response.json()) as {

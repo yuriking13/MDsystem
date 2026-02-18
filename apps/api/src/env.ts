@@ -8,7 +8,23 @@ const EnvSchema = z.object({
   DATABASE_URL: z.string().min(1),
 
   JWT_SECRET: z.string().min(20),
+  JWT_SECRET_PREVIOUS: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim().length === 0
+        ? undefined
+        : value,
+    z.string().min(20).optional(),
+  ),
+  JWT_SECRET_KID: z.string().min(1).optional().default("k-current"),
+  JWT_SECRET_PREVIOUS_KID: z.string().min(1).optional().default("k-previous"),
   API_KEY_ENCRYPTION_SECRET: z.string().min(32),
+  API_KEY_ENCRYPTION_SECRET_PREVIOUS: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim().length === 0
+        ? undefined
+        : value,
+    z.string().min(32).optional(),
+  ),
 
   CORS_ORIGIN: z.string().min(1),
   CROSSREF_MAILTO: z.string().email(),
@@ -45,9 +61,23 @@ const EnvSchema = z.object({
   // JWT tokens configuration
   ACCESS_TOKEN_EXPIRES: z.string().optional().default("15m"), // Access token lifetime
   REFRESH_TOKEN_EXPIRES: z.string().optional().default("7d"), // Refresh token lifetime
+  METRICS_SCRAPE_TOKEN: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim().length === 0
+        ? undefined
+        : value,
+    z.string().min(20).optional(),
+  ), // Optional bearer token for Prometheus scraping
 
   // Logging
   LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).optional(),
+  CSP_REPORT_URI: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim().length === 0
+        ? undefined
+        : value,
+    z.string().url().optional(),
+  ),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

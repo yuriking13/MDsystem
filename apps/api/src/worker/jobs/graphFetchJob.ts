@@ -98,6 +98,119 @@ interface DoiArticleRow {
   source?: string | null;
 }
 
+interface ArticleReferencesUpdate {
+  id: string;
+  referencePmids: string[];
+  citedByPmids: string[];
+}
+
+interface GraphCacheUpsertRow {
+  pmid: string;
+  title: string | null;
+  authors: string | null;
+  year: number | null;
+  doi: string | null;
+}
+
+interface CitationCountUpdate {
+  id: string;
+  count: number;
+}
+
+const ARTICLE_UPDATE_BATCH_SIZE = 100;
+const GRAPH_CACHE_UPSERT_BATCH_SIZE = 100;
+const CITATION_COUNT_BATCH_SIZE = 100;
+
+function chunkArray<T>(items: T[], chunkSize: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    chunks.push(items.slice(i, i + chunkSize));
+  }
+  return chunks;
+}
+
+async function bulkUpdateArticleReferences(
+  updates: ArticleReferencesUpdate[],
+): Promise<void> {
+  if (updates.length === 0) {
+    return;
+  }
+
+  const params: unknown[] = [];
+  const valuesClause = updates
+    .map((update) => {
+      const base = params.length;
+      params.push(update.id, update.referencePmids, update.citedByPmids);
+      return `($${base + 1}, $${base + 2}::text[], $${base + 3}::text[])`;
+    })
+    .join(", ");
+
+  await pool.query(
+    `UPDATE articles AS a
+     SET reference_pmids = v.reference_pmids,
+         cited_by_pmids = v.cited_by_pmids,
+         references_fetched_at = now()
+     FROM (VALUES ${valuesClause}) AS v(id, reference_pmids, cited_by_pmids)
+     WHERE a.id = v.id`,
+    params,
+  );
+}
+
+async function bulkUpsertGraphCache(
+  rows: GraphCacheUpsertRow[],
+): Promise<void> {
+  if (rows.length === 0) {
+    return;
+  }
+
+  const params: unknown[] = [];
+  const valuesClause = rows
+    .map((row) => {
+      const base = params.length;
+      params.push(row.pmid, row.title, row.authors, row.year, row.doi);
+      return `($${base + 1}, $${base + 2}, $${base + 3}, $${base + 4}, $${base + 5}, now(), now() + interval '30 days')`;
+    })
+    .join(", ");
+
+  await pool.query(
+    `INSERT INTO graph_cache (pmid, title, authors, year, doi, fetched_at, expires_at)
+     VALUES ${valuesClause}
+     ON CONFLICT (pmid) DO UPDATE SET
+       title = COALESCE(EXCLUDED.title, graph_cache.title),
+       authors = COALESCE(EXCLUDED.authors, graph_cache.authors),
+       year = COALESCE(EXCLUDED.year, graph_cache.year),
+       doi = COALESCE(EXCLUDED.doi, graph_cache.doi),
+       fetched_at = now(),
+       expires_at = now() + interval '30 days'`,
+    params,
+  );
+}
+
+async function bulkUpdateCitationCounts(
+  updates: CitationCountUpdate[],
+): Promise<void> {
+  if (updates.length === 0) {
+    return;
+  }
+
+  const params: unknown[] = [];
+  const valuesClause = updates
+    .map((update) => {
+      const base = params.length;
+      params.push(update.id, update.count);
+      return `($${base + 1}, $${base + 2}::int)`;
+    })
+    .join(", ");
+
+  await pool.query(
+    `UPDATE articles AS a
+     SET raw_json = COALESCE(a.raw_json, '{}'::jsonb) || jsonb_build_object('europePMCCitations', v.citation_count)
+     FROM (VALUES ${valuesClause}) AS v(id, citation_count)
+     WHERE a.id = v.id`,
+    params,
+  );
+}
+
 async function enqueueAutoEmbeddingsJob(
   payload: GraphFetchJobPayloadWithJobId,
 ): Promise<void> {
@@ -150,14 +263,8 @@ async function enqueueAutoEmbeddingsJob(
 }
 
 export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
-  const {
-    projectId,
-    jobId,
-    userId,
-    selectedOnly,
-    articleIds,
-    autoPipeline,
-  } = payload;
+  const { projectId, jobId, userId, selectedOnly, articleIds, autoPipeline } =
+    payload;
   const startTime = Date.now();
 
   log.info("Starting graph fetch job", {
@@ -332,6 +439,7 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
     let totalCitedByFound = 0;
     let articlesWithReferences = 0;
     let articlesWithCitedBy = 0;
+    const articleReferenceUpdates: ArticleReferencesUpdate[] = [];
 
     for (const [pmid, refs] of refsMap) {
       const articleId = idByPmid.get(pmid);
@@ -358,35 +466,11 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
       const refArray = Array.isArray(refs.references) ? refs.references : [];
       const citedByArray = Array.isArray(refs.citedBy) ? refs.citedBy : [];
 
-      // Логируем первые несколько референсов для отладки
-      if (refArray.length > 0 && processedArticles < 3) {
-        log.debug("Sample refs for article", {
-          pmid,
-          sampleRefs: refArray.slice(0, 5),
-          totalRefs: refArray.length,
-        });
-      }
-
-      await pool.query(
-        `UPDATE articles SET 
-          reference_pmids = $1::text[],
-          cited_by_pmids = $2::text[],
-          references_fetched_at = now()
-         WHERE id = $3`,
-        [refArray, citedByArray, articleId],
-      );
-
-      // Verify the update worked
-      if (processedArticles === 0) {
-        const verifyRes = await pool.query(
-          `SELECT reference_pmids, array_length(reference_pmids, 1) as ref_count 
-           FROM articles WHERE id = $1`,
-          [articleId],
-        );
-        log.debug("Verified first article saved", {
-          refCount: verifyRes.rows[0]?.ref_count || 0,
-        });
-      }
+      articleReferenceUpdates.push({
+        id: articleId,
+        referencePmids: refArray,
+        citedByPmids: citedByArray,
+      });
 
       // Добавляем PMIDs в список для кэширования
       refs.references.forEach((p) => allPmidsToCache.add(p));
@@ -405,6 +489,13 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
         // Проверяем отмену
         if (await checkTimeoutAndCancellation()) return;
       }
+    }
+
+    for (const batch of chunkArray(
+      articleReferenceUpdates,
+      ARTICLE_UPDATE_BATCH_SIZE,
+    )) {
+      await bulkUpdateArticleReferences(batch);
     }
 
     log.info("Phase 1 complete", {
@@ -466,30 +557,19 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
           });
 
           fetchedFromPubmed += fetched.length;
+          const upsertRows: GraphCacheUpsertRow[] = fetched.map((article) => ({
+            pmid: article.pmid,
+            title: article.title || null,
+            authors: (article.authors || "").split(",")[0]?.trim() || "Unknown",
+            year: article.year ?? null,
+            doi: article.doi ?? null,
+          }));
 
-          // Сохраняем в глобальный кэш (без привязки к проекту)
-          for (const article of fetched) {
-            const firstAuthor =
-              (article.authors || "").split(",")[0]?.trim() || "Unknown";
-
-            await pool.query(
-              `INSERT INTO graph_cache (pmid, title, authors, year, doi, fetched_at, expires_at)
-               VALUES ($1, $2, $3, $4, $5, now(), now() + interval '30 days')
-               ON CONFLICT (pmid) DO UPDATE SET
-                 title = COALESCE(EXCLUDED.title, graph_cache.title),
-                 authors = COALESCE(EXCLUDED.authors, graph_cache.authors),
-                 year = COALESCE(EXCLUDED.year, graph_cache.year),
-                 doi = COALESCE(EXCLUDED.doi, graph_cache.doi),
-                 fetched_at = now(),
-                 expires_at = now() + interval '30 days'`,
-              [
-                article.pmid,
-                article.title,
-                firstAuthor,
-                article.year,
-                article.doi,
-              ],
-            );
+          for (const cacheBatch of chunkArray(
+            upsertRows,
+            GRAPH_CACHE_UPSERT_BATCH_SIZE,
+          )) {
+            await bulkUpsertGraphCache(cacheBatch);
           }
         } catch (err) {
           log.error(
@@ -545,29 +625,35 @@ export async function runGraphFetchJob(payload: GraphFetchJobPayloadWithJobId) {
         throttleMs: 150,
       });
 
-      let citationUpdates = 0;
+      const citationUpdates: CitationCountUpdate[] = [];
       for (const [pmid, count] of citationCounts) {
         const articleId = idByPmid.get(pmid);
         if (!articleId || count === 0) continue;
+        citationUpdates.push({ id: articleId, count });
+      }
 
-        await pool.query(
-          `UPDATE articles SET 
-            raw_json = COALESCE(raw_json, '{}'::jsonb) || jsonb_build_object('europePMCCitations', $1)
-           WHERE id = $2`,
-          [count, articleId],
-        );
-        citationUpdates++;
+      let appliedCitationUpdates = 0;
+      for (const batch of chunkArray(
+        citationUpdates,
+        CITATION_COUNT_BATCH_SIZE,
+      )) {
+        if (await checkTimeoutAndCancellation()) return;
+        await bulkUpdateCitationCounts(batch);
+        appliedCitationUpdates += batch.length;
 
         // Обновляем прогресс каждые 20 статей
-        if (citationUpdates % 20 === 0) {
+        if (
+          appliedCitationUpdates % 20 === 0 ||
+          appliedCitationUpdates === citationUpdates.length
+        ) {
           await updateProgress(jobId, {
             phase: "3 - Загрузка счётчиков цитирований",
-            phase_progress: `${citationUpdates}/${phase3PmidsCount} статей`,
+            phase_progress: `${appliedCitationUpdates}/${phase3PmidsCount} статей`,
           });
         }
       }
       log.info("Phase 3 complete: updated citation counts", {
-        updatedArticles: citationUpdates,
+        updatedArticles: appliedCitationUpdates,
       });
     } catch (err) {
       log.error(

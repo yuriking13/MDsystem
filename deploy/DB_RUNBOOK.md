@@ -38,6 +38,18 @@ If potentially destructive SQL is detected (`DROP/TRUNCATE/...`) and
    - require explicit approval before setting
      `ALLOW_DESTRUCTIVE_DB_PUSH=true`
 
+## Security rotation notes (JWT + API key encryption)
+
+For zero-downtime secret rotation:
+
+1. Deploy with both old and new secrets:
+   - `JWT_SECRET=<new>`
+   - `JWT_SECRET_PREVIOUS=<old>`
+   - `API_KEY_ENCRYPTION_SECRET=<new>`
+   - `API_KEY_ENCRYPTION_SECRET_PREVIOUS=<old>`
+2. Keep previous secrets during one access-token TTL + operational buffer.
+3. Remove `*_PREVIOUS` values on the next deploy after the rotation window.
+
 ## Manual Adminer execution order
 
 Run SQL scripts manually in Adminer when needed:
@@ -48,16 +60,70 @@ Run SQL scripts manually in Adminer when needed:
 4. `apps/api/prisma/migrations/add_file_extracted_metadata.sql`
 5. `apps/api/prisma/migrations/fix_admin_user.sql`
 6. `apps/api/prisma/migrations/add_user_blocking.sql`
-7. `apps/api/prisma/migrations/add_project_settings.sql`
-8. `apps/api/prisma/migrations/add_auto_graph_sync_setting.sql`
-9. `apps/api/prisma/migrations/add_semantic_search.sql`
-10. `apps/api/prisma/migrations/add_semantic_clusters.sql`
-11. `apps/api/prisma/migrations/add_embedding_jobs.sql`
-12. `apps/api/prisma/migrations/add_refresh_tokens.sql`
+7. `apps/api/prisma/migrations/add_password_reset_tokens.sql`
+8. `apps/api/prisma/migrations/add_project_settings.sql`
+9. `apps/api/prisma/migrations/add_auto_graph_sync_setting.sql`
+10. `apps/api/prisma/migrations/add_semantic_search.sql`
+11. `apps/api/prisma/migrations/add_semantic_clusters.sql`
+12. `apps/api/prisma/migrations/add_embedding_jobs.sql`
+13. `apps/api/prisma/migrations/add_refresh_tokens.sql`
+14. `apps/api/prisma/migrations/add_composite_indexes_v2.sql`
+
+> For CLI execution use fail-fast mode:
+>
+> ```bash
+> psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f <migration.sql>
+> ```
+>
+> Do not suppress migration errors with `2>/dev/null` or `|| echo ...`.
+
+### Rollback (critical pair example)
+
+If composite index rollout causes regressions in query plans, rollback with:
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f apps/api/prisma/migrations/rollback_add_composite_indexes_v2.sql
+```
+
+Migration naming/versioning policy is documented in:
+
+`apps/api/prisma/migrations/MIGRATION_VERSIONING.md`
 
 ## Post-deploy validation
 
 1. `/api/health` responds with HTTP 200
 2. API login/refresh flow works
 3. Admin panel works (`/api/admin/me`)
-4. No Prisma schema drift warnings in logs
+4. Password reset migration is present and valid:
+
+   ```sql
+   \d+ password_reset_tokens
+   \di idx_password_reset_tokens_*
+   ```
+
+5. Password reset API flow works:
+   - `POST /api/auth/forgot-password`
+   - `POST /api/auth/verify-reset-token`
+   - `POST /api/auth/reset-password`
+6. Prometheus can scrape `/metrics` with bearer token (`METRICS_SCRAPE_TOKEN`)
+7. Composite indexes are present:
+
+   ```sql
+   \di idx_project_articles_project_status_added_at
+   \di idx_project_articles_project_source_status_added_at
+   \di idx_graph_fetch_jobs_project_active_created_at
+   \di idx_graph_cache_project_expires_at
+   ```
+
+8. No Prisma schema drift warnings in logs
+9. Optional critical-flow smoke (auth + refresh + logout-all):
+
+   ```bash
+   TEST_EMAIL=<email> TEST_PASSWORD=<password> BASE_URL=http://127.0.0.1:3000 pnpm run e2e:smoke
+   ```
+
+10. Optional basic load smoke for health/API:
+
+```bash
+BASE_URL=http://127.0.0.1:3000 CONCURRENCY=10 DURATION_SEC=20 PATHS=/api/health pnpm run perf:api:smoke
+```

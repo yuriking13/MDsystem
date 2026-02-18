@@ -4,6 +4,12 @@
 
 set -e
 
+if [ -z "${METRICS_SCRAPE_TOKEN:-}" ]; then
+  echo "ERROR: METRICS_SCRAPE_TOKEN is required for authenticated /metrics scraping"
+  echo "Usage: METRICS_SCRAPE_TOKEN='<strong-random-token>' sudo -E bash setup-monitoring.sh"
+  exit 1
+fi
+
 echo "=== Installing Prometheus ==="
 apt-get update
 apt-get install -y prometheus prometheus-node-exporter
@@ -18,6 +24,11 @@ apt-get install -y grafana
 echo "=== Configuring Prometheus ==="
 # Backup original config
 cp /etc/prometheus/prometheus.yml /etc/prometheus/prometheus.yml.bak
+
+# Create bearer token file for Prometheus -> API /metrics auth
+install -m 600 /dev/null /etc/prometheus/mdsystem-metrics.token
+printf "%s" "$METRICS_SCRAPE_TOKEN" > /etc/prometheus/mdsystem-metrics.token
+chown prometheus:prometheus /etc/prometheus/mdsystem-metrics.token
 
 # Copy MDsystem config
 cat > /etc/prometheus/prometheus.yml << 'EOF'
@@ -34,6 +45,7 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:3000']
     metrics_path: '/metrics'
+    bearer_token_file: '/etc/prometheus/mdsystem-metrics.token'
     scrape_interval: 10s
 
   - job_name: 'node'
@@ -58,6 +70,9 @@ curl -X POST -H "Content-Type: application/json" \
 
 echo ""
 echo "=== Setup Complete ==="
+echo ""
+echo "Metrics token file: /etc/prometheus/mdsystem-metrics.token"
+echo "Ensure API has matching METRICS_SCRAPE_TOKEN in systemd env."
 echo ""
 echo "Prometheus: http://your-server:9090"
 echo "Grafana:    http://your-server:3001 (login: admin/admin)"

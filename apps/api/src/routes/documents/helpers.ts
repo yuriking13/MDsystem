@@ -1,4 +1,7 @@
 import { pool } from "../../pg.js";
+import { createLogger } from "../../utils/logger.js";
+
+const log = createLogger("documents-helpers");
 
 // ==================== PROJECT ACCESS CHECK ====================
 
@@ -51,7 +54,11 @@ export async function hasSubNumberColumn(): Promise<boolean> {
        WHERE table_name = 'citations' AND column_name = 'sub_number'`,
     );
     return (checkCol.rowCount ?? 0) > 0;
-  } catch {
+  } catch (error) {
+    log.error(
+      "Failed to check citations.sub_number column",
+      error instanceof Error ? error : undefined,
+    );
     return false;
   }
 }
@@ -66,7 +73,11 @@ export async function hasVolumeColumns(): Promise<boolean> {
        WHERE table_name = 'articles' AND column_name = 'volume'`,
     );
     return (checkCol.rowCount ?? 0) > 0;
-  } catch {
+  } catch (error) {
+    log.error(
+      "Failed to check articles.volume column",
+      error instanceof Error ? error : undefined,
+    );
     return false;
   }
 }

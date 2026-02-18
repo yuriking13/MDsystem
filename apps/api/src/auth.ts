@@ -87,14 +87,101 @@ type BlockStatusCacheEntry = {
 
 const BLOCK_STATUS_CACHE_TTL_MS = 10_000;
 const blockedStatusCache = new Map<string, BlockStatusCacheEntry>();
+const MAX_ACTIVE_REFRESH_TOKENS_PER_USER = 5;
+
+type JwtTokenWithKid = {
+  header?: {
+    kid?: string;
+  };
+};
 
 export default fp(async (app: FastifyInstance) => {
+  const jwtSecretsByKid = new Map<string, string>([
+    [env.JWT_SECRET_KID, env.JWT_SECRET],
+  ]);
+
+  if (env.JWT_SECRET_PREVIOUS) {
+    jwtSecretsByKid.set(env.JWT_SECRET_PREVIOUS_KID, env.JWT_SECRET_PREVIOUS);
+    app.log.warn(
+      {
+        activeKid: env.JWT_SECRET_KID,
+        previousKid: env.JWT_SECRET_PREVIOUS_KID,
+      },
+      "JWT secret rotation is enabled",
+    );
+  }
+
+  const selectJwtSecret = (token?: JwtTokenWithKid): string => {
+    const tokenKid = token?.header?.kid;
+
+    if (tokenKid) {
+      const secretForKid = jwtSecretsByKid.get(tokenKid);
+      if (!secretForKid) {
+        throw new Error(`Unknown JWT key id: ${tokenKid}`);
+      }
+      return secretForKid;
+    }
+
+    // Legacy (no kid) tokens from pre-rotation deployments.
+    if (env.JWT_SECRET_PREVIOUS) {
+      return env.JWT_SECRET_PREVIOUS;
+    }
+    return env.JWT_SECRET;
+  };
+
   await app.register(jwt, {
-    secret: env.JWT_SECRET,
+    secret: {
+      private: env.JWT_SECRET,
+      public: async (decodedToken: JwtTokenWithKid) =>
+        selectJwtSecret(decodedToken),
+    },
     sign: {
       expiresIn: env.ACCESS_TOKEN_EXPIRES,
+      header: {
+        alg: "HS256",
+        kid: env.JWT_SECRET_KID,
+      },
     },
   });
+
+  /**
+   * Удаляем явно неактуальные refresh tokens пользователя
+   * (истёкшие и уже отозванные).
+   */
+  const cleanupUserRefreshTokens = async (userId: string): Promise<void> => {
+    await pool.query(
+      `DELETE FROM refresh_tokens
+       WHERE user_id = $1
+         AND (revoked = true OR expires_at < now())`,
+      [userId],
+    );
+  };
+
+  /**
+   * Ограничиваем число активных refresh tokens на пользователя.
+   * Сохраняем только самые свежие токены, остальные отзываем.
+   */
+  const enforceRefreshTokenLimit = async (
+    userId: string,
+    maxActiveTokens: number,
+  ): Promise<void> => {
+    await pool.query(
+      `WITH ranked AS (
+         SELECT id,
+                ROW_NUMBER() OVER (ORDER BY created_at DESC, id DESC) AS rn
+         FROM refresh_tokens
+         WHERE user_id = $1
+           AND revoked = false
+           AND expires_at > now()
+       )
+       UPDATE refresh_tokens rt
+       SET revoked = true
+       FROM ranked
+       WHERE rt.id = ranked.id
+         AND ranked.rn > $2`,
+      [userId, maxActiveTokens],
+    );
+  };
 
   /**
    * Генерация пары токенов (access + refresh)
@@ -123,6 +210,10 @@ export default fp(async (app: FastifyInstance) => {
        VALUES ($1, $2, $3)`,
       [userId, tokenHash, expiresAt],
     );
+
+    // Opportunistic cleanup + bounded active sessions per user.
+    await cleanupUserRefreshTokens(userId);
+    await enforceRefreshTokenLimit(userId, MAX_ACTIVE_REFRESH_TOKENS_PER_USER);
 
     return { accessToken, refreshToken };
   };
