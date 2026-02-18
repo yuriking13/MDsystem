@@ -29,6 +29,8 @@ model User {
   uploadedFiles     ProjectFile[]
   activities        UserActivity[]
   sessions          UserSession[]
+  refreshTokens     RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
   subscriptions     UserSubscription[]
   adminAuditLogs    AdminAuditLog[]
   resolvedErrors    SystemErrorLog[]   @relation("ResolvedBy")
@@ -48,6 +50,39 @@ model UserApiKey {
 
   @@unique([userId, provider])
   @@map("user_api_keys")
+}
+
+model RefreshToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()::text"))
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revoked, expiresAt])
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()::text"))
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime  @map("expires_at")
+  used      Boolean   @default(false)
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([used, expiresAt])
+  @@map("password_reset_tokens")
 }
 
 model Project {

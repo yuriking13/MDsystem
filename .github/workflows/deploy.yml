@@ -19,6 +19,8 @@ jobs:
           script_stop: true
           command_timeout: 15m
           script: |
+            set -euo pipefail
+
             cd /root/MDsystem
             git fetch --all
             git reset --hard origin/main
@@ -34,46 +36,33 @@ jobs:
 
             export DATABASE_URL="postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}"
 
-            echo "Resetting pg-boss schema..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/reset_boss_schema.sql 2>/dev/null || echo "pg-boss reset done"
+            apply_migration() {
+              local migration_file="$1"
+              echo "Applying migration: $(basename "$migration_file")"
+              psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration_file"
+            }
 
-            echo "Dropping conflicting views..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/drop_admin_views.sql 2>/dev/null || echo "Views dropped"
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/reset_boss_schema.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/drop_admin_views.sql
 
             echo "Generating Prisma schema diff (dry-run, informational only)..."
-            pnpm --filter api exec prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel /root/MDsystem/apps/api/prisma/schema.prisma --script > /tmp/prisma-diff.sql 2>/dev/null || echo "Prisma diff skipped (non-critical)"
+            if ! pnpm --filter api exec prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel /root/MDsystem/apps/api/prisma/schema.prisma --script > /tmp/prisma-diff.sql; then
+              echo "WARNING: Prisma diff generation failed (non-critical)." >&2
+            fi
 
             echo "Skipping prisma db push (manual DB mode)."
 
-            echo "Applying project_files migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_project_files.sql 2>/dev/null || echo "already exists"
-
-            echo "Applying file metadata cache migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_file_extracted_metadata.sql 2>/dev/null || echo "already exists"
-
-            echo "Fixing admin user..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/fix_admin_user.sql 2>/dev/null || echo "done"
-
-            echo "Applying user blocking migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_user_blocking.sql 2>/dev/null || echo "already exists"
-
-            echo "Applying project settings migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_project_settings.sql 2>/dev/null || echo "already exists"
-
-            echo "Applying auto graph sync setting migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_auto_graph_sync_setting.sql 2>/dev/null || echo "already exists"
-
-            echo "Applying semantic search migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_search.sql 2>/dev/null || echo "already exists"
-
-            echo "Applying semantic clusters migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_semantic_clusters.sql 2>/dev/null || echo "already exists"
-
-            echo "Applying embedding jobs migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_embedding_jobs.sql 2>/dev/null || echo "already exists"
-
-            echo "Applying refresh tokens migration..."
-            psql "$DATABASE_URL" -f /root/MDsystem/apps/api/prisma/migrations/add_refresh_tokens.sql 2>/dev/null || echo "already exists"
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_project_files.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_file_extracted_metadata.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/fix_admin_user.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_user_blocking.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_password_reset_tokens.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_project_settings.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_auto_graph_sync_setting.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_semantic_search.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_semantic_clusters.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_embedding_jobs.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_refresh_tokens.sql
 
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'
@@ -86,7 +75,7 @@ jobs:
 
             mkdir -p /etc/systemd/system/thesis-api.service.d
 
-            printf "[Service]\nEnvironment=\"NODE_ENV=production\"\nEnvironment=\"PORT=3000\"\nEnvironment=\"HOST=127.0.0.1\"\nEnvironment=\"JWT_SECRET=${{ secrets.JWT_SECRET }}\"\nEnvironment=\"CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}\"\nEnvironment=\"CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}\"\nEnvironment=\"API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}\"\nEnvironment=\"DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}\"\nEnvironment=\"S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}\"\nEnvironment=\"S3_REGION=${{ secrets.S3_REGION }}\"\nEnvironment=\"S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}\"\nEnvironment=\"S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}\"\nEnvironment=\"S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}\"\n" > /etc/systemd/system/thesis-api.service.d/override.conf
+            printf "[Service]\nEnvironment=\"NODE_ENV=production\"\nEnvironment=\"PORT=3000\"\nEnvironment=\"HOST=127.0.0.1\"\nEnvironment=\"JWT_SECRET=${{ secrets.JWT_SECRET }}\"\nEnvironment=\"CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}\"\nEnvironment=\"CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}\"\nEnvironment=\"API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}\"\nEnvironment=\"METRICS_SCRAPE_TOKEN=${{ secrets.METRICS_SCRAPE_TOKEN }}\"\nEnvironment=\"DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}\"\nEnvironment=\"S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}\"\nEnvironment=\"S3_REGION=${{ secrets.S3_REGION }}\"\nEnvironment=\"S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}\"\nEnvironment=\"S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}\"\nEnvironment=\"S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}\"\n" > /etc/systemd/system/thesis-api.service.d/override.conf
 
             cp /root/MDsystem/deploy/thesis-api.service /etc/systemd/system/thesis-api.service
             systemctl daemon-reload

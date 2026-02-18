@@ -48,16 +48,37 @@ Run SQL scripts manually in Adminer when needed:
 4. `apps/api/prisma/migrations/add_file_extracted_metadata.sql`
 5. `apps/api/prisma/migrations/fix_admin_user.sql`
 6. `apps/api/prisma/migrations/add_user_blocking.sql`
-7. `apps/api/prisma/migrations/add_project_settings.sql`
-8. `apps/api/prisma/migrations/add_auto_graph_sync_setting.sql`
-9. `apps/api/prisma/migrations/add_semantic_search.sql`
-10. `apps/api/prisma/migrations/add_semantic_clusters.sql`
-11. `apps/api/prisma/migrations/add_embedding_jobs.sql`
-12. `apps/api/prisma/migrations/add_refresh_tokens.sql`
+7. `apps/api/prisma/migrations/add_password_reset_tokens.sql`
+8. `apps/api/prisma/migrations/add_project_settings.sql`
+9. `apps/api/prisma/migrations/add_auto_graph_sync_setting.sql`
+10. `apps/api/prisma/migrations/add_semantic_search.sql`
+11. `apps/api/prisma/migrations/add_semantic_clusters.sql`
+12. `apps/api/prisma/migrations/add_embedding_jobs.sql`
+13. `apps/api/prisma/migrations/add_refresh_tokens.sql`
+
+> For CLI execution use fail-fast mode:
+>
+> ```bash
+> psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f <migration.sql>
+> ```
+>
+> Do not suppress migration errors with `2>/dev/null` or `|| echo ...`.
 
 ## Post-deploy validation
 
 1. `/api/health` responds with HTTP 200
 2. API login/refresh flow works
 3. Admin panel works (`/api/admin/me`)
-4. No Prisma schema drift warnings in logs
+4. Password reset migration is present and valid:
+
+   ```sql
+   \d+ password_reset_tokens
+   \di idx_password_reset_tokens_*
+   ```
+
+5. Password reset API flow works:
+   - `POST /api/auth/forgot-password`
+   - `POST /api/auth/verify-reset-token`
+   - `POST /api/auth/reset-password`
+6. Prometheus can scrape `/metrics` with bearer token (`METRICS_SCRAPE_TOKEN`)
+7. No Prisma schema drift warnings in logs
