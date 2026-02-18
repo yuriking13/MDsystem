@@ -38,6 +38,18 @@ If potentially destructive SQL is detected (`DROP/TRUNCATE/...`) and
    - require explicit approval before setting
      `ALLOW_DESTRUCTIVE_DB_PUSH=true`
 
+## Security rotation notes (JWT + API key encryption)
+
+For zero-downtime secret rotation:
+
+1. Deploy with both old and new secrets:
+   - `JWT_SECRET=<new>`
+   - `JWT_SECRET_PREVIOUS=<old>`
+   - `API_KEY_ENCRYPTION_SECRET=<new>`
+   - `API_KEY_ENCRYPTION_SECRET_PREVIOUS=<old>`
+2. Keep previous secrets during one access-token TTL + operational buffer.
+3. Remove `*_PREVIOUS` values on the next deploy after the rotation window.
+
 ## Manual Adminer execution order
 
 Run SQL scripts manually in Adminer when needed:
@@ -55,6 +67,7 @@ Run SQL scripts manually in Adminer when needed:
 11. `apps/api/prisma/migrations/add_semantic_clusters.sql`
 12. `apps/api/prisma/migrations/add_embedding_jobs.sql`
 13. `apps/api/prisma/migrations/add_refresh_tokens.sql`
+14. `apps/api/prisma/migrations/add_composite_indexes_v2.sql`
 
 > For CLI execution use fail-fast mode:
 >
@@ -63,6 +76,18 @@ Run SQL scripts manually in Adminer when needed:
 > ```
 >
 > Do not suppress migration errors with `2>/dev/null` or `|| echo ...`.
+
+### Rollback (critical pair example)
+
+If composite index rollout causes regressions in query plans, rollback with:
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f apps/api/prisma/migrations/rollback_add_composite_indexes_v2.sql
+```
+
+Migration naming/versioning policy is documented in:
+
+`apps/api/prisma/migrations/MIGRATION_VERSIONING.md`
 
 ## Post-deploy validation
 
@@ -81,4 +106,24 @@ Run SQL scripts manually in Adminer when needed:
    - `POST /api/auth/verify-reset-token`
    - `POST /api/auth/reset-password`
 6. Prometheus can scrape `/metrics` with bearer token (`METRICS_SCRAPE_TOKEN`)
-7. No Prisma schema drift warnings in logs
+7. Composite indexes are present:
+
+   ```sql
+   \di idx_project_articles_project_status_added_at
+   \di idx_project_articles_project_source_status_added_at
+   \di idx_graph_fetch_jobs_project_active_created_at
+   \di idx_graph_cache_project_expires_at
+   ```
+
+8. No Prisma schema drift warnings in logs
+9. Optional critical-flow smoke (auth + refresh + logout-all):
+
+   ```bash
+   TEST_EMAIL=<email> TEST_PASSWORD=<password> BASE_URL=http://127.0.0.1:3000 pnpm run e2e:smoke
+   ```
+
+10. Optional basic load smoke for health/API:
+
+```bash
+BASE_URL=http://127.0.0.1:3000 CONCURRENCY=10 DURATION_SEC=20 PATHS=/api/health pnpm run perf:api:smoke
+```

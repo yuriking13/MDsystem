@@ -63,6 +63,7 @@ jobs:
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_semantic_clusters.sql
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_embedding_jobs.sql
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_refresh_tokens.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_composite_indexes_v2.sql
 
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'
@@ -75,7 +76,28 @@ jobs:
 
             mkdir -p /etc/systemd/system/thesis-api.service.d
 
-            printf "[Service]\nEnvironment=\"NODE_ENV=production\"\nEnvironment=\"PORT=3000\"\nEnvironment=\"HOST=127.0.0.1\"\nEnvironment=\"JWT_SECRET=${{ secrets.JWT_SECRET }}\"\nEnvironment=\"CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}\"\nEnvironment=\"CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}\"\nEnvironment=\"API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}\"\nEnvironment=\"METRICS_SCRAPE_TOKEN=${{ secrets.METRICS_SCRAPE_TOKEN }}\"\nEnvironment=\"DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}\"\nEnvironment=\"S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}\"\nEnvironment=\"S3_REGION=${{ secrets.S3_REGION }}\"\nEnvironment=\"S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}\"\nEnvironment=\"S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}\"\nEnvironment=\"S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}\"\n" > /etc/systemd/system/thesis-api.service.d/override.conf
+            cat > /etc/systemd/system/thesis-api.service.d/override.conf <<EOF
+            [Service]
+            Environment="NODE_ENV=production"
+            Environment="PORT=3000"
+            Environment="HOST=127.0.0.1"
+            Environment="JWT_SECRET=${{ secrets.JWT_SECRET }}"
+            Environment="JWT_SECRET_PREVIOUS=${{ secrets.JWT_SECRET_PREVIOUS }}"
+            Environment="JWT_SECRET_KID=k-current"
+            Environment="JWT_SECRET_PREVIOUS_KID=k-previous"
+            Environment="CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}"
+            Environment="CROSSREF_MAILTO=${{ secrets.CROSSREF_MAILTO }}"
+            Environment="API_KEY_ENCRYPTION_SECRET=${{ secrets.API_KEY_ENCRYPTION_SECRET }}"
+            Environment="API_KEY_ENCRYPTION_SECRET_PREVIOUS=${{ secrets.API_KEY_ENCRYPTION_SECRET_PREVIOUS }}"
+            Environment="CSP_REPORT_URI=${{ secrets.CSP_REPORT_URI }}"
+            Environment="METRICS_SCRAPE_TOKEN=${{ secrets.METRICS_SCRAPE_TOKEN }}"
+            Environment="DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASSWORD }}@${{ secrets.PG_HOST }}:${{ secrets.PG_PORT }}/${{ secrets.PG_DATABASE }}"
+            Environment="S3_ENDPOINT=${{ secrets.S3_ENDPOINT }}"
+            Environment="S3_REGION=${{ secrets.S3_REGION }}"
+            Environment="S3_ACCESS_KEY_ID=${{ secrets.S3_ACCESS_KEY_ID }}"
+            Environment="S3_SECRET_ACCESS_KEY=${{ secrets.S3_SECRET_ACCESS_KEY }}"
+            Environment="S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME }}"
+            EOF
 
             cp /root/MDsystem/deploy/thesis-api.service /etc/systemd/system/thesis-api.service
             systemctl daemon-reload

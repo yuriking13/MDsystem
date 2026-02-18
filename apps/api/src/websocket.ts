@@ -5,6 +5,7 @@ import { createLogger } from "./utils/logger.js";
 import { checkProjectAccessPool } from "./utils/project-access.js";
 import crypto from "crypto";
 import { z } from "zod";
+import { getRedisClient, initRedisClient } from "./lib/redis.js";
 
 const log = createLogger("WebSocket");
 
@@ -62,6 +63,11 @@ const userConnections = new Map<string, Set<AppWebSocket>>();
 // Одноразовые короткоживущие tickets для WS handshake
 const wsTickets = new Map<string, WsTicketRecord>();
 const WS_TICKET_TTL_MS = 60 * 1000;
+const WS_TICKET_PREFIX = "ws:ticket:";
+
+function wsTicketKey(ticket: string): string {
+  return `${WS_TICKET_PREFIX}${ticket}`;
+}
 
 function cleanupExpiredTickets() {
   const now = Date.now();
@@ -72,18 +78,60 @@ function cleanupExpiredTickets() {
   }
 }
 
-function issueWsTicket(userId: string, projectId: string): string {
-  cleanupExpiredTickets();
+async function issueWsTicket(
+  userId: string,
+  projectId: string,
+): Promise<string> {
   const ticket = crypto.randomBytes(24).toString("base64url");
-  wsTickets.set(ticket, {
+  const record: WsTicketRecord = {
     userId,
     projectId,
     expiresAt: Date.now() + WS_TICKET_TTL_MS,
-  });
+  };
+
+  const redisClient = getRedisClient() || (await initRedisClient());
+  if (redisClient) {
+    try {
+      await redisClient.setex(
+        wsTicketKey(ticket),
+        Math.ceil(WS_TICKET_TTL_MS / 1000),
+        JSON.stringify(record),
+      );
+      return ticket;
+    } catch (error) {
+      log.error(
+        "Failed to persist WS ticket in Redis, fallback to memory",
+        error,
+      );
+    }
+  }
+
+  cleanupExpiredTickets();
+  wsTickets.set(ticket, record);
   return ticket;
 }
 
-function consumeWsTicket(ticket: string): WsTicketRecord | null {
+async function consumeWsTicket(ticket: string): Promise<WsTicketRecord | null> {
+  const redisClient = getRedisClient() || (await initRedisClient());
+  if (redisClient) {
+    try {
+      const rawRecord = await redisClient.call("GETDEL", wsTicketKey(ticket));
+      if (typeof rawRecord === "string") {
+        const parsed = JSON.parse(rawRecord) as WsTicketRecord;
+        if (parsed.expiresAt <= Date.now()) {
+          return null;
+        }
+        return parsed;
+      }
+      return null;
+    } catch (error) {
+      log.error(
+        "Failed to consume WS ticket from Redis, fallback to memory",
+        error,
+      );
+    }
+  }
+
   cleanupExpiredTickets();
   const record = wsTickets.get(ticket);
   if (!record) {
@@ -263,7 +311,7 @@ export async function registerWebSocket(app: FastifyInstance) {
       });
     }
 
-    const ticket = issueWsTicket(userId, projectId);
+    const ticket = await issueWsTicket(userId, projectId);
     return {
       ticket,
       expiresInMs: WS_TICKET_TTL_MS,
@@ -287,7 +335,7 @@ export async function registerWebSocket(app: FastifyInstance) {
         return;
       }
 
-      const wsTicket = consumeWsTicket(ticket);
+      const wsTicket = await consumeWsTicket(ticket);
       if (!wsTicket) {
         socket.close(4001, "Invalid ticket");
         return;
@@ -355,9 +403,12 @@ export async function registerWebSocket(app: FastifyInstance) {
               JSON.stringify({ type: "pong", timestamp: Date.now() }),
             );
           }
-        } catch {
-          // Игнорируем невалидные сообщения (не JSON)
-          log.debug("Invalid message received", { projectId });
+        } catch (error) {
+          // Игнорируем невалидные сообщения (не JSON), но оставляем trace в логах
+          log.debug("Invalid message received", {
+            projectId,
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       });
 
@@ -399,9 +450,13 @@ export function getConnectionStats() {
   for (const [projectId, connections] of projectConnections) {
     stats[projectId] = connections.size;
   }
+  const ticketBackend = getRedisClient() ? "redis" : "memory";
+
   return {
     totalProjects: projectConnections.size,
     totalUsers: userConnections.size,
+    wsTicketBackend: ticketBackend,
+    pendingInMemoryTickets: wsTickets.size,
     byProject: stats,
   };
 }

@@ -89,11 +89,54 @@ const BLOCK_STATUS_CACHE_TTL_MS = 10_000;
 const blockedStatusCache = new Map<string, BlockStatusCacheEntry>();
 const MAX_ACTIVE_REFRESH_TOKENS_PER_USER = 5;
 
+type JwtTokenWithKid = {
+  header?: {
+    kid?: string;
+  };
+};
+
 export default fp(async (app: FastifyInstance) => {
+  const jwtSecretsByKid = new Map<string, string>([
+    [env.JWT_SECRET_KID, env.JWT_SECRET],
+  ]);
+
+  if (env.JWT_SECRET_PREVIOUS) {
+    jwtSecretsByKid.set(env.JWT_SECRET_PREVIOUS_KID, env.JWT_SECRET_PREVIOUS);
+    app.log.warn(
+      {
+        activeKid: env.JWT_SECRET_KID,
+        previousKid: env.JWT_SECRET_PREVIOUS_KID,
+      },
+      "JWT secret rotation is enabled",
+    );
+  }
+
+  const selectJwtSecret = (token?: JwtTokenWithKid): string => {
+    const tokenKid = token?.header?.kid;
+
+    if (tokenKid) {
+      const secretForKid = jwtSecretsByKid.get(tokenKid);
+      if (!secretForKid) {
+        throw new Error(`Unknown JWT key id: ${tokenKid}`);
+      }
+      return secretForKid;
+    }
+
+    // Legacy (no kid) tokens from pre-rotation deployments.
+    if (env.JWT_SECRET_PREVIOUS) {
+      return env.JWT_SECRET_PREVIOUS;
+    }
+    return env.JWT_SECRET;
+  };
+
   await app.register(jwt, {
-    secret: env.JWT_SECRET,
+    secret: (_request, token) =>
+      selectJwtSecret(token as JwtTokenWithKid | undefined),
     sign: {
       expiresIn: env.ACCESS_TOKEN_EXPIRES,
+      header: {
+        kid: env.JWT_SECRET_KID,
+      },
     },
   });
 
