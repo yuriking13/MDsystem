@@ -130,8 +130,11 @@ export default fp(async (app: FastifyInstance) => {
   };
 
   await app.register(jwt, {
-    secret: (_request: FastifyRequest, token: JwtTokenWithKid) =>
-      selectJwtSecret(token),
+    secret: {
+      private: env.JWT_SECRET,
+      public: async (_request: FastifyRequest, token: JwtTokenWithKid) =>
+        selectJwtSecret(token),
+    },
     sign: {
       expiresIn: env.ACCESS_TOKEN_EXPIRES,
       header: {
