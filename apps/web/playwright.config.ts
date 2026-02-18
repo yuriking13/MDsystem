@@ -15,7 +15,7 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   timeout: 90_000,
   reporter: process.env.CI
     ? [["list"], ["html", { open: "never" }]]
@@ -55,7 +55,7 @@ export default defineConfig({
       },
     },
     {
-      command: "pnpm --filter web dev -- --host 127.0.0.1 --port 4173",
+      command: "pnpm --filter web exec vite --host 127.0.0.1 --port 4173",
       cwd: workspaceRoot,
       url: "http://127.0.0.1:4173/login",
       timeout: 120_000,

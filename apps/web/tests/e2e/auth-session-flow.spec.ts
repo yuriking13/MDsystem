@@ -31,12 +31,26 @@ test.describe("Browser auth flow: refresh/logout/logout-all", () => {
     await page.goto("/projects");
     await expect(page).toHaveURL(/\/projects/);
 
+    await expect
+      .poll(async () => (await readAuthTokens(page)).accessToken, {
+        timeout: 15_000,
+      })
+      .not.toBe("broken.token.value");
+
     const tokensAfterRefresh = await readAuthTokens(page);
     expect(tokensAfterRefresh.accessToken).toBeTruthy();
     expect(tokensAfterRefresh.accessToken).not.toBe("broken.token.value");
-    expect(tokensAfterRefresh.accessToken).not.toBe(
-      tokensBeforeRefresh.accessToken,
+    expect(tokensAfterRefresh.refreshToken).toBeTruthy();
+    expect(tokensAfterRefresh.refreshToken).not.toBe(
+      tokensBeforeRefresh.refreshToken,
     );
+
+    const refreshWithRevokedToken = await request.post("/api/auth/refresh", {
+      data: {
+        refreshToken: tokensBeforeRefresh.refreshToken,
+      },
+    });
+    expect(refreshWithRevokedToken.status()).toBe(401);
 
     await page.getByTestId("sidebar-logout-button").click();
     await expect(page).toHaveURL(/\/login/);
