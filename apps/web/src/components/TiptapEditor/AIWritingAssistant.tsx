@@ -468,9 +468,15 @@ export default function AIWritingAssistant({
       editor
         .chain()
         .focus()
-        .insertContent(
-          `<p class="ai-figure-caption">${illustrationResult.figureCaption}</p>`,
-        )
+        .insertContent({
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: illustrationResult.figureCaption,
+            },
+          ],
+        })
         .run();
     }
 
