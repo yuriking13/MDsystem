@@ -1122,6 +1122,8 @@ export default function AIWritingAssistant({
             Повторить
           </button>
         </div>
+
+        {error && <div className="ai-assistant-error">{error}</div>}
       </div>
     );
   };

@@ -34,7 +34,9 @@ const CriticResponseSchema = z
   })
   .strict();
 
-export type IllustrationLlmResponse = z.infer<typeof IllustrationLlmResponseSchema>;
+export type IllustrationLlmResponse = z.infer<
+  typeof IllustrationLlmResponseSchema
+>;
 export type IllustrationPipelineMode = "baseline" | "agentic";
 
 export type IllustrationPipelineInput = {
@@ -251,7 +253,9 @@ async function runBaselineGeneration(
     maxTokens: 8192,
   });
 
-  return normalizeResponse(parseAndValidate(llmRaw, IllustrationLlmResponseSchema));
+  return normalizeResponse(
+    parseAndValidate(llmRaw, IllustrationLlmResponseSchema),
+  );
 }
 
 async function runPlanner(
@@ -305,7 +309,11 @@ async function runCritic(
     maxTokens: 700,
   });
 
-  return parseAndValidate(criticRaw, CriticResponseSchema);
+  const critic = parseAndValidate(criticRaw, CriticResponseSchema);
+  return {
+    needsRevision: critic.needsRevision,
+    issues: critic.issues ?? [],
+  };
 }
 
 async function runRevision(
@@ -335,7 +343,9 @@ async function runRevision(
     maxTokens: 8192,
   });
 
-  return normalizeResponse(parseAndValidate(revisionRaw, IllustrationLlmResponseSchema));
+  return normalizeResponse(
+    parseAndValidate(revisionRaw, IllustrationLlmResponseSchema),
+  );
 }
 
 export async function runIllustrationPipeline(params: {
