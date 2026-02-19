@@ -14,6 +14,7 @@ import {
 
 const log = createLogger("admin");
 import {
+  buildAdminProjectsFilterAndSort,
   generateAdminToken,
   hashAdminToken,
   normalizePagination,
@@ -1530,7 +1531,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/projects",
     { preHandler: [requireAdmin] },
-    async (req) => {
+    async (req, reply) => {
       const query = z
         .object({
           page: z
@@ -1542,16 +1543,8 @@ export async function adminRoutes(app: FastifyInstance) {
             .optional()
             .transform((v) => parseInt(v || "20")),
           search: z.string().optional(),
-          sortBy: z
-            .enum([
-              "created_at",
-              "updated_at",
-              "name",
-              "documents_count",
-              "articles_count",
-            ])
-            .optional(),
-          sortOrder: z.enum(["asc", "desc"]).optional(),
+          sortBy: z.string().optional(),
+          sortOrder: z.string().optional(),
         })
         .parse(req.query);
 
@@ -1560,22 +1553,18 @@ export async function adminRoutes(app: FastifyInstance) {
         query.limit,
         20,
       );
-      const conditions: string[] = [];
-      const params: unknown[] = [];
-      let paramIdx = 1;
 
-      if (query.search) {
-        conditions.push(
-          `(p.name ILIKE $${paramIdx} OR u.email ILIKE $${paramIdx})`,
-        );
-        params.push(`%${query.search}%`);
-        paramIdx++;
+      const queryBuilderResult = buildAdminProjectsFilterAndSort({
+        search: query.search,
+        sortBy: query.sortBy,
+        sortOrder: query.sortOrder,
+      });
+
+      if (!queryBuilderResult.ok) {
+        return reply.code(400).send({ error: queryBuilderResult.error });
       }
 
-      const whereClause =
-        conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-      const sortColumn = query.sortBy || "created_at";
-      const sortOrder = query.sortOrder || "desc";
+      const { whereClause, params, orderByClause } = queryBuilderResult;
 
       const [projects, total] = await Promise.all([
         pool.query(
@@ -1597,13 +1586,7 @@ export async function adminRoutes(app: FastifyInstance) {
         LEFT JOIN project_members pm ON pm.project_id = p.id
         ${whereClause}
         GROUP BY p.id, u.id
-        ORDER BY ${
-          sortColumn === "documents_count"
-            ? "COUNT(DISTINCT d.id)"
-            : sortColumn === "articles_count"
-              ? "COUNT(DISTINCT pa.article_id)"
-              : `p.${sortColumn}`
-        } ${sortOrder}
+        ${orderByClause}
         LIMIT ${limit} OFFSET ${offset}
       `,
           params,
