@@ -2715,6 +2715,17 @@ export type AIGenerateIllustrationResponse = {
   svgCode: string;
   figureCaption: string | null;
   notes: string | null;
+  projectFile?: {
+    id: string;
+    name: string;
+    mimeType: string;
+    category: "image";
+  };
+  pipeline?: {
+    mode: "baseline" | "agentic";
+    usedFallback: boolean;
+    criticIterations: number;
+  };
   error?: string;
 };
 

@@ -190,13 +190,13 @@ export default function RegisterPage() {
                     />
                     <span>
                       Регистрируясь, вы соглашаетесь с{" "}
-                      <a href="#" className="auth-link">
+                      <Link to="/terms" className="auth-link">
                         Условиями использования
-                      </a>{" "}
+                      </Link>{" "}
                       и{" "}
-                      <a href="#" className="auth-link">
+                      <Link to="/privacy" className="auth-link">
                         Политикой конфиденциальности
-                      </a>
+                      </Link>
                       .
                     </span>
                   </label>

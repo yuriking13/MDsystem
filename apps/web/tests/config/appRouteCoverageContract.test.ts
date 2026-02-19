@@ -95,6 +95,12 @@ describe("app route coverage contract", () => {
       /<Route path="\/offer" element={<PublicOfferPage \/>} \/>/,
     );
     expect(appSource).toMatch(
+      /<Route path="\/terms" element={<TermsOfUsePage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
+      /<Route path="\/privacy" element={<PrivacyPolicyPage \/>} \/>/,
+    );
+    expect(appSource).toMatch(
       /<Route path="\/project-faces" element={<ProjectFacesPage \/>} \/>/,
     );
   });

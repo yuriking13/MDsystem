@@ -13,6 +13,8 @@ const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const PublicOfferPage = lazy(() => import("./pages/PublicOfferPage"));
+const TermsOfUsePage = lazy(() => import("./pages/TermsOfUsePage"));
+const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
 const ProjectFacesPage = lazy(() => import("./pages/ProjectFacesPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
@@ -84,6 +86,8 @@ export default function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/landing" element={<LandingPage />} />
             <Route path="/offer" element={<PublicOfferPage />} />
+            <Route path="/terms" element={<TermsOfUsePage />} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/project-faces" element={<ProjectFacesPage />} />
 
             {/* Authenticated Routes (with sidebar) */}
