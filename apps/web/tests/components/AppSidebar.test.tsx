@@ -237,6 +237,19 @@ describe("AppSidebar mobile collapse behavior", () => {
     expect(document.body.classList.contains("sidebar-collapsed")).toBe(false);
   });
 
+  it("starts with collapsed desktop sidebar on document editor route", async () => {
+    renderSidebar({
+      mobileViewport: false,
+      initialPath: "/projects/project-1/documents/doc-1",
+    });
+
+    await waitFor(() => {
+      expect(document.body.classList.contains("sidebar-collapsed")).toBe(true);
+      expect(screen.getByTitle("Развернуть")).toBeInTheDocument();
+      expect(screen.queryByText("Scientiaiter")).not.toBeInTheDocument();
+    });
+  });
+
   it("calls onCloseMobile after mobile navigation item click", async () => {
     const user = userEvent.setup();
     const onCloseMobile = vi.fn();
@@ -517,6 +530,34 @@ describe("AppSidebar mobile collapse behavior", () => {
       expect(
         document.documentElement.classList.contains("no-transitions"),
       ).toBe(false);
+    });
+  });
+
+  it("allows switching theme while sidebar is collapsed", async () => {
+    const user = userEvent.setup();
+    localStorage.setItem("theme", "dark");
+    renderSidebar({ mobileViewport: false });
+
+    await user.click(screen.getByTitle("Свернуть"));
+
+    const collapsedThemeToggle = screen.getByTestId(
+      "sidebar-theme-toggle-collapsed",
+    );
+    expect(collapsedThemeToggle).toHaveAttribute("type", "button");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+
+    await user.click(collapsedThemeToggle);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+      expect(localStorage.getItem("theme")).toBe("light");
+    });
+
+    await user.click(collapsedThemeToggle);
+
+    await waitFor(() => {
+      expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+      expect(localStorage.getItem("theme")).toBe("dark");
     });
   });
 
