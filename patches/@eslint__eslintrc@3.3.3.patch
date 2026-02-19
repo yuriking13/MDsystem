@@ -1,0 +1,54 @@
+diff --git a/dist/eslintrc-universal.cjs b/dist/eslintrc-universal.cjs
+index 6000445f7ad1c90b22987842d8b68217c1d9b007..736ea2d908ef7f9720d185f2cf4c5fdd42651018 100644
+--- a/dist/eslintrc-universal.cjs
++++ b/dist/eslintrc-universal.cjs
+@@ -374,15 +374,18 @@ var ajvOrig = (additionalOptions = {}) => {
+         meta: false,
+         useDefaults: true,
+         validateSchema: false,
+-        missingRefs: "ignore",
+         verbose: true,
+-        schemaId: "auto",
++        strict: false,
+         ...additionalOptions
+     });
+ 
+     ajv.addMetaSchema(metaSchema);
+-    // eslint-disable-next-line no-underscore-dangle -- part of the API
+-    ajv._opts.defaultMeta = metaSchema.id;
++    // Ajv v6 exposes _opts, Ajv v8 exposes opts
++    if (ajv._opts && typeof ajv._opts === "object") {
++        ajv._opts.defaultMeta = metaSchema.id;
++    } else if (ajv.opts && typeof ajv.opts === "object") {
++        ajv.opts.defaultMeta = metaSchema.id;
++    }
+ 
+     return ajv;
+ };
+diff --git a/dist/eslintrc.cjs b/dist/eslintrc.cjs
+index 1b76091f34e680456e5911651ea84f0c622436c8..5186fd5b236852757201b757725bff8c36af964f 100644
+--- a/dist/eslintrc.cjs
++++ b/dist/eslintrc.cjs
+@@ -1607,15 +1607,18 @@ var ajvOrig = (additionalOptions = {}) => {
+         meta: false,
+         useDefaults: true,
+         validateSchema: false,
+-        missingRefs: "ignore",
+         verbose: true,
+-        schemaId: "auto",
++        strict: false,
+         ...additionalOptions
+     });
+ 
+     ajv.addMetaSchema(metaSchema);
+-    // eslint-disable-next-line no-underscore-dangle -- part of the API
+-    ajv._opts.defaultMeta = metaSchema.id;
++    // Ajv v6 exposes _opts, Ajv v8 exposes opts
++    if (ajv._opts && typeof ajv._opts === "object") {
++        ajv._opts.defaultMeta = metaSchema.id;
++    } else if (ajv.opts && typeof ajv.opts === "object") {
++        ajv.opts.defaultMeta = metaSchema.id;
++    }
+ 
+     return ajv;
+ };

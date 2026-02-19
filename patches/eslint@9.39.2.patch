@@ -1,0 +1,44 @@
+diff --git a/lib/shared/ajv.js b/lib/shared/ajv.js
+index 5c5c41bd7470bd190bd4efb5caab88c73ae01f56..24a048c0601bc24398534c86eda19ca6393a3179 100644
+--- a/lib/shared/ajv.js
++++ b/lib/shared/ajv.js
+@@ -8,8 +8,14 @@
+ // Requirements
+ //------------------------------------------------------------------------------
+ 
+-const Ajv = require("ajv"),
++const Ajv = require("ajv");
++
++let metaSchema;
++try {
+ 	metaSchema = require("ajv/lib/refs/json-schema-draft-04.json");
++} catch {
++	metaSchema = require("ajv/dist/refs/json-schema-draft-07.json");
++}
+ 
+ //------------------------------------------------------------------------------
+ // Public Interface
+@@ -20,15 +26,19 @@ module.exports = (additionalOptions = {}) => {
+ 		meta: false,
+ 		useDefaults: true,
+ 		validateSchema: false,
+-		missingRefs: "ignore",
+ 		verbose: true,
+-		schemaId: "auto",
++		strict: false,
+ 		...additionalOptions,
+ 	});
+ 
+ 	ajv.addMetaSchema(metaSchema);
+-	// eslint-disable-next-line no-underscore-dangle -- Ajv's API
+-	ajv._opts.defaultMeta = metaSchema.id;
++	const metaId = metaSchema.id || metaSchema.$id;
++	// eslint-disable-next-line no-underscore-dangle -- Ajv v6 API
++	if (ajv._opts && typeof ajv._opts === "object") {
++		ajv._opts.defaultMeta = metaId;
++	} else if (ajv.opts && typeof ajv.opts === "object") {
++		ajv.opts.defaultMeta = metaId;
++	}
+ 
+ 	return ajv;
+ };

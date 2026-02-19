@@ -33,7 +33,7 @@ const ADMIN_PROJECT_SORT_WHITELIST = {
   articles_count: "COUNT(DISTINCT pa.article_id)",
 } as const;
 
-const SQL_META_CHARACTERS = /(--|\/\*|\*\/|;|\u0000)/;
+const SQL_META_CHARACTERS = /(--|\/\*|\*\/|;)/;
 
 type AdminProjectsSortBy = keyof typeof ADMIN_PROJECT_SORT_WHITELIST;
 type AdminProjectsSortOrder = "asc" | "desc";
@@ -71,7 +71,11 @@ export function buildAdminProjectsFilterAndSort(args: {
     if (search.length === 0) {
       return { ok: false, error: "Invalid search filter value" };
     }
-    if (search.length > 200 || SQL_META_CHARACTERS.test(search)) {
+    if (
+      search.length > 200 ||
+      search.includes("\0") ||
+      SQL_META_CHARACTERS.test(search)
+    ) {
       return { ok: false, error: "Unsafe search filter value" };
     }
 

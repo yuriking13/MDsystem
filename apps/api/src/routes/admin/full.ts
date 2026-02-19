@@ -1123,7 +1123,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/users/:userId/reset-password",
     { preHandler: [requireAdmin] },
-    async (req) => {
+    async (req, reply) => {
       const { userId } = z
         .object({ userId: z.string().uuid() })
         .parse(req.params);
