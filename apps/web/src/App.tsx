@@ -80,7 +80,7 @@ export default function App() {
             {/* Public Routes (no sidebar) */}
             <Route
               path="/"
-              element={<Navigate to={token ? "/projects" : "/login"} replace />}
+              element={<Navigate to={token ? "/projects" : "/landing"} replace />}
             />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
