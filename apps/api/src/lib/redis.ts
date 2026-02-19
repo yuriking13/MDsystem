@@ -554,7 +554,13 @@ export async function cacheThrough<T>(
   const data = await fetcher();
 
   // Cache it (don't await, fire and forget)
-  cacheSet(key, data, ttl).catch(() => {});
+  cacheSet(key, data, ttl).catch((err) => {
+    log.warn("Failed to cache cache-through result", {
+      key,
+      ttl,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  });
 
   return data;
 }

@@ -321,8 +321,16 @@ export async function pubmedEFetchBatch(args: {
         url: urlPubmed,
         studyTypes: [], // заполним позже по вашей модели, сейчас пусто
       });
-    } catch {
-      // skip bad article
+    } catch (err) {
+      const sourceId = a?.MedlineCitation?.PMID;
+      const pmid =
+        typeof sourceId === "object"
+          ? String(sourceId?.["#text"] ?? "").trim()
+          : String(sourceId ?? "").trim();
+      log.warn("Skipping malformed PubMed article in efetch batch", {
+        pmid: pmid || undefined,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
@@ -459,10 +467,23 @@ export async function pubmedFetchByPmids(args: {
 
       // Cache each article for 24 hours
       cacheSet(CACHE_KEYS.pubmed(pmid), article, TTL.EXTERNAL_API).catch(
-        () => {},
+        (err) => {
+          log.warn("Failed to cache PubMed article", {
+            pmid,
+            error: err instanceof Error ? err.message : String(err),
+          });
+        },
       );
-    } catch {
-      // skip bad article
+    } catch (err) {
+      const sourceId = a?.MedlineCitation?.PMID;
+      const pmid =
+        typeof sourceId === "object"
+          ? String(sourceId?.["#text"] ?? "").trim()
+          : String(sourceId ?? "").trim();
+      log.warn("Skipping malformed PubMed article in efetch by pmids", {
+        pmid: pmid || undefined,
+        error: err instanceof Error ? err.message : String(err),
+      });
     }
   }
 
