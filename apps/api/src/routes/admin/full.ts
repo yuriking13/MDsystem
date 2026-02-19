@@ -1,10 +1,16 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 import { pool } from "../../pg.js";
-import crypto from "crypto";
-import { verifyPassword } from "../../lib/password.js";
+import { verifyPassword, hashPassword } from "../../lib/password.js";
 import { rateLimits } from "../../plugins/rate-limit.js";
 import { createLogger } from "../../utils/logger.js";
+import { env } from "../../env.js";
+import {
+  RESET_TOKEN_EXPIRY_MS,
+  buildPasswordResetLink,
+  generatePasswordResetToken,
+  hashPasswordResetToken,
+} from "../../lib/password-reset-token.js";
 
 const log = createLogger("admin");
 import {
@@ -1120,30 +1126,55 @@ export async function adminRoutes(app: FastifyInstance) {
       const { userId } = z
         .object({ userId: z.string().uuid() })
         .parse(req.params);
-      const argon2 = await import("argon2");
-
-      // Generate temporary password
-      const tempPassword = crypto.randomBytes(8).toString("hex");
-      const passwordHash = await argon2.hash(tempPassword);
-
-      await pool.query(
-        `UPDATE users SET password_hash = $1, password_reset_required = true WHERE id = $2`,
-        [passwordHash, userId],
+      const resetToken = generatePasswordResetToken();
+      const tokenHash = hashPasswordResetToken(resetToken);
+      const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
+      const temporaryPasswordHash = await hashPassword(
+        generatePasswordResetToken(),
       );
+
+      const updateUserResult = await pool.query(
+        `UPDATE users
+         SET password_hash = $1, password_reset_required = true
+         WHERE id = $2`,
+        [temporaryPasswordHash, userId],
+      );
+      if (!updateUserResult.rowCount) {
+        return reply.code(404).send({ error: "User not found" });
+      }
+
+      await pool.query(`DELETE FROM password_reset_tokens WHERE user_id = $1`, [
+        userId,
+      ]);
+      await pool.query(
+        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, $3)`,
+        [userId, tokenHash, expiresAt],
+      );
+      await pool.query(
+        `UPDATE refresh_tokens SET revoked = true WHERE user_id = $1`,
+        [userId],
+      );
+
+      const resetLink = buildPasswordResetLink(env.CORS_ORIGIN, resetToken);
 
       await logAdminAction(
         req.user.sub,
         "reset_password",
         "user",
         userId,
-        {},
+        {
+          resetLinkIssued: true,
+          expiresAt: expiresAt.toISOString(),
+        },
         req.ip,
       );
 
       return {
-        tempPassword,
+        resetLink,
+        expiresAt: expiresAt.toISOString(),
         message:
-          "Send this password to the user. They will be required to change it on next login.",
+          "Send this one-time reset link to the user. The link expires in 1 hour.",
       };
     },
   );

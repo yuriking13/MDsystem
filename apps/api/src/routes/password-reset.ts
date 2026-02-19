@@ -10,28 +10,15 @@ import { z } from "zod";
 import { pool } from "../pg.js";
 import { hashPassword } from "../lib/password.js";
 import { rateLimits } from "../plugins/rate-limit.js";
-import crypto from "crypto";
 import { createLogger } from "../utils/logger.js";
 import { ValidationError, InvalidTokenError } from "../utils/typed-errors.js";
+import {
+  RESET_TOKEN_EXPIRY_MS,
+  generatePasswordResetToken,
+  hashPasswordResetToken,
+} from "../lib/password-reset-token.js";
 
 const log = createLogger("password-reset");
-
-// Время жизни reset token: 1 час
-const RESET_TOKEN_EXPIRY_MS = 60 * 60 * 1000;
-
-/**
- * Генерация безопасного reset token
- */
-function generateResetToken(): string {
-  return crypto.randomBytes(32).toString("hex");
-}
-
-/**
- * Хеширование токена для хранения в БД
- */
-function hashToken(token: string): string {
-  return crypto.createHash("sha256").update(token).digest("hex");
-}
 
 /**
  * Password strength validation
@@ -124,8 +111,8 @@ export async function passwordResetRoutes(app: FastifyInstance) {
       }
 
       // Генерируем reset token
-      const resetToken = generateResetToken();
-      const tokenHash = hashToken(resetToken);
+      const resetToken = generatePasswordResetToken();
+      const tokenHash = hashPasswordResetToken(resetToken);
       const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
 
       // Используем транзакцию для атомарности
@@ -195,7 +182,7 @@ export async function passwordResetRoutes(app: FastifyInstance) {
     }
 
     const { token } = result.data;
-    const tokenHash = hashToken(token);
+    const tokenHash = hashPasswordResetToken(token);
 
     const tokenResult = await pool.query(
       `SELECT rt.user_id, rt.expires_at, u.email, u.is_blocked
@@ -260,7 +247,7 @@ export async function passwordResetRoutes(app: FastifyInstance) {
         );
       }
 
-      const tokenHash = hashToken(token);
+      const tokenHash = hashPasswordResetToken(token);
 
       // Проверяем токен
       const tokenResult = await pool.query(
