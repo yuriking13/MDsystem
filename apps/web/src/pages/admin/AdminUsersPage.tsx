@@ -282,7 +282,8 @@ function UserDetail() {
   const [data, setData] = useState<UserDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [tempPassword, setTempPassword] = useState<string | null>(null);
+  const [resetLink, setResetLink] = useState<string | null>(null);
+  const [resetExpiresAt, setResetExpiresAt] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   const load = useCallback(async () => {
@@ -335,7 +336,8 @@ function UserDetail() {
     setActionLoading(true);
     try {
       const result = await apiAdminResetPassword(userId);
-      setTempPassword(result.tempPassword);
+      setResetLink(result.resetLink);
+      setResetExpiresAt(result.expiresAt);
     } catch (err) {
       alert(getErrorMessage(err));
     } finally {
@@ -474,16 +476,19 @@ function UserDetail() {
         </button>
       </div>
 
-      {/* Temp Password Display */}
-      {tempPassword && (
+      {/* One-time reset link display */}
+      {resetLink && (
         <div className="admin-password-result">
-          <p>Новый временный пароль (покажите пользователю):</p>
+          <p>
+            Одноразовая ссылка для сброса пароля (действует до{" "}
+            {resetExpiresAt ? formatDate(resetExpiresAt) : "истечения срока"}):
+          </p>
           <div className="admin-password-value">
-            <code>{tempPassword}</code>
+            <code>{resetLink}</code>
             <button
               className="btn secondary"
               onClick={() => {
-                navigator.clipboard.writeText(tempPassword);
+                navigator.clipboard.writeText(resetLink);
                 alert("Скопировано!");
               }}
             >

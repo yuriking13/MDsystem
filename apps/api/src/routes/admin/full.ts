@@ -1,13 +1,20 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 import { pool } from "../../pg.js";
-import crypto from "crypto";
-import { verifyPassword } from "../../lib/password.js";
+import { verifyPassword, hashPassword } from "../../lib/password.js";
 import { rateLimits } from "../../plugins/rate-limit.js";
 import { createLogger } from "../../utils/logger.js";
+import { env } from "../../env.js";
+import {
+  RESET_TOKEN_EXPIRY_MS,
+  buildPasswordResetLink,
+  generatePasswordResetToken,
+  hashPasswordResetToken,
+} from "../../lib/password-reset-token.js";
 
 const log = createLogger("admin");
 import {
+  buildAdminProjectsFilterAndSort,
   generateAdminToken,
   hashAdminToken,
   normalizePagination,
@@ -1116,34 +1123,59 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post(
     "/api/admin/users/:userId/reset-password",
     { preHandler: [requireAdmin] },
-    async (req) => {
+    async (req, reply) => {
       const { userId } = z
         .object({ userId: z.string().uuid() })
         .parse(req.params);
-      const argon2 = await import("argon2");
-
-      // Generate temporary password
-      const tempPassword = crypto.randomBytes(8).toString("hex");
-      const passwordHash = await argon2.hash(tempPassword);
-
-      await pool.query(
-        `UPDATE users SET password_hash = $1, password_reset_required = true WHERE id = $2`,
-        [passwordHash, userId],
+      const resetToken = generatePasswordResetToken();
+      const tokenHash = hashPasswordResetToken(resetToken);
+      const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MS);
+      const temporaryPasswordHash = await hashPassword(
+        generatePasswordResetToken(),
       );
+
+      const updateUserResult = await pool.query(
+        `UPDATE users
+         SET password_hash = $1, password_reset_required = true
+         WHERE id = $2`,
+        [temporaryPasswordHash, userId],
+      );
+      if (!updateUserResult.rowCount) {
+        return reply.code(404).send({ error: "User not found" });
+      }
+
+      await pool.query(`DELETE FROM password_reset_tokens WHERE user_id = $1`, [
+        userId,
+      ]);
+      await pool.query(
+        `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+         VALUES ($1, $2, $3)`,
+        [userId, tokenHash, expiresAt],
+      );
+      await pool.query(
+        `UPDATE refresh_tokens SET revoked = true WHERE user_id = $1`,
+        [userId],
+      );
+
+      const resetLink = buildPasswordResetLink(env.CORS_ORIGIN, resetToken);
 
       await logAdminAction(
         req.user.sub,
         "reset_password",
         "user",
         userId,
-        {},
+        {
+          resetLinkIssued: true,
+          expiresAt: expiresAt.toISOString(),
+        },
         req.ip,
       );
 
       return {
-        tempPassword,
+        resetLink,
+        expiresAt: expiresAt.toISOString(),
         message:
-          "Send this password to the user. They will be required to change it on next login.",
+          "Send this one-time reset link to the user. The link expires in 1 hour.",
       };
     },
   );
@@ -1499,7 +1531,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.get(
     "/api/admin/projects",
     { preHandler: [requireAdmin] },
-    async (req) => {
+    async (req, reply) => {
       const query = z
         .object({
           page: z
@@ -1511,16 +1543,8 @@ export async function adminRoutes(app: FastifyInstance) {
             .optional()
             .transform((v) => parseInt(v || "20")),
           search: z.string().optional(),
-          sortBy: z
-            .enum([
-              "created_at",
-              "updated_at",
-              "name",
-              "documents_count",
-              "articles_count",
-            ])
-            .optional(),
-          sortOrder: z.enum(["asc", "desc"]).optional(),
+          sortBy: z.string().optional(),
+          sortOrder: z.string().optional(),
         })
         .parse(req.query);
 
@@ -1529,22 +1553,18 @@ export async function adminRoutes(app: FastifyInstance) {
         query.limit,
         20,
       );
-      const conditions: string[] = [];
-      const params: unknown[] = [];
-      let paramIdx = 1;
 
-      if (query.search) {
-        conditions.push(
-          `(p.name ILIKE $${paramIdx} OR u.email ILIKE $${paramIdx})`,
-        );
-        params.push(`%${query.search}%`);
-        paramIdx++;
+      const queryBuilderResult = buildAdminProjectsFilterAndSort({
+        search: query.search,
+        sortBy: query.sortBy,
+        sortOrder: query.sortOrder,
+      });
+
+      if (!queryBuilderResult.ok) {
+        return reply.code(400).send({ error: queryBuilderResult.error });
       }
 
-      const whereClause =
-        conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
-      const sortColumn = query.sortBy || "created_at";
-      const sortOrder = query.sortOrder || "desc";
+      const { whereClause, params, orderByClause } = queryBuilderResult;
 
       const [projects, total] = await Promise.all([
         pool.query(
@@ -1566,13 +1586,7 @@ export async function adminRoutes(app: FastifyInstance) {
         LEFT JOIN project_members pm ON pm.project_id = p.id
         ${whereClause}
         GROUP BY p.id, u.id
-        ORDER BY ${
-          sortColumn === "documents_count"
-            ? "COUNT(DISTINCT d.id)"
-            : sortColumn === "articles_count"
-              ? "COUNT(DISTINCT pa.article_id)"
-              : `p.${sortColumn}`
-        } ${sortOrder}
+        ${orderByClause}
         LIMIT ${limit} OFFSET ${offset}
       `,
           params,

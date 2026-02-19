@@ -459,11 +459,12 @@ export async function apiAdminDeleteUser(
 
 export async function apiAdminResetPassword(
   userId: string,
-): Promise<{ tempPassword: string; message: string }> {
-  return adminApiFetch<{ tempPassword: string; message: string }>(
-    `/api/admin/users/${userId}/reset-password`,
-    { method: "POST" },
-  );
+): Promise<{ resetLink: string; expiresAt: string; message: string }> {
+  return adminApiFetch<{
+    resetLink: string;
+    expiresAt: string;
+    message: string;
+  }>(`/api/admin/users/${userId}/reset-password`, { method: "POST" });
 }
 
 export async function apiAdminGetUserProjects(

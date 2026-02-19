@@ -94,6 +94,10 @@ const EnvSchema = z
       .min(1000)
       .optional()
       .default(30000), // Request timeout
+    TRUST_PROXY: z.preprocess(
+      emptyStringToUndefined,
+      z.string().min(1).optional(),
+    ), // Fastify trust proxy config (boolean/number/IP/CIDR/list as string)
     STATEMENT_TIMEOUT_MS: z.coerce
       .number()
       .int()

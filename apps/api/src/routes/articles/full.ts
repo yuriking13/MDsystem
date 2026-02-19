@@ -48,6 +48,7 @@ import {
   parseFirstJsonObject,
   requestOpenRouterCompletion,
 } from "./ai-assistant.service.js";
+import { escapeHtml, toEncodedDoiPath } from "../../utils/html.js";
 
 const log = createLogger("articles");
 
@@ -4096,36 +4097,43 @@ ${articlesForAI}
       const article = articleRes.rows[0];
 
       // Build document content
-      const title = documentTitle || article.title_ru || article.title_en;
+      const title =
+        documentTitle || article.title_ru || article.title_en || "Без названия";
+      const safeTitle = escapeHtml(title);
 
       // Create HTML content for the document
-      let content = `<h1>${title}</h1>\n`;
+      let content = `<h1>${safeTitle}</h1>\n`;
 
       // Add metadata
       if (article.authors && article.authors.length > 0) {
-        content += `<p><strong>Авторы:</strong> ${article.authors.join(", ")}</p>\n`;
+        const safeAuthors = (article.authors as string[])
+          .map((author) => escapeHtml(author))
+          .join(", ");
+        content += `<p><strong>Авторы:</strong> ${safeAuthors}</p>\n`;
       }
 
       if (article.year) {
-        content += `<p><strong>Год:</strong> ${article.year}</p>\n`;
+        content += `<p><strong>Год:</strong> ${escapeHtml(article.year)}</p>\n`;
       }
 
       if (article.journal) {
-        content += `<p><strong>Журнал:</strong> ${article.journal}`;
-        if (article.volume) content += `, Т. ${article.volume}`;
-        if (article.issue) content += `, № ${article.issue}`;
-        if (article.pages) content += `, С. ${article.pages}`;
+        content += `<p><strong>Журнал:</strong> ${escapeHtml(article.journal)}`;
+        if (article.volume) content += `, Т. ${escapeHtml(article.volume)}`;
+        if (article.issue) content += `, № ${escapeHtml(article.issue)}`;
+        if (article.pages) content += `, С. ${escapeHtml(article.pages)}`;
         content += `</p>\n`;
       }
 
       if (article.doi) {
-        content += `<p><strong>DOI:</strong> <a href="https://doi.org/${article.doi}">${article.doi}</a></p>\n`;
+        const doi = String(article.doi);
+        const encodedDoiPath = toEncodedDoiPath(doi);
+        content += `<p><strong>DOI:</strong> <a href="https://doi.org/${encodedDoiPath}">${escapeHtml(doi)}</a></p>\n`;
       }
 
       // Add abstract
       const abstractText = article.abstract_ru || article.abstract_en;
       if (abstractText) {
-        content += `<h2>Аннотация</h2>\n<p>${abstractText}</p>\n`;
+        content += `<h2>Аннотация</h2>\n<p>${escapeHtml(abstractText)}</p>\n`;
       }
 
       // Placeholder for main content
