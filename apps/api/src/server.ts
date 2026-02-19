@@ -38,6 +38,9 @@ import { registerWebSocket, getConnectionStats } from "./websocket.js";
 import { initCache, getCacheBackend, closeCache } from "./lib/redis.js";
 import { getRateLimitStats, rateLimits } from "./plugins/rate-limit.js";
 import { requireAdminAccess } from "./utils/require-admin.js";
+import { parseTrustProxy } from "./utils/trust-proxy.js";
+
+const trustProxy = parseTrustProxy(env.TRUST_PROXY);
 
 const app = Fastify({
   logger: {
@@ -60,6 +63,7 @@ const app = Fastify({
     `req-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`,
   // Request timeout из env
   requestTimeout: env.REQUEST_TIMEOUT_MS,
+  trustProxy,
 });
 
 app.log.info(
