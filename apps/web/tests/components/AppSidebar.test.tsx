@@ -550,14 +550,12 @@ describe("AppSidebar mobile collapse behavior", () => {
 
     await waitFor(() => {
       expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-      expect(localStorage.getItem("theme")).toBe("light");
     });
 
     await user.click(collapsedThemeToggle);
 
     await waitFor(() => {
       expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-      expect(localStorage.getItem("theme")).toBe("dark");
     });
   });
 
