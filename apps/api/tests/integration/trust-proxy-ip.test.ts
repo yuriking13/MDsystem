@@ -43,7 +43,8 @@ describe("Trust proxy request IP handling", () => {
   it("uses forwarded IP for rate-limit key generation", async () => {
     setTestEnv();
     const { default: Fastify } = await import("fastify");
-    const { createRateLimiter } = await import("../../src/plugins/rate-limit.js");
+    const { createRateLimiter } =
+      await import("../../src/plugins/rate-limit.js");
 
     const app = Fastify({ logger: false, trustProxy: true });
     const limiter = createRateLimiter("trust-proxy-rate", {
@@ -52,7 +53,9 @@ describe("Trust proxy request IP handling", () => {
       message: "rate limited",
     });
 
-    app.get("/api/limited", { preHandler: [limiter] }, async () => ({ ok: true }));
+    app.get("/api/limited", { preHandler: [limiter] }, async () => ({
+      ok: true,
+    }));
     await app.ready();
 
     const first = await app.inject({
@@ -91,40 +94,46 @@ describe("Trust proxy request IP handling", () => {
 
     const auditIps: string[] = [];
 
-    queryMock.mockImplementation(async (sql: string, params: unknown[] = []) => {
-      const text = sql.replace(/\s+/g, " ").trim();
+    queryMock.mockImplementation(
+      async (sql: string, params: unknown[] = []) => {
+        const text = sql.replace(/\s+/g, " ").trim();
 
-      if (
-        text.startsWith(
-          "SELECT id, email, password_hash, is_admin, admin_token_hash, is_blocked FROM users WHERE email = $1",
-        )
-      ) {
-        return {
-          rowCount: 1,
-          rows: [
-            {
-              id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
-              email: "admin@example.com",
-              password_hash: "hash:any",
-              is_admin: true,
-              admin_token_hash: null,
-              is_blocked: false,
-            },
-          ],
-        };
-      }
+        if (
+          text.startsWith(
+            "SELECT id, email, password_hash, is_admin, admin_token_hash, is_blocked FROM users WHERE email = $1",
+          )
+        ) {
+          return {
+            rowCount: 1,
+            rows: [
+              {
+                id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+                email: "admin@example.com",
+                password_hash: "hash-valid",
+                is_admin: true,
+                admin_token_hash: null,
+                is_blocked: false,
+              },
+            ],
+          };
+        }
 
-      if (text.startsWith("UPDATE users SET last_login_at = now() WHERE id = $1")) {
-        return { rowCount: 1, rows: [] };
-      }
+        if (
+          text.startsWith(
+            "UPDATE users SET last_login_at = now() WHERE id = $1",
+          )
+        ) {
+          return { rowCount: 1, rows: [] };
+        }
 
-      if (text.startsWith("INSERT INTO admin_audit_log")) {
-        auditIps.push(String(params[5] ?? ""));
-        return { rowCount: 1, rows: [] };
-      }
+        if (text.startsWith("INSERT INTO admin_audit_log")) {
+          auditIps.push(String(params[5] ?? ""));
+          return { rowCount: 1, rows: [] };
+        }
 
-      throw new Error(`Unexpected query: ${text}`);
-    });
+        throw new Error(`Unexpected query: ${text}`);
+      },
+    );
 
     const { default: Fastify } = await import("fastify");
     const { default: authPlugin } = await import("../../src/auth.js");
