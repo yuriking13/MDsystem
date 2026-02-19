@@ -14,6 +14,8 @@
   --bg-glass-light: rgba(22, 34, 54, 0.6);
   --bg-metal: linear-gradient(145deg, rgba(22, 34, 54, 0.9), rgba(13, 27, 42, 0.95));
   --bg-metal-shine: linear-gradient(145deg, rgba(30, 48, 80, 0.6), rgba(22, 34, 54, 0.8));
+  --surface-elevated: var(--bg-glass);
+  --surface-glass: var(--bg-glass-light);
 
   /* Borders */
   --border-glass: rgba(100, 140, 200, 0.1);
@@ -32,6 +34,7 @@
   --accent-gradient-hover: linear-gradient(135deg, #4b74ff, #7c3aed);
   --accent-glow: rgba(75, 116, 255, 0.4);
   --accent-glow-strong: rgba(75, 116, 255, 0.6);
+  --accent-primary: var(--accent);
   --success: #10b981;
   --danger: #ef4444;
   --warning: #fbbf24;
@@ -10608,6 +10611,28 @@ input:focus::placeholder {
   text-decoration: underline;
 }
 
+.auth-link-btn--button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border-glass);
+  background: var(--bg-glass-light);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: color var(--transition-normal) ease,
+    background-color var(--transition-normal) ease,
+    border-color var(--transition-normal) ease;
+}
+
+.auth-link-btn--button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  text-decoration: none;
+}
+
 .auth-footer-text {
   text-align: center;
   font-size: 14px;
@@ -10681,6 +10706,10 @@ input:focus::placeholder {
 
   .auth-submit {
     min-height: 42px;
+  }
+
+  .auth-link-btn--button {
+    width: 100%;
   }
 }
 

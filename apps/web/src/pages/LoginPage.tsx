@@ -38,14 +38,14 @@ export default function LoginPage() {
         <div className="auth-grid">
           {/* Left side - Feature list */}
           <div className="auth-features">
-            <a href="/" className="auth-logo">
+            <Link to="/landing" className="auth-logo">
               <img
                 src="/logo.svg"
                 alt="Scientiaiter Logo"
                 className="auth-logo-icon w-6 h-6"
               />
               Scientiaiter
-            </a>
+            </Link>
 
             <div className="auth-features-list">
               <div className="auth-feature">
@@ -184,14 +184,19 @@ export default function LoginPage() {
 
                 {error && <div className="auth-error">{error}</div>}
 
-                <button
-                  type="submit"
-                  className="auth-submit"
-                  data-testid="login-submit-button"
-                  disabled={busy}
-                >
-                  {busy ? "Вход..." : "Войти в аккаунт"}
-                </button>
+                <div className="auth-actions">
+                  <button
+                    type="submit"
+                    className="auth-submit"
+                    data-testid="login-submit-button"
+                    disabled={busy}
+                  >
+                    {busy ? "Вход..." : "Войти в аккаунт"}
+                  </button>
+                  <Link to="/landing" className="auth-link-btn auth-link-btn--button">
+                    На лендинг
+                  </Link>
+                </div>
 
                 <p className="auth-footer-text">
                   Нет аккаунта?{" "}
