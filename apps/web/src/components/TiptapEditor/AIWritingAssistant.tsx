@@ -447,41 +447,31 @@ export default function AIWritingAssistant({
       return;
     }
 
-    // Create a blob URL from SVG
-    const svgBlob = new Blob([safeSvg], {
-      type: "image/svg+xml",
-    });
-    const svgUrl = URL.createObjectURL(svgBlob);
+    if (!illustrationResult.projectFile) {
+      setError(
+        "Иллюстрация не была сохранена в хранилище. Попробуйте сгенерировать заново.",
+      );
+      return;
+    }
 
-    // Insert image into editor
     editor
       .chain()
       .focus()
-      .setImage({
-        src: svgUrl,
-        alt: illustrationResult.figureCaption || illustrationResult.title,
+      .insertContent({
+        type: "projectFileNode",
+        attrs: {
+          fileId: illustrationResult.projectFile.id,
+          projectId,
+          fileName: illustrationResult.projectFile.name,
+          mimeType: illustrationResult.projectFile.mimeType,
+          category: illustrationResult.projectFile.category,
+          caption: illustrationResult.figureCaption || illustrationResult.title,
+        },
       })
       .run();
 
-    // Add figure caption
-    if (illustrationResult.figureCaption) {
-      editor
-        .chain()
-        .focus()
-        .insertContent({
-          type: "paragraph",
-          content: [
-            {
-              type: "text",
-              text: illustrationResult.figureCaption,
-            },
-          ],
-        })
-        .run();
-    }
-
     onClose();
-  }, [illustrationResult, editor, onClose]);
+  }, [illustrationResult, editor, onClose, projectId]);
 
   // ===== Render =====
 
@@ -1132,6 +1122,8 @@ export default function AIWritingAssistant({
             Повторить
           </button>
         </div>
+
+        {error && <div className="ai-assistant-error">{error}</div>}
       </div>
     );
   };

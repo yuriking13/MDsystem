@@ -160,6 +160,16 @@ const EnvSchema = z
       z.coerce.number().min(0).max(1).optional().default(1),
     ),
 
+    // AI illustration pipeline feature flags
+    AI_ILLUSTRATION_AGENTIC_ENABLED: z.preprocess(
+      parseBooleanEnv,
+      z.boolean().optional().default(false),
+    ),
+    AI_ILLUSTRATION_AGENTIC_MAX_CRITIC_ROUNDS: z.preprocess(
+      emptyStringToUndefined,
+      z.coerce.number().int().min(0).max(2).optional().default(1),
+    ),
+
     // Logging
     LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).optional(),
     CSP_REPORT_URI: z.preprocess(

@@ -117,10 +117,43 @@ const projectsCreated = new client.Counter({
   registers: [register],
 });
 
+const aiIllustrationRequestsTotal = new client.Counter({
+  name: "ai_illustration_requests_total",
+  help: "Total number of AI illustration generation requests",
+  labelNames: ["mode", "outcome"],
+  registers: [register],
+});
+
+const aiIllustrationPipelineDurationSeconds = new client.Histogram({
+  name: "ai_illustration_pipeline_duration_seconds",
+  help: "Duration of AI illustration generation pipeline in seconds",
+  labelNames: ["mode", "outcome"],
+  buckets: [0.1, 0.3, 0.5, 1, 2, 4, 8, 15, 30, 60],
+  registers: [register],
+});
+
+const aiIllustrationParseFailuresTotal = new client.Counter({
+  name: "ai_illustration_parse_failures_total",
+  help: "Total number of AI illustration response parse/schema failures",
+  labelNames: ["failure_type"],
+  registers: [register],
+});
+
+const aiIllustrationFallbackTotal = new client.Counter({
+  name: "ai_illustration_fallback_total",
+  help: "Total number of AI illustration pipeline fallbacks",
+  labelNames: ["from_mode", "to_mode"],
+  registers: [register],
+});
+
 // Export metrics for use in routes
 export const metrics = {
   articlesSearched,
   projectsCreated,
+  aiIllustrationRequestsTotal,
+  aiIllustrationPipelineDurationSeconds,
+  aiIllustrationParseFailuresTotal,
+  aiIllustrationFallbackTotal,
 };
 
 function pickHeaderValue(

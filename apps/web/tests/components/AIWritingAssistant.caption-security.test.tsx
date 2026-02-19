@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Editor } from "@tiptap/react";
@@ -57,16 +57,11 @@ function createEditorMock(): {
 }
 
 describe("AIWritingAssistant caption insertion security", () => {
-  it("inserts illustration caption as structured text node, not raw HTML", async () => {
-    if (!URL.createObjectURL) {
-      Object.defineProperty(URL, "createObjectURL", {
-        writable: true,
-        value: vi.fn(() => "blob:ai-caption-test"),
-      });
-    } else {
-      vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:ai-caption-test");
-    }
+  beforeEach(() => {
+    apiAIGenerateIllustrationMock.mockReset();
+  });
 
+  it("inserts persisted illustration as project file node", async () => {
     const maliciousCaption = `Caption <img src=x onerror=alert("xss")> <script>alert("x")</script>`;
 
     apiAIGenerateIllustrationMock.mockResolvedValue({
@@ -78,6 +73,12 @@ describe("AIWritingAssistant caption insertion security", () => {
         '<svg xmlns="http://www.w3.org/2000/svg"><rect width="10" height="10" /></svg>',
       figureCaption: maliciousCaption,
       notes: null,
+      projectFile: {
+        id: "file-illustration-1",
+        name: "ai-illustration.svg",
+        mimeType: "image/svg+xml",
+        category: "image",
+      },
     });
 
     const { editor, chainApi } = createEditorMock();
@@ -102,14 +103,70 @@ describe("AIWritingAssistant caption insertion security", () => {
 
     await user.click(screen.getByText("Вставить в документ"));
 
-    expect(chainApi.insertContent).toHaveBeenCalledWith({
-      type: "paragraph",
-      content: [{ type: "text", text: maliciousCaption }],
-    });
+    expect(chainApi.insertContent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "projectFileNode",
+        attrs: expect.objectContaining({
+          fileId: "file-illustration-1",
+          projectId: "project-1",
+          caption: maliciousCaption,
+        }),
+      }),
+    );
 
     const hasRawHtmlInsertion = chainApi.insertContent.mock.calls.some(
       ([arg]) => typeof arg === "string",
     );
     expect(hasRawHtmlInsertion).toBe(false);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows graceful error when persisted asset is missing", async () => {
+    apiAIGenerateIllustrationMock.mockResolvedValue({
+      ok: true,
+      title: "Test illustration",
+      description: "Test",
+      type: "diagram",
+      svgCode:
+        '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script><rect width="10" height="10" /></svg>',
+      figureCaption: "Safe caption",
+      notes: null,
+    });
+
+    const { editor, chainApi } = createEditorMock();
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+
+    const { container } = render(
+      <AIWritingAssistant
+        editor={editor}
+        projectId="project-1"
+        onClose={onClose}
+      />,
+    );
+
+    await user.click(screen.getByText("Создать иллюстрацию"));
+    await user.click(screen.getByText("Сгенерировать иллюстрацию"));
+
+    await waitFor(() => {
+      expect(screen.getByText("Вставить в документ")).toBeInTheDocument();
+    });
+
+    expect(container.querySelector(".ai-illustration-preview script")).toBeNull();
+
+    await user.click(screen.getByText("Вставить в документ"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Иллюстрация не была сохранена в хранилище. Попробуйте сгенерировать заново.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    expect(chainApi.insertContent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "projectFileNode" }),
+    );
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

@@ -18,13 +18,24 @@
 
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
+import { env } from "../env.js";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
 import { checkProjectAccessPool } from "../utils/project-access.js";
 import { getUserApiKey } from "../utils/project-access.js";
 import { createLogger } from "../utils/logger.js";
 import { rateLimits } from "../plugins/rate-limit.js";
+import { metrics } from "../plugins/metrics.js";
 import { ExternalServiceError } from "../utils/typed-errors.js";
+import { isStorageConfigured } from "../lib/storage.js";
+import {
+  IllustrationPipelineError,
+  runIllustrationPipeline,
+} from "../services/ai-illustration-pipeline.js";
+import {
+  IllustrationPersistenceError,
+  persistGeneratedIllustrationAsset,
+} from "../services/illustration-asset-storage.js";
 
 const log = createLogger("ai-writing-assistant");
 const OPENROUTER_API = "https://openrouter.ai/api/v1/chat/completions";
@@ -743,56 +754,132 @@ const aiWritingAssistantRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
+      if (!isStorageConfigured()) {
+        return reply.code(503).send({
+          error:
+            "Illustration storage is not configured. Please contact administrator.",
+        });
+      }
+
+      const startedAt = performance.now();
+      let pipelineMode: "baseline" | "agentic" = env
+        .AI_ILLUSTRATION_AGENTIC_ENABLED
+        ? "agentic"
+        : "baseline";
+      let outcome: "success" | "error" | "invalid_response" = "error";
+
       try {
-        const systemPrompt = buildIllustrationPrompt(
-          selectedText,
-          illustrationType,
-          documentTitle,
-        );
+        const pipeline = await runIllustrationPipeline({
+          input: {
+            selectedText,
+            illustrationType,
+            documentTitle,
+          },
+          llmCall: ({ systemPrompt, userPrompt, temperature, maxTokens }) =>
+            callLLM(apiKey, systemPrompt, userPrompt, {
+              temperature,
+              maxTokens,
+            }),
+          options: {
+            agenticEnabled: env.AI_ILLUSTRATION_AGENTIC_ENABLED,
+            maxCriticIterations: env.AI_ILLUSTRATION_AGENTIC_MAX_CRITIC_ROUNDS,
+            buildIllustrationPrompt,
+          },
+        });
 
-        const llmResponse = await callLLM(
-          apiKey,
-          systemPrompt,
-          `Создай иллюстрацию на основе этого текста:\n\n${selectedText}`,
-          { temperature: 0.7, maxTokens: 8192 },
-        );
-
-        let result;
-        try {
-          let cleanResponse = llmResponse.trim();
-          if (cleanResponse.startsWith("```json")) {
-            cleanResponse = cleanResponse.slice(7);
-          }
-          if (cleanResponse.startsWith("```")) {
-            cleanResponse = cleanResponse.slice(3);
-          }
-          if (cleanResponse.endsWith("```")) {
-            cleanResponse = cleanResponse.slice(0, -3);
-          }
-          result = JSON.parse(cleanResponse.trim());
-        } catch (error) {
-          log.warn("Failed to parse AI illustration JSON response", {
-            projectId,
-            error: error instanceof Error ? error.message : String(error),
+        pipelineMode = pipeline.mode;
+        if (pipeline.usedFallback) {
+          metrics.aiIllustrationFallbackTotal.inc({
+            from_mode: "agentic",
+            to_mode: "baseline",
           });
-          return reply.code(500).send({
-            error: "Failed to parse AI response. Please try again.",
+          log.warn("AI illustration pipeline fallback triggered", {
+            projectId,
+            reason: pipeline.fallbackReason,
           });
         }
 
+        const persisted = await persistGeneratedIllustrationAsset({
+          projectId,
+          userId,
+          title: pipeline.result.title,
+          description: pipeline.result.description,
+          svgCode: pipeline.result.svgCode,
+        });
+
+        outcome = "success";
         return reply.send({
           ok: true,
-          title: result.title,
-          description: result.description,
-          type: result.type,
-          svgCode: result.svgCode,
-          figureCaption: result.figureCaption || null,
-          notes: result.notes || null,
+          title: pipeline.result.title,
+          description: pipeline.result.description,
+          type: pipeline.result.type,
+          svgCode: persisted.sanitizedSvg,
+          figureCaption: pipeline.result.figureCaption || null,
+          notes: pipeline.result.notes || null,
+          projectFile: persisted.projectFile,
+          pipeline: {
+            mode: pipeline.mode,
+            usedFallback: pipeline.usedFallback,
+            criticIterations: pipeline.criticIterations,
+          },
         });
       } catch (err) {
+        if (err instanceof IllustrationPipelineError) {
+          outcome = "invalid_response";
+          metrics.aiIllustrationParseFailuresTotal.inc({
+            failure_type: err.code,
+          });
+          log.warn("AI illustration response failed strict validation", {
+            projectId,
+            code: err.code,
+            details: err.details,
+          });
+
+          return reply.code(502).send({
+            error: "Invalid AI illustration response format",
+            code: err.code,
+          });
+        }
+
+        if (err instanceof IllustrationPersistenceError) {
+          log.warn("Failed to persist generated illustration", {
+            projectId,
+            code: err.code,
+            details: err.details,
+          });
+
+          if (err.code === "STORAGE_NOT_CONFIGURED") {
+            return reply.code(503).send({
+              error:
+                "Illustration storage is not configured. Please contact administrator.",
+            });
+          }
+
+          if (err.code === "SVG_SANITIZATION_FAILED") {
+            return reply.code(422).send({
+              error:
+                "Generated illustration failed security validation. Please try again.",
+            });
+          }
+
+          return reply.code(500).send({
+            error: "Failed to persist generated illustration",
+          });
+        }
+
         log.error("AI illustration generation failed", err, { projectId });
         return reply.code(500).send({
           error: "AI illustration generation failed",
+        });
+      } finally {
+        const durationSeconds = (performance.now() - startedAt) / 1000;
+        metrics.aiIllustrationPipelineDurationSeconds.observe(
+          { mode: pipelineMode, outcome },
+          durationSeconds,
+        );
+        metrics.aiIllustrationRequestsTotal.inc({
+          mode: pipelineMode,
+          outcome,
         });
       }
     },
