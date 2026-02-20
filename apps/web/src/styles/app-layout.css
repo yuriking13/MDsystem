@@ -644,6 +644,34 @@ html.layout-fixed #root {
   padding: 0 4px;
 }
 
+.sidebar-theme-toggle-collapsed {
+  @apply flex items-center justify-center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  border: 1px solid hsla(var(--glass-hue1), 30%, 50%, 0.32);
+  background-color: hsla(var(--glass-hue2), 25%, 16%, 0.62);
+  color: #e2e8f0;
+  cursor: pointer;
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+}
+
+.sidebar-theme-toggle-collapsed:hover {
+  background-color: hsla(var(--glass-hue1), 45%, 44%, 0.22);
+  border-color: hsla(var(--glass-hue1), 45%, 55%, 0.45);
+  color: #ffffff;
+}
+
+.sidebar-theme-toggle-collapsed:focus-visible {
+  outline: 2px solid rgba(59, 130, 246, 0.65);
+  outline-offset: 2px;
+}
+
+.sidebar-theme-toggle-collapsed__icon {
+  width: 18px;
+  height: 18px;
+}
+
 .sidebar-footer-btn {
   @apply flex items-center gap-2.5 w-full px-3 py-2 rounded-lg;
   @apply text-neutral-400 hover:text-white;
@@ -820,6 +848,20 @@ html.layout-fixed #root {
 .light-theme .sidebar-footer-btn,
 [data-theme="light"] .sidebar-footer-btn {
   @apply text-neutral-600 hover:text-neutral-900;
+}
+
+.light-theme .sidebar-theme-toggle-collapsed,
+[data-theme="light"] .sidebar-theme-toggle-collapsed {
+  border-color: hsla(var(--glass-hue2), 24%, 58%, 0.4);
+  background-color: hsla(0, 0%, 100%, 0.78);
+  color: #334155;
+}
+
+.light-theme .sidebar-theme-toggle-collapsed:hover,
+[data-theme="light"] .sidebar-theme-toggle-collapsed:hover {
+  border-color: hsla(var(--glass-hue1), 40%, 50%, 0.45);
+  background-color: hsla(var(--glass-hue1), 30%, 94%, 0.98);
+  color: #0f172a;
 }
 
 .light-theme .sidebar-footer-btn:hover,
