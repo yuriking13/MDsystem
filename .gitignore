@@ -36,3 +36,6 @@ apps/web/src/**/*.js
 
 # Backup files
 *.bak
+
+# Project help/rules (local only)
+help_sub/

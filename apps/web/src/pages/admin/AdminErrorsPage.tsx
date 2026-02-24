@@ -37,17 +37,28 @@ function ErrorDetailModal({
 }: ErrorDetailModalProps) {
   const [notes, setNotes] = useState("");
   const [resolving, setResolving] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
   const resolvedAtLabel = error.resolved_at
     ? formatDate(error.resolved_at)
     : "—";
 
+  function formatRequestBody(value: unknown): string {
+    try {
+      if (typeof value === "string") return value;
+      return JSON.stringify(value, null, 2);
+    } catch {
+      return String(value);
+    }
+  }
+
   async function handleResolve() {
     setResolving(true);
+    setResolveError(null);
     try {
       await apiAdminResolveError(error.id, notes || undefined);
       onResolve();
     } catch (err) {
-      alert(getErrorMessage(err));
+      setResolveError(getErrorMessage(err));
     } finally {
       setResolving(false);
     }
@@ -118,7 +129,7 @@ function ErrorDetailModal({
               <div className="admin-error-detail-item full-width">
                 <span className="admin-error-detail-label">Request body</span>
                 <pre className="admin-error-body">
-                  {JSON.stringify(error.request_body, null, 2)}
+                  {formatRequestBody(error.request_body)}
                 </pre>
               </div>
             )}
@@ -147,6 +158,15 @@ function ErrorDetailModal({
         {!error.resolved && (
           <div className="admin-modal-footer">
             <div className="admin-resolve-form">
+              {resolveError ? (
+                <div
+                  className="alert admin-alert"
+                  role="alert"
+                  aria-live="polite"
+                >
+                  <span>{resolveError}</span>
+                </div>
+              ) : null}
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}

@@ -1675,12 +1675,166 @@
   margin-bottom: 8px !important;
 }
 
+.science-page .public-main {
+  padding-top: 28px;
+}
+
+.science-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.science-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.science-card-top h3 {
+  margin: 0;
+}
+
+.science-placeholder-card {
+  max-width: 860px;
+}
+
+.med-tab-active {
+  border-color: var(--accent-primary) !important;
+}
+
+.med-columns {
+  align-items: flex-start;
+}
+
+.med-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.med-list-item {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border-glass);
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  text-align: left;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.med-list-item:hover {
+  border-color: var(--accent-primary);
+}
+
+.med-list-item-active {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent-primary) 36%, transparent);
+}
+
+.med-inline-control {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.med-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.med-error {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.med-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.med-timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.med-timeline::before {
+  content: "";
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 11px;
+  width: 2px;
+  background: color-mix(in srgb, var(--accent-primary) 34%, var(--border-glass));
+}
+
+.med-timeline-item {
+  position: relative;
+  padding-left: 40px;
+}
+
+.med-timeline-dot {
+  position: absolute;
+  left: 6px;
+  top: 20px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--accent-primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent-primary) 25%, transparent);
+}
+
+.med-timeline-label {
+  margin: 0 0 6px;
+  font-weight: 700;
+  color: var(--text-primary) !important;
+}
+
+.med-stage-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.med-stage-card {
+  border-style: dashed;
+}
+
+.med-stage-card-done {
+  border-style: solid;
+  border-color: color-mix(in srgb, #22c55e 40%, var(--border-glass));
+}
+
+.med-stage-index {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--text-secondary) !important;
+}
+
 @media (max-width: 1100px) {
   .public-hero {
     grid-template-columns: 1fr;
   }
 
   .public-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .med-stage-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -1698,6 +1852,14 @@
 
   .public-grid-2,
   .public-grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .med-inline-control {
+    grid-template-columns: 1fr;
+  }
+
+  .med-stage-grid {
     grid-template-columns: 1fr;
   }
 }

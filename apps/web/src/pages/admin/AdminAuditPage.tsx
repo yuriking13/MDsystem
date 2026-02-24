@@ -30,9 +30,17 @@ function formatAuditDetails(details: AuditLogItem["details"]): string {
     return "—";
   }
   const detailsObject = details as Record<string, unknown>;
-  return Object.keys(detailsObject).length > 0
-    ? JSON.stringify(detailsObject).slice(0, 50)
-    : "—";
+  if (Object.keys(detailsObject).length === 0) return "—";
+
+  let serialized = "";
+  try {
+    serialized = JSON.stringify(detailsObject);
+  } catch {
+    serialized = String(details);
+  }
+
+  const compact = serialized.replace(/[\r\n\t]+/g, " ");
+  return compact.length > 50 ? `${compact.slice(0, 50)}...` : compact;
 }
 
 export default function AdminAuditPage() {

@@ -65,6 +65,7 @@ export default function AdminJobsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionResult, setActionResult] = useState<string | null>(null);
 
   const loadJobs = useCallback(async () => {
     setLoading(true);
@@ -95,21 +96,25 @@ export default function AdminJobsPage() {
 
   async function handleCancel(jobId: string) {
     if (!confirm("Отменить эту задачу?")) return;
+    setActionResult(null);
     try {
       await apiAdminCancelJob(jobId);
-      loadJobs();
+      setActionResult("Задача успешно отменена.");
+      await loadJobs();
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     }
   }
 
   async function handleRetry(jobId: string) {
     if (!confirm("Повторить эту задачу?")) return;
+    setActionResult(null);
     try {
       await apiAdminRetryJob(jobId);
-      loadJobs();
+      setActionResult("Задача поставлена на повторный запуск.");
+      await loadJobs();
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     }
   }
 
@@ -176,6 +181,15 @@ export default function AdminJobsPage() {
       {error && (
         <div className="alert admin-alert">
           <span>{error}</span>
+        </div>
+      )}
+      {actionResult && (
+        <div
+          className="alert admin-alert success"
+          role="status"
+          aria-live="polite"
+        >
+          <span>{actionResult}</span>
         </div>
       )}
 

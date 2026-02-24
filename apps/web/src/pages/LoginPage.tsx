@@ -13,7 +13,6 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -169,20 +168,16 @@ export default function LoginPage() {
                 </div>
 
                 <div className="auth-options">
-                  <label className="auth-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={remember}
-                      onChange={(e) => setRemember(e.target.checked)}
-                    />
-                    <span>Запомнить меня</span>
-                  </label>
                   <span className="auth-link">
                     Сброс пароля временно отключен, обратитесь к администратору
                   </span>
                 </div>
 
-                {error && <div className="auth-error">{error}</div>}
+                {error && (
+                  <div className="auth-error" role="alert" aria-live="polite">
+                    {error}
+                  </div>
+                )}
 
                 <div className="auth-actions">
                   <button
@@ -193,7 +188,10 @@ export default function LoginPage() {
                   >
                     {busy ? "Вход..." : "Войти в аккаунт"}
                   </button>
-                  <Link to="/landing" className="auth-link-btn auth-link-btn--button">
+                  <Link
+                    to="/landing"
+                    className="auth-link-btn auth-link-btn--button"
+                  >
                     На лендинг
                   </Link>
                 </div>

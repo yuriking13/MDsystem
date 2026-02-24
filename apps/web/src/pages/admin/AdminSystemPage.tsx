@@ -38,6 +38,7 @@ export default function AdminSystemPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cleanupLoading, setCleanupLoading] = useState<string | null>(null);
+  const [cleanupResult, setCleanupResult] = useState<string | null>(null);
 
   async function loadData() {
     setLoading(true);
@@ -65,6 +66,7 @@ export default function AdminSystemPage() {
 
   async function handleCleanup(type: "cache" | "sessions" | "activity") {
     setCleanupLoading(type);
+    setCleanupResult(null);
     try {
       let result;
       if (type === "cache") {
@@ -74,10 +76,10 @@ export default function AdminSystemPage() {
       } else {
         result = await apiAdminCleanupOldActivity(90);
       }
-      alert(`Удалено записей: ${result.deletedCount}`);
-      loadData();
+      setCleanupResult(`Удалено записей: ${result.deletedCount}`);
+      await loadData();
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     } finally {
       setCleanupLoading(null);
     }
@@ -114,6 +116,16 @@ export default function AdminSystemPage() {
         <div className="alert admin-alert">
           <IconExclamation />
           <span>{error}</span>
+        </div>
+      )}
+      {cleanupResult && (
+        <div
+          className="alert admin-alert success"
+          role="status"
+          aria-live="polite"
+        >
+          <IconCheckCircle />
+          <span>{cleanupResult}</span>
         </div>
       )}
 
@@ -372,24 +384,28 @@ export default function AdminSystemPage() {
             <h3>Размеры таблиц</h3>
           </div>
           <div className="admin-card-content">
-            <table className="admin-table admin-table-compact">
-              <thead>
-                <tr>
-                  <th>Таблица</th>
-                  <th>Строк</th>
-                  <th>Размер</th>
-                </tr>
-              </thead>
-              <tbody>
-                {health?.tables.map((table) => (
-                  <tr key={table.table_name}>
-                    <td className="mono">{table.table_name}</td>
-                    <td>{table.row_count.toLocaleString()}</td>
-                    <td className="mono">{formatBytes(table.total_size)}</td>
+            {!health?.tables || health.tables.length === 0 ? (
+              <p className="admin-empty">Нет данных о таблицах.</p>
+            ) : (
+              <table className="admin-table admin-table-compact">
+                <thead>
+                  <tr>
+                    <th>Таблица</th>
+                    <th>Строк</th>
+                    <th>Размер</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {health.tables.map((table) => (
+                    <tr key={table.table_name}>
+                      <td className="mono">{table.table_name}</td>
+                      <td>{table.row_count.toLocaleString()}</td>
+                      <td className="mono">{formatBytes(table.total_size)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       </div>

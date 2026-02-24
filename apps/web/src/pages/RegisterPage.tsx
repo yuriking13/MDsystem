@@ -202,7 +202,11 @@ export default function RegisterPage() {
                   </label>
                 </div>
 
-                {error && <div className="auth-error">{error}</div>}
+                {error && (
+                  <div className="auth-error" role="alert" aria-live="polite">
+                    {error}
+                  </div>
+                )}
 
                 <div className="auth-actions">
                   <button
@@ -213,7 +217,10 @@ export default function RegisterPage() {
                   >
                     {busy ? "Создание..." : "Создать аккаунт"}
                   </button>
-                  <Link to="/landing" className="auth-link-btn auth-link-btn--button">
+                  <Link
+                    to="/landing"
+                    className="auth-link-btn auth-link-btn--button"
+                  >
                     На лендинг
                   </Link>
                 </div>

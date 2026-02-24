@@ -19,6 +19,8 @@ type LandingContent = {
   };
   controls: {
     language: string;
+    switchToEnglish: string;
+    switchToRussian: string;
     switchToLight: string;
     switchToDark: string;
     signIn: string;
@@ -124,6 +126,8 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
     },
     controls: {
       language: "Language",
+      switchToEnglish: "Switch language to English",
+      switchToRussian: "Switch language to Russian",
       switchToLight: "Switch to light mode",
       switchToDark: "Switch to dark mode",
       signIn: "Sign in",
@@ -233,8 +237,14 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       items: [
         { value: "2", label: "Interface languages (English / Russian)" },
         { value: "2", label: "Theme modes (light / dark)" },
-        { value: "Role-based", label: "Project access and collaboration model" },
-        { value: "API-first", label: "Architecture for integrations and scaling" },
+        {
+          value: "Role-based",
+          label: "Project access and collaboration model",
+        },
+        {
+          value: "API-first",
+          label: "Architecture for integrations and scaling",
+        },
       ],
     },
     pricing: {
@@ -358,6 +368,8 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
     },
     controls: {
       language: "Язык",
+      switchToEnglish: "Переключить язык на английский",
+      switchToRussian: "Переключить язык на русский",
       switchToLight: "Переключить на светлую тему",
       switchToDark: "Переключить на тёмную тему",
       signIn: "Войти",
@@ -468,7 +480,10 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
         { value: "2", label: "Языка интерфейса (English / Russian)" },
         { value: "2", label: "Темы оформления (светлая / тёмная)" },
         { value: "Role-based", label: "Модель прав доступа внутри проектов" },
-        { value: "API-first", label: "Архитектура для интеграций и масштабирования" },
+        {
+          value: "API-first",
+          label: "Архитектура для интеграций и масштабирования",
+        },
       ],
     },
     pricing: {
@@ -616,7 +631,9 @@ function isHashLink(href: string): boolean {
 
 export default function LandingPage() {
   const [theme, setTheme] = useState<ThemeMode>(() => resolveInitialTheme());
-  const [locale, setLocale] = useState<LandingLocale>(() => resolveInitialLocale());
+  const [locale, setLocale] = useState<LandingLocale>(() =>
+    resolveInitialLocale(),
+  );
   const t = LANDING_CONTENT[locale];
   const currentYear = new Date().getFullYear();
 
@@ -653,7 +670,11 @@ export default function LandingPage() {
       <header className="public-header">
         <div className="public-header-inner">
           <Link to="/landing" className="public-brand">
-            <img src="/logo.svg" alt={t.brandName} className="public-brand-logo" />
+            <img
+              src="/logo.svg"
+              alt={t.brandName}
+              className="public-brand-logo"
+            />
             <span>{t.brandName}</span>
           </Link>
 
@@ -669,7 +690,7 @@ export default function LandingPage() {
             <button
               type="button"
               className="public-theme-toggle"
-              aria-label={t.controls.language}
+              aria-label={t.controls.switchToEnglish}
               aria-pressed={locale === "en"}
               onClick={() => setLocale("en")}
             >
@@ -678,7 +699,7 @@ export default function LandingPage() {
             <button
               type="button"
               className="public-theme-toggle"
-              aria-label={t.controls.language}
+              aria-label={t.controls.switchToRussian}
               aria-pressed={locale === "ru"}
               onClick={() => setLocale("ru")}
             >
@@ -690,7 +711,9 @@ export default function LandingPage() {
               className="public-theme-toggle"
               onClick={toggleTheme}
               aria-label={
-                theme === "dark" ? t.controls.switchToLight : t.controls.switchToDark
+                theme === "dark"
+                  ? t.controls.switchToLight
+                  : t.controls.switchToDark
               }
             >
               {theme === "dark" ? "☀" : "🌙"}

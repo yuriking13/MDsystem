@@ -12,6 +12,15 @@ import AppLayout from "./components/AppLayout";
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
+const ScienceLandingPage = lazy(
+  () => import("./pages/science/ScienceLandingPage"),
+);
+const ScienceDisciplinePlaceholderPage = lazy(
+  () => import("./pages/science/ScienceDisciplinePlaceholderPage"),
+);
+const MedScienceLandingPage = lazy(
+  () => import("./pages/med/MedScienceLandingPage"),
+);
 const PublicOfferPage = lazy(() => import("./pages/PublicOfferPage"));
 const TermsOfUsePage = lazy(() => import("./pages/TermsOfUsePage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
@@ -36,6 +45,7 @@ const AdminProjectsPage = lazy(() => import("./pages/admin/AdminProjectsPage"));
 const AdminJobsPage = lazy(() => import("./pages/admin/AdminJobsPage"));
 const AdminSystemPage = lazy(() => import("./pages/admin/AdminSystemPage"));
 const AdminArticlesPage = lazy(() => import("./pages/admin/AdminArticlesPage"));
+import { resolveScienceDisciplineFromHostname } from "./lib/scienceDomains";
 
 // Loading fallback component
 function PageLoader() {
@@ -51,6 +61,15 @@ function PageLoader() {
 
 export default function App() {
   const { token } = useAuth();
+  const disciplineFromHost =
+    typeof window !== "undefined"
+      ? resolveScienceDisciplineFromHostname(window.location.hostname)
+      : null;
+  const rootRedirect = disciplineFromHost
+    ? disciplineFromHost === "med"
+      ? "/med"
+      : `/science/${disciplineFromHost}`
+    : "/science";
 
   // Initialize theme on mount
   useEffect(() => {
@@ -78,13 +97,16 @@ export default function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public Routes (no sidebar) */}
-            <Route
-              path="/"
-              element={<Navigate to={token ? "/projects" : "/login"} replace />}
-            />
+            <Route path="/" element={<Navigate to={rootRedirect} replace />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/landing" element={<LandingPage />} />
+            <Route path="/science" element={<ScienceLandingPage />} />
+            <Route
+              path="/science/:discipline"
+              element={<ScienceDisciplinePlaceholderPage />}
+            />
+            <Route path="/med" element={<MedScienceLandingPage />} />
             <Route path="/offer" element={<PublicOfferPage />} />
             <Route path="/terms" element={<TermsOfUsePage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />

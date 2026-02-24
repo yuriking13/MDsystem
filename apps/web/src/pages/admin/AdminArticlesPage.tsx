@@ -42,6 +42,7 @@ export default function AdminArticlesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cleanupLoading, setCleanupLoading] = useState(false);
+  const [cleanupResult, setCleanupResult] = useState<string | null>(null);
 
   const loadArticles = useCallback(async () => {
     setLoading(true);
@@ -84,12 +85,14 @@ export default function AdminArticlesPage() {
     )
       return;
     setCleanupLoading(true);
+    setCleanupResult(null);
+    setError(null);
     try {
       const result = await apiAdminDeleteOrphanArticles();
-      alert(`Удалено статей: ${result.deletedCount}`);
-      loadArticles();
+      setCleanupResult(`Удалено статей: ${result.deletedCount}`);
+      await loadArticles();
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     } finally {
       setCleanupLoading(false);
     }
@@ -204,6 +207,15 @@ export default function AdminArticlesPage() {
       {error && (
         <div className="alert admin-alert">
           <span>{error}</span>
+        </div>
+      )}
+      {cleanupResult && (
+        <div
+          className="alert admin-alert success"
+          role="status"
+          aria-live="polite"
+        >
+          <span>{cleanupResult}</span>
         </div>
       )}
 

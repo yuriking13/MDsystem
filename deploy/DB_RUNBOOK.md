@@ -73,7 +73,8 @@ Run SQL scripts manually in Adminer when needed:
 11. `apps/api/prisma/migrations/add_semantic_clusters.sql`
 12. `apps/api/prisma/migrations/add_embedding_jobs.sql`
 13. `apps/api/prisma/migrations/add_refresh_tokens.sql`
-14. `apps/api/prisma/migrations/add_composite_indexes_v2.sql`
+14. `apps/api/prisma/migrations/add_med_publisher_v1.sql`
+15. `apps/api/prisma/migrations/add_composite_indexes_v2.sql`
 
 > For CLI execution use fail-fast mode:
 >

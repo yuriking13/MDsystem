@@ -73,6 +73,7 @@ jobs:
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_semantic_clusters.sql
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_embedding_jobs.sql
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_refresh_tokens.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_med_publisher_v1.sql
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_composite_indexes_v2.sql
 
             JWT_SECRET='${{ secrets.JWT_SECRET }}'

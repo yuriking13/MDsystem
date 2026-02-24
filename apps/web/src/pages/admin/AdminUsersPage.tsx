@@ -59,6 +59,7 @@ function UsersList() {
   const [appliedSearch, setAppliedSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -86,11 +87,17 @@ function UsersList() {
   }
 
   async function toggleAdmin(userId: string, currentIsAdmin: boolean) {
+    setActionMessage(null);
     try {
       await apiAdminUpdateUserAdmin(userId, !currentIsAdmin);
-      loadUsers();
+      setActionMessage(
+        currentIsAdmin
+          ? "Права администратора сняты."
+          : "Права администратора выданы.",
+      );
+      await loadUsers();
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     }
   }
 
@@ -159,6 +166,15 @@ function UsersList() {
       {error && (
         <div className="alert admin-alert">
           <span>{error}</span>
+        </div>
+      )}
+      {actionMessage && (
+        <div
+          className="alert admin-alert success"
+          role="status"
+          aria-live="polite"
+        >
+          <span>{actionMessage}</span>
         </div>
       )}
 
@@ -285,6 +301,7 @@ function UserDetail() {
   const [resetLink, setResetLink] = useState<string | null>(null);
   const [resetExpiresAt, setResetExpiresAt] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!userId) return;
@@ -307,11 +324,14 @@ function UserDetail() {
     if (!userId || !data) return;
     const reason = prompt("Причина блокировки (опционально):");
     setActionLoading(true);
+    setActionMessage(null);
+    setError(null);
     try {
       await apiAdminBlockUser(userId, true, reason || undefined);
+      setActionMessage("Пользователь заблокирован.");
       await load();
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -320,11 +340,14 @@ function UserDetail() {
   async function handleUnblock() {
     if (!userId) return;
     setActionLoading(true);
+    setActionMessage(null);
+    setError(null);
     try {
       await apiAdminBlockUser(userId, false);
+      setActionMessage("Пользователь разблокирован.");
       await load();
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -334,12 +357,15 @@ function UserDetail() {
     if (!userId) return;
     if (!confirm("Сбросить пароль пользователя?")) return;
     setActionLoading(true);
+    setActionMessage(null);
+    setError(null);
     try {
       const result = await apiAdminResetPassword(userId);
       setResetLink(result.resetLink);
       setResetExpiresAt(result.expiresAt);
+      setActionMessage("Ссылка для сброса пароля сгенерирована.");
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -355,11 +381,12 @@ function UserDetail() {
       return;
     if (!confirm("Вы уверены? Все данные пользователя будут удалены!")) return;
     setActionLoading(true);
+    setError(null);
     try {
       await apiAdminDeleteUser(userId);
       navigate("/admin/users");
     } catch (err) {
-      alert(getErrorMessage(err));
+      setError(getErrorMessage(err));
     } finally {
       setActionLoading(false);
     }
@@ -477,6 +504,15 @@ function UserDetail() {
       </div>
 
       {/* One-time reset link display */}
+      {actionMessage && (
+        <div
+          className="alert admin-alert success"
+          role="status"
+          aria-live="polite"
+        >
+          <span>{actionMessage}</span>
+        </div>
+      )}
       {resetLink && (
         <div className="admin-password-result">
           <p>
@@ -487,9 +523,13 @@ function UserDetail() {
             <code>{resetLink}</code>
             <button
               className="btn secondary"
-              onClick={() => {
-                navigator.clipboard.writeText(resetLink);
-                alert("Скопировано!");
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(resetLink);
+                  setActionMessage("Ссылка скопирована в буфер обмена.");
+                } catch {
+                  setError("Не удалось скопировать ссылку в буфер обмена.");
+                }
               }}
             >
               Копировать
@@ -646,7 +686,9 @@ function UserDetail() {
                       </span>
                       <span className="admin-session-meta">
                         {session.ip_address} ·{" "}
-                        {session.user_agent?.slice(0, 50)}...
+                        {session.user_agent
+                          ? `${session.user_agent.slice(0, 50)}...`
+                          : "—"}
                       </span>
                     </div>
                   </div>

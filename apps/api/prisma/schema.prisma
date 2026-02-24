@@ -35,6 +35,12 @@ model User {
   adminAuditLogs    AdminAuditLog[]
   resolvedErrors    SystemErrorLog[]   @relation("ResolvedBy")
   userErrors        SystemErrorLog[]   @relation("UserErrors")
+  medSubmissionsAuthored MedPublisherSubmission[] @relation("MedPublisherSubmissionAuthor")
+  medSubmissionsHandled  MedPublisherSubmission[] @relation("MedPublisherHandlingEditor")
+  medPublisherReviews    MedPublisherReview[]     @relation("MedPublisherReviewReviewer")
+  medPublisherEvents     MedPublisherTimelineEvent[] @relation("MedPublisherEventActor")
+  medPublisherEditorProfile MedPublisherEditor?   @relation("MedPublisherEditorUser")
+  grantedMedPublisherEditors MedPublisherEditor[] @relation("MedPublisherEditorGrantedBy")
 
   @@map("users")
 }
@@ -194,6 +200,88 @@ model ProjectArticle {
 
   @@id([projectId, articleId])
   @@map("project_articles")
+}
+
+model MedPublisherSubmission {
+  id          String    @id @default(dbgenerated("gen_random_uuid()"))
+  title       String
+  abstract    String?
+  keywords    String[]  @default([])
+  manuscript  String?
+  status      String    @default("draft")
+  createdBy   String    @map("created_by")
+  handlingEditorId String? @map("handling_editor_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+  submittedAt DateTime? @map("submitted_at")
+  decisionAt  DateTime? @map("decision_at")
+  publishedAt DateTime? @map("published_at")
+
+  author  User                        @relation("MedPublisherSubmissionAuthor", fields: [createdBy], references: [id], onDelete: Cascade)
+  handlingEditor User?                @relation("MedPublisherHandlingEditor", fields: [handlingEditorId], references: [id], onDelete: SetNull)
+  reviews MedPublisherReview[]
+  events  MedPublisherTimelineEvent[]
+
+  @@index([createdBy])
+  @@index([handlingEditorId])
+  @@index([status])
+  @@map("med_publisher_submissions")
+}
+
+model MedPublisherEditor {
+  userId     String   @id @map("user_id")
+  role       String   @default("editor")
+  isActive   Boolean  @default(true) @map("is_active")
+  canPublish Boolean  @default(true) @map("can_publish")
+  createdBy  String?  @map("created_by")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  user      User  @relation("MedPublisherEditorUser", fields: [userId], references: [id], onDelete: Cascade)
+  grantedBy User? @relation("MedPublisherEditorGrantedBy", fields: [createdBy], references: [id], onDelete: SetNull)
+
+  @@index([role, isActive])
+  @@index([createdBy])
+  @@map("med_publisher_editors")
+}
+
+model MedPublisherReview {
+  id                  String    @id @default(dbgenerated("gen_random_uuid()"))
+  submissionId        String    @map("submission_id")
+  reviewerId          String    @map("reviewer_id")
+  status              String    @default("assigned")
+  recommendation      String?
+  publicComment       String?   @map("public_comment")
+  confidentialComment String?   @map("confidential_comment")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @default(now()) @updatedAt @map("updated_at")
+  submittedAt         DateTime? @map("submitted_at")
+
+  submission MedPublisherSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  reviewer   User                   @relation("MedPublisherReviewReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+
+  @@unique([submissionId, reviewerId])
+  @@index([reviewerId])
+  @@index([status])
+  @@map("med_publisher_reviews")
+}
+
+model MedPublisherTimelineEvent {
+  id          BigInt    @id @default(autoincrement())
+  submissionId String   @map("submission_id")
+  eventType   String    @map("event_type")
+  eventLabel  String    @map("event_label")
+  actorUserId String?   @map("actor_user_id")
+  actorRole   String?   @map("actor_role")
+  payloadJson Json      @default("{}") @map("payload_json")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  submission MedPublisherSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  actor      User?                  @relation("MedPublisherEventActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([submissionId, createdAt])
+  @@index([actorUserId])
+  @@map("med_publisher_timeline_events")
 }
 
 model Document {
