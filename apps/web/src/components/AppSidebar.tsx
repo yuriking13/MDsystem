@@ -195,6 +195,12 @@ export default function AppSidebar({
       tab: "graph",
     },
     {
+      id: "publisher",
+      label: "Издательство",
+      icon: BookOpenIcon,
+      tab: "publisher",
+    },
+    {
       id: "settings",
       label: "Настройки проекта",
       icon: Cog6ToothIcon,

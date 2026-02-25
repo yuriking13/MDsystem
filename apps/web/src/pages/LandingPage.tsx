@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import {
+  SCIENCE_DISCIPLINES,
+  getScienceDisciplineHref,
+} from "../lib/scienceDomains";
 
 type ThemeMode = "light" | "dark";
 type LandingLocale = "en" | "ru";
@@ -348,7 +352,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       company: {
         title: "Company",
         links: [
-          { label: "Landing", href: "/landing" },
+          { label: "Landing", href: "/" },
           { label: "Sign in", href: "/login" },
           { label: "Register", href: "/register" },
         ],
@@ -587,7 +591,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       company: {
         title: "Компания",
         links: [
-          { label: "Лендинг", href: "/landing" },
+          { label: "Лендинг", href: "/" },
           { label: "Войти", href: "/login" },
           { label: "Регистрация", href: "/register" },
         ],
@@ -657,6 +661,7 @@ export default function LandingPage() {
     { href: "#pricing", label: t.nav.pricing },
     { href: "#faq", label: t.nav.faq },
     { href: "#contact", label: t.nav.contact },
+    { href: "#sciences", label: locale === "ru" ? "Науки" : "Sciences" },
   ];
 
   const footerLinks = [
@@ -669,7 +674,7 @@ export default function LandingPage() {
     <div id="top" className="public-page">
       <header className="public-header">
         <div className="public-header-inner">
-          <Link to="/landing" className="public-brand">
+          <Link to="/" className="public-brand">
             <img
               src="/logo.svg"
               alt={t.brandName}
@@ -721,6 +726,9 @@ export default function LandingPage() {
             <Link to="/login" className="public-theme-toggle">
               {t.controls.signIn}
             </Link>
+            <Link to="/med" className="public-theme-toggle">
+              {locale === "ru" ? "Издательство MED" : "MED Publisher"}
+            </Link>
             <Link to="/register" className="public-btn">
               {t.controls.getStarted}
             </Link>
@@ -741,6 +749,11 @@ export default function LandingPage() {
               <a href="#pricing" className="public-btn public-btn-secondary">
                 {t.hero.secondaryAction}
               </a>
+              <Link to="/med" className="public-btn public-btn-secondary">
+                {locale === "ru"
+                  ? "Открыть издательство MED"
+                  : "Open MED publisher"}
+              </Link>
             </div>
           </article>
 
@@ -819,6 +832,64 @@ export default function LandingPage() {
                 <p>{item.label}</p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section id="sciences" className="public-section">
+          <div className="public-section-header">
+            <h2>
+              {locale === "ru"
+                ? "Научные направления и издательство"
+                : "Science disciplines & publishing"}
+            </h2>
+            <p>
+              {locale === "ru"
+                ? "Работайте с научными статьями по направлениям. Медицинский контур включает полный издательский workflow."
+                : "Work with scientific articles across disciplines. The medical section includes a full publishing workflow."}
+            </p>
+          </div>
+          <div className="public-grid public-grid-3">
+            {SCIENCE_DISCIPLINES.map((disc) => {
+              const href = getScienceDisciplineHref(
+                disc.slug,
+                disc.fallbackPath,
+              );
+              const isExternal = /^https?:\/\//.test(href);
+              return (
+                <article key={disc.slug} className="public-card">
+                  <span className="public-badge">{disc.code}</span>
+                  <h3>{disc.label}</h3>
+                  <p>{disc.description}</p>
+                  <div className="public-hero-actions">
+                    {isExternal ? (
+                      <a
+                        href={href}
+                        className="public-btn public-btn-secondary"
+                      >
+                        {locale === "ru" ? "Открыть" : "Open"}
+                      </a>
+                    ) : (
+                      <Link
+                        to={href}
+                        className="public-btn public-btn-secondary"
+                      >
+                        {locale === "ru" ? "Открыть" : "Open"}
+                      </Link>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+          <div className="public-hero-actions">
+            <Link to="/med" className="public-btn">
+              {locale === "ru"
+                ? "Перейти в медицинское издательство"
+                : "Open medical publishing"}
+            </Link>
+            <Link to="/science" className="public-btn public-btn-secondary">
+              {locale === "ru" ? "Все научные направления" : "All disciplines"}
+            </Link>
           </div>
         </section>
 

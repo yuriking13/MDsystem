@@ -63,6 +63,9 @@ const ArticlesSection = React.lazy(
 );
 const CitationGraph = React.lazy(() => import("../components/CitationGraph"));
 const ChartFromTable = React.lazy(() => import("../components/ChartFromTable"));
+const PublisherSection = React.lazy(
+  () => import("../components/PublisherSection"),
+);
 const StatisticEditModal = React.lazy(
   () => import("../components/StatisticEditModal"),
 );
@@ -127,6 +130,7 @@ type Tab =
   | "files"
   | "statistics"
   | "graph"
+  | "publisher"
   | "team"
   | "settings";
 
@@ -3832,6 +3836,22 @@ export default function ProjectDetailPage() {
             fallback={<div className="p-8 text-center">Загрузка графа...</div>}
           >
             <CitationGraph projectId={id} />
+          </Suspense>
+        )}
+
+        {/* === PUBLISHER TAB === */}
+        {activeTab === "publisher" && id && project && (
+          <Suspense
+            fallback={
+              <div className="p-8 text-center">Загрузка издательства...</div>
+            }
+          >
+            <PublisherSection
+              projectId={id}
+              projectName={project.name}
+              projectDescription={project.description}
+              documents={documents}
+            />
           </Suspense>
         )}
 
