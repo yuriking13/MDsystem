@@ -141,6 +141,42 @@ vi.mock("../../src/pages/admin/AdminArticlesPage", () => ({
   default: () => <div>Admin Articles Page</div>,
 }));
 
+vi.mock("../../src/pages/LandingPage", () => ({
+  default: () => <div>Landing Page</div>,
+}));
+
+vi.mock("../../src/pages/science/ScienceLandingPage", () => ({
+  default: () => <div>Science Landing Page</div>,
+}));
+
+vi.mock("../../src/pages/science/ScienceDisciplinePlaceholderPage", () => ({
+  default: () => <div>Science Placeholder Page</div>,
+}));
+
+vi.mock("../../src/pages/med/MedScienceLandingPage", () => ({
+  default: () => <div>Med Science Landing Page</div>,
+}));
+
+vi.mock("../../src/pages/PublicOfferPage", () => ({
+  default: () => <div>Public Offer Page</div>,
+}));
+
+vi.mock("../../src/pages/TermsOfUsePage", () => ({
+  default: () => <div>Terms Of Use Page</div>,
+}));
+
+vi.mock("../../src/pages/PrivacyPolicyPage", () => ({
+  default: () => <div>Privacy Policy Page</div>,
+}));
+
+vi.mock("../../src/pages/ProjectFacesPage", () => ({
+  default: () => <div>Project Faces Page</div>,
+}));
+
+vi.mock("../../src/lib/scienceDomains", () => ({
+  resolveScienceDisciplineFromHostname: () => null,
+}));
+
 function createThemeStorage(theme: string | null): Storage {
   return {
     getItem: vi.fn((key: string) => (key === "theme" ? theme : null)),
@@ -401,7 +437,7 @@ describe("App theme bootstrap runtime", () => {
     expect(storage.getItem).toHaveBeenCalledWith("theme");
   });
 
-  it("redirects unauthenticated root route to login page", async () => {
+  it("renders landing page for unauthenticated root route", async () => {
     const storage = createThemeStorage(null);
     vi.stubGlobal("localStorage", storage);
     authState.token = null;
@@ -416,11 +452,11 @@ describe("App theme bootstrap runtime", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Login Page")).toBeInTheDocument();
+      expect(screen.getByText("Landing Page")).toBeInTheDocument();
     });
   });
 
-  it("applies persisted light theme while redirecting unauthenticated root to login", async () => {
+  it("applies persisted light theme on landing page for unauthenticated root", async () => {
     const storage = createThemeStorage("light");
     vi.stubGlobal("localStorage", storage);
     authState.token = null;
@@ -436,11 +472,11 @@ describe("App theme bootstrap runtime", () => {
 
     await waitFor(() => {
       expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-      expect(screen.getByText("Login Page")).toBeInTheDocument();
+      expect(screen.getByText("Landing Page")).toBeInTheDocument();
     });
   });
 
-  it("redirects authenticated root route into projects page under app layout", async () => {
+  it("renders landing page for authenticated root route", async () => {
     const storage = createThemeStorage("dark");
     vi.stubGlobal("localStorage", storage);
     authState.token = "auth-token";
@@ -455,12 +491,11 @@ describe("App theme bootstrap runtime", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("App Layout")).toBeInTheDocument();
-      expect(screen.getByText("Projects Page")).toBeInTheDocument();
+      expect(screen.getByText("Landing Page")).toBeInTheDocument();
     });
   });
 
-  it("applies persisted light theme while redirecting authenticated root to projects", async () => {
+  it("applies persisted light theme on landing page for authenticated root", async () => {
     const storage = createThemeStorage("light");
     vi.stubGlobal("localStorage", storage);
     authState.token = "auth-token";
@@ -476,16 +511,15 @@ describe("App theme bootstrap runtime", () => {
 
     await waitFor(() => {
       expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-      expect(screen.getByText("App Layout")).toBeInTheDocument();
-      expect(screen.getByText("Projects Page")).toBeInTheDocument();
+      expect(screen.getByText("Landing Page")).toBeInTheDocument();
     });
   });
 
   it.each([
-    [null, "Login Page"],
-    ["auth-token", "Projects Page"],
+    [null, "Landing Page"],
+    ["auth-token", "Landing Page"],
   ] as const)(
-    "falls back to dark theme for unsupported persisted value on root redirect (token=%s)",
+    "falls back to dark theme for unsupported persisted value on root landing (token=%s)",
     async (token, expectedPageText) => {
       const storage = createThemeStorage("solarized");
       vi.stubGlobal("localStorage", storage);
@@ -508,12 +542,12 @@ describe("App theme bootstrap runtime", () => {
   );
 
   it.each([
-    ["light", null, "Login Page"],
-    ["light", "auth-token", "Projects Page"],
-    ["dark", null, "Login Page"],
-    ["dark", "auth-token", "Projects Page"],
+    ["light", null, "Landing Page"],
+    ["light", "auth-token", "Landing Page"],
+    ["dark", null, "Landing Page"],
+    ["dark", "auth-token", "Landing Page"],
   ] as const)(
-    "keeps %s theme on root redirect with query + hash (token=%s)",
+    "keeps %s theme on root landing with query + hash (token=%s)",
     async (persistedTheme, token, expectedPageText) => {
       const storage = createThemeStorage(persistedTheme);
       vi.stubGlobal("localStorage", storage);
@@ -536,10 +570,10 @@ describe("App theme bootstrap runtime", () => {
   );
 
   it.each([
-    [null, "Login Page"],
-    ["auth-token", "Projects Page"],
+    [null, "Landing Page"],
+    ["auth-token", "Landing Page"],
   ] as const)(
-    "falls back to dark theme on root redirect with query + hash for unsupported preference (token=%s)",
+    "falls back to dark theme on root landing with query + hash for unsupported preference (token=%s)",
     async (token, expectedPageText) => {
       const storage = createThemeStorage("solarized");
       vi.stubGlobal("localStorage", storage);

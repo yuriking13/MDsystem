@@ -65,11 +65,12 @@ export default function App() {
     typeof window !== "undefined"
       ? resolveScienceDisciplineFromHostname(window.location.hostname)
       : null;
-  const rootRedirect = disciplineFromHost
-    ? disciplineFromHost === "med"
-      ? "/med"
-      : `/science/${disciplineFromHost}`
-    : "/science";
+  const rootElement =
+    disciplineFromHost && disciplineFromHost !== "med" ? (
+      <Navigate to={`/science/${disciplineFromHost}`} replace />
+    ) : (
+      <LandingPage />
+    );
 
   // Initialize theme on mount
   useEffect(() => {
@@ -97,10 +98,10 @@ export default function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             {/* Public Routes (no sidebar) */}
-            <Route path="/" element={<Navigate to={rootRedirect} replace />} />
+            <Route path="/" element={rootElement} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
-            <Route path="/landing" element={<LandingPage />} />
+            <Route path="/landing" element={<Navigate to="/" replace />} />
             <Route path="/science" element={<ScienceLandingPage />} />
             <Route
               path="/science/:discipline"
@@ -158,7 +159,10 @@ export default function App() {
               <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route
+              path="*"
+              element={<Navigate to={token ? "/projects" : "/login"} replace />}
+            />
           </Routes>
         </Suspense>
       </ToastProvider>
