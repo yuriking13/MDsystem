@@ -59,6 +59,18 @@ Run all checks from the workspace root:
 - Coverage: `pnpm test:coverage`
 - Build: `pnpm build`
 
+### Publisher regression checklist
+
+When touching publisher workflow (`apps/api/src/routes/med-publisher.ts`, `apps/web/src/components/PublisherSection.tsx`, `apps/web/src/lib/medPublisherApi.ts`, `apps/api/prisma/migrations/add_med_publisher_v1.sql`), run this focused sequence before pushing:
+
+- `pnpm --filter api typecheck`
+- `pnpm --filter web typecheck`
+- `pnpm --filter api test -- tests/integration/med-publisher-routes.test.ts`
+- `pnpm --filter web test -- tests/components/PublisherSection.test.tsx`
+- `pnpm --filter web test -- tests/components/AppThemeBootstrapRuntime.test.tsx`
+
+This checklist is mandatory for publisher changes to prevent route/ACL/UI regressions.
+
 The guard script can also be run directly:
 
 - `pnpm run quality:guards` (auto-cleans WEB JS mirrors, then checks)

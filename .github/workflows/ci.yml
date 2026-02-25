@@ -93,6 +93,18 @@ jobs:
           CORS_ORIGIN: http://localhost:5173
           CROSSREF_MAILTO: test@example.com
 
+      - name: Publisher API critical slice
+        run: pnpm --filter api test -- tests/integration/med-publisher-routes.test.ts
+        env:
+          DATABASE_URL: postgresql://test:test@localhost:5432/mdsystem_test
+          API_KEY_ENCRYPTION_SECRET: test-secret-key-for-ci-testing-32chars
+          JWT_SECRET: test-jwt-secret-for-ci
+          NODE_ENV: test
+          HOST: 127.0.0.1
+          PORT: 3001
+          CORS_ORIGIN: http://localhost:5173
+          CROSSREF_MAILTO: test@example.com
+
       - name: Upload API coverage artifact
         uses: actions/upload-artifact@v4
         with:
@@ -136,6 +148,12 @@ jobs:
 
       - name: Test WEB with coverage
         run: pnpm --filter web test:coverage
+
+      - name: Publisher WEB critical slice
+        run: pnpm --filter web test -- tests/components/PublisherSection.test.tsx
+
+      - name: App theme/runtime routing critical slice
+        run: pnpm --filter web test -- tests/components/AppThemeBootstrapRuntime.test.tsx
 
       - name: Upload WEB coverage artifact
         uses: actions/upload-artifact@v4

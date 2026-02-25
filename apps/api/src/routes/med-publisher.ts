@@ -2,9 +2,14 @@ import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { pool } from "../pg.js";
 import { getUserId } from "../utils/auth-helpers.js";
+import { checkProjectAccessPool } from "../utils/project-access.js";
 
 const SubmissionIdSchema = z.object({
   submissionId: z.string().uuid(),
+});
+
+const ProjectIdSchema = z.object({
+  projectId: z.string().uuid(),
 });
 
 const SubmissionStatusSchema = z.enum([
@@ -17,6 +22,22 @@ const SubmissionStatusSchema = z.enum([
   "published",
 ]);
 
+const ALLOWED_SUBMISSION_TRANSITIONS: Record<string, Set<string>> = {
+  draft: new Set(["submitted"]),
+  submitted: new Set(["under_review", "revision_requested"]),
+  under_review: new Set(["revision_requested", "accepted", "rejected"]),
+  revision_requested: new Set(["submitted", "under_review"]),
+  accepted: new Set(["published"]),
+  rejected: new Set([]),
+  published: new Set([]),
+};
+
+function canTransitionStatus(fromStatus: string, toStatus: string): boolean {
+  const allowed = ALLOWED_SUBMISSION_TRANSITIONS[fromStatus];
+  if (!allowed) return false;
+  return allowed.has(toStatus);
+}
+
 const DecisionSchema = z.object({
   decision: z.enum(["revision_requested", "accepted", "rejected"]),
   note: z.string().max(5000).optional().nullable(),
@@ -27,6 +48,7 @@ const CreateSubmissionSchema = z.object({
   abstract: z.string().min(20).max(20000),
   keywords: z.array(z.string().min(2).max(64)).max(30).optional().default([]),
   manuscript: z.string().max(200000).optional().nullable(),
+  projectId: z.string().uuid().optional().nullable(),
 });
 
 const AssignReviewerSchema = z.object({
@@ -297,6 +319,72 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     },
   );
 
+  fastify.get(
+    "/med/publisher/project/:projectId",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = getUserId(request);
+      const paramsParse = ProjectIdSchema.safeParse(request.params);
+      if (!paramsParse.success) {
+        return reply.code(400).send({
+          error: "BadRequest",
+          message: "Invalid project ID",
+        });
+      }
+
+      const { projectId } = paramsParse.data;
+      const access = await checkProjectAccessPool(projectId, userId, false);
+      if (!access.ok) {
+        return reply.code(403).send({
+          error: "Forbidden",
+          message: "No access to this project",
+        });
+      }
+
+      const editorProfile = await getEditorProfile(userId);
+      const isEditor = Boolean(editorProfile);
+
+      const submissionsRes = await pool.query(
+        `SELECT s.*,
+                author.email AS author_email,
+                handling.email AS handling_editor_email,
+                COUNT(r.id)::int AS reviewers_total,
+                COUNT(*) FILTER (WHERE r.status = 'submitted')::int AS reviewers_completed
+         FROM med_publisher_submissions s
+         LEFT JOIN users author ON author.id = s.created_by
+         LEFT JOIN users handling ON handling.id = s.handling_editor_id
+         LEFT JOIN med_publisher_reviews r ON r.submission_id = s.id
+         WHERE s.project_id = $1
+         GROUP BY s.id, author.email, handling.email
+         ORDER BY s.updated_at DESC`,
+        [projectId],
+      );
+
+      const reviewAssignmentsRes = await pool.query(
+        `SELECT r.id AS review_id,
+                r.submission_id,
+                r.status AS review_status,
+                r.recommendation,
+                s.title,
+                s.status,
+                s.abstract
+         FROM med_publisher_reviews r
+         JOIN med_publisher_submissions s ON s.id = r.submission_id
+         WHERE r.reviewer_id = $1
+           AND s.project_id = $2
+         ORDER BY r.created_at DESC`,
+        [userId, projectId],
+      );
+
+      return {
+        submissions: submissionsRes.rows,
+        reviewAssignments: reviewAssignmentsRes.rows,
+        editorRole: editorProfile?.role ?? null,
+        isEditor,
+      };
+    },
+  );
+
   fastify.post(
     "/med/publisher/submissions",
     { preHandler: [fastify.authenticate] },
@@ -311,14 +399,29 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       const keywords = normalizeKeywords(bodyParse.data.keywords);
+      const projectId = bodyParse.data.projectId ?? null;
+      if (projectId) {
+        const projectAccess = await checkProjectAccessPool(
+          projectId,
+          userId,
+          true,
+        );
+        if (!projectAccess.ok) {
+          return reply.code(403).send({
+            error: "Forbidden",
+            message: "No edit access to the linked project",
+          });
+        }
+      }
+
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
 
         const createdRes = await client.query(
           `INSERT INTO med_publisher_submissions
-            (title, abstract, keywords, manuscript, created_by, status)
-           VALUES ($1, $2, $3, $4, $5, 'draft')
+            (title, abstract, keywords, manuscript, created_by, project_id, status)
+           VALUES ($1, $2, $3, $4, $5, $6, 'draft')
            RETURNING *`,
           [
             bodyParse.data.title.trim(),
@@ -326,6 +429,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             keywords,
             bodyParse.data.manuscript?.trim() || null,
             userId,
+            projectId,
           ],
         );
 
@@ -376,8 +480,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         });
       }
 
+      const editorProfile = await getEditorProfile(userId);
       if (!access.isAuthor && !access.isReviewer) {
-        const editorProfile = await getEditorProfile(userId);
         const hasEditorAccess = Boolean(
           editorProfile?.isActive && access.isHandlingEditor,
         );
@@ -389,7 +493,6 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         }
       }
 
-      const editorProfile = await getEditorProfile(userId);
       const isEditorViewer = Boolean(
         editorProfile?.isActive && access.isHandlingEditor,
       );
@@ -768,6 +871,29 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         });
       }
 
+      const submissionAuthorRes = await pool.query(
+        `SELECT created_by, status
+         FROM med_publisher_submissions
+         WHERE id = $1
+         LIMIT 1`,
+        [paramsParse.data.submissionId],
+      );
+      if (submissionAuthorRes.rowCount === 0) {
+        return reply.code(404).send({
+          error: "NotFound",
+          message: "Submission not found",
+        });
+      }
+      const submissionAuthorId = String(submissionAuthorRes.rows[0].created_by);
+      const submissionStatus = String(submissionAuthorRes.rows[0].status);
+      if (submissionStatus === "published" || submissionStatus === "rejected") {
+        return reply.code(400).send({
+          error: "BadRequest",
+          message:
+            "Reviewers cannot be assigned for published or rejected submissions",
+        });
+      }
+
       const reviewerRes = await pool.query(
         "SELECT id, email FROM users WHERE lower(email) = lower($1) LIMIT 1",
         [bodyParse.data.reviewerEmail.trim()],
@@ -787,10 +913,24 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           message: "Author cannot assign themselves as reviewer",
         });
       }
+      if (reviewerId === submissionAuthorId) {
+        return reply.code(400).send({
+          error: "BadRequest",
+          message: "Submission author cannot be assigned as reviewer",
+        });
+      }
 
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+
+        await client.query(
+          `SELECT id
+           FROM med_publisher_submissions
+           WHERE id = $1
+           FOR UPDATE`,
+          [paramsParse.data.submissionId],
+        );
 
         const reviewRes = await client.query(
           `INSERT INTO med_publisher_reviews
@@ -1011,6 +1151,50 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       try {
         await client.query("BEGIN");
 
+        const stateRes = await client.query(
+          `SELECT status
+           FROM med_publisher_submissions
+           WHERE id = $1
+             AND handling_editor_id = $2
+           FOR UPDATE`,
+          [paramsParse.data.submissionId, userId],
+        );
+        if (stateRes.rowCount === 0) {
+          await client.query("ROLLBACK");
+          return reply.code(404).send({
+            error: "NotFound",
+            message: "Submission not found",
+          });
+        }
+
+        const currentStatus = String(stateRes.rows[0].status);
+        if (!canTransitionStatus(currentStatus, bodyParse.data.decision)) {
+          await client.query("ROLLBACK");
+          return reply.code(400).send({
+            error: "BadRequest",
+            message: `Invalid status transition: ${currentStatus} -> ${bodyParse.data.decision}`,
+          });
+        }
+
+        const reviewsCountRes = await client.query(
+          `SELECT COUNT(*)::int AS submitted_count
+           FROM med_publisher_reviews
+           WHERE submission_id = $1
+             AND status = 'submitted'`,
+          [paramsParse.data.submissionId],
+        );
+        const submittedReviews = Number(
+          reviewsCountRes.rows[0]?.submitted_count ?? 0,
+        );
+        if (submittedReviews < 1) {
+          await client.query("ROLLBACK");
+          return reply.code(400).send({
+            error: "BadRequest",
+            message:
+              "Editorial decision requires at least one submitted review",
+          });
+        }
+
         const submissionRes = await client.query(
           `UPDATE med_publisher_submissions
            SET status = $3,
@@ -1096,6 +1280,30 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+
+        const stateRes = await client.query(
+          `SELECT status
+           FROM med_publisher_submissions
+           WHERE id = $1
+             AND handling_editor_id = $2
+           FOR UPDATE`,
+          [paramsParse.data.submissionId, userId],
+        );
+        if (stateRes.rowCount === 0) {
+          await client.query("ROLLBACK");
+          return reply.code(404).send({
+            error: "NotFound",
+            message: "Submission not found",
+          });
+        }
+        const currentStatus = String(stateRes.rows[0].status);
+        if (!canTransitionStatus(currentStatus, "published")) {
+          await client.query("ROLLBACK");
+          return reply.code(400).send({
+            error: "BadRequest",
+            message: `Invalid status transition: ${currentStatus} -> published`,
+          });
+        }
 
         const publishRes = await client.query(
           `UPDATE med_publisher_submissions

@@ -249,10 +249,12 @@ export async function apiFetch<T>(
       | ApiErrorPayload
       | string
       | null;
-    const msg =
+    const rawMessage =
       typeof payload === "string"
         ? payload
         : payload?.message || payload?.error || `HTTP ${res.status}`;
+    const msg =
+      typeof rawMessage === "string" ? rawMessage : "Неизвестная ошибка API";
     throw new Error(msg);
   }
 

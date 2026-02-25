@@ -24,6 +24,8 @@ ALTER TABLE med_publisher_submissions
 ALTER TABLE med_publisher_submissions
   ADD COLUMN IF NOT EXISTS handling_editor_id TEXT;
 ALTER TABLE med_publisher_submissions
+  ADD COLUMN IF NOT EXISTS project_id TEXT;
+ALTER TABLE med_publisher_submissions
   ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ;
 ALTER TABLE med_publisher_submissions
   ADD COLUMN IF NOT EXISTS decision_at TIMESTAMPTZ;
@@ -47,6 +49,8 @@ CREATE INDEX IF NOT EXISTS idx_med_publisher_submissions_created_by
   ON med_publisher_submissions(created_by);
 CREATE INDEX IF NOT EXISTS idx_med_publisher_submissions_handling_editor
   ON med_publisher_submissions(handling_editor_id);
+CREATE INDEX IF NOT EXISTS idx_med_publisher_submissions_project_id
+  ON med_publisher_submissions(project_id);
 CREATE INDEX IF NOT EXISTS idx_med_publisher_submissions_status
   ON med_publisher_submissions(status);
 CREATE INDEX IF NOT EXISTS idx_med_publisher_submissions_updated_at
@@ -184,6 +188,14 @@ DO $$ BEGIN
   ALTER TABLE med_publisher_submissions
     ADD CONSTRAINT med_publisher_submissions_handling_editor_id_fkey
     FOREIGN KEY (handling_editor_id) REFERENCES users(id)
+    ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE med_publisher_submissions
+    ADD CONSTRAINT med_publisher_submissions_project_id_fkey
+    FOREIGN KEY (project_id) REFERENCES projects(id)
     ON DELETE SET NULL ON UPDATE CASCADE;
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;

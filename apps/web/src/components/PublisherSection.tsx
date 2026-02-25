@@ -69,6 +69,10 @@ function htmlToPlain(html: string): string {
     .trim();
 }
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
 type Props = {
   projectId: string;
   projectName: string;
@@ -241,6 +245,9 @@ export default function PublisherSection({
   const submissions = data?.submissions ?? [];
   const reviewAssignments = data?.reviewAssignments ?? [];
   const isEditor = Boolean(data?.isEditor);
+  const canAssignEditor = isValidEmail(editorEmail);
+  const canAssignReviewer = isValidEmail(reviewerEmail);
+  const canGrantEditor = isValidEmail(grantEditorEmail);
   const sel = detail.submission;
   const isHandlingEditor = Boolean(
     sel &&
@@ -464,7 +471,7 @@ export default function PublisherSection({
                     <button
                       className="btn secondary"
                       type="button"
-                      disabled={actionLoading || !editorEmail.trim()}
+                      disabled={actionLoading || !canAssignEditor}
                       onClick={() =>
                         withAction(async () => {
                           await apiAssignHandlingEditor(
@@ -491,9 +498,7 @@ export default function PublisherSection({
                       className="btn secondary"
                       type="button"
                       disabled={
-                        actionLoading ||
-                        !reviewerEmail.trim() ||
-                        !isHandlingEditor
+                        actionLoading || !canAssignReviewer || !isHandlingEditor
                       }
                       onClick={() =>
                         withAction(async () => {
@@ -556,6 +561,12 @@ export default function PublisherSection({
                           disabled={actionLoading}
                           onClick={() =>
                             withAction(async () => {
+                              if (
+                                !window.confirm(
+                                  "Отклонить рукопись? Это действие повлияет на дальнейший workflow.",
+                                )
+                              )
+                                return;
                               await apiSetMedDecision(sel.id, {
                                 decision: "rejected",
                                 note: decisionNote || null,
@@ -575,6 +586,12 @@ export default function PublisherSection({
                           disabled={actionLoading}
                           onClick={() =>
                             withAction(async () => {
+                              if (
+                                !window.confirm(
+                                  "Опубликовать статью сейчас? После публикации статус станет финальным.",
+                                )
+                              )
+                                return;
                               await apiPublishMedSubmission(sel.id);
                               setOk("Статья опубликована!");
                             })
@@ -635,7 +652,7 @@ export default function PublisherSection({
             <button
               className="btn secondary"
               type="button"
-              disabled={actionLoading || !grantEditorEmail.trim()}
+              disabled={actionLoading || !canGrantEditor}
               onClick={() =>
                 withAction(async () => {
                   await apiGrantEditorRole(grantEditorEmail.trim());

@@ -121,6 +121,7 @@ model Project {
   queries    SearchQuery[]
   graphFetchJobs GraphFetchJob[]
   files      ProjectFile[]
+  publisherSubmissions MedPublisherSubmission[] @relation("MedPublisherSubmissionProject")
 
   @@map("projects")
 }
@@ -211,6 +212,7 @@ model MedPublisherSubmission {
   status      String    @default("draft")
   createdBy   String    @map("created_by")
   handlingEditorId String? @map("handling_editor_id")
+  projectId   String?   @map("project_id")
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
   submittedAt DateTime? @map("submitted_at")
@@ -219,11 +221,13 @@ model MedPublisherSubmission {
 
   author  User                        @relation("MedPublisherSubmissionAuthor", fields: [createdBy], references: [id], onDelete: Cascade)
   handlingEditor User?                @relation("MedPublisherHandlingEditor", fields: [handlingEditorId], references: [id], onDelete: SetNull)
+  project Project?                    @relation("MedPublisherSubmissionProject", fields: [projectId], references: [id], onDelete: SetNull)
   reviews MedPublisherReview[]
   events  MedPublisherTimelineEvent[]
 
   @@index([createdBy])
   @@index([handlingEditorId])
+  @@index([projectId])
   @@index([status])
   @@map("med_publisher_submissions")
 }

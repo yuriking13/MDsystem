@@ -1,2 +1,2 @@
-# Lint-staged with non-blocking mode for now
-npx lint-staged --allow-empty || true
+# Lint-staged (blocking to avoid silent regressions)
+npx lint-staged --allow-empty
