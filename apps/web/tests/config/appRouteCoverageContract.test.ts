@@ -75,21 +75,19 @@ describe("app route coverage contract", () => {
     );
   });
 
-  it("keeps wildcard fallback route to root redirect", () => {
+  it("keeps wildcard fallback route to auth-dependent redirect", () => {
     expect(appSource).toMatch(
-      /<Route path="\*" element={<Navigate to="\/" replace \/>} \/>/,
+      /<Route[\s\S]*?path="\*"[\s\S]*?element={<Navigate to=\{token \? "\/projects" : "\/login"\} replace \/>}[\s\S]*?\/>/,
     );
   });
 
-  it("keeps root redirect dependent on auth token", () => {
-    expect(appSource).toMatch(
-      /<Route[\s\S]*?path="\/"[\s\S]*?element={<Navigate to=\{token \? "\/projects" : "\/login"\} replace \/>}[\s\S]*?\/>/,
-    );
+  it("keeps root route rendering rootElement", () => {
+    expect(appSource).toMatch(/<Route path="\/" element=\{rootElement\} \/>/);
   });
 
   it("keeps public marketing pages routed without auth", () => {
     expect(appSource).toMatch(
-      /<Route path="\/landing" element={<LandingPage \/>} \/>/,
+      /<Route path="\/landing" element={<Navigate to="\/" replace \/>} \/>/,
     );
     expect(appSource).toMatch(
       /<Route path="\/offer" element={<PublicOfferPage \/>} \/>/,
