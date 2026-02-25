@@ -87,6 +87,29 @@ export type MedPublisherDashboardResponse = {
   editorRole: "editor" | "chief_editor" | null;
 };
 
+export type MedProjectPublisherResponse = {
+  submissions: MedPublisherSubmission[];
+  reviewAssignments: Array<{
+    review_id: string;
+    submission_id: string;
+    review_status: "assigned" | "submitted";
+    recommendation: string | null;
+    title: string;
+    status: MedSubmissionStatus;
+    abstract: string | null;
+  }>;
+  editorRole: "editor" | "chief_editor" | null;
+  isEditor: boolean;
+};
+
+export async function apiGetProjectPublisher(
+  projectId: string,
+): Promise<MedProjectPublisherResponse> {
+  return apiFetch<MedProjectPublisherResponse>(
+    `/api/med/publisher/project/${projectId}`,
+  );
+}
+
 export async function apiGetMedPublisherDashboard(): Promise<MedPublisherDashboardResponse> {
   return apiFetch<MedPublisherDashboardResponse>(
     "/api/med/publisher/dashboard",
@@ -98,6 +121,7 @@ export async function apiCreateMedSubmission(payload: {
   abstract: string;
   keywords: string[];
   manuscript?: string | null;
+  projectId?: string | null;
 }): Promise<{ submission: MedPublisherSubmission }> {
   return apiFetch<{ submission: MedPublisherSubmission }>(
     "/api/med/publisher/submissions",

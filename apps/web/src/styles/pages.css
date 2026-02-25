@@ -1863,3 +1863,54 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ===== Publisher Section (inside project) ===== */
+.publisher-section .publisher-stages .row {
+  flex-wrap: wrap;
+}
+.publisher-stage-card {
+  flex: 1 1 140px;
+  text-align: center;
+  padding: 12px;
+}
+.publisher-stage-number {
+  font-size: 1.3em;
+  font-weight: 700;
+}
+.publisher-stage-label {
+  font-size: 0.85em;
+}
+.publisher-stage-status {
+  font-size: 0.75em;
+  margin-top: 4px;
+  color: var(--color-text-muted, #888);
+}
+.publisher-stage-done .publisher-stage-status {
+  color: var(--color-accent, #10b981);
+}
+.publisher-timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-accent, #6366f1);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.publisher-timeline-row {
+  align-items: flex-start;
+}
+.publisher-timeline-meta {
+  font-size: 0.8em;
+}
+.publisher-review-card {
+  padding: 12px;
+}
+.publisher-review-meta {
+  font-size: 0.8em;
+}
+.publisher-action-input {
+  flex: 1;
+}
+.publisher-submissions-row {
+  flex-wrap: wrap;
+}
