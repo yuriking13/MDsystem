@@ -182,11 +182,17 @@ export async function authRoutes(app: FastifyInstance) {
     "/api/auth/me",
     { preHandler: [app.auth] },
     async (req: FastifyRequest) => {
-      const roleRes = await pool.query(
-        "SELECT role FROM users WHERE id = $1 LIMIT 1",
-        [req.user.sub],
-      );
-      const role = (roleRes.rows[0]?.role as string) || "user";
+      let role = "user";
+      try {
+        const roleRes = await pool.query(
+          "SELECT role FROM users WHERE id = $1 LIMIT 1",
+          [req.user.sub],
+        );
+        const r = roleRes.rows[0]?.role;
+        if (typeof r === "string" && r) role = r;
+      } catch {
+        // role column may not exist on older DB; fallback to "user"
+      }
       return { user: { id: req.user.sub, email: req.user.email, role } };
     },
   );

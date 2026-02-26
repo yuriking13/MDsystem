@@ -24,7 +24,12 @@ async function adminApiFetch<T>(
 
   if (!res.ok) {
     const payload = await res.json().catch(() => null);
-    const msg = payload?.message || payload?.error || `HTTP ${res.status}`;
+    const raw =
+      (payload &&
+        typeof payload === "object" &&
+        (payload.message ?? payload.error)) ??
+      `HTTP ${res.status}`;
+    const msg = typeof raw === "string" ? raw : "Неизвестная ошибка API";
     throw new Error(msg);
   }
 
