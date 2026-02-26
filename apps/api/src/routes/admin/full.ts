@@ -301,7 +301,7 @@ export async function adminRoutes(app: FastifyInstance) {
       params,
     );
 
-    let usersResult: Awaited<ReturnType<typeof pool.query>>;
+    let usersResult: { rows: Record<string, unknown>[] };
     try {
       usersResult = await pool.query(
         `
@@ -345,10 +345,12 @@ export async function adminRoutes(app: FastifyInstance) {
         `,
           params,
         );
-        usersResult.rows = usersResult.rows.map((r) => ({
-          ...r,
-          role: "user",
-        }));
+        usersResult.rows = usersResult.rows.map(
+          (r: Record<string, unknown>) => ({
+            ...r,
+            role: "user",
+          }),
+        );
       } else {
         throw err;
       }
