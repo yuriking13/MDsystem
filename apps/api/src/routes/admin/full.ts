@@ -296,8 +296,14 @@ export async function adminRoutes(app: FastifyInstance) {
       params.push(`%${query.search}%`);
     }
 
-    const [users, total] = await Promise.all([
-      pool.query(
+    const totalQuery = pool.query(
+      `SELECT COUNT(*) FROM users ${whereClause}`,
+      params,
+    );
+
+    let usersResult: Awaited<ReturnType<typeof pool.query>>;
+    try {
+      usersResult = await pool.query(
         `
         SELECT 
           u.id, u.email, u.created_at, u.last_login_at, u.is_admin, u.role,
@@ -314,12 +320,44 @@ export async function adminRoutes(app: FastifyInstance) {
         LIMIT ${limit} OFFSET ${offset}
       `,
         params,
-      ),
-      pool.query(`SELECT COUNT(*) FROM users ${whereClause}`, params),
-    ]);
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.includes("role") &&
+        (msg.includes("does not exist") || msg.includes("column"))
+      ) {
+        usersResult = await pool.query(
+          `
+          SELECT 
+            u.id, u.email, u.created_at, u.last_login_at, u.is_admin,
+            COUNT(DISTINCT p.id) as projects_count,
+            COUNT(DISTINCT pm.project_id) as member_of_count,
+            COALESCE(sub.status, 'free') as subscription_status
+          FROM users u
+          LEFT JOIN projects p ON p.created_by = u.id
+          LEFT JOIN project_members pm ON pm.user_id = u.id
+          LEFT JOIN user_subscriptions sub ON sub.user_id = u.id
+          ${whereClause}
+          GROUP BY u.id, sub.status
+          ORDER BY u.created_at DESC
+          LIMIT ${limit} OFFSET ${offset}
+        `,
+          params,
+        );
+        usersResult.rows = usersResult.rows.map((r) => ({
+          ...r,
+          role: "user",
+        }));
+      } else {
+        throw err;
+      }
+    }
+
+    const total = await totalQuery;
 
     return {
-      users: users.rows,
+      users: usersResult.rows,
       total: parseInt(total.rows[0].count),
       page,
       totalPages: Math.ceil(parseInt(total.rows[0].count) / limit),
