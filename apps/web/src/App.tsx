@@ -30,6 +30,12 @@ const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage"));
 const DocumentPage = lazy(() => import("./pages/DocumentPage"));
 const DocumentationPage = lazy(() => import("./pages/DocumentationPage"));
+const ReviewerDashboardPage = lazy(
+  () => import("./pages/ReviewerDashboardPage"),
+);
+const ChiefEditorDashboardPage = lazy(
+  () => import("./pages/ChiefEditorDashboardPage"),
+);
 
 // Lazy load admin pages
 const AdminLoginPage = lazy(() => import("./pages/admin/AdminLoginPage"));
@@ -129,6 +135,11 @@ export default function App() {
               />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/docs" element={<DocumentationPage />} />
+              <Route path="/reviewer" element={<ReviewerDashboardPage />} />
+              <Route
+                path="/chief-editor"
+                element={<ChiefEditorDashboardPage />}
+              />
             </Route>
 
             {/* Admin Routes */}

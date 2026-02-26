@@ -182,7 +182,12 @@ export async function authRoutes(app: FastifyInstance) {
     "/api/auth/me",
     { preHandler: [app.auth] },
     async (req: FastifyRequest) => {
-      return { user: { id: req.user.sub, email: req.user.email } };
+      const roleRes = await pool.query(
+        "SELECT role FROM users WHERE id = $1 LIMIT 1",
+        [req.user.sub],
+      );
+      const role = (roleRes.rows[0]?.role as string) || "user";
+      return { user: { id: req.user.sub, email: req.user.email, role } };
     },
   );
 }

@@ -261,3 +261,69 @@ export async function apiGetMedSubmission(submissionId: string): Promise<{
     };
   }>(`/api/med/publisher/submissions/${submissionId}`);
 }
+
+export async function apiInviteReviewer(
+  submissionId: string,
+  reviewerEmail: string,
+): Promise<{ ok: true; invitationId: string }> {
+  return apiFetch<{ ok: true; invitationId: string }>(
+    `/api/med/publisher/submissions/${submissionId}/invite-reviewer`,
+    {
+      method: "POST",
+      body: JSON.stringify({ reviewerEmail }),
+    },
+  );
+}
+
+export async function apiGetReviewerInvitations(submissionId: string): Promise<{
+  invitations: Array<{
+    id: string;
+    reviewer_email: string;
+    status: "pending" | "accepted" | "declined";
+    created_at: string;
+    resolved_at: string | null;
+  }>;
+}> {
+  return apiFetch<{
+    invitations: Array<{
+      id: string;
+      reviewer_email: string;
+      status: "pending" | "accepted" | "declined";
+      created_at: string;
+      resolved_at: string | null;
+    }>;
+  }>(`/api/med/publisher/submissions/${submissionId}/reviewer-invitations`);
+}
+
+export async function apiGetPendingInvitations(): Promise<{
+  invitations: Array<{
+    id: string;
+    submission_id: string;
+    submission_title: string;
+    status: "pending";
+    created_at: string;
+  }>;
+}> {
+  return apiFetch<{
+    invitations: Array<{
+      id: string;
+      submission_id: string;
+      submission_title: string;
+      status: "pending";
+      created_at: string;
+    }>;
+  }>("/api/med/publisher/reviewer-invitations/pending");
+}
+
+export async function apiResolveReviewerInvitation(
+  invitationId: string,
+  decision: "approved" | "rejected",
+): Promise<{ invitation: Record<string, unknown> }> {
+  return apiFetch<{ invitation: Record<string, unknown> }>(
+    `/api/med/publisher/reviewer-invitations/${invitationId}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ decision }),
+    },
+  );
+}

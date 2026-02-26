@@ -146,7 +146,7 @@ export default function AppSidebar({
     },
   ];
 
-  // Main navigation items
+  // Main navigation items (role-based)
   const mainNavItems: NavItem[] = [
     {
       id: "projects",
@@ -161,6 +161,24 @@ export default function AppSidebar({
       path: "/docs",
     },
   ];
+
+  const role = user?.role;
+  if (role === "reviewer" || role === "editor" || role === "chief_editor") {
+    mainNavItems.push({
+      id: "reviewer",
+      label: "Рецензирование",
+      icon: ClipboardDocumentListIcon,
+      path: "/reviewer",
+    });
+  }
+  if (role === "chief_editor") {
+    mainNavItems.push({
+      id: "chief-editor",
+      label: "Редакция",
+      icon: DocumentTextIcon,
+      path: "/chief-editor",
+    });
+  }
 
   // Project-specific navigation items
   const projectNavItems: NavItem[] = [

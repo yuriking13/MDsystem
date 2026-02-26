@@ -300,7 +300,7 @@ export async function adminRoutes(app: FastifyInstance) {
       pool.query(
         `
         SELECT 
-          u.id, u.email, u.created_at, u.last_login_at, u.is_admin,
+          u.id, u.email, u.created_at, u.last_login_at, u.is_admin, u.role,
           COUNT(DISTINCT p.id) as projects_count,
           COUNT(DISTINCT pm.project_id) as member_of_count,
           COALESCE(sub.status, 'free') as subscription_status
@@ -417,6 +417,37 @@ export async function adminRoutes(app: FastifyInstance) {
         "user",
         userId,
         { isAdmin: body.isAdmin },
+        req.ip,
+      );
+
+      return { ok: true };
+    },
+  );
+
+  app.patch(
+    "/api/admin/users/:userId/role",
+    { preHandler: [requireAdmin] },
+    async (req) => {
+      const { userId } = z
+        .object({ userId: z.string().uuid() })
+        .parse(req.params);
+      const body = z
+        .object({
+          role: z.enum(["user", "author", "reviewer", "editor", "admin"]),
+        })
+        .parse(req.body);
+
+      await pool.query(`UPDATE users SET role = $1 WHERE id = $2`, [
+        body.role,
+        userId,
+      ]);
+
+      await logAdminAction(
+        req.user.sub,
+        "update_user_role",
+        "user",
+        userId,
+        { role: body.role },
         req.ip,
       );
 

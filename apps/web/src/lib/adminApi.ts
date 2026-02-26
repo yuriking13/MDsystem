@@ -59,6 +59,7 @@ export type UserListItem = {
   created_at: string;
   last_login_at: string | null;
   is_admin: boolean;
+  role: string;
   projects_count: number;
   member_of_count: number;
   subscription_status: string;
@@ -445,6 +446,16 @@ export async function apiAdminBlockUser(
   return adminApiFetch<{ ok: true }>(`/api/admin/users/${userId}/block`, {
     method: "PATCH",
     body: JSON.stringify({ blocked, reason }),
+  });
+}
+
+export async function apiAdminUpdateUserRole(
+  userId: string,
+  role: string,
+): Promise<{ ok: true }> {
+  return adminApiFetch<{ ok: true }>(`/api/admin/users/${userId}/role`, {
+    method: "PATCH",
+    body: JSON.stringify({ role }),
   });
 }
 

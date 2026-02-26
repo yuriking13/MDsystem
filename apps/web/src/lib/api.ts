@@ -261,7 +261,7 @@ export async function apiFetch<T>(
   return (await res.json()) as T;
 }
 
-export type AuthUser = { id: string; email: string };
+export type AuthUser = { id: string; email: string; role: string };
 export type AuthResponse = {
   user: AuthUser;
   token: string;

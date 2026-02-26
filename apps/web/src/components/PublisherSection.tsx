@@ -96,7 +96,13 @@ export default function PublisherSection({
     submission: MedPublisherSubmission | null;
     reviews: MedPublisherReview[];
     timeline: MedPublisherTimelineEvent[];
-  }>({ submission: null, reviews: [], timeline: [] });
+    access: { isAuthor: boolean; isReviewer: boolean; isEditor: boolean };
+  }>({
+    submission: null,
+    reviews: [],
+    timeline: [],
+    access: { isAuthor: false, isReviewer: false, isEditor: false },
+  });
 
   const [actionLoading, setActionLoading] = useState(false);
   const [reviewerEmail, setReviewerEmail] = useState("");
@@ -148,7 +154,12 @@ export default function PublisherSection({
 
   useEffect(() => {
     if (!selectedId) {
-      setDetail({ submission: null, reviews: [], timeline: [] });
+      setDetail({
+        submission: null,
+        reviews: [],
+        timeline: [],
+        access: { isAuthor: false, isReviewer: false, isEditor: false },
+      });
       return;
     }
     let cancelled = false;
@@ -244,19 +255,14 @@ export default function PublisherSection({
 
   const submissions = data?.submissions ?? [];
   const reviewAssignments = data?.reviewAssignments ?? [];
-  const isEditor = Boolean(data?.isEditor);
+  const editorRole = data?.editorRole;
   const canAssignEditor = isValidEmail(editorEmail);
   const canAssignReviewer = isValidEmail(reviewerEmail);
   const canGrantEditor = isValidEmail(grantEditorEmail);
   const sel = detail.submission;
-  const isHandlingEditor = Boolean(
-    sel &&
-    isEditor &&
-    sel.handling_editor_id &&
-    data?.submissions.some(
-      (s) => s.id === sel.id && s.handling_editor_id === sel.handling_editor_id,
-    ),
-  );
+  const isTerminal = sel?.status === "published" || sel?.status === "rejected";
+  const isHandlingEditor =
+    detail.access.isEditor && Boolean(sel?.handling_editor_id);
 
   const doneSet = useMemo(
     () => new Set(detail.timeline.map((ev) => ev.event_type)),
@@ -441,205 +447,213 @@ export default function PublisherSection({
                 </div>
               )}
 
-              <div className="search-form-card mb-4">
-                <h5>Действия</h5>
-                <div className="stack">
-                  {(sel.status === "draft" ||
-                    sel.status === "revision_requested") && (
-                    <button
-                      className="btn"
-                      type="button"
-                      disabled={actionLoading}
-                      onClick={() =>
-                        withAction(async () => {
-                          await apiSubmitMedSubmission(sel.id);
-                          setOk("Рукопись отправлена в редакцию");
-                        })
-                      }
-                    >
-                      Отправить в редакцию
-                    </button>
-                  )}
-
-                  <div className="row gap">
-                    <input
-                      value={editorEmail}
-                      onChange={(e) => setEditorEmail(e.target.value)}
-                      placeholder="email редактора для назначения"
-                      className="publisher-action-input"
-                    />
-                    <button
-                      className="btn secondary"
-                      type="button"
-                      disabled={actionLoading || !canAssignEditor}
-                      onClick={() =>
-                        withAction(async () => {
-                          await apiAssignHandlingEditor(
-                            sel.id,
-                            editorEmail.trim(),
-                          );
-                          setEditorEmail("");
-                          setOk("Ответственный редактор назначен");
-                        })
-                      }
-                    >
-                      Назначить редактора
-                    </button>
-                  </div>
-
-                  <div className="row gap">
-                    <input
-                      value={reviewerEmail}
-                      onChange={(e) => setReviewerEmail(e.target.value)}
-                      placeholder="email рецензента"
-                      className="publisher-action-input"
-                    />
-                    <button
-                      className="btn secondary"
-                      type="button"
-                      disabled={
-                        actionLoading || !canAssignReviewer || !isHandlingEditor
-                      }
-                      onClick={() =>
-                        withAction(async () => {
-                          await apiAssignReviewer(sel.id, reviewerEmail.trim());
-                          setReviewerEmail("");
-                          setOk("Рецензент назначен");
-                        })
-                      }
-                    >
-                      Назначить рецензента
-                    </button>
-                  </div>
-
-                  {isHandlingEditor && (
-                    <>
-                      <textarea
-                        value={decisionNote}
-                        onChange={(e) => setDecisionNote(e.target.value)}
-                        placeholder="Комментарий к решению редакции"
-                        rows={2}
-                      />
-                      <div className="row gap">
-                        <button
-                          className="btn secondary"
-                          type="button"
-                          disabled={actionLoading}
-                          onClick={() =>
-                            withAction(async () => {
-                              await apiSetMedDecision(sel.id, {
-                                decision: "revision_requested",
-                                note: decisionNote || null,
-                              });
-                              setDecisionNote("");
-                              setOk("Запрошена доработка");
-                            })
-                          }
-                        >
-                          Доработка
-                        </button>
-                        <button
-                          className="btn"
-                          type="button"
-                          disabled={actionLoading}
-                          onClick={() =>
-                            withAction(async () => {
-                              await apiSetMedDecision(sel.id, {
-                                decision: "accepted",
-                                note: decisionNote || null,
-                              });
-                              setDecisionNote("");
-                              setOk("Статья принята");
-                            })
-                          }
-                        >
-                          Принять
-                        </button>
-                        <button
-                          className="btn secondary"
-                          type="button"
-                          disabled={actionLoading}
-                          onClick={() =>
-                            withAction(async () => {
-                              if (
-                                !window.confirm(
-                                  "Отклонить рукопись? Это действие повлияет на дальнейший workflow.",
-                                )
-                              )
-                                return;
-                              await apiSetMedDecision(sel.id, {
-                                decision: "rejected",
-                                note: decisionNote || null,
-                              });
-                              setDecisionNote("");
-                              setOk("Статья отклонена");
-                            })
-                          }
-                        >
-                          Отклонить
-                        </button>
-                      </div>
-                      {sel.status === "accepted" && (
-                        <button
-                          className="btn"
-                          type="button"
-                          disabled={actionLoading}
-                          onClick={() =>
-                            withAction(async () => {
-                              if (
-                                !window.confirm(
-                                  "Опубликовать статью сейчас? После публикации статус станет финальным.",
-                                )
-                              )
-                                return;
-                              await apiPublishMedSubmission(sel.id);
-                              setOk("Статья опубликована!");
-                            })
-                          }
-                        >
-                          Опубликовать
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {detail.reviews.length > 0 && (
+              {!isTerminal && (
                 <div className="search-form-card mb-4">
-                  <h5>Рецензии</h5>
+                  <h5>Действия</h5>
                   <div className="stack">
-                    {detail.reviews.map((rev) => (
-                      <div
-                        key={rev.id}
-                        className="search-form-card publisher-review-card"
+                    {(sel.status === "draft" ||
+                      sel.status === "revision_requested") && (
+                      <button
+                        className="btn"
+                        type="button"
+                        disabled={actionLoading}
+                        onClick={() =>
+                          withAction(async () => {
+                            await apiSubmitMedSubmission(sel.id);
+                            setOk("Рукопись отправлена в редакцию");
+                          })
+                        }
                       >
-                        <div className="row space">
-                          <strong>{rev.reviewer_email || "Рецензент"}</strong>
-                          <span>
-                            {rev.status === "submitted"
-                              ? "Отправлена"
-                              : "Назначена"}
-                          </span>
-                        </div>
-                        {rev.recommendation && (
-                          <p>Рекомендация: {rev.recommendation}</p>
-                        )}
-                        {rev.public_comment && <p>{rev.public_comment}</p>}
-                        <div className="muted publisher-review-meta">
-                          {fmtDate(rev.submitted_at)}
-                        </div>
+                        Отправить в редакцию
+                      </button>
+                    )}
+
+                    {editorRole === "chief_editor" && (
+                      <div className="row gap">
+                        <input
+                          value={editorEmail}
+                          onChange={(e) => setEditorEmail(e.target.value)}
+                          placeholder="email редактора для назначения"
+                          className="publisher-action-input"
+                        />
+                        <button
+                          className="btn secondary"
+                          type="button"
+                          disabled={actionLoading || !canAssignEditor}
+                          onClick={() =>
+                            withAction(async () => {
+                              await apiAssignHandlingEditor(
+                                sel.id,
+                                editorEmail.trim(),
+                              );
+                              setEditorEmail("");
+                              setOk("Ответственный редактор назначен");
+                            })
+                          }
+                        >
+                          Назначить редактора
+                        </button>
                       </div>
-                    ))}
+                    )}
+
+                    {isHandlingEditor && !isTerminal && (
+                      <div className="row gap">
+                        <input
+                          value={reviewerEmail}
+                          onChange={(e) => setReviewerEmail(e.target.value)}
+                          placeholder="email рецензента"
+                          className="publisher-action-input"
+                        />
+                        <button
+                          className="btn secondary"
+                          type="button"
+                          disabled={actionLoading || !canAssignReviewer}
+                          onClick={() =>
+                            withAction(async () => {
+                              await apiAssignReviewer(
+                                sel.id,
+                                reviewerEmail.trim(),
+                              );
+                              setReviewerEmail("");
+                              setOk("Рецензент назначен");
+                            })
+                          }
+                        >
+                          Назначить рецензента
+                        </button>
+                      </div>
+                    )}
+
+                    {isHandlingEditor && (
+                      <>
+                        <textarea
+                          value={decisionNote}
+                          onChange={(e) => setDecisionNote(e.target.value)}
+                          placeholder="Комментарий к решению редакции"
+                          rows={2}
+                        />
+                        <div className="row gap">
+                          <button
+                            className="btn secondary"
+                            type="button"
+                            disabled={actionLoading}
+                            onClick={() =>
+                              withAction(async () => {
+                                await apiSetMedDecision(sel.id, {
+                                  decision: "revision_requested",
+                                  note: decisionNote || null,
+                                });
+                                setDecisionNote("");
+                                setOk("Запрошена доработка");
+                              })
+                            }
+                          >
+                            Доработка
+                          </button>
+                          <button
+                            className="btn"
+                            type="button"
+                            disabled={actionLoading}
+                            onClick={() =>
+                              withAction(async () => {
+                                await apiSetMedDecision(sel.id, {
+                                  decision: "accepted",
+                                  note: decisionNote || null,
+                                });
+                                setDecisionNote("");
+                                setOk("Статья принята");
+                              })
+                            }
+                          >
+                            Принять
+                          </button>
+                          <button
+                            className="btn secondary"
+                            type="button"
+                            disabled={actionLoading}
+                            onClick={() =>
+                              withAction(async () => {
+                                if (
+                                  !window.confirm(
+                                    "Отклонить рукопись? Это действие повлияет на дальнейший workflow.",
+                                  )
+                                )
+                                  return;
+                                await apiSetMedDecision(sel.id, {
+                                  decision: "rejected",
+                                  note: decisionNote || null,
+                                });
+                                setDecisionNote("");
+                                setOk("Статья отклонена");
+                              })
+                            }
+                          >
+                            Отклонить
+                          </button>
+                        </div>
+                        {sel.status === "accepted" && (
+                          <button
+                            className="btn"
+                            type="button"
+                            disabled={actionLoading}
+                            onClick={() =>
+                              withAction(async () => {
+                                if (
+                                  !window.confirm(
+                                    "Опубликовать статью сейчас? После публикации статус станет финальным.",
+                                  )
+                                )
+                                  return;
+                                await apiPublishMedSubmission(sel.id);
+                                setOk("Статья опубликована!");
+                              })
+                            }
+                          >
+                            Опубликовать
+                          </button>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
               )}
+
+              {detail.reviews.length > 0 &&
+                (detail.access.isAuthor || isHandlingEditor) && (
+                  <div className="search-form-card mb-4">
+                    <h5>Рецензии</h5>
+                    <div className="stack">
+                      {detail.reviews.map((rev) => (
+                        <div
+                          key={rev.id}
+                          className="search-form-card publisher-review-card"
+                        >
+                          <div className="row space">
+                            <strong>{rev.reviewer_email || "Рецензент"}</strong>
+                            <span>
+                              {rev.status === "submitted"
+                                ? "Отправлена"
+                                : "Назначена"}
+                            </span>
+                          </div>
+                          {rev.recommendation && (
+                            <p>Рекомендация: {rev.recommendation}</p>
+                          )}
+                          {rev.public_comment && <p>{rev.public_comment}</p>}
+                          <div className="muted publisher-review-meta">
+                            {fmtDate(rev.submitted_at)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
             </div>
           )}
         </>
       )}
 
-      {isEditor && (
+      {editorRole === "chief_editor" && (
         <div className="search-form-card mb-4">
           <h5>Выдать роль редактора</h5>
           <div className="row gap">

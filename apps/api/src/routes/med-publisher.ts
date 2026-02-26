@@ -910,7 +910,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       if (reviewerId === userId) {
         return reply.code(400).send({
           error: "BadRequest",
-          message: "Author cannot assign themselves as reviewer",
+          message: "Editor cannot assign themselves as reviewer",
         });
       }
       if (reviewerId === submissionAuthorId) {
@@ -1195,11 +1195,27 @@ const plugin: FastifyPluginAsync = async (fastify) => {
           });
         }
 
+        if (bodyParse.data.decision === "revision_requested") {
+          const revRes = await client.query(
+            `SELECT revision_count FROM med_publisher_submissions WHERE id = $1`,
+            [paramsParse.data.submissionId],
+          );
+          const currentRevisions = Number(revRes.rows[0]?.revision_count ?? 0);
+          if (currentRevisions >= 3) {
+            await client.query("ROLLBACK");
+            return reply.code(400).send({
+              error: "BadRequest",
+              message: "Maximum number of revisions (3) reached",
+            });
+          }
+        }
+
         const submissionRes = await client.query(
           `UPDATE med_publisher_submissions
            SET status = $3,
                decision_at = now(),
                published_at = CASE WHEN $3 = 'accepted' THEN published_at ELSE NULL END,
+               revision_count = CASE WHEN $3 = 'revision_requested' THEN revision_count + 1 ELSE revision_count END,
                updated_at = now()
            WHERE id = $1
              AND handling_editor_id = $2
@@ -1378,6 +1394,224 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       return {
         editors: result.rows,
       };
+    },
+  );
+
+  fastify.post(
+    "/med/publisher/submissions/:submissionId/invite-reviewer",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = getUserId(request);
+      const paramsParse = SubmissionIdSchema.safeParse(request.params);
+      const bodyParse = AssignReviewerSchema.safeParse(request.body);
+      if (!paramsParse.success || !bodyParse.success) {
+        return reply.code(400).send({
+          error: "BadRequest",
+          message: "Invalid request payload",
+        });
+      }
+
+      const access = await getSubmissionAccess(
+        paramsParse.data.submissionId,
+        userId,
+      );
+      if (!access?.exists) {
+        return reply.code(404).send({
+          error: "NotFound",
+          message: "Submission not found",
+        });
+      }
+      const editorProfile = await getEditorProfile(userId);
+      const canInvite = Boolean(
+        editorProfile && access.isHandlingEditor && editorProfile.isActive,
+      );
+      if (!canInvite) {
+        return reply.code(403).send({
+          error: "Forbidden",
+          message: "Only assigned editor can invite reviewers",
+        });
+      }
+
+      const email = bodyParse.data.reviewerEmail.trim().toLowerCase();
+
+      const existing = await pool.query(
+        `SELECT id FROM med_reviewer_invitations
+         WHERE submission_id = $1 AND invited_email = $2 AND status = 'pending'`,
+        [paramsParse.data.submissionId, email],
+      );
+      if (existing.rowCount && existing.rowCount > 0) {
+        return reply.code(409).send({
+          error: "Conflict",
+          message: "Invitation already pending for this email",
+        });
+      }
+
+      const result = await pool.query(
+        `INSERT INTO med_reviewer_invitations
+           (submission_id, invited_email, invited_by_id)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [paramsParse.data.submissionId, email, userId],
+      );
+
+      await appendTimelineEvent(pool as unknown as SqlClient, {
+        submissionId: paramsParse.data.submissionId,
+        eventType: "reviewer_invited",
+        eventLabel: `Приглашение рецензенту отправлено: ${email}`,
+        actorUserId: userId,
+        actorRole: "editor",
+        payload: { invitedEmail: email },
+      });
+
+      return { invitation: result.rows[0] };
+    },
+  );
+
+  fastify.get(
+    "/med/publisher/submissions/:submissionId/invitations",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = getUserId(request);
+      const paramsParse = SubmissionIdSchema.safeParse(request.params);
+      if (!paramsParse.success) {
+        return reply.code(400).send({
+          error: "BadRequest",
+          message: "Invalid submission ID",
+        });
+      }
+
+      const access = await getSubmissionAccess(
+        paramsParse.data.submissionId,
+        userId,
+      );
+      if (!access?.exists) {
+        return reply.code(404).send({
+          error: "NotFound",
+          message: "Submission not found",
+        });
+      }
+
+      const editorProfile = await getEditorProfile(userId);
+      const canView = Boolean(
+        editorProfile && access.isHandlingEditor && editorProfile.isActive,
+      );
+      if (!canView && !access.isAuthor) {
+        return reply.code(403).send({
+          error: "Forbidden",
+          message: "No access to invitations",
+        });
+      }
+
+      const result = await pool.query(
+        `SELECT i.*, u.email AS invited_by_email
+         FROM med_reviewer_invitations i
+         JOIN users u ON u.id = i.invited_by_id
+         WHERE i.submission_id = $1
+         ORDER BY i.created_at DESC`,
+        [paramsParse.data.submissionId],
+      );
+
+      return { invitations: result.rows };
+    },
+  );
+
+  fastify.patch(
+    "/med/publisher/invitations/:invitationId/approve",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = getUserId(request);
+      const { invitationId } = z
+        .object({ invitationId: z.string().uuid() })
+        .parse(request.params);
+
+      const editorProfile = await getEditorProfile(userId);
+      if (!editorProfile || !isChiefEditor(editorProfile)) {
+        return reply.code(403).send({
+          error: "Forbidden",
+          message: "Only chief editor can approve reviewer invitations",
+        });
+      }
+
+      const invRes = await pool.query(
+        `UPDATE med_reviewer_invitations
+         SET status = 'approved', approved_by_id = $2, resolved_at = now()
+         WHERE id = $1 AND status = 'pending'
+         RETURNING *`,
+        [invitationId, userId],
+      );
+
+      if (invRes.rowCount === 0) {
+        return reply.code(404).send({
+          error: "NotFound",
+          message: "Invitation not found or already resolved",
+        });
+      }
+
+      const inv = invRes.rows[0] as {
+        submission_id: string;
+        invited_email: string;
+      };
+
+      await appendTimelineEvent(pool as unknown as SqlClient, {
+        submissionId: inv.submission_id,
+        eventType: "invitation_approved",
+        eventLabel: `Приглашение рецензенту одобрено: ${inv.invited_email}`,
+        actorUserId: userId,
+        actorRole: "editor",
+        payload: { invitationId, invitedEmail: inv.invited_email },
+      });
+
+      return { invitation: invRes.rows[0] };
+    },
+  );
+
+  fastify.patch(
+    "/med/publisher/invitations/:invitationId/reject",
+    { preHandler: [fastify.authenticate] },
+    async (request, reply) => {
+      const userId = getUserId(request);
+      const { invitationId } = z
+        .object({ invitationId: z.string().uuid() })
+        .parse(request.params);
+
+      const editorProfile = await getEditorProfile(userId);
+      if (!editorProfile || !isChiefEditor(editorProfile)) {
+        return reply.code(403).send({
+          error: "Forbidden",
+          message: "Only chief editor can reject reviewer invitations",
+        });
+      }
+
+      const invRes = await pool.query(
+        `UPDATE med_reviewer_invitations
+         SET status = 'rejected', approved_by_id = $2, resolved_at = now()
+         WHERE id = $1 AND status = 'pending'
+         RETURNING *`,
+        [invitationId, userId],
+      );
+
+      if (invRes.rowCount === 0) {
+        return reply.code(404).send({
+          error: "NotFound",
+          message: "Invitation not found or already resolved",
+        });
+      }
+
+      const inv = invRes.rows[0] as {
+        submission_id: string;
+        invited_email: string;
+      };
+
+      await appendTimelineEvent(pool as unknown as SqlClient, {
+        submissionId: inv.submission_id,
+        eventType: "invitation_rejected",
+        eventLabel: `Приглашение рецензенту отклонено: ${inv.invited_email}`,
+        actorUserId: userId,
+        actorRole: "editor",
+        payload: { invitationId, invitedEmail: inv.invited_email },
+      });
+
+      return { invitation: invRes.rows[0] };
     },
   );
 };
