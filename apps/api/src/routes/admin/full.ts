@@ -289,7 +289,7 @@ export async function adminRoutes(app: FastifyInstance) {
       20,
     );
     let whereClause = "";
-    const params: unknown[] = [];
+    const params: string[] = [];
 
     if (query.search) {
       whereClause = "WHERE email ILIKE $1";

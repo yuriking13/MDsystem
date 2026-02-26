@@ -11,7 +11,6 @@ import {
   apiCreateMedSubmission,
   apiGetMedSubmission,
   apiGetProjectPublisher,
-  apiGrantEditorRole,
   apiPublishMedSubmission,
   apiSetMedDecision,
   apiSubmitMedSubmission,
@@ -108,7 +107,6 @@ export default function PublisherSection({
   const [reviewerEmail, setReviewerEmail] = useState("");
   const [editorEmail, setEditorEmail] = useState("");
   const [decisionNote, setDecisionNote] = useState("");
-  const [grantEditorEmail, setGrantEditorEmail] = useState("");
 
   const [showCreate, setShowCreate] = useState(false);
   const [createTitle, setCreateTitle] = useState("");
@@ -258,7 +256,6 @@ export default function PublisherSection({
   const editorRole = data?.editorRole;
   const canAssignEditor = isValidEmail(editorEmail);
   const canAssignReviewer = isValidEmail(reviewerEmail);
-  const canGrantEditor = isValidEmail(grantEditorEmail);
   const sel = detail.submission;
   const isTerminal = sel?.status === "published" || sel?.status === "rejected";
   const isHandlingEditor =
@@ -402,21 +399,21 @@ export default function PublisherSection({
               </div>
 
               <div className="publisher-stages mb-4">
-                <h5>Этапы публикации</h5>
+                <h5 className="mb-3">Этапы публикации</h5>
                 <div className="row gap publisher-submissions-row">
                   {STAGE_ORDER.map((stage, i) => {
                     const done = doneSet.has(stage.key);
                     return (
                       <div
                         key={stage.key}
-                        className={`search-form-card publisher-stage-card ${done ? "publisher-stage-done" : ""}`}
+                        className={`publisher-stage-card ${done ? "publisher-stage-done" : ""}`}
                       >
                         <div className="publisher-stage-number">{i + 1}</div>
                         <div className="publisher-stage-label">
                           {stage.label}
                         </div>
                         <div className="publisher-stage-status">
-                          {done ? "Завершено" : "Ожидает"}
+                          {done ? "✓ Завершено" : "Ожидает"}
                         </div>
                       </div>
                     );
@@ -653,33 +650,7 @@ export default function PublisherSection({
         </>
       )}
 
-      {editorRole === "chief_editor" && (
-        <div className="search-form-card mb-4">
-          <h5>Выдать роль редактора</h5>
-          <div className="row gap">
-            <input
-              value={grantEditorEmail}
-              onChange={(e) => setGrantEditorEmail(e.target.value)}
-              placeholder="email пользователя"
-              className="publisher-action-input"
-            />
-            <button
-              className="btn secondary"
-              type="button"
-              disabled={actionLoading || !canGrantEditor}
-              onClick={() =>
-                withAction(async () => {
-                  await apiGrantEditorRole(grantEditorEmail.trim());
-                  setGrantEditorEmail("");
-                  setOk("Роль editor выдана");
-                })
-              }
-            >
-              Выдать
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Removed "Выдать роль редактора" section as per user request */}
 
       {reviewAssignments.length > 0 && (
         <div className="search-form-card mb-4">

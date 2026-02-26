@@ -12,7 +12,6 @@ import {
   apiCreateMedSubmission,
   apiGetMedPublisherDashboard,
   apiGetMedSubmission,
-  apiGrantEditorRole,
   apiPublishMedSubmission,
   apiSetMedDecision,
   apiSubmitMedSubmission,
@@ -575,7 +574,6 @@ function ChiefEditorPanel({
   editors: MedPublisherDashboardResponse["editors"];
   onReload: () => Promise<void>;
 }) {
-  const [grantEmail, setGrantEmail] = useState("");
   const [assignEditorEmail, setAssignEditorEmail] = useState("");
   const [assignSubmissionId, setAssignSubmissionId] = useState<string>("");
   const [loading, setLoading] = useState(false);
@@ -592,14 +590,6 @@ function ChiefEditorPanel({
     } finally {
       setLoading(false);
     }
-  };
-
-  const grantEditor = async () => {
-    if (!grantEmail.trim()) return;
-    await withState(async () => {
-      await apiGrantEditorRole(grantEmail.trim());
-      setGrantEmail("");
-    });
   };
 
   const assignHandlingEditor = async () => {
@@ -640,27 +630,6 @@ function ChiefEditorPanel({
                 </div>
               ))
             )}
-          </div>
-          <div className="med-actions">
-            <label className="form-label">
-              <span className="form-label-text">
-                Выдать роль editor по email
-              </span>
-              <input
-                value={grantEmail}
-                onChange={(event) => setGrantEmail(event.target.value)}
-                className="form-input"
-                placeholder="editor@example.com"
-              />
-            </label>
-            <button
-              type="button"
-              className="public-btn"
-              onClick={grantEditor}
-              disabled={loading || !grantEmail.trim()}
-            >
-              Выдать роль editor
-            </button>
           </div>
         </article>
 

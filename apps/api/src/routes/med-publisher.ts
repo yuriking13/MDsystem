@@ -673,12 +673,16 @@ const plugin: FastifyPluginAsync = async (fastify) => {
     { preHandler: [fastify.authenticate] },
     async (request, reply) => {
       const userId = getUserId(request);
-      const profile = await requireEditorProfile(reply, userId);
-      if (!profile) return;
-      if (profile.role !== "chief_editor") {
+
+      // Check if user is admin
+      const adminRes = await pool.query(
+        "SELECT is_admin FROM users WHERE id = $1",
+        [userId],
+      );
+      if (!adminRes.rowCount || !adminRes.rows[0].is_admin) {
         return reply.code(403).send({
           error: "Forbidden",
-          message: "Only chief editor can grant editor role",
+          message: "Only admin can grant editor role",
         });
       }
 
