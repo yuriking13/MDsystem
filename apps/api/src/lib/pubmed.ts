@@ -530,9 +530,9 @@ export async function pubmedFetchAll(args: {
 
     if (args.onBatch) {
       const res = args.onBatch(batch, items.length);
-      if (res && res.stop) break;
+      if (res?.stop) break;
     }
-    if (args.stopWhen && args.stopWhen(items.length)) break;
+    if (args.stopWhen?.(items.length)) break;
   }
 
   return { count, items };

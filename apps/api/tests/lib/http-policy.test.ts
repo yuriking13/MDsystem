@@ -2,8 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { resilientFetch } from "../../src/lib/http-client.js";
 import { filterArticlesByRelevance } from "../../src/lib/ai-relevance-filter.js";
 
-const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -15,7 +13,9 @@ describe("http policy", () => {
       new Response("", { status: 429 }),
       new Response("ok", { status: 200 }),
     ];
-    const fetchMock = vi.fn(() => Promise.resolve(responses.shift()!));
+    const fetchMock = vi.fn(() =>
+      Promise.resolve(responses.shift() ?? new Response("", { status: 500 })),
+    );
     vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
 
     const res = await resilientFetch("https://example.test", {
