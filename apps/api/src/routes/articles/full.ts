@@ -1091,7 +1091,6 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       // PHASE 2: AI RELEVANCE — score as signal (fail-safe keeps all)
       // ================================================================
       let relevanceFiltered = 0;
-      let _aiFailed = false;
       let articlesWithAiScore: Array<CollectedArticle & { aiScore?: number }> =
         dedupedArticles;
 
@@ -1112,7 +1111,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 sendProgress("relevance_filter", { total, processed, kept });
               },
             });
-            _aiFailed = scoreResult.failed;
+            // scoreResult.failed tracked via fail-safe logic
             articlesWithAiScore = dedupedArticles.map((article, idx) => ({
               ...article,
               aiScore: scoreResult.items[idx]?.aiScore ?? 0,
@@ -1139,7 +1138,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               aiScore: 1,
             }));
             relevanceFiltered = filterResult.removed;
-            _aiFailed = filterResult.failed;
+            // filterResult.failed tracked via fail-safe logic
 
             sendProgress("relevance_filter_done", {
               total: dedupedArticles.length,
@@ -1153,7 +1152,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             "AI relevance filter error",
             err instanceof Error ? err : new Error(String(err)),
           );
-          _aiFailed = true;
+          // AI scoring failed — fail-safe keeps all articles
           // On error, keep all articles
           articlesWithAiScore = dedupedArticles.map((a) => ({
             ...a,

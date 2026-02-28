@@ -23,7 +23,8 @@ export type WSEventType =
   | "embedding:completed"
   | "embedding:error"
   | "embedding:cancelled"
-  | "search:progress";
+  | "search:progress"
+  | "search:partial-results";
 
 export interface WSEvent {
   type: WSEventType;
