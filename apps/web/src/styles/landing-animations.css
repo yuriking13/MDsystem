@@ -225,14 +225,6 @@
   margin-bottom: 4rem;
 }
 
-.feature-with-illustration:nth-child(even) {
-  direction: rtl;
-}
-
-.feature-with-illustration:nth-child(even) > * {
-  direction: ltr;
-}
-
 .feature-illustration {
   position: relative;
   height: 400px;
@@ -241,11 +233,6 @@
 @media (max-width: 1024px) {
   .feature-with-illustration {
     grid-template-columns: 1fr;
-    direction: ltr;
-  }
-
-  .feature-with-illustration:nth-child(even) {
-    direction: ltr;
   }
 
   .feature-illustration {
