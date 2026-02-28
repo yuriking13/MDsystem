@@ -4,6 +4,9 @@ import {
   SCIENCE_DISCIPLINES,
   getScienceDisciplineHref,
 } from "../lib/scienceDomains";
+import InteractiveLandingIllustration from "../components/InteractiveLandingIllustration";
+import FullscreenHero from "../components/FullscreenHero";
+import { useSectionTransition } from "../lib/useScrollEffect";
 
 type ThemeMode = "light" | "dark";
 type LandingLocale = "en" | "ru";
@@ -641,6 +644,9 @@ export default function LandingPage() {
   const t = LANDING_CONTENT[locale];
   const currentYear = new Date().getFullYear();
 
+  // Хук для отслеживания активной секции и эффектов перехода
+  useSectionTransition();
+
   useEffect(() => {
     applyTheme(theme);
   }, [theme]);
@@ -737,73 +743,78 @@ export default function LandingPage() {
       </header>
 
       <main className="public-main">
-        <section className="public-hero">
-          <article className="public-hero-content">
-            <span className="public-badge">{t.trustLogosTitle}</span>
-            <h1>{t.hero.title}</h1>
-            <p>{t.hero.description}</p>
-            <div className="public-hero-actions">
-              <Link to="/register" className="public-btn">
-                {t.hero.primaryAction}
-              </Link>
-              <a href="#pricing" className="public-btn public-btn-secondary">
-                {t.hero.secondaryAction}
-              </a>
-              <Link to="/med" className="public-btn public-btn-secondary">
-                {locale === "ru"
-                  ? "Открыть издательство MED"
-                  : "Open MED publisher"}
-              </Link>
-            </div>
-          </article>
+        {/* Полноэкранный Hero блок с интерактивными изображениями */}
+        <FullscreenHero
+          badge={t.trustLogosTitle}
+          title={t.hero.title}
+          subtitle={t.hero.description}
+          ctaText={t.hero.primaryAction}
+          ctaLink="/register"
+          secondaryCtaText={t.hero.secondaryAction}
+          secondaryCtaLink="#features"
+        />
 
-          <aside className="public-hero-panel">
-            <h3>{t.featuresIntro.title}</h3>
-            <ul className="public-list">
-              {t.featureCards.slice(0, 3).map((card) => (
-                <li key={card.title}>
-                  <strong>{card.title}:</strong> {card.description}
-                </li>
-              ))}
-            </ul>
-          </aside>
-        </section>
-
-        <section id="features" className="public-section">
+        <section
+          id="features"
+          className="public-section"
+          data-section="features"
+        >
           <div className="public-section-header">
             <h2>{t.featuresIntro.title}</h2>
             <p>{t.featuresIntro.description}</p>
           </div>
-          <div className="public-grid public-grid-2">
-            {t.featureCards.map((card) => (
-              <article key={card.title} className="public-card">
-                <h3>{card.title}</h3>
-                <p>{card.description}</p>
-              </article>
-            ))}
+          <div className="feature-with-illustration">
+            <div>
+              <div className="public-grid public-grid-2">
+                {t.featureCards.map((card) => (
+                  <article key={card.title} className="public-card">
+                    <h3>{card.title}</h3>
+                    <p>{card.description}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+            <div className="feature-illustration">
+              <InteractiveLandingIllustration variant="features" />
+            </div>
           </div>
         </section>
 
-        <section id="workflow" className="public-section">
+        <section
+          id="workflow"
+          className="public-section"
+          data-section="workflow"
+        >
           <div className="public-section-header">
             <h2>{t.featuresIntro.cta}</h2>
           </div>
-          <div className="public-grid public-grid-2">
-            {t.workflowRows.map((row) => (
-              <article key={row.title} className="public-card">
-                <h3>{row.title}</h3>
-                <p>{row.description}</p>
-                <ul className="public-list">
-                  {row.bullets.map((bullet) => (
-                    <li key={bullet}>{bullet}</li>
-                  ))}
-                </ul>
-              </article>
-            ))}
+          <div className="feature-with-illustration">
+            <div className="feature-illustration">
+              <InteractiveLandingIllustration variant="workflow" />
+            </div>
+            <div>
+              <div className="public-grid public-grid-2">
+                {t.workflowRows.map((row) => (
+                  <article key={row.title} className="public-card">
+                    <h3>{row.title}</h3>
+                    <p>{row.description}</p>
+                    <ul className="public-list">
+                      {row.bullets.map((bullet) => (
+                        <li key={bullet}>{bullet}</li>
+                      ))}
+                    </ul>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="testimonials" className="public-section">
+        <section
+          id="testimonials"
+          className="public-section"
+          data-section="testimonials"
+        >
           <div className="public-section-header">
             <h2>{t.testimonials.title}</h2>
             <p>{t.testimonials.description}</p>
@@ -820,22 +831,33 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="public-section">
+        <section className="public-section" data-section="stats">
           <div className="public-section-header">
             <h2>{t.stats.title}</h2>
             <p>{t.stats.description}</p>
           </div>
-          <div className="public-grid public-grid-2">
-            {t.stats.items.map((item) => (
-              <article key={item.label} className="public-card">
-                <p className="public-price">{item.value}</p>
-                <p>{item.label}</p>
-              </article>
-            ))}
+          <div className="feature-with-illustration">
+            <div>
+              <div className="public-grid public-grid-2">
+                {t.stats.items.map((item) => (
+                  <article key={item.label} className="public-card">
+                    <p className="public-price">{item.value}</p>
+                    <p>{item.label}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
+            <div className="feature-illustration">
+              <InteractiveLandingIllustration variant="stats" />
+            </div>
           </div>
         </section>
 
-        <section id="sciences" className="public-section">
+        <section
+          id="sciences"
+          className="public-section"
+          data-section="sciences"
+        >
           <div className="public-section-header">
             <h2>
               {locale === "ru"
@@ -893,39 +915,46 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="pricing" className="public-section">
+        <section id="pricing" className="public-section" data-section="pricing">
           <div className="public-section-header">
             <h2>{t.pricing.title}</h2>
             <p>{t.pricing.description}</p>
           </div>
-          <div className="public-grid public-grid-3">
-            {t.pricing.plans.map((plan, index) => (
-              <article
-                key={plan.name}
-                className={`public-card public-pricing-card ${
-                  index === 1 ? "public-pricing-card-highlight" : ""
-                }`}
-              >
-                <h3>{plan.name}</h3>
-                <p>{plan.description}</p>
-                <p className="public-price">
-                  {plan.price}
-                  {plan.period}
-                </p>
-                <ul className="public-list">
-                  {plan.features.map((feature) => (
-                    <li key={feature}>{feature}</li>
-                  ))}
-                </ul>
-                <Link to="/register" className="public-btn">
-                  {plan.cta}
-                </Link>
-              </article>
-            ))}
+          <div className="feature-with-illustration">
+            <div className="feature-illustration">
+              <InteractiveLandingIllustration variant="pricing" />
+            </div>
+            <div>
+              <div className="public-grid public-grid-3">
+                {t.pricing.plans.map((plan, index) => (
+                  <article
+                    key={plan.name}
+                    className={`public-card public-pricing-card ${
+                      index === 1 ? "public-pricing-card-highlight" : ""
+                    }`}
+                  >
+                    <h3>{plan.name}</h3>
+                    <p>{plan.description}</p>
+                    <p className="public-price">
+                      {plan.price}
+                      {plan.period}
+                    </p>
+                    <ul className="public-list">
+                      {plan.features.map((feature) => (
+                        <li key={feature}>{feature}</li>
+                      ))}
+                    </ul>
+                    <Link to="/register" className="public-btn">
+                      {plan.cta}
+                    </Link>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
 
-        <section id="faq" className="public-section">
+        <section id="faq" className="public-section" data-section="faq">
           <div className="public-section-header">
             <h2>{t.faq.title}</h2>
             <p>{t.faq.description}</p>
@@ -940,7 +969,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="contact" className="public-section">
+        <section id="contact" className="public-section" data-section="contact">
           <article className="public-card">
             <h2>{t.cta.title}</h2>
             <p>{t.cta.description}</p>
@@ -950,6 +979,9 @@ export default function LandingPage() {
               </Link>
             </div>
           </article>
+          <div className="feature-illustration">
+            <InteractiveLandingIllustration variant="cta" />
+          </div>
         </section>
       </main>
 

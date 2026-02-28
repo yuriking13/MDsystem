@@ -6,6 +6,7 @@ import { AuthProvider } from "./lib/AuthContext";
 import { AdminAuthProvider } from "./lib/AdminContext";
 import { initFrontendObservability } from "./lib/observability";
 import "./styles/index.css";
+import "./styles/landing-animations.css";
 // admin.css is now imported in AdminLayout (lazy loaded)
 // flowbite is initialized lazily after DOM is ready
 import "flowbite";

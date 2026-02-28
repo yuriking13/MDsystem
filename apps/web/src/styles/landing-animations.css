@@ -1,0 +1,1270 @@
+/* =============================================================================
+   Interactive Landing Illustrations
+   Динамические анимации и эффекты для лэндинга
+   ============================================================================= */
+
+/* Контейнер для иллюстраций */
+.interactive-landing-illustration {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.interactive-landing-illustration svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Плавное появление при входе в viewport */
+.interactive-landing-illustration {
+  opacity: 0;
+  transform: translateY(30px);
+  transition:
+    opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-landing-illustration.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Секции с эффектом погружения */
+[data-section] {
+  position: relative;
+  opacity: 0;
+  transform: translateY(40px) scale(0.95);
+  transition:
+    opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-section].section-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Параллакс контейнер */
+.parallax-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.parallax-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  will-change: transform;
+}
+
+.parallax-layer-back {
+  transform-origin: center;
+}
+
+/* Анимации для SVG элементов */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+  25% {
+    transform: translateY(-10px) translateX(5px);
+  }
+  50% {
+    transform: translateY(-5px) translateX(-5px);
+  }
+  75% {
+    transform: translateY(-15px) translateX(3px);
+  }
+}
+
+@keyframes rotate-smooth {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    opacity: 0.5;
+    filter: blur(2px);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(4px);
+  }
+}
+
+@keyframes draw-line {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Варианты иллюстраций */
+.interactive-landing-illustration[data-variant="hero"] {
+  min-height: 400px;
+}
+
+.interactive-landing-illustration[data-variant="features"] {
+  min-height: 300px;
+}
+
+.interactive-landing-illustration[data-variant="workflow"] {
+  min-height: 350px;
+}
+
+.interactive-landing-illustration[data-variant="stats"] {
+  min-height: 300px;
+}
+
+.interactive-landing-illustration[data-variant="pricing"] {
+  min-height: 400px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .interactive-landing-illustration {
+    min-height: 250px;
+  }
+
+  [data-section] {
+    transform: translateY(20px) scale(0.98);
+  }
+}
+
+/* Улучшение производительности */
+.interactive-landing-illustration svg,
+.interactive-landing-illustration svg * {
+  will-change: transform, opacity;
+}
+
+/* Отключение анимаций для пользователей с prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .interactive-landing-illustration,
+  [data-section] {
+    transition: none;
+    animation: none;
+  }
+
+  .interactive-landing-illustration {
+    opacity: 1;
+    transform: none;
+  }
+
+  [data-section] {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* =============================================================================
+   Обновлённые стили для лэндинга с иллюстрациями
+   ============================================================================= */
+
+/* Hero section с иллюстрацией */
+.public-hero-with-illustration {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+  min-height: 600px;
+}
+
+.public-hero-illustration {
+  position: relative;
+  height: 500px;
+}
+
+@media (max-width: 1024px) {
+  .public-hero-with-illustration {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .public-hero-illustration {
+    height: 400px;
+  }
+}
+
+/* Feature section с иллюстрацией */
+.feature-with-illustration {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+  margin-bottom: 4rem;
+}
+
+.feature-with-illustration:nth-child(even) {
+  direction: rtl;
+}
+
+.feature-with-illustration:nth-child(even) > * {
+  direction: ltr;
+}
+
+.feature-illustration {
+  position: relative;
+  height: 400px;
+}
+
+@media (max-width: 1024px) {
+  .feature-with-illustration {
+    grid-template-columns: 1fr;
+    direction: ltr;
+  }
+
+  .feature-with-illustration:nth-child(even) {
+    direction: ltr;
+  }
+
+  .feature-illustration {
+    height: 300px;
+  }
+}
+
+/* Плавный переход между секциями */
+.public-section {
+  scroll-margin-top: 100px;
+  position: relative;
+}
+
+/* Эффект глубины для секций */
+.public-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(var(--color-primary-rgb, 102, 126, 234), 0.02) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  z-index: -1;
+}
+
+.public-section.section-active::before {
+  opacity: 1;
+}
+
+/* Декоративные элементы фона */
+.landing-background-decoration {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.3;
+}
+
+.landing-background-decoration svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Floating action button для скролла вверх */
+.scroll-to-top {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--color-primary, #667eea);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+}
+
+.scroll-to-top.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.scroll-to-top:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.scroll-to-top:active {
+  transform: translateY(-2px);
+}
+
+/* Улучшенная прокрутка */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Контент постепенно появляется при скролле */
+.stagger-fade-in > * {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fade-in-up 0.6s ease forwards;
+}
+
+.stagger-fade-in > *:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.stagger-fade-in > *:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.stagger-fade-in > *:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.stagger-fade-in > *:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.stagger-fade-in > *:nth-child(5) {
+  animation-delay: 0.5s;
+}
+.stagger-fade-in > *:nth-child(6) {
+  animation-delay: 0.6s;
+}
+
+/* Интеграция с существующими стилями лэндинга */
+.public-hero {
+  position: relative;
+  z-index: 1;
+}
+
+/* Градиентный overlay для секций */
+.section-gradient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.05) 0%,
+    rgba(118, 75, 162, 0.05) 100%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.section-active .section-gradient-overlay {
+  opacity: 1;
+}
+
+/* Микро-взаимодействия */
+.interactive-element {
+  transition: transform 0.2s ease;
+}
+
+.interactive-element:hover {
+  transform: scale(1.05);
+}
+
+.interactive-element:active {
+  transform: scale(0.98);
+}
+
+/* Плавное затемнение при переходе между страницами */
+.page-transition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 9999;
+}
+
+.page-transition-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* =============================================================================
+   Fullscreen Hero Block
+   Полноэкранный hero с интерактивными изображениями
+   ============================================================================= */
+
+.fullscreen-hero {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh; /* Fallback для мобильных */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding-top: 80px; /* Высота хедера */
+}
+
+/* Фоновая галерея изображений */
+.fullscreen-hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.hero-image {
+  position: absolute;
+  pointer-events: all;
+  transition: opacity 0.6s ease;
+}
+
+/* Позиционирование изображений - разбросаны по экрану */
+.hero-image-1 {
+  top: 10%;
+  left: 5%;
+  width: 200px;
+  height: 200px;
+  opacity: 0.6;
+}
+
+.hero-image-2 {
+  top: 15%;
+  right: 8%;
+  width: 180px;
+  height: 180px;
+  opacity: 0.5;
+}
+
+.hero-image-3 {
+  bottom: 20%;
+  left: 10%;
+  width: 150px;
+  height: 150px;
+  opacity: 0.7;
+}
+
+.hero-image-4 {
+  bottom: 25%;
+  right: 12%;
+  width: 160px;
+  height: 160px;
+  opacity: 0.6;
+}
+
+.hero-image-5 {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 250px;
+  height: 250px;
+  opacity: 0.3;
+  z-index: -1;
+}
+
+/* Контент hero блока */
+.fullscreen-hero-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 800px;
+  padding: 2rem;
+  text-align: center;
+}
+
+.fullscreen-hero-inner {
+  animation: fade-in-up 1s ease forwards;
+}
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1rem;
+  background: rgba(102, 126, 234, 0.15);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-primary, #667eea);
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(10px);
+  animation: scale-in 0.6s ease 0.2s backwards;
+}
+
+.hero-title {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin: 0 0 1.5rem;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--color-primary, #667eea) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: fade-in-up 0.8s ease 0.3s backwards;
+}
+
+.hero-subtitle {
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  line-height: 1.6;
+  color: var(--text-secondary);
+  margin: 0 0 2.5rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  animation: fade-in-up 0.8s ease 0.4s backwards;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  animation: fade-in-up 0.8s ease 0.5s backwards;
+}
+
+.hero-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  min-width: 160px;
+}
+
+.hero-btn-primary {
+  background: var(--color-primary, #667eea);
+  color: white;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+}
+
+.hero-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.hero-btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border: 2px solid var(--border-color, #ddd);
+  backdrop-filter: blur(10px);
+}
+
+.hero-btn-secondary:hover {
+  border-color: var(--color-primary, #667eea);
+  background: rgba(102, 126, 234, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Индикатор скролла */
+.hero-scroll-indicator {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  animation: fade-in-up 1s ease 1s forwards;
+}
+
+.scroll-mouse {
+  width: 24px;
+  height: 40px;
+  border: 2px solid var(--text-secondary);
+  border-radius: 12px;
+  position: relative;
+  animation: float 2s ease-in-out infinite;
+}
+
+.scroll-wheel {
+  width: 4px;
+  height: 8px;
+  background: var(--text-secondary);
+  border-radius: 2px;
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: scroll-wheel 1.5s ease-in-out infinite;
+}
+
+@keyframes scroll-wheel {
+  0%, 100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+}
+
+.scroll-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* Оптимизированные интерактивные изображения */
+.optimized-interactive-image {
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.optimized-interactive-image.is-active {
+  opacity: 1;
+}
+
+.optimized-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Оптимизация для производительности */
+.optimized-svg g {
+  will-change: transform;
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Адаптивность */
+@media (max-width: 1024px) {
+  .hero-image-1,
+  .hero-image-2,
+  .hero-image-3,
+  .hero-image-4 {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .hero-image-5 {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .fullscreen-hero {
+    padding-top: 60px;
+  }
+
+  .fullscreen-hero-content {
+    padding: 1rem;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-btn {
+    width: 100%;
+  }
+
+  /* Упрощаем изображения на мобильных */
+  .hero-image-1,
+  .hero-image-2 {
+    top: 5%;
+    width: 100px;
+    height: 100px;
+    opacity: 0.4;
+  }
+
+  .hero-image-3,
+  .hero-image-4 {
+    bottom: 10%;
+    width: 100px;
+    height: 100px;
+    opacity: 0.4;
+  }
+
+  .hero-image-5 {
+    width: 150px;
+    height: 150px;
+    opacity: 0.2;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-image-1,
+  .hero-image-2,
+  .hero-image-3,
+  .hero-image-4 {
+    width: 80px;
+    height: 80px;
+  }
+
+  .hero-scroll-indicator {
+    bottom: 1rem;
+  }
+}
+
+/* =============================================================================
+   SVG иллюстрации - фиксированные анимации с CSS
+   ============================================================================= */
+
+/* Parallax layers для OptimizedInteractiveImage */
+.parallax-layer-1 {
+  will-change: transform;
+  animation: parallax-float-strong 10s ease-in-out infinite;
+}
+
+.parallax-layer-2 {
+  will-change: transform;
+  animation: parallax-float-medium 12s ease-in-out infinite;
+}
+
+.parallax-layer-3 {
+  will-change: transform;
+  animation: parallax-float-weak 15s ease-in-out infinite;
+}
+
+@keyframes parallax-float-strong {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(15px, -10px);
+  }
+  50% {
+    transform: translate(-10px, 15px);
+  }
+  75% {
+    transform: translate(10px, 10px);
+  }
+}
+
+@keyframes parallax-float-medium {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(10px, -7px);
+  }
+  50% {
+    transform: translate(-7px, 10px);
+  }
+  75% {
+    transform: translate(7px, 7px);
+  }
+}
+
+@keyframes parallax-float-weak {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(5px, -3px);
+  }
+  50% {
+    transform: translate(-3px, 5px);
+  }
+  75% {
+    transform: translate(3px, 3px);
+  }
+}
+
+/* Hero variant styles */
+.hero-svg {
+  animation: hero-scale 3s ease-in-out forwards;
+}
+
+@keyframes hero-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.hero-bg-circle-1 {
+  opacity: 0.3;
+  animation: hero-bg-1 8s ease-in-out infinite;
+}
+
+@keyframes hero-bg-1 {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(50px, 30px);
+    opacity: 0.5;
+  }
+}
+
+.hero-bg-circle-2 {
+  opacity: 0.2;
+  animation: hero-bg-2 10s ease-in-out infinite;
+}
+
+@keyframes hero-bg-2 {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.2;
+  }
+  50% {
+    transform: translate(-40px, -20px);
+    opacity: 0.5;
+  }
+}
+
+.hero-center-group {
+  animation: hero-center 2s ease-out forwards;
+}
+
+@keyframes hero-center {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-content-line {
+  opacity: 0;
+  animation: hero-line-slide 1s ease-out forwards;
+}
+
+.hero-content-line-0 {
+  animation-delay: 0.2s;
+}
+
+.hero-content-line-1 {
+  animation-delay: 0.3s;
+}
+
+.hero-content-line-2 {
+  animation-delay: 0.4s;
+}
+
+.hero-content-line-3 {
+  animation-delay: 0.5s;
+}
+
+.hero-content-line-4 {
+  animation-delay: 0.6s;
+}
+
+@keyframes hero-line-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 0.7;
+    transform: translateX(0);
+  }
+}
+
+.hero-icon-circle {
+  opacity: 0.5;
+  animation: hero-icon-pulse 2s ease-in-out infinite;
+}
+
+@keyframes hero-icon-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.hero-connect-line-1,
+.hero-connect-line-2 {
+  stroke-dasharray: 500 500;
+  stroke-dashoffset: 500;
+  animation: hero-line-draw 3s ease-out forwards;
+}
+
+.hero-connect-line-2 {
+  animation-delay: 0.5s;
+}
+
+@keyframes hero-line-draw {
+  to {
+    stroke-dashoffset: 0;
+    opacity: 0.5;
+  }
+}
+
+.hero-particle {
+  animation: hero-particle-float 4s ease-in-out infinite;
+}
+
+@keyframes hero-particle-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translate(20px, -15px);
+    opacity: 0.6;
+  }
+}
+
+/* Features variant styles */
+.features-svg {
+  animation: features-appear 2s ease-out forwards;
+}
+
+@keyframes features-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.features-node {
+  opacity: 0.2;
+  transition: all 0.5s ease-out;
+}
+
+.features-node-active {
+  opacity: 0.6;
+  animation: features-node-pulse 2s ease-in-out infinite;
+}
+
+@keyframes features-node-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.features-line {
+  opacity: 0.1;
+  transition: opacity 0.5s ease-out;
+}
+
+.features-line-active {
+  opacity: 0.4;
+}
+
+/* Workflow variant styles */
+.workflow-svg {
+  animation: workflow-appear 2s ease-out forwards;
+}
+
+@keyframes workflow-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.workflow-step {
+  opacity: 0;
+  transform: translateY(50px);
+  animation: workflow-step-rise 0.8s ease-out forwards;
+}
+
+.workflow-step-active {
+  opacity: 0.8;
+}
+
+@keyframes workflow-step-rise {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 0.8;
+    transform: translateY(0);
+  }
+}
+
+.workflow-arrow {
+  opacity: 0;
+  stroke-dasharray: 50 50;
+  stroke-dashoffset: 50;
+}
+
+.workflow-arrow-active {
+  animation: workflow-arrow-draw 1s ease-out forwards;
+}
+
+@keyframes workflow-arrow-draw {
+  to {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Stats variant styles */
+.stats-svg {
+  animation: stats-appear 2s ease-out forwards;
+}
+
+@keyframes stats-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.stats-bar {
+  opacity: 0;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  animation: stats-bar-grow 1s ease-out forwards;
+}
+
+@keyframes stats-bar-grow {
+  to {
+    opacity: 0.7;
+    transform: scaleY(1);
+  }
+}
+
+.stats-curve {
+  stroke-dasharray: 600 600;
+  stroke-dashoffset: 600;
+  animation: stats-curve-draw 2s ease-out forwards;
+}
+
+@keyframes stats-curve-draw {
+  to {
+    opacity: 0.8;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Pricing variant styles */
+.pricing-svg {
+  animation: pricing-appear 2s ease-out forwards;
+}
+
+@keyframes pricing-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pricing-card {
+  opacity: 0;
+  transform: translateY(50px) scale(0);
+  transition: all 0.6s ease-out;
+}
+
+.pricing-card-active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  animation: pricing-card-float 3s ease-in-out infinite;
+}
+
+.pricing-card-featured.pricing-card-active {
+  transform: translateY(0) scale(1.1);
+}
+
+@keyframes pricing-card-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.pricing-decoration {
+  opacity: 0.3;
+  animation: pricing-decoration-pulse 4s ease-in-out infinite;
+}
+
+@keyframes pricing-decoration-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.5;
+  }
+}
+
+/* CTA variant styles */
+.cta-svg {
+  animation: cta-appear 2s ease-out forwards;
+}
+
+@keyframes cta-appear {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.cta-ring {
+  opacity: 0.3;
+  animation: cta-ring-rotate 20s linear infinite;
+  transform-origin: 400px 300px;
+}
+
+.cta-ring-1 {
+  animation-duration: 25s;
+}
+
+.cta-ring-2 {
+  animation-duration: 30s;
+}
+
+.cta-ring-3 {
+  animation-duration: 35s;
+}
+
+.cta-ring-4 {
+  animation-duration: 40s;
+}
+
+@keyframes cta-ring-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cta-star {
+  opacity: 0.6;
+  animation: cta-star-pulse 3s ease-in-out infinite;
+  transform-origin: 400px 300px;
+}
+
+@keyframes cta-star-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.9;
+  }
+}
+
+/* Отключение для пользователей с prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .fullscreen-hero-inner,
+  .hero-badge,
+  .hero-title,
+  .hero-subtitle,
+  .hero-actions,
+  .hero-scroll-indicator {
+    animation: none;
+    opacity: 1;
+  }
+
+  .scroll-mouse,
+  .scroll-wheel {
+    animation: none;
+  }
+
+  .optimized-svg g {
+    will-change: auto;
+    transition: none;
+  }
+}
+
