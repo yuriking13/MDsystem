@@ -37,7 +37,10 @@ import {
 } from "../../lib/redis.js";
 import { getUserId } from "../../utils/auth-helpers.js";
 import { createLogger } from "../../utils/logger.js";
-import { filterArticlesByRelevance } from "../../lib/ai-relevance-filter.js";
+import {
+  filterArticlesByRelevance,
+  scoreArticlesByRelevance,
+} from "../../lib/ai-relevance-filter.js";
 import { broadcastToProject } from "../../websocket.js";
 import {
   OffsetPaginationSchema,
@@ -49,6 +52,8 @@ import {
   requestOpenRouterCompletion,
 } from "./ai-assistant.service.js";
 import { escapeHtml, toEncodedDoiPath } from "../../utils/html.js";
+import { dedupArticles } from "../../lib/dedup-merge.js";
+import { rankArticles } from "../../lib/ranking.js";
 
 const log = createLogger("articles");
 
@@ -75,6 +80,7 @@ const SEARCH_SOURCES = ["pubmed", "doaj", "wiley"] as const;
 // Схемы валидации
 const SearchBodySchema = z.object({
   query: z.string().min(1).max(1000),
+  mode: z.enum(["simple", "advanced"]).optional().default("simple"),
   sources: z.array(z.enum(SEARCH_SOURCES)).min(1).default(["pubmed"]),
   filters: z
     .object({
@@ -92,6 +98,13 @@ const SearchBodySchema = z.object({
     .optional(),
   maxResults: z.number().int().min(1).max(10000).default(100),
   triggerAutoGraphSync: z.boolean().optional().default(true),
+  options: z
+    .object({
+      enablePartialResults: z.boolean().optional(),
+      enableAiScoring: z.boolean().optional(),
+      enableEnrichmentByDoi: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 const ArticleStatusSchema = z.object({
@@ -704,13 +717,14 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       const projectId = paramsP.data.id;
+      const runId = `sr_${Date.now()}`;
 
       // Helper: send WebSocket progress event
       function sendProgress(stage: string, detail: Record<string, unknown>) {
         broadcastToProject(projectId, {
           type: "search:progress",
           projectId,
-          payload: { stage, ...detail },
+          payload: { runId, stage, ...detail },
           timestamp: Date.now(),
           userId,
         });
@@ -747,6 +761,18 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       const shouldTranslate = bodyP.data.filters?.translate === true;
       const searchPubTypes = bodyP.data.filters?.publicationTypes || [];
       const searchQuery = bodyP.data.query;
+      const searchMode = bodyP.data.mode || "simple";
+      const envAiFlag = process.env.FEATURE_AI_AS_SIGNAL;
+      const envRanking = process.env.FEATURE_NEW_RANKING_PIPELINE;
+      const featureFlags = {
+        earlyStopAndPartial:
+          bodyP.data.options?.enablePartialResults === true ||
+          process.env.FEATURE_EARLY_STOP === "1",
+        aiAsSignal:
+          bodyP.data.options?.enableAiScoring ??
+          (envAiFlag ? envAiFlag === "1" : true),
+        newRankingPipeline: envRanking ? envRanking === "1" : true,
+      };
 
       // Получаем PMIDs и DOIs статей, которые УЖЕ есть в проекте
       const existingInProjectRes = await pool.query(
@@ -790,6 +816,8 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       const sourceResults: Record<string, { count: number; added: number }> =
         {};
+      const earlyStopTarget = bodyP.data.maxResults + 25; // buffer for dedup
+      let stopCollecting = false;
 
       // ============ PUBMED SEARCH ============
       if (sources.includes("pubmed")) {
@@ -807,6 +835,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 apiKey: apiKey || undefined,
                 topic: bodyP.data.query,
                 filters: typeFilters,
+                mode: searchMode,
                 maxTotal: maxForType,
                 throttleMs: apiKey ? 100 : 350,
               });
@@ -837,7 +866,16 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                   source: "pubmed",
                   pubType,
                 });
+
+                if (
+                  featureFlags.earlyStopAndPartial &&
+                  collectedArticles.length >= earlyStopTarget
+                ) {
+                  stopCollecting = true;
+                  break;
+                }
               }
+              if (stopCollecting) break;
             } catch (err) {
               log.error(
                 "Error searching PubMed",
@@ -845,6 +883,11 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 { pubType },
               );
             }
+          }
+          if (stopCollecting) {
+            log.info(
+              "Early stop after reaching target from PubMed pubtype search",
+            );
           }
         } else {
           if (searchPubTypes.length === 1) {
@@ -855,6 +898,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
               apiKey: apiKey || undefined,
               topic: bodyP.data.query,
               filters,
+              mode: searchMode,
               maxTotal: maxPerSource,
               throttleMs: apiKey ? 100 : 350,
             });
@@ -888,6 +932,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
                 pubType:
                   searchPubTypes.length === 1 ? searchPubTypes[0] : undefined,
               });
+
+              if (
+                featureFlags.earlyStopAndPartial &&
+                collectedArticles.length >= earlyStopTarget
+              ) {
+                stopCollecting = true;
+                break;
+              }
+            }
+            if (stopCollecting) {
+              log.info("Early stop after reaching target from PubMed search");
             }
           } catch (err) {
             log.error(
@@ -899,7 +954,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // ============ DOAJ SEARCH ============
-      if (sources.includes("doaj")) {
+      if (!stopCollecting && sources.includes("doaj")) {
         sourceResults.doaj = { count: 0, added: 0 };
         sendProgress("searching_source", { source: "doaj" });
 
@@ -936,6 +991,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             collectedArticles.push({
               ...doajToUniversal(article),
             });
+
+            if (
+              featureFlags.earlyStopAndPartial &&
+              collectedArticles.length >= earlyStopTarget
+            ) {
+              stopCollecting = true;
+              break;
+            }
+          }
+          if (stopCollecting) {
+            log.info("Early stop after reaching target from DOAJ search");
           }
         } catch (err) {
           log.error(
@@ -946,7 +1012,7 @@ const plugin: FastifyPluginAsync = async (fastify) => {
       }
 
       // ============ WILEY SEARCH ============
-      if (sources.includes("wiley")) {
+      if (!stopCollecting && sources.includes("wiley")) {
         sourceResults.wiley = { count: 0, added: 0 };
         sendProgress("searching_source", { source: "wiley" });
 
@@ -983,6 +1049,17 @@ const plugin: FastifyPluginAsync = async (fastify) => {
             collectedArticles.push({
               ...wileyToUniversal(article),
             });
+
+            if (
+              featureFlags.earlyStopAndPartial &&
+              collectedArticles.length >= earlyStopTarget
+            ) {
+              stopCollecting = true;
+              break;
+            }
+          }
+          if (stopCollecting) {
+            log.info("Early stop after reaching target from Wiley search");
           }
         } catch (err) {
           log.error(
@@ -999,50 +1076,148 @@ const plugin: FastifyPluginAsync = async (fastify) => {
         skippedDuplicates: skipped,
       });
 
+      const { unique: dedupedArticles, duplicates } = dedupArticles(
+        collectedArticles,
+        { enableSoft: true },
+      );
+
+      sendProgress("dedup_done", {
+        collected: collectedArticles.length,
+        unique: dedupedArticles.length,
+        duplicates: duplicates.length,
+      });
+
       // ================================================================
-      // PHASE 2: AI RELEVANCE FILTER — remove irrelevant articles
+      // PHASE 2: AI RELEVANCE — score as signal (fail-safe keeps all)
       // ================================================================
       let relevanceFiltered = 0;
-      let articlesToSave = collectedArticles;
+      let aiFailed = false;
+      let articlesWithAiScore: Array<CollectedArticle & { aiScore?: number }> =
+        dedupedArticles;
 
-      if (openrouterKey && collectedArticles.length > 0) {
+      if (openrouterKey && dedupedArticles.length > 0) {
         sendProgress("relevance_filter", {
-          total: collectedArticles.length,
+          total: dedupedArticles.length,
           processed: 0,
-          kept: collectedArticles.length,
+          kept: dedupedArticles.length,
         });
 
         try {
-          const filterResult = await filterArticlesByRelevance({
-            articles: collectedArticles,
-            query: searchQuery,
-            apiKey: openrouterKey,
-            onProgress: (processed, total, kept) => {
-              sendProgress("relevance_filter", { total, processed, kept });
-            },
-          });
+          if (featureFlags.aiAsSignal) {
+            const scoreResult = await scoreArticlesByRelevance({
+              articles: dedupedArticles,
+              query: searchQuery,
+              apiKey: openrouterKey,
+              onProgress: (processed, total, kept) => {
+                sendProgress("relevance_filter", { total, processed, kept });
+              },
+            });
+            aiFailed = scoreResult.failed;
+            articlesWithAiScore = dedupedArticles.map((article, idx) => ({
+              ...article,
+              aiScore: scoreResult.items[idx]?.aiScore ?? 0,
+            }));
 
-          articlesToSave = filterResult.relevant as CollectedArticle[];
-          relevanceFiltered = filterResult.removed;
+            sendProgress("relevance_filter_done", {
+              total: dedupedArticles.length,
+              kept: dedupedArticles.length,
+              removed: 0,
+              mode: "score",
+            });
+          } else {
+            const filterResult = await filterArticlesByRelevance({
+              articles: dedupedArticles,
+              query: searchQuery,
+              apiKey: openrouterKey,
+              mode: "filter",
+              onProgress: (processed, total, kept) => {
+                sendProgress("relevance_filter", { total, processed, kept });
+              },
+            });
+            articlesWithAiScore = filterResult.relevant.map((a) => ({
+              ...a,
+              aiScore: 1,
+            }));
+            relevanceFiltered = filterResult.removed;
+            aiFailed = filterResult.failed;
 
-          sendProgress("relevance_filter_done", {
-            total: collectedArticles.length,
-            kept: articlesToSave.length,
-            removed: relevanceFiltered,
-          });
+            sendProgress("relevance_filter_done", {
+              total: dedupedArticles.length,
+              kept: articlesWithAiScore.length,
+              removed: relevanceFiltered,
+              mode: "filter",
+            });
+          }
         } catch (err) {
           log.error(
             "AI relevance filter error",
             err instanceof Error ? err : new Error(String(err)),
           );
+          aiFailed = true;
           // On error, keep all articles
-          articlesToSave = collectedArticles;
+          articlesWithAiScore = dedupedArticles.map((a) => ({
+            ...a,
+            aiScore: 0,
+          }));
         }
+      } else {
+        articlesWithAiScore = dedupedArticles.map((a) => ({
+          ...a,
+          aiScore: 0,
+        }));
       }
 
       // ================================================================
-      // PHASE 3: SAVE filtered articles to DB + link to project
+      // PHASE 3: RANK & SAVE articles to DB + link to project
       // ================================================================
+      let articlesToSave: Array<CollectedArticle & { aiScore?: number }> =
+        articlesWithAiScore;
+
+      if (featureFlags.newRankingPipeline) {
+        const ranked = rankArticles({
+          articles: articlesWithAiScore.map((article) => ({
+            ...article,
+            signals: {
+              aiScore: article.aiScore ?? 0,
+              year: article.year ?? null,
+              hasStats: !!article.studyTypes?.length,
+            },
+          })),
+          query: searchQuery,
+        });
+        articlesToSave = ranked as typeof articlesToSave;
+
+        if (featureFlags.earlyStopAndPartial) {
+          const topSample = articlesToSave.slice(0, 20).map((art, idx) => ({
+            ...art,
+            rank: idx + 1,
+          }));
+          broadcastToProject(projectId, {
+            type: "search:partial-results",
+            projectId,
+            payload: {
+              runId,
+              batch: 1,
+              articles: topSample.map((a) => ({
+                id: `${a.pmid ?? a.doi ?? a.title}-${a.source}`,
+                title: a.title,
+                abstract: a.abstract,
+                year: a.year,
+                doi: a.doi,
+                pmid: a.pmid,
+                source: [a.source],
+                score: (a as { score?: number }).score ?? 0,
+                scoreBreakdown: (a as { scoreBreakdown?: unknown })
+                  .scoreBreakdown,
+                explain: (a as { explain?: string[] }).explain,
+              })),
+            },
+            timestamp: Date.now(),
+            userId,
+          });
+        }
+      }
+
       sendProgress("saving", { total: articlesToSave.length, saved: 0 });
 
       let added = 0;
@@ -1124,7 +1299,9 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       // Обогащение Crossref если запрошено
       let enriched = 0;
-      const shouldEnrichByDOI = bodyP.data.filters?.enrichByDOI;
+      const shouldEnrichByDOI =
+        bodyP.data.options?.enableEnrichmentByDoi ??
+        bodyP.data.filters?.enrichByDOI;
       if (shouldEnrichByDOI && newArticleIds.length > 0) {
         sendProgress("enriching", { total: newArticleIds.length });
         const toEnrich = await pool.query(

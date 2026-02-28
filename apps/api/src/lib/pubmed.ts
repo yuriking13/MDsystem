@@ -3,6 +3,7 @@ import { sleep } from "./http.js";
 import { resilientFetch, resilientFetchJson } from "./http-client.js";
 import { cacheSet, cacheGet, CACHE_KEYS, TTL } from "./redis.js";
 import { createLogger } from "../utils/logger.js";
+import { translatePubmedQuery, type SearchMode } from "./query-processor.js";
 
 const log = createLogger("pubmed");
 
@@ -125,39 +126,6 @@ const SEARCH_FIELD_TAGS: Record<PubMedSearchField, string> = {
   Language: "[la]",
 };
 
-function buildPubmedTerm(topic: string, filters: PubMedFilters): string {
-  const terms: string[] = [];
-
-  // базовая тема с полем поиска
-  const fieldTag = filters.searchField
-    ? SEARCH_FIELD_TAGS[filters.searchField] || ""
-    : "";
-  if (fieldTag) {
-    // Если поле указано, добавляем тег к теме
-    terms.push(`(${topic})${fieldTag}`);
-  } else {
-    terms.push(`(${topic})`);
-  }
-
-  // free full text (бесплатный полный текст)
-  if (filters.freeFullTextOnly) {
-    terms.push(`free full text[sb]`);
-  }
-  // full text (полный текст, включая платный)
-  else if (filters.fullTextOnly) {
-    terms.push(`full text[sb]`);
-  }
-
-  // publication types с поддержкой AND/OR
-  if (filters.publicationTypes?.length) {
-    const logic = filters.publicationTypesLogic === "and" ? " AND " : " OR ";
-    const pt = filters.publicationTypes.map((t) => `"${t}"[pt]`).join(logic);
-    terms.push(`(${pt})`);
-  }
-
-  return terms.join(" AND ");
-}
-
 type ESearchResp = {
   esearchresult: {
     count: string;
@@ -173,8 +141,35 @@ export async function pubmedESearch(args: {
   topic: string;
   filters: PubMedFilters;
   retmax?: number;
+  mode?: SearchMode;
 }): Promise<{ webenv: string; queryKey: string; count: number }> {
-  const term = buildPubmedTerm(args.topic, args.filters);
+  const fieldTag = args.filters.searchField
+    ? SEARCH_FIELD_TAGS[args.filters.searchField] || ""
+    : "";
+  const translated = translatePubmedQuery({
+    query: args.topic,
+    mode: args.mode ?? "simple",
+    fieldTag,
+  });
+
+  const terms: string[] = [translated];
+
+  if (args.filters.freeFullTextOnly) terms.push("free full text[sb]");
+  else if (args.filters.fullTextOnly) terms.push("full text[sb]");
+
+  if (args.filters.publicationTypes?.length) {
+    const logic =
+      args.filters.publicationTypesLogic === "and" ? " AND " : " OR ";
+    const pt = args.filters.publicationTypes
+      .map((t) => `"${t}"[pt]`)
+      .join(logic);
+    terms.push(`(${pt})`);
+  }
+
+  const term =
+    terms.length > 1
+      ? `(${terms.shift()}) AND ${terms.join(" AND ")}`
+      : terms[0];
   const url = new URL(
     "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi",
   );
@@ -193,6 +188,10 @@ export async function pubmedESearch(args: {
   }
 
   if (args.apiKey) url.searchParams.set("api_key", args.apiKey);
+  const tool = process.env.NCBI_TOOL || "mdsystem";
+  url.searchParams.set("tool", tool);
+  const email = process.env.NCBI_EMAIL;
+  if (email) url.searchParams.set("email", email);
 
   const data = await resilientFetchJson<ESearchResp>(url.toString(), {
     apiName: "pubmed",
@@ -498,11 +497,18 @@ export async function pubmedFetchAll(args: {
   batchSize?: number;
   throttleMs?: number;
   maxTotal?: number; // safety
+  mode?: SearchMode;
+  onBatch?: (
+    batch: PubMedArticle[],
+    totalCollected: number,
+  ) => void | { stop?: boolean };
+  stopWhen?: (totalCollected: number) => boolean;
 }): Promise<{ count: number; items: PubMedArticle[] }> {
   const { webenv, queryKey, count } = await pubmedESearch({
     apiKey: args.apiKey,
     topic: args.topic,
     filters: args.filters,
+    mode: args.mode,
   });
 
   const batchSize = args.batchSize ?? 200;
@@ -521,6 +527,12 @@ export async function pubmedFetchAll(args: {
       throttleMs: args.throttleMs ?? 120,
     });
     items.push(...batch);
+
+    if (args.onBatch) {
+      const res = args.onBatch(batch, items.length);
+      if (res && res.stop) break;
+    }
+    if (args.stopWhen && args.stopWhen(items.length)) break;
   }
 
   return { count, items };

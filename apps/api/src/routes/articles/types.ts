@@ -26,6 +26,7 @@ export const SEARCH_SOURCES = ["pubmed", "doaj", "wiley"] as const;
 
 export const SearchBodySchema = z.object({
   query: z.string().min(1).max(1000),
+  mode: z.enum(["simple", "advanced"]).optional().default("simple"),
   sources: z.array(z.enum(SEARCH_SOURCES)).min(1).default(["pubmed"]),
   filters: z
     .object({
@@ -42,6 +43,13 @@ export const SearchBodySchema = z.object({
     })
     .optional(),
   maxResults: z.number().int().min(1).max(10000).default(100),
+  options: z
+    .object({
+      enablePartialResults: z.boolean().optional(),
+      enableAiScoring: z.boolean().optional(),
+      enableEnrichmentByDoi: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export const ArticleStatusSchema = z.object({

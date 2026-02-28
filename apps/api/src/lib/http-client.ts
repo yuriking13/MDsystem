@@ -74,6 +74,16 @@ const API_RATE_LIMITS: Record<string, RateLimiterConfig> = {
   unpaywall: { tokensPerSecond: 10, maxTokens: 10 },
 };
 
+const CONTACT_EMAIL = process.env.NCBI_EMAIL || process.env.CONTACT_EMAIL;
+const API_DEFAULT_HEADERS: Record<string, Record<string, string>> = {
+  crossref: {
+    "User-Agent": `mdsystem/1.0 (${CONTACT_EMAIL ?? "support@mdsystem.app"})`,
+  },
+  pubmed: {
+    "User-Agent": `mdsystem/1.0 (${CONTACT_EMAIL ?? "support@mdsystem.app"})`,
+  },
+};
+
 function getRateLimiter(apiName: string): TokenBucketRateLimiter {
   const existingLimiter = rateLimiters.get(apiName);
   if (existingLimiter) {
@@ -271,6 +281,10 @@ export async function resilientFetch(
 
       const response = await fetch(url, {
         ...fetchOptions,
+        headers: {
+          ...(API_DEFAULT_HEADERS[apiName] || {}),
+          ...(fetchOptions.headers || {}),
+        },
         signal: controller.signal,
       });
 
@@ -278,6 +292,9 @@ export async function resilientFetch(
 
       // Check if response is retryable
       if (!response.ok && isRetryableError(response, retryConfig)) {
+        if (response.status === 429) {
+          log.warn(`${apiName} hit rate limit (429)`);
+        }
         if (attempt < retryConfig.maxRetries) {
           const delay = calculateBackoff(attempt, retryConfig);
           log.info(
