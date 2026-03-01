@@ -50,7 +50,7 @@ export default function FullscreenHero({
       {/* Фоновое изображение клетки — 25% видимого hero */}
       <div className="hero-cell-bg">
         <img
-          src="https://storage.yandexcloud.net/mdsystem/landing/1_basic_cell.png"
+          src="https://storage.yandexcloud.net/scentiaiterpublic/landing/1_basic_cell.png"
           alt=""
           className="hero-cell-img"
           loading="eager"
