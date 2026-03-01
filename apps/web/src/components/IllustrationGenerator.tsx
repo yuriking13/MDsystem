@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import {
   ILLUSTRATION_GRADIENTS,
-  COLOR_SCHEMES,
   generateFloatingParticles,
   generateBlob,
   generateWave,
-  renderGradientDefs,
   type GradientConfig,
 } from "../lib/illustrationPatterns";
 
@@ -37,7 +35,7 @@ export default function IllustrationGenerator({
     let content = "";
 
     switch (pattern) {
-      case "particles":
+      case "particles": {
         const particles = generateFloatingParticles(
           particleCount,
           bounds,
@@ -45,18 +43,20 @@ export default function IllustrationGenerator({
         );
         content = particles
           .map(
-            (p, i) =>
+            (p) =>
               `<circle cx="${p.props.cx}" cy="${p.props.cy}" r="${p.props.r}" fill="url(#${gradient})" opacity="${p.props.opacity}" />`,
           )
           .join("\n      ");
         break;
+      }
 
-      case "blob":
+      case "blob": {
         const blobPath = generateBlob(400, 300, 150, animationIntensity, 8);
         content = `<path d="${blobPath}" fill="url(#${gradient})" opacity="0.6" />`;
         break;
+      }
 
-      case "wave":
+      case "wave": {
         const wavePath = generateWave(
           50 * animationIntensity,
           2,
@@ -66,8 +66,9 @@ export default function IllustrationGenerator({
         );
         content = `<path d="${wavePath}" stroke="url(#${gradient})" stroke-width="3" fill="none" opacity="0.8" />`;
         break;
+      }
 
-      case "mixed":
+      case "mixed": {
         const mixedParticles = generateFloatingParticles(
           particleCount / 2,
           bounds,
@@ -78,11 +79,12 @@ export default function IllustrationGenerator({
       <path d="${mixedBlob}" fill="url(#${gradient})" opacity="0.4" />
       ${mixedParticles
         .map(
-          (p, i) =>
+          (p) =>
             `<circle cx="${p.props.cx}" cy="${p.props.cy}" r="${p.props.r}" fill="url(#${gradient})" opacity="${p.props.opacity}" />`,
         )
         .join("\n      ")}`;
         break;
+      }
     }
 
     const svgCode = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600">

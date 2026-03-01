@@ -17,11 +17,11 @@ interface OptimizedInteractiveImageProps {
 export default function OptimizedInteractiveImage({
   variant,
   className = "",
-  intensity = 0.5,
+  intensity: _intensity = 0.5,
 }: OptimizedInteractiveImageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isInView, setIsInView] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
+  const [_mousePos, _setMousePos] = useState({ x: 0.5, y: 0.5 });
   const rafRef = useRef<number>();
 
   // Intersection Observer для ленивой загрузки
@@ -64,7 +64,7 @@ export default function OptimizedInteractiveImage({
           Math.min(1, (e.clientY - rect.top) / rect.height),
         );
 
-        setMousePos({ x, y });
+        _setMousePos({ x, y });
         rafRef.current = undefined;
       });
     };

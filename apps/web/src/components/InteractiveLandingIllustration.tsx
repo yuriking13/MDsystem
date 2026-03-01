@@ -23,7 +23,7 @@ export default function InteractiveLandingIllustration({
   const containerRef = useRef<HTMLDivElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [_mousePosition, _setMousePosition] = useState({ x: 0, y: 0 });
 
   // Отслеживание видимости элемента и прогресса скролла
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function InteractiveLandingIllustration({
       const rect = containerRef.current.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = (e.clientY - rect.top) / rect.height;
-      setMousePosition({ x, y });
+      _setMousePosition({ x, y });
     };
 
     const container = containerRef.current;
