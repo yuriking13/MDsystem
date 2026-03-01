@@ -518,9 +518,27 @@ html {
   height: 100%;
   object-fit: contain;
   opacity: 0.35;
-  filter: grayscale(100%) brightness(1.8) contrast(1.2);
   user-select: none;
   -webkit-user-drag: none;
+}
+
+/* Индивидуальная цветокоррекция для выравнивания тона между кадрами */
+/* Img 1: яркость 76, нейтральный тон — эталон */
+.hero-cell-img-1 {
+  filter: grayscale(100%) brightness(1.6) contrast(1.15);
+}
+
+/* Img 2: яркость 64, нейтральный — чуть поднять яркость */
+.hero-cell-img-2 {
+  filter: grayscale(100%) brightness(1.85) contrast(1.15);
+}
+
+/* Img 3: яркость 62, холодный тон (B-R +13.6) — поднять яркость, убрать синеву sepia */
+.hero-cell-img-3 {
+  filter: grayscale(100%) sepia(15%) brightness(1.9) contrast(1.15);
+  /* Контент до самых краёв — уменьшаем масштаб чтобы не обрезалось */
+  object-fit: contain;
+  transform: scale(0.88);
 }
 
 /* Overlay-слой для анимации смены */

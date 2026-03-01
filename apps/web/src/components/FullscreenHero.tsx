@@ -76,7 +76,7 @@ export default function FullscreenHero({
         <img
           src={HERO_IMAGES[currentIdx]}
           alt=""
-          className="hero-cell-img"
+          className={`hero-cell-img hero-cell-img-${currentIdx + 1}`}
           loading="eager"
           aria-hidden="true"
         />
@@ -92,7 +92,7 @@ export default function FullscreenHero({
           <img
             src={HERO_IMAGES[nextIdx]}
             alt=""
-            className="hero-cell-img"
+            className={`hero-cell-img hero-cell-img-${nextIdx + 1}`}
             aria-hidden="true"
           />
         </div>
