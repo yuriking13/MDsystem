@@ -920,37 +920,30 @@ export default function LandingPage() {
             <h2>{t.pricing.title}</h2>
             <p>{t.pricing.description}</p>
           </div>
-          <div className="feature-with-illustration">
-            <div className="feature-illustration">
-              <InteractiveLandingIllustration variant="pricing" />
-            </div>
-            <div>
-              <div className="public-grid public-grid-3">
-                {t.pricing.plans.map((plan, index) => (
-                  <article
-                    key={plan.name}
-                    className={`public-card public-pricing-card ${
-                      index === 1 ? "public-pricing-card-highlight" : ""
-                    }`}
-                  >
-                    <h3>{plan.name}</h3>
-                    <p>{plan.description}</p>
-                    <p className="public-price">
-                      {plan.price}
-                      {plan.period}
-                    </p>
-                    <ul className="public-list">
-                      {plan.features.map((feature) => (
-                        <li key={feature}>{feature}</li>
-                      ))}
-                    </ul>
-                    <Link to="/register" className="public-btn">
-                      {plan.cta}
-                    </Link>
-                  </article>
-                ))}
-              </div>
-            </div>
+          <div className="public-grid public-grid-3">
+            {t.pricing.plans.map((plan, index) => (
+              <article
+                key={plan.name}
+                className={`public-card public-pricing-card ${
+                  index === 1 ? "public-pricing-card-highlight" : ""
+                }`}
+              >
+                <h3>{plan.name}</h3>
+                <p>{plan.description}</p>
+                <p className="public-price">
+                  {plan.price}
+                  {plan.period}
+                </p>
+                <ul className="public-list">
+                  {plan.features.map((feature) => (
+                    <li key={feature}>{feature}</li>
+                  ))}
+                </ul>
+                <Link to="/register" className="public-btn">
+                  {plan.cta}
+                </Link>
+              </article>
+            ))}
           </div>
         </section>
 

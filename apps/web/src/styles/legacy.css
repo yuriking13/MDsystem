@@ -5,35 +5,35 @@
   font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
   line-height: 1.5;
   
-  /* ===== DARK THEME (Default) ===== */
+  /* ===== DARK THEME (Default) — Engraved Scientific Illustration ===== */
 
-  /* Backgrounds */
-  --bg-primary: #0a1628;
-  --bg-secondary: rgba(13, 27, 42, 0.9);
-  --bg-glass: rgba(13, 27, 42, 0.8);
-  --bg-glass-light: rgba(22, 34, 54, 0.6);
-  --bg-metal: linear-gradient(145deg, rgba(22, 34, 54, 0.9), rgba(13, 27, 42, 0.95));
-  --bg-metal-shine: linear-gradient(145deg, rgba(30, 48, 80, 0.6), rgba(22, 34, 54, 0.8));
+  /* Backgrounds — Pure black, like an etching plate */
+  --bg-primary: #000000;
+  --bg-secondary: rgba(5, 5, 5, 0.95);
+  --bg-glass: rgba(8, 8, 8, 0.88);
+  --bg-glass-light: rgba(14, 14, 14, 0.7);
+  --bg-metal: linear-gradient(145deg, rgba(12, 12, 12, 0.95), rgba(4, 4, 4, 0.98));
+  --bg-metal-shine: linear-gradient(145deg, rgba(20, 20, 20, 0.6), rgba(10, 10, 10, 0.8));
   --surface-elevated: var(--bg-glass);
   --surface-glass: var(--bg-glass-light);
 
-  /* Borders */
-  --border-glass: rgba(100, 140, 200, 0.1);
-  --border-glass-light: rgba(120, 160, 220, 0.2);
-  --border-glow: rgba(75, 116, 255, 0.4);
+  /* Borders — Fine white/gray lines like engraving strokes */
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --border-glass-light: rgba(255, 255, 255, 0.18);
+  --border-glow: rgba(255, 255, 255, 0.3);
 
-  /* Text */
-  --text-primary: #e8f0ff;
-  --text-secondary: #a0b5d8;
-  --text-muted: #607095;
+  /* Text — White/gray like etched lines on black plate */
+  --text-primary: #e8e8e8;
+  --text-secondary: #a0a0a0;
+  --text-muted: #606060;
 
-  /* Accents */
-  --accent: #4b74ff;
-  --accent-secondary: #7c3aed;
-  --accent-gradient: linear-gradient(135deg, #4b74ff, #7c3aed);
-  --accent-gradient-hover: linear-gradient(135deg, #4b74ff, #7c3aed);
-  --accent-glow: rgba(75, 116, 255, 0.4);
-  --accent-glow-strong: rgba(75, 116, 255, 0.6);
+  /* Accents — Monochrome white instead of blue */
+  --accent: #c8c8c8;
+  --accent-secondary: #999999;
+  --accent-gradient: linear-gradient(135deg, #d0d0d0, #909090);
+  --accent-gradient-hover: linear-gradient(135deg, #e0e0e0, #a0a0a0);
+  --accent-glow: rgba(255, 255, 255, 0.2);
+  --accent-glow-strong: rgba(255, 255, 255, 0.35);
   --accent-primary: var(--accent);
   --success: #10b981;
   --danger: #ef4444;
@@ -52,74 +52,74 @@
   /* Warning Gradient */
   --warning-gradient: linear-gradient(135deg, #fbbf24, #f59e0b);
 
-  /* Animated Background */
-  --anim-bg-1: #01111D;
-  --anim-bg-2: #074F83;
+  /* Animated Background — Nearly black gradient */
+  --anim-bg-1: #000000;
+  --anim-bg-2: #0a0a0a;
 
-  /* Buttons */
-  --btn-primary: #2563eb;
-  --btn-secondary: #162236;
-  --btn-secondary-text: #e5e7eb;
+  /* Buttons — Monochrome engraving style */
+  --btn-primary: #d0d0d0;
+  --btn-secondary: #111111;
+  --btn-secondary-text: #d0d0d0;
   --btn-danger: #dc2626;
 
   /* Inputs */
-  --input-bg: #162236;
-  --input-border: rgba(56, 89, 138, 0.3);
+  --input-bg: #0a0a0a;
+  --input-border: rgba(255, 255, 255, 0.15);
 
-  /* Cards */
-  --card-bg: rgba(13, 27, 42, 0.45);
-  --card-border: rgba(56, 89, 138, 0.25);
-  --card-title: #ffffff;
-  --card-desc: #9ca3af;
-  --card-bg-hover: rgba(13, 27, 42, 0.55);
-  --card-border-hover: rgba(56, 89, 138, 0.45);
-  --card-shine: rgba(255, 255, 255, 0.03);
+  /* Cards — Dark with fine white borders */
+  --card-bg: rgba(5, 5, 5, 0.6);
+  --card-border: rgba(255, 255, 255, 0.12);
+  --card-title: #e8e8e8;
+  --card-desc: #909090;
+  --card-bg-hover: rgba(12, 12, 12, 0.7);
+  --card-border-hover: rgba(255, 255, 255, 0.25);
+  --card-shine: rgba(255, 255, 255, 0.02);
 
   /* Glass Effects */
-  --metal-highlight: rgba(255, 255, 255, 0.05);
-  --metal-shadow: rgba(0, 0, 0, 0.2);
+  --metal-highlight: rgba(255, 255, 255, 0.04);
+  --metal-shadow: rgba(0, 0, 0, 0.4);
 
-  /* Background Gradients */
-  --bg-gradient-1: rgba(75, 116, 255, 0.12);
-  --bg-gradient-2: rgba(124, 58, 237, 0.08);
-  --bg-gradient-3: rgba(16, 185, 129, 0.06);
+  /* Background Gradients — Subtle gray radials */
+  --bg-gradient-1: rgba(255, 255, 255, 0.03);
+  --bg-gradient-2: rgba(255, 255, 255, 0.02);
+  --bg-gradient-3: rgba(255, 255, 255, 0.015);
 
   /* Articles */
-  --article-title: #f3f4f6;
-  --article-meta: #9ca3af;
+  --article-title: #e0e0e0;
+  --article-meta: #808080;
 
   /* Modal */
-  --modal-bg: rgba(13, 27, 42, 0.85);
-  --modal-title: #ffffff;
-  --modal-body: #d1d5db;
-  --modal-footer-bg: rgba(13, 27, 42, 0.3);
+  --modal-bg: rgba(5, 5, 5, 0.92);
+  --modal-title: #e8e8e8;
+  --modal-body: #b0b0b0;
+  --modal-footer-bg: rgba(8, 8, 8, 0.5);
 
   /* Tabs */
-  --tabs-bg: rgba(13, 27, 42, 0.5);
-  --tab-active-bg: #2563eb;
-  --tab-active-text: #ffffff;
-  --tab-inactive-text: #a0b5d8;
-  --tab-hover-bg: rgba(22, 34, 54, 0.5);
+  --tabs-bg: rgba(8, 8, 8, 0.6);
+  --tab-active-bg: rgba(255, 255, 255, 0.15);
+  --tab-active-text: #e8e8e8;
+  --tab-inactive-text: #808080;
+  --tab-hover-bg: rgba(255, 255, 255, 0.06);
 
   /* Table */
-  --table-header-bg: rgba(13, 27, 42, 0.5);
+  --table-header-bg: rgba(8, 8, 8, 0.6);
 
   /* Alerts */
-  --alert-error-bg: rgba(239, 68, 68, 0.1);
-  --alert-error-border: rgba(239, 68, 68, 0.2);
+  --alert-error-bg: rgba(239, 68, 68, 0.08);
+  --alert-error-border: rgba(239, 68, 68, 0.18);
   --alert-error-text: #f87171;
-  --alert-success-bg: rgba(16, 185, 129, 0.1);
-  --alert-success-border: rgba(16, 185, 129, 0.2);
+  --alert-success-bg: rgba(16, 185, 129, 0.08);
+  --alert-success-border: rgba(16, 185, 129, 0.18);
   --alert-success-text: #34d399;
 
   /* Editor */
   --editor-bg: #ffffff;
   --editor-text: #1a1a1a;
-  --editor-toolbar-bg: rgba(0, 0, 0, 0.3);
+  --editor-toolbar-bg: rgba(0, 0, 0, 0.5);
 
   /* Badges */
-  --badge-role-bg: rgba(37, 99, 235, 0.2);
-  --badge-role-text: #60a5fa;
+  --badge-role-bg: rgba(255, 255, 255, 0.1);
+  --badge-role-text: #c0c0c0;
 
   /* Stat Badges */
   --stat-p001-bg: rgba(74, 222, 128, 0.3);
@@ -137,37 +137,37 @@
   --stat-ai-bg: rgba(255, 165, 0, 0.25);
   --stat-ai-text: #ffa500;
 
-  /* Sidebar */
-  --sidebar-bg-base: #0e1117;
-  --glass-hue1: 210;
-  --glass-hue2: 250;
-  --sidebar-border: rgba(56, 72, 96, 0.6);
-  --sidebar-text: #9ca3af;
-  --sidebar-hover-bg: rgba(37, 99, 235, 0.15);
-  --sidebar-hover-text: #ffffff;
-  --sidebar-active-bg: rgba(37, 99, 235, 0.2);
-  --sidebar-active-text: #60a5fa;
-  --sidebar-logo-bg-1: #3b82f6;
-  --sidebar-logo-bg-2: #2563eb;
-  --sidebar-logo-text: #ffffff;
-  --sidebar-footer-text: #9ca3af;
-  --sidebar-logout-bg: rgba(239, 68, 68, 0.2);
+  /* Sidebar — Engraved monochrome */
+  --sidebar-bg-base: #030303;
+  --glass-hue1: 0;
+  --glass-hue2: 0;
+  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar-text: #808080;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+  --sidebar-hover-text: #e0e0e0;
+  --sidebar-active-bg: rgba(255, 255, 255, 0.12);
+  --sidebar-active-text: #d0d0d0;
+  --sidebar-logo-bg-1: #c0c0c0;
+  --sidebar-logo-bg-2: #909090;
+  --sidebar-logo-text: #000000;
+  --sidebar-footer-text: #707070;
+  --sidebar-logout-bg: rgba(239, 68, 68, 0.15);
   --sidebar-logout-text: #f87171;
-  --sidebar-divider: rgba(56, 89, 138, 0.25);
-  --sidebar-badge-bg: rgba(59, 130, 246, 0.2);
+  --sidebar-divider: rgba(255, 255, 255, 0.08);
+  --sidebar-badge-bg: rgba(255, 255, 255, 0.1);
 
-  /* Auth Page */
-  --auth-radial1: rgba(75, 116, 255, 0.15);
-  --auth-radial2: rgba(124, 58, 237, 0.1);
-  --auth-grid: rgba(75, 116, 255, 0.03);
-  --auth-feature-bg-1: #050810;
-  --auth-feature-bg-2: #0a1020;
-  --auth-feature-inner-border: rgba(255, 255, 255, 0.05);
-  --auth-feature-inner-bg: rgba(255, 255, 255, 0.12);
-  --auth-card-bg-1: #040610;
-  --auth-card-bg-2: #0a101e;
-  --auth-card-inner-border: rgba(255, 255, 255, 0.04);
-  --auth-input-bg: rgba(255, 255, 255, 0.08);
+  /* Auth Page — Engraved style */
+  --auth-radial1: rgba(255, 255, 255, 0.04);
+  --auth-radial2: rgba(255, 255, 255, 0.02);
+  --auth-grid: rgba(255, 255, 255, 0.02);
+  --auth-feature-bg-1: #020202;
+  --auth-feature-bg-2: #080808;
+  --auth-feature-inner-border: rgba(255, 255, 255, 0.06);
+  --auth-feature-inner-bg: rgba(255, 255, 255, 0.08);
+  --auth-card-bg-1: #020202;
+  --auth-card-bg-2: #080808;
+  --auth-card-inner-border: rgba(255, 255, 255, 0.05);
+  --auth-input-bg: rgba(255, 255, 255, 0.06);
 
   /* Graph Node Colors */
   --graph-node-citing: #ec4899;
@@ -182,28 +182,28 @@
   --graph-node-pvalue: #fbbf24;
   --graph-node-default: #6b7280;
   --graph-cluster-default: #6366f1;
-  --graph-bg: #0b0f19;
-  --graph-bg-fullscreen: #050810;
-  --graph-link-color: rgba(100, 130, 180, 0.25);
+  --graph-bg: #020202;
+  --graph-bg-fullscreen: #000000;
+  --graph-link-color: rgba(255, 255, 255, 0.12);
 
   /* Graph Panel */
-  --graph-panel-bg: #0f172a;
-  --graph-canvas-bg-1: #0f172a;
-  --graph-canvas-bg-2: #1e293b;
-  --graph-grid-dot: #334155;
-  --graph-select-bg: rgba(51, 65, 85, 0.5);
-  --graph-select-border: #475569;
-  --graph-tool-bg: #1e293b;
-  --graph-tool-text: #cbd5e1;
-  --graph-tool-active: #3b82f6;
-  --graph-legend-label: #cbd5e1;
-  --graph-legend-count: #64748b;
-  --graph-toolbar-bg: rgba(15, 23, 42, 0.9);
-  --graph-toolbar-border: rgba(71, 85, 105, 0.5);
+  --graph-panel-bg: #050505;
+  --graph-canvas-bg-1: #030303;
+  --graph-canvas-bg-2: #0a0a0a;
+  --graph-grid-dot: #222222;
+  --graph-select-bg: rgba(255, 255, 255, 0.06);
+  --graph-select-border: #333333;
+  --graph-tool-bg: #0a0a0a;
+  --graph-tool-text: #b0b0b0;
+  --graph-tool-active: #d0d0d0;
+  --graph-legend-label: #b0b0b0;
+  --graph-legend-count: #606060;
+  --graph-toolbar-bg: rgba(5, 5, 5, 0.95);
+  --graph-toolbar-border: rgba(255, 255, 255, 0.1);
 
-  /* Derived gradients */
-  --accent-gradient: linear-gradient(135deg, #4b74ff, #7c3aed);
-  --accent-gradient-hover: linear-gradient(135deg, #4b74ff, #7c3aed);
+  /* Derived gradients — Monochrome */
+  --accent-gradient: linear-gradient(135deg, #d0d0d0, #909090);
+  --accent-gradient-hover: linear-gradient(135deg, #e0e0e0, #a0a0a0);
 
   /* Animation speeds */
   --transition-fast: 0.1s;

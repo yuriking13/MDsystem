@@ -47,6 +47,17 @@ export default function FullscreenHero({
         ))}
       </div>
 
+      {/* Фоновое изображение клетки — 25% видимого hero */}
+      <div className="hero-cell-bg">
+        <img
+          src="https://storage.yandexcloud.net/mdsystem/landing/1_basic_cell.png"
+          alt=""
+          className="hero-cell-img"
+          loading="eager"
+          aria-hidden="true"
+        />
+      </div>
+
       {/* Основной контент - центрированный */}
       <div className="fullscreen-hero-content">
         <div className="fullscreen-hero-inner">

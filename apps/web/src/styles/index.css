@@ -109,12 +109,12 @@
   }
 
   [data-theme="dark"] {
-    /* Dark Theme Colors */
-    --color-primary: 59 130 246;
-    --color-primary-foreground: 255 255 255;
+    /* Dark Theme Colors — Engraved Scientific Illustration */
+    --color-primary: 200 200 200;
+    --color-primary-foreground: 0 0 0;
     
-    --color-secondary: 107 114 128;
-    --color-secondary-foreground: 255 255 255;
+    --color-secondary: 128 128 128;
+    --color-secondary-foreground: 240 240 240;
     
     --color-success: 16 185 129;
     --color-success-foreground: 255 255 255;
@@ -128,25 +128,25 @@
     --color-info: 14 165 233;
     --color-info-foreground: 255 255 255;
     
-    /* Background Colors - Dark Blue */
-    --color-background: 10 22 40; /* #0A1628 */
-    --color-background-secondary: 13 27 42; /* #0D1B2A */
-    --color-background-tertiary: 22 34 54; /* #162236 */
+    /* Background Colors — Pure Black */
+    --color-background: 0 0 0;
+    --color-background-secondary: 5 5 5;
+    --color-background-tertiary: 12 12 12;
     
-    /* Surface Colors - Dark Blue */
-    --color-surface: 13 27 42;
-    --color-surface-hover: 22 34 54;
-    --color-surface-active: 30 48 80;
+    /* Surface Colors — Near-black */
+    --color-surface: 5 5 5;
+    --color-surface-hover: 14 14 14;
+    --color-surface-active: 22 22 22;
     
-    /* Border Colors - Dark Blue */
-    --color-border: 38 59 92;
-    --color-border-hover: 56 89 138;
+    /* Border Colors — White/gray fine lines */
+    --color-border: 40 40 40;
+    --color-border-hover: 70 70 70;
     
-    /* Text Colors - Dark */
-    --color-text-primary: 248 250 252; /* #F8FAFC */
-    --color-text-secondary: 203 213 225; /* #CBD5E1 */
-    --color-text-tertiary: 148 163 184; /* #94A3B8 */
-    --color-text-disabled: 100 116 139;
+    /* Text Colors — Monochrome */
+    --color-text-primary: 232 232 232;
+    --color-text-secondary: 160 160 160;
+    --color-text-tertiary: 110 110 110;
+    --color-text-disabled: 70 70 70;
     
     /* Overlay - Dark */
     --color-overlay: 0 0 0 / 0.7;
@@ -166,7 +166,7 @@
   body {
     @apply font-sans;
     @apply text-neutral-50;
-    background-color: #0a1628;
+    background-color: #000000;
   }
 
   body.light-theme,
@@ -214,7 +214,7 @@
 
   .dark ::-webkit-scrollbar-track,
   [data-theme="dark"] ::-webkit-scrollbar-track {
-    background-color: #0a1628;
+    background-color: #000000;
   }
 
   ::-webkit-scrollbar-thumb {
@@ -241,8 +241,8 @@
 
   .dark .glass,
   [data-theme="dark"] .glass {
-    background-color: rgba(13, 27, 42, 0.8);
-    border-color: rgba(56, 89, 138, 0.25);
+    background-color: rgba(5, 5, 5, 0.88);
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
   /* Card Base */
@@ -254,8 +254,8 @@
 
   .dark .card,
   [data-theme="dark"] .card {
-    background-color: #0d1b2a;
-    border-color: rgba(56, 89, 138, 0.2);
+    background-color: #050505;
+    border-color: rgba(255, 255, 255, 0.1);
   }
 
   /* Focus Visible Ring */
@@ -307,7 +307,7 @@
   /* Text Gradient */
   .text-gradient {
     @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, #3B82F6, #1D4ED8);
+    background-image: linear-gradient(135deg, #e0e0e0, #888888);
   }
 
   /* Truncate with lines */

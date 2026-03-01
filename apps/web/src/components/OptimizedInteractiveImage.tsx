@@ -91,8 +91,8 @@ export default function OptimizedInteractiveImage({
           <svg viewBox="0 0 400 400" className="optimized-svg">
             <defs>
               <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#667eea" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#764ba2" stopOpacity="0.4" />
+                <stop offset="0%" stopColor="#d0d0d0" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#707070" stopOpacity="0.25" />
               </linearGradient>
             </defs>
 
@@ -141,8 +141,8 @@ export default function OptimizedInteractiveImage({
           <svg viewBox="0 0 400 400" className="optimized-svg">
             <defs>
               <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#4facfe" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#00f2fe" stopOpacity="0.4" />
+                <stop offset="0%" stopColor="#c0c0c0" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#808080" stopOpacity="0.25" />
               </linearGradient>
             </defs>
 
@@ -198,8 +198,8 @@ export default function OptimizedInteractiveImage({
           <svg viewBox="0 0 400 400" className="optimized-svg">
             <defs>
               <linearGradient id="grad3" x1="0%" y1="100%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#fa709a" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#fee140" stopOpacity="0.4" />
+                <stop offset="0%" stopColor="#b0b0b0" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#606060" stopOpacity="0.25" />
               </linearGradient>
             </defs>
 
@@ -240,8 +240,8 @@ export default function OptimizedInteractiveImage({
           <svg viewBox="0 0 400 400" className="optimized-svg">
             <defs>
               <linearGradient id="grad4" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#a8edea" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#fed6e3" stopOpacity="0.4" />
+                <stop offset="0%" stopColor="#c8c8c8" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#888888" stopOpacity="0.25" />
               </linearGradient>
             </defs>
 
@@ -279,8 +279,8 @@ export default function OptimizedInteractiveImage({
           <svg viewBox="0 0 400 400" className="optimized-svg">
             <defs>
               <linearGradient id="grad5" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#ff9a9e" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#fecfef" stopOpacity="0.4" />
+                <stop offset="0%" stopColor="#d0d0d0" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#909090" stopOpacity="0.25" />
               </linearGradient>
             </defs>
 

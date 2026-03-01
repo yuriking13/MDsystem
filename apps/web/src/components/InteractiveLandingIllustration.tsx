@@ -103,8 +103,8 @@ export default function InteractiveLandingIllustration({
                 x2="100%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#667eea" />
-                <stop offset="100%" stopColor="#764ba2" />
+                <stop offset="0%" stopColor="#e0e0e0" />
+                <stop offset="100%" stopColor="#808080" />
               </linearGradient>
               <linearGradient
                 id="heroGradient2"
@@ -113,11 +113,11 @@ export default function InteractiveLandingIllustration({
                 x2="100%"
                 y2="0%"
               >
-                <stop offset="0%" stopColor="#f093fb" stopOpacity="0.7" />
-                <stop offset="100%" stopColor="#f5576c" stopOpacity="0.5" />
+                <stop offset="0%" stopColor="#c0c0c0" stopOpacity="0.5" />
+                <stop offset="100%" stopColor="#909090" stopOpacity="0.3" />
               </linearGradient>
               <filter id="glow">
-                <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
                 <feMerge>
                   <feMergeNode in="coloredBlur" />
                   <feMergeNode in="SourceGraphic" />
@@ -231,8 +231,8 @@ export default function InteractiveLandingIllustration({
                 x2="100%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#4facfe" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#00f2fe" stopOpacity="0.6" />
+                <stop offset="0%" stopColor="#d0d0d0" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#888888" stopOpacity="0.5" />
               </linearGradient>
             </defs>
 
@@ -297,8 +297,8 @@ export default function InteractiveLandingIllustration({
                 x2="0%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#fa709a" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#fee140" stopOpacity="0.6" />
+                <stop offset="0%" stopColor="#c8c8c8" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#707070" stopOpacity="0.5" />
               </linearGradient>
               <marker
                 id="arrowhead"
@@ -360,8 +360,8 @@ export default function InteractiveLandingIllustration({
                 x2="100%"
                 y2="0%"
               >
-                <stop offset="0%" stopColor="#30cfd0" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#330867" stopOpacity="0.6" />
+                <stop offset="0%" stopColor="#b0b0b0" stopOpacity="0.7" />
+                <stop offset="100%" stopColor="#505050" stopOpacity="0.5" />
               </linearGradient>
             </defs>
 
@@ -413,12 +413,12 @@ export default function InteractiveLandingIllustration({
                 x2="100%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#a8edea" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#fed6e3" stopOpacity="0.6" />
+                <stop offset="0%" stopColor="#d0d0d0" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="#808080" stopOpacity="0.4" />
               </linearGradient>
               <radialGradient id="pricingRadial">
-                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.5" />
-                <stop offset="100%" stopColor="#a8edea" stopOpacity="0.2" />
+                <stop offset="0%" stopColor="#ffffff" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#808080" stopOpacity="0.1" />
               </radialGradient>
             </defs>
 
@@ -487,9 +487,9 @@ export default function InteractiveLandingIllustration({
                 x2="100%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#ff9a9e" stopOpacity="0.8" />
-                <stop offset="50%" stopColor="#fecfef" stopOpacity="0.6" />
-                <stop offset="100%" stopColor="#ffecd2" stopOpacity="0.8" />
+                <stop offset="0%" stopColor="#d0d0d0" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#a0a0a0" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#808080" stopOpacity="0.6" />
               </linearGradient>
             </defs>
 
