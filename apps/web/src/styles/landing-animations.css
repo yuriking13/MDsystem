@@ -498,19 +498,19 @@ html {
   z-index: -1;
 }
 
-/* Фоновое изображение клетки — по центру, 25% видимого hero */
+/* Фоновое изображение клетки — на весь hero */
 .hero-cell-bg {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 25vmin;
-  height: 25vmin;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 0;
   pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .hero-cell-img {

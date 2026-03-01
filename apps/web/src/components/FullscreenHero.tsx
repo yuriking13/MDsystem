@@ -1,5 +1,4 @@
 import React from "react";
-import OptimizedInteractiveImage from "./OptimizedInteractiveImage";
 
 interface FullscreenHeroProps {
   title: string;
@@ -24,30 +23,9 @@ export default function FullscreenHero({
   secondaryCtaLink,
   badge,
 }: FullscreenHeroProps) {
-  // Массив интерактивных изображений - рендерятся только в viewport
-  const images = [
-    { variant: "abstract-1" as const, intensity: 0.5 },
-    { variant: "abstract-2" as const, intensity: 0.6 },
-    { variant: "geometric" as const, intensity: 0.4 },
-    { variant: "organic" as const, intensity: 0.5 },
-    { variant: "abstract-3" as const, intensity: 0.7 },
-  ];
-
   return (
     <section className="fullscreen-hero">
-      {/* Фоновая галерея интерактивных изображений */}
-      <div className="fullscreen-hero-background">
-        {images.map((img, i) => (
-          <OptimizedInteractiveImage
-            key={i}
-            variant={img.variant}
-            intensity={img.intensity}
-            className={`hero-image hero-image-${i + 1}`}
-          />
-        ))}
-      </div>
-
-      {/* Фоновое изображение клетки — 25% видимого hero */}
+      {/* Фоновое изображение клетки */}
       <div className="hero-cell-bg">
         <img
           src="https://storage.yandexcloud.net/scentiaiterpublic/landing/1_basic_cell.png"
