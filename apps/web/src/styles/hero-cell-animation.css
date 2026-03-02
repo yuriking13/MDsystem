@@ -10,10 +10,10 @@
 /* ------------------------------------------------------------------ */
 .hca {
   --center-size: clamp(160px, 24vw, 340px);
-  --tcell-size: clamp(55px, 7vw, 100px);
-  --orbit-r: clamp(110px, 16vw, 230px);
+  --tcell-size: clamp(70px, 9vw, 130px);
+  --orbit-diameter: clamp(260px, 36vw, 520px);
   --corner-size: clamp(120px, 16vw, 240px);
-  --protein-size: clamp(45px, 7vw, 90px);
+  --protein-size: clamp(70px, 10vw, 140px);
 
   position: absolute;
   inset: 0;
@@ -73,8 +73,9 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 0;
-  height: 0;
+  width: var(--orbit-diameter);
+  height: var(--orbit-diameter);
+  transform: translate(-50%, -50%);
   animation: hca-spin 3.8s linear infinite;
   will-change: transform;
   transition: opacity 0.35s ease;
@@ -99,34 +100,34 @@
 }
 
 @keyframes hca-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to   { transform: translate(-50%, -50%) rotate(360deg); }
 }
 
-/* ---- T‑cell slots (positioned at ± orbit radius) ---- */
+/* ---- T‑cell slots (positioned at top & bottom of orbit circle) ---- */
 .hca-tcell-slot {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 0;
-  height: 0;
+  left: 50%;
+  width: var(--tcell-size);
+  height: var(--tcell-size);
+  transform: translateX(-50%);
 }
 
 .hca-tcell-slot-1 {
-  transform: translateY(calc(-1 * var(--orbit-r)));
+  top: 0;
+  transform: translate(-50%, -50%);
 }
 .hca-tcell-slot-2 {
-  transform: translateY(var(--orbit-r));
+  bottom: 0;
+  transform: translate(-50%, 50%);
 }
 
 .hca-tcell {
-  position: absolute;
-  width: var(--tcell-size);
+  width: 100%;
   height: auto;
-  top: 0;
-  left: 0;
-  transform: translate(-50%, -50%);
-  opacity: 0.85;
+  display: block;
+  opacity: 1;
+  filter: drop-shadow(0 0 8px rgba(100, 200, 255, 0.4));
 }
 
 /* ── Fly‑away during "attacked" ── */
@@ -138,12 +139,12 @@
 }
 
 @keyframes hca-fly-out-up {
-  0%   { transform: translateY(calc(-1 * var(--orbit-r))); opacity: 1; }
-  100% { transform: translateY(calc(-1 * var(--orbit-r) - 45vh)); opacity: 0; }
+  0%   { transform: translate(-50%, -50%); opacity: 1; }
+  100% { transform: translate(-50%, calc(-50% - 60vh)); opacity: 0; }
 }
 @keyframes hca-fly-out-down {
-  0%   { transform: translateY(var(--orbit-r)); opacity: 1; }
-  100% { transform: translateY(calc(var(--orbit-r) + 45vh)); opacity: 0; }
+  0%   { transform: translate(-50%, 50%); opacity: 1; }
+  100% { transform: translate(-50%, calc(50% + 60vh)); opacity: 0; }
 }
 
 /* =================================================================
@@ -201,24 +202,29 @@
 }
 
 .hca-protein-caudal {
-  animation: hca-prot-from-bl 1.15s ease-in forwards;
+  animation: hca-prot-from-bl 1.2s ease-in-out forwards;
+  filter: drop-shadow(0 0 6px rgba(255, 160, 60, 0.5));
 }
 .hca-protein-cranial {
-  animation: hca-prot-from-tr 1.15s ease-in forwards;
+  animation: hca-prot-from-tr 1.2s ease-in-out forwards;
+  filter: drop-shadow(0 0 6px rgba(100, 180, 255, 0.5));
 }
 
+/* Start positions match the corner cell CSS positions:
+   caudal: bottom 12%, left 12%  →  roughly translate(-38vw, +30vh) from centre
+   cranial: top 14%, right 10%   →  roughly translate(+38vw, -30vh) from centre */
 @keyframes hca-prot-from-bl {
   0% {
     transform: translate(
-      calc(-50% - 28vw),
-      calc(-50% + 22vh)
+      calc(-50% - 38vw + 60px),
+      calc(-50% + 30vh - 60px)
     );
-    opacity: 0.9;
+    opacity: 1;
   }
-  60% { opacity: 0.85; }
-  85% { opacity: 0.5; }
+  70% { opacity: 0.9; }
+  90% { opacity: 0.5; }
   100% {
-    transform: translate(-50%, -50%) scale(0.4);
+    transform: translate(-50%, -50%) scale(0.5);
     opacity: 0;
   }
 }
@@ -226,15 +232,15 @@
 @keyframes hca-prot-from-tr {
   0% {
     transform: translate(
-      calc(-50% + 26vw),
-      calc(-50% - 20vh)
+      calc(-50% + 38vw - 60px),
+      calc(-50% - 30vh + 60px)
     );
-    opacity: 0.9;
+    opacity: 1;
   }
-  60% { opacity: 0.85; }
-  85% { opacity: 0.5; }
+  70% { opacity: 0.9; }
+  90% { opacity: 0.5; }
   100% {
-    transform: translate(-50%, -50%) scale(0.4);
+    transform: translate(-50%, -50%) scale(0.5);
     opacity: 0;
   }
 }
@@ -264,20 +270,20 @@
 @media (max-width: 768px) {
   .hca {
     --center-size: clamp(110px, 38vw, 220px);
-    --tcell-size: clamp(40px, 10vw, 70px);
-    --orbit-r: clamp(75px, 22vw, 150px);
+    --tcell-size: clamp(50px, 12vw, 90px);
+    --orbit-diameter: clamp(200px, 50vw, 380px);
     --corner-size: clamp(80px, 22vw, 160px);
-    --protein-size: clamp(35px, 9vw, 60px);
+    --protein-size: clamp(50px, 12vw, 100px);
   }
 }
 
 @media (max-width: 480px) {
   .hca {
     --center-size: 100px;
-    --tcell-size: 36px;
-    --orbit-r: 65px;
+    --tcell-size: 44px;
+    --orbit-diameter: 180px;
     --corner-size: 70px;
-    --protein-size: 32px;
+    --protein-size: 44px;
   }
 
   .hca-caudal {
