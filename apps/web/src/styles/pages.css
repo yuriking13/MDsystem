@@ -1469,7 +1469,7 @@
 .public-main {
   width: min(1200px, 100% - 32px);
   margin: 0 auto;
-  padding: 36px 0 64px;
+  padding: 0 0 64px;
 }
 
 .public-hero {
