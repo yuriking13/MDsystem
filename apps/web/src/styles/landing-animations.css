@@ -430,15 +430,15 @@ html {
 .fullscreen-hero {
   position: relative;
   min-height: 100vh;
-  min-height: 100dvh; /* Fallback для мобильных */
+  min-height: 100dvh;
   width: 100vw;
-  margin-left: 50%;
-  transform: translateX(-50%);
+  margin-left: calc(50% - 50vw);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding-top: 80px; /* Высота хедера */
+  padding-top: 0;
+  margin-top: -1px; /* Убираем зазор от хедера */
 }
 
 /* Фоновая галерея изображений */

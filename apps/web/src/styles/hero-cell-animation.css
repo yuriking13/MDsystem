@@ -12,13 +12,13 @@
   --center-size: clamp(160px, 24vw, 340px);
   --tcell-size: clamp(70px, 9vw, 130px);
   --orbit-diameter: clamp(260px, 36vw, 520px);
-  --corner-size: clamp(200px, 28vw, 420px);
+  --corner-size: clamp(280px, 38vw, 550px);
   --protein-size: clamp(140px, 20vw, 280px);
 
   position: absolute;
   inset: 0;
   pointer-events: none;
-  overflow: visible;
+  overflow: hidden;
   z-index: 0;
 }
 
@@ -159,12 +159,12 @@
 }
 
 .hca-caudal {
-  bottom: 4%;
-  left: 2%;
+  bottom: -5%;
+  left: -3%;
 }
 .hca-cranial {
-  top: 8%;
-  right: 2%;
+  top: 2%;
+  right: -3%;
 }
 
 /* ── Appear ── */
@@ -272,7 +272,7 @@
     --center-size: clamp(110px, 38vw, 220px);
     --tcell-size: clamp(50px, 12vw, 90px);
     --orbit-diameter: clamp(200px, 50vw, 380px);
-    --corner-size: clamp(130px, 30vw, 260px);
+    --corner-size: clamp(180px, 38vw, 350px);
     --protein-size: clamp(100px, 24vw, 200px);
   }
 }
@@ -282,17 +282,17 @@
     --center-size: 100px;
     --tcell-size: 44px;
     --orbit-diameter: 180px;
-    --corner-size: 100px;
+    --corner-size: 140px;
     --protein-size: 80px;
   }
 
   .hca-caudal {
-    bottom: 3%;
-    left: 1%;
+    bottom: -3%;
+    left: -2%;
   }
   .hca-cranial {
-    top: 8%;
-    right: 1%;
+    top: 3%;
+    right: -2%;
   }
 }
 
