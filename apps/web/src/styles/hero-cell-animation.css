@@ -9,11 +9,11 @@
 /*  Custom properties (sizing)                                        */
 /* ------------------------------------------------------------------ */
 .hca {
-  --center-size: clamp(140px, 22vw, 300px);
-  --tcell-size: clamp(40px, 5.5vw, 70px);
-  --orbit-r: clamp(100px, 15vw, 210px);
-  --corner-size: clamp(75px, 11vw, 155px);
-  --protein-size: clamp(28px, 4vw, 55px);
+  --center-size: clamp(160px, 24vw, 340px);
+  --tcell-size: clamp(55px, 7vw, 100px);
+  --orbit-r: clamp(110px, 16vw, 230px);
+  --corner-size: clamp(120px, 16vw, 240px);
+  --protein-size: clamp(45px, 7vw, 90px);
 
   position: absolute;
   inset: 0;
@@ -45,7 +45,7 @@
 
 /* ── Healthy cell: visible only during "idle" ── */
 .hca[data-phase="idle"] .hca-center-healthy {
-  opacity: 0.5;
+  opacity: 0.65;
   animation: hca-soft-in 0.8s ease both;
 }
 
@@ -126,7 +126,7 @@
   top: 0;
   left: 0;
   transform: translate(-50%, -50%);
-  opacity: 0.6;
+  opacity: 0.85;
 }
 
 /* ── Fly‑away during "attacked" ── */
@@ -158,12 +158,12 @@
 }
 
 .hca-caudal {
-  bottom: 8%;
-  left: 6%;
+  bottom: 12%;
+  left: 12%;
 }
 .hca-cranial {
-  top: 12%;
-  right: 6%;
+  top: 14%;
+  right: 10%;
 }
 
 /* ── Appear ── */
@@ -176,7 +176,7 @@
 .hca[data-phase="attack-2"] .hca-corner,
 .hca[data-phase="attack-3"] .hca-corner,
 .hca[data-phase="center-fade"] .hca-corner {
-  opacity: 0.6;
+  opacity: 0.8;
 }
 
 /* ── Fade out ── */
@@ -185,8 +185,8 @@
 }
 
 @keyframes hca-corner-in {
-  from { opacity: 0; transform: scale(0.55); }
-  to   { opacity: 0.6; transform: scale(1); }
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 0.8; transform: scale(1); }
 }
 
 /* =================================================================
@@ -210,14 +210,15 @@
 @keyframes hca-prot-from-bl {
   0% {
     transform: translate(
-      calc(-50% - 36vw),
-      calc(-50% + 32vh)
+      calc(-50% - 28vw),
+      calc(-50% + 22vh)
     );
-    opacity: 0.75;
+    opacity: 0.9;
   }
-  75% { opacity: 0.7; }
+  60% { opacity: 0.85; }
+  85% { opacity: 0.5; }
   100% {
-    transform: translate(-50%, -50%) scale(0.55);
+    transform: translate(-50%, -50%) scale(0.4);
     opacity: 0;
   }
 }
@@ -225,14 +226,15 @@
 @keyframes hca-prot-from-tr {
   0% {
     transform: translate(
-      calc(-50% + 34vw),
-      calc(-50% - 28vh)
+      calc(-50% + 26vw),
+      calc(-50% - 20vh)
     );
-    opacity: 0.75;
+    opacity: 0.9;
   }
-  75% { opacity: 0.7; }
+  60% { opacity: 0.85; }
+  85% { opacity: 0.5; }
   100% {
-    transform: translate(-50%, -50%) scale(0.55);
+    transform: translate(-50%, -50%) scale(0.4);
     opacity: 0;
   }
 }
@@ -242,7 +244,7 @@
    ================================================================= */
 @keyframes hca-soft-in {
   from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
-  to   { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  to   { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }
 }
 
 @keyframes hca-flash-in {
@@ -261,30 +263,30 @@
    ================================================================= */
 @media (max-width: 768px) {
   .hca {
-    --center-size: clamp(100px, 40vw, 200px);
-    --tcell-size: clamp(30px, 8vw, 55px);
-    --orbit-r: clamp(70px, 22vw, 140px);
-    --corner-size: clamp(55px, 16vw, 110px);
-    --protein-size: clamp(22px, 6vw, 42px);
+    --center-size: clamp(110px, 38vw, 220px);
+    --tcell-size: clamp(40px, 10vw, 70px);
+    --orbit-r: clamp(75px, 22vw, 150px);
+    --corner-size: clamp(80px, 22vw, 160px);
+    --protein-size: clamp(35px, 9vw, 60px);
   }
 }
 
 @media (max-width: 480px) {
   .hca {
     --center-size: 100px;
-    --tcell-size: 28px;
+    --tcell-size: 36px;
     --orbit-r: 65px;
-    --corner-size: 50px;
-    --protein-size: 20px;
+    --corner-size: 70px;
+    --protein-size: 32px;
   }
 
   .hca-caudal {
-    bottom: 5%;
-    left: 4%;
+    bottom: 8%;
+    left: 6%;
   }
   .hca-cranial {
-    top: 10%;
-    right: 4%;
+    top: 12%;
+    right: 6%;
   }
 }
 
