@@ -1,17 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react";
-
-const HERO_IMAGES = [
-  "https://storage.yandexcloud.net/scentiaiterpublic/landing/1_basic_cell.png",
-  "https://storage.yandexcloud.net/scentiaiterpublic/landing/2_virus_cell.png",
-  "https://storage.yandexcloud.net/scentiaiterpublic/landing/3_attacked_cell.png",
-] as const;
-
-/** Тайминги (мс) */
-const PHASE_SHOW = 4000; // показ текущего кадра
-const PHASE_FADE = 2000; // плавное появление следующего (1→2)
-const PHASE_GLITCH = 1200; // длительность глитч-эффекта (2→3)
-
-type Phase = "show" | "fade" | "glitch";
+import React from "react";
+import HeroCellAnimation from "./HeroCellAnimation";
 
 interface FullscreenHeroProps {
   title: string;
@@ -24,8 +12,8 @@ interface FullscreenHeroProps {
 }
 
 /**
- * Полноэкранный Hero блок с анимированной сменой изображений
- * 1_basic_cell → fade → 2_virus_cell → glitch → 3_attacked_cell → fade → …
+ * Полноэкранный Hero блок с анимированной клеточной сценой:
+ * здоровая клетка → атака → иммунный ответ → цикл
  */
 export default function FullscreenHero({
   title,
@@ -36,78 +24,10 @@ export default function FullscreenHero({
   secondaryCtaLink,
   badge,
 }: FullscreenHeroProps) {
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [phase, setPhase] = useState<Phase>("show");
-
-  const advance = useCallback(() => {
-    const nextIdx = (currentIdx + 1) % HERO_IMAGES.length;
-    // Переход 1→2: fade, переход 2→3: glitch, переход 3→1: fade
-    const transitionType: Phase = currentIdx === 1 ? "glitch" : "fade";
-
-    setPhase(transitionType);
-
-    const duration = transitionType === "glitch" ? PHASE_GLITCH : PHASE_FADE;
-
-    setTimeout(() => {
-      setCurrentIdx(nextIdx);
-      setPhase("show");
-    }, duration);
-  }, [currentIdx]);
-
-  useEffect(() => {
-    const timer = setTimeout(advance, PHASE_SHOW);
-    return () => clearTimeout(timer);
-  }, [currentIdx, phase, advance]);
-
-  // Предзагрузка всех изображений
-  useEffect(() => {
-    HERO_IMAGES.forEach((src) => {
-      const img = new Image();
-      img.src = src;
-    });
-  }, []);
-
-  const nextIdx = (currentIdx + 1) % HERO_IMAGES.length;
-
   return (
     <section className="fullscreen-hero">
-      {/* Слой текущего изображения */}
-      <div className="hero-cell-bg">
-        <img
-          src={HERO_IMAGES[currentIdx]}
-          alt=""
-          className={`hero-cell-img hero-cell-img-${currentIdx + 1}`}
-          loading="eager"
-          aria-hidden="true"
-        />
-      </div>
-
-      {/* Слой следующего изображения (fade / glitch) */}
-      {phase !== "show" && (
-        <div
-          className={`hero-cell-bg hero-cell-overlay ${
-            phase === "glitch" ? "hero-glitch-in" : "hero-fade-in"
-          }`}
-        >
-          <img
-            src={HERO_IMAGES[nextIdx]}
-            alt=""
-            className={`hero-cell-img hero-cell-img-${nextIdx + 1}`}
-            aria-hidden="true"
-          />
-        </div>
-      )}
-
-      {/* Глитч-артефакты */}
-      {phase === "glitch" && (
-        <div className="hero-glitch-overlay" aria-hidden="true">
-          <div className="glitch-line glitch-line-1" />
-          <div className="glitch-line glitch-line-2" />
-          <div className="glitch-line glitch-line-3" />
-          <div className="glitch-line glitch-line-4" />
-          <div className="glitch-line glitch-line-5" />
-        </div>
-      )}
+      {/* Анимированная клеточная сцена */}
+      <HeroCellAnimation />
 
       {/* Основной контент - центрированный */}
       <div className="fullscreen-hero-content">

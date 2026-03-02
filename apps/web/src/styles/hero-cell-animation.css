@@ -1,0 +1,304 @@
+/* =============================================================================
+   Hero Cell Animation — Animated cell‑biology storyline
+   =============================================================================
+   Phase flow: idle → attacked → corners-in → attack-1/2/3 →
+               center-fade → corners-fade → reset → (loop)
+   ============================================================================= */
+
+/* ------------------------------------------------------------------ */
+/*  Custom properties (sizing)                                        */
+/* ------------------------------------------------------------------ */
+.hca {
+  --center-size: clamp(140px, 22vw, 300px);
+  --tcell-size: clamp(40px, 5.5vw, 70px);
+  --orbit-r: clamp(100px, 15vw, 210px);
+  --corner-size: clamp(75px, 11vw, 155px);
+  --protein-size: clamp(28px, 4vw, 55px);
+
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+/* Shared image reset */
+.hca-img {
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+/* =================================================================
+   CENTRE CELLS
+   ================================================================= */
+.hca-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--center-size);
+  height: auto;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  will-change: opacity;
+}
+
+/* ── Healthy cell: visible only during "idle" ── */
+.hca[data-phase="idle"] .hca-center-healthy {
+  opacity: 0.5;
+  animation: hca-soft-in 0.8s ease both;
+}
+
+/* ── Attacked cell: visible from "attacked" through "attack-3" ── */
+.hca[data-phase="attacked"] .hca-center-attacked {
+  opacity: 0.55;
+  animation: hca-flash-in 0.5s ease both;
+}
+.hca[data-phase="corners-in"] .hca-center-attacked,
+.hca[data-phase="attack-1"] .hca-center-attacked,
+.hca[data-phase="attack-2"] .hca-center-attacked,
+.hca[data-phase="attack-3"] .hca-center-attacked {
+  opacity: 0.55;
+}
+
+/* ── Centre cell fading out ── */
+.hca[data-phase="center-fade"] .hca-center-attacked {
+  animation: hca-fade-out 1.1s ease forwards;
+}
+
+/* =================================================================
+   ORBIT RING  (always spins; visibility toggled per phase)
+   ================================================================= */
+.hca-orbit-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  animation: hca-spin 3.8s linear infinite;
+  will-change: transform;
+  transition: opacity 0.35s ease;
+}
+
+/* Show orbit ring only during idle & attacked */
+.hca[data-phase="idle"] .hca-orbit-ring {
+  opacity: 1;
+}
+.hca[data-phase="attacked"] .hca-orbit-ring {
+  opacity: 1;
+}
+/* Hide in all other phases */
+.hca[data-phase="corners-in"] .hca-orbit-ring,
+.hca[data-phase="attack-1"] .hca-orbit-ring,
+.hca[data-phase="attack-2"] .hca-orbit-ring,
+.hca[data-phase="attack-3"] .hca-orbit-ring,
+.hca[data-phase="center-fade"] .hca-orbit-ring,
+.hca[data-phase="corners-fade"] .hca-orbit-ring,
+.hca[data-phase="reset"] .hca-orbit-ring {
+  opacity: 0;
+}
+
+@keyframes hca-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ---- T‑cell slots (positioned at ± orbit radius) ---- */
+.hca-tcell-slot {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+}
+
+.hca-tcell-slot-1 {
+  transform: translateY(calc(-1 * var(--orbit-r)));
+}
+.hca-tcell-slot-2 {
+  transform: translateY(var(--orbit-r));
+}
+
+.hca-tcell {
+  position: absolute;
+  width: var(--tcell-size);
+  height: auto;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  opacity: 0.6;
+}
+
+/* ── Fly‑away during "attacked" ── */
+.hca[data-phase="attacked"] .hca-tcell-slot-1 {
+  animation: hca-fly-out-up 1.3s ease-out forwards;
+}
+.hca[data-phase="attacked"] .hca-tcell-slot-2 {
+  animation: hca-fly-out-down 1.3s ease-out forwards;
+}
+
+@keyframes hca-fly-out-up {
+  0%   { transform: translateY(calc(-1 * var(--orbit-r))); opacity: 1; }
+  100% { transform: translateY(calc(-1 * var(--orbit-r) - 45vh)); opacity: 0; }
+}
+@keyframes hca-fly-out-down {
+  0%   { transform: translateY(var(--orbit-r)); opacity: 1; }
+  100% { transform: translateY(calc(var(--orbit-r) + 45vh)); opacity: 0; }
+}
+
+/* =================================================================
+   CORNER CELLS
+   ================================================================= */
+.hca-corner {
+  position: absolute;
+  width: var(--corner-size);
+  height: auto;
+  opacity: 0;
+  will-change: opacity, transform;
+}
+
+.hca-caudal {
+  bottom: 8%;
+  left: 6%;
+}
+.hca-cranial {
+  top: 12%;
+  right: 6%;
+}
+
+/* ── Appear ── */
+.hca[data-phase="corners-in"] .hca-corner {
+  animation: hca-corner-in 0.8s ease both;
+}
+
+/* ── Stay visible during attacks & center-fade ── */
+.hca[data-phase="attack-1"] .hca-corner,
+.hca[data-phase="attack-2"] .hca-corner,
+.hca[data-phase="attack-3"] .hca-corner,
+.hca[data-phase="center-fade"] .hca-corner {
+  opacity: 0.6;
+}
+
+/* ── Fade out ── */
+.hca[data-phase="corners-fade"] .hca-corner {
+  animation: hca-fade-out 1s ease forwards;
+}
+
+@keyframes hca-corner-in {
+  from { opacity: 0; transform: scale(0.55); }
+  to   { opacity: 0.6; transform: scale(1); }
+}
+
+/* =================================================================
+   PROTEINS  (fly from corner cell toward centre)
+   ================================================================= */
+.hca-protein {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--protein-size);
+  height: auto;
+}
+
+.hca-protein-caudal {
+  animation: hca-prot-from-bl 1.15s ease-in forwards;
+}
+.hca-protein-cranial {
+  animation: hca-prot-from-tr 1.15s ease-in forwards;
+}
+
+@keyframes hca-prot-from-bl {
+  0% {
+    transform: translate(
+      calc(-50% - 36vw),
+      calc(-50% + 32vh)
+    );
+    opacity: 0.75;
+  }
+  75% { opacity: 0.7; }
+  100% {
+    transform: translate(-50%, -50%) scale(0.55);
+    opacity: 0;
+  }
+}
+
+@keyframes hca-prot-from-tr {
+  0% {
+    transform: translate(
+      calc(-50% + 34vw),
+      calc(-50% - 28vh)
+    );
+    opacity: 0.75;
+  }
+  75% { opacity: 0.7; }
+  100% {
+    transform: translate(-50%, -50%) scale(0.55);
+    opacity: 0;
+  }
+}
+
+/* =================================================================
+   SHARED KEYFRAMES
+   ================================================================= */
+@keyframes hca-soft-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+  to   { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes hca-flash-in {
+  0%   { opacity: 0; filter: brightness(2.5); }
+  40%  { opacity: 0.65; filter: brightness(1.4); }
+  100% { opacity: 0.55; filter: brightness(1); }
+}
+
+@keyframes hca-fade-out {
+  from { opacity: 0.55; }
+  to   { opacity: 0; }
+}
+
+/* =================================================================
+   RESPONSIVE TWEAKS
+   ================================================================= */
+@media (max-width: 768px) {
+  .hca {
+    --center-size: clamp(100px, 40vw, 200px);
+    --tcell-size: clamp(30px, 8vw, 55px);
+    --orbit-r: clamp(70px, 22vw, 140px);
+    --corner-size: clamp(55px, 16vw, 110px);
+    --protein-size: clamp(22px, 6vw, 42px);
+  }
+}
+
+@media (max-width: 480px) {
+  .hca {
+    --center-size: 100px;
+    --tcell-size: 28px;
+    --orbit-r: 65px;
+    --corner-size: 50px;
+    --protein-size: 20px;
+  }
+
+  .hca-caudal {
+    bottom: 5%;
+    left: 4%;
+  }
+  .hca-cranial {
+    top: 10%;
+    right: 4%;
+  }
+}
+
+/* Respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .hca-orbit-ring {
+    animation: none;
+  }
+  .hca-tcell-slot-1,
+  .hca-tcell-slot-2 {
+    animation: none !important;
+  }
+  .hca-protein-caudal,
+  .hca-protein-cranial {
+    animation-duration: 0.01s !important;
+  }
+}
