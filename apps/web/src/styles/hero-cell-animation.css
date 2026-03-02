@@ -13,7 +13,7 @@
   --tcell-size: clamp(70px, 9vw, 130px);
   --orbit-diameter: clamp(260px, 36vw, 520px);
   --corner-size: clamp(120px, 16vw, 240px);
-  --protein-size: clamp(70px, 10vw, 140px);
+  --protein-size: clamp(140px, 20vw, 280px);
 
   position: absolute;
   inset: 0;
@@ -46,13 +46,13 @@
 /* ── Healthy cell: visible only during "idle" ── */
 .hca[data-phase="idle"] .hca-center-healthy {
   opacity: 0.65;
-  animation: hca-soft-in 0.8s ease both;
+  animation: hca-soft-in 1.2s ease-out both;
 }
 
 /* ── Attacked cell: visible from "attacked" through "attack-3" ── */
 .hca[data-phase="attacked"] .hca-center-attacked {
   opacity: 0.55;
-  animation: hca-flash-in 0.5s ease both;
+  animation: hca-flash-in 0.8s ease-out both;
 }
 .hca[data-phase="corners-in"] .hca-center-attacked,
 .hca[data-phase="attack-1"] .hca-center-attacked,
@@ -63,7 +63,7 @@
 
 /* ── Centre cell fading out ── */
 .hca[data-phase="center-fade"] .hca-center-attacked {
-  animation: hca-fade-out 1.1s ease forwards;
+  animation: hca-fade-out 1.4s ease-in-out forwards;
 }
 
 /* =================================================================
@@ -76,9 +76,9 @@
   width: var(--orbit-diameter);
   height: var(--orbit-diameter);
   transform: translate(-50%, -50%);
-  animation: hca-spin 3.8s linear infinite;
+  animation: hca-spin 5.7s linear infinite;
   will-change: transform;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.8s ease-in-out;
 }
 
 /* Show orbit ring only during idle & attacked */
@@ -132,10 +132,10 @@
 
 /* ── Fly‑away during "attacked" ── */
 .hca[data-phase="attacked"] .hca-tcell-slot-1 {
-  animation: hca-fly-out-up 1.3s ease-out forwards;
+  animation: hca-fly-out-up 1.8s ease-in-out forwards;
 }
 .hca[data-phase="attacked"] .hca-tcell-slot-2 {
-  animation: hca-fly-out-down 1.3s ease-out forwards;
+  animation: hca-fly-out-down 1.8s ease-in-out forwards;
 }
 
 @keyframes hca-fly-out-up {
@@ -169,7 +169,7 @@
 
 /* ── Appear ── */
 .hca[data-phase="corners-in"] .hca-corner {
-  animation: hca-corner-in 0.8s ease both;
+  animation: hca-corner-in 1.0s ease-out both;
 }
 
 /* ── Stay visible during attacks & center-fade ── */
@@ -182,7 +182,7 @@
 
 /* ── Fade out ── */
 .hca[data-phase="corners-fade"] .hca-corner {
-  animation: hca-fade-out 1s ease forwards;
+  animation: hca-fade-out 1.2s ease-in-out forwards;
 }
 
 @keyframes hca-corner-in {
@@ -202,12 +202,12 @@
 }
 
 .hca-protein-caudal {
-  animation: hca-prot-from-bl 1.2s ease-in-out forwards;
-  filter: drop-shadow(0 0 6px rgba(255, 160, 60, 0.5));
+  animation: hca-prot-from-bl 1.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  filter: drop-shadow(0 0 10px rgba(255, 160, 60, 0.6));
 }
 .hca-protein-cranial {
-  animation: hca-prot-from-tr 1.2s ease-in-out forwards;
-  filter: drop-shadow(0 0 6px rgba(100, 180, 255, 0.5));
+  animation: hca-prot-from-tr 1.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  filter: drop-shadow(0 0 10px rgba(100, 180, 255, 0.6));
 }
 
 /* Start positions match the corner cell CSS positions:
@@ -249,13 +249,13 @@
    SHARED KEYFRAMES
    ================================================================= */
 @keyframes hca-soft-in {
-  from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.88); }
   to   { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }
 }
 
 @keyframes hca-flash-in {
-  0%   { opacity: 0; filter: brightness(2.5); }
-  40%  { opacity: 0.65; filter: brightness(1.4); }
+  0%   { opacity: 0; filter: brightness(2); }
+  50%  { opacity: 0.6; filter: brightness(1.3); }
   100% { opacity: 0.55; filter: brightness(1); }
 }
 
@@ -273,7 +273,7 @@
     --tcell-size: clamp(50px, 12vw, 90px);
     --orbit-diameter: clamp(200px, 50vw, 380px);
     --corner-size: clamp(80px, 22vw, 160px);
-    --protein-size: clamp(50px, 12vw, 100px);
+    --protein-size: clamp(100px, 24vw, 200px);
   }
 }
 
@@ -283,7 +283,7 @@
     --tcell-size: 44px;
     --orbit-diameter: 180px;
     --corner-size: 70px;
-    --protein-size: 44px;
+    --protein-size: 80px;
   }
 
   .hca-caudal {
