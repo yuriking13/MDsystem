@@ -742,18 +742,18 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="public-main">
-        {/* Полноэкранный Hero блок с интерактивными изображениями */}
-        <FullscreenHero
-          badge={t.trustLogosTitle}
-          title={t.hero.title}
-          subtitle={t.hero.description}
-          ctaText={t.hero.primaryAction}
-          ctaLink="/register"
-          secondaryCtaText={t.hero.secondaryAction}
-          secondaryCtaLink="#features"
-        />
+      {/* Полноэкранный Hero блок вне контейнера */}
+      <FullscreenHero
+        badge={t.trustLogosTitle}
+        title={t.hero.title}
+        subtitle={t.hero.description}
+        ctaText={t.hero.primaryAction}
+        ctaLink="/register"
+        secondaryCtaText={t.hero.secondaryAction}
+        secondaryCtaLink="#features"
+      />
 
+      <main className="public-main">
         <section
           id="features"
           className="public-section"

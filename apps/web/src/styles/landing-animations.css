@@ -431,14 +431,13 @@ html {
   position: relative;
   height: calc(100vh - 65px);
   height: calc(100dvh - 65px);
-  width: 100vw;
-  margin-left: calc(50% - 50vw);
-  margin-top: 0;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   padding: 0;
+  margin: 0;
 }
 
 /* Фоновая галерея изображений */
