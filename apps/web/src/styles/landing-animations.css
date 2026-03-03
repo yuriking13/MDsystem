@@ -429,9 +429,9 @@ html {
 
 .fullscreen-hero {
   position: relative;
-  top: 55%;
-  left: 60%;
-  transform: translate(-50%, -50%);
+  height: calc(100vh - 65px);
+  height: calc(100dvh - 65px);
+  width: 100%;
   overflow: hidden;
   padding: 0;
   margin: 0;
@@ -440,9 +440,9 @@ html {
 /* ---- Визуальная часть: сфера по центру-низу ---- */
 .fullscreen-hero-visual {
   position: absolute;
-  width: clamp(520px, 62vw, 1100px);
-  height: auto;
-  transform: translateX(-50%);
+  top: 55%;
+  left: 60%;
+  transform: translate(-50%, -50%);
   z-index: 0;
   pointer-events: none;
   display: flex;
