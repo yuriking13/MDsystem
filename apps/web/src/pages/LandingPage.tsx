@@ -37,10 +37,13 @@ type LandingContent = {
   };
   hero: {
     title: string;
+    subtitle: string;
     description: string;
-    primaryAction: string;
-    secondaryAction: string;
-    mockupAlt: string;
+    readMore: string;
+    metaLeft: string;
+    metaCenter: string;
+    nextSection: string;
+    ctaLabel: string;
   };
   trustLogosTitle: string;
   featuresIntro: {
@@ -143,12 +146,15 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       closeMainMenu: "Close main menu",
     },
     hero: {
-      title: "Your research and document workflow in one MDsystem workspace",
+      title: "Research\nworkspace",
+      subtitle: "We create intelligent research & document workflows",
       description:
-        "MDsystem helps teams search literature, map citation relationships, and produce publication-ready documents with AI support.",
-      primaryAction: "Create workspace",
-      secondaryAction: "Pricing & FAQ",
-      mockupAlt: "MDsystem dashboard overview",
+        "An AI-powered platform that helps teams search literature, map citation relationships, and produce publication-ready documents. Our results speak for themselves.",
+      readMore: "READ MORE",
+      metaLeft: "Multi-source search across databases",
+      metaCenter: "AI-powered citation analysis",
+      nextSection: "Features that drive research forward",
+      ctaLabel: "Get started",
     },
     trustLogosTitle: "Built with a modern tech stack and integrations",
     featuresIntro: {
@@ -385,12 +391,15 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       closeMainMenu: "Закрыть главное меню",
     },
     hero: {
-      title: "Исследования и документы в едином рабочем пространстве MDsystem",
+      title: "Пространство\nисследований",
+      subtitle: "Создаём интеллектуальные рабочие процессы для науки",
       description:
-        "MDsystem помогает командам искать литературу, строить граф цитирования и готовить документы к публикации с поддержкой AI.",
-      primaryAction: "Создать workspace",
-      secondaryAction: "Тарифы и FAQ",
-      mockupAlt: "Обзор панели MDsystem",
+        "AI-платформа, которая помогает командам искать литературу, строить граф цитирования и готовить документы к публикации. Результаты говорят сами за себя.",
+      readMore: "ПОДРОБНЕЕ",
+      metaLeft: "Мульти-источниковый поиск по базам данных",
+      metaCenter: "AI-анализ цитирования",
+      nextSection: "Возможности для исследований",
+      ctaLabel: "Начать",
     },
     trustLogosTitle: "Современный стек и интеграции платформы",
     featuresIntro: {
@@ -742,15 +751,20 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Полноэкранный Hero блок вне контейнера */}
+      {/* Полноэкранный Hero блок — editorial multi-zone layout */}
       <FullscreenHero
-        badge={t.trustLogosTitle}
         title={t.hero.title}
-        subtitle={t.hero.description}
-        ctaText={t.hero.primaryAction}
+        subtitle={t.hero.subtitle}
+        description={t.hero.description}
+        ctaText={t.hero.ctaLabel}
         ctaLink="/register"
-        secondaryCtaText={t.hero.secondaryAction}
-        secondaryCtaLink="#features"
+        readMoreText={t.hero.readMore}
+        readMoreLink="#features"
+        metaLeft={t.hero.metaLeft}
+        metaCenter={t.hero.metaCenter}
+        nextSectionTitle={t.hero.nextSection}
+        slideNumber="01"
+        verticalLinks={["Features", "Pricing", "FAQ", "Contact"]}
       />
 
       <main className="public-main">
