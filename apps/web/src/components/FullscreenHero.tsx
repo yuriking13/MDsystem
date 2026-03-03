@@ -1,5 +1,4 @@
 import React from "react";
-import HeroCellAnimation from "./HeroCellAnimation";
 
 interface FullscreenHeroProps {
   title: string;
@@ -11,9 +10,12 @@ interface FullscreenHeroProps {
   badge?: string;
 }
 
+const TCELL_IMG =
+  "https://storage.yandexcloud.net/scentiaiterpublic/landing/t-cell.png";
+
 /**
- * Полноэкранный Hero блок с анимированной клеточной сценой:
- * здоровая клетка → атака → иммунный ответ → цикл
+ * Полноэкранный Hero блок — минималистичный дизайн
+ * с крупным изображением T-клетки справа и текстом слева.
  */
 export default function FullscreenHero({
   title,
@@ -26,10 +28,7 @@ export default function FullscreenHero({
 }: FullscreenHeroProps) {
   return (
     <section className="fullscreen-hero">
-      {/* Анимированная клеточная сцена */}
-      <HeroCellAnimation />
-
-      {/* Основной контент - центрированный */}
+      {/* Текстовая часть — слева */}
       <div className="fullscreen-hero-content">
         <div className="fullscreen-hero-inner">
           {badge && <span className="hero-badge">{badge}</span>}
@@ -54,12 +53,24 @@ export default function FullscreenHero({
         </div>
       </div>
 
+      {/* Изображение T-клетки — справа */}
+      <div className="fullscreen-hero-visual">
+        <img
+          src={TCELL_IMG}
+          alt=""
+          className="hero-sphere"
+          loading="eager"
+          draggable={false}
+        />
+      </div>
+
+      {/* Нижний градиент затемнения для перехода к следующей секции */}
+      <div className="hero-bottom-fade" aria-hidden="true" />
+
       {/* Индикатор скролла */}
       <div className="hero-scroll-indicator">
-        <div className="scroll-mouse">
-          <div className="scroll-wheel"></div>
-        </div>
-        <span className="scroll-text">Прокрутите вниз</span>
+        <span className="scroll-text">СКРОЛЛИТЕ ВНИЗ</span>
+        <span className="scroll-chevron">&#8964;</span>
       </div>
     </section>
   );
