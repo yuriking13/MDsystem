@@ -440,18 +440,15 @@ html {
 /* ---- Визуальная часть: сфера по центру-низу ---- */
 .fullscreen-hero-visual {
   position: absolute;
-  top: 52%;
-  right: -6%;
-  transform: translateY(-50%);
+  bottom: -30%;
+  left: 55%;
+  transform: translateX(-50%);
   z-index: 0;
   pointer-events: none;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
 }
 
 .hero-sphere {
-  width: clamp(520px, 48vw, 760px);
+  width: clamp(550px, 65vw, 1100px);
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   background: radial-gradient(
@@ -473,10 +470,10 @@ html {
 /* ---- Текстовая часть (сверху-слева, поверх сферы) ---- */
 .fullscreen-hero-content {
   position: absolute;
-  top: clamp(2.5rem, 10vh, 7rem);
-  left: clamp(2.5rem, 7vw, 9rem);
+  top: clamp(3rem, 12vh, 8rem);
+  left: clamp(3rem, 9vw, 11rem);
   z-index: 2;
-  max-width: 460px;
+  max-width: 520px;
   text-align: left;
 }
 
@@ -496,16 +493,16 @@ html {
 
 .hero-title {
   font-size: clamp(2.5rem, 5.5vw, 4.5rem);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.08;
   margin: 0 0 1.5rem;
-  color: rgba(255, 255, 255, 0.92);
+  color: #ffffff;
 }
 
 .hero-subtitle {
   font-size: clamp(0.95rem, 1.8vw, 1.2rem);
   line-height: 1.65;
-  color: rgba(255, 255, 255, 0.46);
+  color: rgba(255, 255, 255, 0.5);
   margin: 0 0 2.5rem;
   max-width: 400px;
 }
@@ -600,18 +597,14 @@ html {
 /* ---- Адаптивность ---- */
 @media (max-width: 1024px) {
   .fullscreen-hero-content {
-    top: clamp(2rem, 7vh, 3.5rem);
+    top: clamp(2rem, 7vh, 3rem);
     left: 2rem;
     right: 2rem;
     max-width: none;
   }
 
   .hero-sphere {
-    width: clamp(420px, 62vw, 640px);
-  }
-
-  .fullscreen-hero-visual {
-    right: -10%;
+    width: clamp(420px, 70vw, 760px);
   }
 }
 
@@ -640,11 +633,7 @@ html {
   }
 
   .hero-sphere {
-    width: clamp(320px, 82vw, 520px);
-  }
-
-  .fullscreen-hero-visual {
-    right: -18%;
+    width: clamp(320px, 82vw, 560px);
   }
 }
 
@@ -654,12 +643,7 @@ html {
   }
 
   .hero-sphere {
-    width: 96vw;
-  }
-
-  .fullscreen-hero-visual {
-    top: 58%;
-    right: -24%;
+    width: 92vw;
   }
 }
 
