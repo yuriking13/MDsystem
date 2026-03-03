@@ -429,9 +429,9 @@ html {
 
 .fullscreen-hero {
   position: relative;
-  height: calc(100vh - 65px);
-  height: calc(100dvh - 65px);
-  width: 100%;
+  top: 55%;
+  left: 60%;
+  transform: translate(-50%, -50%);
   overflow: hidden;
   padding: 0;
   margin: 0;
@@ -440,8 +440,8 @@ html {
 /* ---- Визуальная часть: сфера по центру-низу ---- */
 .fullscreen-hero-visual {
   position: absolute;
-  bottom: -8%;
-  left: 50%;
+  width: clamp(520px, 62vw, 1100px);
+  height: auto;
   transform: translateX(-50%);
   z-index: 0;
   pointer-events: none;
@@ -473,8 +473,8 @@ html {
 /* ---- Текстовая часть (сверху-слева, поверх сферы) ---- */
 .fullscreen-hero-content {
   position: absolute;
-  top: clamp(2rem, 8vh, 6rem);
-  left: clamp(2rem, 6vw, 8rem);
+  top: clamp(3rem, 12vh, 8rem);
+  left: clamp(3rem, 9vw, 11rem);
   z-index: 2;
   max-width: 520px;
   text-align: left;
@@ -600,26 +600,22 @@ html {
 /* ---- Адаптивность ---- */
 @media (max-width: 1024px) {
   .fullscreen-hero-content {
-    top: clamp(1.5rem, 5vh, 3rem);
+    top: clamp(2rem, 7vh, 3rem);
     left: 2rem;
     right: 2rem;
     max-width: none;
   }
 
   .hero-sphere {
-    width: clamp(350px, 60vw, 550px);
-  }
-
-  .fullscreen-hero-visual {
-    bottom: -5%;
+    width: clamp(420px, 70vw, 760px);
   }
 }
 
 @media (max-width: 768px) {
   .fullscreen-hero-content {
     top: 1.5rem;
-    left: 1.5rem;
-    right: 1.5rem;
+    left: 1.25rem;
+    right: 1.25rem;
   }
 
   .hero-title {
@@ -640,11 +636,7 @@ html {
   }
 
   .hero-sphere {
-    width: clamp(280px, 75vw, 420px);
-  }
-
-  .fullscreen-hero-visual {
-    bottom: -3%;
+    width: clamp(320px, 82vw, 560px);
   }
 }
 
@@ -654,11 +646,7 @@ html {
   }
 
   .hero-sphere {
-    width: 85vw;
-  }
-
-  .fullscreen-hero-visual {
-    bottom: 0;
+    width: 92vw;
   }
 }
 
