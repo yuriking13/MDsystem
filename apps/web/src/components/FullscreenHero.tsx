@@ -10,12 +10,9 @@ interface FullscreenHeroProps {
   badge?: string;
 }
 
-const TCELL_IMG =
-  "https://storage.yandexcloud.net/scentiaiterpublic/landing/t-cell.png";
-
 /**
- * Полноэкранный Hero блок — минималистичный дизайн
- * с крупным изображением T-клетки справа и текстом слева.
+ * Полноэкранный Hero блок — минималистичный дизайн.
+ * Круг-плейсхолдер по центру-низу, текст сверху-слева.
  */
 export default function FullscreenHero({
   title,
@@ -28,15 +25,9 @@ export default function FullscreenHero({
 }: FullscreenHeroProps) {
   return (
     <section className="fullscreen-hero">
-      {/* Сфера — крупная, по центру-низу (фоновый слой) */}
+      {/* Круг-плейсхолдер — по центру-низу */}
       <div className="fullscreen-hero-visual">
-        <img
-          src={TCELL_IMG}
-          alt=""
-          className="hero-sphere"
-          loading="eager"
-          draggable={false}
-        />
+        <div className="hero-sphere" aria-hidden="true" />
       </div>
 
       {/* Текстовая часть — сверху-слева, поверх сферы */}

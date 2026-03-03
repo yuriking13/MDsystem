@@ -452,12 +452,22 @@ html {
 
 .hero-sphere {
   width: clamp(420px, 52vw, 820px);
-  height: auto;
-  object-fit: contain;
-  user-select: none;
-  -webkit-user-drag: none;
-  filter: drop-shadow(0 0 120px rgba(100, 200, 255, 0.08));
-  opacity: 0.9;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 38% 35%,
+    rgba(60, 60, 60, 0.9) 0%,
+    rgba(30, 30, 30, 0.95) 45%,
+    rgba(10, 10, 10, 1) 75%,
+    #000000 100%
+  );
+  box-shadow:
+    inset -40px -30px 80px rgba(0, 0, 0, 0.8),
+    inset 20px 15px 60px rgba(255, 255, 255, 0.04),
+    0 0 120px rgba(100, 200, 255, 0.06),
+    0 0 60px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  opacity: 0.95;
 }
 
 /* ---- Текстовая часть (сверху-слева, поверх сферы) ---- */
