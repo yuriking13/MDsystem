@@ -424,7 +424,7 @@ html {
 
 /* =============================================================================
    Fullscreen Hero Block
-   Минималистичный hero: текст слева, крупная сфера справа
+   Крупная сфера по центру-низу, текст сверху-слева с наложением
    ============================================================================= */
 
 .fullscreen-hero {
@@ -432,26 +432,42 @@ html {
   height: calc(100vh - 65px);
   height: calc(100dvh - 65px);
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   overflow: hidden;
-  padding: 0 clamp(2rem, 6vw, 8rem);
+  padding: 0;
   margin: 0;
-  gap: 2rem;
 }
 
-/* ---- Текстовая часть (слева) ---- */
+/* ---- Визуальная часть: сфера по центру-низу ---- */
+.fullscreen-hero-visual {
+  position: absolute;
+  bottom: -8%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.hero-sphere {
+  width: clamp(420px, 52vw, 820px);
+  height: auto;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 0 120px rgba(100, 200, 255, 0.08));
+  opacity: 0.9;
+}
+
+/* ---- Текстовая часть (сверху-слева, поверх сферы) ---- */
 .fullscreen-hero-content {
-  position: relative;
+  position: absolute;
+  top: clamp(2rem, 8vh, 6rem);
+  left: clamp(2rem, 6vw, 8rem);
   z-index: 2;
-  flex: 0 1 520px;
   max-width: 520px;
   text-align: left;
-}
-
-.fullscreen-hero-inner {
-  /* без анимации */
 }
 
 .hero-badge {
@@ -469,7 +485,7 @@ html {
 }
 
 .hero-title {
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: clamp(2.5rem, 5.5vw, 4.5rem);
   font-weight: 700;
   line-height: 1.08;
   margin: 0 0 1.5rem;
@@ -477,11 +493,11 @@ html {
 }
 
 .hero-subtitle {
-  font-size: clamp(1rem, 2vw, 1.25rem);
-  line-height: 1.6;
-  color: rgba(255, 255, 255, 0.55);
+  font-size: clamp(0.95rem, 1.8vw, 1.2rem);
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.5);
   margin: 0 0 2.5rem;
-  max-width: 440px;
+  max-width: 400px;
 }
 
 .hero-actions {
@@ -494,13 +510,13 @@ html {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 2rem;
-  font-size: 1rem;
+  padding: 0.875rem 1.75rem;
+  font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
   border-radius: 12px;
   transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-  min-width: 160px;
+  min-width: 150px;
 }
 
 .hero-btn-primary {
@@ -527,39 +543,17 @@ html {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* ---- Визуальная часть: сфера (справа) ---- */
-.fullscreen-hero-visual {
-  position: relative;
-  z-index: 1;
-  flex: 0 1 55%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  pointer-events: none;
-}
-
-.hero-sphere {
-  width: clamp(320px, 42vw, 700px);
-  height: auto;
-  object-fit: contain;
-  user-select: none;
-  -webkit-user-drag: none;
-  filter: drop-shadow(0 0 80px rgba(100, 200, 255, 0.12));
-  opacity: 0.85;
-}
-
 /* ---- Нижний градиент затемнения ---- */
 .hero-bottom-fade {
   position: absolute;
   bottom: 0;
   left: 0;
   width: 100%;
-  height: 30%;
+  height: 35%;
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    rgba(0, 0, 0, 0.7) 60%,
+    rgba(0, 0, 0, 0.6) 50%,
     #000000 100%
   );
   z-index: 3;
@@ -569,7 +563,7 @@ html {
 /* ---- Индикатор скролла ---- */
 .hero-scroll-indicator {
   position: absolute;
-  bottom: 2rem;
+  bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -595,42 +589,27 @@ html {
 
 /* ---- Адаптивность ---- */
 @media (max-width: 1024px) {
-  .fullscreen-hero {
-    flex-direction: column;
-    justify-content: center;
-    text-align: center;
-    padding: 2rem;
-    gap: 1.5rem;
-  }
-
   .fullscreen-hero-content {
-    text-align: center;
-    max-width: 600px;
-    flex: none;
-  }
-
-  .hero-subtitle {
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .hero-actions {
-    justify-content: center;
-  }
-
-  .fullscreen-hero-visual {
-    flex: none;
-    height: auto;
+    top: clamp(1.5rem, 5vh, 3rem);
+    left: 2rem;
+    right: 2rem;
+    max-width: none;
   }
 
   .hero-sphere {
-    width: clamp(220px, 50vw, 400px);
+    width: clamp(350px, 60vw, 550px);
+  }
+
+  .fullscreen-hero-visual {
+    bottom: -5%;
   }
 }
 
 @media (max-width: 768px) {
-  .fullscreen-hero {
-    padding: 1.5rem;
+  .fullscreen-hero-content {
+    top: 1.5rem;
+    left: 1.5rem;
+    right: 1.5rem;
   }
 
   .hero-title {
@@ -638,7 +617,7 @@ html {
   }
 
   .hero-subtitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .hero-actions {
@@ -651,17 +630,25 @@ html {
   }
 
   .hero-sphere {
-    width: clamp(180px, 60vw, 320px);
+    width: clamp(280px, 75vw, 420px);
+  }
+
+  .fullscreen-hero-visual {
+    bottom: -3%;
   }
 }
 
 @media (max-width: 480px) {
   .hero-scroll-indicator {
-    bottom: 1rem;
+    bottom: 0.75rem;
   }
 
   .hero-sphere {
-    width: 70vw;
+    width: 85vw;
+  }
+
+  .fullscreen-hero-visual {
+    bottom: 0;
   }
 }
 

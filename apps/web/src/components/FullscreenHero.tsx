@@ -28,32 +28,7 @@ export default function FullscreenHero({
 }: FullscreenHeroProps) {
   return (
     <section className="fullscreen-hero">
-      {/* Текстовая часть — слева */}
-      <div className="fullscreen-hero-content">
-        <div className="fullscreen-hero-inner">
-          {badge && <span className="hero-badge">{badge}</span>}
-
-          <h1 className="hero-title">{title}</h1>
-
-          <p className="hero-subtitle">{subtitle}</p>
-
-          <div className="hero-actions">
-            <a href={ctaLink} className="hero-btn hero-btn-primary">
-              {ctaText}
-            </a>
-            {secondaryCtaText && secondaryCtaLink && (
-              <a
-                href={secondaryCtaLink}
-                className="hero-btn hero-btn-secondary"
-              >
-                {secondaryCtaText}
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Изображение T-клетки — справа */}
+      {/* Сфера — крупная, по центру-низу (фоновый слой) */}
       <div className="fullscreen-hero-visual">
         <img
           src={TCELL_IMG}
@@ -62,6 +37,26 @@ export default function FullscreenHero({
           loading="eager"
           draggable={false}
         />
+      </div>
+
+      {/* Текстовая часть — сверху-слева, поверх сферы */}
+      <div className="fullscreen-hero-content">
+        {badge && <span className="hero-badge">{badge}</span>}
+
+        <h1 className="hero-title">{title}</h1>
+
+        <p className="hero-subtitle">{subtitle}</p>
+
+        <div className="hero-actions">
+          <a href={ctaLink} className="hero-btn hero-btn-primary">
+            {ctaText}
+          </a>
+          {secondaryCtaText && secondaryCtaLink && (
+            <a href={secondaryCtaLink} className="hero-btn hero-btn-secondary">
+              {secondaryCtaText}
+            </a>
+          )}
+        </div>
       </div>
 
       {/* Нижний градиент затемнения для перехода к следующей секции */}
