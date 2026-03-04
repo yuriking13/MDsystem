@@ -99,7 +99,12 @@ export default function FullscreenHero({
     <section className={`fullscreen-hero ${heroLightClass}`}>
       {/* Сфера — по центру, с наложением */}
       <div className="fullscreen-hero-visual">
-        <div className="hero-sphere" aria-hidden="true" />
+        <img
+          className="hero-sphere"
+          src="https://storage.yandexcloud.net/scentiaiterpublic/landing/Cell2.avif"
+          alt=""
+          aria-hidden="true"
+        />
       </div>
 
       {/* Watermark — крупная полупрозрачная цифра */}
