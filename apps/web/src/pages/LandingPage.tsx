@@ -184,6 +184,36 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
         description:
           "Use role-based access, centralized docs, and admin controls for secure collaborative work.",
       },
+      {
+        title: "AI writing assistant",
+        description:
+          "Improve text in academic style with AI, auto-generate tables and charts from selections, create scientific illustrations and look up full texts by DOI/PMID.",
+      },
+      {
+        title: "Academic document editor",
+        description:
+          "Full-featured WYSIWYG editor with page layout, inline citations, document outline, comments, track changes, and embedded charts.",
+      },
+      {
+        title: "Peer review & publishing",
+        description:
+          "Complete editorial workflow — manuscript submission, reviewer assignment, structured peer review, timeline tracking, and one-click publication.",
+      },
+      {
+        title: "Statistical analysis",
+        description:
+          "Create research statistics with 8 chart types, auto-recommended methods based on data classification, and embed charts directly into documents.",
+      },
+      {
+        title: "Document version control",
+        description:
+          "Automatic and manual versioning with full history, diff comparison, restore, and real-time WebSocket sync across the team.",
+      },
+      {
+        title: "Smart file management",
+        description:
+          "Upload and organize project files with S3-compatible storage. AI-powered metadata extraction, automatic DOI detection, and full-text conversion.",
+      },
     ],
     workflowRows: [
       {
@@ -428,6 +458,36 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
         title: "Управление проектом",
         description:
           "Ролевой доступ, централизованные документы и админ-инструменты для безопасной командной работы.",
+      },
+      {
+        title: "AI-ассистент написания",
+        description:
+          "Улучшение текста в академическом стиле с помощью ИИ, автогенерация таблиц и диаграмм, создание научных иллюстраций и поиск полных текстов по DOI/PMID.",
+      },
+      {
+        title: "Академический редактор",
+        description:
+          "Полнофункциональный WYSIWYG-редактор с настройкой страниц, встроенными цитатами, навигацией по оглавлению, комментариями и отслеживанием правок.",
+      },
+      {
+        title: "Рецензирование и публикация",
+        description:
+          "Полный редакционный цикл — подача рукописей, назначение рецензентов, структурированное рецензирование, хронология и публикация в один клик.",
+      },
+      {
+        title: "Статистический анализ",
+        description:
+          "Создание статистики с 8 типами диаграмм, авторекомендация статметодов по классификации данных и встраивание графиков в документы.",
+      },
+      {
+        title: "Версионирование документов",
+        description:
+          "Автоматическое и ручное версионирование с историей, сравнением, восстановлением и синхронизацией в реальном времени через WebSocket.",
+      },
+      {
+        title: "Умное управление файлами",
+        description:
+          "Загрузка и организация файлов проекта с S3-хранилищем. Извлечение метаданных с помощью ИИ, автоопределение DOI и конвертация полного текста.",
       },
     ],
     workflowRows: [
@@ -777,20 +837,16 @@ export default function LandingPage() {
             <h2>{t.featuresIntro.title}</h2>
             <p>{t.featuresIntro.description}</p>
           </div>
-          <div className="feature-with-illustration">
-            <div>
-              <div className="public-grid public-grid-2">
-                {t.featureCards.map((card) => (
-                  <article key={card.title} className="public-card">
-                    <h3>{card.title}</h3>
-                    <p>{card.description}</p>
-                  </article>
-                ))}
-              </div>
-            </div>
-            <div className="feature-illustration">
-              <InteractiveLandingIllustration variant="features" />
-            </div>
+          <div className="public-grid public-grid-3">
+            {t.featureCards.map((card) => (
+              <article key={card.title} className="public-card">
+                <h3>{card.title}</h3>
+                <p>{card.description}</p>
+              </article>
+            ))}
+          </div>
+          <div className="feature-illustration-full">
+            <InteractiveLandingIllustration variant="features" />
           </div>
         </section>
 
