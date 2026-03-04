@@ -468,10 +468,60 @@ html {
   box-shadow:
     inset -40px -30px 80px rgba(0, 0, 0, 0.8),
     inset 20px 15px 60px rgba(255, 255, 255, 0.06),
-    0 0 120px rgba(100, 200, 255, 0.05),
+    0 0 120px rgba(100, 200, 255, 0.04),
     0 0 80px rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.05);
   opacity: 0.95;
+  filter: brightness(0.82);
+  transition:
+    filter 0.45s ease,
+    box-shadow 0.45s ease,
+    opacity 0.45s ease;
+}
+
+.fullscreen-hero.hero-light-level-0 .hero-sphere {
+  filter: brightness(0.82);
+  box-shadow:
+    inset -40px -30px 80px rgba(0, 0, 0, 0.8),
+    inset 20px 15px 60px rgba(255, 255, 255, 0.04),
+    0 0 120px rgba(100, 200, 255, 0.03),
+    0 0 80px rgba(0, 0, 0, 0.65);
+}
+
+.fullscreen-hero.hero-light-level-1 .hero-sphere {
+  filter: brightness(0.9);
+  box-shadow:
+    inset -40px -30px 80px rgba(0, 0, 0, 0.78),
+    inset 22px 16px 64px rgba(255, 255, 255, 0.07),
+    0 0 130px rgba(134, 205, 255, 0.05),
+    0 0 90px rgba(184, 255, 58, 0.05);
+}
+
+.fullscreen-hero.hero-light-level-2 .hero-sphere {
+  filter: brightness(0.98);
+  box-shadow:
+    inset -38px -28px 78px rgba(0, 0, 0, 0.75),
+    inset 24px 18px 66px rgba(255, 255, 255, 0.09),
+    0 0 140px rgba(144, 212, 255, 0.07),
+    0 0 110px rgba(184, 255, 58, 0.08);
+}
+
+.fullscreen-hero.hero-light-level-3 .hero-sphere {
+  filter: brightness(1.06);
+  box-shadow:
+    inset -36px -26px 76px rgba(0, 0, 0, 0.72),
+    inset 26px 20px 68px rgba(255, 255, 255, 0.11),
+    0 0 160px rgba(152, 220, 255, 0.1),
+    0 0 130px rgba(184, 255, 58, 0.14);
+}
+
+.fullscreen-hero.hero-light-level-4 .hero-sphere {
+  filter: brightness(1.14);
+  box-shadow:
+    inset -34px -24px 74px rgba(0, 0, 0, 0.68),
+    inset 28px 22px 72px rgba(255, 255, 255, 0.13),
+    0 0 190px rgba(160, 230, 255, 0.12),
+    0 0 160px rgba(184, 255, 58, 0.2);
 }
 
 /* ---- Watermark — крупная полупрозрачная цифра ---- */
@@ -588,6 +638,9 @@ html {
   width: 8px;
   height: 8px;
   border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   background: rgba(255, 255, 255, 0.2);
   transition: background 0.3s ease;
 }
@@ -615,11 +668,72 @@ html {
   flex-shrink: 0;
 }
 
-/* Превью следующей секции — карточка справа внизу */
-.hero-next-preview {
-  position: relative;
-  width: 200px;
-  flex-shrink: 0;
+/* Слайдер карточек справа внизу */
+.hero-card-slider {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-left: auto;
+  width: min(360px, 100%);
+}
+
+.hero-card-viewport {
+  flex: 1;
+  overflow: hidden;
+}
+
+.hero-card-nav {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.hero-card-nav:hover {
+  border-color: rgba(184, 255, 58, 0.6);
+  background: rgba(184, 255, 58, 0.14);
+  color: #d8ff84;
+}
+
+.hero-preview-card {
+  width: 100%;
+  min-height: 124px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  padding: 0.9rem;
+  backdrop-filter: blur(6px);
+}
+
+.hero-preview-card--next {
+  animation: hero-card-in-next 0.28s ease;
+}
+
+.hero-preview-card--prev {
+  animation: hero-card-in-prev 0.28s ease;
+}
+
+.hero-preview-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .hero-next-number {
@@ -644,6 +758,28 @@ html {
   color: rgba(255, 255, 255, 0.5);
   margin: 0;
   line-height: 1.4;
+}
+
+@keyframes hero-card-in-next {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes hero-card-in-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 /* ---- CTA кнопка — круглая, лаймовая ---- */
@@ -752,8 +888,8 @@ html {
     display: none;
   }
 
-  .hero-next-preview {
-    display: none;
+  .hero-card-slider {
+    width: min(420px, 100%);
   }
 
   .hero-sphere {
@@ -792,6 +928,16 @@ html {
   .hero-meta--center {
     display: none;
   }
+
+  .hero-bottom-row {
+    align-items: stretch;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .hero-card-slider {
+    width: 100%;
+  }
 }
 
 @media (max-width: 480px) {
@@ -805,6 +951,11 @@ html {
 
   .hero-pagination {
     display: none;
+  }
+
+  .hero-card-nav {
+    width: 30px;
+    height: 30px;
   }
 
   .hero-watermark {

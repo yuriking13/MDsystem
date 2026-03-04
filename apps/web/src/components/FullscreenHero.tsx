@@ -1,4 +1,9 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
+
+type HeroCard = {
+  title: string;
+  description: string;
+};
 
 interface FullscreenHeroProps {
   /** Короткий крупный заголовок (1-2 слова на строку) */
@@ -21,6 +26,8 @@ interface FullscreenHeroProps {
   metaCenter?: string;
   /** Заголовок превью следующей секции */
   nextSectionTitle?: string;
+  /** Карточки для горизонтального переключения */
+  cards?: HeroCard[];
   /** Номер текущего слайда */
   slideNumber?: string;
   /** Вертикальные ссылки справа */
@@ -43,11 +50,53 @@ export default function FullscreenHero({
   metaLeft,
   metaCenter,
   nextSectionTitle,
+  cards = [],
   slideNumber = "01",
   verticalLinks = [],
 }: FullscreenHeroProps) {
+  // Если карточки не переданы, используем fallback из текущих hero-данных.
+  const resolvedCards = useMemo<HeroCard[]>(() => {
+    if (cards.length > 0) {
+      return cards;
+    }
+
+    return [
+      {
+        title: nextSectionTitle ?? "Feature Overview",
+        description,
+      },
+    ];
+  }, [cards, description, nextSectionTitle]);
+
+  const [activeCardIdx, setActiveCardIdx] = useState(0);
+  const [slideDirection, setSlideDirection] = useState<"next" | "prev">("next");
+
+  const safeMaxIndex = Math.max(resolvedCards.length - 1, 1);
+  const lightLevel = Math.round((activeCardIdx / safeMaxIndex) * 4);
+  const heroLightClass = `hero-light-level-${lightLevel}`;
+  const activeCard = resolvedCards[activeCardIdx] ?? resolvedCards[0];
+
+  const goPrevCard = () => {
+    setSlideDirection("prev");
+    setActiveCardIdx((current) =>
+      current === 0 ? resolvedCards.length - 1 : current - 1,
+    );
+  };
+
+  const goNextCard = () => {
+    setSlideDirection("next");
+    setActiveCardIdx((current) =>
+      current === resolvedCards.length - 1 ? 0 : current + 1,
+    );
+  };
+
+  const goToCard = (targetIndex: number) => {
+    setSlideDirection(targetIndex >= activeCardIdx ? "next" : "prev");
+    setActiveCardIdx(targetIndex);
+  };
+
   return (
-    <section className="fullscreen-hero">
+    <section className={`fullscreen-hero ${heroLightClass}`}>
       {/* Сфера — по центру, с наложением */}
       <div className="fullscreen-hero-visual">
         <div className="hero-sphere" aria-hidden="true" />
@@ -78,10 +127,16 @@ export default function FullscreenHero({
         <div className="hero-bottom-row">
           {/* Пагинация */}
           <div className="hero-pagination">
-            <span className="hero-dot hero-dot--active" />
-            <span className="hero-dot" />
-            <span className="hero-dot" />
-            <span className="hero-dot" />
+            {resolvedCards.map((card, idx) => (
+              <button
+                key={`${card.title}-${idx}`}
+                type="button"
+                className={`hero-dot ${idx === activeCardIdx ? "hero-dot--active" : ""}`}
+                aria-label={`Switch to card ${idx + 1}`}
+                aria-pressed={idx === activeCardIdx}
+                onClick={() => goToCard(idx)}
+              />
+            ))}
           </div>
 
           {/* Мета-лево */}
@@ -100,14 +155,39 @@ export default function FullscreenHero({
             </div>
           )}
 
-          {/* Превью следующей секции */}
-          {nextSectionTitle && (
-            <div className="hero-next-preview">
-              <div className="hero-next-number">02</div>
-              <div className="hero-next-image" aria-hidden="true" />
-              <p className="hero-next-label">{nextSectionTitle}</p>
+          {/* Карточки справа: рабочий слайдер с переключением влево/вправо */}
+          <div className="hero-card-slider" aria-label="Hero feature cards">
+            <button
+              type="button"
+              className="hero-card-nav hero-card-nav--prev"
+              onClick={goPrevCard}
+              aria-label="Previous card"
+            >
+              &#8249;
+            </button>
+
+            <div className="hero-card-viewport">
+              <article
+                key={`hero-card-${activeCardIdx}`}
+                className={`hero-preview-card hero-preview-card--${slideDirection}`}
+              >
+                <div className="hero-next-number">
+                  {String(activeCardIdx + 1).padStart(2, "0")}
+                </div>
+                <h3 className="hero-preview-title">{activeCard.title}</h3>
+                <p className="hero-next-label">{activeCard.description}</p>
+              </article>
             </div>
-          )}
+
+            <button
+              type="button"
+              className="hero-card-nav hero-card-nav--next"
+              onClick={goNextCard}
+              aria-label="Next card"
+            >
+              &#8250;
+            </button>
+          </div>
         </div>
       </div>
 

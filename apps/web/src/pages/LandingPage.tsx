@@ -823,6 +823,7 @@ export default function LandingPage() {
         metaLeft={t.hero.metaLeft}
         metaCenter={t.hero.metaCenter}
         nextSectionTitle={t.hero.nextSection}
+        cards={t.featureCards.slice(0, 6)}
         slideNumber="01"
         verticalLinks={["Features", "Pricing", "FAQ", "Contact"]}
       />
