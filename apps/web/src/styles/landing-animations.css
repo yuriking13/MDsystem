@@ -458,13 +458,20 @@ html {
   width: clamp(420px, 52vw, 820px);
   aspect-ratio: 1 / 1;
   border-radius: 50%;
-  background: radial-gradient(
-    circle at 38% 35%,
-    rgba(80, 80, 80, 0.9) 0%,
-    rgba(50, 50, 50, 0.95) 30%,
-    rgba(25, 25, 25, 1) 60%,
-    #0a0a0a 100%
-  );
+  background-color: #0a0a0a;
+  background-image:
+    radial-gradient(
+      circle at 34% 30%,
+      rgba(255, 255, 255, 0.12) 0%,
+      rgba(255, 255, 255, 0.02) 38%,
+      rgba(0, 0, 0, 0.22) 72%,
+      rgba(0, 0, 0, 0.45) 100%
+    ),
+    url("https://storage.yandexcloud.net/scentiaiterpublic/landing/Cell2.avif");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-blend-mode: screen, normal;
   box-shadow:
     inset -40px -30px 80px rgba(0, 0, 0, 0.8),
     inset 20px 15px 60px rgba(255, 255, 255, 0.06),
