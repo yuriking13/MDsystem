@@ -101,7 +101,7 @@ export default function FullscreenHero({
       <div className="fullscreen-hero-visual">
         <img
           className="hero-sphere"
-          src="https://storage.yandexcloud.net/scentiaiterpublic/landing/Cell2.avif"
+          src="https://storage.yandexcloud.net/scentiaiterpublic/landing/Cell2.png"
           alt=""
           aria-hidden="true"
         />
