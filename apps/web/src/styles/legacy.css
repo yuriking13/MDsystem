@@ -8,8 +8,8 @@
   /* ===== DARK THEME (Default) — Engraved Scientific Illustration ===== */
 
   /* Backgrounds — Pure black, like an etching plate */
-  --bg-primary: #000000;
-  --bg-secondary: rgba(5, 5, 5, 0.95);
+  --bg-primary: #0a1628;
+  --bg-secondary: rgba(13, 27, 42, 0.9);
   --bg-glass: rgba(8, 8, 8, 0.88);
   --bg-glass-light: rgba(14, 14, 14, 0.7);
   --bg-metal: linear-gradient(145deg, rgba(12, 12, 12, 0.95), rgba(4, 4, 4, 0.98));
@@ -23,17 +23,17 @@
   --border-glow: rgba(255, 255, 255, 0.3);
 
   /* Text — White/gray like etched lines on black plate */
-  --text-primary: #e8e8e8;
+  --text-primary: #e8f0ff;
   --text-secondary: #a0a0a0;
   --text-muted: #606060;
 
-  /* Accents — Monochrome white instead of blue */
-  --accent: #c8c8c8;
-  --accent-secondary: #999999;
-  --accent-gradient: linear-gradient(135deg, #d0d0d0, #909090);
-  --accent-gradient-hover: linear-gradient(135deg, #e0e0e0, #a0a0a0);
-  --accent-glow: rgba(255, 255, 255, 0.2);
-  --accent-glow-strong: rgba(255, 255, 255, 0.35);
+  /* Accents — scientific blue/violet */
+  --accent: #4b74ff;
+  --accent-secondary: #7c3aed;
+  --accent-gradient: linear-gradient(135deg, #4b74ff, #7c3aed);
+  --accent-gradient-hover: linear-gradient(135deg, #5b84ff, #8b4aff);
+  --accent-glow: rgba(75, 116, 255, 0.24);
+  --accent-glow-strong: rgba(124, 58, 237, 0.34);
   --accent-primary: var(--accent);
   --success: #10b981;
   --danger: #ef4444;
@@ -182,12 +182,12 @@
   --graph-node-pvalue: #fbbf24;
   --graph-node-default: #6b7280;
   --graph-cluster-default: #6366f1;
-  --graph-bg: #020202;
-  --graph-bg-fullscreen: #000000;
-  --graph-link-color: rgba(255, 255, 255, 0.12);
+  --graph-bg: #0b0f19;
+  --graph-bg-fullscreen: #050810;
+  --graph-link-color: rgba(100, 130, 180, 0.25);
 
   /* Graph Panel */
-  --graph-panel-bg: #050505;
+  --graph-panel-bg: #0f172a;
   --graph-canvas-bg-1: #030303;
   --graph-canvas-bg-2: #0a0a0a;
   --graph-grid-dot: #222222;
@@ -201,9 +201,9 @@
   --graph-toolbar-bg: rgba(5, 5, 5, 0.95);
   --graph-toolbar-border: rgba(255, 255, 255, 0.1);
 
-  /* Derived gradients — Monochrome */
-  --accent-gradient: linear-gradient(135deg, #d0d0d0, #909090);
-  --accent-gradient-hover: linear-gradient(135deg, #e0e0e0, #a0a0a0);
+  /* Derived gradients */
+  --accent-gradient: linear-gradient(135deg, #4b74ff, #7c3aed);
+  --accent-gradient-hover: linear-gradient(135deg, #5b84ff, #8b4aff);
 
   /* Animation speeds */
   --transition-fast: 0.1s;

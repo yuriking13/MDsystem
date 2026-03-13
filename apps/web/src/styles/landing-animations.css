@@ -482,28 +482,28 @@ html {
   filter:
     brightness(0.9)
     drop-shadow(0 0 85px rgba(134, 205, 255, 0.09))
-    drop-shadow(0 0 70px rgba(184, 255, 58, 0.08));
+    drop-shadow(0 0 70px rgba(94, 200, 255, 0.08));
 }
 
 .fullscreen-hero.hero-light-level-2 .hero-sphere {
   filter:
     brightness(0.98)
     drop-shadow(0 0 100px rgba(144, 212, 255, 0.12))
-    drop-shadow(0 0 85px rgba(184, 255, 58, 0.12));
+    drop-shadow(0 0 85px rgba(94, 200, 255, 0.12));
 }
 
 .fullscreen-hero.hero-light-level-3 .hero-sphere {
   filter:
     brightness(1.06)
     drop-shadow(0 0 120px rgba(152, 220, 255, 0.15))
-    drop-shadow(0 0 105px rgba(184, 255, 58, 0.17));
+    drop-shadow(0 0 105px rgba(94, 200, 255, 0.17));
 }
 
 .fullscreen-hero.hero-light-level-4 .hero-sphere {
   filter:
     brightness(1.14)
     drop-shadow(0 0 145px rgba(160, 230, 255, 0.2))
-    drop-shadow(0 0 130px rgba(184, 255, 58, 0.24));
+    drop-shadow(0 0 130px rgba(94, 200, 255, 0.24));
 }
 
 /* ---- Watermark — крупная полупрозрачная цифра ---- */
@@ -555,7 +555,7 @@ html {
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  color: rgba(184, 255, 58, 0.9);
+  color: rgba(94, 200, 255, 0.9);
 }
 
 .hero-title {
@@ -626,7 +626,7 @@ html {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: rgba(184, 255, 58, 0.95);
+  background: rgba(94, 200, 255, 0.95);
 }
 
 .hero-readmore {
@@ -635,13 +635,13 @@ html {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #b8ff3a;
+  color: #5ec8ff;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .hero-readmore:hover {
-  color: #d4ff7a;
+  color: #8adfff;
 }
 
 .hero-copy-group--next,
@@ -725,7 +725,7 @@ html {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #b8ff3a;
+  background: #5ec8ff;
   flex-shrink: 0;
 }
 
@@ -763,8 +763,8 @@ html {
 }
 
 .hero-card-nav:hover {
-  border-color: rgba(184, 255, 58, 0.6);
-  background: rgba(184, 255, 58, 0.14);
+  border-color: rgba(94, 200, 255, 0.6);
+  background: rgba(94, 200, 255, 0.14);
   color: #d8ff84;
 }
 
@@ -800,7 +800,7 @@ html {
 .hero-next-number {
   font-size: 0.7rem;
   font-weight: 700;
-  color: #b8ff3a;
+  color: #5ec8ff;
   letter-spacing: 0.1em;
   margin-bottom: 0.5rem;
 }
@@ -855,16 +855,16 @@ html {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: #b8ff3a;
+  background: #5ec8ff;
   color: #0a0a0a;
   text-decoration: none;
   transition: transform 0.25s ease, background 0.25s ease;
-  box-shadow: 0 4px 20px rgba(184, 255, 58, 0.25);
+  box-shadow: 0 4px 20px rgba(94, 200, 255, 0.25);
 }
 
 .hero-cta-circle:hover {
   transform: scale(1.08);
-  background: #c8ff5c;
+  background: #77d4ff;
 }
 
 /* ---- Вертикальная навигация — правый край ---- */
@@ -892,7 +892,7 @@ html {
 }
 
 .hero-vertical-link:hover {
-  color: #b8ff3a;
+  color: #5ec8ff;
 }
 
 /* ---- Нижний градиент затемнения ---- */
