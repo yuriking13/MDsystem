@@ -1508,7 +1508,7 @@
 .public-main {
   width: min(1240px, 100% - 36px);
   margin: 0 auto;
-  padding: 20px 0 72px;
+  padding: 28px 0 84px;
 }
 
 .public-hero {
@@ -1585,26 +1585,154 @@
   gap: 8px;
 }
 
-.public-section {
-  margin-top: 42px;
+.public-main > .public-section {
+  margin-top: clamp(2rem, 4vw, 3.2rem);
+  padding: clamp(1.25rem, 3vw, 2.4rem);
+  border-radius: 24px;
+  border: 1px solid color-mix(in srgb, var(--public-border) 88%, transparent);
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--public-accent) 9%, transparent), transparent 42%),
+    radial-gradient(circle at 100% 100%, rgba(255, 255, 255, 0.015), transparent 46%),
+    linear-gradient(170deg, color-mix(in srgb, var(--public-surface-strong) 92%, transparent), color-mix(in srgb, var(--public-surface) 94%, transparent));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 22px 44px rgba(0, 0, 0, 0.24);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    border-color 0.35s ease,
+    box-shadow 0.35s ease,
+    transform 0.35s ease;
+}
+
+.public-main > .public-section::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--public-accent) 66%, transparent),
+    transparent
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.public-main > .public-section.section-active {
+  border-color: color-mix(in srgb, var(--public-accent) 48%, var(--public-border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.09),
+    0 26px 54px rgba(0, 0, 0, 0.3),
+    0 0 44px color-mix(in srgb, var(--public-accent) 12%, transparent);
+}
+
+[data-section="features"] {
+  background:
+    radial-gradient(circle at 14% 8%, rgba(94, 200, 255, 0.14), transparent 42%),
+    linear-gradient(168deg, rgba(22, 38, 66, 0.84), rgba(13, 23, 43, 0.72));
+}
+
+[data-section="workflow"] {
+  background:
+    radial-gradient(circle at 82% 14%, rgba(145, 106, 255, 0.14), transparent 45%),
+    linear-gradient(165deg, rgba(18, 29, 52, 0.85), rgba(12, 20, 40, 0.74));
+}
+
+[data-section="testimonials"] {
+  background:
+    radial-gradient(circle at 16% 12%, rgba(255, 194, 94, 0.14), transparent 42%),
+    linear-gradient(166deg, rgba(35, 33, 57, 0.85), rgba(17, 21, 38, 0.76));
+}
+
+[data-section="stats"] {
+  background:
+    radial-gradient(circle at 78% 22%, rgba(97, 232, 190, 0.12), transparent 44%),
+    linear-gradient(164deg, rgba(16, 38, 50, 0.84), rgba(10, 23, 33, 0.76));
+}
+
+[data-section="sciences"] {
+  background:
+    radial-gradient(circle at 86% 20%, rgba(124, 177, 255, 0.14), transparent 44%),
+    linear-gradient(168deg, rgba(21, 30, 62, 0.86), rgba(13, 20, 42, 0.76));
+}
+
+[data-section="pricing"] {
+  background:
+    radial-gradient(circle at 18% 8%, rgba(110, 255, 201, 0.11), transparent 42%),
+    linear-gradient(166deg, rgba(20, 42, 42, 0.84), rgba(9, 23, 30, 0.75));
+}
+
+[data-section="faq"] {
+  background:
+    radial-gradient(circle at 16% 10%, rgba(153, 178, 255, 0.13), transparent 42%),
+    linear-gradient(166deg, rgba(22, 29, 56, 0.84), rgba(10, 16, 35, 0.76));
+}
+
+[data-section="contact"] {
+  background:
+    radial-gradient(circle at 80% 20%, rgba(255, 173, 94, 0.15), transparent 42%),
+    linear-gradient(166deg, rgba(37, 40, 67, 0.86), rgba(17, 20, 41, 0.76));
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  gap: clamp(1rem, 2.6vw, 1.9rem);
+  align-items: center;
+}
+
+.light-theme .public-main > .public-section,
+[data-theme="light"] .public-main > .public-section {
+  border-color: color-mix(in srgb, var(--public-border) 95%, transparent);
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--public-accent) 8%, transparent), transparent 46%),
+    linear-gradient(166deg, rgba(255, 255, 255, 0.9), rgba(242, 248, 255, 0.78));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    0 18px 34px rgba(18, 26, 43, 0.1);
+}
+
+.light-theme .public-main > .public-section.section-active,
+[data-theme="light"] .public-main > .public-section.section-active {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 20px 38px rgba(18, 26, 43, 0.14),
+    0 0 0 1px color-mix(in srgb, var(--public-accent) 18%, transparent);
 }
 
 .public-section-header h1,
 .public-section-header h2 {
   margin: 0;
-  font-size: clamp(28px, 4vw, 36px);
+  font-size: clamp(30px, 4.5vw, 48px);
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    rgba(229, 242, 255, 0.95) 52%,
+    color-mix(in srgb, var(--public-accent) 52%, #ffffff) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 .public-section-header p {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
   color: var(--public-text-muted);
-  max-width: 760px;
+  max-width: 70ch;
+  line-height: 1.72;
+  font-size: clamp(0.98rem, 1.5vw, 1.06rem);
 }
 
 .public-grid {
   display: grid;
-  gap: 18px;
-  margin-top: 22px;
+  gap: 1.1rem;
+  margin-top: 1.45rem;
 }
 
 .public-grid-2 {
@@ -1616,7 +1744,8 @@
 }
 
 .public-card {
-  padding: 22px;
+  padding: clamp(1rem, 2.1vw, 1.35rem);
+  border-radius: 16px;
   transition:
     transform 0.25s ease,
     border-color 0.25s ease,
@@ -1653,12 +1782,147 @@
 
 .public-card h3 {
   margin: 0 0 10px;
+  font-size: clamp(1rem, 1.4vw, 1.18rem);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
 .public-card p {
   margin: 0;
   color: var(--public-text-muted);
-  line-height: 1.55;
+  line-height: 1.62;
+}
+
+.public-main .feature-with-illustration {
+  margin-bottom: 0;
+  gap: clamp(1rem, 2.8vw, 2rem);
+  align-items: stretch;
+}
+
+.public-main .feature-illustration,
+.public-main .feature-illustration-full {
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--public-border) 86%, transparent);
+  background:
+    radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--public-accent) 12%, transparent), transparent 45%),
+    linear-gradient(165deg, color-mix(in srgb, var(--public-surface-strong) 94%, transparent), color-mix(in srgb, var(--public-surface) 92%, transparent));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    0 20px 40px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.public-main .feature-illustration {
+  height: clamp(300px, 38vw, 420px);
+}
+
+.public-main .feature-illustration-full {
+  height: clamp(320px, 34vw, 410px);
+  margin-top: 1.4rem;
+}
+
+[data-section="features"] .public-grid-3 {
+  grid-template-columns: 1.1fr 0.9fr 1fr;
+}
+
+[data-section="features"] .public-card:first-child {
+  grid-column: span 2;
+}
+
+[data-section="workflow"] .public-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+[data-section="workflow"] .public-list {
+  margin-top: 0.15rem;
+  padding: 0;
+  list-style: none;
+  gap: 0.5rem;
+}
+
+[data-section="workflow"] .public-list li {
+  position: relative;
+  padding-left: 1rem;
+  color: color-mix(in srgb, var(--public-text) 86%, transparent);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+[data-section="workflow"] .public-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.52rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--public-accent) 86%, #ffffff 14%);
+}
+
+[data-section="testimonials"] .public-card {
+  padding-top: 2.1rem;
+}
+
+[data-section="testimonials"] .public-card::before {
+  content: "\201C";
+  position: absolute;
+  top: 0.55rem;
+  left: 0.8rem;
+  font-size: 2.2rem;
+  line-height: 1;
+  color: color-mix(in srgb, var(--public-accent) 45%, transparent);
+  pointer-events: none;
+}
+
+[data-section="testimonials"] .public-face-role {
+  margin-top: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--public-accent) 75%, #ffffff 25%) !important;
+}
+
+[data-section="stats"] .public-card {
+  text-align: center;
+  justify-content: center;
+}
+
+[data-section="stats"] .public-price {
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 0.4rem;
+  background: linear-gradient(
+    145deg,
+    #ffffff 0%,
+    color-mix(in srgb, var(--public-accent) 70%, #ffffff 30%) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-section="sciences"] .public-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+[data-section="sciences"] .public-badge {
+  align-self: flex-start;
+  margin-bottom: 0.2rem;
+}
+
+[data-section="sciences"] .public-hero-actions {
+  margin-top: auto;
+}
+
+[data-section="pricing"] .public-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .public-pricing-card {
@@ -1668,8 +1932,11 @@
 }
 
 .public-pricing-card-highlight {
-  border-color: color-mix(in srgb, var(--public-accent) 55%, transparent);
-  box-shadow: 0 18px 34px color-mix(in srgb, var(--public-accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--public-accent) 72%, transparent);
+  transform: translateY(-6px);
+  box-shadow:
+    0 22px 48px color-mix(in srgb, var(--public-accent) 20%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--public-accent) 30%, transparent);
 }
 
 .public-price {
@@ -1681,24 +1948,65 @@
 .public-faq {
   margin-top: 16px;
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .public-faq-item {
-  border: 1px solid var(--public-border);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--public-surface-strong) 90%, transparent);
-  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--public-border) 92%, transparent);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--public-accent) 9%, transparent), transparent 50%),
+    color-mix(in srgb, var(--public-surface-strong) 92%, transparent);
+  padding: 13px 16px;
+  transition:
+    border-color 0.24s ease,
+    box-shadow 0.24s ease,
+    transform 0.24s ease;
 }
 
 .public-faq-item summary {
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.public-faq-item:hover {
+  border-color: color-mix(in srgb, var(--public-accent) 55%, transparent);
+  transform: translateY(-1px);
+}
+
+.public-faq-item[open] {
+  border-color: color-mix(in srgb, var(--public-accent) 62%, transparent);
+  box-shadow:
+    0 14px 28px rgba(0, 0, 0, 0.2),
+    0 0 0 1px color-mix(in srgb, var(--public-accent) 24%, transparent);
 }
 
 .public-faq-item p {
   margin: 10px 0 0;
   color: var(--public-text-muted);
+}
+
+[data-section="contact"] > .public-card {
+  min-height: 100%;
+  padding: clamp(1.15rem, 2.4vw, 1.7rem);
+}
+
+[data-section="contact"] > .public-card h2 {
+  margin: 0;
+  font-size: clamp(1.65rem, 3vw, 2.45rem);
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+[data-section="contact"] > .public-card p {
+  margin-top: 0.8rem;
+  font-size: 1.02rem;
+  line-height: 1.68;
+}
+
+[data-section="contact"] .feature-illustration {
+  height: clamp(250px, 34vw, 330px);
 }
 
 .public-footer {
@@ -1955,6 +2263,22 @@
     grid-template-columns: 1fr;
   }
 
+  .public-main > .public-section {
+    border-radius: 20px;
+  }
+
+  [data-section="features"] .public-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-section="contact"] {
+    grid-template-columns: 1fr;
+  }
+
+  [data-section="contact"] .feature-illustration {
+    height: clamp(220px, 42vw, 320px);
+  }
+
   .public-grid-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1969,6 +2293,19 @@
   .public-footer-inner,
   .public-main {
     width: min(100% - 20px, 1200px);
+  }
+
+  .public-main > .public-section {
+    padding: 1rem;
+    border-radius: 16px;
+  }
+
+  [data-section="features"] .public-card:first-child {
+    grid-column: auto;
+  }
+
+  .public-pricing-card-highlight {
+    transform: none;
   }
 
   .public-nav {
