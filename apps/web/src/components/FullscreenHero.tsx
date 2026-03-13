@@ -118,6 +118,13 @@ export default function FullscreenHero({
 
   return (
     <section className={`fullscreen-hero ${heroLightClass}`}>
+      {/* Кинетический параллакс-фон */}
+      <div className="hero-bg-orbs" aria-hidden="true">
+        <div className="hero-orb hero-orb--1" />
+        <div className="hero-orb hero-orb--2" />
+        <div className="hero-orb hero-orb--3" />
+        <div className="hero-grid-overlay" />
+      </div>
       {/* Сфера — по центру, с наложением */}
       <div className="fullscreen-hero-visual">
         <img
