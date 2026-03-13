@@ -125,7 +125,7 @@ type LandingContent = {
 
 const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
   en: {
-    brandName: "MDsystem",
+    brandName: "Scientiaiter",
     nav: {
       home: "Home",
       features: "Features",
@@ -160,7 +160,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
     featuresIntro: {
       title: "Designed for research teams and product-minded analysts",
       description:
-        "From early discovery to final manuscript, MDsystem keeps your sources, notes, and project docs connected.",
+        "From early discovery to final manuscript, Scientiaiter keeps your sources, notes, and project docs connected.",
       cta: "See how it works",
     },
     featureCards: [
@@ -240,9 +240,9 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       },
     ],
     testimonials: {
-      title: "What teams say about MDsystem",
+      title: "What teams say about Scientiaiter",
       description:
-        "Research, product, and analytics teams use MDsystem to reduce manual overhead and improve traceability.",
+        "Research, product, and analytics teams use Scientiaiter to reduce manual overhead and improve traceability.",
       cards: [
         {
           title: "Solid foundation for collaborative reviews",
@@ -276,7 +276,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
     stats: {
       title: "Platform capabilities that matter",
       description:
-        "MDsystem is designed to support research operations in multilingual, collaborative environments.",
+        "Scientiaiter is designed to support research operations in multilingual, collaborative environments.",
       items: [
         { value: "2", label: "Interface languages (English / Russian)" },
         { value: "2", label: "Theme modes (light / dark)" },
@@ -339,16 +339,16 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
     faq: {
       title: "How can we help?",
       description:
-        "A few common questions from teams evaluating MDsystem for scientific and analytical workflows.",
+        "A few common questions from teams evaluating Scientiaiter for scientific and analytical workflows.",
       searchPlaceholder: "Type keywords to find answers",
       items: [
         {
           question: "Can we switch between English and Russian?",
           answer:
-            "Yes. Use the EN/RU toggle in the top navigation. Your selection is saved in the browser.",
+            "Yes. Use the single RU/EN language button in the top navigation. Your selection is saved in the browser.",
         },
         {
-          question: "Does MDsystem support dark and light themes?",
+          question: "Does Scientiaiter support dark and light themes?",
           answer:
             "Yes. Theme mode is available in the header and synced with the same local setting used across the web app.",
         },
@@ -365,7 +365,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       ],
     },
     cta: {
-      title: "Start your MDsystem workspace today",
+      title: "Start your Scientiaiter workspace today",
       description:
         "Launch your first project, invite collaborators, and move from discovery to draft in one flow.",
       action: "Create free account",
@@ -400,7 +400,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
     },
   },
   ru: {
-    brandName: "MDsystem",
+    brandName: "Scientiaiter",
     nav: {
       home: "Главная",
       features: "Возможности",
@@ -435,7 +435,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
     featuresIntro: {
       title: "Разработано для исследовательских и продуктовых команд",
       description:
-        "От первого запроса до финального текста: MDsystem связывает источники, заметки и документы проекта в одном контуре.",
+        "От первого запроса до финального текста: Scientiaiter связывает источники, заметки и документы проекта в одном контуре.",
       cta: "Как это работает",
     },
     featureCards: [
@@ -515,7 +515,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       },
     ],
     testimonials: {
-      title: "Что команды говорят о MDsystem",
+      title: "Что команды говорят о Scientiaiter",
       description:
         "Платформу используют исследовательские, продуктовые и аналитические команды для сокращения ручной рутины.",
       cards: [
@@ -551,7 +551,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
     stats: {
       title: "Ключевые характеристики платформы",
       description:
-        "MDsystem ориентирован на мультиязычную и командную работу в исследовательских сценариях.",
+        "Scientiaiter ориентирован на мультиязычную и командную работу в исследовательских сценариях.",
       items: [
         { value: "2", label: "Языка интерфейса (English / Russian)" },
         { value: "2", label: "Темы оформления (светлая / тёмная)" },
@@ -611,13 +611,13 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
     faq: {
       title: "Чем можем помочь?",
       description:
-        "Ниже — частые вопросы от команд, которые оценивают MDsystem для исследовательских процессов.",
+        "Ниже — частые вопросы от команд, которые оценивают Scientiaiter для исследовательских процессов.",
       searchPlaceholder: "Введите ключевые слова для поиска ответа",
       items: [
         {
           question: "Можно ли переключаться между русским и английским?",
           answer:
-            "Да. Используйте переключатель EN/RU в верхней панели. Выбор сохраняется в браузере.",
+            "Да. Используйте единую кнопку RU/EN в верхней панели. Выбор сохраняется в браузере.",
         },
         {
           question: "Поддерживаются светлая и тёмная темы?",
@@ -637,7 +637,7 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       ],
     },
     cta: {
-      title: "Запустите workspace в MDsystem уже сегодня",
+      title: "Запустите workspace в Scientiaiter уже сегодня",
       description:
         "Создайте первый проект, пригласите коллег и проходите путь от поиска до черновика в одном процессе.",
       action: "Создать бесплатный аккаунт",
@@ -671,6 +671,223 @@ const LANDING_CONTENT: Record<LandingLocale, LandingContent> = {
       copyright: "Все права защищены.",
     },
   },
+};
+
+const HERO_SLIDES: Record<
+  LandingLocale,
+  Array<{
+    stageLabel: string;
+    title: string;
+    description: string;
+    heroTitle: string;
+    heroSubtitle: string;
+    heroDescription: string;
+    metaLeft: string;
+    metaCenter: string;
+    highlights: string[];
+  }>
+> = {
+  en: [
+    {
+      stageLabel: "DISCOVERY",
+      title: "Literature search",
+      description: "Start with evidence, not assumptions.",
+      heroTitle: "Evidence-first\nresearch start",
+      heroSubtitle:
+        "Search across multiple sources with one structured query flow",
+      heroDescription:
+        "Scientiaiter aggregates publications from several databases, deduplicates records, and helps your team move from broad exploration to a focused corpus in minutes.",
+      metaLeft: "Cross-database indexing and deduplication",
+      metaCenter: "Team-ready source collections",
+      highlights: [
+        "Unified import from major literature sources",
+        "Fast filters by title, abstract, tags, and year",
+        "Shared folders for reproducible review cycles",
+      ],
+    },
+    {
+      stageLabel: "AUTOMATION",
+      title: "Workflow automation",
+      description: "Remove repeated manual operations.",
+      heroTitle: "Fewer manual\nhandoffs",
+      heroSubtitle: "Automate repetitive operations in every review iteration",
+      heroDescription:
+        "From metadata enrichment to reusable templates, Scientiaiter removes friction from routine steps so analysts and editors spend time on interpretation instead of formatting tasks.",
+      metaLeft: "Template-driven operations",
+      metaCenter: "Repeatable team processes",
+      highlights: [
+        "Reusable flows for screening and data prep",
+        "Automatic normalization of article metadata",
+        "Consistent outputs across projects and teams",
+      ],
+    },
+    {
+      stageLabel: "ANALYTICS",
+      title: "Citation graph",
+      description: "See structure behind the topic.",
+      heroTitle: "Map the field\nwith citation context",
+      heroSubtitle: "Visualize influence, clusters, and weak evidence zones",
+      heroDescription:
+        "Graph-based exploration reveals how publications connect, where consensus is strong, and where your next analysis can deliver the highest impact.",
+      metaLeft: "Reference topology and cluster views",
+      metaCenter: "Gap-aware research planning",
+      highlights: [
+        "Interactive graph exploration with semantic hints",
+        "Detection of outliers and bridge publications",
+        "Support for prioritizing next research steps",
+      ],
+    },
+    {
+      stageLabel: "WRITING",
+      title: "AI writing assistant",
+      description: "Draft with scientific structure.",
+      heroTitle: "From evidence\nto manuscript",
+      heroSubtitle: "Write, improve, and format text in one document workflow",
+      heroDescription:
+        "Compose publication-ready drafts with AI-assisted editing, structured citations, and document tools designed for scientific writing standards.",
+      metaLeft: "Academic-style AI guidance",
+      metaCenter: "Citations and layout in one editor",
+      highlights: [
+        "AI suggestions tuned for scientific tone",
+        "Inline citations and bibliography support",
+        "Embedded charts and research illustrations",
+      ],
+    },
+    {
+      stageLabel: "PUBLISHING",
+      title: "Peer review & publishing",
+      description: "Coordinate editorial decisions faster.",
+      heroTitle: "Editorial workflow\nwithout fragmentation",
+      heroSubtitle: "Manage submissions, reviewers, and publication timeline",
+      heroDescription:
+        "Scientiaiter supports the full editorial lifecycle: submission intake, reviewer assignment, decision tracking, and one-click publication handoff.",
+      metaLeft: "Structured peer-review pipeline",
+      metaCenter: "Clear decision history",
+      highlights: [
+        "Submission states with timeline visibility",
+        "Role-based editor and reviewer workspaces",
+        "Consistent handoff from review to publishing",
+      ],
+    },
+    {
+      stageLabel: "GOVERNANCE",
+      title: "Project governance",
+      description: "Operate securely at team scale.",
+      heroTitle: "Controlled access\nfor every research role",
+      heroSubtitle: "Keep data, permissions, and audit context aligned",
+      heroDescription:
+        "Role-aware access and centralized administration help organizations scale research programs while preserving traceability and operational consistency.",
+      metaLeft: "Role-based permissions model",
+      metaCenter: "Audit-friendly collaboration",
+      highlights: [
+        "Project-level access control and ownership",
+        "Shared documentation and version history",
+        "Operational visibility for admins and leads",
+      ],
+    },
+  ],
+  ru: [
+    {
+      stageLabel: "DISCOVERY",
+      title: "Поиск литературы",
+      description: "Начинайте с доказательной базы.",
+      heroTitle: "Доказательная база\nс первого шага",
+      heroSubtitle: "Поиск по нескольким источникам в едином контуре запроса",
+      heroDescription:
+        "Scientiaiter агрегирует публикации из разных баз, удаляет дубликаты и помогает команде быстро перейти от широкого поиска к рабочему корпусу источников.",
+      metaLeft: "Кросс-базовая индексация и дедупликация",
+      metaCenter: "Коллекции источников для всей команды",
+      highlights: [
+        "Единый импорт из ключевых научных источников",
+        "Фильтрация по заголовкам, аннотациям, тегам и годам",
+        "Общие папки для воспроизводимых циклов обзора",
+      ],
+    },
+    {
+      stageLabel: "AUTOMATION",
+      title: "Автоматизация workflow",
+      description: "Меньше рутины в каждом цикле.",
+      heroTitle: "Меньше ручных\nопераций",
+      heroSubtitle:
+        "Автоматизируйте повторяющиеся этапы исследовательского процесса",
+      heroDescription:
+        "От обогащения метаданных до шаблонов сценариев: Scientiaiter снимает рутинную нагрузку, чтобы команда фокусировалась на анализе и выводах.",
+      metaLeft: "Шаблоны повторяемых процессов",
+      metaCenter: "Стабильные командные сценарии",
+      highlights: [
+        "Переиспользуемые потоки скрининга и подготовки данных",
+        "Автонормализация метаданных публикаций",
+        "Единый формат результатов для разных проектов",
+      ],
+    },
+    {
+      stageLabel: "ANALYTICS",
+      title: "Граф цитирования",
+      description: "Понимайте структуру области, а не только список статей.",
+      heroTitle: "Карта знаний\nс контекстом цитирования",
+      heroSubtitle:
+        "Визуализируйте кластеры, влияние и пробелы в доказательствах",
+      heroDescription:
+        "Графовый анализ показывает, как связаны публикации, где доказательная база сильна, а где есть пространство для следующей исследовательской итерации.",
+      metaLeft: "Кластеры и топология ссылок",
+      metaCenter: "Планирование исследований по пробелам",
+      highlights: [
+        "Интерактивный граф с семантическими подсказками",
+        "Выявление мостов и аномалий в цитировании",
+        "Приоритизация следующих аналитических шагов",
+      ],
+    },
+    {
+      stageLabel: "WRITING",
+      title: "AI-ассистент написания",
+      description: "От заметок к публикационному тексту.",
+      heroTitle: "От источников\nк рукописи",
+      heroSubtitle:
+        "Пишите, редактируйте и оформляйте материалы в одном редакторе",
+      heroDescription:
+        "Создавайте публикационно готовые тексты с AI-редактурой, встроенными цитатами и инструментами документирования, адаптированными под научный стиль.",
+      metaLeft: "ИИ-помощь в академическом стиле",
+      metaCenter: "Цитирование и верстка в одном месте",
+      highlights: [
+        "Подсказки для научного тона и структуры",
+        "Встроенная библиография и ссылки по тексту",
+        "Встраивание диаграмм и научных иллюстраций",
+      ],
+    },
+    {
+      stageLabel: "PUBLISHING",
+      title: "Рецензирование и публикация",
+      description: "Ускоряйте редакционный цикл.",
+      heroTitle: "Редакционный процесс\nбез разрывов",
+      heroSubtitle:
+        "Управляйте подачами, рецензентами и решениями в одном контуре",
+      heroDescription:
+        "Scientiaiter поддерживает полный издательский цикл: прием рукописей, назначение рецензентов, фиксацию решений и передачу в публикацию.",
+      metaLeft: "Структурированный peer-review процесс",
+      metaCenter: "Прозрачная хронология решений",
+      highlights: [
+        "Статусы рукописей и timeline по этапам",
+        "Ролевые кабинеты редактора и рецензента",
+        "Согласованный переход от ревью к публикации",
+      ],
+    },
+    {
+      stageLabel: "GOVERNANCE",
+      title: "Управление проектами",
+      description: "Безопасная масштабируемая командная работа.",
+      heroTitle: "Контроль доступа\nдля каждой роли",
+      heroSubtitle: "Сохраняйте целостность данных и прозрачность процессов",
+      heroDescription:
+        "Ролевая модель доступа и централизованное управление помогают масштабировать исследовательские программы без потери прослеживаемости.",
+      metaLeft: "Role-based модель прав",
+      metaCenter: "Аудит и управляемая коллаборация",
+      highlights: [
+        "Права доступа на уровне проектов и задач",
+        "Общая документация и история версий",
+        "Операционная видимость для администраторов",
+      ],
+    },
+  ],
 };
 
 function applyTheme(nextTheme: ThemeMode) {
@@ -711,6 +928,7 @@ export default function LandingPage() {
     resolveInitialLocale(),
   );
   const t = LANDING_CONTENT[locale];
+  const heroCards = HERO_SLIDES[locale];
   const currentYear = new Date().getFullYear();
 
   // Хук для отслеживания активной секции и эффектов перехода
@@ -727,6 +945,10 @@ export default function LandingPage() {
 
   const toggleTheme = () => {
     setTheme((prevTheme) => (prevTheme === "dark" ? "light" : "dark"));
+  };
+
+  const toggleLocale = () => {
+    setLocale((prevLocale) => (prevLocale === "ru" ? "en" : "ru"));
   };
 
   const navItems = [
@@ -769,21 +991,15 @@ export default function LandingPage() {
           <div className="public-header-actions">
             <button
               type="button"
-              className="public-theme-toggle"
-              aria-label={t.controls.switchToEnglish}
-              aria-pressed={locale === "en"}
-              onClick={() => setLocale("en")}
+              className="public-theme-toggle public-lang-toggle"
+              aria-label={
+                locale === "ru"
+                  ? t.controls.switchToEnglish
+                  : t.controls.switchToRussian
+              }
+              onClick={toggleLocale}
             >
-              EN
-            </button>
-            <button
-              type="button"
-              className="public-theme-toggle"
-              aria-label={t.controls.switchToRussian}
-              aria-pressed={locale === "ru"}
-              onClick={() => setLocale("ru")}
-            >
-              RU
+              {locale === "ru" ? "RU / EN" : "EN / RU"}
             </button>
             <button
               id="themeToggle"
@@ -823,9 +1039,13 @@ export default function LandingPage() {
         metaLeft={t.hero.metaLeft}
         metaCenter={t.hero.metaCenter}
         nextSectionTitle={t.hero.nextSection}
-        cards={t.featureCards.slice(0, 6)}
+        cards={heroCards}
         slideNumber="01"
-        verticalLinks={["Features", "Pricing", "FAQ", "Contact"]}
+        verticalLinks={
+          locale === "ru"
+            ? ["Возможности", "Тарифы", "FAQ", "Контакты"]
+            : ["Features", "Pricing", "FAQ", "Contact"]
+        }
       />
 
       <main className="public-main">

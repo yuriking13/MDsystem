@@ -3,6 +3,15 @@ import React, { useMemo, useState } from "react";
 type HeroCard = {
   title: string;
   description: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroDescription?: string;
+  metaLeft?: string;
+  metaCenter?: string;
+  readMoreText?: string;
+  readMoreLink?: string;
+  stageLabel?: string;
+  highlights?: string[];
 };
 
 interface FullscreenHeroProps {
@@ -75,6 +84,18 @@ export default function FullscreenHero({
   const lightLevel = Math.round((activeCardIdx / safeMaxIndex) * 4);
   const heroLightClass = `hero-light-level-${lightLevel}`;
   const activeCard = resolvedCards[activeCardIdx] ?? resolvedCards[0];
+  const resolvedSlideNumber =
+    resolvedCards.length > 1
+      ? String(activeCardIdx + 1).padStart(2, "0")
+      : slideNumber;
+  const resolvedTitle = activeCard.heroTitle ?? title;
+  const resolvedSubtitle = activeCard.heroSubtitle ?? subtitle;
+  const resolvedDescription = activeCard.heroDescription ?? description;
+  const resolvedMetaLeft = activeCard.metaLeft ?? metaLeft;
+  const resolvedMetaCenter = activeCard.metaCenter ?? metaCenter;
+  const resolvedReadMoreText = activeCard.readMoreText ?? readMoreText;
+  const resolvedReadMoreLink = activeCard.readMoreLink ?? readMoreLink;
+  const resolvedHighlights = activeCard.highlights ?? [];
 
   const goPrevCard = () => {
     setSlideDirection("prev");
@@ -109,23 +130,43 @@ export default function FullscreenHero({
 
       {/* Watermark — крупная полупрозрачная цифра */}
       <div className="hero-watermark" aria-hidden="true">
-        {slideNumber}
+        {resolvedSlideNumber}
       </div>
 
       {/* Основная Grid-сетка */}
       <div className="hero-grid">
         {/* Левая колонка: заголовок + подзаголовок */}
         <div className="hero-left">
-          <h1 className="hero-title">{title}</h1>
-          <p className="hero-subtitle">{subtitle}</p>
+          <div
+            key={`hero-left-copy-${activeCardIdx}`}
+            className={`hero-copy-group hero-copy-group--${slideDirection}`}
+          >
+            {activeCard.stageLabel ? (
+              <p className="hero-stage-label">{activeCard.stageLabel}</p>
+            ) : null}
+            <h1 className="hero-title">{resolvedTitle}</h1>
+            <p className="hero-subtitle">{resolvedSubtitle}</p>
+          </div>
         </div>
 
         {/* Правая колонка: описание + read more */}
         <div className="hero-right">
-          <p className="hero-description">{description}</p>
-          <a href={readMoreLink} className="hero-readmore">
-            {readMoreText}
-          </a>
+          <div
+            key={`hero-right-copy-${activeCardIdx}`}
+            className={`hero-detail-group hero-detail-group--${slideDirection}`}
+          >
+            <p className="hero-description">{resolvedDescription}</p>
+            {resolvedHighlights.length > 0 ? (
+              <ul className="hero-highlights">
+                {resolvedHighlights.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            ) : null}
+            <a href={resolvedReadMoreLink} className="hero-readmore">
+              {resolvedReadMoreText}
+            </a>
+          </div>
         </div>
 
         {/* Нижняя строка: мета-данные */}
@@ -145,18 +186,18 @@ export default function FullscreenHero({
           </div>
 
           {/* Мета-лево */}
-          {metaLeft && (
+          {resolvedMetaLeft && (
             <div className="hero-meta hero-meta--left">
               <span className="hero-meta-marker" aria-hidden="true" />
-              <span>{metaLeft}</span>
+              <span>{resolvedMetaLeft}</span>
             </div>
           )}
 
           {/* Мета-центр */}
-          {metaCenter && (
+          {resolvedMetaCenter && (
             <div className="hero-meta hero-meta--center">
               <span className="hero-meta-marker" aria-hidden="true" />
-              <span>{metaCenter}</span>
+              <span>{resolvedMetaCenter}</span>
             </div>
           )}
 

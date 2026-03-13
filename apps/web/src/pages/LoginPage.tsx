@@ -37,7 +37,7 @@ export default function LoginPage() {
         <div className="auth-grid">
           {/* Left side - Feature list */}
           <div className="auth-features">
-            <Link to="/landing" className="auth-logo">
+            <Link to="/" className="auth-logo">
               <img
                 src="/logo.svg"
                 alt="Scientiaiter Logo"
@@ -188,10 +188,7 @@ export default function LoginPage() {
                   >
                     {busy ? "Вход..." : "Войти в аккаунт"}
                   </button>
-                  <Link
-                    to="/landing"
-                    className="auth-link-btn auth-link-btn--button"
-                  >
+                  <Link to="/" className="auth-link-btn auth-link-btn--button">
                     На лендинг
                   </Link>
                 </div>

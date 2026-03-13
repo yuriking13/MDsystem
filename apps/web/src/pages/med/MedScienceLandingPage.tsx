@@ -975,10 +975,10 @@ export default function MedScienceLandingPage() {
           <a href={mainScienceHref} className="public-brand">
             <img
               src="/logo.svg"
-              alt="MDsystem Med"
+              alt="Scientiaiter Med"
               className="public-brand-logo"
             />
-            <span>MDsystem Med</span>
+            <span>Scientiaiter Med</span>
           </a>
           <div className="public-header-actions">
             <button

@@ -46,7 +46,7 @@ export default function RegisterPage() {
         <div className="auth-grid">
           {/* Left side - Feature list */}
           <div className="auth-features">
-            <Link to="/landing" className="auth-logo">
+            <Link to="/" className="auth-logo">
               <img
                 src="/logo.svg"
                 alt="Scientiaiter Logo"
@@ -217,10 +217,7 @@ export default function RegisterPage() {
                   >
                     {busy ? "Создание..." : "Создать аккаунт"}
                   </button>
-                  <Link
-                    to="/landing"
-                    className="auth-link-btn auth-link-btn--button"
-                  >
+                  <Link to="/" className="auth-link-btn auth-link-btn--button">
                     На лендинг
                   </Link>
                 </div>

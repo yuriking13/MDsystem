@@ -6,7 +6,7 @@ export default function PrivacyPolicyPage() {
     <div className="public-page public-doc-page">
       <header className="public-header">
         <div className="public-header-inner">
-          <Link to="/landing" className="public-brand">
+          <Link to="/" className="public-brand">
             <img
               src="/logo.svg"
               alt="Scientiaiter"
@@ -30,8 +30,8 @@ export default function PrivacyPolicyPage() {
           <div className="public-section-header">
             <h1>Privacy Policy / Политика конфиденциальности</h1>
             <p>
-              Документ описывает, какие данные обрабатываются в сервисе и с какой
-              целью. Может быть заменен финальной юридической редакцией.
+              Документ описывает, какие данные обрабатываются в сервисе и с
+              какой целью. Может быть заменен финальной юридической редакцией.
             </p>
           </div>
 
@@ -44,8 +44,8 @@ export default function PrivacyPolicyPage() {
                 файлы.
               </li>
               <li>
-                Технические данные для безопасности и аналитики
-                (логи, IP-адрес, события ошибок).
+                Технические данные для безопасности и аналитики (логи, IP-адрес,
+                события ошибок).
               </li>
             </ul>
 

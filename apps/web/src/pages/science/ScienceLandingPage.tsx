@@ -55,10 +55,10 @@ export default function ScienceLandingPage() {
           <a href={mainHref} className="public-brand">
             <img
               src="/logo.svg"
-              alt="MDsystem Science"
+              alt="Scientiaiter Science"
               className="public-brand-logo"
             />
-            <span>MDsystem Science</span>
+            <span>Scientiaiter Science</span>
           </a>
           <div className="public-header-actions">
             <Link to="/login" className="public-theme-toggle">
@@ -88,7 +88,7 @@ export default function ScienceLandingPage() {
               >
                 Перейти в медицинский раздел
               </a>
-              <Link to="/landing" className="public-btn public-btn-secondary">
+              <Link to="/" className="public-btn public-btn-secondary">
                 Основной лендинг проекта
               </Link>
             </div>

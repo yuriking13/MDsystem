@@ -544,6 +544,20 @@ html {
   grid-row: 1;
 }
 
+.hero-copy-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hero-stage-label {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(184, 255, 58, 0.9);
+}
+
 .hero-title {
   font-size: clamp(3rem, 6.5vw, 6rem);
   font-weight: 700;
@@ -575,11 +589,44 @@ html {
   justify-self: end;
 }
 
+.hero-detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
 .hero-description {
   font-size: 0.875rem;
   line-height: 1.75;
   color: rgba(255, 255, 255, 0.5);
-  margin: 0 0 1.25rem;
+  margin: 0;
+}
+
+.hero-highlights {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.hero-highlights li {
+  position: relative;
+  padding-left: 1rem;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.45;
+}
+
+.hero-highlights li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.48rem;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(184, 255, 58, 0.95);
 }
 
 .hero-readmore {
@@ -595,6 +642,38 @@ html {
 
 .hero-readmore:hover {
   color: #d4ff7a;
+}
+
+.hero-copy-group--next,
+.hero-detail-group--next {
+  animation: hero-copy-in-next 0.3s ease;
+}
+
+.hero-copy-group--prev,
+.hero-detail-group--prev {
+  animation: hero-copy-in-prev 0.3s ease;
+}
+
+@keyframes hero-copy-in-next {
+  from {
+    opacity: 0;
+    transform: translateY(10px) translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+}
+
+@keyframes hero-copy-in-prev {
+  from {
+    opacity: 0;
+    transform: translateY(10px) translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
 }
 
 /* ---- Нижняя строка: мета, пагинация, превью ---- */
@@ -890,6 +969,10 @@ html {
 
   .hero-subtitle {
     font-size: 0.9rem;
+  }
+
+  .hero-highlights {
+    gap: 0.35rem;
   }
 
   .hero-cta-circle {

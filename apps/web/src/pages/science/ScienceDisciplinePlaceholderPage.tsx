@@ -88,10 +88,10 @@ export function ScienceDisciplinePlaceholderContent({
           <Link to="/science" className="public-brand">
             <img
               src="/logo.svg"
-              alt="MDsystem Science"
+              alt="Scientiaiter Science"
               className="public-brand-logo"
             />
-            <span>MDsystem Science</span>
+            <span>Scientiaiter Science</span>
           </Link>
         </div>
       </header>

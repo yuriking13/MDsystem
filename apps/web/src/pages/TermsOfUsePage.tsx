@@ -6,7 +6,7 @@ export default function TermsOfUsePage() {
     <div className="public-page public-doc-page">
       <header className="public-header">
         <div className="public-header-inner">
-          <Link to="/landing" className="public-brand">
+          <Link to="/" className="public-brand">
             <img
               src="/logo.svg"
               alt="Scientiaiter"
@@ -52,7 +52,9 @@ export default function TermsOfUsePage() {
 
             <h2>3. Обязанности пользователя</h2>
             <ul className="public-list">
-              <li>Использовать сервис в рамках применимого законодательства.</li>
+              <li>
+                Использовать сервис в рамках применимого законодательства.
+              </li>
               <li>
                 Не загружать вредоносный, нарушающий права третьих лиц или
                 запрещенный контент.

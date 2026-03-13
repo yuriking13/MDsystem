@@ -27,7 +27,7 @@ export default function ProjectFacesPage() {
     <div className="public-page">
       <header className="public-header">
         <div className="public-header-inner">
-          <Link to="/landing" className="public-brand">
+          <Link to="/" className="public-brand">
             <img
               src="/logo.svg"
               alt="Scientiaiter"
@@ -36,7 +36,7 @@ export default function ProjectFacesPage() {
             <span>Scientiaiter</span>
           </Link>
           <div className="public-header-actions">
-            <Link to="/landing" className="public-btn public-btn-secondary">
+            <Link to="/" className="public-btn public-btn-secondary">
               На лендинг
             </Link>
             <Link to="/offer" className="public-btn public-btn-secondary">
