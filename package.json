@@ -24,7 +24,8 @@
     "e2e:browser": "pnpm --filter web run e2e",
     "e2e:browser:install": "pnpm --filter web run e2e:install",
     "prepare": "husky || true",
-    "db:cleanup": "cd apps/api && node -e \"require('child_process').execSync('psql ' + process.env.DATABASE_URL + ' -f prisma/migrations/cleanup_invalid_statistics.sql', {stdio: 'inherit'})\""
+    "db:cleanup": "cd apps/api && node -e \"require('child_process').execSync('psql ' + process.env.DATABASE_URL + ' -f prisma/migrations/cleanup_invalid_statistics.sql', {stdio: 'inherit'})\"",
+    "start": "node dist/src/bootstrap.js"
   },
   "dependencies": {
     "@tiptap/extension-paragraph": "^3.14.0",
@@ -66,7 +67,18 @@
       "markdown-it": "^14.1.1",
       "minimatch": "^10.2.1",
       "preact": "^10.28.3",
-      "qs": "^6.14.2"
+      "qs": "^6.14.2",
+      "bn.js@<4.12.3": ">=4.12.3",
+      "rollup@>=4.0.0 <4.59.0": ">=4.59.0",
+      "minimatch@>=10.0.0 <10.2.3": ">=10.2.3",
+      "underscore@<=1.13.7": ">=1.13.8",
+      "dompurify@>=3.1.3 <=3.3.1": ">=3.3.2",
+      "fast-xml-parser@>=5.0.0 <5.3.8": ">=5.3.8",
+      "fastify@>=5.7.2 <=5.8.0": ">=5.8.1",
+      "file-type@>=13.0.0 <21.3.1": ">=21.3.1",
+      "flatted@<3.4.0": ">=3.4.0",
+      "file-type@>=20.0.0 <=21.3.1": ">=21.3.2",
+      "fast-xml-parser@>=4.0.0-beta.3 <=5.5.5": ">=5.5.6"
     },
     "patchedDependencies": {
       "@eslint/eslintrc@3.3.3": "patches/@eslint__eslintrc@3.3.3.patch",
