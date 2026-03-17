@@ -1,0 +1,536 @@
+/* ===== REVOLUTIONARY SCIENTIFIC DESIGN ===== */
+/* Concept: Neo-Brutalist Scientific with Organic Mathematical Forms */
+/* Inspiration: Soviet constructivism meets organic chemistry diagrams */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,200;0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,200;0,400;0,600;0,900;1,400&display=swap');
+
+:root {
+  /* Typography Revolution - Away from Inter/Roboto */
+  --font-display: 'Crimson Pro', Georgia, serif; /* Distinctive serif for headlines */
+  --font-body: 'JetBrains Mono', 'SF Mono', Consolas, monospace; /* Monospace for scientific precision */
+  --font-accent: 'Crimson Pro', Georgia, serif;
+  
+  /* Revolutionary Color Palette - Vermillion & Prussian Blue Scientific */
+  --color-vermillion: #E34234; /* Cinnabar red - alchemical power */
+  --color-prussian: #003153; /* Deep scientific blue */
+  --color-bone: #F7F3E9; /* Aged paper, laboratory notes */
+  --color-graphite: #2B2B2B; /* Carbon, scientific drawings */
+  --color-copper: #B87333; /* Oxidized metal, apparatus */
+  --color-mercury: #E5E5E5; /* Liquid metal shimmer */
+  
+  /* Experimental Gradients */
+  --gradient-reaction: linear-gradient(135deg, var(--color-vermillion) 0%, var(--color-copper) 100%);
+  --gradient-synthesis: linear-gradient(90deg, var(--color-prussian) 0%, var(--color-vermillion) 100%);
+  --gradient-apparatus: conic-gradient(from 45deg, var(--color-graphite), var(--color-copper), var(--color-prussian));
+  
+  /* Scientific Spacing - Fibonacci-based */
+  --space-phi-1: 0.618rem; /* φ ratio */
+  --space-phi-2: 1rem;
+  --space-phi-3: 1.618rem;
+  --space-phi-4: 2.618rem;
+  --space-phi-5: 4.236rem;
+  --space-phi-6: 6.854rem;
+  
+  /* Molecular Border Radius - Organic curves */
+  --radius-molecular: 0.618rem;
+  --radius-compound: 1.618rem;
+  --radius-apparatus: 2.618rem;
+  
+  /* Experimental Shadows - Chemical depth */
+  --shadow-beaker: 0 4px 20px rgba(227, 66, 52, 0.15);
+  --shadow-apparatus: 0 8px 32px rgba(0, 49, 83, 0.2);
+  --shadow-reaction: 0 12px 48px rgba(227, 66, 52, 0.25);
+}
+
+/* Dark Theme - Laboratory at Night */
+[data-theme="dark"] {
+  --bg-laboratory: var(--color-graphite);
+  --bg-apparatus: rgba(0, 49, 83, 0.9);
+  --bg-glass: rgba(43, 43, 43, 0.95);
+  --text-formula: var(--color-bone);
+  --text-notation: var(--color-mercury);
+  --text-emphasis: var(--color-vermillion);
+}
+
+/* Light Theme - Daylight Laboratory */
+[data-theme="light"] {
+  --bg-laboratory: var(--color-bone);
+  --bg-apparatus: rgba(247, 243, 233, 0.95);
+  --bg-glass: rgba(229, 229, 229, 0.9);
+  --text-formula: var(--color-graphite);
+  --text-notation: var(--color-prussian);
+  --text-emphasis: var(--color-vermillion);
+}
+
+/* ===== BASE REVOLUTIONARY STYLES ===== */
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-laboratory);
+  color: var(--text-formula);
+  font-size: 0.95rem;
+  line-height: 1.618; /* Golden ratio line height */
+  letter-spacing: 0.02em;
+  font-weight: 400;
+}
+
+/* Revolutionary Typography Hierarchy */
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 3.618rem; /* φ³ */
+  font-weight: 900;
+  background: var(--gradient-reaction);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-transform: lowercase;
+}
+
+h2 {
+  font-size: 2.618rem; /* φ² */
+  color: var(--text-emphasis);
+}
+
+h3 {
+  font-size: 1.618rem; /* φ */
+  color: var(--text-notation);
+}
+
+/* Scientific Apparatus Components */
+.apparatus-card {
+  background: var(--bg-apparatus);
+  border: 2px solid var(--color-copper);
+  border-radius: var(--radius-compound);
+  padding: var(--space-phi-4);
+  box-shadow: var(--shadow-apparatus);
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.apparatus-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-synthesis);
+  opacity: 0.7;
+}
+
+.apparatus-card:hover {
+  transform: translateY(-4px) rotate(0.5deg);
+  box-shadow: var(--shadow-reaction);
+  border-color: var(--color-vermillion);
+}
+
+/* Revolutionary Button Design - Laboratory Equipment */
+.reaction-button {
+  font-family: var(--font-body);
+  background: var(--gradient-reaction);
+  color: var(--color-bone);
+  border: none;
+  padding: var(--space-phi-2) var(--space-phi-4);
+  border-radius: var(--radius-molecular);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+}
+
+.reaction-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s ease;
+}
+
+.reaction-button:hover::after {
+  left: 100%;
+}
+
+.reaction-button:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-reaction);
+}
+
+/* Molecular Structure Navigation */
+.molecular-nav {
+  font-family: var(--font-body);
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--color-copper);
+  border-radius: var(--radius-apparatus);
+  padding: var(--space-phi-2);
+  margin: var(--space-phi-3) 0;
+}
+
+.molecular-nav a {
+  color: var(--text-notation);
+  text-decoration: none;
+  padding: var(--space-phi-1) var(--space-phi-2);
+  margin: 0 var(--space-phi-1);
+  border-radius: var(--radius-molecular);
+  transition: all 0.2s ease;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+.molecular-nav a:hover {
+  background: var(--color-vermillion);
+  color: var(--color-bone);
+  transform: translateY(-2px);
+}
+
+/* Scientific Grid System - Crystalline Structure */
+.crystal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-phi-4);
+  margin: var(--space-phi-5) 0;
+}
+
+.crystal-grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.crystal-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* Laboratory Form Elements */
+.formula-input {
+  font-family: var(--font-body);
+  background: var(--bg-glass);
+  border: 2px solid var(--color-copper);
+  border-radius: var(--radius-molecular);
+  padding: var(--space-phi-2) var(--space-phi-3);
+  color: var(--text-formula);
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.formula-input:focus {
+  outline: none;
+  border-color: var(--color-vermillion);
+  box-shadow: 0 0 0 3px rgba(227, 66, 52, 0.2);
+}
+
+/* Scientific Animations */
+@keyframes molecular-rotation {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes chemical-reaction {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.molecule-spin {
+  animation: molecular-rotation 20s linear infinite;
+}
+
+.reaction-appear {
+  animation: chemical-reaction 0.6s ease-out;
+}
+
+/* Revolutionary Layout - Asymmetric Scientific */
+.laboratory-hero {
+  display: grid;
+  grid-template-columns: 1.618fr 1fr; /* Golden ratio */
+  gap: var(--space-phi-5);
+  min-height: 90vh;
+  align-items: center;
+  padding: var(--space-phi-5);
+}
+
+.apparatus-sidebar {
+  background: var(--gradient-apparatus);
+  padding: var(--space-phi-4);
+  border-radius: var(--radius-compound);
+  position: relative;
+  overflow: hidden;
+}
+
+.apparatus-sidebar::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.1) 60deg, transparent 120deg);
+  animation: molecular-rotation 30s linear infinite;
+}
+
+/* Responsive Revolutionary Design */
+@media (max-width: 768px) {
+  h1 { font-size: 2.618rem; }
+  h2 { font-size: 1.618rem; }
+  
+  .laboratory-hero {
+    grid-template-columns: 1fr;
+    gap: var(--space-phi-3);
+  }
+  
+  .crystal-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .crystal-grid-2,
+  .crystal-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Scientific Data Tables */
+.data-table {
+  font-family: var(--font-body);
+  background: var(--bg-glass);
+  border: 2px solid var(--color-copper);
+  border-radius: var(--radius-compound);
+  overflow: hidden;
+  margin: var(--space-phi-4) 0;
+}
+
+.data-table th {
+  background: var(--gradient-synthesis);
+  color: var(--color-bone);
+  padding: var(--space-phi-2);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.data-table td {
+  padding: var(--space-phi-2);
+  border-bottom: 1px solid var(--color-copper);
+}
+
+.data-table tr:hover {
+  background: rgba(227, 66, 52, 0.1);
+}
+
+/* Experimental Progress Indicators */
+.reaction-progress {
+  height: 6px;
+  background: var(--color-graphite);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: var(--space-phi-2) 0;
+}
+
+.reaction-progress-bar {
+  height: 100%;
+  background: var(--gradient-reaction);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  position: relative;
+}
+
+.reaction-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    rgba(255,255,255,0.3) 25%, 
+    transparent 25%, 
+    transparent 50%, 
+    rgba(255,255,255,0.3) 50%, 
+    rgba(255,255,255,0.3) 75%, 
+    transparent 75%);
+  background-size: 12px 12px;
+  animation: progress-stripes 1s linear infinite;
+}
+
+@keyframes progress-stripes {
+  0% { background-position: 0 0; }
+  100% { background-position: 12px 0; }
+}
+
+/* Scientific Lists */
+.scientific-list {
+  list-style: none;
+  padding: 0;
+  margin: var(--space-phi-3) 0 0 0;
+}
+
+.scientific-list li {
+  position: relative;
+  padding: var(--space-phi-1) 0 var(--space-phi-1) var(--space-phi-3);
+  color: var(--text-notation);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.scientific-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--color-vermillion);
+  font-weight: 700;
+}
+
+.scientific-list li:hover {
+  color: var(--text-formula);
+  transform: translateX(4px);
+  transition: all 0.2s ease;
+}
+
+/* Revolutionary Navigation Override */
+.public-nav a {
+  font-family: var(--font-body) !important;
+  font-weight: 500 !important;
+  text-transform: lowercase !important;
+  letter-spacing: 0.05em !important;
+  color: var(--text-notation) !important;
+  text-decoration: none !important;
+  padding: var(--space-phi-1) var(--space-phi-2) !important;
+  border-radius: var(--radius-molecular) !important;
+  transition: all 0.2s ease !important;
+}
+
+.public-nav a:hover {
+  background: var(--color-vermillion) !important;
+  color: var(--color-bone) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Revolutionary Button Overrides */
+.public-btn {
+  font-family: var(--font-body) !important;
+  background: var(--gradient-reaction) !important;
+  color: var(--color-bone) !important;
+  border: none !important;
+  padding: var(--space-phi-2) var(--space-phi-4) !important;
+  border-radius: var(--radius-molecular) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  text-decoration: none !important;
+  display: inline-block !important;
+  transition: all 0.3s ease !important;
+  font-size: 0.85rem !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.public-btn:hover {
+  transform: scale(1.05) !important;
+  box-shadow: var(--shadow-reaction) !important;
+}
+
+.public-btn-secondary {
+  background: transparent !important;
+  color: var(--color-copper) !important;
+  border: 2px solid var(--color-copper) !important;
+}
+
+.public-btn-secondary:hover {
+  background: var(--color-copper) !important;
+  color: var(--color-bone) !important;
+}
+
+/* Revolutionary Header */
+.public-header {
+  background: var(--bg-glass) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 2px solid var(--color-copper) !important;
+}
+
+.public-brand {
+  font-family: var(--font-display) !important;
+  font-weight: 600 !important;
+  color: var(--text-formula) !important;
+  text-decoration: none !important;
+}
+
+.public-brand span {
+  font-size: 1.2rem !important;
+  color: var(--color-vermillion) !important;
+}
+
+/* Revolutionary Theme Toggle */
+.public-theme-toggle {
+  font-family: var(--font-body) !important;
+  background: var(--bg-apparatus) !important;
+  color: var(--text-notation) !important;
+  border: 1px solid var(--color-copper) !important;
+  padding: var(--space-phi-1) var(--space-phi-2) !important;
+  border-radius: var(--radius-molecular) !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  text-decoration: none !important;
+}
+
+.public-theme-toggle:hover {
+  background: var(--color-vermillion) !important;
+  color: var(--color-bone) !important;
+  border-color: var(--color-vermillion) !important;
+}
+
+/* Animation Delay Classes */
+.reaction-delay-2 { animation-delay: 0.2s; }
+.reaction-delay-4 { animation-delay: 0.4s; }
+.reaction-delay-6 { animation-delay: 0.6s; }
+.reaction-delay-8 { animation-delay: 0.8s; }
+.reaction-delay-10 { animation-delay: 1s; }
+.reaction-delay-12 { animation-delay: 1.2s; }
+
+.progress-initial { 
+  width: 0%; 
+  transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.progress-animated { 
+  width: 85% !important;
+}
+
+.mouse-following {
+  transition: transform 0.3s ease;
+  transform: translate(calc(var(--mouse-x, 0) * 20px), calc(var(--mouse-y, 0) * 20px)) rotate(calc(var(--mouse-x, 0) * 10deg));
+}
+
+.mouse-following[data-mouse-x] {
+  --mouse-x: attr(data-mouse-x);
+  --mouse-y: attr(data-mouse-y);
+}
+
+/* Feature Cards Animation Delays */
+.feature-card-0 { animation-delay: 0s; }
+.feature-card-1 { animation-delay: 0.1s; }
+.feature-card-2 { animation-delay: 0.2s; }
+.feature-card-3 { animation-delay: 0.3s; }
+.feature-card-4 { animation-delay: 0.4s; }
+.feature-card-5 { animation-delay: 0.5s; }
+.feature-card-6 { animation-delay: 0.6s; }
+.feature-card-7 { animation-delay: 0.7s; }
+.feature-card-8 { animation-delay: 0.8s; }
+.feature-card-9 { animation-delay: 0.9s; }
+
+/* Workflow Cards Animation Delays */
+.workflow-card-0 { animation-delay: 0s; }
+.workflow-card-1 { animation-delay: 0.2s; }

@@ -5,6 +5,8 @@ import {
   getScienceDisciplineHref,
 } from "../lib/scienceDomains";
 import InteractiveLandingIllustration from "../components/InteractiveLandingIllustration";
+import ScientificVisualization from "../components/ScientificVisualization";
+import RevolutionaryHero from "../components/RevolutionaryHero";
 import FullscreenHero from "../components/FullscreenHero";
 import { useSectionTransition } from "../lib/useScrollEffect";
 
@@ -1027,8 +1029,19 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Полноэкранный Hero блок — editorial multi-zone layout */}
-      <FullscreenHero
+      {/* Revolutionary Hero блок — Scientific Brutalism */}
+      <RevolutionaryHero
+        title={t.hero.title}
+        subtitle={t.hero.subtitle}
+        description={t.hero.description}
+        ctaText={t.hero.ctaLabel}
+        ctaLink="/register"
+        secondaryText={t.hero.readMore}
+        secondaryLink="#features"
+      />
+
+      {/* Fallback Полноэкранный Hero блок — editorial multi-zone layout */}
+      {/* <FullscreenHero
         title={t.hero.title}
         subtitle={t.hero.subtitle}
         description={t.hero.description}
@@ -1046,7 +1059,7 @@ export default function LandingPage() {
             ? ["Возможности", "Тарифы", "FAQ", "Контакты"]
             : ["Features", "Pricing", "FAQ", "Contact"]
         }
-      />
+      /> */}
 
       <main className="public-main">
         <section
@@ -1058,16 +1071,19 @@ export default function LandingPage() {
             <h2>{t.featuresIntro.title}</h2>
             <p>{t.featuresIntro.description}</p>
           </div>
-          <div className="public-grid public-grid-3">
-            {t.featureCards.map((card) => (
-              <article key={card.title} className="public-card">
+          <div className="crystal-grid crystal-grid-3">
+            {t.featureCards.map((card, index) => (
+              <article
+                key={card.title}
+                className={`apparatus-card reaction-appear feature-card-${index}`}
+              >
                 <h3>{card.title}</h3>
                 <p>{card.description}</p>
               </article>
             ))}
           </div>
           <div className="feature-illustration-full">
-            <InteractiveLandingIllustration variant="features" />
+            <ScientificVisualization variant="features" />
           </div>
         </section>
 
@@ -1081,15 +1097,18 @@ export default function LandingPage() {
           </div>
           <div className="feature-with-illustration">
             <div className="feature-illustration">
-              <InteractiveLandingIllustration variant="workflow" />
+              <ScientificVisualization variant="workflow" />
             </div>
             <div>
-              <div className="public-grid public-grid-2">
-                {t.workflowRows.map((row) => (
-                  <article key={row.title} className="public-card">
+              <div className="crystal-grid crystal-grid-2">
+                {t.workflowRows.map((row, index) => (
+                  <article
+                    key={row.title}
+                    className={`apparatus-card reaction-appear workflow-card-${index}`}
+                  >
                     <h3>{row.title}</h3>
                     <p>{row.description}</p>
-                    <ul className="public-list">
+                    <ul className="scientific-list">
                       {row.bullets.map((bullet) => (
                         <li key={bullet}>{bullet}</li>
                       ))}
