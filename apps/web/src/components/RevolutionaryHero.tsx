@@ -24,31 +24,45 @@ export default function RevolutionaryHero({
   const progressRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    let progressTimer: number | undefined;
+
     // Animated progress bar on load
-    if (progressRef.current) {
-      setTimeout(() => {
-        progressRef.current!.classList.add("progress-animated");
+    const progressBar = progressRef.current;
+    if (progressBar) {
+      progressTimer = window.setTimeout(() => {
+        progressBar.classList.add("progress-animated");
       }, 500);
     }
 
     // Floating molecule animation
     const molecule = moleculeRef.current;
-    if (molecule) {
-      let mouseX = 0;
-      let mouseY = 0;
-
-      const handleMouseMove = (e: MouseEvent) => {
-        mouseX = e.clientX / window.innerWidth - 0.5;
-        mouseY = e.clientY / window.innerHeight - 0.5;
-
-        molecule.classList.add("mouse-following");
-        molecule.setAttribute("data-mouse-x", mouseX.toString());
-        molecule.setAttribute("data-mouse-y", mouseY.toString());
+    if (!molecule) {
+      return () => {
+        if (progressTimer !== undefined) {
+          window.clearTimeout(progressTimer);
+        }
       };
-
-      window.addEventListener("mousemove", handleMouseMove);
-      return () => window.removeEventListener("mousemove", handleMouseMove);
     }
+
+    let mouseX = 0;
+    let mouseY = 0;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX = e.clientX / window.innerWidth - 0.5;
+      mouseY = e.clientY / window.innerHeight - 0.5;
+
+      molecule.classList.add("mouse-following");
+      molecule.setAttribute("data-mouse-x", mouseX.toString());
+      molecule.setAttribute("data-mouse-y", mouseY.toString());
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => {
+      if (progressTimer !== undefined) {
+        window.clearTimeout(progressTimer);
+      }
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
   }, []);
 
   return (
@@ -215,7 +229,7 @@ export default function RevolutionaryHero({
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         .laboratory-hero {
           position: relative;
           overflow: hidden;

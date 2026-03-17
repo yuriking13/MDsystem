@@ -7,7 +7,6 @@ import {
 import InteractiveLandingIllustration from "../components/InteractiveLandingIllustration";
 import ScientificVisualization from "../components/ScientificVisualization";
 import RevolutionaryHero from "../components/RevolutionaryHero";
-import FullscreenHero from "../components/FullscreenHero";
 import { useSectionTransition } from "../lib/useScrollEffect";
 
 type ThemeMode = "light" | "dark";
@@ -930,7 +929,7 @@ export default function LandingPage() {
     resolveInitialLocale(),
   );
   const t = LANDING_CONTENT[locale];
-  const heroCards = HERO_SLIDES[locale];
+  const _heroCards = HERO_SLIDES[locale];
   const currentYear = new Date().getFullYear();
 
   // Хук для отслеживания активной секции и эффектов перехода

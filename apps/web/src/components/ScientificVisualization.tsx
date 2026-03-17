@@ -29,12 +29,6 @@ export default function ScientificVisualization({
     const animate = () => {
       ctx.clearRect(0, 0, rect.width, rect.height);
 
-      // Set up colors
-      const vermillion = "#E34234";
-      const prussian = "#003153";
-      const copper = "#B87333";
-      const bone = "#F7F3E9";
-
       if (variant === "features") {
         // Draw molecular network
         drawMolecularNetwork(ctx, rect.width, rect.height, time);
@@ -165,7 +159,6 @@ export default function ScientificVisualization({
     time: number,
   ) => {
     // Draw oscilloscope-like display
-    const centerX = width / 2;
     const centerY = height / 2;
 
     // Frame
@@ -271,7 +264,7 @@ export default function ScientificVisualization({
   return (
     <div className="scientific-visualization">
       <canvas ref={canvasRef} className="scientific-canvas" />
-      <style jsx global>{`
+      <style>{`
         .scientific-visualization {
           padding: var(--space-phi-3);
           background: var(--bg-apparatus);
