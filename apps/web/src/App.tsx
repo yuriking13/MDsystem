@@ -11,7 +11,7 @@ import AppLayout from "./components/AppLayout";
 // Lazy load pages for better performance
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
-const LandingPage = lazy(() => import("./pages/CellularLandingPage"));
+const LandingPage = lazy(() => import("./pages/ProfessionalLandingPage"));
 const ScienceLandingPage = lazy(
   () => import("./pages/science/ScienceLandingPage"),
 );
