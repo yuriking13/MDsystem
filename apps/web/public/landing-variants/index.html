@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Выберите стиль лэндинга - Scientiaiter</title>
+  <style>
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 2rem;
+      color: #1a1a1a;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      color: #2563eb;
+    }
+    
+    .subtitle {
+      font-size: 1.25rem;
+      color: #64748b;
+      margin-bottom: 3rem;
+    }
+    
+    .variants {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2rem;
+      margin: 2rem 0;
+    }
+    
+    .variant-card {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 2rem;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .variant-card:hover {
+      border-color: #2563eb;
+      transform: translateY(-5px);
+      box-shadow: 0 20px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    .variant-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    
+    .variant-description {
+      color: #64748b;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+    
+    .variant-preview {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background: #2563eb;
+      color: white;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background 0.3s ease;
+    }
+    
+    .variant-card:hover .btn {
+      background: #1d4ed8;
+    }
+
+    .modern { --accent: #3b82f6; }
+    .soviet { --accent: #dc2626; }
+    .greek { --accent: #d4af37; }
+
+    .modern .variant-title { color: #3b82f6; }
+    .soviet .variant-title { color: #dc2626; }
+    .greek .variant-title { color: #d4af37; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Выберите стиль лэндинга</h1>
+    <p class="subtitle">
+      Три варианта дизайна для Scientiaiter, каждый отражает уникальный подход к слиянию классической науки и ИИ
+    </p>
+    
+    <div class="variants">
+      <a href="modern/" class="variant-card modern">
+        <div class="variant-preview">💻</div>
+        <h2 class="variant-title">Современный стиль</h2>
+        <p class="variant-description">
+          Минималистичный дизайн с акцентом на технологии. Чистые линии, 
+          современная типографика и интерактивные элементы. Фокус на инновациях 
+          и будущем науки.
+        </p>
+        <span class="btn">Посмотреть →</span>
+      </a>
+
+      <a href="soviet/" class="variant-card soviet">
+        <div class="variant-preview">⚙️</div>
+        <h2 class="variant-title">Советский стиль</h2>
+        <p class="variant-description">
+          Конструктивистский дизайн в духе советской эпохи. Геометрические формы,
+          красно-золотая цветовая схема, промышленная эстетика. Упор на 
+          планомерность и систематичность.
+        </p>
+        <span class="btn">Посмотреть →</span>
+      </a>
+
+      <a href="greek/" class="variant-card greek">
+        <div class="variant-preview">🏛️</div>
+        <h2 class="variant-title">Греческий стиль</h2>
+        <p class="variant-description">
+          Классический античный дизайн с элементами древнегреческой философии.
+          Мраморные текстуры, золотые акценты, академическая серьезность. 
+          Связь с традициями научной мысли.
+        </p>
+        <span class="btn">Посмотреть →</span>
+      </a>
+    </div>
+
+    <div style="margin-top: 3rem; padding: 2rem; background: white; border-radius: 12px; border: 2px solid #e2e8f0;">
+      <h3 style="color: #1a1a1a; margin-bottom: 1rem;">Концепция</h3>
+      <p style="color: #64748b; line-height: 1.6;">
+        Каждый вариант подчеркивает ключевую идею Scientiaiter — слияние классической науки с ИИ. 
+        Современный стиль показывает технологическое будущее, советский — системный подход к науке, 
+        а греческий — связь с философскими корнями научного метода. Специализация на медицинских 
+        исследованиях подчеркивается во всех вариантах.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

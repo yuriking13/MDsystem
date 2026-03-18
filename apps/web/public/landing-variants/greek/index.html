@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Σκιεντιαίτερ - Соединяя Мудрость Веков с Силой Разума</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <style>
+    /* Ancient Greek Academic Design System */
+    :root {
+      --marble: #F8F6F0;
+      --marble-dark: #E8E4D6;
+      --gold: #D4AF37;
+      --deep-gold: #B8941F;
+      --bronze: #CD7F32;
+      --deep-blue: #1C3F7A;
+      --navy: #0F2C5C;
+      --charcoal: #2C2C2C;
+      --parchment: #F5F1E8;
+      --ink: #1a1a1a;
+      --shadow: rgba(0, 0, 0, 0.15);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Crimson Text', serif;
+      background: var(--marble);
+      color: var(--ink);
+      line-height: 1.7;
+      font-size: 18px;
+    }
+
+    /* Classical Typography */
+    .hero-title {
+      font-family: 'Cinzel', serif;
+      font-size: 4rem;
+      font-weight: 900;
+      color: var(--deep-blue);
+      text-align: center;
+      margin-bottom: 1.5rem;
+      text-shadow: 2px 2px 4px var(--shadow);
+      position: relative;
+    }
+
+    .hero-title::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 4px;
+      background: linear-gradient(to right, var(--gold) 0%, var(--deep-gold) 100%);
+    }
+
+    .hero-subtitle {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      color: var(--bronze);
+      text-align: center;
+      margin-bottom: 2rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 2.8rem;
+      font-weight: 600;
+      color: var(--deep-blue);
+      text-align: center;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+
+    .section-subtitle {
+      font-size: 1.3rem;
+      color: var(--bronze);
+      text-align: center;
+      margin-bottom: 3rem;
+      font-style: italic;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Layout */
+    .container { 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      padding: 0 2rem; 
+    }
+
+    .section { 
+      padding: 5rem 0; 
+      position: relative;
+    }
+
+    .columns {
+      display: grid;
+      gap: 3rem;
+    }
+
+    .columns-2 { grid-template-columns: 1fr 1fr; }
+    .columns-3 { grid-template-columns: repeat(3, 1fr); }
+
+    @media (max-width: 768px) {
+      .columns-2, .columns-3 { grid-template-columns: 1fr; }
+    }
+
+    /* Classical decorative elements */
+    .greek-border {
+      border: 3px solid var(--gold);
+      border-radius: 0;
+      position: relative;
+    }
+
+    .greek-border::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: -8px;
+      right: -8px;
+      bottom: -8px;
+      border: 1px solid var(--bronze);
+      z-index: -1;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, var(--marble) 0%, var(--marble-dark) 100%);
+      border-bottom: 3px solid var(--gold);
+      padding: 1.5rem 0;
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      right: 0;
+      height: 8px;
+      background: repeating-linear-gradient(
+        to right,
+        var(--bronze) 0px,
+        var(--bronze) 20px,
+        var(--gold) 20px,
+        var(--gold) 40px
+      );
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      font-weight: 900;
+      color: var(--deep-blue);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo::before {
+      content: 'Σ';
+      font-size: 2.5rem;
+      color: var(--gold);
+    }
+
+    .nav {
+      display: flex;
+      gap: 3rem;
+      list-style: none;
+    }
+
+    .nav a {
+      color: var(--deep-blue);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .nav a:hover {
+      color: var(--gold);
+    }
+
+    .nav a::after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gold);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .nav a:hover::after {
+      transform: scaleX(1);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-block;
+      padding: 1rem 2.5rem;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--deep-gold) 100%);
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1.1rem;
+      border: 2px solid var(--bronze);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn:hover {
+      background: linear-gradient(135deg, var(--deep-gold) 0%, var(--bronze) 100%);
+      color: var(--marble);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 15px var(--shadow);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, var(--marble) 0%, var(--marble-dark) 100%);
+      color: var(--deep-blue);
+      border: 2px solid var(--deep-blue);
+    }
+
+    .btn-secondary:hover {
+      background: var(--deep-blue);
+      color: var(--marble);
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      background: 
+        radial-gradient(circle at 20% 20%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(28, 63, 122, 0.1) 0%, transparent 50%),
+        var(--marble);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 10 L90 90 L10 90 Z" fill="none" stroke="%23D4AF37" stroke-width="0.5" opacity="0.1"/></svg>');
+      background-size: 200px 200px;
+      opacity: 0.3;
+      animation: float 20s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(30px, -30px) rotate(2deg); }
+      66% { transform: translate(-20px, 20px) rotate(-1deg); }
+    }
+
+    .hero-content {
+      text-align: center;
+      z-index: 2;
+      position: relative;
+    }
+
+    .hero-text {
+      max-width: 800px;
+      margin: 0 auto 3rem;
+      font-size: 1.3rem;
+      color: var(--charcoal);
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Ancient scroll code pattern */
+    .scroll-code {
+      position: absolute;
+      right: 10%;
+      top: 25%;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: var(--bronze);
+      opacity: 0.2;
+      transform: rotate(15deg);
+      max-width: 300px;
+    }
+
+    .papyrus-line {
+      background: var(--parchment);
+      border-left: 3px solid var(--gold);
+      padding: 0.5rem 1rem;
+      margin: 0.5rem 0;
+      box-shadow: 2px 2px 4px var(--shadow);
+      animation: unroll 5s ease-in-out infinite;
+    }
+
+    @keyframes unroll {
+      0% { transform: scaleX(0.1); opacity: 0; }
+      20% { transform: scaleX(1); opacity: 1; }
+      80% { transform: scaleX(1); opacity: 1; }
+      100% { transform: scaleX(0.1); opacity: 0; }
+    }
+
+    .papyrus-line:nth-child(2) { animation-delay: -1s; }
+    .papyrus-line:nth-child(3) { animation-delay: -2s; }
+    .papyrus-line:nth-child(4) { animation-delay: -3s; }
+
+    /* Cards - Classical tablet style */
+    .wisdom-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 2.5rem;
+      margin: 4rem 0;
+    }
+
+    .wisdom-card {
+      background: var(--parchment);
+      border: 2px solid var(--bronze);
+      padding: 2.5rem;
+      position: relative;
+      transition: all 0.4s ease;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .wisdom-card::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      background: linear-gradient(45deg, var(--gold), var(--bronze), var(--gold));
+      z-index: -1;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .wisdom-card:hover::before {
+      opacity: 1;
+    }
+
+    .wisdom-card:hover {
+      transform: translateY(-8px);
+      background: var(--marble);
+    }
+
+    .card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      display: block;
+      text-align: center;
+    }
+
+    .card-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--deep-blue);
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .card-text {
+      line-height: 1.8;
+      color: var(--ink);
+      text-align: justify;
+    }
+
+    /* Philosophical quote section */
+    .philosophy-section {
+      background: linear-gradient(135deg, var(--deep-blue) 0%, var(--navy) 100%);
+      color: var(--marble);
+      padding: 6rem 0;
+      text-align: center;
+      position: relative;
+    }
+
+    .philosophy-section::before {
+      content: '"';
+      position: absolute;
+      top: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: 'Cinzel', serif;
+      font-size: 8rem;
+      color: var(--gold);
+      opacity: 0.3;
+    }
+
+    .quote {
+      font-family: 'Cinzel', serif;
+      font-size: 2.2rem;
+      font-weight: 400;
+      line-height: 1.4;
+      max-width: 900px;
+      margin: 0 auto 2rem;
+      color: var(--marble);
+      position: relative;
+      z-index: 2;
+    }
+
+    .quote-author {
+      font-size: 1.3rem;
+      color: var(--gold);
+      font-style: italic;
+      margin-bottom: 3rem;
+    }
+
+    /* Medicine specialization */
+    .medicine-focus {
+      background: var(--parchment);
+      padding: 5rem 0;
+      position: relative;
+    }
+
+    .medicine-focus::before {
+      content: '⚕';
+      position: absolute;
+      top: 3rem;
+      right: 3rem;
+      font-size: 4rem;
+      color: var(--gold);
+      opacity: 0.3;
+    }
+
+    /* Footer */
+    .footer {
+      background: var(--charcoal);
+      color: var(--marble);
+      padding: 4rem 0 2rem;
+      text-align: center;
+      border-top: 5px solid var(--gold);
+      position: relative;
+    }
+
+    .footer::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: 0;
+      right: 0;
+      height: 15px;
+      background: repeating-linear-gradient(
+        to right,
+        var(--bronze) 0px,
+        var(--bronze) 30px,
+        var(--gold) 30px,
+        var(--gold) 60px
+      );
+    }
+
+    .footer-motto {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      color: var(--gold);
+      margin-bottom: 1rem;
+      font-style: italic;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.8rem; }
+      .nav { display: none; }
+      .hero-actions { flex-direction: column; }
+      .scroll-code { display: none; }
+      .quote { font-size: 1.8rem; }
+      .section-title { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <a href="#" class="logo">ΚΙΕΝΤΙΑΊΤΕΡ</a>
+        
+        <nav class="nav">
+          <a href="#wisdom">Мудрость</a>
+          <a href="#academy">Академия</a>
+          <a href="#medicine">Медицина</a>
+        </nav>
+
+        <div>
+          <a href="/login" class="btn btn-secondary">Войти</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          ΕΠΙΣΤΗΜΗ ΚΑΙ ΤΕΧΝΗ
+        </h1>
+        <p class="hero-subtitle">Наука и Искусство</p>
+        
+        <div class="hero-text">
+          <p>
+            Scientiaiter воплощает древнюю мечту философов — соединить мудрость веков 
+            с безграничной силой разума. Как в древних академиях, где мыслители постигали 
+            природу вещей, наша платформа создает пространство для современных исследователей.
+          </p>
+        </div>
+        
+        <div class="hero-actions">
+          <a href="/register" class="btn">Войти в Академию</a>
+          <a href="#wisdom" class="btn btn-secondary">Познать Мудрость</a>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Ancient Code Scroll -->
+    <div class="scroll-code">
+      <div class="papyrus-line">επιστημη.αρχή()</div>
+      <div class="papyrus-line">λογος.αναλυσις()</div>
+      <div class="papyrus-line">σοφια.συνδυασμος()</div>
+      <div class="papyrus-line">αληθεια.ανακαλυψις()</div>
+    </div>
+  </section>
+
+  <!-- Wisdom Section -->
+  <section class="section" id="wisdom">
+    <div class="container">
+      <h2 class="section-title">Столпы Мудрости</h2>
+      <p class="section-subtitle">
+        Основанные на вечных принципах познания, усиленные современными технологиями
+      </p>
+      
+      <div class="wisdom-grid">
+        <div class="wisdom-card">
+          <span class="card-icon">📜</span>
+          <h3 class="card-title">Episteme<br><small>Научное знание</small></h3>
+          <p class="card-text">
+            Систематический поиск и анализ литературы следует принципам, заложенным Аристотелем. 
+            ИИ помогает структурировать знания, но основа остается классической — строгость метода 
+            и проверяемость результатов.
+          </p>
+        </div>
+
+        <div class="wisdom-card">
+          <span class="card-icon">🏛️</span>
+          <h3 class="card-title">Techné<br><small>Искусство применения</small></h3>
+          <p class="card-text">
+            Мастерство научного письма развивается через практику, как учили в древних риториках. 
+            ИИ-ассистент направляет исследователя, предлагая улучшения структуры и стиля, 
+            сохраняя авторскую мысль.
+          </p>
+        </div>
+
+        <div class="wisdom-card">
+          <span class="card-icon">🔍</span>
+          <h3 class="card-title">Logos<br><small>Разумное обоснование</small></h3>
+          <p class="card-text">
+            Логический анализ данных и построение аргументации — сердце научного метода. 
+            Граф цитирования визуализирует связи идей, помогая обнаружить логические пробелы 
+            и новые направления мысли.
+          </p>
+        </div>
+
+        <div class="wisdom-card">
+          <span class="card-icon">⚖️</span>
+          <h3 class="card-title">Díkē<br><small>Справедливость метода</small></h3>
+          <p class="card-text">
+            Этические принципы исследования остаются неизменными. Платформа обеспечивает 
+            прозрачность процессов, сохранение авторства и ответственное использование 
+            данных в соответствии с научной этикой.
+          </p>
+        </div>
+
+        <div class="wisdom-card">
+          <span class="card-icon">🌟</span>
+          <h3 class="card-title">Sophia<br><small>Высшая мудрость</small></h3>
+          <p class="card-text">
+            Интеграция всех форм знания в целостное понимание. ИИ анализирует паттерны 
+            в массивах данных, но интерпретация и синтез остаются прерогативой человеческого разума.
+          </p>
+        </div>
+
+        <div class="wisdom-card">
+          <span class="card-icon">🔄</span>
+          <h3 class="card-title">Mimēsis<br><small>Творческое воспроизведение</small></h3>
+          <p class="card-text">
+            Автоматизация рутинных процессов освобождает время для творческого поиска. 
+            Шаблоны и workflows сохраняют лучшие практики, позволяя фокусироваться 
+            на оригинальном вкладе в науку.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Philosophy Quote Section -->
+  <section class="philosophy-section">
+    <div class="container">
+      <blockquote class="quote">
+        Знание есть припоминание того, что душа уже знала, 
+        а истинное обучение — это пробуждение разума к познанию вечных истин
+      </blockquote>
+      <cite class="quote-author">— По мотивам учения Платона</cite>
+      
+      <div style="max-width: 600px; margin: 0 auto;">
+        <p style="font-size: 1.2rem; line-height: 1.6;">
+          Scientiaiter следует этому принципу: технологии лишь пробуждают и направляют 
+          врожденную способность человека к познанию истины.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Medicine Focus Section -->
+  <section class="medicine-focus section" id="medicine">
+    <div class="container">
+      <h2 class="section-title">Ιατρική Τέχνη</h2>
+      <p class="section-subtitle">Медицинское искусство</p>
+      
+      <div class="columns columns-2">
+        <div>
+          <h3 style="font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--deep-blue); margin-bottom: 1.5rem;">
+            Наследие Гиппократа
+          </h3>
+          <p style="margin-bottom: 1.5rem;">
+            Как отец медицины заложил основы научного подхода к лечению, Scientiaiter 
+            создает фундамент для современных медицинских исследований. Принципы "не навреди" 
+            и тщательного наблюдения остаются актуальными.
+          </p>
+          <p style="margin-bottom: 2rem;">
+            Наша платформа специализируется на медицинских исследованиях, где особенно важны 
+            точность, воспроизводимость и этическая ответственность.
+          </p>
+          <a href="/med" class="btn">Медицинская Академия</a>
+        </div>
+        
+        <div class="wisdom-card" style="margin-top: 0;">
+          <span class="card-icon">⚕️</span>
+          <h3 class="card-title">Современный Асклепион</h3>
+          <p class="card-text">
+            Как древние храмы исцеления были центрами медицинского знания, 
+            Scientiaiter создает цифровое пространство для:
+          </p>
+          <ul style="margin-top: 1rem; padding-left: 2rem; line-height: 1.8;">
+            <li>Систематических обзоров клинических исследований</li>
+            <li>Анализа эффективности терапевтических методов</li>
+            <li>Изучения паттернов в медицинских данных</li>
+            <li>Подготовки публикаций для медицинских журналов</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Academy CTA -->
+  <section class="section" id="academy" style="background: var(--marble-dark);">
+    <div class="container">
+      <div style="text-align: center;">
+        <h2 class="section-title">Присоединяйтесь к Академии</h2>
+        <p class="section-subtitle">
+          Станьте частью сообщества исследователей, объединяющих классическую мудрость 
+          с современными возможностями
+        </p>
+        <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
+          <a href="/register" class="btn">Начать Исследование</a>
+          <a href="#wisdom" class="btn btn-secondary">Изучить Философию</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p class="footer-motto">"Τὸ σαφὲς εἰδέναι" — Ясно знать</p>
+      <p>&copy; 2024 Scientiaiter</p>
+      <p style="margin-top: 1rem; font-style: italic;">
+        Соединяя мудрость Античности с силой современных технологий
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Ancient scroll animation
+    function animateScroll() {
+      const lines = document.querySelectorAll('.papyrus-line');
+      lines.forEach((line, index) => {
+        setTimeout(() => {
+          line.style.animation = 'none';
+          setTimeout(() => {
+            line.style.animation = 'unroll 5s ease-in-out infinite';
+          }, 100);
+        }, index * 1000);
+      });
+    }
+
+    setInterval(animateScroll, 6000);
+
+    // Smooth scrolling for classical navigation
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+          });
+        }
+      });
+    });
+
+    // Wisdom card hover effects
+    document.querySelectorAll('.wisdom-card').forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-8px) scale(1.02)';
+      });
+      
+      card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0) scale(1)';
+      });
+    });
+
+    // Classical parallax effect
+    window.addEventListener('scroll', () => {
+      const scrolled = window.pageYOffset;
+      const parallax = document.querySelector('.hero::before');
+      if (parallax) {
+        const rate = scrolled * -0.5;
+        parallax.style.transform = `translate3d(0, ${rate}px, 0)`;
+      }
+    });
+  </script>
+</body>
+</html>
