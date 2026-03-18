@@ -21,7 +21,8 @@
       position: relative;
       width: 100vw;
       height: 100vh;
-      perspective: 1000px;
+      perspective: 1200px;
+      perspective-origin: center center;
     }
 
     /* Each section as a "layer" */
@@ -32,15 +33,27 @@
       width: 100%;
       height: 100%;
       transform-style: preserve-3d;
-      transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       opacity: 0;
       pointer-events: none;
+      transform: translateZ(-100px) scale(0.9);
     }
 
     .section-layer.active {
       opacity: 1;
       pointer-events: all;
       z-index: 10;
+      transform: translateZ(0) scale(1);
+    }
+
+    .section-layer.prev {
+      transform: translateZ(-200px) scale(0.8);
+      opacity: 0.3;
+    }
+
+    .section-layer.next {
+      transform: translateZ(-50px) scale(0.95);
+      opacity: 0.1;
     }
 
     /* Navigation between layers */
@@ -518,36 +531,37 @@
 
     // Layer navigation
     function showLayer(layerIndex) {
-      if (isTransitioning || layerIndex === currentLayer) return;
+      if (isTransitioning || layerIndex === currentLayer || layerIndex < 0 || layerIndex >= totalLayers) return;
       
+      console.log(`Switching from layer ${currentLayer} to ${layerIndex}`);
       isTransitioning = true;
       
-      // Hide current layer
-      const currentLayerEl = document.querySelector(`[data-layer="${currentLayer}"]`);
-      const targetLayerEl = document.querySelector(`[data-layer="${layerIndex}"]`);
+      // Get all layers
+      const allLayers = document.querySelectorAll('.section-layer');
       
-      if (currentLayerEl) {
-        currentLayerEl.classList.remove('active');
-      }
-      
-      // Show target layer with delay
-      setTimeout(() => {
-        if (targetLayerEl) {
-          targetLayerEl.classList.add('active');
+      // Remove all states
+      allLayers.forEach((layer, index) => {
+        layer.classList.remove('active', 'prev', 'next');
+        
+        if (index === layerIndex) {
+          layer.classList.add('active');
+        } else if (index < layerIndex) {
+          layer.classList.add('prev');
+        } else {
+          layer.classList.add('next');
         }
-        
-        // Update navigation dots
-        document.querySelectorAll('.nav-dot').forEach((dot, index) => {
-          dot.classList.toggle('active', index === layerIndex);
-        });
-        
-        currentLayer = layerIndex;
-        
-        setTimeout(() => {
-          isTransitioning = false;
-        }, 600);
-        
-      }, 200);
+      });
+      
+      // Update navigation dots
+      document.querySelectorAll('.nav-dot').forEach((dot, index) => {
+        dot.classList.toggle('active', index === layerIndex);
+      });
+      
+      currentLayer = layerIndex;
+      
+      setTimeout(() => {
+        isTransitioning = false;
+      }, 800);
     }
 
     // Dive to next layer
@@ -659,6 +673,20 @@
         layer.style.willChange = 'transform, opacity';
       });
     }, 1000);
+
+    // Debug: Add click handler to verify JavaScript is working
+    document.addEventListener('click', (e) => {
+      console.log('Click detected at:', e.target);
+      if (e.target.classList.contains('dive-btn')) {
+        console.log('Dive button clicked');
+      }
+    });
+
+    // Test navigation on load
+    setTimeout(() => {
+      console.log('Page loaded, current layer:', currentLayer);
+      console.log('Total layers found:', document.querySelectorAll('.section-layer').length);
+    }, 500);
   </script>
 </body>
 </html>
