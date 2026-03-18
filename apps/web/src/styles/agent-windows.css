@@ -1,0 +1,544 @@
+/* =============================================================================
+   Agent Windows Styles
+   Styles for the new modal-based agent window system
+   ============================================================================= */
+
+/* Base agent window styles */
+.agent-window {
+  position: fixed;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  min-width: 320px;
+  min-height: 240px;
+  z-index: 9999;
+}
+
+/* Window type variations */
+.agent-window--literature {
+  border-color: #3b82f6;
+}
+
+.agent-window--writing {
+  border-color: #10b981;
+}
+
+.agent-window--analytics {
+  border-color: #8b5cf6;
+}
+
+.agent-window--citation {
+  border-color: #f59e0b;
+}
+
+.agent-window--quality {
+  border-color: #ef4444;
+}
+
+.agent-window--general {
+  border-color: #6b7280;
+}
+
+/* Window states */
+.agent-window--minimized {
+  opacity: 0.8;
+  transform: scale(0.9);
+  transition: all 0.2s ease;
+}
+
+.agent-window--dragging {
+  box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.35);
+  transform: scale(1.02);
+  z-index: 10000;
+}
+
+.agent-window--resizing {
+  transition: none;
+}
+
+/* Window header */
+.agent-window-header {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+  user-select: none;
+}
+
+.agent-window-header:hover {
+  background: #f3f4f6;
+}
+
+.agent-window-header--dragging {
+  background: #e5e7eb;
+  cursor: grabbing;
+}
+
+.agent-window-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.agent-window-type-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.agent-window-type-indicator--literature {
+  background-color: #3b82f6;
+}
+
+.agent-window-type-indicator--writing {
+  background-color: #10b981;
+}
+
+.agent-window-type-indicator--analytics {
+  background-color: #8b5cf6;
+}
+
+.agent-window-type-indicator--citation {
+  background-color: #f59e0b;
+}
+
+.agent-window-type-indicator--quality {
+  background-color: #ef4444;
+}
+
+.agent-window-type-indicator--general {
+  background-color: #6b7280;
+}
+
+.agent-window-title-text {
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+}
+
+.agent-window-type-badge {
+  font-size: 11px;
+  color: #6b7280;
+  background: #e5e7eb;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+/* Window controls */
+.agent-window-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-window-control {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-window-control:hover {
+  transform: scale(1.1);
+}
+
+.agent-window-control--minimize {
+  background-color: #fbbf24;
+  color: #92400e;
+}
+
+.agent-window-control--minimize:hover {
+  background-color: #f59e0b;
+}
+
+.agent-window-control--maximize {
+  background-color: #34d399;
+  color: #065f46;
+}
+
+.agent-window-control--maximize:hover {
+  background-color: #10b981;
+}
+
+.agent-window-control--close {
+  background-color: #f87171;
+  color: #991b1b;
+}
+
+.agent-window-control--close:hover {
+  background-color: #ef4444;
+}
+
+/* Window content */
+.agent-window-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.agent-window-content-inner {
+  height: 100%;
+  overflow: auto;
+}
+
+/* Resize handle */
+.agent-window-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 16px;
+  height: 16px;
+  cursor: se-resize;
+  z-index: 10;
+}
+
+.agent-window-resize-handle::before {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  background: #9ca3af;
+  opacity: 0.5;
+  clip-path: polygon(100% 0, 0 100%, 100% 100%);
+}
+
+.agent-window-resize-handle:hover::before {
+  opacity: 0.8;
+  background: #6b7280;
+}
+
+/* Backdrop */
+.agent-window-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.2);
+  z-index: 9998;
+  backdrop-filter: blur(2px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .agent-window {
+    width: 100% !important;
+    height: 100% !important;
+    top: 0 !important;
+    left: 0 !important;
+    border-radius: 0;
+    border: none;
+  }
+
+  .agent-window-header {
+    padding: 16px 20px;
+  }
+
+  .agent-window-title-text {
+    font-size: 16px;
+  }
+
+  .agent-window-resize-handle {
+    display: none;
+  }
+}
+
+/* Agent floating button */
+.agent-fab {
+  position: fixed;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 50;
+}
+
+.agent-fab:hover {
+  transform: scale(1.1);
+  background: #2563eb;
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.5);
+}
+
+.agent-fab--menu-open {
+  background: #6b7280;
+  transform: rotate(45deg);
+}
+
+.agent-fab--menu-open:hover {
+  background: #4b5563;
+}
+
+.agent-fab--active {
+  animation: pulse 2s infinite;
+}
+
+.agent-fab-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 24px;
+  height: 24px;
+  background: #10b981;
+  color: white;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+/* Agent menu */
+.agent-fab-menu {
+  position: absolute;
+  width: 320px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  z-index: 51;
+}
+
+.agent-fab-menu-header {
+  padding: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.agent-fab-menu-title {
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.agent-fab-menu-subtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.agent-fab-menu-content {
+  max-height: 384px;
+  overflow-y: auto;
+}
+
+.agent-fab-menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  background: white;
+  border: none;
+  border-left: 4px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.agent-fab-menu-item:hover {
+  background: #f9fafb;
+}
+
+.agent-fab-menu-item--active {
+  border-left-color: #10b981;
+  background: #f0fdf4;
+}
+
+.agent-fab-menu-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.agent-fab-menu-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.agent-fab-menu-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-fab-menu-item-title {
+  font-weight: 500;
+  color: #111827;
+  font-size: 14px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.agent-fab-menu-item-description {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-fab-menu-item-badge {
+  font-size: 11px;
+  background: #dcfce7;
+  color: #166534;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.agent-fab-menu-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.agent-fab-menu-stats {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Positioning classes */
+.agent-fab--bottom-right {
+  bottom: 24px;
+  right: 24px;
+}
+
+.agent-fab--bottom-left {
+  bottom: 24px;
+  left: 24px;
+}
+
+.agent-fab--top-right {
+  top: 24px;
+  right: 24px;
+}
+
+.agent-fab--top-left {
+  top: 24px;
+  left: 24px;
+}
+
+.agent-fab-menu--bottom-right {
+  bottom: calc(100% + 8px);
+  right: 0;
+}
+
+.agent-fab-menu--bottom-left {
+  bottom: calc(100% + 8px);
+  left: 0;
+}
+
+.agent-fab-menu--top-right {
+  top: calc(100% + 8px);
+  right: 0;
+}
+
+.agent-fab-menu--top-left {
+  top: calc(100% + 8px);
+  left: 0;
+}
+
+/* Body states during dragging/resizing */
+body.agent-dragging {
+  cursor: move !important;
+}
+
+body.agent-resizing {
+  cursor: se-resize !important;
+}
+
+body.agent-no-select {
+  user-select: none !important;
+}
+
+/* Window positioning styles using dataset attributes */
+.agent-window[data-window-x] {
+  left: calc(1px * attr(data-window-x number, 100));
+  top: calc(1px * attr(data-window-y number, 100));
+  width: calc(1px * attr(data-window-width number, 450));
+  height: calc(1px * attr(data-window-height number, 600));
+  z-index: attr(data-window-z number, 1000);
+}
+
+/* Fallback for browsers that don't support attr() with numbers */
+.agent-window {
+  left: 100px;
+  top: 100px; 
+  width: 450px;
+  height: 600px;
+  z-index: 1000;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.agent-window {
+  animation: fadeIn 0.2s ease;
+}
+
+.agent-fab-menu {
+  animation: slideUp 0.15s ease;
+}
