@@ -1,548 +1,603 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/professional-landing.css";
 
 export default function ProfessionalLandingPage() {
-  const [scrollY, setScrollY] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [language, setLanguage] = useState<"ru" | "en">("ru");
 
   useEffect(() => {
-    setIsLoaded(true);
+    // Apply theme to document
+    document.documentElement.className = theme === "dark" ? "dark" : "";
+  }, [theme]);
 
-    const handleScroll = () => {
-      setScrollY(window.scrollY);
-    };
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
 
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  const toggleLanguage = () => {
+    setLanguage((prev) => (prev === "ru" ? "en" : "ru"));
+  };
 
-  // Calculate device explosion effect based on scroll
-  const scrollProgress = Math.min(scrollY / 1200, 1);
-  const animationPhase = Math.floor(scrollProgress * 5); // 0-4 phases
+  const content = {
+    ru: {
+      nav: {
+        platform: "Платформа",
+        capabilities: "Возможности",
+        pricing: "Цены",
+        login: "Войти",
+        start: "Начать",
+      },
+      hero: {
+        badge: "Научная платформа нового поколения",
+        title: ["Исследования", "на новом", "уровне"],
+        subtitle:
+          "Профессиональная платформа для систематизации знаний, анализа данных и подготовки публикаций в области медицинских исследований",
+        cta1: "Попробовать платформу",
+        cta2: "Запросить демо",
+      },
+      capabilities: {
+        title: "Интегрированная исследовательская экосистема",
+        subtitle:
+          "Каждый компонент платформы работает в синергии, обеспечивая полный цикл научного исследования",
+        cards: [
+          {
+            title: "Аналитический движок",
+            description:
+              "Продвинутые статистические методы и машинное обучение для анализа исследовательских данных. Автоматическая проверка гипотез и выявление паттернов.",
+          },
+          {
+            title: "ИИ-ядро",
+            description:
+              "Центральный искусственный интеллект для обработки естественного языка, генерации гипотез и ассистирования в написании научных текстов.",
+          },
+          {
+            title: "База литературы",
+            description:
+              "Интегрированный доступ к ведущим научным базам данных. Умный поиск, автоматическая категоризация и построение графов цитирования.",
+          },
+          {
+            title: "Центр коллаборации",
+            description:
+              "Инструменты для командной работы: общие проекты, рецензирование, версионирование документов и распределение ролей.",
+          },
+        ],
+      },
+      pricing: {
+        title: "Тарифные планы",
+        subtitle: "Выберите подходящий план для ваших исследований",
+      },
+      footer: {
+        title: "Готовы повысить качество ваших исследований?",
+        subtitle:
+          "Присоединяйтесь к исследователям, которые уже используют возможности интегрированной научной платформы",
+        cta1: "Начать бесплатный период",
+        cta2: "Запросить демо",
+      },
+    },
+    en: {
+      nav: {
+        platform: "Platform",
+        capabilities: "Features",
+        pricing: "Pricing",
+        login: "Log in",
+        start: "Get Started",
+      },
+      hero: {
+        badge: "Next-generation scientific platform",
+        title: ["Research", "at a new", "level"],
+        subtitle:
+          "Professional platform for knowledge systematization, data analysis and publication preparation in medical research",
+        cta1: "Try Platform",
+        cta2: "Request Demo",
+      },
+      capabilities: {
+        title: "Integrated Research Ecosystem",
+        subtitle:
+          "Every component works in synergy to provide a complete scientific research cycle",
+        cards: [
+          {
+            title: "Analytics Engine",
+            description:
+              "Advanced statistical methods and machine learning for research data analysis. Automatic hypothesis testing and pattern detection.",
+          },
+          {
+            title: "AI Core",
+            description:
+              "Central artificial intelligence for natural language processing, hypothesis generation and scientific writing assistance.",
+          },
+          {
+            title: "Literature Database",
+            description:
+              "Integrated access to leading scientific databases. Smart search, automatic categorization and citation graph building.",
+          },
+          {
+            title: "Collaboration Hub",
+            description:
+              "Team collaboration tools: shared projects, peer review, document versioning and role management.",
+          },
+        ],
+      },
+      pricing: {
+        title: "Pricing Plans",
+        subtitle: "Choose the right plan for your research",
+      },
+      footer: {
+        title: "Ready to enhance your research quality?",
+        subtitle:
+          "Join researchers who are already using the integrated scientific platform capabilities",
+        cta1: "Start Free Trial",
+        cta2: "Request Demo",
+      },
+    },
+  };
+
+  const t = content[language];
 
   return (
-    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-slate-200 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Link to="/" className="text-2xl font-bold text-slate-900">
-              Scientiaiter
-            </Link>
+    <div
+      className={`min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-slate-900" : "bg-slate-50"}`}
+    >
+      {/* Animated Background */}
+      <div className="geometric-bg">
+        <div className="geometric-shape shape-1"></div>
+        <div className="geometric-shape shape-2"></div>
+        <div className="geometric-shape shape-3"></div>
+        <div className="geometric-shape shape-4"></div>
+        <div className="geometric-shape shape-5"></div>
+        <div className="geometric-shape shape-6"></div>
+      </div>
 
-            <nav className="hidden md:flex items-center gap-8">
-              <a
-                href="#platform"
-                className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
-              >
-                Платформа
-              </a>
-              <a
-                href="#capabilities"
-                className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
-              >
-                Возможности
-              </a>
-              <a
-                href="#pricing"
-                className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
-              >
-                Цены
-              </a>
-            </nav>
-
-            <div className="flex items-center gap-4">
+      {/* Header + Hero Combined */}
+      <section
+        className={`min-h-screen relative overflow-hidden ${theme === "dark" ? "bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900" : "bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50"}`}
+      >
+        {/* Header */}
+        <header className="relative z-50 px-6 py-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between">
               <Link
-                to="/login"
-                className="text-slate-600 hover:text-slate-900 transition-colors font-medium"
+                to="/"
+                className={`text-2xl font-bold ${theme === "dark" ? "text-white" : "text-slate-900"}`}
               >
-                Войти
+                Scientiaiter
               </Link>
+
+              <nav className="hidden md:flex items-center gap-8">
+                <a
+                  href="#platform"
+                  className={`${theme === "dark" ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"} transition-colors font-medium`}
+                >
+                  {t.nav.platform}
+                </a>
+                <a
+                  href="#capabilities"
+                  className={`${theme === "dark" ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"} transition-colors font-medium`}
+                >
+                  {t.nav.capabilities}
+                </a>
+                <a
+                  href="#pricing"
+                  className={`${theme === "dark" ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"} transition-colors font-medium`}
+                >
+                  {t.nav.pricing}
+                </a>
+              </nav>
+
+              <div className="flex items-center gap-4">
+                {/* Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className={`p-2 rounded-lg transition-colors ${theme === "dark" ? "text-yellow-400 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
+                  title={
+                    theme === "dark"
+                      ? "Switch to light mode"
+                      : "Switch to dark mode"
+                  }
+                >
+                  {theme === "dark" ? (
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  ) : (
+                    <svg
+                      className="w-5 h-5"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                    </svg>
+                  )}
+                </button>
+
+                {/* Language Toggle */}
+                <button
+                  onClick={toggleLanguage}
+                  className={`px-3 py-2 rounded-lg font-medium transition-colors ${theme === "dark" ? "text-slate-300 hover:text-white hover:bg-slate-800" : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"}`}
+                >
+                  {language === "ru" ? "EN" : "RU"}
+                </button>
+
+                <Link
+                  to="/login"
+                  className={`${theme === "dark" ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"} transition-colors font-medium`}
+                >
+                  {t.nav.login}
+                </Link>
+
+                <Link
+                  to="/register"
+                  className={`${theme === "dark" ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-900 hover:bg-slate-800"} text-white px-6 py-2.5 rounded-lg transition-colors font-medium`}
+                >
+                  {t.nav.start}
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Hero Content */}
+        <div className="relative z-40 flex items-center justify-center min-h-[calc(100vh-100px)] px-6">
+          <div className="max-w-5xl mx-auto text-center">
+            <div className="mb-8 animate-fade-in-up">
+              <span
+                className={`${theme === "dark" ? "bg-blue-500/20 text-blue-300 border-blue-400/30" : "bg-blue-100 text-blue-800"} border px-6 py-3 rounded-full text-sm font-medium backdrop-blur-sm`}
+              >
+                {t.hero.badge}
+              </span>
+            </div>
+
+            <h1
+              className={`text-6xl md:text-8xl font-light mb-8 ${theme === "dark" ? "text-white" : "text-slate-900"} leading-tight animate-fade-in-up-delay-1`}
+            >
+              {t.hero.title.map((line, index) => (
+                <div key={index} className="block">
+                  {line}
+                </div>
+              ))}
+            </h1>
+
+            <p
+              className={`text-xl md:text-2xl ${theme === "dark" ? "text-slate-300" : "text-slate-600"} mb-12 leading-relaxed max-w-4xl mx-auto font-light animate-fade-in-up-delay-2`}
+            >
+              {t.hero.subtitle}
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in-up-delay-3">
               <Link
                 to="/register"
-                className="bg-slate-900 text-white px-6 py-2.5 rounded-lg hover:bg-slate-800 transition-colors font-medium"
+                className={`${theme === "dark" ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-600 hover:bg-blue-700"} text-white px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105`}
               >
-                Начать
+                {t.hero.cta1}
               </Link>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="min-h-screen flex items-center justify-center px-6 relative bg-gradient-to-b from-slate-50 to-slate-100 pt-20">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="mb-6">
-            <span className="bg-blue-100 text-blue-800 px-4 py-2 rounded-full text-sm font-medium">
-              Научная платформа нового поколения
-            </span>
-          </div>
-
-          <h1 className="text-5xl md:text-6xl font-bold mb-6 text-slate-900 leading-tight">
-            Исследования
-            <br />
-            на новом
-            <br />
-            уровне
-          </h1>
-
-          <p className="text-xl text-slate-600 mb-8 leading-relaxed max-w-2xl mx-auto">
-            Профессиональная платформа для систематизации знаний, анализа данных
-            и подготовки публикаций в области медицинских исследований
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-            <Link
-              to="/register"
-              className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              Попробовать платформу
-            </Link>
-            <Link
-              to="/demo"
-              className="border border-slate-300 text-slate-700 px-8 py-4 rounded-xl text-lg font-semibold hover:border-slate-400 hover:bg-slate-50 transition-all duration-200"
-            >
-              Запросить демо
-            </Link>
-          </div>
-
-          {/* Feature highlights */}
-          <div className="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="font-semibold text-slate-900 mb-3">
-                Возможности платформы
-              </h3>
-              <ul className="text-left space-y-2 text-slate-600">
-                <li>• Интеллектуальный поиск литературы с ИИ</li>
-                <li>• Граф цитирования и связей между работами</li>
-                <li>• Автоматизированный анализ данных</li>
-                <li>• ИИ-ассистент для научного письма</li>
-                <li>• Соблюдение стандартов доказательной медицины</li>
-              </ul>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-sm">
-              <h3 className="font-semibold text-slate-900 mb-3">
-                Медицинская специализация
-              </h3>
-              <ul className="text-left space-y-2 text-slate-600">
-                <li>• Поддержка протоколов CONSORT, PRISMA</li>
-                <li>• Интеграция с PubMed, Cochrane</li>
-                <li>• Соблюдение стандартов GCP</li>
-                <li>• Автоматизация клинических протоколов</li>
-                <li>• Подготовка для медицинских журналов</li>
-              </ul>
+              <Link
+                to="/demo"
+                className={`${theme === "dark" ? "border-slate-400 text-slate-300 hover:bg-slate-800" : "border-slate-300 text-slate-700 hover:bg-slate-50"} border-2 px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 hover:scale-105`}
+              >
+                {t.hero.cta2}
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
       {/* Capabilities Section */}
-      <section id="capabilities" className="py-20 px-6 bg-white">
+      <section
+        id="capabilities"
+        className={`py-24 px-6 ${theme === "dark" ? "bg-slate-800" : "bg-white"}`}
+      >
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-900 mb-6">
-              Интегрированная исследовательская экосистема
+          <div className="text-center mb-20">
+            <h2
+              className={`text-4xl md:text-5xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-6`}
+            >
+              {t.capabilities.title}
             </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto">
-              Каждый компонент платформы работает в синергии, обеспечивая полный
-              цикл научного исследования
+            <p
+              className={`text-xl ${theme === "dark" ? "text-slate-300" : "text-slate-600"} max-w-3xl mx-auto font-light`}
+            >
+              {t.capabilities.subtitle}
             </p>
           </div>
 
           <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-8">
-            {/* Analytics Engine */}
-            <div className="group">
-              <div className="bg-slate-50 rounded-2xl p-8 h-full border border-slate-200 hover:border-blue-200 hover:bg-blue-50/50 transition-all duration-300">
-                <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-200 transition-colors">
-                  <svg
-                    className="w-8 h-8 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-4">
-                  Аналитический движок
-                </h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Продвинутые статистические методы и машинное обучение для
-                  анализа исследовательских данных. Автоматическая проверка
-                  гипотез и выявление паттернов.
-                </p>
-              </div>
-            </div>
+            {t.capabilities.cards.map((card, index) => {
+              const colors = [
+                {
+                  bg:
+                    theme === "dark"
+                      ? "bg-slate-700 hover:bg-blue-900"
+                      : "bg-slate-50 hover:bg-blue-50",
+                  icon:
+                    theme === "dark"
+                      ? "bg-blue-900 text-blue-300"
+                      : "bg-blue-100 text-blue-600",
+                },
+                {
+                  bg:
+                    theme === "dark"
+                      ? "bg-slate-700 hover:bg-emerald-900"
+                      : "bg-slate-50 hover:bg-emerald-50",
+                  icon:
+                    theme === "dark"
+                      ? "bg-emerald-900 text-emerald-300"
+                      : "bg-emerald-100 text-emerald-600",
+                },
+                {
+                  bg:
+                    theme === "dark"
+                      ? "bg-slate-700 hover:bg-amber-900"
+                      : "bg-slate-50 hover:bg-amber-50",
+                  icon:
+                    theme === "dark"
+                      ? "bg-amber-900 text-amber-300"
+                      : "bg-amber-100 text-amber-600",
+                },
+                {
+                  bg:
+                    theme === "dark"
+                      ? "bg-slate-700 hover:bg-purple-900"
+                      : "bg-slate-50 hover:bg-purple-50",
+                  icon:
+                    theme === "dark"
+                      ? "bg-purple-900 text-purple-300"
+                      : "bg-purple-100 text-purple-600",
+                },
+              ];
 
-            {/* AI Core */}
-            <div className="group">
-              <div className="bg-slate-50 rounded-2xl p-8 h-full border border-slate-200 hover:border-emerald-200 hover:bg-emerald-50/50 transition-all duration-300">
-                <div className="w-16 h-16 bg-emerald-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-200 transition-colors">
-                  <svg
-                    className="w-8 h-8 text-emerald-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 10V3L4 14h7v7l9-11h-7z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-4">
-                  ИИ-ядро
-                </h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Центральный искусственный интеллект для обработки
-                  естественного языка, генерации гипотез и ассистирования в
-                  написании научных текстов.
-                </p>
-              </div>
-            </div>
+              const svgIcons = [
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />,
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />,
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"
+                />,
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                />,
+              ];
 
-            {/* Literature Database */}
-            <div className="group">
-              <div className="bg-slate-50 rounded-2xl p-8 h-full border border-slate-200 hover:border-amber-200 hover:bg-amber-50/50 transition-all duration-300">
-                <div className="w-16 h-16 bg-amber-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-amber-200 transition-colors">
-                  <svg
-                    className="w-8 h-8 text-amber-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+              return (
+                <div key={index} className="group">
+                  <div
+                    className={`${colors[index].bg} ${theme === "dark" ? "border-slate-600" : "border-slate-200"} rounded-2xl p-8 h-full border transition-all duration-300`}
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"
-                    />
-                  </svg>
+                    <div
+                      className={`w-16 h-16 ${colors[index].icon} rounded-xl flex items-center justify-center mb-6 transition-colors`}
+                    >
+                      <svg
+                        className="w-8 h-8"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        {svgIcons[index]}
+                      </svg>
+                    </div>
+                    <h3
+                      className={`text-xl font-medium ${theme === "dark" ? "text-white" : "text-slate-900"} mb-4`}
+                    >
+                      {card.title}
+                    </h3>
+                    <p
+                      className={`${theme === "dark" ? "text-slate-300" : "text-slate-600"} leading-relaxed font-light`}
+                    >
+                      {card.description}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-4">
-                  База литературы
-                </h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Интегрированный доступ к ведущим научным базам данных. Умный
-                  поиск, автоматическая категоризация и построение графов
-                  цитирования.
-                </p>
-              </div>
-            </div>
-
-            {/* Team Hub */}
-            <div className="group">
-              <div className="bg-slate-50 rounded-2xl p-8 h-full border border-slate-200 hover:border-purple-200 hover:bg-purple-50/50 transition-all duration-300">
-                <div className="w-16 h-16 bg-purple-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-purple-200 transition-colors">
-                  <svg
-                    className="w-8 h-8 text-purple-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-4">
-                  Центр коллаборации
-                </h3>
-                <p className="text-slate-600 leading-relaxed">
-                  Инструменты для командной работы: общие проекты,
-                  рецензирование, версионирование документов и распределение
-                  ролей.
-                </p>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Pricing */}
-      <section id="pricing" className="py-20 px-6 bg-slate-50">
+      {/* Pricing Section */}
+      <section
+        id="pricing"
+        className={`py-24 px-6 ${theme === "dark" ? "bg-slate-900" : "bg-slate-50"}`}
+      >
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-900 mb-6">
-              Тарифные планы
+          <div className="text-center mb-20">
+            <h2
+              className={`text-4xl md:text-5xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-6`}
+            >
+              {t.pricing.title}
             </h2>
-            <p className="text-xl text-slate-600">
-              Выберите подходящий план для ваших исследований
+            <p
+              className={`text-xl ${theme === "dark" ? "text-slate-300" : "text-slate-600"} font-light`}
+            >
+              {t.pricing.subtitle}
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="bg-white rounded-2xl p-8 border border-slate-200">
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">
-                Исследователь
-              </h3>
-              <div className="text-4xl font-bold text-slate-900 mb-2">
-                ₽2,990
-                <span className="text-lg font-normal text-slate-600">/мес</span>
-              </div>
-              <p className="text-slate-600 mb-6">
-                Для индивидуальных исследователей
-              </p>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Поиск в 10+ научных базах
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  ИИ-ассистент для письма
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  5 проектов одновременно
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Email поддержка
-                </li>
-              </ul>
-              <Link
-                to="/register"
-                className="w-full bg-slate-900 text-white px-6 py-3 rounded-xl font-semibold hover:bg-slate-800 transition-colors text-center block"
+            {/* Individual Plan */}
+            <div
+              className={`${theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"} rounded-2xl p-8 border`}
+            >
+              <h3
+                className={`text-2xl font-medium ${theme === "dark" ? "text-white" : "text-slate-900"} mb-2`}
               >
-                Выбрать план
-              </Link>
-            </div>
-
-            <div className="bg-blue-600 rounded-2xl p-8 border-2 border-blue-600 relative">
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <span className="bg-blue-100 text-blue-800 px-4 py-1 rounded-full text-sm font-medium">
-                  Популярный
+                {language === "ru" ? "Исследователь" : "Researcher"}
+              </h3>
+              <div
+                className={`text-4xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-2`}
+              >
+                ₽2,990
+                <span
+                  className={`text-lg font-normal ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}
+                >
+                  /мес
                 </span>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Команда</h3>
-              <div className="text-4xl font-bold text-white mb-2">
-                ₽8,990
-                <span className="text-lg font-normal text-blue-200">/мес</span>
-              </div>
-              <p className="text-blue-200 mb-6">Для исследовательских групп</p>
-              <ul className="space-y-3 mb-8 text-white">
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-blue-200 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Все возможности плана "Исследователь"
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-blue-200 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  До 10 участников команды
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-blue-200 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Совместная работа над проектами
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-blue-200 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Приоритетная поддержка
-                </li>
-              </ul>
+              <p
+                className={`${theme === "dark" ? "text-slate-400" : "text-slate-600"} mb-6 font-light`}
+              >
+                {language === "ru"
+                  ? "Для индивидуальных исследователей"
+                  : "For individual researchers"}
+              </p>
               <Link
                 to="/register"
-                className="w-full bg-white text-blue-600 px-6 py-3 rounded-xl font-semibold hover:bg-blue-50 transition-colors text-center block"
+                className={`w-full ${theme === "dark" ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-slate-900 hover:bg-slate-800 text-white"} px-6 py-3 rounded-xl font-medium transition-colors text-center block`}
               >
-                Выбрать план
+                {language === "ru" ? "Выбрать план" : "Choose plan"}
               </Link>
             </div>
 
-            <div className="bg-white rounded-2xl p-8 border border-slate-200">
-              <h3 className="text-2xl font-bold text-slate-900 mb-2">
-                Институт
-              </h3>
-              <div className="text-4xl font-bold text-slate-900 mb-2">
-                Договор
+            {/* Team Plan - Popular */}
+            <div
+              className={`${theme === "dark" ? "bg-blue-900 border-blue-700" : "bg-blue-600 border-blue-600"} rounded-2xl p-8 border-2 relative transform scale-105`}
+            >
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                <span
+                  className={`${theme === "dark" ? "bg-blue-200 text-blue-900" : "bg-blue-100 text-blue-800"} px-4 py-1 rounded-full text-sm font-medium`}
+                >
+                  {language === "ru" ? "Популярный" : "Popular"}
+                </span>
               </div>
-              <p className="text-slate-600 mb-6">Для крупных организаций</p>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Все возможности плана "Команда"
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Неограниченное количество участников
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Персональный менеджер
-                </li>
-                <li className="flex items-center">
-                  <svg
-                    className="w-5 h-5 text-green-500 mr-3"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Индивидуальная интеграция
-                </li>
-              </ul>
+              <h3 className="text-2xl font-medium text-white mb-2">
+                {language === "ru" ? "Команда" : "Team"}
+              </h3>
+              <div className="text-4xl font-light text-white mb-2">
+                ₽8,990
+                <span
+                  className={`text-lg font-normal ${theme === "dark" ? "text-blue-300" : "text-blue-200"}`}
+                >
+                  /мес
+                </span>
+              </div>
+              <p
+                className={`${theme === "dark" ? "text-blue-300" : "text-blue-200"} mb-6 font-light`}
+              >
+                {language === "ru"
+                  ? "Для исследовательских групп"
+                  : "For research teams"}
+              </p>
+              <Link
+                to="/register"
+                className="w-full bg-white text-blue-600 px-6 py-3 rounded-xl font-medium hover:bg-blue-50 transition-colors text-center block"
+              >
+                {language === "ru" ? "Выбрать план" : "Choose plan"}
+              </Link>
+            </div>
+
+            {/* Enterprise Plan */}
+            <div
+              className={`${theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"} rounded-2xl p-8 border`}
+            >
+              <h3
+                className={`text-2xl font-medium ${theme === "dark" ? "text-white" : "text-slate-900"} mb-2`}
+              >
+                {language === "ru" ? "Институт" : "Enterprise"}
+              </h3>
+              <div
+                className={`text-4xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-2`}
+              >
+                {language === "ru" ? "Договор" : "Custom"}
+              </div>
+              <p
+                className={`${theme === "dark" ? "text-slate-400" : "text-slate-600"} mb-6 font-light`}
+              >
+                {language === "ru"
+                  ? "Для крупных организаций"
+                  : "For large organizations"}
+              </p>
               <Link
                 to="/contact"
-                className="w-full border-2 border-slate-900 text-slate-900 px-6 py-3 rounded-xl font-semibold hover:bg-slate-900 hover:text-white transition-colors text-center block"
+                className={`w-full border-2 ${theme === "dark" ? "border-slate-400 text-slate-300 hover:bg-slate-700" : "border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white"} px-6 py-3 rounded-xl font-medium transition-colors text-center block`}
               >
-                Связаться с нами
+                {language === "ru" ? "Связаться с нами" : "Contact us"}
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 px-6 bg-slate-900 text-white">
+      {/* Footer */}
+      <footer
+        className={`py-24 px-6 ${theme === "dark" ? "bg-slate-800" : "bg-slate-900"} text-white`}
+      >
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold mb-6">
-            Готовы повысить качество ваших исследований?
+          <h2 className="text-4xl md:text-5xl font-light mb-6">
+            {t.footer.title}
           </h2>
-          <p className="text-xl text-slate-300 mb-8">
-            Присоединяйтесь к исследователям, которые уже используют возможности
-            интегрированной научной платформы
+          <p
+            className={`text-xl ${theme === "dark" ? "text-slate-300" : "text-slate-300"} mb-8 font-light`}
+          >
+            {t.footer.subtitle}
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
             <Link
               to="/register"
-              className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-10 py-4 rounded-xl text-lg font-medium hover:bg-blue-700 transition-colors"
             >
-              Начать бесплатный период
+              {t.footer.cta1}
             </Link>
             <Link
               to="/demo"
-              className="border border-white text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-white/10 transition-colors"
+              className="border-2 border-white text-white px-10 py-4 rounded-xl text-lg font-medium hover:bg-white/10 transition-colors"
             >
-              Запросить демо
+              {t.footer.cta2}
             </Link>
           </div>
+
+          {/* Footer Links */}
+          <div className="border-t border-slate-700 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="text-2xl font-bold">Scientiaiter</div>
+
+              <div className="flex gap-8 text-sm">
+                <Link
+                  to="/privacy"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  {language === "ru" ? "Конфиденциальность" : "Privacy"}
+                </Link>
+                <Link
+                  to="/terms"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  {language === "ru" ? "Условия" : "Terms"}
+                </Link>
+                <Link
+                  to="/support"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  {language === "ru" ? "Поддержка" : "Support"}
+                </Link>
+              </div>
+
+              <div className="text-slate-500 text-sm">© 2026 Scientiaiter</div>
+            </div>
+          </div>
         </div>
-      </section>
+      </footer>
     </div>
   );
 }
