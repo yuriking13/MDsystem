@@ -3,89 +3,89 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Σκιεντιαίτερ - Соединяя Мудрость Веков с Силой Разума</title>
+  <title>Scientiaiter - Академическая платформа для научных исследований</title>
   <link rel="icon" type="image/svg+xml" href="/logo.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;900&family=Source+Serif+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
   <style>
-    /* Ancient Greek Academic Design System */
+    /* Refined Academic Classical Design */
     :root {
-      --marble: #F8F6F0;
-      --marble-dark: #E8E4D6;
-      --gold: #D4AF37;
-      --deep-gold: #B8941F;
-      --bronze: #CD7F32;
-      --deep-blue: #1C3F7A;
-      --navy: #0F2C5C;
-      --charcoal: #2C2C2C;
-      --parchment: #F5F1E8;
-      --ink: #1a1a1a;
-      --shadow: rgba(0, 0, 0, 0.15);
+      --primary: #2C5F99;
+      --primary-light: #4A7BB7;
+      --accent: #B8860B;
+      --accent-light: #DAA520;
+      --bg: #FEFEFE;
+      --bg-secondary: #F8F7F4;
+      --bg-accent: #F5F3EE;
+      --text: #2D3748;
+      --text-secondary: #4A5568;
+      --text-muted: #718096;
+      --border: #E2D8C3;
+      --border-accent: #C8A882;
+      --shadow: rgba(44, 95, 153, 0.08);
+      --shadow-warm: rgba(184, 134, 11, 0.12);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body {
-      font-family: 'Crimson Text', serif;
-      background: var(--marble);
-      color: var(--ink);
+      font-family: 'Source Serif Pro', serif;
+      background: var(--bg);
+      color: var(--text);
       line-height: 1.7;
       font-size: 18px;
     }
 
-    /* Classical Typography */
+    /* Elegant Academic Typography */
     .hero-title {
-      font-family: 'Cinzel', serif;
-      font-size: 4rem;
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.5rem, 5vw, 4rem);
       font-weight: 900;
-      color: var(--deep-blue);
+      color: var(--primary);
       text-align: center;
       margin-bottom: 1.5rem;
-      text-shadow: 2px 2px 4px var(--shadow);
       position: relative;
+      line-height: 1.2;
     }
 
     .hero-title::after {
       content: '';
       position: absolute;
-      bottom: -20px;
+      bottom: -15px;
       left: 50%;
       transform: translateX(-50%);
-      width: 200px;
-      height: 4px;
-      background: linear-gradient(to right, var(--gold) 0%, var(--deep-gold) 100%);
+      width: 120px;
+      height: 3px;
+      background: linear-gradient(to right, var(--accent) 0%, var(--accent-light) 100%);
+      border-radius: 2px;
     }
 
     .hero-subtitle {
-      font-family: 'Cinzel', serif;
+      font-family: 'Playfair Display', serif;
       font-size: 1.5rem;
-      color: var(--bronze);
+      color: var(--accent);
       text-align: center;
       margin-bottom: 2rem;
       font-weight: 600;
-      letter-spacing: 1px;
+      font-style: italic;
     }
 
     .section-title {
-      font-family: 'Cinzel', serif;
-      font-size: 2.8rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem;
       font-weight: 600;
-      color: var(--deep-blue);
-      text-align: center;
+      color: var(--primary);
       margin-bottom: 1rem;
       position: relative;
     }
 
     .section-subtitle {
-      font-size: 1.3rem;
-      color: var(--bronze);
-      text-align: center;
+      font-size: 1.25rem;
+      color: var(--text-secondary);
       margin-bottom: 3rem;
       font-style: italic;
-      max-width: 600px;
-      margin-left: auto;
-      margin-right: auto;
+      max-width: 700px;
     }
 
     /* Layout */
@@ -100,40 +100,22 @@
       position: relative;
     }
 
-    .columns {
+    .grid {
       display: grid;
-      gap: 3rem;
+      gap: 2.5rem;
     }
 
-    .columns-2 { grid-template-columns: 1fr 1fr; }
-    .columns-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: 1fr 1fr; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
 
     @media (max-width: 768px) {
-      .columns-2, .columns-3 { grid-template-columns: 1fr; }
-    }
-
-    /* Classical decorative elements */
-    .greek-border {
-      border: 3px solid var(--gold);
-      border-radius: 0;
-      position: relative;
-    }
-
-    .greek-border::before {
-      content: '';
-      position: absolute;
-      top: -8px;
-      left: -8px;
-      right: -8px;
-      bottom: -8px;
-      border: 1px solid var(--bronze);
-      z-index: -1;
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
     }
 
     /* Header */
     .header {
-      background: linear-gradient(135deg, var(--marble) 0%, var(--marble-dark) 100%);
-      border-bottom: 3px solid var(--gold);
+      background: linear-gradient(135deg, var(--bg) 0%, var(--bg-secondary) 100%);
+      border-bottom: 2px solid var(--border-accent);
       padding: 1.5rem 0;
       position: relative;
     }
@@ -141,17 +123,18 @@
     .header::after {
       content: '';
       position: absolute;
-      bottom: -3px;
+      bottom: -2px;
       left: 0;
       right: 0;
-      height: 8px;
+      height: 4px;
       background: repeating-linear-gradient(
         to right,
-        var(--bronze) 0px,
-        var(--bronze) 20px,
-        var(--gold) 20px,
-        var(--gold) 40px
+        var(--accent) 0px,
+        var(--accent) 15px,
+        var(--primary) 15px,
+        var(--primary) 30px
       );
+      opacity: 0.6;
     }
 
     .header-content {
@@ -161,39 +144,39 @@
     }
 
     .logo {
-      font-family: 'Cinzel', serif;
-      font-size: 2.2rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
       font-weight: 900;
-      color: var(--deep-blue);
+      color: var(--primary);
       text-decoration: none;
       display: flex;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
     }
 
     .logo::before {
-      content: 'Σ';
-      font-size: 2.5rem;
-      color: var(--gold);
+      content: '⚛';
+      font-size: 1.8rem;
+      color: var(--accent);
     }
 
     .nav {
       display: flex;
-      gap: 3rem;
+      gap: 2.5rem;
       list-style: none;
     }
 
     .nav a {
-      color: var(--deep-blue);
+      color: var(--text);
       text-decoration: none;
       font-weight: 600;
-      font-size: 1.1rem;
+      font-size: 1rem;
       position: relative;
       transition: all 0.3s ease;
     }
 
     .nav a:hover {
-      color: var(--gold);
+      color: var(--primary);
     }
 
     .nav a::after {
@@ -203,7 +186,7 @@
       left: 0;
       right: 0;
       height: 2px;
-      background: var(--gold);
+      background: var(--accent);
       transform: scaleX(0);
       transition: transform 0.3s ease;
     }
@@ -212,16 +195,17 @@
       transform: scaleX(1);
     }
 
-    /* Buttons */
+    /* Refined buttons */
     .btn {
       display: inline-block;
-      padding: 1rem 2.5rem;
-      background: linear-gradient(135deg, var(--gold) 0%, var(--deep-gold) 100%);
-      color: var(--ink);
+      padding: 1rem 2.25rem;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
       text-decoration: none;
       font-weight: 600;
-      font-size: 1.1rem;
-      border: 2px solid var(--bronze);
+      font-size: 1rem;
+      border-radius: 8px;
+      border: 2px solid transparent;
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
@@ -234,8 +218,8 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-      transition: left 0.6s ease;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
     }
 
     .btn:hover::before {
@@ -243,21 +227,20 @@
     }
 
     .btn:hover {
-      background: linear-gradient(135deg, var(--deep-gold) 0%, var(--bronze) 100%);
-      color: var(--marble);
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
       transform: translateY(-2px);
-      box-shadow: 0 8px 15px var(--shadow);
+      box-shadow: 0 8px 20px var(--shadow);
     }
 
-    .btn-secondary {
-      background: linear-gradient(135deg, var(--marble) 0%, var(--marble-dark) 100%);
-      color: var(--deep-blue);
-      border: 2px solid var(--deep-blue);
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 2px solid var(--primary);
     }
 
-    .btn-secondary:hover {
-      background: var(--deep-blue);
-      color: var(--marble);
+    .btn-outline:hover {
+      background: var(--primary);
+      color: white;
     }
 
     /* Hero Section */
@@ -266,9 +249,9 @@
       display: flex;
       align-items: center;
       background: 
-        radial-gradient(circle at 20% 20%, rgba(212, 175, 55, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(28, 63, 122, 0.1) 0%, transparent 50%),
-        var(--marble);
+        radial-gradient(circle at 20% 20%, rgba(44, 95, 153, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(184, 134, 11, 0.03) 0%, transparent 50%),
+        var(--bg);
       position: relative;
       overflow: hidden;
     }
@@ -280,29 +263,29 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 10 L90 90 L10 90 Z" fill="none" stroke="%23D4AF37" stroke-width="0.5" opacity="0.1"/></svg>');
-      background-size: 200px 200px;
-      opacity: 0.3;
-      animation: float 20s ease-in-out infinite;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="1" fill="%23B8860B" opacity="0.1"/><circle cx="80" cy="40" r="0.8" fill="%232C5F99" opacity="0.1"/><circle cx="40" cy="80" r="1.2" fill="%23B8860B" opacity="0.1"/></svg>');
+      background-size: 150px 150px;
+      animation: scholarly-float 25s ease-in-out infinite;
     }
 
-    @keyframes float {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      33% { transform: translate(30px, -30px) rotate(2deg); }
-      66% { transform: translate(-20px, 20px) rotate(-1deg); }
+    @keyframes scholarly-float {
+      0%, 100% { transform: translate(0, 0); opacity: 0.3; }
+      50% { transform: translate(30px, -30px); opacity: 0.6; }
     }
 
     .hero-content {
       text-align: center;
       z-index: 2;
       position: relative;
+      max-width: 800px;
+      margin: 0 auto;
     }
 
     .hero-text {
-      max-width: 800px;
-      margin: 0 auto 3rem;
-      font-size: 1.3rem;
-      color: var(--charcoal);
+      font-size: 1.25rem;
+      margin-bottom: 3rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
     }
 
     .hero-actions {
@@ -312,199 +295,212 @@
       flex-wrap: wrap;
     }
 
-    /* Ancient scroll code pattern */
-    .scroll-code {
+    /* Academic code pattern */
+    .research-notes {
       position: absolute;
-      right: 10%;
-      top: 25%;
+      right: 8%;
+      top: 30%;
       font-family: 'Courier New', monospace;
-      font-size: 0.9rem;
-      color: var(--bronze);
-      opacity: 0.2;
-      transform: rotate(15deg);
-      max-width: 300px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      opacity: 0.4;
+      max-width: 280px;
+      transform: rotate(5deg);
     }
 
-    .papyrus-line {
-      background: var(--parchment);
-      border-left: 3px solid var(--gold);
-      padding: 0.5rem 1rem;
-      margin: 0.5rem 0;
-      box-shadow: 2px 2px 4px var(--shadow);
-      animation: unroll 5s ease-in-out infinite;
+    .note-line {
+      background: var(--bg-accent);
+      border-left: 3px solid var(--accent);
+      padding: 0.6rem 1rem;
+      margin: 0.6rem 0;
+      box-shadow: 2px 2px 6px var(--shadow-warm);
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      position: relative;
     }
 
-    @keyframes unroll {
-      0% { transform: scaleX(0.1); opacity: 0; }
-      20% { transform: scaleX(1); opacity: 1; }
-      80% { transform: scaleX(1); opacity: 1; }
-      100% { transform: scaleX(0.1); opacity: 0; }
+    .note-line::before {
+      content: '※';
+      position: absolute;
+      left: -10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      background: var(--bg);
+      padding: 0 2px;
     }
 
-    .papyrus-line:nth-child(2) { animation-delay: -1s; }
-    .papyrus-line:nth-child(3) { animation-delay: -2s; }
-    .papyrus-line:nth-child(4) { animation-delay: -3s; }
+    .note-line:nth-child(even) {
+      margin-left: 1rem;
+      border-left-color: var(--primary);
+    }
 
-    /* Cards - Classical tablet style */
-    .wisdom-grid {
+    /* Cards - Academic paper style */
+    .academic-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
       gap: 2.5rem;
       margin: 4rem 0;
     }
 
-    .wisdom-card {
-      background: var(--parchment);
-      border: 2px solid var(--bronze);
+    .paper-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
       padding: 2.5rem;
       position: relative;
       transition: all 0.4s ease;
-      box-shadow: 0 4px 12px var(--shadow);
+      box-shadow: 0 2px 12px var(--shadow);
     }
 
-    .wisdom-card::before {
+    .paper-card::before {
       content: '';
       position: absolute;
-      top: -5px;
-      left: -5px;
-      right: -5px;
-      bottom: -5px;
-      background: linear-gradient(45deg, var(--gold), var(--bronze), var(--gold));
-      z-index: -1;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--primary));
+      border-radius: 12px 12px 0 0;
       opacity: 0;
       transition: opacity 0.3s ease;
     }
 
-    .wisdom-card:hover::before {
+    .paper-card:hover::before {
       opacity: 1;
     }
 
-    .wisdom-card:hover {
-      transform: translateY(-8px);
-      background: var(--marble);
+    .paper-card:hover {
+      transform: translateY(-6px);
+      background: var(--bg);
+      border-color: var(--border-accent);
+      box-shadow: 0 12px 25px var(--shadow);
     }
 
     .card-icon {
-      font-size: 2.5rem;
+      font-size: 2.2rem;
       margin-bottom: 1.5rem;
       display: block;
       text-align: center;
     }
 
     .card-title {
-      font-family: 'Cinzel', serif;
-      font-size: 1.4rem;
+      font-family: 'Playfair Display', serif;
+      font-size: 1.375rem;
       font-weight: 600;
-      color: var(--deep-blue);
+      color: var(--primary);
       margin-bottom: 1.5rem;
       text-align: center;
     }
 
     .card-text {
       line-height: 1.8;
-      color: var(--ink);
+      color: var(--text);
       text-align: justify;
     }
 
-    /* Philosophical quote section */
-    .philosophy-section {
-      background: linear-gradient(135deg, var(--deep-blue) 0%, var(--navy) 100%);
-      color: var(--marble);
-      padding: 6rem 0;
+    /* Academic quote section */
+    .academic-philosophy {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: white;
+      padding: 5rem 0;
       text-align: center;
       position: relative;
     }
 
-    .philosophy-section::before {
+    .academic-philosophy::before {
       content: '"';
       position: absolute;
       top: 2rem;
       left: 50%;
       transform: translateX(-50%);
-      font-family: 'Cinzel', serif;
-      font-size: 8rem;
-      color: var(--gold);
+      font-family: 'Playfair Display', serif;
+      font-size: 6rem;
+      color: var(--accent);
       opacity: 0.3;
     }
 
-    .quote {
-      font-family: 'Cinzel', serif;
-      font-size: 2.2rem;
+    .philosophy-quote {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
       font-weight: 400;
-      line-height: 1.4;
-      max-width: 900px;
+      line-height: 1.5;
+      max-width: 800px;
       margin: 0 auto 2rem;
-      color: var(--marble);
       position: relative;
       z-index: 2;
     }
 
-    .quote-author {
-      font-size: 1.3rem;
-      color: var(--gold);
+    .quote-attribution {
+      font-size: 1.2rem;
+      color: var(--accent-light);
       font-style: italic;
       margin-bottom: 3rem;
+      position: relative;
+      z-index: 2;
     }
 
     /* Medicine specialization */
     .medicine-focus {
-      background: var(--parchment);
+      background: var(--bg-accent);
       padding: 5rem 0;
       position: relative;
     }
 
     .medicine-focus::before {
-      content: '⚕';
+      content: '🎓';
       position: absolute;
       top: 3rem;
       right: 3rem;
-      font-size: 4rem;
-      color: var(--gold);
-      opacity: 0.3;
+      font-size: 3rem;
+      opacity: 0.2;
     }
 
     /* Footer */
     .footer {
-      background: var(--charcoal);
-      color: var(--marble);
+      background: var(--text);
+      color: var(--bg);
       padding: 4rem 0 2rem;
       text-align: center;
-      border-top: 5px solid var(--gold);
+      border-top: 4px solid var(--accent);
       position: relative;
     }
 
     .footer::before {
       content: '';
       position: absolute;
-      top: -5px;
+      top: -4px;
       left: 0;
       right: 0;
-      height: 15px;
+      height: 8px;
       background: repeating-linear-gradient(
         to right,
-        var(--bronze) 0px,
-        var(--bronze) 30px,
-        var(--gold) 30px,
-        var(--gold) 60px
+        var(--accent) 0px,
+        var(--accent) 20px,
+        var(--primary) 20px,
+        var(--primary) 40px
       );
+      opacity: 0.7;
     }
 
     .footer-motto {
-      font-family: 'Cinzel', serif;
-      font-size: 1.2rem;
-      color: var(--gold);
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem;
+      color: var(--accent-light);
       margin-bottom: 1rem;
       font-style: italic;
     }
 
     /* Mobile adjustments */
     @media (max-width: 768px) {
-      .hero-title { font-size: 2.8rem; }
+      .hero-title { font-size: 2.5rem; }
       .nav { display: none; }
       .hero-actions { flex-direction: column; }
-      .scroll-code { display: none; }
-      .quote { font-size: 1.8rem; }
-      .section-title { font-size: 2.2rem; }
+      .research-notes { display: none; }
+      .philosophy-quote { font-size: 1.6rem; }
+      .section-title { font-size: 2rem; }
+      .section { padding: 3rem 0; }
+      .academic-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -513,16 +509,16 @@
   <header class="header">
     <div class="container">
       <div class="header-content">
-        <a href="#" class="logo">ΚΙΕΝΤΙΑΊΤΕΡ</a>
+        <a href="#" class="logo">Scientiaiter</a>
         
         <nav class="nav">
-          <a href="#wisdom">Мудрость</a>
-          <a href="#academy">Академия</a>
+          <a href="#academia">Академия</a>
+          <a href="#methods">Методология</a>
           <a href="#medicine">Медицина</a>
         </nav>
 
         <div>
-          <a href="/login" class="btn btn-secondary">Войти</a>
+          <a href="/login" class="btn btn-outline">Войти</a>
         </div>
       </div>
     </div>
@@ -533,99 +529,102 @@
     <div class="container">
       <div class="hero-content">
         <h1 class="hero-title">
-          ΕΠΙΣΤΗΜΗ ΚΑΙ ΤΕΧΝΗ
+          Академическая платформа<br>
+          нового поколения
         </h1>
-        <p class="hero-subtitle">Наука и Искусство</p>
+        <p class="hero-subtitle">Где традиции встречают инновации</p>
         
         <div class="hero-text">
           <p>
-            Scientiaiter воплощает древнюю мечту философов — соединить мудрость веков 
-            с безграничной силой разума. Как в древних академиях, где мыслители постигали 
-            природу вещей, наша платформа создает пространство для современных исследователей.
+            Scientiaiter объединяет вековые традиции академического исследования 
+            с современными возможностями искусственного интеллекта. Мы создаём пространство, 
+            где строгость научного метода усиливается точностью машинного анализа.
           </p>
         </div>
         
         <div class="hero-actions">
-          <a href="/register" class="btn">Войти в Академию</a>
-          <a href="#wisdom" class="btn btn-secondary">Познать Мудрость</a>
+          <a href="/register" class="btn">Присоединиться к исследованию</a>
+          <a href="#academia" class="btn btn-outline">Изучить методологию</a>
         </div>
       </div>
     </div>
     
-    <!-- Ancient Code Scroll -->
-    <div class="scroll-code">
-      <div class="papyrus-line">επιστημη.αρχή()</div>
-      <div class="papyrus-line">λογος.αναλυσις()</div>
-      <div class="papyrus-line">σοφια.συνδυασμος()</div>
-      <div class="papyrus-line">αληθεια.ανακαλυψις()</div>
+    <!-- Research Notes -->
+    <div class="research-notes">
+      <div class="note-line">research.methodology.init()</div>
+      <div class="note-line">classical.knowledge.load()</div>
+      <div class="note-line">ai.analysis.enhance()</div>
+      <div class="note-line">synthesis.create_new()</div>
     </div>
   </section>
 
-  <!-- Wisdom Section -->
-  <section class="section" id="wisdom">
+  <!-- Academia Section -->
+  <section class="section" id="academia">
     <div class="container">
-      <h2 class="section-title">Столпы Мудрости</h2>
-      <p class="section-subtitle">
-        Основанные на вечных принципах познания, усиленные современными технологиями
-      </p>
+      <div style="text-align: center; margin-bottom: 4rem;">
+        <h2 class="section-title">Принципы академического исследования</h2>
+        <p class="section-subtitle">
+          Основанные на научной строгости, усиленные современными технологиями
+        </p>
+      </div>
       
-      <div class="wisdom-grid">
-        <div class="wisdom-card">
-          <span class="card-icon">📜</span>
-          <h3 class="card-title">Episteme<br><small>Научное знание</small></h3>
+      <div class="academic-grid">
+        <div class="paper-card">
+          <span class="card-icon">📚</span>
+          <h3 class="card-title">Научная методология</h3>
           <p class="card-text">
-            Систематический поиск и анализ литературы следует принципам, заложенным Аристотелем. 
-            ИИ помогает структурировать знания, но основа остается классической — строгость метода 
+            Систематический поиск и критический анализ литературы следует принципам 
+            доказательной науки. ИИ помогает структурировать знания, сохраняя академическую строгость 
             и проверяемость результатов.
           </p>
         </div>
 
-        <div class="wisdom-card">
-          <span class="card-icon">🏛️</span>
-          <h3 class="card-title">Techné<br><small>Искусство применения</small></h3>
+        <div class="paper-card">
+          <span class="card-icon">✍️</span>
+          <h3 class="card-title">Искусство научного письма</h3>
           <p class="card-text">
-            Мастерство научного письма развивается через практику, как учили в древних риториках. 
+            Развитие навыков академического письма через практику и обратную связь. 
             ИИ-ассистент направляет исследователя, предлагая улучшения структуры и стиля, 
-            сохраняя авторскую мысль.
+            сохраняя авторский голос.
           </p>
         </div>
 
-        <div class="wisdom-card">
-          <span class="card-icon">🔍</span>
-          <h3 class="card-title">Logos<br><small>Разумное обоснование</small></h3>
+        <div class="paper-card">
+          <span class="card-icon">🔗</span>
+          <h3 class="card-title">Логика и аргументация</h3>
           <p class="card-text">
-            Логический анализ данных и построение аргументации — сердце научного метода. 
-            Граф цитирования визуализирует связи идей, помогая обнаружить логические пробелы 
-            и новые направления мысли.
+            Анализ данных и построение обоснованных выводов — основа научного метода. 
+            Визуализация связей между исследованиями помогает обнаружить пробелы 
+            и новые направления.
           </p>
         </div>
 
-        <div class="wisdom-card">
+        <div class="paper-card">
           <span class="card-icon">⚖️</span>
-          <h3 class="card-title">Díkē<br><small>Справедливость метода</small></h3>
+          <h3 class="card-title">Этика исследования</h3>
           <p class="card-text">
-            Этические принципы исследования остаются неизменными. Платформа обеспечивает 
-            прозрачность процессов, сохранение авторства и ответственное использование 
-            данных в соответствии с научной этикой.
+            Ответственное использование данных и соблюдение принципов научной честности. 
+            Прозрачность процессов и сохранение авторства в соответствии 
+            с академическими стандартами.
           </p>
         </div>
 
-        <div class="wisdom-card">
-          <span class="card-icon">🌟</span>
-          <h3 class="card-title">Sophia<br><small>Высшая мудрость</small></h3>
+        <div class="paper-card">
+          <span class="card-icon">🧠</span>
+          <h3 class="card-title">Интеллектуальный синтез</h3>
           <p class="card-text">
-            Интеграция всех форм знания в целостное понимание. ИИ анализирует паттерны 
-            в массивах данных, но интерпретация и синтез остаются прерогативой человеческого разума.
+            Интеграция различных источников знания в целостное понимание. 
+            ИИ анализирует паттерны в данных, но интерпретация остается прерогативой 
+            исследователя.
           </p>
         </div>
 
-        <div class="wisdom-card">
+        <div class="paper-card">
           <span class="card-icon">🔄</span>
-          <h3 class="card-title">Mimēsis<br><small>Творческое воспроизведение</small></h3>
+          <h3 class="card-title">Воспроизводимость</h3>
           <p class="card-text">
-            Автоматизация рутинных процессов освобождает время для творческого поиска. 
-            Шаблоны и workflows сохраняют лучшие практики, позволяя фокусироваться 
-            на оригинальном вкладе в науку.
+            Документирование процессов и создание воспроизводимых research workflows. 
+            Стандартизация лучших практик освобождает время для творческого поиска.
           </p>
         </div>
       </div>
@@ -633,18 +632,18 @@
   </section>
 
   <!-- Philosophy Quote Section -->
-  <section class="philosophy-section">
+  <section class="academic-philosophy">
     <div class="container">
-      <blockquote class="quote">
-        Знание есть припоминание того, что душа уже знала, 
-        а истинное обучение — это пробуждение разума к познанию вечных истин
+      <blockquote class="philosophy-quote">
+        Истинное знание рождается из союза опыта и разума, 
+        где традиционная мудрость встречает современные инструменты познания
       </blockquote>
-      <cite class="quote-author">— По мотивам учения Платона</cite>
+      <cite class="quote-attribution">— Философия Scientiaiter</cite>
       
-      <div style="max-width: 600px; margin: 0 auto;">
-        <p style="font-size: 1.2rem; line-height: 1.6;">
-          Scientiaiter следует этому принципу: технологии лишь пробуждают и направляют 
-          врожденную способность человека к познанию истины.
+      <div style="max-width: 650px; margin: 0 auto; position: relative; z-index: 2;">
+        <p style="font-size: 1.2rem; line-height: 1.7; opacity: 0.9;">
+          Наша платформа следует этому принципу: технологии служат для расширения 
+          и углубления человеческих способностей к научному познанию.
         </p>
       </div>
     </div>
@@ -653,57 +652,68 @@
   <!-- Medicine Focus Section -->
   <section class="medicine-focus section" id="medicine">
     <div class="container">
-      <h2 class="section-title">Ιατρική Τέχνη</h2>
-      <p class="section-subtitle">Медицинское искусство</p>
+      <div style="text-align: center; margin-bottom: 3rem;">
+        <h2 class="section-title">Медицинские исследования</h2>
+        <p class="section-subtitle">Традиции Гиппократа в эпоху больших данных</p>
+      </div>
       
-      <div class="columns columns-2">
+      <div class="grid grid-2">
         <div>
-          <h3 style="font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--deep-blue); margin-bottom: 1.5rem;">
-            Наследие Гиппократа
+          <h3 style="font-family: 'Playfair Display', serif; font-size: 1.75rem; color: var(--primary); margin-bottom: 1.5rem;">
+            Доказательная медицина
           </h3>
-          <p style="margin-bottom: 1.5rem;">
-            Как отец медицины заложил основы научного подхода к лечению, Scientiaiter 
-            создает фундамент для современных медицинских исследований. Принципы "не навреди" 
-            и тщательного наблюдения остаются актуальными.
+          <p style="margin-bottom: 1.5rem; line-height: 1.8;">
+            Как основатель медицины заложил принципы научного подхода, 
+            Scientiaiter создаёт фундамент для современных медицинских исследований. 
+            Принципы точности и тщательного наблюдения остаются неизменными.
           </p>
-          <p style="margin-bottom: 2rem;">
-            Наша платформа специализируется на медицинских исследованиях, где особенно важны 
-            точность, воспроизводимость и этическая ответственность.
+          <p style="margin-bottom: 2rem; line-height: 1.8;">
+            Наша платформа специализируется на медицинской сфере, где особенно важны 
+            воспроизводимость результатов и этическая ответственность.
           </p>
-          <a href="/med" class="btn">Медицинская Академия</a>
+          <a href="/med" class="btn">Медицинское издательство</a>
         </div>
         
-        <div class="wisdom-card" style="margin-top: 0;">
-          <span class="card-icon">⚕️</span>
-          <h3 class="card-title">Современный Асклепион</h3>
-          <p class="card-text">
-            Как древние храмы исцеления были центрами медицинского знания, 
-            Scientiaiter создает цифровое пространство для:
+        <div class="paper-card" style="margin-top: 0;">
+          <span class="card-icon">🏥</span>
+          <h3 class="card-title">Современный подход</h3>
+          <p class="card-text" style="margin-bottom: 1.5rem;">
+            Scientiaiter поддерживает полный цикл медицинских исследований:
           </p>
-          <ul style="margin-top: 1rem; padding-left: 2rem; line-height: 1.8;">
-            <li>Систематических обзоров клинических исследований</li>
-            <li>Анализа эффективности терапевтических методов</li>
-            <li>Изучения паттернов в медицинских данных</li>
-            <li>Подготовки публикаций для медицинских журналов</li>
+          <ul style="list-style: none; padding: 0; line-height: 2;">
+            <li style="margin: 0.8rem 0; display: flex; align-items: flex-start; gap: 0.8rem;">
+              <span style="color: var(--accent); margin-top: 0.2rem;">◆</span>
+              <span>Систематические обзоры клинических данных</span>
+            </li>
+            <li style="margin: 0.8rem 0; display: flex; align-items: flex-start; gap: 0.8rem;">
+              <span style="color: var(--accent); margin-top: 0.2rem;">◆</span>
+              <span>Мета-анализ терапевтических методов</span>
+            </li>
+            <li style="margin: 0.8rem 0; display: flex; align-items: flex-start; gap: 0.8rem;">
+              <span style="color: var(--accent); margin-top: 0.2rem;">◆</span>
+              <span>Подготовка публикаций для рецензируемых журналов</span>
+            </li>
+            <li style="margin: 0.8rem 0; display: flex; align-items: flex-start; gap: 0.8rem;">
+              <span style="color: var(--accent); margin-top: 0.2rem;">◆</span>
+              <span>Соблюдение международных стандартов</span>
+            </li>
           </ul>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Academy CTA -->
-  <section class="section" id="academy" style="background: var(--marble-dark);">
+  <!-- Academic CTA -->
+  <section class="section" style="background: var(--bg-secondary); text-align: center;">
     <div class="container">
-      <div style="text-align: center;">
-        <h2 class="section-title">Присоединяйтесь к Академии</h2>
-        <p class="section-subtitle">
-          Станьте частью сообщества исследователей, объединяющих классическую мудрость 
-          с современными возможностями
-        </p>
-        <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 2rem;">
-          <a href="/register" class="btn">Начать Исследование</a>
-          <a href="#wisdom" class="btn btn-secondary">Изучить Философию</a>
-        </div>
+      <h2 class="section-title">Вступайте в академическое сообщество</h2>
+      <p class="section-subtitle" style="margin: 0 auto;">
+        Присоединяйтесь к исследователям, которые объединяют классическую научную традицию 
+        с современными аналитическими возможностями
+      </p>
+      <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; margin-top: 2.5rem;">
+        <a href="/register" class="btn">Начать исследование</a>
+        <a href="#academia" class="btn btn-outline">Узнать больше</a>
       </div>
     </div>
   </section>
@@ -711,62 +721,76 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="container">
-      <p class="footer-motto">"Τὸ σαφὲς εἰδέναι" — Ясно знать</p>
+      <p class="footer-motto">"Scientia et Virtus" — Знание и Добродетель</p>
       <p>&copy; 2024 Scientiaiter</p>
-      <p style="margin-top: 1rem; font-style: italic;">
-        Соединяя мудрость Античности с силой современных технологий
+      <p style="margin-top: 1rem; font-style: italic; color: var(--accent-light);">
+        Объединяем академические традиции с силой современных технологий
       </p>
     </div>
   </footer>
 
   <script>
-    // Ancient scroll animation
-    function animateScroll() {
-      const lines = document.querySelectorAll('.papyrus-line');
-      lines.forEach((line, index) => {
+    // Academic animation effects
+    function animateResearchNotes() {
+      const notes = document.querySelectorAll('.note-line');
+      notes.forEach((note, index) => {
         setTimeout(() => {
-          line.style.animation = 'none';
+          note.style.transform = 'translateX(8px) scale(1.02)';
+          note.style.boxShadow = '4px 4px 12px rgba(184, 134, 11, 0.2)';
           setTimeout(() => {
-            line.style.animation = 'unroll 5s ease-in-out infinite';
-          }, 100);
-        }, index * 1000);
+            note.style.transform = 'translateX(0) scale(1)';
+            note.style.boxShadow = '2px 2px 6px var(--shadow-warm)';
+          }, 800);
+        }, index * 600);
       });
     }
 
-    setInterval(animateScroll, 6000);
+    setInterval(animateResearchNotes, 6000);
 
-    // Smooth scrolling for classical navigation
+    // Smooth academic scrolling
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
       anchor.addEventListener('click', function (e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
         if (target) {
-          target.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
+          const headerHeight = 100;
+          const elementPosition = target.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerHeight;
+          
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
           });
         }
       });
     });
 
-    // Wisdom card hover effects
-    document.querySelectorAll('.wisdom-card').forEach(card => {
+    // Paper card interactions
+    document.querySelectorAll('.paper-card').forEach(card => {
       card.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateY(-8px) scale(1.02)';
+        this.style.transform = 'translateY(-6px) scale(1.01)';
+        const icon = this.querySelector('.card-icon');
+        if (icon) {
+          icon.style.transform = 'scale(1.1)';
+        }
       });
       
       card.addEventListener('mouseleave', function() {
         this.style.transform = 'translateY(0) scale(1)';
+        const icon = this.querySelector('.card-icon');
+        if (icon) {
+          icon.style.transform = 'scale(1)';
+        }
       });
     });
 
-    // Classical parallax effect
+    // Scholarly parallax effect
     window.addEventListener('scroll', () => {
       const scrolled = window.pageYOffset;
-      const parallax = document.querySelector('.hero::before');
-      if (parallax) {
-        const rate = scrolled * -0.5;
-        parallax.style.transform = `translate3d(0, ${rate}px, 0)`;
+      const heroPattern = document.querySelector('.hero::before');
+      if (heroPattern) {
+        const rate = scrolled * -0.3;
+        heroPattern.style.transform = `translate3d(0, ${rate}px, 0)`;
       }
     });
   </script>

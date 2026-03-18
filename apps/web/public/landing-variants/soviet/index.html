@@ -3,82 +3,98 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>НАУКАТЕР - Автоматизированная Система Научных Исследований</title>
+  <title>Scientiaiter - Автоматизированная система научных исследований</title>
   <link rel="icon" type="image/svg+xml" href="/logo.svg" />
   <style>
-    /* Soviet Constructivist Design System */
+    /* Refined Soviet Constructivist Design */
     :root {
-      --red-primary: #C41E3A;
-      --red-secondary: #8B1A1A;
-      --yellow: #FFD700;
-      --black: #1a1a1a;
+      --red: #DC2626;
+      --red-dark: #B91C1C;
+      --gold: #F59E0B;
+      --gold-dark: #D97706;
+      --black: #1F2937;
       --white: #FFFFFF;
-      --gray: #888888;
-      --bg-paper: #F5F5DC;
-      --bg-dark: #2D2D2D;
+      --gray: #6B7280;
+      --gray-light: #F3F4F6;
+      --bg: #FAFAFA;
+      --shadow: rgba(0, 0, 0, 0.15);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
     
     body {
-      font-family: 'Arial Black', 'Arial', sans-serif;
-      background: var(--bg-paper);
+      font-family: 'Arial', 'Helvetica', sans-serif;
+      background: var(--bg);
       color: var(--black);
-      line-height: 1.4;
-      overflow-x: hidden;
+      line-height: 1.6;
+      font-weight: 500;
     }
 
-    /* Typography - Soviet style */
+    /* Constructivist typography */
     .hero-title {
-      font-size: 4rem;
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
       font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: -2px;
-      margin-bottom: 1rem;
-      color: var(--red-primary);
-      text-shadow: 4px 4px 0px var(--black);
-      transform: perspective(500px) rotateX(15deg);
-    }
-
-    .subtitle {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: var(--black);
-      text-transform: uppercase;
-      margin-bottom: 2rem;
-      letter-spacing: 2px;
-    }
-
-    .section-header {
-      font-size: 2.5rem;
-      font-weight: 900;
-      text-transform: uppercase;
-      color: var(--red-primary);
-      margin-bottom: 2rem;
+      letter-spacing: -1px;
+      margin-bottom: 1.5rem;
+      color: var(--red);
       position: relative;
     }
 
-    .section-header::before {
-      content: '★';
+    .hero-title::after {
+      content: '';
       position: absolute;
-      left: -3rem;
-      color: var(--yellow);
-      font-size: 2rem;
+      bottom: -10px;
+      left: 0;
+      width: 100px;
+      height: 6px;
+      background: linear-gradient(90deg, var(--red) 0%, var(--gold) 100%);
+      transform: skew(-20deg);
+    }
+
+    .hero-subtitle {
+      font-size: 1.375rem;
+      font-weight: 700;
+      color: var(--black);
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: var(--red);
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .section-title::before {
+      content: '';
+      position: absolute;
+      left: -2rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1rem;
+      height: 1rem;
+      background: var(--gold);
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
     }
 
     /* Layout */
     .container { 
-      max-width: 1400px; 
+      max-width: 1200px; 
       margin: 0 auto; 
       padding: 0 2rem; 
     }
 
     .section { 
-      padding: 4rem 0; 
+      padding: 5rem 0; 
       position: relative;
     }
 
-    /* Soviet geometric patterns */
+    /* Geometric patterns */
     .bg-pattern {
       position: absolute;
       top: 0;
@@ -86,30 +102,34 @@
       right: 0;
       bottom: 0;
       background: 
-        linear-gradient(45deg, transparent 40%, var(--red-primary) 40%, var(--red-primary) 60%, transparent 60%),
-        linear-gradient(-45deg, transparent 40%, var(--yellow) 40%, var(--yellow) 60%, transparent 60%);
-      background-size: 40px 40px;
-      opacity: 0.05;
+        linear-gradient(45deg, transparent 30%, rgba(220, 38, 38, 0.03) 30%, rgba(220, 38, 38, 0.03) 70%, transparent 70%),
+        linear-gradient(-45deg, transparent 30%, rgba(245, 158, 11, 0.03) 30%, rgba(245, 158, 11, 0.03) 70%, transparent 70%);
+      background-size: 60px 60px;
       z-index: -1;
     }
 
     /* Header */
     .header {
-      background: var(--red-primary);
-      color: var(--white);
-      padding: 1rem 0;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      background: linear-gradient(135deg, var(--white) 0%, var(--gray-light) 100%);
+      border-bottom: 4px solid var(--red);
+      padding: 1.5rem 0;
       position: relative;
     }
 
     .header::after {
       content: '';
       position: absolute;
-      bottom: 0;
+      bottom: -4px;
       left: 0;
       right: 0;
       height: 4px;
-      background: var(--yellow);
+      background: repeating-linear-gradient(
+        to right,
+        var(--gold) 0px,
+        var(--gold) 20px,
+        var(--red) 20px,
+        var(--red) 40px
+      );
     }
 
     .header-content {
@@ -122,29 +142,34 @@
       font-size: 2rem;
       font-weight: 900;
       text-decoration: none;
-      color: var(--white);
+      color: var(--red);
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 1px;
+      position: relative;
+    }
+
+    .logo::before {
+      content: '◆';
+      position: absolute;
+      left: -1.5rem;
+      color: var(--gold);
     }
 
     .nav {
       display: flex;
-      gap: 3rem;
+      gap: 2.5rem;
       list-style: none;
     }
 
     .nav a {
-      color: var(--white);
+      color: var(--black);
       text-decoration: none;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 1px;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
       transition: all 0.3s ease;
       position: relative;
-    }
-
-    .nav a:hover {
-      color: var(--yellow);
     }
 
     .nav a::after {
@@ -152,47 +177,66 @@
       position: absolute;
       bottom: -5px;
       left: 0;
-      right: 0;
-      height: 2px;
-      background: var(--yellow);
-      transform: scaleX(0);
-      transition: transform 0.3s ease;
+      width: 0;
+      height: 3px;
+      background: var(--red);
+      transition: width 0.3s ease;
+    }
+
+    .nav a:hover {
+      color: var(--red);
     }
 
     .nav a:hover::after {
-      transform: scaleX(1);
+      width: 100%;
     }
 
-    /* Buttons */
+    /* Industrial buttons */
     .btn {
       display: inline-block;
-      padding: 1rem 2.5rem;
-      background: var(--red-primary);
+      padding: 1rem 2rem;
+      background: var(--red);
       color: var(--white);
       text-decoration: none;
       font-weight: 900;
       text-transform: uppercase;
       letter-spacing: 1px;
-      border: 3px solid var(--black);
-      box-shadow: 4px 4px 0px var(--black);
+      border: none;
+      cursor: pointer;
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
+      font-size: 0.9rem;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .btn:hover::before {
+      left: 100%;
     }
 
     .btn:hover {
-      background: var(--red-secondary);
-      transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0px var(--black);
+      background: var(--red-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px var(--shadow);
     }
 
     .btn-secondary {
-      background: var(--yellow);
+      background: var(--gold);
       color: var(--black);
     }
 
     .btn-secondary:hover {
-      background: #E6C200;
+      background: var(--gold-dark);
     }
 
     /* Hero Section */
@@ -200,13 +244,21 @@
       min-height: 100vh;
       display: flex;
       align-items: center;
+      background: linear-gradient(135deg, var(--bg) 0%, var(--gray-light) 100%);
       position: relative;
-      background: linear-gradient(135deg, var(--bg-paper) 0%, #E6E6E6 100%);
+      overflow: hidden;
     }
 
     .hero-content {
       position: relative;
       z-index: 2;
+      max-width: 600px;
+    }
+
+    .hero-text {
+      font-size: 1.25rem;
+      margin-bottom: 3rem;
+      color: var(--gray);
     }
 
     .hero-actions {
@@ -215,128 +267,111 @@
       margin-top: 3rem;
     }
 
-    /* Industrial code pattern */
-    .code-factory {
+    /* Constructivist code pattern */
+    .machine-graphics {
       position: absolute;
       right: 5%;
-      top: 20%;
+      top: 25%;
       font-family: 'Courier New', monospace;
       font-size: 1rem;
-      opacity: 0.15;
-      transform: rotate(-5deg);
+      opacity: 0.2;
+      transform: rotate(-8deg);
     }
 
-    .machine-code {
-      background: var(--red-primary);
+    .machine-block {
+      background: var(--red);
       color: var(--white);
-      padding: 0.5rem 1rem;
-      margin: 0.5rem 0;
+      padding: 0.75rem 1.25rem;
+      margin: 0.75rem 0;
       font-weight: bold;
-      border-left: 4px solid var(--yellow);
-      animation: production 4s linear infinite;
+      position: relative;
+      transition: all 0.3s ease;
     }
 
-    @keyframes production {
-      0% { transform: translateX(100px); opacity: 0; }
-      25% { opacity: 1; }
-      75% { opacity: 1; }
-      100% { transform: translateX(-100px); opacity: 0; }
+    .machine-block::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--gold);
     }
 
-    .machine-code:nth-child(2) { animation-delay: -1s; }
-    .machine-code:nth-child(3) { animation-delay: -2s; }
-    .machine-code:nth-child(4) { animation-delay: -3s; }
+    .machine-block::after {
+      content: '▶';
+      position: absolute;
+      right: -20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--gold);
+      font-size: 0.8rem;
+    }
 
-    /* Feature cards - Industrial style */
+    .machine-block:nth-child(even) {
+      background: var(--gold);
+      color: var(--black);
+      margin-left: 2rem;
+    }
+
+    /* Feature cards */
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       gap: 2rem;
       margin: 3rem 0;
     }
 
     .feature-card {
       background: var(--white);
-      border: 3px solid var(--black);
+      border-left: 6px solid var(--red);
       padding: 2rem;
-      box-shadow: 8px 8px 0px var(--red-primary);
+      box-shadow: 4px 4px 0px var(--gray-light);
       position: relative;
       transition: all 0.3s ease;
-    }
-
-    .feature-card:hover {
-      transform: translate(-4px, -4px);
-      box-shadow: 12px 12px 0px var(--red-primary);
     }
 
     .feature-card::before {
       content: '';
       position: absolute;
-      top: -3px;
-      left: -3px;
-      right: -3px;
-      height: 20px;
-      background: var(--yellow);
-      z-index: -1;
+      top: 0;
+      right: 0;
+      width: 30px;
+      height: 30px;
+      background: var(--gold);
+      clip-path: polygon(100% 0%, 0% 0%, 100% 100%);
+    }
+
+    .feature-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 8px 8px 0px var(--red);
+      border-left-color: var(--gold);
     }
 
     .feature-title {
-      font-size: 1.5rem;
+      font-size: 1.25rem;
       font-weight: 900;
       text-transform: uppercase;
-      color: var(--red-primary);
+      color: var(--red);
       margin-bottom: 1rem;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
     }
 
     .feature-text {
-      font-size: 1rem;
-      line-height: 1.6;
       color: var(--black);
+      line-height: 1.7;
     }
 
-    /* Progress bars */
-    .progress-section {
-      background: var(--red-primary);
-      color: var(--white);
-      padding: 4rem 0;
-      position: relative;
-    }
-
-    .progress-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 2rem;
-    }
-
-    .progress-item {
-      text-align: center;
-    }
-
-    .progress-number {
-      font-size: 3rem;
-      font-weight: 900;
-      color: var(--yellow);
-      display: block;
-    }
-
-    .progress-label {
-      font-size: 1.2rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    /* Propaganda poster style */
-    .poster-section {
-      background: var(--red-primary);
+    /* Industrial showcase */
+    .industrial-showcase {
+      background: var(--black);
       color: var(--white);
       padding: 6rem 0;
-      text-align: center;
       position: relative;
+      text-align: center;
     }
 
-    .poster-section::before {
+    .industrial-showcase::before {
       content: '';
       position: absolute;
       top: 0;
@@ -344,26 +379,75 @@
       right: 0;
       bottom: 0;
       background: 
-        radial-gradient(circle at 20% 20%, var(--yellow) 2%, transparent 2%),
-        radial-gradient(circle at 80% 80%, var(--yellow) 2%, transparent 2%);
-      background-size: 50px 50px;
-      opacity: 0.1;
+        repeating-linear-gradient(
+          45deg,
+          transparent 0px,
+          transparent 40px,
+          rgba(245, 158, 11, 0.1) 40px,
+          rgba(245, 158, 11, 0.1) 80px
+        );
     }
 
-    .poster-title {
-      font-size: 3.5rem;
+    .industrial-title {
+      font-size: 3rem;
       font-weight: 900;
       text-transform: uppercase;
       margin-bottom: 2rem;
-      text-shadow: 3px 3px 0px var(--black);
-      transform: perspective(400px) rotateX(10deg);
+      color: var(--white);
+      position: relative;
+      z-index: 2;
     }
 
-    .poster-subtitle {
-      font-size: 1.8rem;
+    .industrial-subtitle {
+      font-size: 1.5rem;
       font-weight: 700;
       margin-bottom: 3rem;
-      color: var(--yellow);
+      color: var(--gold);
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Statistics */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      margin: 3rem 0;
+    }
+
+    .stat-card {
+      text-align: center;
+      padding: 2rem;
+      background: var(--white);
+      border: 3px solid var(--red);
+      position: relative;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: -3px;
+      right: -3px;
+      width: 20px;
+      height: 20px;
+      background: var(--gold);
+    }
+
+    .stat-number {
+      font-size: 3rem;
+      font-weight: 900;
+      color: var(--red);
+      display: block;
+      text-transform: uppercase;
+    }
+
+    .stat-label {
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--black);
+      letter-spacing: 0.5px;
+      margin-top: 0.5rem;
     }
 
     /* Footer */
@@ -372,17 +456,24 @@
       color: var(--white);
       padding: 3rem 0;
       text-align: center;
+      border-top: 6px solid var(--red);
       position: relative;
     }
 
     .footer::before {
       content: '';
       position: absolute;
-      top: 0;
+      top: -6px;
       left: 0;
       right: 0;
-      height: 4px;
-      background: var(--yellow);
+      height: 6px;
+      background: repeating-linear-gradient(
+        to right,
+        var(--gold) 0px,
+        var(--gold) 30px,
+        var(--red) 30px,
+        var(--red) 60px
+      );
     }
 
     /* Mobile */
@@ -391,8 +482,10 @@
       .nav { display: none; }
       .features-grid { grid-template-columns: 1fr; }
       .hero-actions { flex-direction: column; }
-      .code-factory { display: none; }
-      .poster-title { font-size: 2.5rem; }
+      .machine-graphics { display: none; }
+      .industrial-title { font-size: 2rem; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .section { padding: 3rem 0; }
     }
   </style>
 </head>
@@ -401,16 +494,16 @@
   <header class="header">
     <div class="container">
       <div class="header-content">
-        <a href="#" class="logo">НАУКАТЕР</a>
+        <a href="#" class="logo">Scientiaiter</a>
         
         <nav class="nav">
-          <a href="#plan">План</a>
-          <a href="#progress">Прогресс</a>
-          <a href="#production">Производство</a>
+          <a href="#system">Система</a>
+          <a href="#capabilities">Возможности</a>
+          <a href="#medicine">Медицина</a>
         </nav>
 
         <div>
-          <a href="/login" class="btn btn-secondary">Войти в систему</a>
+          <a href="/login" class="btn btn-secondary">Вход в систему</a>
         </div>
       </div>
     </div>
@@ -422,140 +515,142 @@
     <div class="container">
       <div class="hero-content">
         <h1 class="hero-title">
-          АВТОМАТИЗИРОВАННАЯ<br>
-          СИСТЕМА НАУЧНЫХ<br>
-          ИССЛЕДОВАНИЙ
+          Автоматизированная<br>
+          научная платформа
         </h1>
-        <p class="subtitle">
-          Пятилетний план цифровизации науки<br>
-          Объединение классических методов с мощью машин
+        <p class="hero-subtitle">
+          Системный подход к исследованиям
         </p>
-        <p style="font-size: 1.2rem; margin-bottom: 2rem;">
-          НАУКАТЕР — передовая автоматизированная система для научно-исследовательских институтов. 
-          Повышайте производительность научного труда, выполняйте планы досрочно!
-        </p>
+        <div class="hero-text">
+          <p>
+            Scientiaiter — передовая платформа для автоматизации научно-исследовательских процессов. 
+            Объединяем классические методологии с мощностью современных вычислительных систем 
+            для повышения эффективности научного труда.
+          </p>
+        </div>
         <div class="hero-actions">
-          <a href="/register" class="btn">Встать в ряды</a>
-          <a href="#plan" class="btn btn-secondary">Изучить план</a>
+          <a href="/register" class="btn">Подключиться к системе</a>
+          <a href="#system" class="btn btn-secondary">Изучить возможности</a>
         </div>
       </div>
     </div>
     
-    <!-- Industrial Code Pattern -->
-    <div class="code-factory">
-      <div class="machine-code">МОДУЛЬ_АНАЛИЗА.init()</div>
-      <div class="machine-code">ПЛАН_ИССЛЕДОВАНИЙ.execute()</div>
-      <div class="machine-code">ДАННЫЕ.process()</div>
-      <div class="machine-code">РЕЗУЛЬТАТ.optimize()</div>
+    <!-- Machine Graphics -->
+    <div class="machine-graphics">
+      <div class="machine-block">ИНИЦИАЛИЗАЦИЯ.СИСТЕМА()</div>
+      <div class="machine-block">ЗАГРУЗКА.МОДУЛЬ_АНАЛИЗА</div>
+      <div class="machine-block">ОБРАБОТКА.НАУЧНЫЕ_ДАННЫЕ</div>
+      <div class="machine-block">ГЕНЕРАЦИЯ.РЕЗУЛЬТАТ</div>
+      <div class="machine-block">ВЫХОД.ГОТОВЫЙ_ПРОДУКТ</div>
     </div>
   </section>
 
-  <!-- Plan Section -->
-  <section class="section" id="plan">
+  <!-- System Section -->
+  <section class="section" id="system">
     <div class="bg-pattern"></div>
     <div class="container">
-      <h2 class="section-header">ЗАДАЧИ ПЯТИЛЕТКИ</h2>
+      <h2 class="section-title">Компоненты системы</h2>
       
       <div class="features-grid">
         <div class="feature-card">
-          <div class="feature-title">⚙️ АВТОМАТИЗАЦИЯ ПОИСКА</div>
+          <div class="feature-title">⚙️ Автоматизированный поиск</div>
           <div class="feature-text">
-            Машинный поиск и анализ научной литературы. Система обрабатывает тысячи источников 
-            в минуты, классифицирует по релевантности и строит карты знаний.
+            Интеллектуальная система поиска и анализа научной литературы. 
+            Обрабатывает множественные источники данных, классифицирует по релевантности 
+            и строит структурированные базы знаний.
           </div>
         </div>
 
         <div class="feature-card">
-          <div class="feature-title">🏭 ПРОИЗВОДСТВО ТЕКСТОВ</div>
+          <div class="feature-title">🏭 Производственный конвейер</div>
           <div class="feature-text">
-            Автоматизированная фабрика научных текстов. ИИ-ассистент помогает структурировать 
-            исследования, проверяет логику и соответствие академическим стандартам.
+            Автоматизированная обработка научных текстов от сырых данных до готовых публикаций. 
+            ИИ-ассистент структурирует исследования и проверяет соответствие стандартам.
           </div>
         </div>
 
         <div class="feature-card">
-          <div class="feature-title">📊 СТАТИСТИЧЕСКИЙ АППАРАТ</div>
+          <div class="feature-title">📊 Аналитический модуль</div>
           <div class="feature-text">
-            Централизованная обработка данных исследований. Автоматическое построение графиков, 
-            выявление закономерностей и подготовка аналитических сводок.
+            Централизованная обработка исследовательских данных. Автоматическое построение 
+            визуализаций, выявление закономерностей и подготовка аналитических отчётов.
           </div>
         </div>
 
         <div class="feature-card">
-          <div class="feature-title">🔬 ЛАБОРАТОРИЯ АНАЛИЗА</div>
+          <div class="feature-title">🔬 Лаборатория данных</div>
           <div class="feature-text">
-            Систематический разбор медицинских публикаций. Выявление трендов, противоречий 
-            в данных и формирование рекомендаций для дальнейших исследований.
+            Систематический анализ медицинских публикаций и клинических данных. 
+            Выявление трендов и формирование рекомендаций для исследовательских групп.
           </div>
         </div>
 
         <div class="feature-card">
-          <div class="feature-title">📋 ПЛАН КАЧЕСТВА</div>
+          <div class="feature-title">📋 Контроль качества</div>
           <div class="feature-text">
-            Централизованный контроль качества научной продукции. Проверка методологии, 
-            воспроизводимости результатов и соответствия требованиям.
+            Централизованная проверка методологии, воспроизводимости результатов 
+            и соответствия академическим требованиям на всех этапах исследования.
           </div>
         </div>
 
         <div class="feature-card">
-          <div class="feature-title">🎯 ЦЕЛЕВЫЕ ПОКАЗАТЕЛИ</div>
+          <div class="feature-title">🎯 Система метрик</div>
           <div class="feature-text">
-            Учет и контроль выполнения плановых заданий. Мониторинг прогресса исследовательских 
-            групп и оптимизация распределения ресурсов.
+            Мониторинг производительности исследовательских процессов. 
+            Учёт показателей эффективности и оптимизация распределения ресурсов.
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Progress Section -->
-  <section class="progress-section" id="progress">
+  <!-- Statistics Section -->
+  <section class="section" id="capabilities" style="background: var(--gray-light);">
     <div class="container">
-      <h2 style="font-size: 3rem; font-weight: 900; text-align: center; margin-bottom: 3rem; color: var(--yellow);">
-        ПРОИЗВОДСТВЕННЫЕ ПОКАЗАТЕЛИ
-      </h2>
+      <h2 class="section-title" style="text-align: center;">Производственные показатели</h2>
       
-      <div class="progress-grid">
-        <div class="progress-item">
-          <span class="progress-number">127%</span>
-          <span class="progress-label">Выполнение плана</span>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-number">3x</span>
+          <span class="stat-label">Ускорение процессов</span>
         </div>
         
-        <div class="progress-item">
-          <span class="progress-number">2.5x</span>
-          <span class="progress-label">Ускорение процессов</span>
+        <div class="stat-card">
+          <span class="stat-number">95%</span>
+          <span class="stat-label">Автоматизация</span>
         </div>
         
-        <div class="progress-item">
-          <span class="progress-number">95%</span>
-          <span class="progress-label">Автоматизация</span>
+        <div class="stat-card">
+          <span class="stat-number">24/7</span>
+          <span class="stat-label">Режим работы</span>
         </div>
         
-        <div class="progress-item">
-          <span class="progress-number">∞</span>
-          <span class="progress-label">Мощность системы</span>
+        <div class="stat-card">
+          <span class="stat-number">∞</span>
+          <span class="stat-label">Масштабируемость</span>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Production Focus Section -->
-  <section class="poster-section" id="production">
+  <!-- Industrial Showcase -->
+  <section class="industrial-showcase" id="medicine">
     <div class="container">
-      <h2 class="poster-title">
-        МЕДИЦИНСКАЯ НАУКА —<br>
-        ПРИОРИТЕТ ГОСУДАРСТВА!
+      <h2 class="industrial-title">
+        Медицинский сектор —<br>
+        приоритетное направление
       </h2>
-      <p class="poster-subtitle">
-        Специализированный модуль для медицинских исследований
+      <p class="industrial-subtitle">
+        Специализированные решения для медицинских исследований
       </p>
-      <p style="font-size: 1.4rem; max-width: 800px; margin: 0 auto 3rem;">
-        Платформа НАУКАТЕР концентрируется на медицинских исследованиях как ключевом направлении 
-        народного хозяйства. Здоровье граждан — основа процветания государства!
+      <p style="font-size: 1.25rem; max-width: 800px; margin: 0 auto 3rem; position: relative; z-index: 2; line-height: 1.6;">
+        Платформа Scientiaiter фокусируется на медицинских исследованиях как стратегически важном 
+        направлении. Обеспечиваем высочайшие стандарты качества и безопасности данных 
+        для клинических исследований.
       </p>
-      <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;">
-        <a href="/register" class="btn">ПРИСОЕДИНИТЬСЯ К ДВИЖЕНИЮ</a>
-        <a href="/med" class="btn btn-secondary">МЕДИЦИНСКИЙ МОДУЛЬ</a>
+      <div style="display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap; position: relative; z-index: 2;">
+        <a href="/register" class="btn">Войти в систему</a>
+        <a href="/med" class="btn btn-secondary">Медицинский модуль</a>
       </div>
     </div>
   </section>
@@ -563,50 +658,52 @@
   <!-- Footer -->
   <footer class="footer">
     <div class="container">
-      <p style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">
-        НАУКАТЕР — АВТОМАТИЗИРОВАННАЯ СИСТЕМА НАУЧНЫХ ИССЛЕДОВАНИЙ
+      <p style="font-size: 1.25rem; font-weight: 900; margin-bottom: 1rem; text-transform: uppercase;">
+        Scientiaiter — автоматизированная научная платформа
       </p>
-      <p>&copy; 2024 Министерство Научного Прогресса</p>
-      <p style="margin-top: 1rem; color: var(--yellow);">
-        "Знание + Машина = Прогресс"
+      <p>&copy; 2024 Центр автоматизации научных исследований</p>
+      <p style="margin-top: 1rem; color: var(--gold); font-weight: 700;">
+        "Системность × Технология = Прогресс"
       </p>
     </div>
   </footer>
 
   <script>
     // Industrial animation effects
-    function startProductionLine() {
-      const codes = document.querySelectorAll('.machine-code');
+    function runMachineProcess() {
+      const blocks = document.querySelectorAll('.machine-block');
       let delay = 0;
       
-      codes.forEach(code => {
+      blocks.forEach((block, index) => {
         setTimeout(() => {
-          code.style.animation = 'none';
+          block.style.transform = 'translateX(10px)';
+          block.style.boxShadow = '0 0 20px rgba(245, 158, 11, 0.5)';
           setTimeout(() => {
-            code.style.animation = 'production 4s linear infinite';
-          }, 100);
+            block.style.transform = 'translateX(0)';
+            block.style.boxShadow = 'none';
+          }, 600);
         }, delay);
-        delay += 1000;
+        delay += 800;
       });
     }
 
-    setInterval(startProductionLine, 5000);
+    setInterval(runMachineProcess, 5000);
 
-    // Progress counter animation
-    function animateCounters() {
-      const numbers = document.querySelectorAll('.progress-number');
+    // Statistics animation
+    function animateStats() {
+      const numbers = document.querySelectorAll('.stat-number');
       numbers.forEach(num => {
-        if (num.textContent !== '∞') {
+        if (!num.textContent.includes('∞') && !num.textContent.includes('/')) {
           const target = parseFloat(num.textContent);
           let current = 0;
-          const increment = target / 50;
+          const increment = target / 30;
           const timer = setInterval(() => {
             current += increment;
             if (current >= target) {
               current = target;
               clearInterval(timer);
             }
-            num.textContent = current.toFixed(1) + (num.textContent.includes('%') ? '%' : 'x');
+            num.textContent = Math.floor(current) + (num.textContent.includes('%') ? '%' : (num.textContent.includes('x') ? 'x' : ''));
           }, 50);
         }
       });
@@ -616,12 +713,12 @@
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          animateCounters();
+          animateStats();
         }
       });
     }, { threshold: 0.5 });
 
-    observer.observe(document.querySelector('.progress-section'));
+    observer.observe(document.querySelector('#capabilities'));
 
     // Smooth scrolling
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -631,6 +728,17 @@
         if (target) {
           target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+      });
+    });
+
+    // Feature cards hover effects
+    document.querySelectorAll('.feature-card').forEach(card => {
+      card.addEventListener('mouseenter', function() {
+        this.style.borderLeftColor = 'var(--gold)';
+      });
+      
+      card.addEventListener('mouseleave', function() {
+        this.style.borderLeftColor = 'var(--red)';
       });
     });
   </script>
