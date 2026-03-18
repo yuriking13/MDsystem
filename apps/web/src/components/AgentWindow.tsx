@@ -211,6 +211,7 @@ export default function AgentWindow({
         );
       };
     }
+    return () => {}; // Add explicit return for TypeScript
   }, [isDragging, isResizing, handleMouseMove, handleMouseUp]);
 
   // ============================================================================
@@ -272,7 +273,6 @@ export default function AgentWindow({
 
       {/* Window */}
       <AgentWindowContainer
-        ref={windowRef}
         windowState={windowState}
         isDragging={isDragging}
         isResizing={isResizing}
@@ -283,6 +283,7 @@ export default function AgentWindow({
         <div
           ref={headerRef}
           className={`agent-window-header ${isDragging ? "agent-window-header--dragging" : ""}`}
+          onMouseDown={handleMouseDown}
         >
           <div className="agent-window-title">
             <div

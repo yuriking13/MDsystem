@@ -212,26 +212,27 @@ export default function AgentFloatingButton({
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
+    return () => {}; // Add explicit return for TypeScript
   }, [isMenuOpen]);
 
-  const getPositionClasses = () => {
+  const getPositionClasses = (): string => {
     const positions = {
       "bottom-right": "bottom-6 right-6",
       "bottom-left": "bottom-6 left-6",
       "top-right": "top-6 right-6",
       "top-left": "top-6 left-6",
-    };
-    return positions[position];
+    } as const;
+    return positions[position] || positions["bottom-right"];
   };
 
-  const getMenuPositionClasses = () => {
+  const getMenuPositionClasses = (): string => {
     const positions = {
       "bottom-right": "bottom-full right-0 mb-2",
       "bottom-left": "bottom-full left-0 mb-2",
       "top-right": "top-full right-0 mt-2",
       "top-left": "top-full left-0 mt-2",
     };
-    return positions[position];
+    return positions[position] || positions["bottom-right"];
   };
 
   const handleAgentSelect = (agentType: AgentType) => {

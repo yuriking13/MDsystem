@@ -525,7 +525,7 @@ export const AgentCoordinator = new AgentCoordinatorClass();
 // Global access for debugging
 if (typeof window !== "undefined") {
   (
-    window as Window & { AgentCoordinator: typeof AgentCoordinator }
+    window as typeof window & { AgentCoordinator: typeof AgentCoordinator }
   ).AgentCoordinator = AgentCoordinator;
 }
 
