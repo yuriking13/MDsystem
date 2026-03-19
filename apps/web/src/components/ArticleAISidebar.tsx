@@ -4,6 +4,7 @@ import {
   type ArticlesAISuggestedArticle,
   type ArticlesAIAssistantResponse,
 } from "../lib/api";
+import ArticleAIModal from "./ArticleAIModal";
 
 // ============================================================
 // Types
@@ -327,6 +328,30 @@ export default function ArticleAISidebar({
         ),
     },
   ];
+
+  // If this component is used directly, render the new modal instead
+  // This provides backward compatibility while using the new architecture
+  if (typeof isOpen !== "undefined") {
+    return (
+      <ArticleAIModal
+        projectId={projectId}
+        projectName={projectName}
+        viewStatus={viewStatus}
+        candidateCount={candidateCount}
+        selectedArticlesCount={selectedArticlesCount}
+        onAddToSelected={onAddToSelected}
+        onHighlightArticle={onHighlightArticle}
+        messages={externalMessages}
+        onSendMessage={externalOnSendMessage}
+        isLoading={externalIsLoading}
+        suggestedActions={externalSuggestedActions}
+        onAnalyzeSelection={onAnalyzeSelection}
+        onSummarizeAll={onSummarizeAll}
+        onFindSimilar={onFindSimilar}
+        onGenerateCriteria={onGenerateCriteria}
+      />
+    );
+  }
 
   // ============================================================
   // Render: Floating Button (when closed)

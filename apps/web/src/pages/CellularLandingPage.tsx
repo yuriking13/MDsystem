@@ -4,7 +4,7 @@ import "../styles/cellular-landing.css";
 
 export default function CellularLandingPage() {
   const [scrollY, setScrollY] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [_isLoaded, setIsLoaded] = useState(false);
   const cellRef = useRef<HTMLDivElement>(null);
   const heroRef = useRef<HTMLElement>(null);
 

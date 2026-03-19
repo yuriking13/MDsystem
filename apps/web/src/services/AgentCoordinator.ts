@@ -117,7 +117,7 @@ class AgentCoordinatorClass {
 
     this.agents.set(id, agent);
     this.emit("agent-registered", { agent });
-    console.log(`✅ Agent registered: ${id} (${type})`);
+    console.warn(`✅ Agent registered: ${id} (${type})`);
   }
 
   unregisterAgent(id: string): void {
@@ -129,7 +129,7 @@ class AgentCoordinatorClass {
     }
 
     this.agents.delete(id);
-    console.log(`❌ Agent unregistered: ${id}`);
+    console.warn(`❌ Agent unregistered: ${id}`);
   }
 
   getAgent(id: string): AgentState | undefined {
@@ -328,7 +328,7 @@ class AgentCoordinatorClass {
 
   private deliverMessage(message: AgentMessage): void {
     // Implement message delivery logic based on agent type
-    console.log(
+    console.warn(
       `📨 Message from ${message.fromAgent} to ${message.toAgent}:`,
       message.payload,
     );
@@ -374,7 +374,10 @@ class AgentCoordinatorClass {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, []);
     }
-    this.eventHandlers.get(event)!.push(handler);
+    const handlers = this.eventHandlers.get(event);
+    if (handlers) {
+      handlers.push(handler);
+    }
   }
 
   off(event: AgentEventType, handler: AgentEventHandler): void {
@@ -510,12 +513,11 @@ class AgentCoordinatorClass {
   }
 
   debugLog(): void {
-    console.group("🤖 Agent Coordinator State");
-    console.log("Stats:", this.getSystemStats());
-    console.log("Agents:", Array.from(this.agents.entries()));
-    console.log("Open Windows:", this.getOpenWindows());
-    console.log("Message Queue:", this.messageQueue.slice(-10)); // Last 10 messages
-    console.groupEnd();
+    console.error("🤖 Agent Coordinator State");
+    console.warn("Stats:", this.getSystemStats());
+    console.warn("Agents:", Array.from(this.agents.entries()));
+    console.warn("Open Windows:", this.getOpenWindows());
+    console.warn("Message Queue:", this.messageQueue.slice(-10)); // Last 10 messages
   }
 }
 

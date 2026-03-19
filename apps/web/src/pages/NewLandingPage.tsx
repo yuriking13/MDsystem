@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 export default function NewLandingPage() {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [activeSection, setActiveSection] = useState("hero");
+  const [_activeSection, setActiveSection] = useState("hero");
   const heroRef = useRef<HTMLElement>(null);
   const problemsRef = useRef<HTMLElement>(null);
   const solutionRef = useRef<HTMLElement>(null);
