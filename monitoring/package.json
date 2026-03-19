@@ -1,0 +1,46 @@
+{
+  "name": "agent-monitoring-dashboard",
+  "version": "1.0.0",
+  "description": "Real-time monitoring dashboard for agent systems with optimized performance tracking",
+  "main": "server/monitoring-server.js",
+  "scripts": {
+    "start": "node server/monitoring-server.js",
+    "dev": "nodemon server/monitoring-server.js",
+    "test": "node test/test-server.js",
+    "install-deps": "npm install",
+    "build": "echo 'Building dashboard assets...' && npm run optimize",
+    "optimize": "echo 'Optimizing CSS and JS files...'",
+    "lint": "eslint **/*.js",
+    "simulate": "node scripts/simulate-data.js"
+  },
+  "keywords": [
+    "monitoring",
+    "dashboard",
+    "real-time",
+    "websocket",
+    "performance",
+    "tabulator",
+    "agents"
+  ],
+  "author": "Monitoring System",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1",
+    "eslint": "^8.44.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-org/agent-monitoring.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/agent-monitoring/issues"
+  },
+  "homepage": "https://github.com/your-org/agent-monitoring#readme"
+}

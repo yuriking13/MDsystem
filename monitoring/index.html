@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Monitoring Dashboard</title>
+    
+    <!-- Tabulator CSS -->
+    <link href="https://unpkg.com/tabulator-tables@6.2.5/dist/css/tabulator.min.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- WebSocket.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ws/8.16.0/ws.min.js"></script>
+    
+    <!-- Tabulator JS -->
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@6.2.5/dist/js/tabulator.min.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles/dashboard.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <h1>Agent Monitoring Dashboard</h1>
+            <div class="status-indicators">
+                <div class="status-item">
+                    <span class="status-label">System Status:</span>
+                    <span id="system-status" class="status-value online">Online</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Last Update:</span>
+                    <span id="last-update" class="status-value">--</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Connected Agents:</span>
+                    <span id="connected-agents" class="status-value">0</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div class="dashboard-grid">
+            <!-- Performance Metrics -->
+            <section class="grid-item performance-section">
+                <h2>Performance Metrics</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>CPU Usage</h3>
+                        <canvas id="cpu-chart"></canvas>
+                        <div class="metric-value" id="cpu-value">0%</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Memory Usage</h3>
+                        <canvas id="memory-chart"></canvas>
+                        <div class="metric-value" id="memory-value">0 MB</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Task Processing Rate</h3>
+                        <canvas id="task-rate-chart"></canvas>
+                        <div class="metric-value" id="task-rate-value">0/min</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Error Rate</h3>
+                        <canvas id="error-rate-chart"></canvas>
+                        <div class="metric-value" id="error-rate-value">0%</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Task Queue Visualization -->
+            <section class="grid-item queue-section">
+                <h2>Task Queue Status</h2>
+                <div class="queue-header">
+                    <div class="queue-stats">
+                        <span class="stat-item">Pending: <span id="pending-tasks">0</span></span>
+                        <span class="stat-item">Processing: <span id="processing-tasks">0</span></span>
+                        <span class="stat-item">Completed: <span id="completed-tasks">0</span></span>
+                        <span class="stat-item">Failed: <span id="failed-tasks">0</span></span>
+                    </div>
+                    <div class="queue-controls">
+                        <button id="pause-queue" class="btn btn-warning">Pause Queue</button>
+                        <button id="clear-completed" class="btn btn-secondary">Clear Completed</button>
+                        <button id="retry-failed" class="btn btn-danger">Retry Failed</button>
+                    </div>
+                </div>
+                <div id="task-queue-table"></div>
+            </section>
+
+            <!-- Error Handling System -->
+            <section class="grid-item error-section">
+                <h2>Error Monitoring</h2>
+                <div class="error-summary">
+                    <div class="error-stats">
+                        <div class="error-stat">
+                            <span class="error-count" id="critical-errors">0</span>
+                            <span class="error-label">Critical</span>
+                        </div>
+                        <div class="error-stat">
+                            <span class="error-count" id="warning-errors">0</span>
+                            <span class="error-label">Warnings</span>
+                        </div>
+                        <div class="error-stat">
+                            <span class="error-count" id="info-errors">0</span>
+                            <span class="error-label">Info</span>
+                        </div>
+                    </div>
+                    <div class="error-controls">
+                        <button id="clear-errors" class="btn btn-secondary">Clear All</button>
+                        <button id="export-errors" class="btn btn-primary">Export Log</button>
+                    </div>
+                </div>
+                <div id="error-log-table"></div>
+            </section>
+
+            <!-- Agent Status -->
+            <section class="grid-item agent-section">
+                <h2>Agent Status</h2>
+                <div class="agent-controls">
+                    <button id="refresh-agents" class="btn btn-primary">Refresh</button>
+                    <button id="restart-all" class="btn btn-warning">Restart All</button>
+                </div>
+                <div id="agent-status-table"></div>
+            </section>
+
+            <!-- Real-time Logs -->
+            <section class="grid-item logs-section">
+                <h2>Real-time Logs</h2>
+                <div class="log-controls">
+                    <select id="log-level">
+                        <option value="all">All Levels</option>
+                        <option value="error">Errors Only</option>
+                        <option value="warning">Warnings</option>
+                        <option value="info">Info</option>
+                        <option value="debug">Debug</option>
+                    </select>
+                    <button id="clear-logs" class="btn btn-secondary">Clear</button>
+                    <button id="pause-logs" class="btn btn-warning">Pause</button>
+                </div>
+                <div id="log-container"></div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/websocket-client.js"></script>
+    <script src="js/chart-manager.js"></script>
+    <script src="js/table-manager.js"></script>
+    <script src="js/dashboard-controller.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
