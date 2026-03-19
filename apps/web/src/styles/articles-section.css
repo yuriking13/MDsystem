@@ -3310,3 +3310,81 @@ body.agent-no-select {
       calc(12px + env(safe-area-inset-left, 0px));
   }
 }
+
+/* =============================================================================
+   AI Assistant Tabs (Cross-Platform Search Integration)
+   ============================================================================= */
+
+.article-ai-tabs {
+  @apply flex border-b border-gray-200 bg-gray-50;
+  padding: 0;
+}
+
+.light-theme .article-ai-tabs,
+[data-theme="light"] .article-ai-tabs {
+  border-color: #e5e7eb;
+  background: #f9fafb;
+}
+
+.dark-theme .article-ai-tabs,
+[data-theme="dark"] .article-ai-tabs {
+  border-color: #374151;
+  background: #1f2937;
+}
+
+.article-ai-tab {
+  @apply flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium;
+  @apply border-b-2 border-transparent transition-all duration-200;
+  @apply text-gray-500 hover:text-gray-700 hover:border-gray-300;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  cursor: pointer;
+}
+
+.article-ai-tab.active {
+  @apply text-blue-600 border-blue-600;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.light-theme .article-ai-tab,
+[data-theme="light"] .article-ai-tab {
+  @apply text-gray-500 hover:text-gray-700;
+}
+
+.light-theme .article-ai-tab.active,
+[data-theme="light"] .article-ai-tab.active {
+  @apply text-blue-600;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dark-theme .article-ai-tab,
+[data-theme="dark"] .article-ai-tab {
+  @apply text-gray-400 hover:text-gray-200;
+}
+
+.dark-theme .article-ai-tab.active,
+[data-theme="dark"] .article-ai-tab.active {
+  @apply text-blue-400;
+  background: rgba(96, 165, 250, 0.1);
+}
+
+.article-ai-search-tab {
+  @apply flex-1 overflow-auto;
+  height: calc(100% - 56px); /* Account for tab height */
+}
+
+/* Cross-platform search component styles */
+.cross-platform-search {
+  @apply p-4 h-full flex flex-col;
+}
+
+.cross-platform-search .search-form {
+  @apply flex-shrink-0;
+}
+
+.cross-platform-search .max-h-96 {
+  @apply flex-1;
+  max-height: none; /* Override to use full available height */
+}

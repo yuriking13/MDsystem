@@ -2782,3 +2782,188 @@ export async function apiAILookupFulltext(
     },
   );
 }
+
+// =============================================================================
+// Cross-Platform Search API
+// =============================================================================
+
+export type SearchProvider = "pubmed" | "crossref" | "arxiv" | "semantic";
+
+export interface SearchResult {
+  id: string;
+  provider: SearchProvider;
+  title: string;
+  authors: string[];
+  abstract?: string;
+  doi?: string;
+  pmid?: string;
+  arxivId?: string;
+  journal?: string;
+  year?: number;
+  url?: string;
+  score: number;
+  citationCount?: number;
+}
+
+export interface SearchQuery {
+  query: string;
+  providers: SearchProvider[];
+  maxResults: number;
+  yearFrom?: number;
+  yearTo?: number;
+  language?: "en" | "ru" | "any";
+  sortBy?: "relevance" | "date" | "citations";
+  projectId?: string;
+}
+
+export interface SearchResponse {
+  query: string;
+  results: SearchResult[];
+  totalFound: number;
+  providers: {
+    [K in SearchProvider]?: {
+      count: number;
+      status: "success" | "error" | "timeout";
+      error?: string;
+    };
+  };
+  cached: boolean;
+  searchTime: number;
+}
+
+export interface SearchProviderInfo {
+  id: SearchProvider;
+  name: string;
+  description: string;
+  url: string;
+  coverage: string;
+  free: boolean;
+  maxResults: number;
+}
+
+export interface SearchProvidersResponse {
+  providers: SearchProviderInfo[];
+  totalProviders: number;
+  recommendations: Array<{
+    field: string;
+    providers: string[];
+    description: string;
+  }>;
+}
+
+export interface SearchCacheStats {
+  cache: {
+    totalQueries: number;
+    avgResultsPerQuery: number;
+    oldestEntry: string | null;
+    newestEntry: string | null;
+  };
+  providers: Array<{
+    name: string;
+    usageCount: number;
+    avgResults: number;
+  }>;
+  userStats: {
+    searchesLast30Days: number;
+    avgResultsFound: number;
+    avgSearchTimeMs: number;
+    activeSearchDays: number;
+  };
+}
+
+export interface ImportSearchResultsRequest {
+  projectId: string;
+  searchResults: Array<{
+    id: string;
+    provider: SearchProvider;
+    title: string;
+    authors?: string[];
+    abstract?: string;
+    doi?: string;
+    pmid?: string;
+    arxivId?: string;
+    journal?: string;
+    year?: number;
+    url?: string;
+  }>;
+}
+
+export interface ImportSearchResultsResponse {
+  success: boolean;
+  imported: Array<{
+    id: string;
+    title: string;
+    provider: SearchProvider;
+    status: string;
+  }>;
+  skipped: Array<{
+    id: string;
+    title: string;
+    provider: SearchProvider;
+    status: string;
+    reason: string;
+  }>;
+  summary: {
+    totalProcessed: number;
+    imported: number;
+    skipped: number;
+  };
+}
+
+/**
+ * Выполняет кросс-платформенный поиск научных статей
+ */
+export async function apiCrossPlatformSearch(
+  searchQuery: SearchQuery,
+): Promise<{ success: boolean; data: SearchResponse }> {
+  return apiFetch<{ success: boolean; data: SearchResponse }>(
+    `/api/search/cross-platform`,
+    {
+      method: "POST",
+      body: JSON.stringify(searchQuery),
+    },
+  );
+}
+
+/**
+ * Получает список доступных провайдеров поиска
+ */
+export async function apiGetSearchProviders(): Promise<SearchProvidersResponse> {
+  return apiFetch<SearchProvidersResponse>(`/api/search/providers`);
+}
+
+/**
+ * Получает статистику кэша поиска
+ */
+export async function apiGetSearchCacheStats(): Promise<SearchCacheStats> {
+  return apiFetch<SearchCacheStats>(`/api/search/cache-stats`);
+}
+
+/**
+ * Импортирует результаты поиска в проект как кандидаты
+ */
+export async function apiImportSearchResults(
+  data: ImportSearchResultsRequest,
+): Promise<ImportSearchResultsResponse> {
+  return apiFetch<ImportSearchResultsResponse>(`/api/search/import-results`, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+/**
+ * Очищает кэш поиска (только для администраторов)
+ */
+export async function apiClearSearchCache(): Promise<{
+  success: boolean;
+  message: string;
+  deletedEntries: number;
+}> {
+  return apiFetch<{
+    success: boolean;
+    message: string;
+    deletedEntries: number;
+  }>(`/api/search/cache`, {
+    method: "DELETE",
+  });
+}
