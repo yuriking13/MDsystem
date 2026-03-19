@@ -91,6 +91,12 @@ export default function QualityAgent({
     name: "Academic Writing Standard",
     description: "Standard academic writing guidelines",
     checks: [],
+    thresholds: {
+      grammar: 0.9,
+      style: 0.8,
+      structure: 0.85,
+      citations: 0.95,
+    },
   };
 
   const [selectedStandard, setSelectedStandard] =
@@ -866,7 +872,7 @@ export default function QualityAgent({
             {qualityReports.map((report) => (
               <div key={report.id} className="p-3 border rounded">
                 <div className="font-medium">
-                  {report.text.substring(0, 50)}...
+                  {(report.target || report.id).substring(0, 50)}...
                 </div>
                 <div className="text-sm text-gray-600">
                   Score: {report.overallScore}/100

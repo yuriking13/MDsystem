@@ -160,6 +160,9 @@ export interface PaginatedResponse<T> {
 export interface SearchResult {
   articles: Article[];
   total: number;
+  totalFound?: number;
+  message?: string;
+  added?: number;
   sources: {
     pubmed?: number;
     doaj?: number;

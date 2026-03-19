@@ -246,8 +246,14 @@ export default function AnalyticsAgent({
       },
       results: {
         summary: analysisData.summary,
-        statistics: analysisData.statistics,
-        visualizations: analysisData.visualizations,
+        statistics: analysisData.statistics as Record<string, number>,
+        visualizations: analysisData.visualizations as
+          | {
+              type: "chart" | "table" | "graph";
+              data: unknown;
+              config: Record<string, unknown>;
+            }[]
+          | undefined,
         interpretation: analysisData.interpretation,
         recommendations: analysisData.recommendations,
       },
@@ -654,7 +660,7 @@ export default function AnalyticsAgent({
                     Confidence Level
                   </label>
                   <select
-                    value={analysisParameters.confidence || "0.95"}
+                    value={(analysisParameters.confidence || "0.95") as string}
                     onChange={(e) =>
                       setAnalysisParameters((prev) => ({
                         ...prev,
@@ -673,7 +679,7 @@ export default function AnalyticsAgent({
                     Significance Level
                   </label>
                   <select
-                    value={analysisParameters.alpha || "0.05"}
+                    value={(analysisParameters.alpha || "0.05") as string}
                     onChange={(e) =>
                       setAnalysisParameters((prev) => ({
                         ...prev,

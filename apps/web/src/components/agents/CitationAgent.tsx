@@ -122,7 +122,16 @@ export default function CitationAgent({
           message.payload?.type === "article-selected"
         ) {
           const article = message.payload.article;
-          addReferenceFromArticle(article);
+          addReferenceFromArticle(
+            article as {
+              title?: string;
+              authors?: string[];
+              journal?: string;
+              year?: number;
+              doi?: string;
+              url?: string;
+            },
+          );
         }
       }
     };
@@ -236,7 +245,7 @@ export default function CitationAgent({
     const newRef: Reference = {
       id: `ref-${Date.now()}`,
       type: "article",
-      title: article.title,
+      title: article.title || "Unknown Title",
       authors: article.authors || [],
       year: article.year || new Date().getFullYear(),
       journal: article.journal,

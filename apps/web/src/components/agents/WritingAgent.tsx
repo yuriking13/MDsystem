@@ -87,7 +87,11 @@ export default function WritingAgent({
         const message = data.message as {
           toAgent: string;
           type?: string;
-          payload?: { type: string; article: unknown; analysis: unknown };
+          payload?: {
+            type: string;
+            article: Record<string, unknown>;
+            analysis: Record<string, unknown>;
+          };
         };
         if (message.toAgent === agentId) {
           handleIncomingMessage(message);
@@ -101,7 +105,11 @@ export default function WritingAgent({
 
   const handleIncomingMessage = (message: {
     type?: string;
-    payload?: { type: string; article: unknown; analysis: unknown };
+    payload?: {
+      type: string;
+      article: Record<string, unknown>;
+      analysis: Record<string, unknown>;
+    };
   }) => {
     if (
       message.type === "request" &&
@@ -110,7 +118,9 @@ export default function WritingAgent({
       const { article, analysis } = message.payload;
 
       // Auto-generate summary from literature analysis
-      const prompt = `Based on the analysis of "${article.title}" by ${article.authors.join(", ")}, create a brief academic summary including methodology, findings, and limitations.`;
+      const articleTitle = (article?.title as string) || "Unknown Article";
+      const articleAuthors = (article?.authors as string[]) || [];
+      const prompt = `Based on the analysis of "${articleTitle}" by ${articleAuthors.join(", ")}, create a brief academic summary including methodology, findings, and limitations.`;
       handleWritingTask("summary", prompt);
     }
   };
@@ -162,10 +172,10 @@ export default function WritingAgent({
     // Simulate AI-powered writing suggestions
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const mockSuggestions: WritingSuggestion[] = [
+    const mockSuggestions = [
       {
         id: "1",
-        type: "academic-tone",
+        type: "academic-tone" as const,
         original: "This study shows",
         suggestion: "This research demonstrates",
         explanation: "Use more precise academic language",
