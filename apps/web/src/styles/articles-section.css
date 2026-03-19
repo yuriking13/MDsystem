@@ -1548,9 +1548,9 @@
 
 .article-ai-modal--collapsed {
   width: 300px;
-  height: 60px;
-  min-height: 60px;
-  max-height: 60px;
+  height: 56px;
+  min-height: 56px;
+  max-height: 56px;
 }
 
 .article-ai-modal--dragging {
