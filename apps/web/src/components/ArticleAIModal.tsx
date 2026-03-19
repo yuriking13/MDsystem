@@ -97,7 +97,7 @@ export default function ArticleAIModal({
   const [input, setInput] = useState("");
   const [maxSuggestions, setMaxSuggestions] = useState(10);
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [_position, setPosition] = useState({ x: 100, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
@@ -209,6 +209,7 @@ export default function ArticleAIModal({
         document.body.classList.remove("body-dragging");
       };
     }
+    return undefined;
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // ============================================================

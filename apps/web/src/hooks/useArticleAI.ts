@@ -49,6 +49,6 @@ export function useLegacyArticleAISidebar(_selectedArticles: unknown[] = []) {
     toggle: toggleModal,
     close: closeModal,
     open: openModal,
-    selectedCount: selectedArticles.length,
+    selectedCount: _selectedArticles.length,
   };
 }

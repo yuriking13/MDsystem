@@ -3,7 +3,7 @@
  * Maintains backward compatibility while providing enhanced modal functionality
  */
 
-import React from "react";
+import React, { useState } from "react";
 import ArticleAIModal from "./ArticleAIModal";
 
 type Article = {
