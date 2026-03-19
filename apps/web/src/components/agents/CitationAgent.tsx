@@ -3,7 +3,7 @@
  * Специализированный агент для работы с научными ссылками
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAgentWindow } from "../AgentWindow";
 import AgentWindow from "../AgentWindow";
 import AgentCoordinator from "../../services/AgentCoordinator";
@@ -71,7 +71,7 @@ type Props = {
 
 export default function CitationAgent({
   agentId = "citation-agent",
-  onReferenceSelect,
+  // onReferenceSelect - commented out as unused
   onCitationGenerate,
   initialStyle = "APA",
 }: Props) {
@@ -138,7 +138,7 @@ export default function CitationAgent({
 
     AgentCoordinator.on("message-sent", handleAgentMessage);
     return () => AgentCoordinator.off("message-sent", handleAgentMessage);
-  }, [agentId]);
+  }, [agentId, addReferenceFromArticle]);
 
   // Update agent status
   useEffect(() => {
@@ -234,39 +234,42 @@ export default function CitationAgent({
     setReferences(demoRefs);
   };
 
-  const addReferenceFromArticle = (article: {
-    title?: string;
-    authors?: string[];
-    journal?: string;
-    year?: number;
-    doi?: string;
-    url?: string;
-  }) => {
-    const newRef: Reference = {
-      id: `ref-${Date.now()}`,
-      type: "article",
-      title: article.title || "Unknown Title",
-      authors: article.authors || [],
-      year: article.year || new Date().getFullYear(),
-      journal: article.journal,
-      doi: article.doi,
-      addedAt: new Date(),
-      tags: [],
-      notes: "",
-      citationCount: 0,
-      lastCited: null,
-    };
+  const addReferenceFromArticle = useCallback(
+    (article: {
+      title?: string;
+      authors?: string[];
+      journal?: string;
+      year?: number;
+      doi?: string;
+      url?: string;
+    }) => {
+      const newRef: Reference = {
+        id: `ref-${Date.now()}`,
+        type: "article",
+        title: article.title || "Unknown Title",
+        authors: article.authors || [],
+        year: article.year || new Date().getFullYear(),
+        journal: article.journal,
+        doi: article.doi,
+        addedAt: new Date(),
+        tags: [],
+        notes: "",
+        citationCount: 0,
+        lastCited: null,
+      };
 
-    setReferences((prev) => [newRef, ...prev]);
-    setSelectedReference(newRef);
-    setViewMode("library");
+      setReferences((prev) => [newRef, ...prev]);
+      setSelectedReference(newRef);
+      setViewMode("library");
 
-    // Notify user
-    AgentCoordinator.sendMessage(agentId, "writing-agent", "notification", {
-      type: "reference-added",
-      reference: newRef,
-    });
-  };
+      // Notify user
+      AgentCoordinator.sendMessage(agentId, "writing-agent", "notification", {
+        type: "reference-added",
+        reference: newRef,
+      });
+    },
+    [agentId],
+  );
 
   const generateCitation = (
     reference: Reference,
@@ -1029,7 +1032,7 @@ export default function CitationAgent({
               </div>
             ) : (
               <div className="space-y-4">
-                {generateBibliography().map((entry, index) => (
+                {generateBibliography().map((entry, _index) => (
                   <div
                     key={entry.reference.id}
                     className="p-3 border border-gray-200 rounded"

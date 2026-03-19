@@ -3,7 +3,7 @@
  * Специализированный агент для создания и улучшения академических текстов
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAgentWindow } from "../AgentWindow";
 import AgentWindow from "../AgentWindow";
 import AgentCoordinator from "../../services/AgentCoordinator";
@@ -69,7 +69,7 @@ export default function WritingAgent({
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [selectedText, setSelectedText] = useState("");
-  const [selectionRange, setSelectionRange] = useState<{
+  const [_selectionRange, setSelectionRange] = useState<{
     start: number;
     end: number;
   } | null>(null);
@@ -101,29 +101,32 @@ export default function WritingAgent({
 
     AgentCoordinator.on("message-sent", handleAgentMessage);
     return () => AgentCoordinator.off("message-sent", handleAgentMessage);
-  }, [agentId]);
+  }, [agentId, handleIncomingMessage]);
 
-  const handleIncomingMessage = (message: {
-    type?: string;
-    payload?: {
-      type: string;
-      article: Record<string, unknown>;
-      analysis: Record<string, unknown>;
-    };
-  }) => {
-    if (
-      message.type === "request" &&
-      message.payload?.type === "analysis-result"
-    ) {
-      const { article, analysis } = message.payload;
+  const handleIncomingMessage = useCallback(
+    (message: {
+      type?: string;
+      payload?: {
+        type: string;
+        article: Record<string, unknown>;
+        analysis: Record<string, unknown>;
+      };
+    }) => {
+      if (
+        message.type === "request" &&
+        message.payload?.type === "analysis-result"
+      ) {
+        const { article, analysis: _analysis } = message.payload;
 
-      // Auto-generate summary from literature analysis
-      const articleTitle = (article?.title as string) || "Unknown Article";
-      const articleAuthors = (article?.authors as string[]) || [];
-      const prompt = `Based on the analysis of "${articleTitle}" by ${articleAuthors.join(", ")}, create a brief academic summary including methodology, findings, and limitations.`;
-      handleWritingTask("summary", prompt);
-    }
-  };
+        // Auto-generate summary from literature analysis
+        const articleTitle = (article?.title as string) || "Unknown Article";
+        const articleAuthors = (article?.authors as string[]) || [];
+        const prompt = `Based on the analysis of "${articleTitle}" by ${articleAuthors.join(", ")}, create a brief academic summary including methodology, findings, and limitations.`;
+        handleWritingTask("summary", prompt);
+      }
+    },
+    [handleWritingTask],
+  );
 
   // Update agent status
   useEffect(() => {
@@ -167,7 +170,7 @@ export default function WritingAgent({
 
   const generateSuggestions = async (
     text: string,
-    mode: WritingMode,
+    _mode: WritingMode,
   ): Promise<WritingSuggestion[]> => {
     // Simulate AI-powered writing suggestions
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -212,96 +215,96 @@ export default function WritingAgent({
     return mockSuggestions;
   };
 
-  const handleWritingTask = async (
-    mode: WritingMode,
-    input: string = inputText,
-  ) => {
-    if (!input.trim()) return;
+  const handleWritingTask = useCallback(
+    async (mode: WritingMode, input: string = inputText) => {
+      if (!input.trim()) return;
 
-    setIsProcessing(true);
-    setCurrentMode(mode);
+      setIsProcessing(true);
+      setCurrentMode(mode);
 
-    const task: WritingTask = {
-      id: `task-${Date.now()}`,
-      type: mode,
-      input,
-      status: "processing",
-      progress: 0,
-      wordCount: calculateWordCount(input),
-    };
-
-    setCurrentTask(task);
-    AgentCoordinator.updateAgentStatus(
-      agentId,
-      "active",
-      `${mode}: ${input.substring(0, 30)}...`,
-    );
-
-    try {
-      // Simulate progress updates
-      for (let i = 0; i <= 100; i += 20) {
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        setCurrentTask((prev) => (prev ? { ...prev, progress: i } : null));
-      }
-
-      // Generate output based on mode
-      let output = "";
-      let suggestions: WritingSuggestion[] = [];
-
-      switch (mode) {
-        case "draft":
-          output = await generateDraft(input);
-          break;
-        case "improve":
-          output = await improveText(input);
-          suggestions = await generateSuggestions(input, mode);
-          break;
-        case "outline":
-          output = await generateOutline(input);
-          break;
-        case "summary":
-          output = await generateSummary(input);
-          break;
-        case "translate":
-          output = await translateText(input);
-          break;
-      }
-
-      const completedTask: WritingTask = {
-        ...task,
-        output,
-        suggestions,
-        status: "completed",
-        progress: 100,
-        quality: assessTextQuality(output),
-        readabilityScore: calculateReadabilityScore(output),
+      const task: WritingTask = {
+        id: `task-${Date.now()}`,
+        type: mode,
+        input,
+        status: "processing",
+        progress: 0,
+        wordCount: calculateWordCount(input),
       };
 
-      setCurrentTask(completedTask);
-      setTaskHistory((prev) => [completedTask, ...prev.slice(0, 9)]);
-      setOutputText(output);
-      setSuggestions(suggestions);
-      onTextChange?.(output);
+      setCurrentTask(task);
+      AgentCoordinator.updateAgentStatus(
+        agentId,
+        "active",
+        `${mode}: ${input.substring(0, 30)}...`,
+      );
 
-      AgentCoordinator.reportTaskCompleted(agentId, 2000, true);
+      try {
+        // Simulate progress updates
+        for (let i = 0; i <= 100; i += 20) {
+          await new Promise((resolve) => setTimeout(resolve, 200));
+          setCurrentTask((prev) => (prev ? { ...prev, progress: i } : null));
+        }
 
-      // Notify other agents about completed writing task
-      if (mode === "draft" || mode === "improve") {
-        AgentCoordinator.broadcastMessage(agentId, "notification", {
-          type: "text-completed",
-          mode,
-          wordCount: calculateWordCount(output),
-          quality: completedTask.quality,
-        });
+        // Generate output based on mode
+        let output = "";
+        let suggestions: WritingSuggestion[] = [];
+
+        switch (mode) {
+          case "draft":
+            output = await generateDraft(input);
+            break;
+          case "improve":
+            output = await improveText(input);
+            suggestions = await generateSuggestions(input, mode);
+            break;
+          case "outline":
+            output = await generateOutline(input);
+            break;
+          case "summary":
+            output = await generateSummary(input);
+            break;
+          case "translate":
+            output = await translateText(input);
+            break;
+        }
+
+        const completedTask: WritingTask = {
+          ...task,
+          output,
+          suggestions,
+          status: "completed",
+          progress: 100,
+          quality: assessTextQuality(output),
+          readabilityScore: calculateReadabilityScore(output),
+        };
+
+        setCurrentTask(completedTask);
+        setTaskHistory((prev) => [completedTask, ...prev.slice(0, 9)]);
+        setOutputText(output);
+        setSuggestions(suggestions);
+        onTextChange?.(output);
+
+        AgentCoordinator.reportTaskCompleted(agentId, 2000, true);
+
+        // Notify other agents about completed writing task
+        if (mode === "draft" || mode === "improve") {
+          AgentCoordinator.broadcastMessage(agentId, "notification", {
+            type: "text-completed",
+            mode,
+            wordCount: calculateWordCount(output),
+            quality: completedTask.quality,
+          });
+        }
+      } catch (error) {
+        console.error("Writing task failed:", error);
+        setCurrentTask((prev) => (prev ? { ...prev, status: "failed" } : null));
+        AgentCoordinator.reportTaskCompleted(agentId, 2000, false);
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (error) {
-      console.error("Writing task failed:", error);
-      setCurrentTask((prev) => (prev ? { ...prev, status: "failed" } : null));
-      AgentCoordinator.reportTaskCompleted(agentId, 2000, false);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+    },
+    [agentId, inputText],
+  );
 
   const generateDraft = async (prompt: string): Promise<string> => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -326,7 +329,7 @@ This draft provides a foundation that can be further developed and refined accor
     await new Promise((resolve) => setTimeout(resolve, 1200));
 
     // Simple text improvements (in real implementation, this would use AI)
-    let improved = text
+    const improved = text
       .replace(/\bThis study shows\b/g, "This research demonstrates")
       .replace(/\bresearch shows\b/g, "empirical evidence indicates")
       .replace(/\bIn conclusion\b/g, "In summary, the findings suggest")

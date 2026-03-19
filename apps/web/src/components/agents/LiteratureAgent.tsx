@@ -128,7 +128,7 @@ export default function LiteratureAgent({
 
   const simulateLiteratureSearch = async (
     query: string,
-    filters: SearchFilters,
+    _filters: SearchFilters,
   ): Promise<void> => {
     // Simulate network delay
     await new Promise((resolve) =>
@@ -225,7 +225,7 @@ export default function LiteratureAgent({
         Date.now() - performance.now(),
         true,
       );
-    } catch (error) {
+    } catch {
       AgentCoordinator.reportTaskCompleted(
         agentId,
         Date.now() - performance.now(),

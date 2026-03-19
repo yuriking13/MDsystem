@@ -109,7 +109,7 @@ export default function CrossPlatformSearch({
     } finally {
       setIsSearching(false);
     }
-  }, [query, filters, projectId, onSearchComplete]);
+  }, [query, filters, projectId, onSearchComplete, isSearching]);
 
   const handleImportSelected = useCallback(async () => {
     const selectedIds = Array.from(selectedResults);
@@ -155,7 +155,7 @@ export default function CrossPlatformSearch({
     } finally {
       setIsImporting(false);
     }
-  }, [selectedResults, results, projectId, onAddToSelected]);
+  }, [selectedResults, results, projectId, onAddToSelected, isImporting]);
 
   const toggleResultSelection = useCallback((resultId: string) => {
     setSelectedResults((prev) => {
@@ -395,7 +395,7 @@ export default function CrossPlatformSearch({
             </span>
             <div className="flex items-center space-x-2">
               {Object.entries(searchStats.providers).map(
-                ([provider, stats]: [string, any]) => (
+                ([provider, stats]: [string, { count: number }]) => (
                   <span
                     key={provider}
                     className={`px-2 py-1 text-xs rounded-full ${getProviderColor(provider as SearchProvider)}`}

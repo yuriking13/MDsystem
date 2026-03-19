@@ -912,11 +912,9 @@ export default function ArticleAISidebar({
           <CrossPlatformSearch
             projectId={projectId}
             onAddToSelected={onAddToSelected}
-            onSearchComplete={(results, query) => {
+            onSearchComplete={(_results, _query) => {
               // Optional: Можно добавить логику для интеграции результатов поиска с чатом
-              console.log(
-                `Search completed: "${query}" returned ${results.length} results`,
-              );
+              // Search completed logging removed for production
             }}
             className="h-full"
           />

@@ -3,7 +3,7 @@
  * Специализированный агент для проверки качества и соответствия стандартам
  */
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useAgentWindow } from "../AgentWindow";
 import AgentWindow from "../AgentWindow";
 import AgentCoordinator from "../../services/AgentCoordinator";
@@ -76,7 +76,7 @@ export default function QualityAgent({
   );
 
   const [inputText, setInputText] = useState(initialText);
-  const [currentChecks, setCurrentChecks] = useState<QualityCheckType[]>([
+  const [currentChecks, _setCurrentChecks] = useState<QualityCheckType[]>([
     "grammar",
     "style",
     "structure",
@@ -99,7 +99,7 @@ export default function QualityAgent({
     },
   };
 
-  const [selectedStandard, setSelectedStandard] =
+  const [selectedStandard, _setSelectedStandard] =
     useState<QualityStandard>(academicStandard);
   const [viewMode, setViewMode] = useState<"check" | "reports" | "standards">(
     "check",
@@ -129,23 +129,22 @@ export default function QualityAgent({
 
     AgentCoordinator.on("message-sent", handleAgentMessage);
     return () => AgentCoordinator.off("message-sent", handleAgentMessage);
-  }, [agentId]);
+  }, [agentId, handleIncomingMessage]);
 
-  const handleIncomingMessage = (message: {
-    content: string;
-    type?: string;
-    payload?: unknown;
-  }) => {
-    const payload = message.payload as Record<string, unknown>;
-    if (payload?.type === "text-completed") {
-      // Auto-check text from Writing Agent
-      setInputText((payload.text as string) || "");
-      setTimeout(() => runQualityCheck(), 1000);
-    } else if (payload?.type === "analysis-completed") {
-      // Check methodology quality from Analytics Agent
-      runMethodologyCheck(payload);
-    }
-  };
+  const handleIncomingMessage = useCallback(
+    (message: { content: string; type?: string; payload?: unknown }) => {
+      const payload = message.payload as Record<string, unknown>;
+      if (payload?.type === "text-completed") {
+        // Auto-check text from Writing Agent
+        setInputText((payload.text as string) || "");
+        setTimeout(() => runQualityCheck(), 1000);
+      } else if (payload?.type === "analysis-completed") {
+        // Check methodology quality from Analytics Agent
+        runMethodologyCheck(payload);
+      }
+    },
+    [runMethodologyCheck, runQualityCheck],
+  );
 
   // Update agent status
   useEffect(() => {
@@ -160,7 +159,7 @@ export default function QualityAgent({
     }
   }, [isAnalyzing, agentId]);
 
-  const runQualityCheck = async () => {
+  const runQualityCheck = useCallback(async () => {
     if (!inputText.trim()) return;
 
     setIsAnalyzing(true);
@@ -234,7 +233,7 @@ export default function QualityAgent({
       setIsAnalyzing(false);
       setAnalysisProgress(0);
     }
-  };
+  }, [agentId, inputText, currentChecks]);
 
   const performQualityCheck = async (
     checkType: QualityCheckType,
@@ -626,31 +625,34 @@ export default function QualityAgent({
     return issues;
   };
 
-  const runMethodologyCheck = async (analysisData: {
-    confidence?: number;
-    methodology?: string;
-    sampleSize?: number;
-  }) => {
-    // Quick methodology quality check
-    const issues: QualityIssue[] = [];
+  const runMethodologyCheck = useCallback(
+    async (analysisData: {
+      confidence?: number;
+      methodology?: string;
+      sampleSize?: number;
+    }) => {
+      // Quick methodology quality check
+      const issues: QualityIssue[] = [];
 
-    if (analysisData.confidence && analysisData.confidence < 70) {
-      issues.push({
-        id: "methodology-low-confidence",
-        type: "methodology",
-        severity: "warning",
-        title: "Low analysis confidence",
-        description: `Analysis confidence is only ${analysisData.confidence}%`,
-        suggestion: "Review methodology and consider additional validation",
-        autoFixable: false,
-        confidence: 90,
-      });
-    }
+      if (analysisData.confidence && analysisData.confidence < 70) {
+        issues.push({
+          id: "methodology-low-confidence",
+          type: "methodology",
+          severity: "warning",
+          title: "Low analysis confidence",
+          description: `Analysis confidence is only ${analysisData.confidence}%`,
+          suggestion: "Review methodology and consider additional validation",
+          autoFixable: false,
+          confidence: 90,
+        });
+      }
 
-    if (issues.length > 0) {
-      issues.forEach((issue) => onIssueFound?.(issue));
-    }
-  };
+      if (issues.length > 0) {
+        issues.forEach((issue) => onIssueFound?.(issue));
+      }
+    },
+    [],
+  );
 
   const calculateOverallScore = (issues: QualityIssue[]): number => {
     let score = 100;
@@ -764,7 +766,7 @@ export default function QualityAgent({
     }
   };
 
-  const getSeverityIcon = (severity: QualitySeverity) => {
+  const _getSeverityIcon = (severity: QualitySeverity) => {
     const icons = {
       critical: (
         <svg
@@ -822,7 +824,7 @@ export default function QualityAgent({
     return icons[severity];
   };
 
-  const getSeverityColor = (severity: QualitySeverity): string => {
+  const _getSeverityColor = (severity: QualitySeverity): string => {
     const colors = {
       critical: "bg-red-100 text-red-800 border-red-300",
       error: "bg-red-50 text-red-700 border-red-200",

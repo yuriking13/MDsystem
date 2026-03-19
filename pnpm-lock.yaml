@@ -25,6 +25,7 @@ overrides:
   flatted@<3.4.0: ">=3.4.0"
   file-type@>=20.0.0 <=21.3.1: ">=21.3.2"
   fast-xml-parser@>=4.0.0-beta.3 <=5.5.5: ">=5.5.6"
+  fast-xml-parser@>=4.0.0-beta.3 <=5.5.6: ">=5.5.7"
 
 patchedDependencies:
   "@eslint/eslintrc@3.3.3":
@@ -135,8 +136,8 @@ importers:
         specifier: ^16.4.5
         version: 16.6.1
       fast-xml-parser:
-        specifier: ">=5.5.6"
-        version: 5.5.6
+        specifier: ">=5.5.7"
+        version: 5.5.7
       fastify:
         specifier: ">=5.8.1"
         version: 5.8.2
@@ -758,6 +759,13 @@ packages:
       }
     engines: { node: ">=6.9.0" }
 
+  "@babel/code-frame@7.29.0":
+    resolution:
+      {
+        integrity: sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==,
+      }
+    engines: { node: ">=6.9.0" }
+
   "@babel/compat-data@7.28.5":
     resolution:
       {
@@ -874,6 +882,13 @@ packages:
     resolution:
       {
         integrity: sha512-Q/N6JNWvIvPnLDvjlE1OUBLPQHH6l3CltCEsHIujp45zQUSSh8K+gHnaEX45yAT1nyngnINhvWtzN+Nb9D8RAQ==,
+      }
+    engines: { node: ">=6.9.0" }
+
+  "@babel/runtime@7.29.2":
+    resolution:
+      {
+        integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==,
       }
     engines: { node: ">=6.9.0" }
 
@@ -6116,10 +6131,10 @@ packages:
         integrity: sha512-f2jhpN4Eccy0/Uz9csxh3Nu6q4ErKxf0XIsasomfOihuSUa3/xw6w8dnOtCDgEItQFJG8KyXPzQXzcODDrrbOg==,
       }
 
-  fast-xml-parser@5.5.6:
+  fast-xml-parser@5.5.7:
     resolution:
       {
-        integrity: sha512-3+fdZyBRVg29n4rXP0joHthhcHdPUHaIC16cuyyd1iLsuaO6Vea36MPrxgAzbZna8lhvZeRL8Bc9GP56/J9xEw==,
+        integrity: sha512-LteOsISQ2GEiDHZch6L9hB0+MLoYVLToR7xotrzU0opCICBkxOPgHAy1HxAvtxfJNXDJpgAsQN30mkrfpO2Prg==,
       }
     hasBin: true
 
@@ -9160,10 +9175,10 @@ packages:
         integrity: sha512-8r3mkIM/2+PpjHoOtiAW8Rg3jJLHaV7xPwG+YRGrv6FP0wwk/toTpATxWYOW0BKdWwl82VT2tFYi5DlROa0Mxg==,
       }
 
-  strnum@2.1.2:
+  strnum@2.2.1:
     resolution:
       {
-        integrity: sha512-l63NF9y/cLROq/yqKXSLtcMeeyOfnSQlfMSlzFt/K73oIaD8DGaQWd7Z34X9GPiKqP5rbSh84Hl4bOlLcjiSrQ==,
+        integrity: sha512-BwRvNd5/QoAtyW1na1y1LsJGQNvRlkde6Q/ipqqEaivoMdV+B1OMOTVdwR+N/cwVUcIt9PYyHmV8HyexCZSupg==,
       }
 
   strtok3@10.3.4:
@@ -10513,12 +10528,18 @@ snapshots:
   "@aws-sdk/xml-builder@3.965.0":
     dependencies:
       "@smithy/types": 4.11.0
-      fast-xml-parser: 5.5.6
+      fast-xml-parser: 5.5.7
       tslib: 2.8.1
 
   "@aws/lambda-invoke-store@0.2.2": {}
 
   "@babel/code-frame@7.27.1":
+    dependencies:
+      "@babel/helper-validator-identifier": 7.28.5
+      js-tokens: 4.0.0
+      picocolors: 1.1.1
+
+  "@babel/code-frame@7.29.0":
     dependencies:
       "@babel/helper-validator-identifier": 7.28.5
       js-tokens: 4.0.0
@@ -10608,6 +10629,8 @@ snapshots:
       "@babel/helper-plugin-utils": 7.27.1
 
   "@babel/runtime@7.28.4": {}
+
+  "@babel/runtime@7.29.2": {}
 
   "@babel/template@7.27.2":
     dependencies:
@@ -12737,8 +12760,8 @@ snapshots:
 
   "@testing-library/dom@10.4.1":
     dependencies:
-      "@babel/code-frame": 7.27.1
-      "@babel/runtime": 7.28.4
+      "@babel/code-frame": 7.29.0
+      "@babel/runtime": 7.29.2
       "@types/aria-query": 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
@@ -14356,11 +14379,11 @@ snapshots:
     dependencies:
       path-expression-matcher: 1.1.3
 
-  fast-xml-parser@5.5.6:
+  fast-xml-parser@5.5.7:
     dependencies:
       fast-xml-builder: 1.1.4
       path-expression-matcher: 1.1.3
-      strnum: 2.1.2
+      strnum: 2.2.1
 
   fastfall@1.5.1:
     dependencies:
@@ -16275,7 +16298,7 @@ snapshots:
     dependencies:
       js-tokens: 9.0.1
 
-  strnum@2.1.2: {}
+  strnum@2.2.1: {}
 
   strtok3@10.3.4:
     dependencies:

@@ -172,7 +172,7 @@ export default function AnalyticsAgent({
     };
   };
 
-  const generateMockDataset = (filename: string, format: DataFormat) => {
+  const generateMockDataset = (_filename: string, _format: DataFormat) => {
     // Generate realistic mock data for demonstration
     const columns = ["ID", "Value", "Category", "Timestamp", "Score", "Status"];
     const categories = ["A", "B", "C", "D"];
