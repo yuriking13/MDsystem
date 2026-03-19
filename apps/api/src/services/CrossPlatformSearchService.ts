@@ -430,13 +430,17 @@ export class CrossPlatformSearchService {
         (author: Record<string, unknown>) =>
           `${(author.given as string) || ""} ${(author.family as string) || ""}`.trim(),
       ),
-      abstract: work.abstract,
-      doi: work.DOI,
-      journal: work["container-title"]?.[0],
-      year: work.published?.["date-parts"]?.[0]?.[0],
-      url: work.URL,
-      score: Math.max(0.1, (work.score || 0) / 100), // Crossref score is 0-100
-      citationCount: work["is-referenced-by-count"],
+      abstract: (work.abstract as string) || undefined,
+      doi: (work.DOI as string) || undefined,
+      journal: Array.isArray(work["container-title"])
+        ? (work["container-title"][0] as string)
+        : undefined,
+      year: (work.published as Record<string, number[][]>)?.[
+        "date-parts"
+      ]?.[0]?.[0],
+      url: (work.URL as string) || undefined,
+      score: Math.max(0.1, ((work.score as number) || 0) / 100), // Crossref score is 0-100
+      citationCount: (work["is-referenced-by-count"] as number) || undefined,
     };
   }
 

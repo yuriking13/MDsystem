@@ -579,7 +579,7 @@ export type SearchFilters = {
   translate?: boolean;
 };
 
-export type SearchResult = {
+export type SearchSummary = {
   totalFound: number;
   fetched: number;
   added: number;

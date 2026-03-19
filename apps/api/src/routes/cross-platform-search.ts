@@ -26,9 +26,10 @@ const searchQuerySchema = z.object({
   projectId: z.string().optional(), // For semantic search in project context
 });
 
-const searchProviderStatsSchema = z.object({
-  days: z.number().int().min(1).max(90).default(30),
-});
+// Commented out for future use
+// const searchProviderStatsSchema = z.object({
+//   days: z.number().int().min(1).max(90).default(30),
+// });
 
 export const crossPlatformSearchRoutes: FastifyPluginCallback = (
   fastify,
@@ -118,7 +119,7 @@ export const crossPlatformSearchRoutes: FastifyPluginCallback = (
   fastify.get(
     "/search/providers",
     { preHandler: [fastify.authenticate] },
-    async (_request, reply) => {
+    async (_request, _reply) => {
       return {
         providers: [
           {

@@ -1,0 +1,27 @@
+/* WritingAgent Styles */
+
+.progressBar0 { width: 0%; }
+.progressBar5 { width: 5%; }
+.progressBar10 { width: 10%; }
+.progressBar15 { width: 15%; }
+.progressBar20 { width: 20%; }
+.progressBar25 { width: 25%; }
+.progressBar30 { width: 30%; }
+.progressBar35 { width: 35%; }
+.progressBar40 { width: 40%; }
+.progressBar45 { width: 45%; }
+.progressBar50 { width: 50%; }
+.progressBar55 { width: 55%; }
+.progressBar60 { width: 60%; }
+.progressBar65 { width: 65%; }
+.progressBar70 { width: 70%; }
+.progressBar75 { width: 75%; }
+.progressBar80 { width: 80%; }
+.progressBar85 { width: 85%; }
+.progressBar90 { width: 90%; }
+.progressBar95 { width: 95%; }
+.progressBar100 { width: 100%; }
+
+.minHeightTextarea {
+  min-height: 200px;
+}
