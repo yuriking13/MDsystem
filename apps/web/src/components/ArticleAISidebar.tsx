@@ -4,7 +4,6 @@ import {
   type ArticlesAISuggestedArticle,
   type ArticlesAIAssistantResponse,
 } from "../lib/api";
-import ArticleAIModal from "./ArticleAIModal";
 import CrossPlatformSearch from "./CrossPlatformSearch";
 
 // ============================================================
@@ -331,30 +330,6 @@ export default function ArticleAISidebar({
     },
   ];
 
-  // If this component is used directly, render the new modal instead
-  // This provides backward compatibility while using the new architecture
-  if (typeof isOpen !== "undefined") {
-    return (
-      <ArticleAIModal
-        projectId={projectId}
-        projectName={projectName}
-        viewStatus={viewStatus}
-        candidateCount={candidateCount}
-        selectedArticlesCount={selectedArticlesCount}
-        onAddToSelected={onAddToSelected}
-        onHighlightArticle={onHighlightArticle}
-        messages={externalMessages}
-        onSendMessage={externalOnSendMessage}
-        isLoading={externalIsLoading}
-        suggestedActions={externalSuggestedActions}
-        onAnalyzeSelection={onAnalyzeSelection}
-        onSummarizeAll={onSummarizeAll}
-        onFindSimilar={onFindSimilar}
-        onGenerateCriteria={onGenerateCriteria}
-      />
-    );
-  }
-
   // ============================================================
   // Render: Floating Button (when closed)
   // ============================================================
@@ -379,7 +354,7 @@ export default function ArticleAISidebar({
             d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
           />
         </svg>
-        <span className="article-ai-fab-label">MD Assistant</span>
+        <span className="article-ai-fab-label">AI Помощник</span>
         {(selectedArticlesCount ?? candidateCount) > 0 && (
           <span className="article-ai-fab-badge">
             {selectedArticlesCount ?? candidateCount} selected
@@ -411,7 +386,7 @@ export default function ArticleAISidebar({
                 d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
               />
             </svg>
-            <span>MD Assistant</span>
+            <span>AI Помощник</span>
           </div>
           <div className="article-ai-header-sub">
             AI-powered research helper

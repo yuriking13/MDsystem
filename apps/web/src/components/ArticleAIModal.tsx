@@ -88,7 +88,7 @@ export default function ArticleAIModal({
   const { isOpen, openWindow, closeWindow } = useAgentWindow(
     agentId,
     "literature",
-    "MD Assistant",
+    "AI Помощник",
   );
 
   // Internal state (used when no external messages provided)
@@ -311,7 +311,7 @@ export default function ArticleAIModal({
     AgentCoordinator.updateAgentStatus(
       agentId,
       "active",
-      "Opening MD Assistant",
+      "Opening AI Помощник",
     );
     openWindow();
   };
@@ -501,7 +501,7 @@ export default function ArticleAIModal({
             d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
           />
         </svg>
-        <span className="article-ai-modal-fab-label">MD Assistant</span>
+        <span className="article-ai-modal-fab-label">AI Помощник</span>
         {(selectedArticlesCount ?? candidateCount) > 0 && (
           <span className="article-ai-modal-fab-badge">
             {selectedArticlesCount ?? candidateCount}
@@ -544,7 +544,7 @@ export default function ArticleAIModal({
                   d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                 />
               </svg>
-              <span>MD Assistant</span>
+              <span>AI Помощник</span>
             </div>
             <div className="article-ai-modal-header-sub">
               AI-powered research helper

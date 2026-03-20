@@ -14,7 +14,7 @@ export function useArticleAI() {
     AgentCoordinator.updateAgentStatus(
       agentId,
       "active",
-      "Opening MD Assistant",
+      "Opening AI Помощник",
     );
     setIsOpen(true);
   }, [agentId]);
