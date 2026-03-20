@@ -194,7 +194,7 @@ export default function ArticleAISidebar({
   const defaultActions: SuggestedAction[] = [
     {
       id: "analyze",
-      label: "Analyze",
+      label: "Анализ",
       icon: (
         <svg
           className="w-4 h-4"
@@ -220,7 +220,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "summarize",
-      label: "Summarize",
+      label: "Резюме",
       icon: (
         <svg
           className="w-4 h-4"
@@ -243,7 +243,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "find-similar",
-      label: "Find Similar",
+      label: "Похожие",
       icon: (
         <svg
           className="w-4 h-4"
@@ -267,7 +267,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "criteria",
-      label: "Criteria",
+      label: "Критерии",
       icon: (
         <svg
           className="w-4 h-4"
@@ -298,7 +298,7 @@ export default function ArticleAISidebar({
   const defaultPrompts = [
     {
       id: "select-best",
-      label: "Analyze selected articles",
+      label: "Анализ отобранных статей",
       onClick: () =>
         handleSend(
           "Подбери лучшие статьи для отбора из кандидатов. Учитывай качество статистики, релевантность темы и год публикации.",
@@ -306,7 +306,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "summarize",
-      label: "Summarize abstracts",
+      label: "Резюме аннотаций",
       onClick: () =>
         handleSend(
           "Сделай краткий обзор основных тем и направлений среди статей-кандидатов.",
@@ -314,7 +314,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "criteria",
-      label: "Suggest inclusion criteria",
+      label: "Критерии включения",
       onClick: () =>
         handleSend(
           "На основе базы статей предложи критерии включения и исключения для систематического обзора.",
@@ -322,7 +322,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "find-similar",
-      label: "Find similar articles",
+      label: "Найти похожие статьи",
       onClick: () =>
         handleSend(
           "Найди среди кандидатов статьи с наиболее сильной статистикой (p-value, RCT, meta-analysis).",
@@ -357,7 +357,7 @@ export default function ArticleAISidebar({
         <span className="article-ai-fab-label">AI Помощник</span>
         {(selectedArticlesCount ?? candidateCount) > 0 && (
           <span className="article-ai-fab-badge">
-            {selectedArticlesCount ?? candidateCount} selected
+            {selectedArticlesCount ?? candidateCount} выбрано
           </span>
         )}
       </button>
@@ -389,7 +389,7 @@ export default function ArticleAISidebar({
             <span>AI Помощник</span>
           </div>
           <div className="article-ai-header-sub">
-            AI-powered research helper
+            Интеллектуальный помощник исследователя
           </div>
         </div>
         <div className="article-ai-header-actions">
@@ -399,7 +399,7 @@ export default function ArticleAISidebar({
               onClick={handleClearChat}
               title="Очистить чат"
               type="button"
-              aria-label="Clear chat"
+              aria-label="Очистить чат"
             >
               <svg
                 className="w-4 h-4"
@@ -459,7 +459,7 @@ export default function ArticleAISidebar({
               d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
             />
           </svg>
-          AI Chat
+          AI Чат
         </button>
         <button
           className={`article-ai-tab ${activeTab === "search" ? "active" : ""}`}
@@ -479,7 +479,7 @@ export default function ArticleAISidebar({
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-          Cross-Platform Search
+          Поиск по базам
         </button>
       </div>
 
@@ -500,12 +500,12 @@ export default function ArticleAISidebar({
             />
           </svg>
           <span>
-            <strong>{selectedArticlesCount ?? candidateCount}</strong> articles
-            selected
+            <strong>{selectedArticlesCount ?? candidateCount}</strong> статей
+            выбрано
             {projectName && (
               <>
                 {" "}
-                in <em>{projectName}</em>
+                в <em>{projectName}</em>
               </>
             )}
           </span>
@@ -554,10 +554,10 @@ export default function ArticleAISidebar({
                     />
                   </svg>
                 </div>
-                <h4>How can I help?</h4>
+                <h4>Чем могу помочь?</h4>
                 <p>
-                  Ask questions about your articles, request analysis, or get AI
-                  recommendations for article selection.
+                  Задавайте вопросы о ваших статьях, запрашивайте анализ или
+                  получите рекомендации по отбору статей.
                 </p>
 
                 {/* Quick Actions */}
@@ -849,7 +849,7 @@ export default function ArticleAISidebar({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask about your articles..."
+                placeholder="Спросите о ваших статьях..."
                 className="article-ai-textarea"
                 rows={2}
                 disabled={isLoading}
@@ -859,7 +859,7 @@ export default function ArticleAISidebar({
                 onClick={() => handleSend()}
                 disabled={isLoading || !input.trim()}
                 type="button"
-                aria-label="Send message"
+                aria-label="Отправить"
               >
                 <svg
                   className="w-4 h-4"
@@ -877,7 +877,7 @@ export default function ArticleAISidebar({
               </button>
             </div>
             <div className="article-ai-input-hint">
-              Press Enter to send, Shift+Enter for new line
+              Enter — отправить, Shift+Enter — новая строка
             </div>
           </div>
         </>
