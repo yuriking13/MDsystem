@@ -300,7 +300,7 @@ export const crossPlatformSearchRoutes: FastifyPluginCallback = (
         [userId],
       );
 
-      if (!userCheck.rows[0] || userCheck.rows[0].role !== "admin") {
+      if (userCheck.rows[0]?.role !== "admin") {
         return reply.code(403).send({ error: "Admin access required" });
       }
 

@@ -108,6 +108,12 @@ export default function QualityAgent({
 
   const textInputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Refs to break circular dependency between callbacks
+  const runQualityCheckRef = useRef<() => void>(() => {});
+  const runMethodologyCheckRef = useRef<
+    (payload: Record<string, unknown>) => void
+  >(() => {});
+
   // Listen for messages from other agents
   useEffect(() => {
     const handleAgentMessage = (
@@ -122,29 +128,20 @@ export default function QualityAgent({
           payload?: unknown;
         };
         if (message.toAgent === agentId) {
-          handleIncomingMessage(message);
+          const payload = message.payload as Record<string, unknown>;
+          if (payload?.type === "text-completed") {
+            setInputText((payload.text as string) || "");
+            setTimeout(() => runQualityCheckRef.current(), 1000);
+          } else if (payload?.type === "analysis-completed") {
+            runMethodologyCheckRef.current(payload);
+          }
         }
       }
     };
 
     AgentCoordinator.on("message-sent", handleAgentMessage);
     return () => AgentCoordinator.off("message-sent", handleAgentMessage);
-  }, [agentId, handleIncomingMessage]);
-
-  const handleIncomingMessage = useCallback(
-    (message: { content: string; type?: string; payload?: unknown }) => {
-      const payload = message.payload as Record<string, unknown>;
-      if (payload?.type === "text-completed") {
-        // Auto-check text from Writing Agent
-        setInputText((payload.text as string) || "");
-        setTimeout(() => runQualityCheck(), 1000);
-      } else if (payload?.type === "analysis-completed") {
-        // Check methodology quality from Analytics Agent
-        runMethodologyCheck(payload);
-      }
-    },
-    [runMethodologyCheck, runQualityCheck],
-  );
+  }, [agentId]);
 
   // Update agent status
   useEffect(() => {
@@ -233,7 +230,11 @@ export default function QualityAgent({
       setIsAnalyzing(false);
       setAnalysisProgress(0);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [agentId, inputText, currentChecks]);
+
+  // Keep ref in sync
+  runQualityCheckRef.current = runQualityCheck;
 
   const performQualityCheck = async (
     checkType: QualityCheckType,
@@ -651,8 +652,12 @@ export default function QualityAgent({
         issues.forEach((issue) => onIssueFound?.(issue));
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
+
+  // Keep ref in sync
+  runMethodologyCheckRef.current = runMethodologyCheck;
 
   const calculateOverallScore = (issues: QualityIssue[]): number => {
     let score = 100;

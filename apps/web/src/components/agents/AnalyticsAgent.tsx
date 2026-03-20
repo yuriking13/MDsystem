@@ -246,7 +246,10 @@ export default function AnalyticsAgent({
       },
       results: {
         summary: analysisData.summary,
-        statistics: analysisData.statistics as Record<string, number>,
+        statistics: analysisData.statistics as unknown as Record<
+          string,
+          number
+        >,
         visualizations: analysisData.visualizations as
           | {
               type: "chart" | "table" | "graph";

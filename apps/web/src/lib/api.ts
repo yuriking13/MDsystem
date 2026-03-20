@@ -624,8 +624,8 @@ export async function apiSearchArticles(
   maxResults = 100,
   sources: SearchSource[] = ["pubmed"],
   triggerAutoGraphSync = true,
-): Promise<SearchResult> {
-  return apiFetch<SearchResult>(`/api/projects/${projectId}/search`, {
+): Promise<SearchSummary> {
+  return apiFetch<SearchSummary>(`/api/projects/${projectId}/search`, {
     method: "POST",
     body: JSON.stringify({
       query,

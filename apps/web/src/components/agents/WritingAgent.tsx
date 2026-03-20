@@ -76,6 +76,9 @@ export default function WritingAgent({
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const outputRef = useRef<HTMLTextAreaElement>(null);
+  const handleWritingTaskRef = useRef<
+    (mode: WritingMode, input?: string) => void
+  >(() => {});
 
   // Listen for messages from other agents
   useEffect(() => {
@@ -94,39 +97,32 @@ export default function WritingAgent({
           };
         };
         if (message.toAgent === agentId) {
-          handleIncomingMessage(message);
+          const msg = message as {
+            type?: string;
+            payload?: {
+              type: string;
+              article: Record<string, unknown>;
+              analysis: Record<string, unknown>;
+            };
+          };
+          if (
+            msg.type === "request" &&
+            msg.payload?.type === "analysis-result"
+          ) {
+            const { article } = msg.payload;
+            const articleTitle =
+              (article?.title as string) || "Unknown Article";
+            const articleAuthors = (article?.authors as string[]) || [];
+            const prompt = `Based on the analysis of "${articleTitle}" by ${articleAuthors.join(", ")}, create a brief academic summary including methodology, findings, and limitations.`;
+            handleWritingTaskRef.current("summary", prompt);
+          }
         }
       }
     };
 
     AgentCoordinator.on("message-sent", handleAgentMessage);
     return () => AgentCoordinator.off("message-sent", handleAgentMessage);
-  }, [agentId, handleIncomingMessage]);
-
-  const handleIncomingMessage = useCallback(
-    (message: {
-      type?: string;
-      payload?: {
-        type: string;
-        article: Record<string, unknown>;
-        analysis: Record<string, unknown>;
-      };
-    }) => {
-      if (
-        message.type === "request" &&
-        message.payload?.type === "analysis-result"
-      ) {
-        const { article, analysis: _analysis } = message.payload;
-
-        // Auto-generate summary from literature analysis
-        const articleTitle = (article?.title as string) || "Unknown Article";
-        const articleAuthors = (article?.authors as string[]) || [];
-        const prompt = `Based on the analysis of "${articleTitle}" by ${articleAuthors.join(", ")}, create a brief academic summary including methodology, findings, and limitations.`;
-        handleWritingTask("summary", prompt);
-      }
-    },
-    [handleWritingTask],
-  );
+  }, [agentId]);
 
   // Update agent status
   useEffect(() => {
@@ -190,7 +186,7 @@ export default function WritingAgent({
       },
       {
         id: "2",
-        type: "structure",
+        type: "structure" as const,
         original: text.substring(0, Math.min(50, text.length)),
         suggestion:
           "Consider adding a topic sentence to clearly state your main argument",
@@ -200,7 +196,7 @@ export default function WritingAgent({
       },
       {
         id: "3",
-        type: "citation",
+        type: "citation" as const,
         original: "research shows",
         suggestion: "research shows (Author, Year)",
         explanation: "Claims should be supported with proper citations",
@@ -303,8 +299,12 @@ export default function WritingAgent({
         setIsProcessing(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [agentId, inputText],
   );
+
+  // Keep ref in sync
+  handleWritingTaskRef.current = handleWritingTask;
 
   const generateDraft = async (prompt: string): Promise<string> => {
     await new Promise((resolve) => setTimeout(resolve, 1500));

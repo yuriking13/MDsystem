@@ -105,6 +105,16 @@ export default function CitationAgent({
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const addReferenceFromArticleRef = useRef<
+    (article: {
+      title?: string;
+      authors?: string[];
+      journal?: string;
+      year?: number;
+      doi?: string;
+      url?: string;
+    }) => void
+  >(() => {});
 
   // Listen for messages from other agents
   useEffect(() => {
@@ -121,24 +131,22 @@ export default function CitationAgent({
           message.toAgent === agentId &&
           message.payload?.type === "article-selected"
         ) {
-          const article = message.payload.article;
-          addReferenceFromArticle(
-            article as {
-              title?: string;
-              authors?: string[];
-              journal?: string;
-              year?: number;
-              doi?: string;
-              url?: string;
-            },
-          );
+          const article = message.payload.article as {
+            title?: string;
+            authors?: string[];
+            journal?: string;
+            year?: number;
+            doi?: string;
+            url?: string;
+          };
+          addReferenceFromArticleRef.current(article);
         }
       }
     };
 
     AgentCoordinator.on("message-sent", handleAgentMessage);
     return () => AgentCoordinator.off("message-sent", handleAgentMessage);
-  }, [agentId, addReferenceFromArticle]);
+  }, [agentId]);
 
   // Update agent status
   useEffect(() => {
@@ -270,6 +278,9 @@ export default function CitationAgent({
     },
     [agentId],
   );
+
+  // Keep ref in sync
+  addReferenceFromArticleRef.current = addReferenceFromArticle;
 
   const generateCitation = (
     reference: Reference,

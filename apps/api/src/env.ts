@@ -1,8 +1,14 @@
 import { z } from "zod";
-import dotenv from "dotenv";
 
-// Load environment variables from .env file
-dotenv.config();
+// Load environment variables from .env file in development
+if (!process.env.NODE_ENV || process.env.NODE_ENV === "development") {
+  try {
+    const dotenv = await import("dotenv");
+    dotenv.config();
+  } catch {
+    // dotenv not available — env vars must be set externally
+  }
+}
 
 function emptyStringToUndefined(value: unknown): unknown {
   if (typeof value === "string" && value.trim().length === 0) {
