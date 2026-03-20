@@ -5,6 +5,7 @@ import {
   type ArticlesAIAssistantResponse,
 } from "../lib/api";
 import CrossPlatformSearch from "./CrossPlatformSearch";
+import { useLanguage } from "../lib/LanguageContext";
 
 // ============================================================
 // Types
@@ -80,6 +81,7 @@ export default function ArticleAISidebar({
   onGenerateCriteria,
 }: Props) {
   // Internal state (used when no external messages provided)
+  const { t } = useLanguage();
   const [internalMessages, setInternalMessages] = useState<AIMessage[]>([]);
   const [internalLoading, setInternalLoading] = useState(false);
   const [input, setInput] = useState("");
@@ -194,7 +196,7 @@ export default function ArticleAISidebar({
   const defaultActions: SuggestedAction[] = [
     {
       id: "analyze",
-      label: "Анализ",
+      label: t("Анализ", "Analyze"),
       icon: (
         <svg
           className="w-4 h-4"
@@ -220,7 +222,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "summarize",
-      label: "Резюме",
+      label: t("Резюме", "Summarize"),
       icon: (
         <svg
           className="w-4 h-4"
@@ -243,7 +245,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "find-similar",
-      label: "Похожие",
+      label: t("Похожие", "Find Similar"),
       icon: (
         <svg
           className="w-4 h-4"
@@ -267,7 +269,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "criteria",
-      label: "Критерии",
+      label: t("Критерии", "Criteria"),
       icon: (
         <svg
           className="w-4 h-4"
@@ -298,7 +300,7 @@ export default function ArticleAISidebar({
   const defaultPrompts = [
     {
       id: "select-best",
-      label: "Анализ отобранных статей",
+      label: t("Анализ отобранных статей", "Analyze selected articles"),
       onClick: () =>
         handleSend(
           "Подбери лучшие статьи для отбора из кандидатов. Учитывай качество статистики, релевантность темы и год публикации.",
@@ -306,7 +308,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "summarize",
-      label: "Резюме аннотаций",
+      label: t("Резюме аннотаций", "Summarize abstracts"),
       onClick: () =>
         handleSend(
           "Сделай краткий обзор основных тем и направлений среди статей-кандидатов.",
@@ -314,7 +316,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "criteria",
-      label: "Критерии включения",
+      label: t("Критерии включения", "Suggest inclusion criteria"),
       onClick: () =>
         handleSend(
           "На основе базы статей предложи критерии включения и исключения для систематического обзора.",
@@ -322,7 +324,7 @@ export default function ArticleAISidebar({
     },
     {
       id: "find-similar",
-      label: "Найти похожие статьи",
+      label: t("Найти похожие статьи", "Find similar articles"),
       onClick: () =>
         handleSend(
           "Найди среди кандидатов статьи с наиболее сильной статистикой (p-value, RCT, meta-analysis).",
@@ -339,7 +341,10 @@ export default function ArticleAISidebar({
         className="article-ai-fab"
         onClick={onToggle}
         type="button"
-        title="AI помощник по подбору статей"
+        title={t(
+          "AI помощник по подбору статей",
+          "AI article selection assistant",
+        )}
       >
         <svg
           className="w-5 h-5"
@@ -354,10 +359,12 @@ export default function ArticleAISidebar({
             d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
           />
         </svg>
-        <span className="article-ai-fab-label">AI Помощник</span>
+        <span className="article-ai-fab-label">
+          {t("AI Помощник", "AI Assistant")}
+        </span>
         {(selectedArticlesCount ?? candidateCount) > 0 && (
           <span className="article-ai-fab-badge">
-            {selectedArticlesCount ?? candidateCount} выбрано
+            {selectedArticlesCount ?? candidateCount} {t("выбрано", "selected")}
           </span>
         )}
       </button>
@@ -386,10 +393,13 @@ export default function ArticleAISidebar({
                 d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
               />
             </svg>
-            <span>AI Помощник</span>
+            <span>{t("AI Помощник", "AI Assistant")}</span>
           </div>
           <div className="article-ai-header-sub">
-            Интеллектуальный помощник исследователя
+            {t(
+              "Интеллектуальный помощник исследователя",
+              "AI-powered research helper",
+            )}
           </div>
         </div>
         <div className="article-ai-header-actions">
@@ -397,9 +407,9 @@ export default function ArticleAISidebar({
             <button
               className="article-ai-icon-btn"
               onClick={handleClearChat}
-              title="Очистить чат"
+              title={t("Очистить чат", "Clear chat")}
               type="button"
-              aria-label="Очистить чат"
+              aria-label={t("Очистить чат", "Clear chat")}
             >
               <svg
                 className="w-4 h-4"
@@ -479,7 +489,7 @@ export default function ArticleAISidebar({
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-          Поиск по базам
+          {t("Поиск по базам", "Cross-Platform Search")}
         </button>
       </div>
 
@@ -500,12 +510,12 @@ export default function ArticleAISidebar({
             />
           </svg>
           <span>
-            <strong>{selectedArticlesCount ?? candidateCount}</strong> статей
-            выбрано
+            <strong>{selectedArticlesCount ?? candidateCount}</strong>{" "}
+            {t("статей выбрано", "articles selected")}
             {projectName && (
               <>
                 {" "}
-                в <em>{projectName}</em>
+                {t("в", "in")} <em>{projectName}</em>
               </>
             )}
           </span>
@@ -516,7 +526,7 @@ export default function ArticleAISidebar({
       {!externalMessages && (
         <div className="article-ai-settings">
           <label className="article-ai-setting-label">
-            <span>Макс. рекомендаций:</span>
+            <span>{t("Макс. рекомендаций:", "Max suggestions:")}</span>
             <select
               value={maxSuggestions}
               onChange={(e) => setMaxSuggestions(Number(e.target.value))}
@@ -554,10 +564,13 @@ export default function ArticleAISidebar({
                     />
                   </svg>
                 </div>
-                <h4>Чем могу помочь?</h4>
+                <h4>{t("Чем могу помочь?", "How can I help?")}</h4>
                 <p>
-                  Задавайте вопросы о ваших статьях, запрашивайте анализ или
-                  получите рекомендации по отбору статей.
+                  {t(
+                    "Задавайте вопросы о ваших статьях, запрашивайте анализ",
+                    "Ask questions about your articles, request analysis",
+                  )}{" "}
+                  или получите рекомендации по отбору статей.
                 </p>
 
                 {/* Quick Actions */}
@@ -656,11 +669,15 @@ export default function ArticleAISidebar({
                                 />
                               </svg>
                               <span>
-                                Рекомендованные статьи (
+                                {t(
+                                  "Рекомендованные статьи (",
+                                  "Recommended articles (",
+                                )}
                                 {msg.suggestedArticles.length})
                                 {msg.totalAnalyzed && (
                                   <span className="article-ai-analyzed-badge">
-                                    из {msg.totalAnalyzed} проанализированных
+                                    {t("из", "of")} {msg.totalAnalyzed}{" "}
+                                    {t("проанализированных", "analyzed")}
                                   </span>
                                 )}
                               </span>
@@ -676,7 +693,10 @@ export default function ArticleAISidebar({
                                     onAddToSelected(candidateIds);
                                   }}
                                   type="button"
-                                  title="Добавить все рекомендованные в отобранные"
+                                  title={t(
+                                    "Добавить все рекомендованные в отобранные",
+                                    "Add all recommended to selected",
+                                  )}
                                 >
                                   <svg
                                     className="w-3 h-3"
@@ -691,7 +711,7 @@ export default function ArticleAISidebar({
                                       d="M5 13l4 4L19 7"
                                     />
                                   </svg>
-                                  Отобрать все
+                                  {t("Отобрать все", "Select all")}
                                 </button>
                               )}
                             </div>
@@ -710,7 +730,10 @@ export default function ArticleAISidebar({
                                       onClick={() =>
                                         onHighlightArticle?.(article.id)
                                       }
-                                      title="Показать в списке"
+                                      title={t(
+                                        "Показать в списке",
+                                        "Show in list",
+                                      )}
                                     >
                                       {article.title_ru ||
                                         article.title_en ||
@@ -741,11 +764,11 @@ export default function ArticleAISidebar({
                                         className={`article-ai-tag article-ai-tag--status article-ai-tag--${article.status}`}
                                       >
                                         {article.status === "candidate"
-                                          ? "Кандидат"
+                                          ? t("Кандидат", "Candidate")
                                           : article.status === "selected"
-                                            ? "Отобрана"
+                                            ? t("Отобрана", "Selected")
                                             : article.status === "excluded"
-                                              ? "Исключена"
+                                              ? t("Исключена", "Excluded")
                                               : article.status}
                                       </span>
                                     </div>
@@ -764,7 +787,10 @@ export default function ArticleAISidebar({
                                             onAddToSelected([article.id])
                                           }
                                           type="button"
-                                          title="Добавить в отобранные"
+                                          title={t(
+                                            "Добавить в отобранные",
+                                            "Add to selected",
+                                          )}
                                         >
                                           <svg
                                             className="w-4 h-4"
@@ -787,7 +813,10 @@ export default function ArticleAISidebar({
                             </div>
                             {msg.summary && (
                               <div className="article-ai-summary">
-                                <span>Критерии: {msg.summary.criteria}</span>
+                                <span>
+                                  {t("Критерии: ", "Criteria: ")}
+                                  {msg.summary.criteria}
+                                </span>
                               </div>
                             )}
                           </div>
@@ -849,7 +878,10 @@ export default function ArticleAISidebar({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Спросите о ваших статьях..."
+                placeholder={t(
+                  "Спросите о ваших статьях...",
+                  "Ask about your articles...",
+                )}
                 className="article-ai-textarea"
                 rows={2}
                 disabled={isLoading}
@@ -859,7 +891,7 @@ export default function ArticleAISidebar({
                 onClick={() => handleSend()}
                 disabled={isLoading || !input.trim()}
                 type="button"
-                aria-label="Отправить"
+                aria-label={t("Отправить", "Send")}
               >
                 <svg
                   className="w-4 h-4"
@@ -877,7 +909,10 @@ export default function ArticleAISidebar({
               </button>
             </div>
             <div className="article-ai-input-hint">
-              Enter — отправить, Shift+Enter — новая строка
+              {t(
+                "Enter — отправить, Shift+Enter — новая строка",
+                "Enter to send, Shift+Enter for new line",
+              )}
             </div>
           </div>
         </>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { getErrorMessage } from "../lib/errorUtils";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../lib/LanguageContext";
 import {
   apiGetProjects,
   apiCreateProject,
@@ -19,6 +20,7 @@ import { cn } from "../design-system/utils/cn";
 
 export default function ProjectsPage() {
   const nav = useNavigate();
+  const { t, lang } = useLanguage();
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export default function ProjectsPage() {
       setNewName("");
       setNewDesc("");
       setShowCreate(false);
-      setOk("Проект создан!");
+      setOk(t("Проект создан!", "Project created!"));
       await load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -94,7 +96,9 @@ export default function ProjectsPage() {
   async function handleDelete() {
     if (!deleteTarget) return;
     if (deleteConfirmText !== deleteTarget.name) {
-      setError("Название проекта не совпадает");
+      setError(
+        t("Название проекта не совпадает", "Project name doesn't match"),
+      );
       return;
     }
 
@@ -102,7 +106,7 @@ export default function ProjectsPage() {
     setError(null);
     try {
       await apiDeleteProject(deleteTarget.id);
-      setOk("Проект удалён");
+      setOk(t("Проект удалён", "Project deleted"));
       closeDeleteConfirm();
       await load();
     } catch (err) {
@@ -117,8 +121,10 @@ export default function ProjectsPage() {
       {/* Page Header */}
       <header className="page-header">
         <div>
-          <h1 className="page-title">Мои проекты</h1>
-          <p className="page-subtitle">Научно-исследовательские проекты</p>
+          <h1 className="page-title">{t("Мои проекты", "My Projects")}</h1>
+          <p className="page-subtitle">
+            {t("Научно-исследовательские проекты", "Research projects")}
+          </p>
         </div>
         <button
           className="btn-primary projects-create-btn"
@@ -126,7 +132,7 @@ export default function ProjectsPage() {
           onClick={() => setShowCreate(true)}
         >
           <PlusIcon className="w-5 h-5" />
-          Новый проект
+          {t("Новый проект", "New Project")}
         </button>
       </header>
 
@@ -153,7 +159,9 @@ export default function ProjectsPage() {
         <div className="modal-backdrop" onClick={() => setShowCreate(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2 className="modal-title">Создать проект</h2>
+              <h2 className="modal-title">
+                {t("Создать проект", "Create Project")}
+              </h2>
               <button
                 className="modal-close"
                 onClick={() => setShowCreate(false)}
@@ -164,28 +172,36 @@ export default function ProjectsPage() {
             <form onSubmit={handleCreate}>
               <div className="modal-body">
                 <label className="form-label">
-                  <span className="form-label-text">Название проекта *</span>
+                  <span className="form-label-text">
+                    {t("Название проекта *", "Project Name *")}
+                  </span>
                   <input
                     type="text"
                     className="form-input"
                     data-testid="project-name-input"
                     value={newName}
                     onChange={(e) => setNewName(e.target.value)}
-                    placeholder="например: Диссертация: Анализ терапии"
+                    placeholder={t(
+                      "например: Диссертация: Анализ терапии",
+                      "e.g.: Thesis: Therapy Analysis",
+                    )}
                     required
                     autoFocus
                   />
                 </label>
                 <label className="form-label">
                   <span className="form-label-text">
-                    Описание (опционально)
+                    {t("Описание (опционально)", "Description (optional)")}
                   </span>
                   <textarea
                     className="form-input form-textarea"
                     data-testid="project-description-input"
                     value={newDesc}
                     onChange={(e) => setNewDesc(e.target.value)}
-                    placeholder="Краткое описание исследования"
+                    placeholder={t(
+                      "Краткое описание исследования",
+                      "Brief research description",
+                    )}
                     rows={3}
                   />
                 </label>
@@ -196,7 +212,7 @@ export default function ProjectsPage() {
                   className="btn-secondary"
                   onClick={() => setShowCreate(false)}
                 >
-                  Отмена
+                  {t("Отмена", "Cancel")}
                 </button>
                 <button
                   type="submit"
@@ -204,7 +220,9 @@ export default function ProjectsPage() {
                   data-testid="project-create-submit-button"
                   disabled={creating || !newName.trim()}
                 >
-                  {creating ? "Создание…" : "Создать проект"}
+                  {creating
+                    ? t("Создание…", "Creating...")
+                    : t("Создать проект", "Create Project")}
                 </button>
               </div>
             </form>
@@ -216,14 +234,19 @@ export default function ProjectsPage() {
       {loading ? (
         <div className="loading-state">
           <div className="loading-spinner" />
-          <span>Загрузка проектов…</span>
+          <span>{t("Загрузка проектов…", "Loading projects...")}</span>
         </div>
       ) : projects.length === 0 ? (
         <div className="empty-state">
           <FolderIcon className="empty-state-icon" />
-          <h3 className="empty-state-title">Нет проектов</h3>
+          <h3 className="empty-state-title">
+            {t("Нет проектов", "No Projects")}
+          </h3>
           <p className="empty-state-desc">
-            Создайте свой первый проект, чтобы начать работу
+            {t(
+              "Создайте свой первый проект, чтобы начать работу",
+              "Create your first project to get started",
+            )}
           </p>
           <button
             className="btn-primary projects-create-btn"
@@ -231,7 +254,7 @@ export default function ProjectsPage() {
             onClick={() => setShowCreate(true)}
           >
             <PlusIcon className="w-5 h-5" />
-            Создать проект
+            {t("Создать проект", "Create Project")}
           </button>
         </div>
       ) : (
@@ -256,10 +279,10 @@ export default function ProjectsPage() {
                   )}
                 >
                   {p.role === "owner"
-                    ? "Владелец"
+                    ? t("Владелец", "Owner")
                     : p.role === "editor"
-                      ? "Редактор"
-                      : "Читатель"}
+                      ? t("Редактор", "Editor")
+                      : t("Читатель", "Viewer")}
                 </span>
               </div>
 
@@ -272,7 +295,9 @@ export default function ProjectsPage() {
               <div className="project-card-meta">
                 <span className="project-meta-item">
                   <CalendarIcon className="w-4 h-4" />
-                  {new Date(p.updated_at).toLocaleDateString("ru-RU")}
+                  {new Date(p.updated_at).toLocaleDateString(
+                    lang === "ru" ? "ru-RU" : "en-US",
+                  )}
                 </span>
               </div>
 
@@ -285,7 +310,7 @@ export default function ProjectsPage() {
                     nav(`/projects/${p.id}`);
                   }}
                 >
-                  Открыть
+                  {t("Открыть", "Open")}
                   <ArrowRightIcon className="w-4 h-4" />
                 </button>
                 {p.role === "owner" && (
@@ -313,22 +338,33 @@ export default function ProjectsPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
-              <h2 className="modal-title">Удаление проекта</h2>
+              <h2 className="modal-title">
+                {t("Удаление проекта", "Delete Project")}
+              </h2>
               <button className="modal-close" onClick={closeDeleteConfirm}>
                 <XMarkIcon className="w-5 h-5" />
               </button>
             </div>
             <div className="modal-body">
               <p>
-                Вы уверены что хотите удалить проект{" "}
+                {t(
+                  "Вы уверены что хотите удалить проект",
+                  "Are you sure you want to delete project",
+                )}{" "}
                 <strong>"{deleteTarget.name}"</strong>?
               </p>
               <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
-                Это действие необратимо. Все данные проекта будут потеряны.
+                {t(
+                  "Это действие необратимо. Все данные проекта будут потеряны.",
+                  "This action is irreversible. All project data will be lost.",
+                )}
               </p>
               <label className="form-label mt-4">
                 <span className="form-label-text">
-                  Для подтверждения введите название проекта:
+                  {t(
+                    "Для подтверждения введите название проекта:",
+                    "To confirm, enter the project name:",
+                  )}
                 </span>
                 <input
                   type="text"
@@ -346,7 +382,7 @@ export default function ProjectsPage() {
                 className="btn-secondary"
                 onClick={closeDeleteConfirm}
               >
-                Отмена
+                {t("Отмена", "Cancel")}
               </button>
               <button
                 type="button"
@@ -354,7 +390,9 @@ export default function ProjectsPage() {
                 onClick={handleDelete}
                 disabled={deleting || deleteConfirmText !== deleteTarget.name}
               >
-                {deleting ? "Удаление…" : "Удалить проект"}
+                {deleting
+                  ? t("Удаление…", "Deleting...")
+                  : t("Удалить проект", "Delete Project")}
               </button>
             </div>
           </div>

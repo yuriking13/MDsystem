@@ -8,6 +8,7 @@ import {
   type SearchProvider,
   type SearchProvidersResponse,
 } from "../lib/api";
+import { useLanguage } from "../lib/LanguageContext";
 
 interface CrossPlatformSearchProps {
   projectId: string;
@@ -36,6 +37,7 @@ export default function CrossPlatformSearch({
   onSearchComplete,
   className = "",
 }: CrossPlatformSearchProps) {
+  const { t } = useLanguage();
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<SearchFilters>(DEFAULT_FILTERS);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -102,13 +104,18 @@ export default function CrossPlatformSearch({
         });
         onSearchComplete?.(response.data.results, query);
       } else {
-        setError("Ошибка поиска");
+        setError(t("Ошибка поиска", "Search failed"));
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Произошла ошибка поиска");
+      setError(
+        err instanceof Error
+          ? err.message
+          : t("Произошла ошибка поиска", "Search error occurred"),
+      );
     } finally {
       setIsSearching(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, filters, projectId, onSearchComplete, isSearching]);
 
   const handleImportSelected = useCallback(async () => {
@@ -151,10 +158,15 @@ export default function CrossPlatformSearch({
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка импорта");
+      setError(
+        err instanceof Error
+          ? err.message
+          : t("Ошибка импорта", "Import failed"),
+      );
     } finally {
       setIsImporting(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedResults, results, projectId, onAddToSelected, isImporting]);
 
   const toggleResultSelection = useCallback((resultId: string) => {
@@ -200,7 +212,7 @@ export default function CrossPlatformSearch({
       <div className="search-form space-y-4 p-4 border rounded-lg bg-gray-50">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Поисковый запрос
+            {t("Поисковый запрос", "Search Query")}
           </label>
           <div className="flex space-x-2">
             <input
@@ -208,7 +220,10 @@ export default function CrossPlatformSearch({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Введите ключевые слова, DOI, PMID или имя автора..."
+              placeholder={t(
+                "Введите ключевые слова, DOI, PMID или имя автора...",
+                "Enter keywords, DOI, PMID, or author names...",
+              )}
               className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               disabled={isSearching}
             />
@@ -241,7 +256,7 @@ export default function CrossPlatformSearch({
                   <span>Поиск...</span>
                 </div>
               ) : (
-                "Найти"
+                t("Найти", "Search")
               )}
             </button>
           </div>
@@ -252,7 +267,7 @@ export default function CrossPlatformSearch({
           {/* Providers */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Источники
+              {t("Источники", "Sources")}
             </label>
             <div className="space-y-2">
               {availableProviders?.providers.map((provider) => (
@@ -282,12 +297,12 @@ export default function CrossPlatformSearch({
           {/* Year Range */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Годы
+              {t("Годы", "Year Range")}
             </label>
             <div className="space-y-2">
               <input
                 type="number"
-                placeholder="С года"
+                placeholder={t("С года", "From year")}
                 value={filters.yearFrom || ""}
                 onChange={(e) =>
                   setFilters((prev) => ({
@@ -303,7 +318,7 @@ export default function CrossPlatformSearch({
               />
               <input
                 type="number"
-                placeholder="По год"
+                placeholder={t("По год", "To year")}
                 value={filters.yearTo || ""}
                 onChange={(e) =>
                   setFilters((prev) => ({
@@ -323,7 +338,7 @@ export default function CrossPlatformSearch({
           {/* Language */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Язык
+              {t("Язык", "Language")}
             </label>
             <select
               value={filters.language}
@@ -335,16 +350,18 @@ export default function CrossPlatformSearch({
               }
               className="w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              <option value="any">Любой язык</option>
-              <option value="en">Только английский</option>
-              <option value="ru">Только русский</option>
+              <option value="any">{t("Любой язык", "Any language")}</option>
+              <option value="en">
+                {t("Только английский", "English only")}
+              </option>
+              <option value="ru">{t("Только русский", "Russian only")}</option>
             </select>
           </div>
 
           {/* Sort By */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Сортировка
+              {t("Сортировка", "Sort by")}
             </label>
             <select
               value={filters.sortBy}
@@ -356,9 +373,15 @@ export default function CrossPlatformSearch({
               }
               className="w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              <option value="relevance">Релевантность</option>
-              <option value="date">Дата (новые первыми)</option>
-              <option value="citations">Количество цитирований</option>
+              <option value="relevance">
+                {t("Релевантность", "Relevance")}
+              </option>
+              <option value="date">
+                {t("Дата (новые первыми)", "Date (newest first)")}
+              </option>
+              <option value="citations">
+                {t("Количество цитирований", "Citations count")}
+              </option>
             </select>
           </div>
         </div>
@@ -376,9 +399,13 @@ export default function CrossPlatformSearch({
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
           <div className="flex items-center justify-between text-sm text-blue-800">
             <span>
-              Найдено <strong>{searchStats.totalFound}</strong> results in{" "}
-              <strong>{searchStats.searchTime}ms</strong>
-              {searchStats.cached && " (из кеша)"}
+              {t("Найдено", "Found")} <strong>{searchStats.totalFound}</strong>{" "}
+              {t("результатов за", "results in")}{" "}
+              <strong>
+                {searchStats.searchTime}
+                {t("мс", "ms")}
+              </strong>
+              {searchStats.cached && t(" (из кеша)", " (cached)")}
             </span>
             <div className="flex items-center space-x-2">
               {Object.entries(searchStats.providers).map(
@@ -403,20 +430,21 @@ export default function CrossPlatformSearch({
           <div className="flex items-center justify-between p-3 bg-gray-50 border-b">
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                {selectedResults.size} из {results.length} выбрано
+                {selectedResults.size} {t("из", "of")} {results.length}{" "}
+                {t("выбрано", "selected")}
               </span>
               <div className="flex space-x-2">
                 <button
                   onClick={selectAllResults}
                   className="text-sm text-blue-600 hover:text-blue-800"
                 >
-                  Выбрать все
+                  {t("Выбрать все", "Select All")}
                 </button>
                 <button
                   onClick={clearSelection}
                   className="text-sm text-gray-600 hover:text-gray-800"
                 >
-                  Сбросить
+                  {t("Сбросить", "Clear")}
                 </button>
               </div>
             </div>
@@ -427,8 +455,8 @@ export default function CrossPlatformSearch({
                 className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
               >
                 {isImporting
-                  ? "Импорт..."
-                  : `Импортировать ${selectedResults.size} статей`}
+                  ? t("Импорт...", "Importing...")
+                  : `${t("Импортировать", "Import")} ${selectedResults.size} ${t("статей", "articles")}`}
               </button>
             )}
           </div>
@@ -552,10 +580,13 @@ export default function CrossPlatformSearch({
             />
           </svg>
           <h3 className="mt-2 text-lg font-medium text-gray-900">
-            Ничего не найдено
+            {t("Ничего не найдено", "No results found")}
           </h3>
           <p className="mt-1 text-gray-500">
-            Попробуйте изменить запрос или фильтры
+            {t(
+              "Попробуйте изменить запрос или фильтры",
+              "Try adjusting your search terms or filters",
+            )}
           </p>
         </div>
       )}

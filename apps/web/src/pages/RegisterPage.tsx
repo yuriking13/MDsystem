@@ -3,10 +3,12 @@ import { useNavigate, Link } from "react-router-dom";
 import { apiRegister } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 import { parseApiError, getErrorMessage } from "../lib/errors";
+import { useLanguage } from "../lib/LanguageContext";
 
 export default function RegisterPage() {
   const nav = useNavigate();
   const { loginWithToken } = useAuth();
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,12 +21,22 @@ export default function RegisterPage() {
     setError(null);
 
     if (password.length < 8) {
-      setError("Пароль должен быть минимум 8 символов");
+      setError(
+        t(
+          "Пароль должен быть минимум 8 символов",
+          "Password must be at least 8 characters",
+        ),
+      );
       return;
     }
 
     if (!agreeTerms) {
-      setError("Необходимо согласиться с условиями использования");
+      setError(
+        t(
+          "Необходимо согласиться с условиями использования",
+          "Must agree to terms of service",
+        ),
+      );
       return;
     }
 
@@ -69,10 +81,12 @@ export default function RegisterPage() {
                   />
                 </svg>
                 <div>
-                  <h3>Умный поиск статей</h3>
+                  <h3>{t("Умный поиск статей", "Smart Article Search")}</h3>
                   <p>
-                    Интеграция с PubMed, DOAJ, Wiley для поиска научных
-                    публикаций по ключевым словам и MeSH терминам.
+                    {t(
+                      "Интеграция с PubMed, DOAJ, Wiley для поиска научных публикаций по ключевым словам и MeSH терминам.",
+                      "Integration with PubMed, DOAJ, Wiley for searching scientific publications by keywords and MeSH terms.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -90,10 +104,12 @@ export default function RegisterPage() {
                   />
                 </svg>
                 <div>
-                  <h3>Граф цитирований</h3>
+                  <h3>{t("Граф цитирований", "Citation Graph")}</h3>
                   <p>
-                    Визуализация связей между статьями, выявление ключевых работ
-                    и анализ citation network.
+                    {t(
+                      "Визуализация связей между статьями, выявление ключевых работ и анализ citation network.",
+                      "Visualization of article connections, identification of key works and citation network analysis.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -111,10 +127,12 @@ export default function RegisterPage() {
                   />
                 </svg>
                 <div>
-                  <h3>AI-ассистент</h3>
+                  <h3>{t("AI-ассистент", "AI Assistant")}</h3>
                   <p>
-                    Интеллектуальный помощник для формирования поисковых
-                    запросов и анализа результатов.
+                    {t(
+                      "Интеллектуальный помощник для формирования поисковых запросов и анализа результатов.",
+                      "Intelligent assistant for creating search queries and analyzing results.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -132,10 +150,12 @@ export default function RegisterPage() {
                   />
                 </svg>
                 <div>
-                  <h3>Редактор документов</h3>
+                  <h3>{t("Редактор документов", "Document Editor")}</h3>
                   <p>
-                    Создание научных обзоров с автоматической вставкой
-                    цитирований и генерацией библиографии.
+                    {t(
+                      "Создание научных обзоров с автоматической вставкой цитирований и генерацией библиографии.",
+                      "Creating scientific reviews with automatic citation insertion and bibliography generation.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -145,7 +165,9 @@ export default function RegisterPage() {
           {/* Right side - Register form */}
           <div className="auth-form-container">
             <div className="auth-form-card">
-              <h1 className="auth-title">Создать аккаунт</h1>
+              <h1 className="auth-title">
+                {t("Создать аккаунт", "Create Account")}
+              </h1>
 
               <form onSubmit={submit} className="auth-form">
                 <div className="auth-field">
@@ -164,8 +186,10 @@ export default function RegisterPage() {
 
                 <div className="auth-field">
                   <label htmlFor="password">
-                    Пароль{" "}
-                    <span className="auth-hint">(минимум 8 символов)</span>
+                    {t("Пароль", "Password")}{" "}
+                    <span className="auth-hint">
+                      ({t("минимум 8 символов", "min 8 characters")})
+                    </span>
                   </label>
                   <input
                     type="password"
@@ -189,13 +213,16 @@ export default function RegisterPage() {
                       onChange={(e) => setAgreeTerms(e.target.checked)}
                     />
                     <span>
-                      Регистрируясь, вы соглашаетесь с{" "}
+                      {t(
+                        "Регистрируясь, вы соглашаетесь с",
+                        "By registering, you agree to the",
+                      )}{" "}
                       <Link to="/terms" className="auth-link">
-                        Условиями использования
+                        {t("Условиями использования", "Terms of Service")}
                       </Link>{" "}
-                      и{" "}
+                      {t("и", "and")}{" "}
                       <Link to="/privacy" className="auth-link">
-                        Политикой конфиденциальности
+                        {t("Политикой конфиденциальности", "Privacy Policy")}
                       </Link>
                       .
                     </span>
@@ -215,17 +242,19 @@ export default function RegisterPage() {
                     data-testid="register-submit-button"
                     disabled={busy}
                   >
-                    {busy ? "Создание..." : "Создать аккаунт"}
+                    {busy
+                      ? t("Создание...", "Creating...")
+                      : t("Создать аккаунт", "Create Account")}
                   </button>
                   <Link to="/" className="auth-link-btn auth-link-btn--button">
-                    На лендинг
+                    {t("На лендинг", "To landing")}
                   </Link>
                 </div>
 
                 <p className="auth-footer-text">
-                  Уже есть аккаунт?{" "}
+                  {t("Уже есть аккаунт?", "Already have an account?")}{" "}
                   <Link to="/login" className="auth-link">
-                    Войти
+                    {t("Войти", "Sign in")}
                   </Link>
                 </p>
               </form>
@@ -235,7 +264,10 @@ export default function RegisterPage() {
       </div>
 
       <footer className="auth-footer">
-        <span>© 2024-2026 Scientiaiter. Все права защищены.</span>
+        <span>
+          © 2024-2026 Scientiaiter.{" "}
+          {t("Все права защищены.", "All rights reserved.")}
+        </span>
       </footer>
     </section>
   );

@@ -4,104 +4,115 @@ import { useNavigate } from "react-router-dom";
 import { apiDeleteApiKey, apiGetApiKeys, apiSaveApiKey } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 import { resetOnboarding } from "../components/OnboardingTour";
+import { useLanguage } from "../lib/LanguageContext";
 
 const Providers = ["pubmed", "doaj", "wiley", "openrouter"] as const;
-
-// Provider metadata with icons and descriptions
-const ProviderMeta: Record<
-  string,
-  { name: string; description: string; icon: React.ReactNode }
-> = {
-  pubmed: {
-    name: "PubMed",
-    description: "API ключ для поиска и загрузки связей между статьями",
-    icon: (
-      <svg
-        className="icon-md"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-        />
-      </svg>
-    ),
-  },
-  doaj: {
-    name: "DOAJ",
-    description:
-      "Directory of Open Access Journals — поиск статей открытого доступа",
-    icon: (
-      <svg
-        className="icon-md"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-        />
-      </svg>
-    ),
-  },
-  wiley: {
-    name: "Wiley TDM",
-    description:
-      "Wiley Text & Data Mining API для доступа к полнотекстовым статьям",
-    icon: (
-      <svg
-        className="icon-md"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-        />
-      </svg>
-    ),
-  },
-  openrouter: {
-    name: "OpenRouter",
-    description:
-      "Единый AI-провайдер: ассистенты, перевод, семантический поиск и AI-анализ",
-    icon: (
-      <svg
-        className="icon-md"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-        />
-      </svg>
-    ),
-  },
-};
 
 export default function SettingsPage() {
   const nav = useNavigate();
   const { user, logout, refreshMe } = useAuth();
+  const { t } = useLanguage();
 
   const [keys, setKeys] = useState<Record<string, boolean>>({});
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+
+  // Provider metadata with icons and descriptions
+  const ProviderMeta: Record<
+    string,
+    { name: string; description: string; icon: React.ReactNode }
+  > = {
+    pubmed: {
+      name: "PubMed",
+      description: t(
+        "API ключ для поиска и загрузки связей между статьями",
+        "API key for searching and downloading article links",
+      ),
+      icon: (
+        <svg
+          className="icon-md"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+      ),
+    },
+    doaj: {
+      name: "DOAJ",
+      description: t(
+        "Directory of Open Access Journals — поиск статей открытого доступа",
+        "Directory of Open Access Journals — search for open access articles",
+      ),
+      icon: (
+        <svg
+          className="icon-md"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+          />
+        </svg>
+      ),
+    },
+    wiley: {
+      name: "Wiley TDM",
+      description: t(
+        "Wiley Text & Data Mining API для доступа к полнотекстовым статьям",
+        "Wiley Text & Data Mining API for full-text article access",
+      ),
+      icon: (
+        <svg
+          className="icon-md"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+          />
+        </svg>
+      ),
+    },
+    openrouter: {
+      name: "OpenRouter",
+      description: t(
+        "Единый AI-провайдер: ассистенты, перевод, семантический поиск и AI-анализ",
+        "Unified AI provider: assistants, translation, semantic search and AI analysis",
+      ),
+      icon: (
+        <svg
+          className="icon-md"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+          />
+        </svg>
+      ),
+    },
+  };
 
   // Auto-dismiss ok notification after 10 seconds
   useEffect(() => {
@@ -112,6 +123,7 @@ export default function SettingsPage() {
 
   const list = useMemo(
     () => Providers.map((p) => ({ p, has: !!keys[p], meta: ProviderMeta[p] })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [keys],
   );
 
@@ -141,7 +153,7 @@ export default function SettingsPage() {
 
     const key = (draft[provider] || "").trim();
     if (!key) {
-      setError("Key is empty");
+      setError(t("Key is empty", "Key is empty"));
       return;
     }
 
@@ -149,7 +161,7 @@ export default function SettingsPage() {
     try {
       await apiSaveApiKey(provider, key);
       setDraft((d) => ({ ...d, [provider]: "" }));
-      setOk(`Saved: ${provider}`);
+      setOk(t(`Сохранён: ${provider}`, `Saved: ${provider}`));
       await load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -165,7 +177,7 @@ export default function SettingsPage() {
     setBusy(true);
     try {
       await apiDeleteApiKey(provider);
-      setOk(`Deleted: ${provider}`);
+      setOk(t(`Удалён: ${provider}`, `Deleted: ${provider}`));
       await load();
     } catch (err) {
       setError(getErrorMessage(err));
@@ -200,9 +212,11 @@ export default function SettingsPage() {
               />
             </svg>
             <div>
-              <h1 className="settings-header-title">Настройки</h1>
+              <h1 className="settings-header-title">
+                {t("Настройки", "Settings")}
+              </h1>
               <p className="muted settings-header-subtitle">
-                Профиль и API ключи
+                {t("Профиль и API ключи", "Profile and API keys")}
               </p>
             </div>
           </div>
@@ -225,7 +239,7 @@ export default function SettingsPage() {
                   d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
                 />
               </svg>
-              Проекты
+              {t("Проекты", "Projects")}
             </button>
             <button className="btn secondary" onClick={logout} type="button">
               <svg
@@ -241,7 +255,7 @@ export default function SettingsPage() {
                   d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                 />
               </svg>
-              Выйти
+              {t("Выйти", "Logout")}
             </button>
           </div>
         </div>
@@ -263,7 +277,7 @@ export default function SettingsPage() {
               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
             />
           </svg>
-          <h4 className="settings-card-title">Профиль</h4>
+          <h4 className="settings-card-title">{t("Профиль", "Profile")}</h4>
         </div>
         <div className="settings-card-body">
           <div className="settings-profile-grid">
@@ -295,7 +309,7 @@ export default function SettingsPage() {
               d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <h4 className="settings-card-title">Справка</h4>
+          <h4 className="settings-card-title">{t("Справка", "Help")}</h4>
         </div>
         <div className="settings-card-body">
           <div className="settings-help-content">
@@ -318,7 +332,7 @@ export default function SettingsPage() {
                     d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                   />
                 </svg>
-                Документация
+                {t("Документация", "Documentation")}
               </button>
               <button
                 className="btn secondary settings-help-action-btn"
@@ -347,12 +361,14 @@ export default function SettingsPage() {
                     d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                Повторить обучение
+                {t("Повторить обучение", "Repeat tutorial")}
               </button>
             </div>
             <p className="muted settings-help-text">
-              Ознакомьтесь с документацией, чтобы узнать обо всех возможностях
-              платформы, или повторите обучение для новых пользователей.
+              {t(
+                "Ознакомьтесь с документацией, чтобы узнать обо всех возможностях платформы, или повторите обучение для новых пользователей.",
+                "Read the documentation to learn about all platform features, or repeat the tutorial for new users.",
+              )}
             </p>
           </div>
         </div>
@@ -374,18 +390,20 @@ export default function SettingsPage() {
               d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
             />
           </svg>
-          <h4 className="settings-card-title">API Ключи</h4>
+          <h4 className="settings-card-title">{t("API Ключи", "API Keys")}</h4>
         </div>
         <div className="settings-card-body">
           <p className="settings-hint">
-            Ключи хранятся в зашифрованном виде. Введённый ключ не отображается
-            после сохранения.
+            {t(
+              "Ключи хранятся в зашифрованном виде. Введённый ключ не отображается после сохранения.",
+              "Keys are stored encrypted. The entered key is not displayed after saving.",
+            )}
           </p>
 
           {busy && (
             <div className="muted settings-status-row settings-feedback-spacing">
               <div className="loading-spinner" />
-              Загрузка...
+              {t("Загрузка...", "Loading...")}
             </div>
           )}
           {error && (
@@ -412,11 +430,11 @@ export default function SettingsPage() {
                       </strong>
                       {has ? (
                         <span className="settings-provider-badge settings-provider-badge--configured">
-                          ✓ Настроен
+                          ✓ {t("Настроен", "Configured")}
                         </span>
                       ) : (
                         <span className="settings-provider-badge settings-provider-badge--empty">
-                          Не настроен
+                          {t("Не настроен", "Not configured")}
                         </span>
                       )}
                     </div>
@@ -431,7 +449,9 @@ export default function SettingsPage() {
                     className="settings-provider-input"
                     type="password"
                     placeholder={
-                      has ? "Обновить ключ..." : "Вставьте API ключ..."
+                      has
+                        ? t("Обновить ключ...", "Update key...")
+                        : t("Вставьте API ключ...", "Paste API key...")
                     }
                     value={draft[p] || ""}
                     onChange={(e) =>
@@ -457,7 +477,7 @@ export default function SettingsPage() {
                         d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
                       />
                     </svg>
-                    Сохранить
+                    {t("Сохранить", "Save")}
                   </button>
                   <button
                     className={`btn secondary settings-provider-action-btn ${has ? "settings-provider-delete-btn--active" : ""}`}
@@ -478,7 +498,7 @@ export default function SettingsPage() {
                         d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                       />
                     </svg>
-                    Удалить
+                    {t("Удалить", "Delete")}
                   </button>
                 </div>
               </div>

@@ -3,11 +3,13 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { apiLogin } from "../lib/api";
 import { useAuth } from "../lib/AuthContext";
 import { parseApiError, getErrorMessage } from "../lib/errors";
+import { useLanguage } from "../lib/LanguageContext";
 
 export default function LoginPage() {
   const nav = useNavigate();
   const loc = useLocation() as { state?: { from?: string } };
   const { loginWithToken } = useAuth();
+  const { t } = useLanguage();
 
   const redirectTo = useMemo(() => loc.state?.from || "/projects", [loc.state]);
 
@@ -60,10 +62,12 @@ export default function LoginPage() {
                   />
                 </svg>
                 <div>
-                  <h3>Умный поиск статей</h3>
+                  <h3>{t("Умный поиск статей", "Smart Article Search")}</h3>
                   <p>
-                    Интеграция с PubMed, DOAJ, Wiley для поиска научных
-                    публикаций по ключевым словам и MeSH терминам.
+                    {t(
+                      "Интеграция с PubMed, DOAJ, Wiley для поиска научных публикаций по ключевым словам и MeSH терминам.",
+                      "Integration with PubMed, DOAJ, Wiley for searching scientific publications by keywords and MeSH terms.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -81,10 +85,12 @@ export default function LoginPage() {
                   />
                 </svg>
                 <div>
-                  <h3>Граф цитирований</h3>
+                  <h3>{t("Граф цитирований", "Citation Graph")}</h3>
                   <p>
-                    Визуализация связей между статьями, выявление ключевых работ
-                    и анализ citation network.
+                    {t(
+                      "Визуализация связей между статьями, выявление ключевых работ и анализ citation network.",
+                      "Visualization of article connections, identification of key works and citation network analysis.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -102,10 +108,12 @@ export default function LoginPage() {
                   />
                 </svg>
                 <div>
-                  <h3>AI-ассистент</h3>
+                  <h3>{t("AI-ассистент", "AI Assistant")}</h3>
                   <p>
-                    Интеллектуальный помощник для формирования поисковых
-                    запросов и анализа результатов.
+                    {t(
+                      "Интеллектуальный помощник для формирования поисковых запросов и анализа результатов.",
+                      "Intelligent assistant for creating search queries and analyzing results.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -123,10 +131,12 @@ export default function LoginPage() {
                   />
                 </svg>
                 <div>
-                  <h3>Редактор документов</h3>
+                  <h3>{t("Редактор документов", "Document Editor")}</h3>
                   <p>
-                    Создание научных обзоров с автоматической вставкой
-                    цитирований и генерацией библиографии.
+                    {t(
+                      "Создание научных обзоров с автоматической вставкой цитирований и генерацией библиографии.",
+                      "Creating scientific reviews with automatic citation insertion and bibliography generation.",
+                    )}
                   </p>
                 </div>
               </div>
@@ -136,7 +146,7 @@ export default function LoginPage() {
           {/* Right side - Login form */}
           <div className="auth-form-container">
             <div className="auth-form-card">
-              <h1 className="auth-title">Добро пожаловать</h1>
+              <h1 className="auth-title">{t("Добро пожаловать", "Welcome")}</h1>
 
               <form onSubmit={submit} className="auth-form">
                 <div className="auth-field">
@@ -154,7 +164,7 @@ export default function LoginPage() {
                 </div>
 
                 <div className="auth-field">
-                  <label htmlFor="password">Пароль</label>
+                  <label htmlFor="password">{t("Пароль", "Password")}</label>
                   <input
                     type="password"
                     id="password"
@@ -169,7 +179,10 @@ export default function LoginPage() {
 
                 <div className="auth-options">
                   <span className="auth-link">
-                    Сброс пароля временно отключен, обратитесь к администратору
+                    {t(
+                      "Сброс пароля временно отключен, обратитесь к администратору",
+                      "Password reset is temporarily disabled, contact administrator",
+                    )}
                   </span>
                 </div>
 
@@ -186,17 +199,19 @@ export default function LoginPage() {
                     data-testid="login-submit-button"
                     disabled={busy}
                   >
-                    {busy ? "Вход..." : "Войти в аккаунт"}
+                    {busy
+                      ? t("Вход...", "Signing in...")
+                      : t("Войти в аккаунт", "Sign in")}
                   </button>
                   <Link to="/" className="auth-link-btn auth-link-btn--button">
-                    На лендинг
+                    {t("На лендинг", "To landing")}
                   </Link>
                 </div>
 
                 <p className="auth-footer-text">
-                  Нет аккаунта?{" "}
+                  {t("Нет аккаунта?", "No account?")}{" "}
                   <Link to="/register" className="auth-link">
-                    Зарегистрироваться
+                    {t("Зарегистрироваться", "Sign up")}
                   </Link>
                 </p>
               </form>
@@ -206,7 +221,10 @@ export default function LoginPage() {
       </div>
 
       <footer className="auth-footer">
-        <span>© 2024-2026 Scientiaiter. Все права защищены.</span>
+        <span>
+          © 2024-2026 Scientiaiter.{" "}
+          {t("Все права защищены.", "All rights reserved.")}
+        </span>
       </footer>
     </section>
   );

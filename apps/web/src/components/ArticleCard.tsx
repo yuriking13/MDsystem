@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { cn } from "../design-system/utils/cn";
+import { useLanguage } from "../lib/LanguageContext";
 import {
   IconCheck as CheckIcon,
   IconClose as XMarkIcon,
@@ -64,46 +65,10 @@ interface ArticleCardProps {
   className?: string;
 }
 
-const STATUS_CONFIG = {
-  candidate: {
-    border: "border-l-amber-500",
-    badge: "bg-amber-500/20 text-amber-400",
-    label: "Candidate",
-    icon: BeakerIcon,
-  },
-  selected: {
-    border: "border-l-emerald-500",
-    badge: "bg-emerald-500/20 text-emerald-400",
-    label: "Selected",
-    icon: CheckIcon,
-  },
-  excluded: {
-    border: "border-l-rose-500",
-    badge: "bg-rose-500/20 text-rose-400",
-    label: "Excluded",
-    icon: XMarkIcon,
-  },
-  deleted: {
-    border: "border-l-neutral-500",
-    badge: "bg-neutral-500/20 text-neutral-400",
-    label: "Deleted",
-    icon: XMarkIcon,
-  },
-};
-
 const SOURCE_STYLES = {
   pubmed: "bg-blue-500/20 text-blue-400",
   doaj: "bg-purple-500/20 text-purple-400",
   wiley: "bg-orange-500/20 text-orange-400",
-};
-
-const PUB_TYPE_LABELS: Record<string, string> = {
-  systematic_review: "Systematic Review",
-  meta_analysis: "Meta-Analysis",
-  rct: "RCT",
-  clinical_trial: "Clinical Trial",
-  review: "Review",
-  books: "Book",
 };
 
 export default function ArticleCard({
@@ -124,6 +89,43 @@ export default function ArticleCard({
 }: ArticleCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const { t } = useLanguage();
+
+  const STATUS_CONFIG = {
+    candidate: {
+      border: "border-l-amber-500",
+      badge: "bg-amber-500/20 text-amber-400",
+      label: t("Кандидат", "Candidate"),
+      icon: BeakerIcon,
+    },
+    selected: {
+      border: "border-l-emerald-500",
+      badge: "bg-emerald-500/20 text-emerald-400",
+      label: t("Отобран", "Selected"),
+      icon: CheckIcon,
+    },
+    excluded: {
+      border: "border-l-rose-500",
+      badge: "bg-rose-500/20 text-rose-400",
+      label: t("Исключён", "Excluded"),
+      icon: XMarkIcon,
+    },
+    deleted: {
+      border: "border-l-neutral-500",
+      badge: "bg-neutral-500/20 text-neutral-400",
+      label: t("Удалён", "Deleted"),
+      icon: XMarkIcon,
+    },
+  };
+
+  const PUB_TYPE_LABELS: Record<string, string> = {
+    systematic_review: t("Систематический обзор", "Systematic Review"),
+    meta_analysis: t("Мета-анализ", "Meta-Analysis"),
+    rct: t("РКИ", "RCT"),
+    clinical_trial: t("Клиническое исследование", "Clinical Trial"),
+    review: t("Обзор", "Review"),
+    books: t("Книга", "Book"),
+  };
 
   const status = STATUS_CONFIG[article.status];
   const sourceStyle = SOURCE_STYLES[article.source];
@@ -212,7 +214,8 @@ export default function ArticleCard({
         <div className={cn("article-meta", compact && "article-meta--compact")}>
           <span className="article-authors">
             {authorsDisplay}
-            {hasMoreAuthors && ` +${article.authors.length - 3} more`}
+            {hasMoreAuthors &&
+              ` +${article.authors.length - 3} ${t("ещё", "more")}`}
           </span>
           {article.journal && (
             <>
@@ -267,12 +270,12 @@ export default function ArticleCard({
                 {isExpanded ? (
                   <>
                     <ChevronUpIcon className="w-3 h-3" />
-                    Hide
+                    {t("Скрыть", "Hide")}
                   </>
                 ) : (
                   <>
                     <ChevronDownIcon className="w-3 h-3" />
-                    Show more
+                    {t("Показать больше", "Show more")}
                   </>
                 )}
               </button>
@@ -300,7 +303,7 @@ export default function ArticleCard({
                   ? "article-action-btn--active-green"
                   : "article-action-btn--green",
               )}
-              title="Select"
+              title={t("Отобрать", "Select")}
             >
               <CheckIcon className="w-4 h-4" />
             </button>
@@ -313,7 +316,7 @@ export default function ArticleCard({
                   ? "article-action-btn--active-amber"
                   : "article-action-btn--amber",
               )}
-              title="Candidate"
+              title={t("Кандидат", "Candidate")}
             >
               <BeakerIcon className="w-4 h-4" />
             </button>
@@ -326,7 +329,7 @@ export default function ArticleCard({
                   ? "article-action-btn--active-rose"
                   : "article-action-btn--rose",
               )}
-              title="Exclude"
+              title={t("Исключить", "Exclude")}
             >
               <XMarkIcon className="w-4 h-4" />
             </button>
@@ -338,7 +341,7 @@ export default function ArticleCard({
               <button
                 onClick={() => onTranslate(article.id)}
                 className="article-action-btn article-action-btn--default"
-                title="Translate"
+                title={t("Перевести", "Translate")}
               >
                 <LanguageIcon className="w-4 h-4" />
               </button>
@@ -347,7 +350,7 @@ export default function ArticleCard({
               <button
                 onClick={() => onDetectStats(article.id)}
                 className="article-action-btn article-action-btn--default"
-                title="Detect Statistics"
+                title={t("Детекция статистики", "Detect Statistics")}
               >
                 <ChartBarIcon className="w-4 h-4" />
               </button>
@@ -356,7 +359,7 @@ export default function ArticleCard({
               <button
                 onClick={() => onCopyToClipboard(article.id)}
                 className="article-action-btn article-action-btn--default"
-                title="Copy Citation"
+                title={t("Скопировать цитату", "Copy Citation")}
               >
                 <ClipboardDocumentIcon className="w-4 h-4" />
               </button>

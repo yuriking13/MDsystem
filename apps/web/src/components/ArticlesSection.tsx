@@ -6,6 +6,7 @@ import React, {
   useRef,
 } from "react";
 import { createPortal } from "react-dom";
+import { useLanguage } from "../lib/LanguageContext";
 import {
   apiSearchArticles,
   apiGetArticles,
@@ -191,6 +192,7 @@ export default function ArticlesSection({
   onCountsChange,
 }: Props) {
   const toast = useToast();
+  const { t } = useLanguage();
   const {
     projectInfo,
     articleViewStatus: viewStatus,

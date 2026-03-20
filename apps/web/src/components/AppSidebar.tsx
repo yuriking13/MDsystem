@@ -61,7 +61,7 @@ export default function AppSidebar({
   onCloseMobile,
 }: AppSidebarProps) {
   const { user, logout } = useAuth();
-  const { lang, setLang } = useLanguage();
+  const { lang, setLang, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -118,31 +118,31 @@ export default function AppSidebar({
   }[] = [
     {
       id: "candidate",
-      label: "Кандидаты",
+      label: t("Кандидаты", "Candidates"),
       icon: ClipboardDocumentListIcon,
       count: articleCounts.candidate,
     },
     {
       id: "selected",
-      label: "Отобранные",
+      label: t("Отобранные", "Selected"),
       icon: CheckCircleIcon,
       count: articleCounts.selected,
     },
     {
       id: "excluded",
-      label: "Исключённые",
+      label: t("Исключённые", "Excluded"),
       icon: XCircleIcon,
       count: articleCounts.excluded,
     },
     {
       id: "all",
-      label: "Все",
+      label: t("Все", "All"),
       icon: ListBulletIcon,
       count: articleCounts.total,
     },
     {
       id: "deleted",
-      label: "Корзина",
+      label: t("Корзина", "Trash"),
       icon: TrashIcon,
       count: articleCounts.deleted,
     },
@@ -152,13 +152,13 @@ export default function AppSidebar({
   const mainNavItems: NavItem[] = [
     {
       id: "projects",
-      label: "Проекты",
+      label: t("Проекты", "Projects"),
       icon: FolderIcon,
       path: "/projects",
     },
     {
       id: "docs",
-      label: "Документация",
+      label: t("Документация", "Documentation"),
       icon: BookOpenIcon,
       path: "/docs",
     },
@@ -168,7 +168,7 @@ export default function AppSidebar({
   if (role === "reviewer" || role === "editor" || role === "chief_editor") {
     mainNavItems.push({
       id: "reviewer",
-      label: "Рецензирование",
+      label: t("Рецензирование", "Reviewing"),
       icon: ClipboardDocumentListIcon,
       path: "/reviewer",
     });
@@ -176,7 +176,7 @@ export default function AppSidebar({
   if (role === "chief_editor") {
     mainNavItems.push({
       id: "chief-editor",
-      label: "Редакция",
+      label: t("Редакция", "Editorial"),
       icon: DocumentTextIcon,
       path: "/chief-editor",
     });
@@ -186,43 +186,43 @@ export default function AppSidebar({
   const projectNavItems: NavItem[] = [
     {
       id: "articles",
-      label: "База статей",
+      label: t("База статей", "Article Database"),
       icon: ArchiveBoxIcon,
       tab: "articles",
     },
     {
       id: "documents",
-      label: "Документы",
+      label: t("Документы", "Documents"),
       icon: DocumentTextIcon,
       tab: "documents",
     },
     {
       id: "files",
-      label: "Файлы",
+      label: t("Файлы", "Files"),
       icon: FolderOpenIcon,
       tab: "files",
     },
     {
       id: "statistics",
-      label: "Статистика",
+      label: t("Статистика", "Statistics"),
       icon: ChartBarIcon,
       tab: "statistics",
     },
     {
       id: "graph",
-      label: "Граф цитирований",
+      label: t("Граф цитирований", "Citation Graph"),
       icon: ShareIcon,
       tab: "graph",
     },
     {
       id: "publisher",
-      label: "Издательство",
+      label: t("Издательство", "Publisher"),
       icon: BookOpenIcon,
       tab: "publisher",
     },
     {
       id: "settings",
-      label: "Настройки проекта",
+      label: t("Настройки проекта", "Project Settings"),
       icon: Cog6ToothIcon,
       tab: "settings",
     },
@@ -314,7 +314,11 @@ export default function AppSidebar({
         <button
           className="sidebar-collapse-toggle"
           onClick={() => setCollapsed(!collapsed)}
-          title={isCollapsedView ? "Развернуть" : "Свернуть"}
+          title={
+            isCollapsedView
+              ? t("Развернуть", "Expand")
+              : t("Свернуть", "Collapse")
+          }
           type="button"
         >
           {isCollapsedView ? (
@@ -346,11 +350,11 @@ export default function AppSidebar({
               navigate("/projects");
               onCloseMobile?.();
             }}
-            title="Назад к проектам"
+            title={t("Назад к проектам", "Back to projects")}
             type="button"
           >
             <ArrowLeftIcon className="w-4 h-4" />
-            {showSidebarLabels && <span>К проектам</span>}
+            {showSidebarLabels && <span>{t("К проектам", "To projects")}</span>}
           </button>
           {showSidebarLabels && projectName && (
             <>
@@ -364,8 +368,10 @@ export default function AppSidebar({
                   )}
                   {projectUpdatedAt && (
                     <span className="sidebar-project-date">
-                      Обновлён:{" "}
-                      {new Date(projectUpdatedAt).toLocaleDateString("ru-RU")}
+                      {t("Обновлён", "Updated")}:{" "}
+                      {new Date(projectUpdatedAt).toLocaleDateString(
+                        lang === "ru" ? "ru-RU" : "en-US",
+                      )}
                     </span>
                   )}
                 </div>
@@ -489,7 +495,9 @@ export default function AppSidebar({
             className="theme-switcher"
             data-active={isDark ? "dark" : "light"}
           >
-            <legend className="theme-switcher__legend">Выберите тему</legend>
+            <legend className="theme-switcher__legend">
+              {t("Выберите тему", "Choose theme")}
+            </legend>
             <label className="theme-switcher__option">
               <input
                 className="theme-switcher__input"
@@ -550,7 +558,7 @@ export default function AppSidebar({
           <fieldset
             className="lang-switcher"
             role="radiogroup"
-            aria-label="Язык интерфейса"
+            aria-label={t("Язык интерфейса", "Interface language")}
           >
             <label
               className={`lang-switcher__option ${lang === "ru" ? "lang-switcher__option--active" : ""}`}
@@ -589,7 +597,7 @@ export default function AppSidebar({
               navigate("/settings");
               onCloseMobile?.();
             }}
-            title="Перейти в настройки"
+            title={t("Перейти в настройки", "Go to settings")}
             type="button"
           >
             <div className="sidebar-user-avatar">
@@ -611,12 +619,12 @@ export default function AppSidebar({
             handleLogout();
             onCloseMobile?.();
           }}
-          title="Выйти"
+          title={t("Выйти", "Logout")}
           type="button"
         >
           <ArrowRightOnRectangleIcon className="sidebar-footer-icon" />
           {showSidebarLabels && (
-            <span className="sidebar-footer-label">Выйти</span>
+            <span className="sidebar-footer-label">{t("Выйти", "Logout")}</span>
           )}
         </button>
       </div>
