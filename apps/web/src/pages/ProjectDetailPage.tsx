@@ -8,6 +8,7 @@ import React, {
 import { getErrorMessage } from "../lib/errorUtils";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useProjectContext } from "../components/AppLayout";
+import { useLanguage } from "../lib/LanguageContext";
 import {
   apiGetProject,
   apiUpdateProject,
@@ -601,6 +602,7 @@ function FileImagePreview({
 }
 
 export default function ProjectDetailPage() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const nav = useNavigate();
   const { user } = useAuth();
@@ -1553,7 +1555,9 @@ export default function ProjectDetailPage() {
   if (loading) {
     return (
       <div className="container">
-        <div className="muted">Загрузка проекта...</div>
+        <div className="muted">
+          {t("Загрузка проекта...", "Loading project...")}
+        </div>
       </div>
     );
   }
@@ -1561,9 +1565,11 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <div className="container">
-        <div className="alert">{error || "Проект не найден"}</div>
+        <div className="alert">
+          {error || t("Проект не найден", "Project not found")}
+        </div>
         <button className="btn" onClick={() => nav("/projects")} type="button">
-          ← К проектам
+          {t("← К проектам", "← To projects")}
         </button>
       </div>
     );
@@ -1588,7 +1594,11 @@ export default function ProjectDetailPage() {
         {/* === ARTICLES TAB === */}
         {activeTab === "articles" && id && (
           <Suspense
-            fallback={<div className="p-8 text-center">Загрузка статей...</div>}
+            fallback={
+              <div className="p-8 text-center">
+                {t("Загрузка статей...", "Loading articles...")}
+              </div>
+            }
           >
             <ArticlesSection
               projectId={id}
@@ -1602,14 +1612,16 @@ export default function ProjectDetailPage() {
         {activeTab === "documents" && (
           <div className="documents-page">
             <div className="documents-header">
-              <h5 className="documents-header-title">Документы проекта</h5>
+              <h5 className="documents-header-title">
+                {t("Документы проекта", "Project Documents")}
+              </h5>
               {canEdit && (
                 <button
                   className="btn"
                   onClick={() => setShowCreateDoc(true)}
                   type="button"
                 >
-                  + Новый документ
+                  {t("+ Новый документ", "+ New Document")}
                 </button>
               )}
             </div>
@@ -1621,11 +1633,14 @@ export default function ProjectDetailPage() {
               >
                 <div className="stack">
                   <label className="stack">
-                    <span>Название документа</span>
+                    <span>{t("Название документа", "Document Name")}</span>
                     <input
                       value={newDocTitle}
                       onChange={(e) => setNewDocTitle(e.target.value)}
-                      placeholder="Глава 1. Обзор литературы"
+                      placeholder={t(
+                        "Глава 1. Обзор литературы",
+                        "Chapter 1. Literature Review",
+                      )}
                       required
                     />
                   </label>
@@ -1635,14 +1650,16 @@ export default function ProjectDetailPage() {
                       disabled={creatingDoc}
                       type="submit"
                     >
-                      {creatingDoc ? "Создание..." : "Создать"}
+                      {creatingDoc
+                        ? t("Создание...", "Creating...")
+                        : t("Создать", "Create")}
                     </button>
                     <button
                       className="btn secondary"
                       onClick={() => setShowCreateDoc(false)}
                       type="button"
                     >
-                      Отмена
+                      {t("Отмена", "Cancel")}
                     </button>
                   </div>
                 </div>
@@ -1651,8 +1668,10 @@ export default function ProjectDetailPage() {
 
             {documents.length === 0 ? (
               <div className="muted">
-                Нет документов. Создайте первый документ для написания текста
-                диссертации.
+                {t(
+                  "Нет документов. Создайте первый документ для написания текста диссертации.",
+                  "No documents. Create the first document to write your dissertation text.",
+                )}
               </div>
             ) : (
               <div className="documents-grid">
@@ -3643,7 +3662,10 @@ export default function ProjectDetailPage() {
                         {/* Если нет данных */}
                         {!tableData && (
                           <div className="stat-no-data">
-                            Нет данных для отображения
+                            {t(
+                              "Нет данных для отображения",
+                              "No data to display",
+                            )}
                           </div>
                         )}
                       </div>
@@ -3653,8 +3675,8 @@ export default function ProjectDetailPage() {
                           <span className="stat-tag">
                             {stat.data_classification.variableType ===
                             "quantitative"
-                              ? "Количественные"
-                              : "Качественные"}
+                              ? t("Количественные", "Quantitative")
+                              : t("Качественные", "Qualitative")}
                           </span>
                           <span className="stat-tag">
                             {stat.data_classification.subType}

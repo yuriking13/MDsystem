@@ -11,16 +11,21 @@ import {
 } from "../lib/medPublisherApi";
 import { getErrorMessage } from "../lib/errorUtils";
 import { useAuth } from "../lib/AuthContext";
+import { useLanguage } from "../lib/LanguageContext";
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Черновик",
-  submitted: "Отправлена",
-  under_review: "На рецензировании",
-  revision_requested: "Доработка",
-  accepted: "Принята",
-  rejected: "Отклонена",
-  published: "Опубликована",
-};
+function getStatusLabels(
+  t: (ru: string, en: string) => string,
+): Record<string, string> {
+  return {
+    draft: t("Черновик", "Draft"),
+    submitted: t("Отправлена", "Submitted"),
+    under_review: t("На рецензировании", "Under Review"),
+    revision_requested: t("Доработка", "Revision Requested"),
+    accepted: t("Принята", "Accepted"),
+    rejected: t("Отклонена", "Rejected"),
+    published: t("Опубликована", "Published"),
+  };
+}
 
 function fmtDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -36,7 +41,9 @@ function fmtDate(value: string | null | undefined): string {
 }
 
 export default function ReviewerDashboardPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
+  const STATUS_LABELS = getStatusLabels(t);
   const [dashboard, setDashboard] =
     useState<MedPublisherDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -146,20 +153,26 @@ export default function ReviewerDashboardPage() {
   if (loading && !dashboard) {
     return (
       <div className="page-content">
-        <div className="muted">Загрузка данных рецензента...</div>
+        <div className="muted">
+          {t("Загрузка данных рецензента...", "Loading reviewer data...")}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="page-content">
-      <h2>Кабинет рецензента</h2>
+      <h2>{t("Кабинет рецензента", "Reviewer Dashboard")}</h2>
       <p className="muted mb-4">
-        Здесь отображаются назначенные вам рукописи для рецензирования.
+        {t(
+          "Здесь отображаются назначенные вам рукописи для рецензирования.",
+          "Here you can see manuscripts assigned to you for review.",
+        )}
         {user?.email && (
           <>
             {" "}
-            Вы вошли как <strong>{user.email}</strong>.
+            {t("Вы вошли как", "You are logged in as")}{" "}
+            <strong>{user.email}</strong>.
           </>
         )}
       </p>

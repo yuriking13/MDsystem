@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../lib/LanguageContext";
 
 export default function NewLandingPage() {
+  const { t } = useLanguage();
   const [isLoaded, setIsLoaded] = useState(false);
   const [_activeSection, setActiveSection] = useState("hero");
   const heroRef = useRef<HTMLElement>(null);
@@ -50,19 +52,19 @@ export default function NewLandingPage() {
                 href="#problems"
                 className="text-gray-600 hover:text-blue-600 transition-colors"
               >
-                Проблемы
+                {t("Проблемы", "Problems")}
               </a>
               <a
                 href="#solution"
                 className="text-gray-600 hover:text-blue-600 transition-colors"
               >
-                Решение
+                {t("Решение", "Solution")}
               </a>
               <a
                 href="#features"
                 className="text-gray-600 hover:text-blue-600 transition-colors"
               >
-                Возможности
+                {t("Возможности", "Features")}
               </a>
             </nav>
 
@@ -71,13 +73,13 @@ export default function NewLandingPage() {
                 to="/login"
                 className="text-gray-600 hover:text-blue-600 transition-colors"
               >
-                Войти
+                {t("Войти", "Sign In")}
               </Link>
               <Link
                 to="/register"
                 className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transform hover:scale-105 transition-all duration-200"
               >
-                Попробовать
+                {t("Попробовать", "Try It")}
               </Link>
             </div>
           </div>
@@ -94,11 +96,15 @@ export default function NewLandingPage() {
       >
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-6xl md:text-7xl font-black mb-6 leading-none">
-            <span className="block text-gray-900">Научные</span>
-            <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              исследования
+            <span className="block text-gray-900">
+              {t("Научные", "Scientific")}
             </span>
-            <span className="block text-gray-900">без боли</span>
+            <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+              {t("исследования", "research")}
+            </span>
+            <span className="block text-gray-900">
+              {t("без боли", "without pain")}
+            </span>
           </h1>
 
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto leading-relaxed">

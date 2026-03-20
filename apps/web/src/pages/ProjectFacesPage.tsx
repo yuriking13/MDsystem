@@ -1,28 +1,40 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../lib/LanguageContext";
 
-const faces = [
-  {
-    name: "Основатель проекта",
-    role: "Product & Research Lead",
-    description:
-      "Формирует научную стратегию платформы, развивает методологию анализа и определяет дорожную карту продукта.",
-  },
-  {
-    name: "Инженерная команда",
-    role: "Platform Engineering",
-    description:
-      "Отвечает за инфраструктуру, качество данных, масштабируемость поиска и скорость графовых вычислений.",
-  },
-  {
-    name: "AI-направление",
-    role: "Applied AI",
-    description:
-      "Развивает семантические модели, кластеры и автоматические подсказки для исследовательских сценариев.",
-  },
-];
+function getFaces(t: (ru: string, en: string) => string) {
+  return [
+    {
+      name: t("Основатель проекта", "Project Founder"),
+      role: "Product & Research Lead",
+      description: t(
+        "Формирует научную стратегию платформы, развивает методологию анализа и определяет дорожную карту продукта.",
+        "Shapes the scientific strategy of the platform, develops analysis methodology and defines the product roadmap.",
+      ),
+    },
+    {
+      name: t("Инженерная команда", "Engineering Team"),
+      role: "Platform Engineering",
+      description: t(
+        "Отвечает за инфраструктуру, качество данных, масштабируемость поиска и скорость графовых вычислений.",
+        "Responsible for infrastructure, data quality, search scalability and graph computation speed.",
+      ),
+    },
+    {
+      name: t("AI-направление", "AI Direction"),
+      role: "Applied AI",
+      description: t(
+        "Развивает семантические модели, кластеры и автоматические подсказки для исследовательских сценариев.",
+        "Develops semantic models, clusters and automatic suggestions for research scenarios.",
+      ),
+    },
+  ];
+}
 
 export default function ProjectFacesPage() {
+  const { t } = useLanguage();
+  const faces = getFaces(t);
+
   return (
     <div className="public-page">
       <header className="public-header">
@@ -37,13 +49,13 @@ export default function ProjectFacesPage() {
           </Link>
           <div className="public-header-actions">
             <Link to="/" className="public-btn public-btn-secondary">
-              На лендинг
+              {t("На лендинг", "To Landing")}
             </Link>
             <Link to="/offer" className="public-btn public-btn-secondary">
-              Оферта
+              {t("Оферта", "Terms")}
             </Link>
             <Link to="/login" className="public-btn">
-              Войти
+              {t("Войти", "Sign In")}
             </Link>
           </div>
         </div>
@@ -52,10 +64,12 @@ export default function ProjectFacesPage() {
       <main className="public-main">
         <section className="public-section">
           <div className="public-section-header">
-            <h1>Лица проекта</h1>
+            <h1>{t("Лица проекта", "Project Faces")}</h1>
             <p>
-              Раздел команды в демо-режиме. Временно используется логотип вместо
-              персональных фотографий.
+              {t(
+                "Раздел команды в демо-режиме. Временно используется логотип вместо персональных фотографий.",
+                "Team section in demo mode. Logo is used temporarily instead of personal photos.",
+              )}
             </p>
           </div>
 

@@ -12,6 +12,7 @@ import {
   IconShare,
   IconUsers,
 } from "../components/FlowbiteIcons";
+import { useLanguage } from "../lib/LanguageContext";
 
 type DocSectionId =
   | "overview"
@@ -822,6 +823,7 @@ const DOC_SECTION_ICON_COMPONENTS: Record<
 };
 
 export default function DocumentationPage(): React.JSX.Element {
+  const { t } = useLanguage();
   const [activeSectionId, setActiveSectionId] = useState<DocSectionId>(
     DOC_SECTIONS[0].id,
   );
@@ -920,7 +922,7 @@ export default function DocumentationPage(): React.JSX.Element {
       <div className="row space docs-page-header">
         <div className="row gap">
           <Link to="/projects" className="btn secondary">
-            ← К проектам
+            {t("← К проектам", "← To Projects")}
           </Link>
           <h1 className="docs-page-title">
             <IconBookOpen
@@ -928,7 +930,7 @@ export default function DocumentationPage(): React.JSX.Element {
               className="docs-icon-accent"
               aria-hidden="true"
             />
-            Документация
+            {t("Документация", "Documentation")}
           </h1>
         </div>
       </div>

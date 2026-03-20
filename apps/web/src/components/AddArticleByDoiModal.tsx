@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { getErrorMessage } from "../lib/errorUtils";
 import { apiAddArticleByDoi } from "../lib/api";
+import { useLanguage } from "../lib/LanguageContext";
 
 type Props = {
   projectId: string;
@@ -13,6 +14,7 @@ export default function AddArticleByDoiModal({
   onClose,
   onSuccess,
 }: Props) {
+  const { t } = useLanguage();
   const [doi, setDoi] = useState("");
   const [status, setStatus] = useState<"candidate" | "selected">("candidate");
   const [loading, setLoading] = useState(false);
@@ -22,7 +24,7 @@ export default function AddArticleByDoiModal({
     e.preventDefault();
 
     if (!doi.trim()) {
-      setError("Введите DOI");
+      setError(t("Введите DOI", "Please enter DOI"));
       return;
     }
 
@@ -41,12 +43,25 @@ export default function AddArticleByDoiModal({
 
       if (errMsg.includes("404")) {
         setError(
-          "Статья с таким DOI не найдена в базе Crossref. Проверьте правильность DOI.",
+          t(
+            "Статья с таким DOI не найдена в базе Crossref. Проверьте правильность DOI.",
+            "Article with this DOI was not found in Crossref database. Please check the DOI.",
+          ),
         );
       } else if (errMsg.includes("409")) {
-        setError("Эта статья уже добавлена в проект.");
+        setError(
+          t(
+            "Эта статья уже добавлена в проект.",
+            "This article is already added to the project.",
+          ),
+        );
       } else if (errMsg.includes("403")) {
-        setError("У вас нет прав на редактирование этого проекта.");
+        setError(
+          t(
+            "У вас нет прав на редактирование этого проекта.",
+            "You don't have permission to edit this project.",
+          ),
+        );
       } else {
         setError(errMsg);
       }
@@ -62,7 +77,9 @@ export default function AddArticleByDoiModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
-          <h2 className="modal-title">Добавить статью по DOI</h2>
+          <h2 className="modal-title">
+            {t("Добавить статью по DOI", "Add Article by DOI")}
+          </h2>
           <button className="modal-close" onClick={onClose} disabled={loading}>
             <svg
               className="w-5 h-5"
@@ -83,24 +100,33 @@ export default function AddArticleByDoiModal({
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             <label className="form-label">
-              <span className="form-label-text">DOI статьи</span>
+              <span className="form-label-text">
+                {t("DOI статьи", "Article DOI")}
+              </span>
               <input
                 type="text"
                 className="form-input"
                 value={doi}
                 onChange={(e) => setDoi(e.target.value)}
-                placeholder="Например: 10.1038/nature12373"
+                placeholder={t(
+                  "Например: 10.1038/nature12373",
+                  "Example: 10.1038/nature12373",
+                )}
                 disabled={loading}
                 autoFocus
               />
               <small className="add-article-doi-help">
-                Введите полный DOI статьи. Данные будут загружены из базы
-                Crossref.
+                {t(
+                  "Введите полный DOI статьи. Данные будут загружены из базы Crossref.",
+                  "Enter the full article DOI. Data will be loaded from Crossref database.",
+                )}
               </small>
             </label>
 
             <label className="form-label">
-              <span className="form-label-text">Статус в проекте</span>
+              <span className="form-label-text">
+                {t("Статус в проекте", "Project Status")}
+              </span>
               <div className="add-article-doi-status-options">
                 <label className="add-article-doi-status-option">
                   <input
@@ -110,7 +136,7 @@ export default function AddArticleByDoiModal({
                     onChange={(e) => setStatus(e.target.value as "candidate")}
                     disabled={loading}
                   />
-                  Кандидат
+                  {t("Кандидат", "Candidate")}
                 </label>
                 <label className="add-article-doi-status-option">
                   <input
@@ -120,7 +146,7 @@ export default function AddArticleByDoiModal({
                     onChange={(e) => setStatus(e.target.value as "selected")}
                     disabled={loading}
                   />
-                  Отобранная
+                  {t("Отобранная", "Selected")}
                 </label>
               </div>
             </label>
@@ -135,14 +161,14 @@ export default function AddArticleByDoiModal({
               onClick={onClose}
               disabled={loading}
             >
-              Отмена
+              {t("Отмена", "Cancel")}
             </button>
             <button
               type="submit"
               className="btn-primary"
               disabled={loading || !doi.trim()}
             >
-              {loading ? "Добавление..." : "Добавить"}
+              {loading ? t("Добавление...", "Adding...") : t("Добавить", "Add")}
             </button>
           </div>
         </form>

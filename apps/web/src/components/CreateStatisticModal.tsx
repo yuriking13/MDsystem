@@ -9,6 +9,7 @@ import ChartFromTable, {
   getRecommendedStatMethod,
 } from "./ChartFromTable";
 import { apiCreateStatistic, type ProjectStatistic } from "../lib/api";
+import { useLanguage } from "../lib/LanguageContext";
 
 // SVG Icons (Flowbite/Heroicons style)
 const PlusIcon = () => (
@@ -198,24 +199,27 @@ type Props = {
   onCreated: (statistic: ProjectStatistic) => void;
 };
 
-const DEFAULT_TABLE_DATA: TableData = {
-  headers: ["Категория", "Значение"],
+const getDefaultTableData = (
+  t: (ru: string, en: string) => string,
+): TableData => ({
+  headers: [t("Категория", "Category"), t("Значение", "Value")],
   rows: [
-    ["Группа 1", "10"],
-    ["Группа 2", "25"],
-    ["Группа 3", "15"],
+    [t("Группа 1", "Group 1"), "10"],
+    [t("Группа 2", "Group 2"), "25"],
+    [t("Группа 3", "Group 3"), "15"],
   ],
-};
+});
 
 export default function CreateStatisticModal({
   projectId,
   onClose,
   onCreated,
 }: Props) {
-  const [title, setTitle] = useState("Новый график");
+  const { t } = useLanguage();
+  const [title, setTitle] = useState(t("Новый график", "New Chart"));
   const [description, setDescription] = useState("");
   const [chartType, setChartType] = useState<ChartType>("bar");
-  const [tableData, setTableData] = useState<TableData>(DEFAULT_TABLE_DATA);
+  const [tableData, setTableData] = useState<TableData>(getDefaultTableData(t));
   const [labelColumn, setLabelColumn] = useState(0);
   const [dataColumns, setDataColumns] = useState<number[]>([1]);
   const [bins, setBins] = useState(10);
@@ -292,7 +296,10 @@ export default function CreateStatisticModal({
     setTableData({
       headers: [
         ...tableData.headers,
-        `Колонка ${tableData.headers.length + 1}`,
+        t(
+          `Колонка ${tableData.headers.length + 1}`,
+          `Column ${tableData.headers.length + 1}`,
+        ),
       ],
       rows: tableData.rows.map((row) => [...row, ""]),
     });
@@ -325,7 +332,7 @@ export default function CreateStatisticModal({
 
   const handleCreate = async () => {
     if (!title.trim()) {
-      setError("Введите название");
+      setError(t("Введите название", "Please enter title"));
       return;
     }
 
@@ -354,7 +361,11 @@ export default function CreateStatisticModal({
 
       onCreated(result.statistic);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Ошибка создания");
+      setError(
+        err instanceof Error
+          ? err.message
+          : t("Ошибка создания", "Creation error"),
+      );
     } finally {
       setSaving(false);
     }
@@ -388,7 +399,7 @@ export default function CreateStatisticModal({
         <div className="modal-header">
           <h3 className="modal-title statistic-modal-title">
             <PlusIcon />
-            Создать таблицу и график
+            {t("Создать таблицу и график", "Create Table and Chart")}
           </h3>
           <button className="modal-close" onClick={onClose}>
             <CloseIcon />
@@ -404,21 +415,21 @@ export default function CreateStatisticModal({
               onClick={() => setActiveTab("table")}
             >
               <TableIcon />
-              1. Ввод данных
+              {t("1. Ввод данных", "1. Data Input")}
             </button>
             <button
               className={`tab ${activeTab === "chart" ? "active" : ""}`}
               onClick={() => setActiveTab("chart")}
             >
               <ChartIcon />
-              2. Тип графика
+              {t("2. Тип графика", "2. Chart Type")}
             </button>
             <button
               className={`tab ${activeTab === "classification" ? "active" : ""}`}
               onClick={() => setActiveTab("classification")}
             >
               <BeakerIcon />
-              3. Классификация
+              {t("3. Классификация", "3. Classification")}
             </button>
           </div>
 
@@ -427,11 +438,14 @@ export default function CreateStatisticModal({
             <div>
               <div className="row gap create-stat-title-row">
                 <label className="stack create-stat-title-field">
-                  <span>Название графика</span>
+                  <span>{t("Название графика", "Chart Title")}</span>
                   <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Например: Распределение по возрасту"
+                    placeholder={t(
+                      "Например: Распределение по возрасту",
+                      "Example: Age Distribution",
+                    )}
                   />
                 </label>
               </div>
@@ -439,21 +453,23 @@ export default function CreateStatisticModal({
               <div className="row space create-stat-table-meta-row">
                 <span className="muted create-stat-table-meta-label">
                   <TableDataIcon />
-                  Таблица данных: {tableData.rows.length} строк ×{" "}
-                  {tableData.headers.length} колонок
+                  {t(
+                    `Таблица данных: ${tableData.rows.length} строк × ${tableData.headers.length} колонок`,
+                    `Data table: ${tableData.rows.length} rows × ${tableData.headers.length} columns`,
+                  )}
                 </span>
                 <div className="row gap">
                   <button
                     className="btn secondary create-stat-table-action-button"
                     onClick={addColumn}
                   >
-                    + Колонка
+                    {t("+ Колонка", "+ Column")}
                   </button>
                   <button
                     className="btn secondary create-stat-table-action-button"
                     onClick={addRow}
                   >
-                    + Строка
+                    {t("+ Строка", "+ Row")}
                   </button>
                 </div>
               </div>
@@ -478,7 +494,7 @@ export default function CreateStatisticModal({
                               <button
                                 className="btn secondary create-stat-remove-column-button"
                                 onClick={() => removeColumn(i)}
-                                title="Удалить колонку"
+                                title={t("Удалить колонку", "Remove column")}
                               >
                                 ✕
                               </button>
@@ -498,7 +514,7 @@ export default function CreateStatisticModal({
                               <button
                                 className="btn secondary create-stat-remove-row-button"
                                 onClick={() => removeRow(ri)}
-                                title="Удалить строку"
+                                title={t("Удалить строку", "Remove row")}
                               >
                                 ✕
                               </button>
@@ -526,8 +542,10 @@ export default function CreateStatisticModal({
               <div className="card create-stat-table-hint-card">
                 <div className="muted create-stat-table-hint-text">
                   <LightBulbIcon />
-                  Введите данные в таблицу, затем перейдите к выбору типа
-                  графика
+                  {t(
+                    "Введите данные в таблицу, затем перейдите к выбору типа графика",
+                    "Enter data in the table, then proceed to chart type selection",
+                  )}
                 </div>
               </div>
             </div>
@@ -539,7 +557,7 @@ export default function CreateStatisticModal({
               <div className="create-stat-chart-config-column">
                 <div className="create-stat-chart-type-block">
                   <span className="muted create-stat-chart-type-hint-label">
-                    Выберите тип графика
+                    {t("Выберите тип графика", "Select chart type")}
                   </span>
                   <div className="create-stat-chart-type-buttons">
                     {allChartTypes.map((t) => {
@@ -568,27 +586,31 @@ export default function CreateStatisticModal({
                 {chartType === "scatter" ? (
                   <>
                     <label className="stack create-stat-field-spacing">
-                      <span>Ось X (горизонтальная)</span>
+                      <span>
+                        {t("Ось X (горизонтальная)", "X-axis (horizontal)")}
+                      </span>
                       <select
                         value={xColumn}
                         onChange={(e) => setXColumn(Number(e.target.value))}
                       >
                         {tableData.headers.map((h, i) => (
                           <option key={i} value={i}>
-                            {h || `Колонка ${i + 1}`}
+                            {h || t(`Колонка ${i + 1}`, `Column ${i + 1}`)}
                           </option>
                         ))}
                       </select>
                     </label>
                     <label className="stack create-stat-field-spacing">
-                      <span>Ось Y (вертикальная)</span>
+                      <span>
+                        {t("Ось Y (вертикальная)", "Y-axis (vertical)")}
+                      </span>
                       <select
                         value={yColumn}
                         onChange={(e) => setYColumn(Number(e.target.value))}
                       >
                         {tableData.headers.map((h, i) => (
                           <option key={i} value={i}>
-                            {h || `Колонка ${i + 1}`}
+                            {h || t(`Колонка ${i + 1}`, `Column ${i + 1}`)}
                           </option>
                         ))}
                       </select>
@@ -597,7 +619,12 @@ export default function CreateStatisticModal({
                 ) : chartType === "histogram" ? (
                   <>
                     <label className="stack create-stat-field-spacing">
-                      <span>Колонка с данными для гистограммы</span>
+                      <span>
+                        {t(
+                          "Колонка с данными для гистограммы",
+                          "Data column for histogram",
+                        )}
+                      </span>
                       <select
                         value={dataColumns[0] || 1}
                         onChange={(e) =>
@@ -606,13 +633,18 @@ export default function CreateStatisticModal({
                       >
                         {tableData.headers.map((h, i) => (
                           <option key={i} value={i}>
-                            {h || `Колонка ${i + 1}`}
+                            {h || t(`Колонка ${i + 1}`, `Column ${i + 1}`)}
                           </option>
                         ))}
                       </select>
                     </label>
                     <label className="stack create-stat-field-spacing">
-                      <span>Количество интервалов: {bins}</span>
+                      <span>
+                        {t(
+                          `Количество интервалов: ${bins}`,
+                          `Number of bins: ${bins}`,
+                        )}
+                      </span>
                       <input
                         type="range"
                         min={3}
@@ -625,21 +657,29 @@ export default function CreateStatisticModal({
                 ) : (
                   <>
                     <label className="stack create-stat-field-spacing">
-                      <span>Колонка меток (подписи на оси X)</span>
+                      <span>
+                        {t(
+                          "Колонка меток (подписи на оси X)",
+                          "Label column (X-axis labels)",
+                        )}
+                      </span>
                       <select
                         value={labelColumn}
                         onChange={(e) => setLabelColumn(Number(e.target.value))}
                       >
                         {tableData.headers.map((h, i) => (
                           <option key={i} value={i}>
-                            {h || `Колонка ${i + 1}`}
+                            {h || t(`Колонка ${i + 1}`, `Column ${i + 1}`)}
                           </option>
                         ))}
                       </select>
                     </label>
                     <div className="create-stat-field-spacing">
                       <span className="muted">
-                        Колонки с данными (значения на оси Y)
+                        {t(
+                          "Колонки с данными (значения на оси Y)",
+                          "Data columns (Y-axis values)",
+                        )}
                       </span>
                       <div className="row gap create-stat-data-columns-row">
                         {tableData.headers.map(
@@ -656,7 +696,8 @@ export default function CreateStatisticModal({
                                   className="create-stat-checkbox-auto"
                                 />
                                 <span className="create-stat-option-text">
-                                  {h || `Колонка ${i + 1}`}
+                                  {h ||
+                                    t(`Колонка ${i + 1}`, `Column ${i + 1}`)}
                                 </span>
                               </label>
                             ),
@@ -670,7 +711,7 @@ export default function CreateStatisticModal({
               {/* Preview */}
               <div className="create-stat-preview-panel">
                 <div className="muted create-stat-preview-label">
-                  Предпросмотр:
+                  {t("Предпросмотр:", "Preview:")}
                 </div>
                 {chartType === "scatter" ||
                 chartType === "histogram" ||
@@ -683,7 +724,7 @@ export default function CreateStatisticModal({
                   />
                 ) : (
                   <div className="muted create-stat-preview-empty">
-                    Выберите колонки с данными
+                    {t("Выберите колонки с данными", "Select data columns")}
                   </div>
                 )}
               </div>
@@ -697,17 +738,20 @@ export default function CreateStatisticModal({
                 <div className="row space create-stat-classification-header">
                   <strong className="create-stat-classification-title">
                     <BeakerIcon />
-                    Классификация данных
+                    {t("Классификация данных", "Data Classification")}
                   </strong>
                   <span className="muted create-stat-classification-subtitle">
-                    Рекомендуемый метод: {recommendedMethod}
+                    {t(
+                      `Рекомендуемый метод: ${recommendedMethod}`,
+                      `Recommended method: ${recommendedMethod}`,
+                    )}
                   </span>
                 </div>
 
                 <div className="row gap create-stat-classification-fields">
                   <label className="stack create-stat-classification-field">
                     <span className="muted create-stat-classification-field-label">
-                      Тип переменной
+                      {t("Тип переменной", "Variable Type")}
                     </span>
                     <select
                       value={variableType}
@@ -717,14 +761,18 @@ export default function CreateStatisticModal({
                         )
                       }
                     >
-                      <option value="quantitative">Количественные</option>
-                      <option value="qualitative">Качественные</option>
+                      <option value="quantitative">
+                        {t("Количественные", "Quantitative")}
+                      </option>
+                      <option value="qualitative">
+                        {t("Качественные", "Qualitative")}
+                      </option>
                     </select>
                   </label>
 
                   <label className="stack create-stat-classification-field">
                     <span className="muted create-stat-classification-field-label">
-                      Подтип
+                      {t("Подтип", "Subtype")}
                     </span>
                     <select
                       value={subType}
@@ -736,14 +784,24 @@ export default function CreateStatisticModal({
                     >
                       {variableType === "quantitative" ? (
                         <>
-                          <option value="continuous">Непрерывные</option>
-                          <option value="discrete">Дискретные</option>
+                          <option value="continuous">
+                            {t("Непрерывные", "Continuous")}
+                          </option>
+                          <option value="discrete">
+                            {t("Дискретные", "Discrete")}
+                          </option>
                         </>
                       ) : (
                         <>
-                          <option value="nominal">Номинальные</option>
-                          <option value="dichotomous">Дихотомические</option>
-                          <option value="ordinal">Порядковые</option>
+                          <option value="nominal">
+                            {t("Номинальные", "Nominal")}
+                          </option>
+                          <option value="dichotomous">
+                            {t("Дихотомические", "Dichotomous")}
+                          </option>
+                          <option value="ordinal">
+                            {t("Порядковые", "Ordinal")}
+                          </option>
                         </>
                       )}
                     </select>
@@ -752,7 +810,7 @@ export default function CreateStatisticModal({
                   {variableType === "quantitative" && (
                     <label className="stack create-stat-classification-field">
                       <span className="muted create-stat-classification-field-label">
-                        Распределение
+                        {t("Распределение", "Distribution")}
                       </span>
                       <select
                         value={
@@ -769,9 +827,11 @@ export default function CreateStatisticModal({
                             setIsNormalDistribution(e.target.value === "yes");
                         }}
                       >
-                        <option value="">Неизвестно</option>
-                        <option value="yes">Нормальное</option>
-                        <option value="no">Ненормальное</option>
+                        <option value="">{t("Неизвестно", "Unknown")}</option>
+                        <option value="yes">{t("Нормальное", "Normal")}</option>
+                        <option value="no">
+                          {t("Ненормальное", "Non-normal")}
+                        </option>
                       </select>
                     </label>
                   )}
@@ -779,11 +839,16 @@ export default function CreateStatisticModal({
               </div>
 
               <label className="stack create-stat-description-field">
-                <span>Описание (необязательно)</span>
+                <span>
+                  {t("Описание (необязательно)", "Description (optional)")}
+                </span>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Описание графика или метода анализа..."
+                  placeholder={t(
+                    "Описание графика или метода анализа...",
+                    "Chart or analysis method description...",
+                  )}
                   rows={3}
                   className="create-stat-description-textarea"
                 />
@@ -794,25 +859,36 @@ export default function CreateStatisticModal({
                 <div className="card create-stat-explanation-card">
                   <h5 className="create-stat-explanation-title">
                     <QuantitativeIcon />
-                    Количественные данные
+                    {t("Количественные данные", "Quantitative Data")}
                   </h5>
                   <p className="muted create-stat-explanation-text">
-                    <strong>Непрерывные:</strong> возраст, рост, вес, давление
+                    <strong>{t("Непрерывные:", "Continuous:")}</strong>{" "}
+                    {t(
+                      "возраст, рост, вес, давление",
+                      "age, height, weight, pressure",
+                    )}
                     <br />
-                    <strong>Дискретные:</strong> количество детей, число визитов
+                    <strong>{t("Дискретные:", "Discrete:")}</strong>{" "}
+                    {t(
+                      "количество детей, число визитов",
+                      "number of children, number of visits",
+                    )}
                   </p>
                 </div>
                 <div className="card create-stat-explanation-card">
                   <h5 className="create-stat-explanation-title">
                     <QualitativeIcon />
-                    Качественные данные
+                    {t("Качественные данные", "Qualitative Data")}
                   </h5>
                   <p className="muted create-stat-explanation-text">
-                    <strong>Номинальные:</strong> группа крови, пол
+                    <strong>{t("Номинальные:", "Nominal:")}</strong>{" "}
+                    {t("группа крови, пол", "blood type, gender")}
                     <br />
-                    <strong>Дихотомические:</strong> да/нет, жив/умер
+                    <strong>{t("Дихотомические:", "Dichotomous:")}</strong>{" "}
+                    {t("да/нет, жив/умер", "yes/no, alive/dead")}
                     <br />
-                    <strong>Порядковые:</strong> степень тяжести
+                    <strong>{t("Порядковые:", "Ordinal:")}</strong>{" "}
+                    {t("степень тяжести", "severity level")}
                   </p>
                 </div>
               </div>
@@ -831,7 +907,7 @@ export default function CreateStatisticModal({
                   )
                 }
               >
-                ← Назад
+                {t("← Назад", "← Back")}
               </button>
             )}
             {activeTab !== "classification" && (
@@ -843,13 +919,13 @@ export default function CreateStatisticModal({
                   )
                 }
               >
-                Далее →
+                {t("Далее →", "Next →")}
               </button>
             )}
           </div>
           <div className="row gap">
             <button className="btn-secondary" onClick={onClose}>
-              Отмена
+              {t("Отмена", "Cancel")}
             </button>
             <button
               className="btn-primary create-stat-create-button"
@@ -859,12 +935,12 @@ export default function CreateStatisticModal({
               {saving ? (
                 <>
                   <SpinnerIcon />
-                  Создание...
+                  {t("Создание...", "Creating...")}
                 </>
               ) : (
                 <>
                   <CheckIcon />
-                  Создать график
+                  {t("Создать график", "Create Chart")}
                 </>
               )}
             </button>

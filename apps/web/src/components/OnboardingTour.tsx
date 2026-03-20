@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from "react";
+import { useLanguage } from "../lib/LanguageContext";
 
-// Onboarding steps definition
-const ONBOARDING_STEPS = [
+// Helper function to get translated onboarding steps
+const getOnboardingSteps = (t: (ru: string, en: string) => string) => [
   {
     id: "welcome",
-    title: "Добро пожаловать в систему исследований!",
-    content:
+    title: t(
+      "Добро пожаловать в систему исследований!",
+      "Welcome to the Research Platform!",
+    ),
+    content: t(
       "Давайте познакомим вас с основными возможностями платформы. Это займёт всего пару минут.",
+      "Let's introduce you to the main features of the platform. This will only take a couple of minutes.",
+    ),
     icon: (
       <svg
         className="icon-lg"
@@ -25,9 +31,11 @@ const ONBOARDING_STEPS = [
   },
   {
     id: "projects",
-    title: "Проекты",
-    content:
+    title: t("Проекты", "Projects"),
+    content: t(
       "Создавайте проекты для каждого исследования. Внутри проекта вы сможете собирать статьи, писать документы, анализировать данные и работать в команде.",
+      "Create projects for each research study. Within a project you can collect articles, write documents, analyze data and collaborate with your team.",
+    ),
     icon: (
       <svg
         className="icon-lg"
@@ -46,9 +54,11 @@ const ONBOARDING_STEPS = [
   },
   {
     id: "articles",
-    title: "База статей",
-    content:
+    title: t("База статей", "Article Database"),
+    content: t(
       "Ищите научные статьи в PubMed, Semantic Scholar и других базах данных. Добавляйте их в проект и автоматически формируйте список литературы.",
+      "Search for scientific articles in PubMed, Semantic Scholar and other databases. Add them to your project and automatically generate bibliography.",
+    ),
     icon: (
       <svg
         className="icon-lg"
@@ -67,9 +77,11 @@ const ONBOARDING_STEPS = [
   },
   {
     id: "documents",
-    title: "Документы",
-    content:
+    title: t("Документы", "Documents"),
+    content: t(
       "Пишите главы вашего исследования в мощном редакторе. Вставляйте цитаты одним кликом, добавляйте таблицы и графики, экспортируйте в Word или PDF.",
+      "Write chapters of your research in a powerful editor. Insert citations with one click, add tables and charts, export to Word or PDF.",
+    ),
     icon: (
       <svg
         className="icon-lg"
@@ -88,9 +100,11 @@ const ONBOARDING_STEPS = [
   },
   {
     id: "statistics",
-    title: "Статистика",
-    content:
+    title: t("Статистика", "Statistics"),
+    content: t(
       "Создавайте таблицы данных и строите на их основе графики. ИИ-помощник может автоматически найти и добавить статистику из аннотаций статей.",
+      "Create data tables and build charts from them. AI assistant can automatically find and add statistics from article abstracts.",
+    ),
     icon: (
       <svg
         className="icon-lg"
@@ -109,9 +123,11 @@ const ONBOARDING_STEPS = [
   },
   {
     id: "graph",
-    title: "Граф цитирований",
-    content:
+    title: t("Граф цитирований", "Citation Graph"),
+    content: t(
       "Визуализируйте связи между статьями. Находите ключевые источники, расширяйте исследование через ссылки и используйте ИИ-ассистента для поиска.",
+      "Visualize connections between articles. Find key sources, expand research through links and use AI assistant for search.",
+    ),
     icon: (
       <svg
         className="icon-lg"
@@ -130,9 +146,11 @@ const ONBOARDING_STEPS = [
   },
   {
     id: "team",
-    title: "Командная работа",
-    content:
+    title: t("Командная работа", "Team Collaboration"),
+    content: t(
       "Приглашайте коллег в проект. Назначайте роли (владелец, редактор, наблюдатель) и работайте над документами вместе в реальном времени.",
+      "Invite colleagues to your project. Assign roles (owner, editor, observer) and collaborate on documents together in real time.",
+    ),
     icon: (
       <svg
         className="icon-lg"
@@ -151,9 +169,11 @@ const ONBOARDING_STEPS = [
   },
   {
     id: "done",
-    title: "Готово!",
-    content:
+    title: t("Готово!", "Done!"),
+    content: t(
       "Теперь вы знаете основы. Создайте свой первый проект и начните исследование. Если нужна помощь, загляните в раздел документации.",
+      "Now you know the basics. Create your first project and start researching. If you need help, check out the documentation section.",
+    ),
     icon: (
       <svg
         className="icon-lg"
@@ -183,6 +203,7 @@ export default function OnboardingTour({
   onComplete,
   forceShow = false,
 }: OnboardingTourProps) {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
 
@@ -228,6 +249,7 @@ export default function OnboardingTour({
 
   if (!isVisible) return null;
 
+  const ONBOARDING_STEPS = getOnboardingSteps(t);
   const step = ONBOARDING_STEPS[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;
@@ -240,7 +262,7 @@ export default function OnboardingTour({
           onClick={handleSkip}
           className="onboarding-close-btn"
           type="button"
-          title="Пропустить обучение"
+          title={t("Пропустить обучение", "Skip tutorial")}
         >
           <svg
             width={20}
@@ -309,7 +331,7 @@ export default function OnboardingTour({
                 d="M15.75 19.5L8.25 12l7.5-7.5"
               />
             </svg>
-            Назад
+            {t("Назад", "Back")}
           </button>
 
           <span className="onboarding-step-count">
@@ -325,7 +347,7 @@ export default function OnboardingTour({
           >
             {isLastStep ? (
               <>
-                Начать
+                {t("Начать", "Start")}
                 <svg
                   width={16}
                   height={16}
@@ -343,7 +365,7 @@ export default function OnboardingTour({
               </>
             ) : (
               <>
-                Далее
+                {t("Далее", "Next")}
                 <svg
                   width={16}
                   height={16}
@@ -371,7 +393,7 @@ export default function OnboardingTour({
               className="onboarding-skip-btn"
               type="button"
             >
-              Пропустить обучение
+              {t("Пропустить обучение", "Skip tutorial")}
             </button>
           </div>
         )}

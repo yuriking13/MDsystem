@@ -8,6 +8,7 @@ import React, {
 import { getErrorMessage } from "../lib/errorUtils";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProjectContext } from "../components/AppLayout";
+import { useLanguage } from "../lib/LanguageContext";
 import { editorEvents } from "../lib/editorEvents";
 import TiptapEditor, {
   TiptapEditorHandle,
@@ -262,6 +263,7 @@ function calculateDocumentStats(html: string): DocumentStats {
 }
 
 export default function DocumentPage() {
+  const { t } = useLanguage();
   const { projectId, docId } = useParams<{
     projectId: string;
     docId: string;
@@ -1845,7 +1847,9 @@ export default function DocumentPage() {
   if (loading) {
     return (
       <div className="container">
-        <div className="muted">Загрузка документа...</div>
+        <div className="muted">
+          {t("Загрузка документа...", "Loading document...")}
+        </div>
       </div>
     );
   }
@@ -1853,9 +1857,11 @@ export default function DocumentPage() {
   if (!doc) {
     return (
       <div className="container">
-        <div className="alert">Документ не найден</div>
+        <div className="alert">
+          {t("Документ не найден", "Document not found")}
+        </div>
         <button className="btn" onClick={() => nav(-1)}>
-          ← Назад
+          {t("← Назад", "← Back")}
         </button>
       </div>
     );
@@ -1882,7 +1888,7 @@ export default function DocumentPage() {
             <div className="version-history-header">
               <h3 className="version-history-title">
                 <IconClock className="icon-md" />
-                История версий документа
+                {t("История версий документа", "Document Version History")}
               </h3>
               <button
                 className="btn secondary version-history-close-btn"

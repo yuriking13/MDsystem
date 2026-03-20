@@ -16,16 +16,21 @@ import {
 } from "../lib/medPublisherApi";
 import { getErrorMessage } from "../lib/errorUtils";
 import { useAuth } from "../lib/AuthContext";
+import { useLanguage } from "../lib/LanguageContext";
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Черновик",
-  submitted: "Отправлена",
-  under_review: "На рецензировании",
-  revision_requested: "Доработка",
-  accepted: "Принята",
-  rejected: "Отклонена",
-  published: "Опубликована",
-};
+function getStatusLabels(
+  t: (ru: string, en: string) => string,
+): Record<string, string> {
+  return {
+    draft: t("Черновик", "Draft"),
+    submitted: t("Отправлена", "Submitted"),
+    under_review: t("На рецензировании", "Under Review"),
+    revision_requested: t("Доработка", "Revision Requested"),
+    accepted: t("Принята", "Accepted"),
+    rejected: t("Отклонена", "Rejected"),
+    published: t("Опубликована", "Published"),
+  };
+}
 
 function fmtDate(value: string | null | undefined): string {
   if (!value) return "—";
@@ -51,7 +56,9 @@ type PendingInvitation = {
 };
 
 export default function ChiefEditorDashboardPage() {
+  const { t } = useLanguage();
   const { user } = useAuth();
+  const STATUS_LABELS = getStatusLabels(t);
   const [dashboard, setDashboard] =
     useState<MedPublisherDashboardResponse | null>(null);
   const [pendingInvitations, setPendingInvitations] = useState<
@@ -151,21 +158,28 @@ export default function ChiefEditorDashboardPage() {
   if (loading && !dashboard) {
     return (
       <div className="page-content">
-        <div className="muted">Загрузка панели главного редактора...</div>
+        <div className="muted">
+          {t(
+            "Загрузка панели главного редактора...",
+            "Loading chief editor dashboard...",
+          )}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="page-content">
-      <h2>Панель главного редактора</h2>
+      <h2>{t("Панель главного редактора", "Chief Editor Dashboard")}</h2>
       <p className="muted mb-4">
-        Управление рукописями, назначение редакторов и рецензентов, одобрение
-        приглашений.
+        {t(
+          "Управление рукописями, назначение редакторов и рецензентов, одобрение приглашений.",
+          "Manage manuscripts, assign editors and reviewers, approve invitations.",
+        )}
         {user?.email && (
           <>
             {" "}
-            Вы: <strong>{user.email}</strong>
+            {t("Вы:", "You:")} <strong>{user.email}</strong>
           </>
         )}
       </p>

@@ -9,6 +9,7 @@ import ChartFromTable, {
   getRecommendedStatMethod,
 } from "./ChartFromTable";
 import { type ProjectStatistic } from "../lib/api";
+import { useLanguage } from "../lib/LanguageContext";
 
 // SVG Icons (Flowbite/Heroicons style)
 const ChartBarIcon = () => (
@@ -178,6 +179,7 @@ export default function StatisticEditModal({
   onClose,
   onSave,
 }: Props) {
+  const { t } = useLanguage();
   const [title, setTitle] = useState(statistic.title);
   const [description, setDescription] = useState(statistic.description || "");
   const [chartType, setChartType] = useState<ChartType>(
@@ -394,7 +396,9 @@ export default function StatisticEditModal({
         <div className="modal-header">
           <h3 className="modal-title statistic-modal-title">
             {statistic.type === "chart" ? <ChartBarIcon /> : <TableIcon />}
-            Редактировать {statistic.type === "chart" ? "график" : "таблицу"}
+            {statistic.type === "chart"
+              ? t("Редактировать график", "Edit Chart")
+              : t("Редактировать таблицу", "Edit Table")}
           </h3>
           <button className="modal-close" onClick={onClose}>
             <CloseIcon />
@@ -408,21 +412,21 @@ export default function StatisticEditModal({
               onClick={() => setActiveTab("chart")}
             >
               <ChartBarIcon />
-              Тип графика
+              {t("Тип графика", "Chart Type")}
             </button>
             <button
               className={`tab ${activeTab === "table" ? "active" : ""}`}
               onClick={() => setActiveTab("table")}
             >
               <TableIcon />
-              Данные таблицы
+              {t("Данные таблицы", "Table Data")}
             </button>
             <button
               className={`tab ${activeTab === "classification" ? "active" : ""}`}
               onClick={() => setActiveTab("classification")}
             >
               <BeakerIcon />
-              Классификация
+              {t("Классификация", "Classification")}
             </button>
           </div>
 
@@ -431,20 +435,23 @@ export default function StatisticEditModal({
             <div className="row gap edit-stat-chart-layout">
               <div className="edit-stat-left-panel">
                 <label className="stack edit-stat-field-spacing">
-                  <span>Заголовок</span>
+                  <span>{t("Заголовок", "Title")}</span>
                   <input
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Название графика"
+                    placeholder={t("Название графика", "Chart title")}
                   />
                 </label>
 
                 <label className="stack edit-stat-field-spacing">
-                  <span>Описание</span>
+                  <span>{t("Описание", "Description")}</span>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Необязательное описание..."
+                    placeholder={t(
+                      "Необязательное описание...",
+                      "Optional description...",
+                    )}
                     rows={2}
                     className="edit-stat-description-textarea"
                   />
@@ -452,7 +459,7 @@ export default function StatisticEditModal({
 
                 <div className="edit-stat-field-spacing">
                   <span className="muted edit-stat-type-label">
-                    Тип графика
+                    {t("Тип графика", "Chart Type")}
                   </span>
                   <div className="edit-stat-type-buttons-wrap">
                     {allChartTypes.map((t) => {
@@ -486,27 +493,27 @@ export default function StatisticEditModal({
                 {chartType === "scatter" ? (
                   <>
                     <label className="stack edit-stat-field-spacing">
-                      <span>Ось X</span>
+                      <span>{t("Ось X", "X-axis")}</span>
                       <select
                         value={xColumn}
                         onChange={(e) => setXColumn(Number(e.target.value))}
                       >
                         {tableData?.headers.map((h, i) => (
                           <option key={i} value={i}>
-                            {h || `Колонка ${i + 1}`}
+                            {h || t(`Колонка ${i + 1}`, `Column ${i + 1}`)}
                           </option>
                         ))}
                       </select>
                     </label>
                     <label className="stack edit-stat-field-spacing">
-                      <span>Ось Y</span>
+                      <span>{t("Ось Y", "Y-axis")}</span>
                       <select
                         value={yColumn}
                         onChange={(e) => setYColumn(Number(e.target.value))}
                       >
                         {tableData?.headers.map((h, i) => (
                           <option key={i} value={i}>
-                            {h || `Колонка ${i + 1}`}
+                            {h || t(`Колонка ${i + 1}`, `Column ${i + 1}`)}
                           </option>
                         ))}
                       </select>
@@ -515,7 +522,7 @@ export default function StatisticEditModal({
                 ) : chartType === "histogram" ? (
                   <>
                     <label className="stack edit-stat-field-spacing">
-                      <span>Колонка данных</span>
+                      <span>{t("Колонка данных", "Data column")}</span>
                       <select
                         value={dataColumns[0] || 1}
                         onChange={(e) =>
@@ -524,13 +531,18 @@ export default function StatisticEditModal({
                       >
                         {tableData?.headers.map((h, i) => (
                           <option key={i} value={i}>
-                            {h || `Колонка ${i + 1}`}
+                            {h || t(`Колонка ${i + 1}`, `Column ${i + 1}`)}
                           </option>
                         ))}
                       </select>
                     </label>
                     <label className="stack edit-stat-field-spacing">
-                      <span>Количество интервалов (bins): {bins}</span>
+                      <span>
+                        {t(
+                          `Количество интервалов (bins): ${bins}`,
+                          `Number of bins: ${bins}`,
+                        )}
+                      </span>
                       <input
                         type="range"
                         min={3}
@@ -543,20 +555,22 @@ export default function StatisticEditModal({
                 ) : (
                   <>
                     <label className="stack edit-stat-field-spacing">
-                      <span>Колонка меток (X)</span>
+                      <span>{t("Колонка меток (X)", "Label column (X)")}</span>
                       <select
                         value={labelColumn}
                         onChange={(e) => setLabelColumn(Number(e.target.value))}
                       >
                         {tableData?.headers.map((h, i) => (
                           <option key={i} value={i}>
-                            {h || `Колонка ${i + 1}`}
+                            {h || t(`Колонка ${i + 1}`, `Column ${i + 1}`)}
                           </option>
                         ))}
                       </select>
                     </label>
                     <div className="edit-stat-field-spacing">
-                      <span className="muted">Колонки данных (Y)</span>
+                      <span className="muted">
+                        {t("Колонки данных (Y)", "Data columns (Y)")}
+                      </span>
                       <div className="row gap edit-stat-data-columns-wrap">
                         {tableData?.headers.map(
                           (h, i) =>
@@ -586,7 +600,7 @@ export default function StatisticEditModal({
               {/* Preview */}
               <div className="edit-stat-preview-panel">
                 <div className="muted edit-stat-preview-title">
-                  Предпросмотр:
+                  {t("Предпросмотр:", "Preview:")}
                 </div>
                 {tableData &&
                 (chartType === "scatter" ||
@@ -651,7 +665,7 @@ export default function StatisticEditModal({
                               <button
                                 className="btn secondary edit-stat-remove-column-btn"
                                 onClick={() => removeColumn(i)}
-                                title="Удалить колонку"
+                                title={t("Удалить колонку", "Remove column")}
                               >
                                 ✕
                               </button>
@@ -671,7 +685,7 @@ export default function StatisticEditModal({
                               <button
                                 className="btn secondary edit-stat-remove-row-btn"
                                 onClick={() => removeRow(ri)}
-                                title="Удалить строку"
+                                title={t("Удалить строку", "Remove row")}
                               >
                                 ✕
                               </button>
@@ -713,17 +727,20 @@ export default function StatisticEditModal({
                 <div className="row space edit-stat-classification-header">
                   <strong className="edit-stat-classification-title">
                     <ChartBarIcon />
-                    Классификация данных
+                    {t("Классификация данных", "Data Classification")}
                   </strong>
                   <span className="muted edit-stat-classification-method">
-                    Рекомендуемый метод: {recommendedMethod}
+                    {t(
+                      `Рекомендуемый метод: ${recommendedMethod}`,
+                      `Recommended method: ${recommendedMethod}`,
+                    )}
                   </span>
                 </div>
 
                 <div className="row gap edit-stat-classification-fields">
                   <label className="stack edit-stat-classification-field">
                     <span className="muted edit-stat-classification-label">
-                      Тип переменной
+                      {t("Тип переменной", "Variable Type")}
                     </span>
                     <select
                       value={variableType}
@@ -733,14 +750,18 @@ export default function StatisticEditModal({
                         )
                       }
                     >
-                      <option value="quantitative">Количественные</option>
-                      <option value="qualitative">Качественные</option>
+                      <option value="quantitative">
+                        {t("Количественные", "Quantitative")}
+                      </option>
+                      <option value="qualitative">
+                        {t("Качественные", "Qualitative")}
+                      </option>
                     </select>
                   </label>
 
                   <label className="stack edit-stat-classification-field">
                     <span className="muted edit-stat-classification-label">
-                      Подтип
+                      {t("Подтип", "Subtype")}
                     </span>
                     <select
                       value={subType}
@@ -752,14 +773,24 @@ export default function StatisticEditModal({
                     >
                       {variableType === "quantitative" ? (
                         <>
-                          <option value="continuous">Непрерывные</option>
-                          <option value="discrete">Дискретные</option>
+                          <option value="continuous">
+                            {t("Непрерывные", "Continuous")}
+                          </option>
+                          <option value="discrete">
+                            {t("Дискретные", "Discrete")}
+                          </option>
                         </>
                       ) : (
                         <>
-                          <option value="nominal">Номинальные</option>
-                          <option value="dichotomous">Дихотомические</option>
-                          <option value="ordinal">Порядковые</option>
+                          <option value="nominal">
+                            {t("Номинальные", "Nominal")}
+                          </option>
+                          <option value="dichotomous">
+                            {t("Дихотомические", "Dichotomous")}
+                          </option>
+                          <option value="ordinal">
+                            {t("Порядковые", "Ordinal")}
+                          </option>
                         </>
                       )}
                     </select>
@@ -768,7 +799,7 @@ export default function StatisticEditModal({
                   {variableType === "quantitative" && (
                     <label className="stack edit-stat-classification-field">
                       <span className="muted edit-stat-classification-label">
-                        Распределение
+                        {t("Распределение", "Distribution")}
                       </span>
                       <select
                         value={
@@ -785,9 +816,11 @@ export default function StatisticEditModal({
                             setIsNormalDistribution(e.target.value === "yes");
                         }}
                       >
-                        <option value="">Неизвестно</option>
-                        <option value="yes">Нормальное</option>
-                        <option value="no">Ненормальное</option>
+                        <option value="">{t("Неизвестно", "Unknown")}</option>
+                        <option value="yes">{t("Нормальное", "Normal")}</option>
+                        <option value="no">
+                          {t("Ненормальное", "Non-normal")}
+                        </option>
                       </select>
                     </label>
                   )}
@@ -796,7 +829,10 @@ export default function StatisticEditModal({
                 {recommendedTypes.length > 0 && (
                   <div>
                     <span className="muted edit-stat-classification-label">
-                      Рекомендуемые типы графиков:{" "}
+                      {t(
+                        "Рекомендуемые типы графиков:",
+                        "Recommended chart types:",
+                      )}{" "}
                     </span>
                     <div className="row gap edit-stat-recommended-wrap">
                       {recommendedTypes.map((t) => {
@@ -830,26 +866,39 @@ export default function StatisticEditModal({
                 <div className="card edit-stat-explanation-card">
                   <h5 className="edit-stat-explanation-heading">
                     <QuantitativeIcon />
-                    Количественные данные
+                    {t("Количественные данные", "Quantitative Data")}
                   </h5>
                   <p className="muted edit-stat-explanation-body">
-                    <strong>Непрерывные:</strong> возраст, рост, вес, давление
+                    <strong>{t("Непрерывные:", "Continuous:")}</strong>{" "}
+                    {t(
+                      "возраст, рост, вес, давление",
+                      "age, height, weight, pressure",
+                    )}
                     <br />
-                    <strong>Дискретные:</strong> количество детей, число визитов
+                    <strong>{t("Дискретные:", "Discrete:")}</strong>{" "}
+                    {t(
+                      "количество детей, число визитов",
+                      "number of children, number of visits",
+                    )}
                   </p>
                 </div>
                 <div className="card edit-stat-explanation-card">
                   <h5 className="edit-stat-explanation-heading">
                     <QualitativeIcon />
-                    Качественные данные
+                    {t("Качественные данные", "Qualitative Data")}
                   </h5>
                   <p className="muted edit-stat-explanation-body">
-                    <strong>Номинальные:</strong> группа крови, пол
+                    <strong>{t("Номинальные:", "Nominal:")}</strong>{" "}
+                    {t("группа крови, пол", "blood type, gender")}
                     <br />
-                    <strong>Дихотомические:</strong> да/нет, жив/умер
+                    <strong>{t("Дихотомические:", "Dichotomous:")}</strong>{" "}
+                    {t("да/нет, жив/умер", "yes/no, alive/dead")}
                     <br />
-                    <strong>Порядковые:</strong> степень тяжести, стадия
-                    заболевания
+                    <strong>{t("Порядковые:", "Ordinal:")}</strong>{" "}
+                    {t(
+                      "степень тяжести, стадия заболевания",
+                      "severity level, disease stage",
+                    )}
                   </p>
                 </div>
               </div>
@@ -859,7 +908,7 @@ export default function StatisticEditModal({
         {/* Actions */}
         <div className="modal-footer">
           <button className="btn-secondary" onClick={onClose}>
-            Отмена
+            {t("Отмена", "Cancel")}
           </button>
           <button
             className="btn-primary edit-stat-save-btn"
@@ -869,12 +918,12 @@ export default function StatisticEditModal({
             {saving ? (
               <>
                 <SpinnerIcon />
-                Сохранение...
+                {t("Сохранение...", "Saving...")}
               </>
             ) : (
               <>
                 <SaveIcon />
-                Сохранить изменения
+                {t("Сохранить изменения", "Save Changes")}
               </>
             )}
           </button>

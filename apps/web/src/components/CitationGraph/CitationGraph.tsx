@@ -5,6 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
+import { useLanguage } from "../../lib/LanguageContext";
 import ForceGraph2D, {
   type ForceGraphMethods,
   type LinkObject,
@@ -193,6 +194,7 @@ type FetchJobStatus = {
 };
 
 export default function CitationGraph({ projectId }: Props) {
+  const { t } = useLanguage();
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -2536,7 +2538,10 @@ export default function CitationGraph({ projectId }: Props) {
             className="btn secondary graph-header-action-btn graph-header-action-btn--with-gap"
             onClick={loadRecommendations}
             disabled={loadingRecommendations}
-            title="Рекомендации по улучшению графа"
+            title={t(
+              "Рекомендации по улучшению графа",
+              "Graph improvement recommendations",
+            )}
           >
             <IconSparkles size="sm" />
             {recommendations.length > 0 && (
@@ -2558,7 +2563,10 @@ export default function CitationGraph({ projectId }: Props) {
                 loadMissingArticlesStats();
               }
             }}
-            title="Семантический поиск по статьям"
+            title={t(
+              "Семантический поиск по статьям",
+              "Semantic search through articles",
+            )}
           >
             <IconSearch size="sm" />
             <span>Сем.</span>
@@ -2580,7 +2588,10 @@ export default function CitationGraph({ projectId }: Props) {
               }
             }}
             disabled={analyzingMethodologies}
-            title="Анализ методологий исследований"
+            title={t(
+              "Анализ методологий исследований",
+              "Research methodology analysis",
+            )}
           >
             <IconChartBar size="sm" />
             <span>{analyzingMethodologies ? "..." : "Метод."}</span>
@@ -2598,7 +2609,10 @@ export default function CitationGraph({ projectId }: Props) {
               setShowSemanticClustersPanel(!showSemanticClustersPanel);
             }}
             disabled={loadingSemanticClusters}
-            title="Семантические кластеры статей"
+            title={t(
+              "Семантические кластеры статей",
+              "Semantic article clusters",
+            )}
           >
             <IconGraph size="sm" />
             <span>{loadingSemanticClusters ? "..." : "Кластеры"}</span>
@@ -2626,7 +2640,10 @@ export default function CitationGraph({ projectId }: Props) {
               }
             }}
             disabled={loadingGapAnalysis}
-            title="Анализ пропущенных связей"
+            title={t(
+              "Анализ пропущенных связей",
+              "Missing connections analysis",
+            )}
           >
             <IconLinkChain size="sm" />
             <span>{loadingGapAnalysis ? "..." : "Gaps"}</span>
