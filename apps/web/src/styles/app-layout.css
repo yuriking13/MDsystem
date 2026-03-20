@@ -668,6 +668,43 @@ html.layout-fixed #root {
   @apply hover:bg-red-500/20 hover:text-red-400;
 }
 
+/* Language Switcher */
+.sidebar-lang-switcher {
+  @apply flex justify-center;
+  padding: 0 6px;
+}
+
+.lang-switcher {
+  @apply flex rounded-lg overflow-hidden border-0 p-0 m-0;
+  background: hsla(var(--glass-hue1), 20%, 20%, 0.3);
+}
+
+.lang-switcher__option {
+  @apply px-3 py-1.5 cursor-pointer text-xs font-semibold;
+  @apply text-neutral-400 transition-colors;
+}
+
+.lang-switcher__option:hover {
+  @apply text-neutral-200;
+}
+
+.lang-switcher__option--active {
+  @apply text-white;
+  background: hsla(var(--glass-hue1), 40%, 40%, 0.35);
+}
+
+.lang-switcher__input {
+  @apply sr-only;
+}
+
+.app-sidebar--collapsed .sidebar-lang-switcher {
+  padding: 0 4px;
+}
+
+.app-sidebar--collapsed .lang-switcher__option {
+  @apply px-2;
+}
+
 /* User Profile */
 .sidebar-user {
   @apply flex items-center gap-2.5 w-full px-3 py-2;

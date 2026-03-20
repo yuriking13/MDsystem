@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./lib/AuthContext";
 import { AdminAuthProvider } from "./lib/AdminContext";
+import { LanguageProvider } from "./lib/LanguageContext";
 import { initFrontendObservability } from "./lib/observability";
 import "./styles/index.css";
 import "./styles/landing-animations.css";
@@ -24,11 +25,13 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <AdminAuthProvider>
-          <App />
-        </AdminAuthProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <AdminAuthProvider>
+            <App />
+          </AdminAuthProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </BrowserRouter>
   </React.StrictMode>,
 );

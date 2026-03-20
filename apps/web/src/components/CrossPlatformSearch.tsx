@@ -102,10 +102,10 @@ export default function CrossPlatformSearch({
         });
         onSearchComplete?.(response.data.results, query);
       } else {
-        setError("Search failed");
+        setError("Ошибка поиска");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Search error occurred");
+      setError(err instanceof Error ? err.message : "Произошла ошибка поиска");
     } finally {
       setIsSearching(false);
     }
@@ -151,7 +151,7 @@ export default function CrossPlatformSearch({
         });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Import failed");
+      setError(err instanceof Error ? err.message : "Ошибка импорта");
     } finally {
       setIsImporting(false);
     }
@@ -177,20 +177,7 @@ export default function CrossPlatformSearch({
     setSelectedResults(new Set());
   }, []);
 
-  const getProviderIcon = (provider: SearchProvider) => {
-    switch (provider) {
-      case "pubmed":
-        return "🔬";
-      case "crossref":
-        return "📚";
-      case "arxiv":
-        return "🧮";
-      case "semantic":
-        return "🧠";
-      default:
-        return "🔍";
-    }
-  };
+  // Provider icons removed — handled via CSS classes per Flowbite-only rule
 
   const getProviderColor = (provider: SearchProvider) => {
     switch (provider) {
@@ -213,7 +200,7 @@ export default function CrossPlatformSearch({
       <div className="search-form space-y-4 p-4 border rounded-lg bg-gray-50">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Search Query
+            Поисковый запрос
           </label>
           <div className="flex space-x-2">
             <input
@@ -221,7 +208,7 @@ export default function CrossPlatformSearch({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Enter keywords, DOI, PMID, or author names..."
+              placeholder="Введите ключевые слова, DOI, PMID или имя автора..."
               className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               disabled={isSearching}
             />
@@ -251,10 +238,10 @@ export default function CrossPlatformSearch({
                       d="M4 12a8 8 0 0 1 8-8V0l4 4-4 4V4a4 4 0 0 0-4 4H4z"
                     />
                   </svg>
-                  <span>Searching...</span>
+                  <span>Поиск...</span>
                 </div>
               ) : (
-                "Search"
+                "Найти"
               )}
             </button>
           </div>
@@ -265,7 +252,7 @@ export default function CrossPlatformSearch({
           {/* Providers */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sources
+              Источники
             </label>
             <div className="space-y-2">
               {availableProviders?.providers.map((provider) => (
@@ -285,7 +272,7 @@ export default function CrossPlatformSearch({
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="ml-2 text-sm text-gray-700">
-                    {getProviderIcon(provider.id)} {provider.name}
+                    {provider.name}
                   </span>
                 </label>
               ))}
@@ -295,12 +282,12 @@ export default function CrossPlatformSearch({
           {/* Year Range */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Year Range
+              Годы
             </label>
             <div className="space-y-2">
               <input
                 type="number"
-                placeholder="From year"
+                placeholder="С года"
                 value={filters.yearFrom || ""}
                 onChange={(e) =>
                   setFilters((prev) => ({
@@ -316,7 +303,7 @@ export default function CrossPlatformSearch({
               />
               <input
                 type="number"
-                placeholder="To year"
+                placeholder="По год"
                 value={filters.yearTo || ""}
                 onChange={(e) =>
                   setFilters((prev) => ({
@@ -336,7 +323,7 @@ export default function CrossPlatformSearch({
           {/* Language */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Language
+              Язык
             </label>
             <select
               value={filters.language}
@@ -348,16 +335,16 @@ export default function CrossPlatformSearch({
               }
               className="w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              <option value="any">Any language</option>
-              <option value="en">English only</option>
-              <option value="ru">Russian only</option>
+              <option value="any">Любой язык</option>
+              <option value="en">Только английский</option>
+              <option value="ru">Только русский</option>
             </select>
           </div>
 
           {/* Sort By */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sort by
+              Сортировка
             </label>
             <select
               value={filters.sortBy}
@@ -369,9 +356,9 @@ export default function CrossPlatformSearch({
               }
               className="w-full text-sm rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             >
-              <option value="relevance">Relevance</option>
-              <option value="date">Date (newest first)</option>
-              <option value="citations">Citations count</option>
+              <option value="relevance">Релевантность</option>
+              <option value="date">Дата (новые первыми)</option>
+              <option value="citations">Количество цитирований</option>
             </select>
           </div>
         </div>
@@ -389,9 +376,9 @@ export default function CrossPlatformSearch({
         <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
           <div className="flex items-center justify-between text-sm text-blue-800">
             <span>
-              Found <strong>{searchStats.totalFound}</strong> results in{" "}
+              Найдено <strong>{searchStats.totalFound}</strong> results in{" "}
               <strong>{searchStats.searchTime}ms</strong>
-              {searchStats.cached && " (cached)"}
+              {searchStats.cached && " (из кеша)"}
             </span>
             <div className="flex items-center space-x-2">
               {Object.entries(searchStats.providers).map(
@@ -400,7 +387,7 @@ export default function CrossPlatformSearch({
                     key={provider}
                     className={`px-2 py-1 text-xs rounded-full ${getProviderColor(provider as SearchProvider)}`}
                   >
-                    {getProviderIcon(provider as SearchProvider)} {stats.count}
+                    {stats.count}
                   </span>
                 ),
               )}
@@ -416,20 +403,20 @@ export default function CrossPlatformSearch({
           <div className="flex items-center justify-between p-3 bg-gray-50 border-b">
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                {selectedResults.size} of {results.length} selected
+                {selectedResults.size} из {results.length} выбрано
               </span>
               <div className="flex space-x-2">
                 <button
                   onClick={selectAllResults}
                   className="text-sm text-blue-600 hover:text-blue-800"
                 >
-                  Select All
+                  Выбрать все
                 </button>
                 <button
                   onClick={clearSelection}
                   className="text-sm text-gray-600 hover:text-gray-800"
                 >
-                  Clear
+                  Сбросить
                 </button>
               </div>
             </div>
@@ -440,8 +427,8 @@ export default function CrossPlatformSearch({
                 className="px-3 py-1 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
               >
                 {isImporting
-                  ? "Importing..."
-                  : `Import ${selectedResults.size} articles`}
+                  ? "Импорт..."
+                  : `Импортировать ${selectedResults.size} статей`}
               </button>
             )}
           </div>
@@ -469,7 +456,6 @@ export default function CrossPlatformSearch({
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${getProviderColor(result.provider)}`}
                       >
-                        {getProviderIcon(result.provider)}{" "}
                         {result.provider.toUpperCase()}
                       </span>
                       {result.year && (
@@ -478,7 +464,7 @@ export default function CrossPlatformSearch({
                         </span>
                       )}
                       <span className="text-xs text-gray-500">
-                        Score: {(result.score * 100).toFixed(0)}%
+                        Рел.: {(result.score * 100).toFixed(0)}%
                       </span>
                     </div>
 
@@ -501,7 +487,7 @@ export default function CrossPlatformSearch({
                       <p className="text-sm text-gray-600 mb-2">
                         {result.authors.slice(0, 3).join(", ")}
                         {result.authors.length > 3 &&
-                          ` and ${result.authors.length - 3} more`}
+                          ` и ещё ${result.authors.length - 3}`}
                       </p>
                     )}
 
@@ -510,7 +496,7 @@ export default function CrossPlatformSearch({
                         <em>{result.journal}</em>
                         {result.citationCount && (
                           <span className="ml-2 text-xs text-gray-500">
-                            ({result.citationCount} citations)
+                            ({result.citationCount} цитирований)
                           </span>
                         )}
                       </p>
@@ -566,10 +552,10 @@ export default function CrossPlatformSearch({
             />
           </svg>
           <h3 className="mt-2 text-lg font-medium text-gray-900">
-            No results found
+            Ничего не найдено
           </h3>
           <p className="mt-1 text-gray-500">
-            Try adjusting your search terms or filters
+            Попробуйте изменить запрос или фильтры
           </p>
         </div>
       )}

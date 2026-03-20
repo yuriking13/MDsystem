@@ -28,6 +28,7 @@ import {
   IconTrash as TrashIcon,
 } from "./FlowbiteIcons";
 import { useAuth } from "../lib/AuthContext";
+import { useLanguage } from "../lib/LanguageContext";
 import { useProjectContext, type ArticleViewStatus } from "./AppLayout";
 
 interface NavItem {
@@ -60,6 +61,7 @@ export default function AppSidebar({
   onCloseMobile,
 }: AppSidebarProps) {
   const { user, logout } = useAuth();
+  const { lang, setLang } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -539,6 +541,42 @@ export default function AppSidebar({
                   d="M12.5 8.473a10.968 10.968 0 0 1 8.785-.97 7.435 7.435 0 0 0-3.737 4.672l-.09.373A7.454 7.454 0 0 0 28.732 20.4a10.97 10.97 0 0 1-5.232 7.125l-.497.27c-5.014 2.566-11.175.916-14.234-3.813l-.295-.483C5.53 18.403 7.13 11.93 12.017 8.77l.483-.297Zm4.234.616a8.946 8.946 0 0 0-2.805.883l-.429.234A9 9 0 0 0 10.206 22.5l.241.395A9 9 0 0 0 22.5 25.794l.416-.255a8.94 8.94 0 0 0 2.167-1.99 9.433 9.433 0 0 1-2.782-.313c-5.043-1.352-8.036-6.535-6.686-11.578l.147-.491c.242-.745.573-1.44.972-2.078Z"
                 />
               </svg>
+            </label>
+          </fieldset>
+        </div>
+
+        {/* Language Switcher */}
+        <div className="sidebar-lang-switcher">
+          <fieldset
+            className="lang-switcher"
+            role="radiogroup"
+            aria-label="Язык интерфейса"
+          >
+            <label
+              className={`lang-switcher__option ${lang === "ru" ? "lang-switcher__option--active" : ""}`}
+            >
+              <input
+                className="lang-switcher__input"
+                type="radio"
+                name="lang-toggle"
+                value="ru"
+                checked={lang === "ru"}
+                onChange={() => setLang("ru")}
+              />
+              <span className="lang-switcher__label">RU</span>
+            </label>
+            <label
+              className={`lang-switcher__option ${lang === "en" ? "lang-switcher__option--active" : ""}`}
+            >
+              <input
+                className="lang-switcher__input"
+                type="radio"
+                name="lang-toggle"
+                value="en"
+                checked={lang === "en"}
+                onChange={() => setLang("en")}
+              />
+              <span className="lang-switcher__label">EN</span>
             </label>
           </fieldset>
         </div>
