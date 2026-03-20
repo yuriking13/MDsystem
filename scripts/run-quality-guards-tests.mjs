@@ -1,9 +1,9 @@
 import { spawnSync } from "node:child_process";
 
 const guardTestFiles = [
-  "scripts/quality-guards-lib.test.js",
-  "scripts/js-mirror-utils.test.js",
-  "scripts/quality-guards-cli.test.js",
+  "scripts/quality-guards-lib.test.ts",
+  "scripts/js-mirror-utils.test.ts",
+  "scripts/quality-guards-cli.test.ts",
 ];
 
 const result = spawnSync(process.execPath, ["--test", ...guardTestFiles], {

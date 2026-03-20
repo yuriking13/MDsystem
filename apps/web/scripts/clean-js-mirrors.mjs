@@ -14,7 +14,7 @@ const { collectJsMirrorFiles } = require(path.resolve(
   "..",
   "..",
   "scripts",
-  "js-mirror-utils.js",
+  "js-mirror-utils.ts",
 ));
 
 async function main() {

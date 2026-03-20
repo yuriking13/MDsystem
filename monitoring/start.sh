@@ -99,7 +99,7 @@ start_server() {
     print_status "Starting monitoring server on port $PORT..."
     
     # Start server in background and save PID
-    node server/monitoring-server.js > logs/server.log 2>&1 &
+    node server/monitoring-server.ts > logs/server.log 2>&1 &
     SERVER_PID=$!
     echo $SERVER_PID > .server.pid
     
@@ -128,7 +128,7 @@ start_simulation() {
         sleep 3
         
         # Start simulator
-        node scripts/simulate-data.js --speed=1 > logs/simulator.log 2>&1 &
+        node scripts/simulate-data.ts --speed=1 > logs/simulator.log 2>&1 &
         SIMULATOR_PID=$!
         echo $SIMULATOR_PID > .simulator.pid
         

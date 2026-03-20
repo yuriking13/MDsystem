@@ -2,16 +2,16 @@
   "name": "agent-monitoring-dashboard",
   "version": "1.0.0",
   "description": "Real-time monitoring dashboard for agent systems with optimized performance tracking",
-  "main": "server/monitoring-server.js",
+  "main": "server/monitoring-server.ts",
   "scripts": {
-    "start": "node server/monitoring-server.js",
-    "dev": "nodemon server/monitoring-server.js",
+    "start": "node server/monitoring-server.ts",
+    "dev": "nodemon server/monitoring-server.ts",
     "test": "node test/test-server.js",
     "install-deps": "npm install",
     "build": "echo 'Building dashboard assets...' && npm run optimize",
     "optimize": "echo 'Optimizing CSS and JS files...'",
-    "lint": "eslint **/*.js",
-    "simulate": "node scripts/simulate-data.js"
+    "lint": "eslint **/*.ts",
+    "simulate": "node scripts/simulate-data.ts"
   },
   "keywords": [
     "monitoring",

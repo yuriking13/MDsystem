@@ -31,25 +31,28 @@ export default tseslint.config(
     },
     rules: {
       // TypeScript specific
-      "@typescript-eslint/no-unused-vars": ["warn", {
-        argsIgnorePattern: "^_",
-        varsIgnorePattern: "^_",
-      }],
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/no-non-null-assertion": "warn",
-      
+
       // React specific
       "react/jsx-uses-react": "off",
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
-      
+
       // General
       "no-console": ["warn", { allow: ["warn", "error"] }],
       "prefer-const": "warn",
-      
+
       // Отключаем для совместимости
       "@typescript-eslint/ban-ts-comment": "off",
     },
@@ -81,6 +84,6 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ["dist/**", "node_modules/**", "**/*.js"],
-  }
+    ignores: ["dist/**", "node_modules/**", "**/*.js", "eslint.config.ts"],
+  },
 );

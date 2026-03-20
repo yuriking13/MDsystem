@@ -113,7 +113,7 @@ npm run dev
 npm run simulate
 
 # С настраиваемой скоростью и длительностью
-node scripts/simulate-data.js --speed=2 --duration=300
+node scripts/simulate-data.ts --speed=2 --duration=300
 ```
 
 ## 🌐 Доступ к дашборду
@@ -368,7 +368,7 @@ logger.info("Task completed", {
 npm install -g pm2
 
 # Запуск в продакшн
-pm2 start server/monitoring-server.js --name "monitoring-dashboard"
+pm2 start server/monitoring-server.ts --name "monitoring-dashboard"
 
 # Мониторинг процесса
 pm2 monit
@@ -428,15 +428,15 @@ MDsystem/monitoring/
 ├── styles/
 │   └── dashboard.css        # Стили дашборда
 ├── js/
-│   ├── app.js              # Главный файл приложения
-│   ├── websocket-client.js  # WebSocket клиент
-│   ├── chart-manager.js     # Менеджер графиков
-│   ├── table-manager.js     # Менеджер таблиц
-│   └── dashboard-controller.js # Контроллер дашборда
+│   ├── app.ts              # Главный файл приложения
+│   ├── websocket-client.ts  # WebSocket клиент
+│   ├── chart-manager.ts     # Менеджер графиков
+│   ├── table-manager.ts     # Менеджер таблиц
+│   └── dashboard-controller.ts # Контроллер дашборда
 ├── server/
-│   └── monitoring-server.js # WebSocket сервер
+│   └── monitoring-server.ts # WebSocket сервер
 ├── scripts/
-│   └── simulate-data.js     # Симулятор данных
+│   └── simulate-data.ts     # Симулятор данных
 ├── package.json
 └── README.md
 ```
@@ -444,8 +444,8 @@ MDsystem/monitoring/
 ### Добавление новых метрик
 
 1. Обновите `collectSystemMetrics()` в сервере
-2. Добавьте обработчик в `websocket-client.js`
-3. Создайте визуализацию в `chart-manager.js`
+2. Добавьте обработчик в `websocket-client.ts`
+3. Создайте визуализацию в `chart-manager.ts`
 4. Обновите UI в HTML
 
 ### Добавление новых типов задач

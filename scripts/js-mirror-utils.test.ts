@@ -4,7 +4,7 @@ const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
-const { collectJsMirrorFiles } = require("./js-mirror-utils.js");
+const { collectJsMirrorFiles } = require("./js-mirror-utils.ts");
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "js-mirror-utils-"));
@@ -52,7 +52,10 @@ test("collectJsMirrorFiles traverses nested directories", () => {
 
   const mirrors = collectJsMirrorFiles(rootDir);
   assert.equal(mirrors.length, 1);
-  assert.equal(toPosixPath(path.relative(rootDir, mirrors[0])), "a/b/c/component.js");
+  assert.equal(
+    toPosixPath(path.relative(rootDir, mirrors[0])),
+    "a/b/c/component.js",
+  );
 });
 
 test("collectJsMirrorFiles supports custom source extensions", () => {

@@ -1,4 +1,4 @@
-const { runQualityGuards } = require("./quality-guards-lib.js");
+const { runQualityGuards } = require("./quality-guards-lib.ts");
 
 function main() {
   const checkOnly = process.argv.includes("--check");
@@ -37,13 +37,17 @@ function main() {
       );
     }
 
-    if (allViolations.some(({ check }) => check.name === "web-js-source-files")) {
+    if (
+      allViolations.some(({ check }) => check.name === "web-js-source-files")
+    ) {
       console.error(
         "\n[quality-guards] Tip: remove JavaScript files from apps/web/src or migrate them to TypeScript.",
       );
     }
 
-    if (allViolations.some(({ check }) => check.name === "web-style-prop-usage")) {
+    if (
+      allViolations.some(({ check }) => check.name === "web-style-prop-usage")
+    ) {
       console.error(
         "\n[quality-guards] Tip: move styles to CSS classes; style={...} is disallowed in apps/web/src.",
       );

@@ -3,7 +3,10 @@ const path = require("node:path");
 
 const DEFAULT_SOURCE_EXTENSIONS = [".ts", ".tsx"];
 
-function collectJsMirrorFiles(rootDir, sourceExtensions = DEFAULT_SOURCE_EXTENSIONS) {
+function collectJsMirrorFiles(
+  rootDir,
+  sourceExtensions = DEFAULT_SOURCE_EXTENSIONS,
+) {
   const mirrors = [];
   const queue = [rootDir];
 

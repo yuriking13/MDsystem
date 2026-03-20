@@ -6,7 +6,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TOOL_SCRIPT="$SCRIPT_DIR/higgsfield-client.js"
+TOOL_SCRIPT="$SCRIPT_DIR/higgsfield-client.ts"
 
 # Colors for output
 RED='\033[0;31m'

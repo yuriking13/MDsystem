@@ -1,6 +1,6 @@
 const fs = require("node:fs");
 const path = require("node:path");
-const { collectJsMirrorFiles } = require("./js-mirror-utils.js");
+const { collectJsMirrorFiles } = require("./js-mirror-utils.ts");
 
 const SKIP_DIRECTORIES = new Set([
   "node_modules",
@@ -156,7 +156,10 @@ const WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH = path.join(
 );
 
 function loadRequiredWebResponsiveTestTargets(workspaceRoot) {
-  const configPath = path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH);
+  const configPath = path.join(
+    workspaceRoot,
+    WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
+  );
   if (!fs.existsSync(configPath)) {
     return {
       targets: DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
@@ -310,7 +313,9 @@ function collectWebStylePropViolations(workspaceRoot, fileCache) {
 
   const violations = [];
   for (const filePath of tsxFiles) {
-    const relativeFile = path.relative(workspaceRoot, filePath).replaceAll(path.sep, "/");
+    const relativeFile = path
+      .relative(workspaceRoot, filePath)
+      .replaceAll(path.sep, "/");
     const source = fs.readFileSync(filePath, "utf8");
     const matcher = /style=\{/g;
     let match = matcher.exec(source);
@@ -469,7 +474,8 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
   const violations = [];
   const normalizedResponsiveScript = responsiveScript.trim();
   const configRunnerScript = "node scripts/run-responsive-suite.mjs";
-  const usesConfigRunnerScript = normalizedResponsiveScript === configRunnerScript;
+  const usesConfigRunnerScript =
+    normalizedResponsiveScript === configRunnerScript;
   if (
     !usesConfigRunnerScript &&
     !responsiveScript.includes("pnpm run clean:js-mirrors && vitest run")
@@ -562,7 +568,12 @@ function collectWebResponsiveTestScriptCoverageViolations(workspaceRoot) {
 
   if (loadedFromConfig) {
     for (const requiredTarget of requiredTargets) {
-      const targetPath = path.join(workspaceRoot, "apps", "web", requiredTarget);
+      const targetPath = path.join(
+        workspaceRoot,
+        "apps",
+        "web",
+        requiredTarget,
+      );
       if (!fs.existsSync(targetPath)) {
         violations.push({
           file: WEB_RESPONSIVE_TARGETS_CONFIG_PATH.replaceAll(path.sep, "/"),
@@ -773,7 +784,10 @@ function collectWebLayoutTestRouteMatrixCoverageViolations(workspaceRoot) {
 }
 
 function collectWebResponsiveTargetConfigViolations(workspaceRoot) {
-  const configPath = path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH);
+  const configPath = path.join(
+    workspaceRoot,
+    WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
+  );
   if (!fs.existsSync(configPath)) {
     return [];
   }
@@ -896,7 +910,11 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
     ];
   }
 
-  if (!parsedConfig || typeof parsedConfig !== "object" || Array.isArray(parsedConfig)) {
+  if (
+    !parsedConfig ||
+    typeof parsedConfig !== "object" ||
+    Array.isArray(parsedConfig)
+  ) {
     return [
       {
         file: relativeFile,
@@ -908,11 +926,7 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
 
   const violations = [];
   const requiredViewportWidths = [360, 390, 768, 1024, 1280, 1440, 1920];
-  const {
-    viewportWidths,
-    userRoutes,
-    adminRoutes,
-  } = parsedConfig;
+  const { viewportWidths, userRoutes, adminRoutes } = parsedConfig;
 
   if (!Array.isArray(viewportWidths)) {
     violations.push({
@@ -955,18 +969,18 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
     }
   }
 
-  if (!userRoutes || typeof userRoutes !== "object" || Array.isArray(userRoutes)) {
+  if (
+    !userRoutes ||
+    typeof userRoutes !== "object" ||
+    Array.isArray(userRoutes)
+  ) {
     violations.push({
       file: relativeFile,
       line: 1,
       snippet: "invalid-user-routes:expected-object",
     });
   } else {
-    const userRouteArrayFields = [
-      "auth",
-      "shell",
-      "projectTabs",
-    ];
+    const userRouteArrayFields = ["auth", "shell", "projectTabs"];
     for (const field of userRouteArrayFields) {
       const fieldValue = userRoutes[field];
       if (!Array.isArray(fieldValue) || fieldValue.length === 0) {
@@ -1005,7 +1019,10 @@ function collectWebResponsiveManualMatrixConfigViolations(workspaceRoot) {
     ];
     for (const field of userRoutePatternFields) {
       const patternValue = userRoutes[field];
-      if (typeof patternValue !== "string" || patternValue.trim().length === 0) {
+      if (
+        typeof patternValue !== "string" ||
+        patternValue.trim().length === 0
+      ) {
         violations.push({
           file: relativeFile,
           line: 1,
@@ -1066,10 +1083,8 @@ function cleanupWebJsMirrors(workspaceRoot) {
 }
 
 function runQualityGuards(options = {}) {
-  const {
-    workspaceRoot = process.cwd(),
-    autoCleanWebJsMirrors = true,
-  } = options;
+  const { workspaceRoot = process.cwd(), autoCleanWebJsMirrors = true } =
+    options;
   const fileCache = new Map();
 
   let removedWebJsMirrors = [];
@@ -1089,10 +1104,16 @@ function runQualityGuards(options = {}) {
 
   const jsMirrorViolations = collectWebJsMirrors(workspaceRoot);
   if (jsMirrorViolations.length > 0) {
-    allViolations.push({ check: webJsMirrorCheck, violations: jsMirrorViolations });
+    allViolations.push({
+      check: webJsMirrorCheck,
+      violations: jsMirrorViolations,
+    });
   }
 
-  const webJsSourceViolations = collectWebSourceJsFiles(workspaceRoot, fileCache);
+  const webJsSourceViolations = collectWebSourceJsFiles(
+    workspaceRoot,
+    fileCache,
+  );
   if (webJsSourceViolations.length > 0) {
     allViolations.push({
       check: webJsSourceCheck,

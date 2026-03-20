@@ -3,9 +3,9 @@
   "private": true,
   "packageManager": "pnpm@9.15.0",
   "scripts": {
-    "preinstall": "node scripts/enforce-pnpm.js",
-    "quality:guards": "node scripts/quality-guards.js",
-    "quality:guards:check": "node scripts/quality-guards.js --check",
+    "preinstall": "node scripts/enforce-pnpm.ts",
+    "quality:guards": "node scripts/quality-guards.ts",
+    "quality:guards:check": "node scripts/quality-guards.ts --check",
     "quality:guards:test": "node scripts/run-quality-guards-tests.mjs",
     "quality:repo": "pnpm run quality:guards:check && pnpm run quality:guards:test",
     "prisma:generate": "pnpm --filter api exec prisma generate",
@@ -45,7 +45,7 @@
     "*": [
       "pnpm run quality:guards:check"
     ],
-    "scripts/*.js": [
+    "scripts/*.ts": [
       "pnpm run quality:guards:test"
     ],
     "apps/web/scripts/*.{js,mjs,cjs}": [

@@ -9,9 +9,9 @@ const {
   DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS,
   WEB_RESPONSIVE_MANUAL_MATRIX_CONFIG_PATH,
   WEB_RESPONSIVE_TARGETS_CONFIG_PATH,
-} = require("./quality-guards-lib.js");
+} = require("./quality-guards-lib.ts");
 
-const guardCliPath = path.resolve(__dirname, "quality-guards.js");
+const guardCliPath = path.resolve(__dirname, "quality-guards.ts");
 
 function createTempWorkspace() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "quality-guards-cli-"));
@@ -67,7 +67,10 @@ test("quality-guards default mode auto-cleans mirrors", () => {
 
 test("quality-guards check mode reports standalone js/jsx source file tip", () => {
   const workspaceRoot = createTempWorkspace();
-  const jsSourcePath = path.join(workspaceRoot, "apps/web/src/lib/legacy-helper.js");
+  const jsSourcePath = path.join(
+    workspaceRoot,
+    "apps/web/src/lib/legacy-helper.js",
+  );
   const jsxSourcePath = path.join(
     workspaceRoot,
     "apps/web/src/components/legacy-widget.jsx",
@@ -150,12 +153,12 @@ test("quality-guards check mode reports style-prop remediation tip", () => {
 
 test("quality-guards check mode reports 100vh fallback remediation tip", () => {
   const workspaceRoot = createTempWorkspace();
-  const cssFilePath = path.join(workspaceRoot, "apps/web/src/styles/viewport.css");
-
-  writeFile(
-    cssFilePath,
-    [".bad {", "  min-height: 100vh;", "}"].join("\n"),
+  const cssFilePath = path.join(
+    workspaceRoot,
+    "apps/web/src/styles/viewport.css",
   );
+
+  writeFile(cssFilePath, [".bad {", "  min-height: 100vh;", "}"].join("\n"));
 
   const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
     cwd: workspaceRoot,
@@ -171,16 +174,14 @@ test("quality-guards check mode reports 100vh fallback remediation tip", () => {
 
 test("quality-guards check mode passes when 100vh fallback is present", () => {
   const workspaceRoot = createTempWorkspace();
-  const cssFilePath = path.join(workspaceRoot, "apps/web/src/styles/viewport.css");
+  const cssFilePath = path.join(
+    workspaceRoot,
+    "apps/web/src/styles/viewport.css",
+  );
 
   writeFile(
     cssFilePath,
-    [
-      ".ok {",
-      "  min-height: 100vh;",
-      "  min-height: 100dvh;",
-      "}",
-    ].join("\n"),
+    [".ok {", "  min-height: 100vh;", "  min-height: 100dvh;", "}"].join("\n"),
   );
 
   const result = spawnSync(process.execPath, [guardCliPath, "--check"], {
@@ -353,8 +354,10 @@ test("quality-guards check mode reports responsive suite tip when targets are ou
   );
   const reorderedTargets = [...responsiveTargets];
   if (viewportTargetIndex !== -1 && matrixTargetIndex !== -1) {
-    reorderedTargets[viewportTargetIndex] = responsiveTargets[matrixTargetIndex];
-    reorderedTargets[matrixTargetIndex] = responsiveTargets[viewportTargetIndex];
+    reorderedTargets[viewportTargetIndex] =
+      responsiveTargets[matrixTargetIndex];
+    reorderedTargets[matrixTargetIndex] =
+      responsiveTargets[viewportTargetIndex];
   }
 
   writeFile(
@@ -502,7 +505,11 @@ test("quality-guards check mode reports responsive suite tip when configured tar
 
   writeFile(
     path.join(workspaceRoot, WEB_RESPONSIVE_TARGETS_CONFIG_PATH),
-    JSON.stringify(["tests/config/present.test.ts", "tests/config/missing.test.ts"], null, 2),
+    JSON.stringify(
+      ["tests/config/present.test.ts", "tests/config/missing.test.ts"],
+      null,
+      2,
+    ),
   );
   writeFile(
     path.join(workspaceRoot, "apps/web/tests/config/present.test.ts"),

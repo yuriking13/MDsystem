@@ -11,7 +11,7 @@ const {
   lineForIndex,
   readRequiredWebResponsiveTestTargets,
   runQualityGuards,
-} = require("./quality-guards-lib.js");
+} = require("./quality-guards-lib.ts");
 
 function getDefaultResponsiveTargets() {
   return [...DEFAULT_REQUIRED_WEB_RESPONSIVE_TEST_TARGETS];
@@ -152,7 +152,10 @@ test("runQualityGuards reports web js mirrors in check-only mode", () => {
 
 test("runQualityGuards reports standalone js/jsx files in web source", () => {
   const workspaceRoot = createWorkspaceFixture();
-  const jsSourcePath = path.join(workspaceRoot, "apps/web/src/lib/legacy-helper.js");
+  const jsSourcePath = path.join(
+    workspaceRoot,
+    "apps/web/src/lib/legacy-helper.js",
+  );
   const jsxSourcePath = path.join(
     workspaceRoot,
     "apps/web/src/components/LegacyWidget.jsx",
@@ -316,12 +319,9 @@ test("runQualityGuards requires matching property for 100dvh fallback", () => {
 
   writeFile(
     path.join(workspaceRoot, "apps/web/src/styles/viewport-mismatch.css"),
-    [
-      ".bad-mismatch {",
-      "  min-height: 100vh;",
-      "  height: 100dvh;",
-      "}",
-    ].join("\n"),
+    [".bad-mismatch {", "  min-height: 100vh;", "  height: 100dvh;", "}"].join(
+      "\n",
+    ),
   );
 
   const result = runQualityGuards({
@@ -512,7 +512,9 @@ test("runQualityGuards blocks incomplete web test:responsive script coverage", (
   assert.ok(responsiveScriptCoverageViolation);
   assert.ok(
     responsiveScriptCoverageViolation.violations.some((violation) =>
-      violation.snippet.includes("missing-target:tests/pages/AdminLayout.test.tsx"),
+      violation.snippet.includes(
+        "missing-target:tests/pages/AdminLayout.test.tsx",
+      ),
     ),
   );
   assert.ok(
@@ -653,7 +655,9 @@ test("runQualityGuards blocks web test:responsive script without clean-js-mirror
   assert.ok(responsiveScriptCoverageViolation);
   assert.ok(
     responsiveScriptCoverageViolation.violations.some((violation) =>
-      violation.snippet.includes("missing-pre-step:clean-js-mirrors+vitest-run"),
+      violation.snippet.includes(
+        "missing-pre-step:clean-js-mirrors+vitest-run",
+      ),
     ),
   );
 });
@@ -1093,18 +1097,12 @@ test("runQualityGuards blocks inline numeric viewport arrays in layout responsiv
 
   writeFile(
     path.join(workspaceRoot, "apps/web/tests/components/AppLayout.test.tsx"),
-    [
-      "for (const width of [360, 390, 768]) {",
-      "  void width;",
-      "}",
-    ].join("\n"),
+    ["for (const width of [360, 390, 768]) {", "  void width;", "}"].join("\n"),
   );
 
   writeFile(
     path.join(workspaceRoot, "apps/web/tests/pages/AdminLayout.test.tsx"),
-    [
-      "it.each([[360, true], [1024, false]])('x', () => {});",
-    ].join("\n"),
+    ["it.each([[360, true], [1024, false]])('x', () => {});"].join("\n"),
   );
 
   const result = runQualityGuards({
