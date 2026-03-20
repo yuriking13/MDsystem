@@ -46,7 +46,7 @@ describe("ArticleAIModal", () => {
       />,
     );
 
-    expect(screen.getByText("MD Assistant")).toBeInTheDocument();
+    expect(screen.getByText("AI Помощник")).toBeInTheDocument();
     expect(screen.getByText("2")).toBeInTheDocument(); // Badge count
   });
 
@@ -80,7 +80,7 @@ describe("ArticleAIModal", () => {
     const fab = screen.getByRole("button", { name: /AI помощник/i });
     fireEvent.click(fab);
 
-    expect(screen.getByText("5 articles selected")).toBeInTheDocument();
+    expect(screen.getByText(/articles selected/)).toBeInTheDocument();
     expect(screen.getByText("Test Project")).toBeInTheDocument();
   });
 
@@ -148,13 +148,13 @@ describe("ArticleAIModal", () => {
     expect(AgentCoordinator.registerAgent).toHaveBeenCalledWith(
       "article-ai-literature",
       "literature",
-      "MD Assistant",
+      "AI Помощник",
     );
 
     expect(AgentCoordinator.updateAgentStatus).toHaveBeenCalledWith(
       "article-ai-literature",
       "active",
-      "Opening MD Assistant",
+      "Opening AI Помощник",
     );
   });
 
@@ -173,7 +173,7 @@ describe("ArticleAIModal", () => {
 
     // Get modal header for dragging
     const header = screen
-      .getByText("MD Assistant")
+      .getByText("AI Помощник")
       .closest(".article-ai-modal-header");
     expect(header).toBeInTheDocument();
 
@@ -274,7 +274,7 @@ describe("ArticleAIModal", () => {
     fireEvent.click(closeBtn);
 
     // Should close and go back to FAB
-    expect(screen.getByText("MD Assistant")).toBeInTheDocument();
+    expect(screen.getByText("AI Помощник")).toBeInTheDocument();
     expect(screen.queryByText("How can I help?")).not.toBeInTheDocument();
   });
 });

@@ -3,6 +3,14 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ArticleAISidebar from "../../src/components/ArticleAISidebar";
 
+vi.mock("../../src/lib/LanguageContext", () => ({
+  useLanguage: () => ({
+    lang: "en",
+    setLang: vi.fn(),
+    t: (_ru: string, en: string) => en,
+  }),
+}));
+
 const mockMessages = [
   {
     id: "1",
@@ -40,7 +48,7 @@ describe("ArticleAISidebar", () => {
     it("renders floating button when closed", () => {
       render(<ArticleAISidebar {...defaultProps} isOpen={false} />);
 
-      expect(screen.getByText("MD Assistant")).toBeInTheDocument();
+      expect(screen.getByText("AI Assistant")).toBeInTheDocument();
     });
 
     it("shows selected count on floating button", () => {
@@ -59,7 +67,7 @@ describe("ArticleAISidebar", () => {
       const user = userEvent.setup();
       render(<ArticleAISidebar {...defaultProps} isOpen={false} />);
 
-      await user.click(screen.getByText("MD Assistant"));
+      await user.click(screen.getByText("AI Assistant"));
       expect(defaultProps.onToggle).toHaveBeenCalled();
     });
   });
@@ -68,7 +76,7 @@ describe("ArticleAISidebar", () => {
     it("renders the sidebar header", () => {
       render(<ArticleAISidebar {...defaultProps} />);
 
-      expect(screen.getByText("MD Assistant")).toBeInTheDocument();
+      expect(screen.getByText("AI Assistant")).toBeInTheDocument();
       expect(
         screen.getByText("AI-powered research helper"),
       ).toBeInTheDocument();
@@ -202,7 +210,7 @@ describe("ArticleAISidebar", () => {
     it("shows helper text", () => {
       render(<ArticleAISidebar {...defaultProps} />);
 
-      expect(screen.getByText(/Press Enter to send/)).toBeInTheDocument();
+      expect(screen.getByText(/Enter to send/)).toBeInTheDocument();
     });
 
     it("calls onSendMessage when form is submitted", async () => {

@@ -58,28 +58,32 @@ describe("manual smoke checklist contract", () => {
 
     for (const { id, label, tab } of tabExpectations) {
       expect(sidebarSource).toContain(`id: "${id}"`);
-      expect(sidebarSource).toContain(`label: "${label}"`);
+      expect(sidebarSource).toContain(`t("${label}"`);
       expect(sidebarSource).toContain(`tab: "${tab}"`);
     }
   });
 
   it("keeps main sidebar navigation entries for projects and docs", () => {
     expect(sidebarSource).toContain('id: "projects"');
-    expect(sidebarSource).toContain('label: "Проекты"');
+    expect(sidebarSource).toContain('t("Проекты", "Projects")');
     expect(sidebarSource).toContain('path: "/projects"');
     expect(sidebarSource).toContain('id: "docs"');
-    expect(sidebarSource).toContain('label: "Документация"');
+    expect(sidebarSource).toContain('t("Документация", "Documentation")');
     expect(sidebarSource).toContain('path: "/docs"');
   });
 
   it("keeps profile settings and back-to-project controls in sidebar shell", () => {
-    expect(sidebarSource).toContain('title="Перейти в настройки"');
+    expect(sidebarSource).toContain(
+      'title={t("Перейти в настройки", "Go to settings")}',
+    );
     expect(sidebarSource).toContain('navigate("/settings")');
     expect(sidebarSource).toMatch(
       /className="sidebar-user"[\s\S]*?type="button"/,
     );
-    expect(sidebarSource).toContain('title="Назад к проектам"');
-    expect(sidebarSource).toContain("<span>К проектам</span>");
+    expect(sidebarSource).toContain(
+      'title={t("Назад к проектам", "Back to projects")}',
+    );
+    expect(sidebarSource).toContain('{t("К проектам", "To projects")}');
     expect(sidebarSource).toContain('navigate("/projects")');
   });
 
@@ -94,7 +98,7 @@ describe("manual smoke checklist contract", () => {
 
     for (const { id, label } of statusExpectations) {
       expect(sidebarSource).toContain(`id: "${id}"`);
-      expect(sidebarSource).toContain(`label: "${label}"`);
+      expect(sidebarSource).toContain(`t("${label}"`);
     }
   });
 

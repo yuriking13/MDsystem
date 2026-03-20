@@ -3,6 +3,14 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ArticleCard, { ArticleData } from "../../src/components/ArticleCard";
 
+vi.mock("../../src/lib/LanguageContext", () => ({
+  useLanguage: () => ({
+    lang: "en",
+    setLang: vi.fn(),
+    t: (_ru: string, en: string) => en,
+  }),
+}));
+
 const mockArticle: ArticleData = {
   id: "1",
   pmid: "12345678",

@@ -141,7 +141,7 @@ vi.mock("../../src/pages/admin/AdminArticlesPage", () => ({
   default: () => <div>Admin Articles Page</div>,
 }));
 
-vi.mock("../../src/pages/LandingPage", () => ({
+vi.mock("../../src/pages/ProfessionalLandingPage", () => ({
   default: () => <div>Landing Page</div>,
 }));
 
