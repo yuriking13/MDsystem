@@ -90,8 +90,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "sans-serif"],
-        serif: ["Georgia", "Charter", "serif"],
+        sans: ["Noto Serif", "Georgia", "Times New Roman", "serif"],
+        serif: ["Noto Serif", "Georgia", "Charter", "serif"],
         mono: ["JetBrains Mono", "Menlo", "Monaco", "monospace"],
       },
       fontSize: {

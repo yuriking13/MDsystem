@@ -2,13 +2,11 @@
 /* Concept: Neo-Brutalist Scientific with Organic Mathematical Forms */
 /* Inspiration: Soviet constructivism meets organic chemistry diagrams */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,200;0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,200;0,400;0,600;0,900;1,400&display=swap');
-
 :root {
   /* Typography Revolution - Away from Inter/Roboto */
-  --font-display: 'Crimson Pro', Georgia, serif; /* Distinctive serif for headlines */
-  --font-body: 'JetBrains Mono', 'SF Mono', Consolas, monospace; /* Monospace for scientific precision */
-  --font-accent: 'Crimson Pro', Georgia, serif;
+  --font-display: 'Noto Serif', Georgia, serif;
+  --font-body: 'Noto Serif', Georgia, serif;
+  --font-accent: 'Noto Serif', Georgia, serif;
   
   /* Revolutionary Color Palette - Vermillion & Prussian Blue Scientific */
   --color-vermillion: #E34234; /* Cinnabar red - alchemical power */

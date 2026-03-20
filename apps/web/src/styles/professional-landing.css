@@ -3,12 +3,9 @@
    Clean, modern design for Scientiaiter landing page
    ============================================================================= */
 
-/* Import softer font */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
 /* Base styles */
 html {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Noto Serif', Georgia, serif;
   font-feature-settings: 'cv11', 'ss01', 'ss02';
   scroll-behavior: smooth;
 }

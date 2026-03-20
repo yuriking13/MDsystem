@@ -3823,7 +3823,7 @@ export default function CitationGraph({ projectId }: Props) {
                     ) {
                       const label = node.label || "";
                       const fontSize = Math.max(9, 11 / globalScale);
-                      ctx.font = `${fontSize}px Inter, sans-serif`;
+                      ctx.font = `${fontSize}px Noto Serif, serif`;
                       ctx.fillStyle = graphColors.textColor;
                       ctx.textAlign = "center";
                       ctx.textBaseline = "top";
