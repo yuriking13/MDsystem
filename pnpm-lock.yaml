@@ -133,7 +133,7 @@ importers:
         specifier: ^0.41.1
         version: 0.41.1
       dotenv:
-        specifier: ^16.4.5
+        specifier: ^16.6.1
         version: 16.6.1
       fast-xml-parser:
         specifier: ">=5.5.7"

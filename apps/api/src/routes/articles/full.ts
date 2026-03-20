@@ -198,12 +198,19 @@ async function getUserApiKey(
   // Расшифровка (импортируем функцию)
   try {
     const { decryptApiKey } = await import("../../utils/apiKeyCrypto.js");
-    return decryptApiKey(encrypted);
+    log.debug(
+      `Attempting to decrypt API key for user ${userId}, provider ${provider}`,
+    );
+    const decrypted = decryptApiKey(encrypted);
+    log.debug(
+      `Successfully decrypted API key for user ${userId}, provider ${provider}, key length: ${decrypted.length}`,
+    );
+    return decrypted;
   } catch (error) {
     log.error(
       "Failed to decrypt user API key",
       error instanceof Error ? error : undefined,
-      { userId, provider },
+      { userId, provider, encryptedLength: encrypted?.length },
     );
     return null;
   }
@@ -3587,14 +3594,20 @@ const plugin: FastifyPluginAsync = async (fastify) => {
 
       try {
         // Получаем API ключ OpenRouter
+        log.debug(`Fetching OpenRouter API key for user ${userId}`);
         const openrouterKey = await getUserApiKey(userId, "openrouter");
         if (!openrouterKey) {
+          log.warn(`Missing OpenRouter API key for user ${userId}`);
           return reply.code(400).send({
             ok: false,
             error:
-              "Для AI ассистента нужен API ключ OpenRouter. Добавьте его в Настройках.",
+              "Для работы AI ассистента нужен API ключ OpenRouter. Перейдите в Настройки → API ключи → OpenRouter и добавьте ваш ключ.",
+            missingProvider: "openrouter",
           });
         }
+        log.debug(
+          `OpenRouter API key found for user ${userId}, length: ${openrouterKey.length}`,
+        );
 
         // Получаем информацию о проекте
         const projectRes = await pool.query(

@@ -25,7 +25,7 @@ import {
   type SearchProgressEvent,
 } from "../lib/api";
 import AddArticleByDoiModal from "./AddArticleByDoiModal";
-import ArticleAISidebar from "./ArticleAISidebar";
+import ArticleAIModal from "./ArticleAIModal";
 import { useToast } from "./Toast";
 import ArticleCard from "./ArticleCard";
 import { toArticleData } from "../lib/articleAdapter";
@@ -314,8 +314,8 @@ export default function ArticlesSection({
   // Добавление статьи по DOI
   const [showAddByDoiModal, setShowAddByDoiModal] = useState(false);
 
-  // AI ассистент
-  const [showAISidebar, setShowAISidebar] = useState(false);
+  // AI ассистент - состояние управляется внутри модального окна
+  const [forceOpenAI, setForceOpenAI] = useState(false);
 
   // Глобальные настройки отображения
   const [listLang, setListLang] = useState<"ru" | "en">("ru"); // Язык в списке
@@ -1435,9 +1435,9 @@ export default function ArticlesSection({
               </button>
               <button
                 className="articles-toolbar-btn articles-toolbar-btn--ai"
-                onClick={() => setShowAISidebar(!showAISidebar)}
+                onClick={() => setForceOpenAI(!forceOpenAI)}
                 type="button"
-                title="AI помощник — подбор статей по параметрам"
+                title="AI помощник по подбору и анализу статей"
               >
                 <svg
                   className="w-4 h-4"
@@ -1452,7 +1452,7 @@ export default function ArticlesSection({
                     d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                   />
                 </svg>
-                {showAISidebar ? "Скрыть AI" : "AI подбор"}
+                MD Assistant
               </button>
               <button
                 className="articles-toolbar-btn articles-toolbar-btn--primary liquid-metal"
@@ -3101,14 +3101,12 @@ export default function ArticlesSection({
         />
       )}
 
-      {/* AI Assistant Sidebar */}
-      <ArticleAISidebar
-        isOpen={showAISidebar}
-        onToggle={() => setShowAISidebar(!showAISidebar)}
-        onClose={() => setShowAISidebar(false)}
+      {/* AI Assistant Modal */}
+      <ArticleAIModal
         projectId={projectId}
         projectName={projectInfo.name || undefined}
         viewStatus={viewStatus}
+        selectedArticlesCount={counts.selected}
         candidateCount={counts.candidate}
         onAddToSelected={async (articleIds) => {
           try {

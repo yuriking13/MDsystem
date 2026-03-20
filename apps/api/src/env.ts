@@ -1,4 +1,8 @@
 import { z } from "zod";
+import dotenv from "dotenv";
+
+// Load environment variables from .env file
+dotenv.config();
 
 function emptyStringToUndefined(value: unknown): unknown {
   if (typeof value === "string" && value.trim().length === 0) {
