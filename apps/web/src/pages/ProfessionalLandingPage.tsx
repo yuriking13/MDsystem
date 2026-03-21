@@ -454,31 +454,34 @@ export default function ProfessionalLandingPage() {
         </div>
         <div className="partners-runner-track">
           {[
-            "WHO",
-            "PubMed",
-            "Crossref",
-            "OpenAlex",
-            "Scopus",
-            "ORCID",
-            "DOAJ",
-          ].map((partner) => (
-            <span key={`a-${partner}`} className="partner-chip">
-              {partner}
-            </span>
-          ))}
-          {[
-            "WHO",
-            "PubMed",
-            "Crossref",
-            "OpenAlex",
-            "Scopus",
-            "ORCID",
-            "DOAJ",
-          ].map((partner) => (
-            <span key={`b-${partner}`} className="partner-chip">
-              {partner}
-            </span>
-          ))}
+            {
+              name: "Cochrane",
+              src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/Cochrane-logo.jpg",
+            },
+            {
+              name: "DOAJ",
+              src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/DOAJ_idGdm4HXaq_0.png",
+            },
+            {
+              name: "PubMed",
+              src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/US-NLM-PubMed-Logo.svg.png",
+            },
+            {
+              name: "eLibrary",
+              src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/elibrary_ru2.svg",
+            },
+          ].flatMap((p, _, arr) => [
+            <span key={`a-${p.name}`} className="partner-logo-chip">
+              <img src={p.src} alt={p.name} loading="lazy" />
+            </span>,
+            ...(arr.length - 1 === arr.indexOf(p)
+              ? arr.map((pp) => (
+                  <span key={`b-${pp.name}`} className="partner-logo-chip">
+                    <img src={pp.src} alt={pp.name} loading="lazy" />
+                  </span>
+                ))
+              : []),
+          ])}
         </div>
       </section>
 
