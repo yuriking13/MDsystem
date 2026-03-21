@@ -188,7 +188,7 @@ export default function TermsOfUsePage() {
         </div>
       </main>
 
-      <LandingFooter />
+      <LandingFooter language={language} theme={theme} />
     </div>
   );
 }

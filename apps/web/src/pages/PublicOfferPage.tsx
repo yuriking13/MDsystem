@@ -205,7 +205,7 @@ export default function PublicOfferPage() {
         </div>
       </main>
 
-      <LandingFooter />
+      <LandingFooter language={language} theme={theme} />
     </div>
   );
 }

@@ -151,7 +151,7 @@ export default function ProjectFacesPage() {
         </div>
       </main>
 
-      <LandingFooter />
+      <LandingFooter language={language} theme={theme} />
     </div>
   );
 }
