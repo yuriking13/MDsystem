@@ -230,6 +230,19 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.1;
 }
 
+/* Force heading color on external pages and cancel legacy blue gradient. */
+.professional-landing h1,
+.professional-landing h2,
+.professional-landing h3,
+.professional-landing h4,
+.professional-landing h5,
+.professional-landing h6 {
+  background: none !important;
+  -webkit-background-clip: border-box !important;
+  -webkit-text-fill-color: currentColor !important;
+  background-clip: border-box !important;
+}
+
 .font-light {
   font-weight: 300;
 }
@@ -1666,6 +1679,8 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 999vw;
   border: none;
   position: relative;
+  z-index: 0;
+  isolation: isolate;
   cursor: pointer;
   font-family: "Noto Serif", Georgia, serif;
   letter-spacing: -0.03em;
@@ -1688,6 +1703,22 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.3s ease;
 }
 
+.landing-auth-submit::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  left: 12px;
+  right: 12px;
+  top: 56%;
+  height: 68%;
+  border-radius: 999vw;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.08));
+  filter: blur(10px);
+  opacity: 0.72;
+  transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
+  pointer-events: none;
+}
+
 .landing-auth-submit:hover:not(:disabled) {
   transform: scale(0.975);
   backdrop-filter: blur(0.01em);
@@ -1697,6 +1728,12 @@ h1, h2, h3, h4, h5, h6 {
     0 0 0.05em 0.1em inset rgba(255, 255, 255, 0.5),
     0 12px 32px -4px rgba(0, 0, 0, 0.2),
     0 6px 12px -2px rgba(0, 0, 0, 0.15);
+}
+
+.landing-auth-submit:hover:not(:disabled)::before {
+  opacity: 0.92;
+  transform: translateY(1px) scale(1.02);
+  filter: blur(12px);
 }
 
 .landing-style-bch .landing-auth-submit {
@@ -1713,6 +1750,11 @@ h1, h2, h3, h4, h5, h6 {
     0 0 0.1em 0.25em inset rgba(255, 255, 255, 0.05),
     0 8px 24px -4px rgba(0, 0, 0, 0.25),
     0 4px 8px -2px rgba(0, 0, 0, 0.15);
+}
+
+.landing-style-bch .landing-auth-submit::before {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.38), rgba(0, 0, 0, 0.16));
+  opacity: 0.86;
 }
 
 .landing-auth-submit:disabled {
