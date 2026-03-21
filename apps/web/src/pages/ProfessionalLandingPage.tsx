@@ -136,22 +136,35 @@ export default function ProfessionalLandingPage() {
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-slate-900" : "bg-slate-50"}`}
+      className={`professional-landing min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-slate-900" : "bg-slate-50"}`}
     >
-      {/* Animated Background */}
-      <div className="geometric-bg">
-        <div className="geometric-shape shape-1"></div>
-        <div className="geometric-shape shape-2"></div>
-        <div className="geometric-shape shape-3"></div>
-        <div className="geometric-shape shape-4"></div>
-        <div className="geometric-shape shape-5"></div>
-        <div className="geometric-shape shape-6"></div>
+      {/* Animated Background with brand logos */}
+      <div className="logo-bg" aria-hidden="true">
+        <div className="logo-aura logo-aura-1" />
+        <div className="logo-aura logo-aura-2" />
+        <div className="logo-aura logo-aura-3" />
+        <div className="floating-logo logo-1">
+          <img src="/logo.svg" alt="" loading="lazy" />
+        </div>
+        <div className="floating-logo logo-2">
+          <img src="/logo.svg" alt="" loading="lazy" />
+        </div>
+        <div className="floating-logo logo-3">
+          <img src="/logo.svg" alt="" loading="lazy" />
+        </div>
+        <div className="floating-logo logo-4">
+          <img src="/logo.svg" alt="" loading="lazy" />
+        </div>
+        <div className="floating-logo logo-5">
+          <img src="/logo.svg" alt="" loading="lazy" />
+        </div>
+        <div className="floating-logo logo-6">
+          <img src="/logo.svg" alt="" loading="lazy" />
+        </div>
       </div>
 
       {/* Header + Hero Combined */}
-      <section
-        className={`min-h-screen relative overflow-hidden ${theme === "dark" ? "bg-gradient-to-br from-slate-900 via-blue-900 to-purple-900" : "bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50"}`}
-      >
+      <section className="min-h-screen relative overflow-hidden modern-hero-shell">
         {/* Header */}
         <header className="relative z-50 px-6 py-6">
           <div className="max-w-7xl mx-auto">
@@ -233,10 +246,7 @@ export default function ProfessionalLandingPage() {
                   {t.nav.login}
                 </Link>
 
-                <Link
-                  to="/register"
-                  className={`${theme === "dark" ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-900 hover:bg-slate-800"} text-white px-6 py-2.5 rounded-lg transition-colors font-medium`}
-                >
+                <Link to="/register" className="modern-cta-chip">
                   {t.nav.start}
                 </Link>
               </div>
@@ -248,9 +258,7 @@ export default function ProfessionalLandingPage() {
         <div className="relative z-40 flex items-center justify-center min-h-[calc(100vh-100px)] px-6">
           <div className="max-w-5xl mx-auto text-center">
             <div className="mb-8 animate-fade-in-up">
-              <span
-                className={`${theme === "dark" ? "bg-blue-500/20 text-blue-300 border-blue-400/30" : "bg-blue-100 text-blue-800"} border px-6 py-3 rounded-full text-sm font-medium backdrop-blur-sm`}
-              >
+              <span className="modern-badge border px-6 py-3 rounded-full text-sm font-medium backdrop-blur-sm">
                 {t.hero.badge}
               </span>
             </div>
@@ -274,13 +282,13 @@ export default function ProfessionalLandingPage() {
             <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in-up-delay-3">
               <Link
                 to="/register"
-                className={`${theme === "dark" ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-600 hover:bg-blue-700"} text-white px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105`}
+                className="modern-hero-primary text-white px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
               >
                 {t.hero.cta1}
               </Link>
               <Link
                 to="/demo"
-                className={`${theme === "dark" ? "border-slate-400 text-slate-300 hover:bg-slate-800" : "border-slate-300 text-slate-700 hover:bg-slate-50"} border-2 px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 hover:scale-105`}
+                className="modern-hero-secondary border-2 px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 hover:scale-105"
               >
                 {t.hero.cta2}
               </Link>
@@ -290,10 +298,7 @@ export default function ProfessionalLandingPage() {
       </section>
 
       {/* Capabilities Section */}
-      <section
-        id="capabilities"
-        className={`py-24 px-6 ${theme === "dark" ? "bg-slate-800" : "bg-white"}`}
-      >
+      <section id="capabilities" className="py-24 px-6 modern-section-surface">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2
@@ -416,10 +421,7 @@ export default function ProfessionalLandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section
-        id="pricing"
-        className={`py-24 px-6 ${theme === "dark" ? "bg-slate-900" : "bg-slate-50"}`}
-      >
+      <section id="pricing" className="py-24 px-6 modern-section-muted">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <h2
