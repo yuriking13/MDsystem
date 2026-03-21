@@ -1231,6 +1231,54 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* =============================================================================
+   Landing Footer
+   ============================================================================= */
+
+.landing-footer {
+  border-top: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.landing-style-chb .landing-footer {
+  border-top-color: rgba(15, 23, 42, 0.08);
+}
+
+.landing-style-bch .landing-footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.landing-footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.landing-footer-logo {
+  height: 28px;
+  width: auto;
+}
+
+.landing-footer-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .landing-footer-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 1.2rem;
+  }
+
+  .landing-footer-links {
+    justify-content: center;
+  }
+}
+
+/* =============================================================================
    Policy / Legal Pages
    ============================================================================= */
 

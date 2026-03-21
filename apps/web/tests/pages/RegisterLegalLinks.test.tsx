@@ -51,7 +51,9 @@ describe("Register legal links", () => {
       </MemoryRouter>,
     );
     expect(
-      screen.getByRole("heading", { name: "Terms of Use / Условия использования" }),
+      screen.getByRole("heading", {
+        name: "Terms of Use / Условия использования",
+      }),
     ).toBeInTheDocument();
     unmount();
 
@@ -62,7 +64,7 @@ describe("Register legal links", () => {
     );
     expect(
       screen.getByRole("heading", {
-        name: "Privacy Policy / Политика конфиденциальности",
+        name: "Политика конфиденциальности",
       }),
     ).toBeInTheDocument();
   });

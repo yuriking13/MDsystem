@@ -141,13 +141,6 @@ export default function ProfessionalLandingPage() {
           },
         ],
       },
-      footer: {
-        title: "Готовы повысить качество ваших исследований?",
-        subtitle:
-          "Присоединяйтесь к исследователям, которые уже используют возможности интегрированной научной платформы",
-        cta1: "Начать бесплатный период",
-        cta2: "Запросить демо",
-      },
     },
     en: {
       nav: {
@@ -265,13 +258,6 @@ export default function ProfessionalLandingPage() {
             a: "Yes, both Russian and English interface modes are available.",
           },
         ],
-      },
-      footer: {
-        title: "Ready to enhance your research quality?",
-        subtitle:
-          "Join researchers who are already using the integrated scientific platform capabilities",
-        cta1: "Start Free Trial",
-        cta2: "Request Demo",
       },
     },
   };
@@ -1119,7 +1105,7 @@ export default function ProfessionalLandingPage() {
         </div>
       </section>
 
-      <LandingFooter language={language} theme={theme} cta={t.footer} />
+      <LandingFooter language={language} theme={theme} />
     </div>
   );
 }
