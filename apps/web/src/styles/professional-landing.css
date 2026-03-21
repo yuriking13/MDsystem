@@ -1127,6 +1127,271 @@ h1, h2, h3, h4, h5, h6 {
   background: #000000;
 }
 
+/* =============================================================================
+   Conference Banner Cards (Landing)
+   ============================================================================= */
+
+.conf-banner-card {
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.conf-banner-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.conf-banner-image {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.3);
+}
+
+.conf-banner-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.conf-banner-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(148, 163, 184, 0.45);
+}
+
+.conf-placeholder-svg {
+  width: 64px;
+  height: 64px;
+}
+
+.conf-banner-body {
+  padding: 1.25rem 1.4rem;
+}
+
+.conf-banner-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.conf-banner-sub {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.landing-style-chb .conf-banner-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+.landing-style-chb .conf-banner-image {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.landing-style-chb .conf-banner-placeholder {
+  color: rgba(100, 116, 139, 0.45);
+}
+
+.landing-style-bch .conf-banner-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Pricing glass action override */
+.pricing-glass-action {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.pricing-glass-action .glass-button {
+  width: 100%;
+  text-align: center;
+}
+
+.pricing-glass-action .glass-button > span {
+  display: block;
+  text-align: center;
+}
+
+/* =============================================================================
+   Conferences Page
+   ============================================================================= */
+
+.conf-filters {
+  display: flex;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.conf-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 180px;
+}
+
+.conf-filter-group label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+.conf-filter-select {
+  appearance: none;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font-size: 0.9rem;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.conf-filter-select:focus {
+  outline: none;
+  border-color: rgba(56, 189, 248, 0.6);
+}
+
+.landing-style-chb .conf-filter-select {
+  background: rgba(255, 255, 255, 0.7);
+  border-color: rgba(15, 23, 42, 0.15);
+}
+
+.conf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.conf-card {
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.conf-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+}
+
+.conf-card-image {
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: rgba(15, 23, 42, 0.3);
+}
+
+.conf-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.conf-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(148, 163, 184, 0.4);
+}
+
+.conf-placeholder-icon {
+  width: 56px;
+  height: 56px;
+}
+
+.conf-card-body {
+  padding: 1.2rem 1.4rem;
+}
+
+.conf-card-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  margin-bottom: 0.6rem;
+}
+
+.conf-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.conf-card-subtitle {
+  font-size: 0.88rem;
+  opacity: 0.75;
+  margin-bottom: 0.75rem;
+  line-height: 1.45;
+}
+
+.conf-card-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  opacity: 0.55;
+}
+
+.landing-style-chb .conf-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+
+.landing-style-chb .conf-card-image {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.landing-style-chb .conf-card-placeholder {
+  color: rgba(100, 116, 139, 0.4);
+}
+
+.landing-style-chb .conf-card-tag {
+  background: rgba(14, 165, 233, 0.1);
+  color: #0284c7;
+}
+
+.landing-style-bch .conf-card {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 1024px) {
+  .conf-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .conf-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .conf-filters {
+    flex-direction: column;
+  }
+}
+
 @media (max-width: 1024px) {
   .hero-split-layout {
     grid-template-columns: 1fr;

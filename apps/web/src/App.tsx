@@ -12,6 +12,7 @@ import AppLayout from "./components/AppLayout";
 const LoginPage = lazy(() => import("./pages/LoginPage"));
 const RegisterPage = lazy(() => import("./pages/RegisterPage"));
 const LandingPage = lazy(() => import("./pages/ProfessionalLandingPage"));
+const ConferencesPage = lazy(() => import("./pages/ConferencesPage"));
 const ScienceLandingPage = lazy(
   () => import("./pages/science/ScienceLandingPage"),
 );
@@ -118,6 +119,7 @@ export default function App() {
             <Route path="/terms" element={<TermsOfUsePage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
             <Route path="/project-faces" element={<ProjectFacesPage />} />
+            <Route path="/conferences" element={<ConferencesPage />} />
 
             {/* Authenticated Routes (with sidebar) */}
             <Route

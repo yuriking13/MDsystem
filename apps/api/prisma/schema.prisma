@@ -576,3 +576,37 @@ model AdminAuditLog {
   @@index([createdAt])
   @@map("admin_audit_log")
 }
+
+enum MedicalSpecialty {
+  THERAPY
+  SURGERY
+  DENTISTRY
+  CARDIOLOGY
+  ENDOCRINOLOGY
+  NEUROLOGY
+  TRAUMATOLOGY
+  OTORHINOLARYNGOLOGY
+  REHABILITATION
+  PLASTIC_SURGERY
+  GENETICS
+}
+
+model Conference {
+  id          String           @id @default(dbgenerated("gen_random_uuid()"))
+  title       String           @db.VarChar(300)
+  subtitle    String?          @db.VarChar(500)
+  location    String?          @db.VarChar(300)
+  date        DateTime
+  endDate     DateTime?        @map("end_date")
+  specialty   MedicalSpecialty
+  description String?          @db.Text
+  imageUrl    String?          @map("image_url") @db.VarChar(1000)
+  isPublished Boolean          @default(false) @map("is_published")
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  @@index([date])
+  @@index([specialty])
+  @@index([isPublished])
+  @@map("conferences")
+}
