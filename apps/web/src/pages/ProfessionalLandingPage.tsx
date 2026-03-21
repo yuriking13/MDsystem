@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/professional-landing.css";
 
+const HERO_IMAGE_URL =
+  "https://storage.yandexcloud.net/scentiaiterpublic/landing/Cell-cenet.png";
+
 export default function ProfessionalLandingPage() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [language, setLanguage] = useState<"ru" | "en">("ru");
@@ -25,12 +28,14 @@ export default function ProfessionalLandingPage() {
         platform: "Платформа",
         capabilities: "Возможности",
         pricing: "Цены",
+        faq: "FAQ",
         login: "Войти",
         start: "Начать",
       },
+      brandSubtitle: "Путь знания",
       hero: {
         badge: "Научная платформа нового поколения",
-        title: ["Исследования", "на новом", "уровне"],
+        title: "Умное рабочее пространство для научных работ по медицине",
         subtitle:
           "Профессиональная платформа для систематизации знаний, анализа данных и подготовки публикаций в области медицинских исследований",
         cta1: "Попробовать платформу",
@@ -66,6 +71,71 @@ export default function ProfessionalLandingPage() {
       pricing: {
         title: "Тарифные планы",
         subtitle: "Выберите подходящий план для ваших исследований",
+        plans: [
+          {
+            name: "Исследователь",
+            price: "₽2,990",
+            period: "/мес",
+            description: "Для индивидуальных исследователей",
+            benefits: [
+              "До 3 активных проектов",
+              "Базовый AI-ассистент",
+              "Поиск и организация литературы",
+              "Экспорт рукописей в DOCX/PDF",
+            ],
+          },
+          {
+            name: "Команда",
+            price: "₽8,990",
+            period: "/мес",
+            description: "Для исследовательских групп",
+            tag: "Популярный",
+            benefits: [
+              "До 20 участников в команде",
+              "Совместная работа в реальном времени",
+              "Расширенная аналитика и граф цитирования",
+              "Приоритетная поддержка",
+            ],
+          },
+          {
+            name: "Институт",
+            price: "Договор",
+            period: "",
+            description: "Для крупных организаций",
+            benefits: [
+              "Неограниченные проекты и пользователи",
+              "Интеграции с внутренними системами",
+              "Выделенный SLA и сопровождение",
+              "Кастомные рабочие процессы",
+            ],
+          },
+        ],
+      },
+      conference: {
+        title: "Баннеры научных конференций",
+        subtitle: "Место под 3 промо-баннера ближайших конференций",
+        slots: [
+          "Баннер конференции #1",
+          "Баннер конференции #2",
+          "Баннер конференции #3",
+        ],
+      },
+      faq: {
+        title: "FAQ / Вопросы и ответы",
+        items: [
+          {
+            q: "Можно ли работать командой над одной рукописью?",
+            a: "Да, в платформе есть совместное редактирование, комментарии и отслеживание версий.",
+          },
+          {
+            q: "Подходит ли платформа для обзоров литературы?",
+            a: "Да, есть многоканальный поиск, дедупликация источников и структурирование материалов.",
+          },
+          {
+            q: "Есть ли поддержка английского интерфейса?",
+            a: "Да, интерфейс доступен на русском и английском языках.",
+          },
+        ],
       },
       footer: {
         title: "Готовы повысить качество ваших исследований?",
@@ -80,12 +150,14 @@ export default function ProfessionalLandingPage() {
         platform: "Platform",
         capabilities: "Features",
         pricing: "Pricing",
+        faq: "FAQ",
         login: "Log in",
         start: "Get Started",
       },
+      brandSubtitle: "Path of Knowledge",
       hero: {
         badge: "Next-generation scientific platform",
-        title: ["Research", "at a new", "level"],
+        title: "Smart workspace for medical scientific publications",
         subtitle:
           "Professional platform for knowledge systematization, data analysis and publication preparation in medical research",
         cta1: "Try Platform",
@@ -121,6 +193,71 @@ export default function ProfessionalLandingPage() {
       pricing: {
         title: "Pricing Plans",
         subtitle: "Choose the right plan for your research",
+        plans: [
+          {
+            name: "Researcher",
+            price: "$39",
+            period: "/month",
+            description: "For individual researchers",
+            benefits: [
+              "Up to 3 active projects",
+              "Core AI writing assistant",
+              "Literature search and organization",
+              "DOCX/PDF export",
+            ],
+          },
+          {
+            name: "Team",
+            price: "$119",
+            period: "/month",
+            description: "For research teams",
+            tag: "Popular",
+            benefits: [
+              "Up to 20 team members",
+              "Real-time collaboration",
+              "Advanced citation graph",
+              "Priority support",
+            ],
+          },
+          {
+            name: "Enterprise",
+            price: "Custom",
+            period: "",
+            description: "For large organizations",
+            benefits: [
+              "Unlimited projects and users",
+              "Internal system integrations",
+              "Dedicated SLA and support",
+              "Custom workflows",
+            ],
+          },
+        ],
+      },
+      conference: {
+        title: "Scientific Conference Banners",
+        subtitle: "Reserved area for 3 upcoming conference banners",
+        slots: [
+          "Conference banner #1",
+          "Conference banner #2",
+          "Conference banner #3",
+        ],
+      },
+      faq: {
+        title: "FAQ",
+        items: [
+          {
+            q: "Can teams work on the same manuscript?",
+            a: "Yes, the platform includes collaborative editing, comments, and version tracking.",
+          },
+          {
+            q: "Is the platform good for literature reviews?",
+            a: "Yes, it provides multi-source search, source deduplication, and structured collections.",
+          },
+          {
+            q: "Is there multilingual UI support?",
+            a: "Yes, both Russian and English interface modes are available.",
+          },
+        ],
       },
       footer: {
         title: "Ready to enhance your research quality?",
@@ -136,7 +273,7 @@ export default function ProfessionalLandingPage() {
 
   return (
     <div
-      className={`professional-landing min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-slate-900" : "bg-slate-50"}`}
+      className={`professional-landing min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-slate-900 landing-style-bch" : "bg-slate-50 landing-style-chb"}`}
     >
       {/* Animated Background with brand logos */}
       <div className="logo-bg" aria-hidden="true">
@@ -171,9 +308,10 @@ export default function ProfessionalLandingPage() {
             <div className="flex items-center justify-between">
               <Link
                 to="/"
-                className={`text-2xl font-bold ${theme === "dark" ? "text-white" : "text-slate-900"}`}
+                className={`brand-name-stack ${theme === "dark" ? "text-white" : "text-slate-900"}`}
               >
-                Scientiaiter
+                <span className="brand-name-primary">Scientiaiter</span>
+                <span className="brand-name-subtitle">{t.brandSubtitle}</span>
               </Link>
 
               <nav className="hidden md:flex items-center gap-8">
@@ -194,6 +332,12 @@ export default function ProfessionalLandingPage() {
                   className={`${theme === "dark" ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"} transition-colors font-medium`}
                 >
                   {t.nav.pricing}
+                </a>
+                <a
+                  href="#faq"
+                  className={`${theme === "dark" ? "text-slate-300 hover:text-white" : "text-slate-600 hover:text-slate-900"} transition-colors font-medium`}
+                >
+                  {t.nav.faq}
                 </a>
               </nav>
 
@@ -255,45 +399,92 @@ export default function ProfessionalLandingPage() {
         </header>
 
         {/* Hero Content */}
-        <div className="relative z-40 flex items-center justify-center min-h-[calc(100vh-100px)] px-6">
-          <div className="max-w-5xl mx-auto text-center">
-            <div className="mb-8 animate-fade-in-up">
-              <span className="modern-badge border px-6 py-3 rounded-full text-sm font-medium backdrop-blur-sm">
-                {t.hero.badge}
-              </span>
+        <div className="relative z-40 min-h-[calc(100vh-100px)] px-6 flex items-center">
+          <div className="max-w-7xl w-full mx-auto hero-split-layout">
+            <div className="hero-copy-block">
+              <div className="mb-8 animate-fade-in-up">
+                <span className="modern-badge border px-6 py-3 rounded-full text-sm font-medium backdrop-blur-sm">
+                  {t.hero.badge}
+                </span>
+              </div>
+
+              <h1
+                className={`text-5xl md:text-7xl font-light mb-8 ${theme === "dark" ? "text-white" : "text-slate-900"} leading-tight animate-fade-in-up-delay-1`}
+              >
+                {t.hero.title}
+              </h1>
+
+              <p
+                className={`text-xl md:text-2xl ${theme === "dark" ? "text-slate-300" : "text-slate-600"} mb-12 leading-relaxed max-w-3xl font-light animate-fade-in-up-delay-2`}
+              >
+                {t.hero.subtitle}
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-6 animate-fade-in-up-delay-3">
+                <Link
+                  to="/register"
+                  className="modern-hero-primary text-white px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+                >
+                  {t.hero.cta1}
+                </Link>
+                <Link
+                  to="/demo"
+                  className="modern-hero-secondary border-2 px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 hover:scale-105"
+                >
+                  {t.hero.cta2}
+                </Link>
+              </div>
             </div>
 
-            <h1
-              className={`text-6xl md:text-8xl font-light mb-8 ${theme === "dark" ? "text-white" : "text-slate-900"} leading-tight animate-fade-in-up-delay-1`}
-            >
-              {t.hero.title.map((line, index) => (
-                <div key={index} className="block">
-                  {line}
-                </div>
-              ))}
-            </h1>
-
-            <p
-              className={`text-xl md:text-2xl ${theme === "dark" ? "text-slate-300" : "text-slate-600"} mb-12 leading-relaxed max-w-4xl mx-auto font-light animate-fade-in-up-delay-2`}
-            >
-              {t.hero.subtitle}
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in-up-delay-3">
-              <Link
-                to="/register"
-                className="modern-hero-primary text-white px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
-              >
-                {t.hero.cta1}
-              </Link>
-              <Link
-                to="/demo"
-                className="modern-hero-secondary border-2 px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 hover:scale-105"
-              >
-                {t.hero.cta2}
-              </Link>
+            <div className="hero-image-shell animate-fade-in-up-delay-2">
+              <img
+                src={HERO_IMAGE_URL}
+                alt={
+                  language === "ru"
+                    ? "Клеточная визуализация"
+                    : "Cellular visualization"
+                }
+                className="hero-cell-image"
+              />
             </div>
           </div>
+        </div>
+      </section>
+
+      <section
+        className="partners-runner"
+        aria-label={language === "ru" ? "Наши партнеры" : "Our partners"}
+      >
+        <div className="partners-runner-label">
+          {language === "ru" ? "Наши партнеры" : "Our partners"}
+        </div>
+        <div className="partners-runner-track">
+          {[
+            "WHO",
+            "PubMed",
+            "Crossref",
+            "OpenAlex",
+            "Scopus",
+            "ORCID",
+            "DOAJ",
+          ].map((partner) => (
+            <span key={`a-${partner}`} className="partner-chip">
+              {partner}
+            </span>
+          ))}
+          {[
+            "WHO",
+            "PubMed",
+            "Crossref",
+            "OpenAlex",
+            "Scopus",
+            "ORCID",
+            "DOAJ",
+          ].map((partner) => (
+            <span key={`b-${partner}`} className="partner-chip">
+              {partner}
+            </span>
+          ))}
         </div>
       </section>
 
@@ -436,106 +627,88 @@ export default function ProfessionalLandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {/* Individual Plan */}
-            <div
-              className={`${theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"} rounded-2xl p-8 border`}
-            >
-              <h3
-                className={`text-2xl font-medium ${theme === "dark" ? "text-white" : "text-slate-900"} mb-2`}
+          <div className="pricing-grid max-w-6xl mx-auto">
+            {t.pricing.plans.map((plan) => (
+              <article
+                key={plan.name}
+                className={`pricing-offer-card ${plan.tag ? "pricing-offer-featured" : ""}`}
               >
-                {language === "ru" ? "Исследователь" : "Researcher"}
-              </h3>
-              <div
-                className={`text-4xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-2`}
-              >
-                ₽2,990
-                <span
-                  className={`text-lg font-normal ${theme === "dark" ? "text-slate-400" : "text-slate-600"}`}
+                {plan.tag && (
+                  <span className="pricing-offer-tag">{plan.tag}</span>
+                )}
+                <h3 className="pricing-offer-title">{plan.name}</h3>
+                <div className="pricing-offer-price">
+                  {plan.price}
+                  {plan.period && <span>{plan.period}</span>}
+                </div>
+                <p className="pricing-offer-description">{plan.description}</p>
+                <ul
+                  className="pricing-offer-benefits"
+                  aria-label={
+                    language === "ru" ? "Преимущества тарифа" : "Plan benefits"
+                  }
                 >
-                  /мес
-                </span>
-              </div>
-              <p
-                className={`${theme === "dark" ? "text-slate-400" : "text-slate-600"} mb-6 font-light`}
-              >
-                {language === "ru"
-                  ? "Для индивидуальных исследователей"
-                  : "For individual researchers"}
-              </p>
-              <Link
-                to="/register"
-                className={`w-full ${theme === "dark" ? "bg-slate-700 hover:bg-slate-600 text-white" : "bg-slate-900 hover:bg-slate-800 text-white"} px-6 py-3 rounded-xl font-medium transition-colors text-center block`}
-              >
-                {language === "ru" ? "Выбрать план" : "Choose plan"}
-              </Link>
-            </div>
+                  {plan.benefits.map((benefit) => (
+                    <li key={benefit}>{benefit}</li>
+                  ))}
+                </ul>
+                <Link
+                  to={
+                    plan.name === "Институт" || plan.name === "Enterprise"
+                      ? "/contact"
+                      : "/register"
+                  }
+                  className="pricing-offer-action"
+                >
+                  {language === "ru" ? "Выбрать план" : "Choose plan"}
+                </Link>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            {/* Team Plan - Popular */}
-            <div
-              className={`${theme === "dark" ? "bg-blue-900 border-blue-700" : "bg-blue-600 border-blue-600"} rounded-2xl p-8 border-2 relative transform scale-105`}
+      <section className="py-20 px-6 modern-section-surface" id="conference">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2
+              className={`text-4xl md:text-5xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-4`}
             >
-              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <span
-                  className={`${theme === "dark" ? "bg-blue-200 text-blue-900" : "bg-blue-100 text-blue-800"} px-4 py-1 rounded-full text-sm font-medium`}
-                >
-                  {language === "ru" ? "Популярный" : "Popular"}
-                </span>
-              </div>
-              <h3 className="text-2xl font-medium text-white mb-2">
-                {language === "ru" ? "Команда" : "Team"}
-              </h3>
-              <div className="text-4xl font-light text-white mb-2">
-                ₽8,990
-                <span
-                  className={`text-lg font-normal ${theme === "dark" ? "text-blue-300" : "text-blue-200"}`}
-                >
-                  /мес
-                </span>
-              </div>
-              <p
-                className={`${theme === "dark" ? "text-blue-300" : "text-blue-200"} mb-6 font-light`}
-              >
-                {language === "ru"
-                  ? "Для исследовательских групп"
-                  : "For research teams"}
-              </p>
-              <Link
-                to="/register"
-                className="w-full bg-white text-blue-600 px-6 py-3 rounded-xl font-medium hover:bg-blue-50 transition-colors text-center block"
-              >
-                {language === "ru" ? "Выбрать план" : "Choose plan"}
-              </Link>
-            </div>
+              {t.conference.title}
+            </h2>
+            <p
+              className={`${theme === "dark" ? "text-slate-300" : "text-slate-600"} text-lg`}
+            >
+              {t.conference.subtitle}
+            </p>
+          </div>
+          <div className="conference-banner-grid">
+            {t.conference.slots.map((slot) => (
+              <a href="#" key={slot} className="conference-banner-slot">
+                <span>{slot}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
 
-            {/* Enterprise Plan */}
-            <div
-              className={`${theme === "dark" ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200"} rounded-2xl p-8 border`}
+      <section id="faq" className="py-24 px-6 modern-section-muted">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2
+              className={`text-4xl md:text-5xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"}`}
             >
-              <h3
-                className={`text-2xl font-medium ${theme === "dark" ? "text-white" : "text-slate-900"} mb-2`}
-              >
-                {language === "ru" ? "Институт" : "Enterprise"}
-              </h3>
-              <div
-                className={`text-4xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-2`}
-              >
-                {language === "ru" ? "Договор" : "Custom"}
-              </div>
-              <p
-                className={`${theme === "dark" ? "text-slate-400" : "text-slate-600"} mb-6 font-light`}
-              >
-                {language === "ru"
-                  ? "Для крупных организаций"
-                  : "For large organizations"}
-              </p>
-              <Link
-                to="/contact"
-                className={`w-full border-2 ${theme === "dark" ? "border-slate-400 text-slate-300 hover:bg-slate-700" : "border-slate-900 text-slate-900 hover:bg-slate-900 hover:text-white"} px-6 py-3 rounded-xl font-medium transition-colors text-center block`}
-              >
-                {language === "ru" ? "Связаться с нами" : "Contact us"}
-              </Link>
-            </div>
+              {t.faq.title}
+            </h2>
+          </div>
+
+          <div className="faq-list">
+            {t.faq.items.map((item) => (
+              <details key={item.q} className="faq-item">
+                <summary>{item.q}</summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>
