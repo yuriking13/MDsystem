@@ -52,7 +52,7 @@ describe("Register legal links", () => {
     );
     expect(
       screen.getByRole("heading", {
-        name: "Terms of Use / Условия использования",
+        name: "Условия использования",
       }),
     ).toBeInTheDocument();
     unmount();

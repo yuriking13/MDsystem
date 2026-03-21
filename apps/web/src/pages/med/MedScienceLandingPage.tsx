@@ -988,28 +988,28 @@ export default function MedScienceLandingPage() {
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               type="button"
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "overview" ? "bg-blue-500 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "overview" ? "bg-teal-700 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
               onClick={() => selectTab("overview")}
             >
               Обзор
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "submissions" ? "bg-blue-500 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "submissions" ? "bg-teal-700 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
               onClick={() => selectTab("submissions")}
             >
               Издательство
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "tracking" ? "bg-blue-500 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "tracking" ? "bg-teal-700 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
               onClick={() => selectTab("tracking")}
             >
               Трекинг
             </button>
             <button
               type="button"
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "reviewer" ? "bg-blue-500 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "reviewer" ? "bg-teal-700 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
               onClick={() => selectTab("reviewer")}
             >
               Рецензент
@@ -1056,7 +1056,7 @@ export default function MedScienceLandingPage() {
         <div className="max-w-7xl mx-auto">
           <section className="text-center mb-16">
             <span
-              className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${theme === "dark" ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"}`}
+              className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${theme === "dark" ? "bg-teal-500/20 text-teal-400" : "bg-teal-100 text-teal-600"}`}
             >
               med.scientiaiter.ru
             </span>

@@ -48,7 +48,7 @@ html {
   height: 380px;
   top: 8%;
   left: 6%;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.38), rgba(14, 165, 233, 0));
+  background: radial-gradient(circle, rgba(0, 103, 97, 0.38), rgba(0, 103, 97, 0));
 }
 
 .logo-aura-2 {
@@ -65,7 +65,7 @@ html {
   height: 440px;
   left: 30%;
   bottom: -15%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.26), rgba(56, 189, 248, 0));
+  background: radial-gradient(circle, rgba(0, 255, 239, 0.26), rgba(0, 255, 239, 0));
   animation-delay: -7s;
 }
 
@@ -302,7 +302,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .modern-hero-shell {
   background:
-    radial-gradient(circle at 15% 12%, rgba(14, 165, 233, 0.2), transparent 44%),
+    radial-gradient(circle at 15% 12%, rgba(0, 103, 97, 0.2), transparent 44%),
     radial-gradient(circle at 82% 18%, rgba(249, 115, 22, 0.18), transparent 42%),
     linear-gradient(145deg, #050d1f 0%, #0a1a34 48%, #09122a 100%);
 }
@@ -320,29 +320,29 @@ h1, h2, h3, h4, h5, h6 {
 .light-theme .modern-hero-shell,
 [data-theme="light"] .modern-hero-shell {
   background:
-    radial-gradient(circle at 14% 12%, rgba(14, 165, 233, 0.16), transparent 44%),
+    radial-gradient(circle at 14% 12%, rgba(0, 103, 97, 0.16), transparent 44%),
     radial-gradient(circle at 82% 18%, rgba(249, 115, 22, 0.16), transparent 42%),
-    linear-gradient(145deg, #f7fbff 0%, #eef6ff 52%, #e9f2ff 100%);
+    linear-gradient(145deg, #f0fffe 0%, #e6fffd 52%, #e0fffd 100%);
 }
 
 .light-theme .modern-section-surface,
 [data-theme="light"] .modern-section-surface {
-  background: linear-gradient(180deg, #ffffff, #f5f9ff);
+  background: linear-gradient(180deg, #ffffff, #f0fffd);
 }
 
 .light-theme .modern-section-muted,
 [data-theme="light"] .modern-section-muted {
-  background: linear-gradient(180deg, #f2f7ff, #ecf3ff);
+  background: linear-gradient(180deg, #effffd, #e6fffc);
 }
 
 .modern-badge {
   background: linear-gradient(
     120deg,
-    rgba(14, 165, 233, 0.22),
+    rgba(0, 103, 97, 0.22),
     rgba(249, 115, 22, 0.2)
   );
   border-color: rgba(148, 163, 184, 0.26);
-  color: #dbeafe;
+  color: #ccfbf1;
 }
 
 .light-theme .modern-badge,
@@ -352,7 +352,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .modern-cta-chip {
-  background: linear-gradient(135deg, #0284c7, #ea580c);
+  background: linear-gradient(135deg, #006761, #ea580c);
   color: #ffffff;
   padding: 0.65rem 1.2rem;
   border-radius: 0.7rem;
@@ -362,7 +362,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .modern-cta-chip:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 25px rgba(2, 132, 199, 0.35);
+  box-shadow: 0 10px 25px rgba(0, 103, 97, 0.35);
 }
 
 /* =============================================================================
@@ -1548,13 +1548,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .section-dot:hover {
-  border-color: #3b82f6;
+  border-color: #006761;
   transform: scale(1.3);
 }
 
 .section-dot.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: #006761;
+  border-color: #006761;
   transform: scale(1.3);
 }
 
@@ -1613,8 +1613,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .landing-auth-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  border-color: #006761;
+  box-shadow: 0 0 0 3px rgba(0, 103, 97, 0.15);
 }
 
 .landing-auth-input--dark {
@@ -1624,8 +1624,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .landing-auth-input--dark:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  border-color: #006761;
+  box-shadow: 0 0 0 3px rgba(0, 103, 97, 0.25);
 }
 
 .landing-auth-error {
@@ -1643,7 +1643,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 0.75rem;
   border-radius: 0.5rem;
   border: none;
-  background: #3b82f6;
+  background: linear-gradient(135deg, #006761, #00ffef);
   color: #fff;
   font-size: 0.9375rem;
   font-weight: 600;
@@ -1652,7 +1652,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .landing-auth-submit:hover:not(:disabled) {
-  background: #2563eb;
+  background: linear-gradient(135deg, #005a55, #00e6d6);
   transform: translateY(-1px);
 }
 

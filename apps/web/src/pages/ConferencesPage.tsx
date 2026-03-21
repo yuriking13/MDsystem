@@ -167,8 +167,15 @@ export default function ConferencesPage() {
               to="/"
               className={`brand-name-stack ${theme === "dark" ? "text-white" : "text-slate-900"}`}
             >
-              <span className="brand-name-primary">Scientiaiter</span>
-              <span className="brand-name-subtitle">{t.brandSubtitle}</span>
+              <img
+                src="https://storage.yandexcloud.net/scentiaiterpublic/landing/logo_scientiaiter_no_name_bw_nobg_small.png"
+                alt=""
+                className="brand-name-logo"
+              />
+              <div className="brand-name-text">
+                <span className="brand-name-primary">Scientiaiter</span>
+                <span className="brand-name-subtitle">{t.brandSubtitle}</span>
+              </div>
             </Link>
 
             <div className="flex items-center gap-4">

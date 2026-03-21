@@ -107,7 +107,17 @@ export default function PrivacyPolicyPage() {
             to="/"
             className={`brand-name-stack ${theme === "dark" ? "text-white" : "text-slate-900"}`}
           >
-            <span className="brand-name-primary">Scientiaiter</span>
+            <img
+              src="https://storage.yandexcloud.net/scentiaiterpublic/landing/logo_scientiaiter_no_name_bw_nobg_small.png"
+              alt=""
+              className="brand-name-logo"
+            />
+            <div className="brand-name-text">
+              <span className="brand-name-primary">Scientiaiter</span>
+              <span className="brand-name-subtitle">
+                {language === "ru" ? "Путь знания" : "Path of Knowledge"}
+              </span>
+            </div>
           </Link>
 
           <div className="flex items-center gap-4">
@@ -145,7 +155,7 @@ export default function PrivacyPolicyPage() {
             </button>
             <Link
               to="/login"
-              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${theme === "dark" ? "text-white bg-blue-600 hover:bg-blue-700" : "text-white bg-slate-900 hover:bg-slate-800"}`}
+              className={`px-5 py-2 rounded-lg text-sm font-medium transition-colors ${theme === "dark" ? "text-white bg-teal-700 hover:bg-teal-800" : "text-white bg-slate-900 hover:bg-slate-800"}`}
             >
               {language === "ru" ? "Войти" : "Log in"}
             </Link>
