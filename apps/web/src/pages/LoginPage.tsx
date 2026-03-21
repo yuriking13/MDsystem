@@ -51,8 +51,17 @@ export default function LoginPage() {
             to="/"
             className={`brand-name-stack ${theme === "dark" ? "text-white" : "text-slate-900"}`}
           >
-            <img src="/logo.svg" alt="" className="landing-footer-logo" />
-            <span className="brand-name-primary">Scientiaiter</span>
+            <img
+              src="https://storage.yandexcloud.net/scentiaiterpublic/landing/logo_scientiaiter_no_name_bw_nobg_small.png"
+              alt=""
+              className="brand-name-logo"
+            />
+            <div className="brand-name-text">
+              <span className="brand-name-primary">Scientiaiter</span>
+              <span className="brand-name-subtitle">
+                {language === "ru" ? "Путь знания" : "Path of Knowledge"}
+              </span>
+            </div>
           </Link>
           <div className="flex items-center gap-4">
             <button

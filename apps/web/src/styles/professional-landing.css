@@ -633,6 +633,19 @@ h1, h2, h3, h4, h5, h6 {
 
 .brand-name-stack {
   display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-decoration: none;
+}
+
+.brand-name-logo {
+  height: 36px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.brand-name-text {
+  display: flex;
   flex-direction: column;
   line-height: 1.05;
 }

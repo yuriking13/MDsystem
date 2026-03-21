@@ -11,7 +11,7 @@ const SECTIONS = [
   { id: "capabilities", ru: "Возможности", en: "Features" },
   { id: "conference", ru: "Конференции", en: "Conferences" },
   { id: "pricing", ru: "Цены", en: "Pricing" },
-  { id: "faq", ru: "FAQ", en: "FAQ" },
+  { id: "faq", ru: "Вопросы и ответы", en: "FAQ" },
 ];
 
 export default function ProfessionalLandingPage() {
@@ -60,7 +60,7 @@ export default function ProfessionalLandingPage() {
         platform: "Платформа",
         capabilities: "Возможности",
         pricing: "Цены",
-        faq: "FAQ",
+        faq: "Вопросы и ответы",
         login: "Войти",
         start: "Начать",
       },
@@ -156,7 +156,7 @@ export default function ProfessionalLandingPage() {
         }[],
       },
       faq: {
-        title: "FAQ / Вопросы и ответы",
+        title: "Вопросы и ответы",
         items: [
           {
             q: "Можно ли работать командой над одной рукописью?",
@@ -312,8 +312,15 @@ export default function ProfessionalLandingPage() {
                 to="/"
                 className={`brand-name-stack ${theme === "dark" ? "text-white" : "text-slate-900"}`}
               >
-                <span className="brand-name-primary">Scientiaiter</span>
-                <span className="brand-name-subtitle">{t.brandSubtitle}</span>
+                <img
+                  src="https://storage.yandexcloud.net/scentiaiterpublic/landing/logo_scientiaiter_no_name_bw_nobg_small.png"
+                  alt=""
+                  className="brand-name-logo"
+                />
+                <div className="brand-name-text">
+                  <span className="brand-name-primary">Scientiaiter</span>
+                  <span className="brand-name-subtitle">{t.brandSubtitle}</span>
+                </div>
               </Link>
 
               <nav className="hidden md:flex items-center gap-8">
