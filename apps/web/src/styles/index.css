@@ -212,6 +212,19 @@
     @apply text-base;
   }
 
+  /* External public pages must not inherit legacy global heading gradients. */
+  .professional-landing h1,
+  .professional-landing h2,
+  .professional-landing h3,
+  .professional-landing h4,
+  .professional-landing h5,
+  .professional-landing h6 {
+    background: none !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+    -webkit-text-fill-color: currentColor !important;
+  }
+
   /* Scrollbar Styles */
   ::-webkit-scrollbar {
     @apply w-2 h-2;
