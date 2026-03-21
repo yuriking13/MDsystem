@@ -366,23 +366,23 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .modern-hero-primary {
-  background: linear-gradient(135deg, #023431, #0a5f5a) !important;
+  background: linear-gradient(135deg, #0284c7, #ea580c) !important;
 }
 
 .modern-hero-secondary {
-  border-color: rgba(2, 52, 49, 0.45) !important;
-  color: rgba(2, 52, 49, 0.95) !important;
-  background: rgba(255, 239, 170, 0.2);
+  border-color: rgba(148, 163, 184, 0.45) !important;
+  color: rgba(226, 232, 240, 0.95) !important;
+  background: rgba(15, 23, 42, 0.2);
 }
 
 .modern-hero-secondary:hover {
-  background: rgba(255, 239, 170, 0.4);
+  background: rgba(15, 23, 42, 0.4);
 }
 
 .light-theme .modern-hero-secondary,
 [data-theme="light"] .modern-hero-secondary {
-  color: #023431 !important;
-  background: rgba(255, 239, 170, 0.74);
+  color: #1e293b !important;
+  background: rgba(255, 255, 255, 0.74);
 }
 
 /* =============================================================================
@@ -644,54 +644,43 @@ h1, h2, h3, h4, h5, h6 {
    ============================================================================= */
 
 .landing-style-chb {
-  color: #023431;
+  color: #0b0b0b;
 }
 
 .landing-style-chb .modern-hero-shell,
 .landing-style-chb .modern-section-surface,
 .landing-style-chb .modern-section-muted {
-  background: #ffefaa;
+  background: #ffffff;
 }
 
 .landing-style-chb .partners-runner {
-  background: #ffefaa;
-  border-color: rgba(2, 52, 49, 0.12);
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
 }
 
 .landing-style-chb .partners-runner-label,
 .landing-style-chb .partner-chip {
-  color: #023431;
+  color: #0f172a;
 }
 
 .landing-style-chb .partner-chip {
-  border-color: rgba(2, 52, 49, 0.22);
+  border-color: rgba(15, 23, 42, 0.22);
 }
 
 .landing-style-chb .pricing-offer-card {
-  background: #ffefaa;
-  color: #023431;
-  border-color: rgba(2, 52, 49, 0.18);
+  background: #ffffff;
+  color: #0f172a;
+  border-color: rgba(15, 23, 42, 0.18);
 }
 
 .landing-style-chb .pricing-offer-featured {
-  border-color: #023431;
+  border-color: #0f172a;
   background: #f8fafc;
 }
 
 .landing-style-chb .faq-item {
-  background: #ffefaa;
-  border-color: rgba(2, 52, 49, 0.2);
-}
-
-.landing-style-chb .modern-badge {
-  background: linear-gradient(120deg, rgba(2, 52, 49, 0.12), rgba(2, 52, 49, 0.08));
-  border-color: rgba(2, 52, 49, 0.26);
-  color: #023431;
-}
-
-.landing-style-chb .modern-badge {
-  color: #023431;
-  border-color: rgba(2, 52, 49, 0.14);
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.2);
 }
 
 .landing-style-bch {
@@ -707,9 +696,9 @@ h1, h2, h3, h4, h5, h6 {
 .landing-style-bch .modern-badge,
 .landing-style-bch .modern-cta-chip,
 .landing-style-bch .modern-hero-primary {
-  background: linear-gradient(135deg, #ffb84d, #ff8a5b) !important;
+  background: #ffffff !important;
   color: #050505 !important;
-  border-color: transparent !important;
+  border-color: #ffffff !important;
 }
 
 .landing-style-bch .modern-hero-secondary {
