@@ -315,7 +315,7 @@
 }
 
 .slider-input::-webkit-slider-thumb:hover {
-  background: #60a5fa;
+  background: #2DD4BF;
 }
 
 .slider-input:disabled {
@@ -354,7 +354,7 @@
 .select-input:focus {
   outline: none;
   border-color: var(--graph-tool-active);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
 }
 
 /* Checkbox Group */
@@ -658,7 +658,7 @@
 .toolbar-search-input:focus {
   outline: none;
   border-color: var(--graph-tool-active);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
 }
 
 .toolbar-search-count {
@@ -797,7 +797,7 @@
 
 .light-theme .graph-legend-panel,
 [data-theme="light"] .graph-legend-panel {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(239, 246, 255, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(230, 255, 252, 0.95) 100%);
   border: 1px solid rgba(191, 219, 254, 0.75);
   box-shadow:
     0 8px 24px rgba(15, 23, 42, 0.12),
@@ -919,7 +919,7 @@
 }
 
 .graph-legend-item-btn--candidate {
-  --legend-item-color: var(--graph-legend-candidate, #3b82f6);
+  --legend-item-color: var(--graph-legend-candidate, #0D9488);
 }
 
 .graph-legend-item-btn--excluded {
@@ -944,7 +944,7 @@
 
 .graph-legend-theme-dark {
   --graph-legend-selected: #22c55e;
-  --graph-legend-candidate: #3b82f6;
+  --graph-legend-candidate: #0D9488;
   --graph-legend-excluded: #ef4444;
   --graph-legend-citing: #ec4899;
   --graph-legend-reference: #f97316;
@@ -954,7 +954,7 @@
 
 .graph-legend-theme-light {
   --graph-legend-selected: #22c55e;
-  --graph-legend-candidate: #3b82f6;
+  --graph-legend-candidate: #0D9488;
   --graph-legend-excluded: #ef4444;
   --graph-legend-citing: #0ea5e9;
   --graph-legend-reference: #38bdf8;
@@ -964,7 +964,7 @@
 
 .light-theme .quick-stats,
 [data-theme="light"] .quick-stats {
-  background: rgba(239, 246, 255, 0.8);
+  background: rgba(230, 255, 252, 0.8);
 }
 
 .light-theme .select-input,
@@ -981,12 +981,12 @@
 
 .light-theme .node-lang-toggle,
 [data-theme="light"] .node-lang-toggle {
-  background: rgba(239, 246, 255, 0.75);
+  background: rgba(230, 255, 252, 0.75);
 }
 
 .light-theme .node-quick-links,
 [data-theme="light"] .node-quick-links {
-  background: rgba(239, 246, 255, 0.72);
+  background: rgba(230, 255, 252, 0.72);
 }
 
 .light-theme .node-quick-link,
@@ -1030,13 +1030,13 @@
 .graph-sidebar-logo-button {
   width: 32px;
   height: 32px;
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #0D9488 0%, #8b5cf6 100%);
   border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
   cursor: pointer;
   border: none;
 }
@@ -1170,7 +1170,7 @@
 }
 
 .graph-sidebar-depth-btn--active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #0D9488 0%, #006761 100%);
   color: #fff;
 }
 
@@ -1186,7 +1186,7 @@
 }
 
 .graph-sidebar-filter-option--active {
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(13, 148, 136, 0.15);
 }
 
 .graph-sidebar-radio-circle {
@@ -1202,8 +1202,8 @@
 }
 
 .graph-sidebar-radio-circle--active {
-  border-color: #3b82f6;
-  background: #3b82f6;
+  border-color: #0D9488;
+  background: #0D9488;
 }
 
 .graph-sidebar-radio-inner {
@@ -1236,7 +1236,7 @@
 }
 
 .graph-sidebar-source-option--active {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(13, 148, 136, 0.1);
 }
 
 .graph-sidebar-source-box {
@@ -1253,7 +1253,7 @@
 }
 
 .graph-sidebar-source-box--pubmed {
-  --source-color: #3b82f6;
+  --source-color: #0D9488;
 }
 
 .graph-sidebar-source-box--doaj {
@@ -1316,7 +1316,7 @@
 }
 
 .graph-sidebar-action-btn--primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #0D9488 0%, #006761 100%);
   border: 1px solid transparent;
   color: #fff;
 }
@@ -1346,12 +1346,12 @@
 }
 
 .graph-sidebar-feature-btn--active {
-  background: rgba(59, 130, 246, 0.15);
+  background: rgba(13, 148, 136, 0.15);
   color: #fff;
 }
 
 .graph-sidebar-badge {
-  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  background: linear-gradient(135deg, #0D9488 0%, #8b5cf6 100%);
   color: #fff;
   font-size: 10px;
   font-weight: 600;
@@ -1440,8 +1440,8 @@
 }
 
 .graph-sidebar-legend-dot--pubmed {
-  --graph-sidebar-legend-color: #3b82f6;
-  --graph-sidebar-legend-shadow: rgba(59, 130, 246, 0.4);
+  --graph-sidebar-legend-color: #0D9488;
+  --graph-sidebar-legend-shadow: rgba(13, 148, 136, 0.4);
 }
 
 .graph-sidebar-legend-dot--doaj {
@@ -1511,8 +1511,8 @@
 }
 
 .node-level--candidate {
-  --node-level-color: #3b82f6;
-  --node-level-bg: rgba(59, 130, 246, 0.15);
+  --node-level-color: #0D9488;
+  --node-level-bg: rgba(13, 148, 136, 0.15);
 }
 
 .node-level--reference {
@@ -1666,7 +1666,7 @@
 }
 
 .node-abstract-more:hover {
-  color: #60a5fa;
+  color: #2DD4BF;
 }
 
 .node-metadata {
@@ -1712,7 +1712,7 @@
 }
 
 .node-meta-link:hover {
-  color: #60a5fa;
+  color: #2DD4BF;
 }
 
 .node-meta-link-icon {

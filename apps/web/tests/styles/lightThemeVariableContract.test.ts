@@ -39,30 +39,30 @@ describe("light theme variable contract", () => {
     );
   });
 
-  it("keeps legacy light accent stack in blue gradient family", () => {
-    expect(legacyCss).toMatch(/--accent:\s*#2563EB;/);
-    expect(legacyCss).toMatch(/--accent-secondary:\s*#3B82F6;/);
+  it("keeps legacy light accent stack in teal gradient family", () => {
+    expect(legacyCss).toMatch(/--accent:\s*#006761;/);
+    expect(legacyCss).toMatch(/--accent-secondary:\s*#0D9488;/);
     expect(legacyCss).toMatch(
-      /--accent-gradient:\s*linear-gradient\(135deg,\s*#2563EB,\s*#3B82F6\);/,
+      /--accent-gradient:\s*linear-gradient\(135deg,\s*#006761,\s*#0D9488\);/,
     );
     expect(legacyCss).toMatch(
-      /--accent-gradient-hover:\s*linear-gradient\(135deg,\s*#1D4ED8,\s*#2563EB\);/,
+      /--accent-gradient-hover:\s*linear-gradient\(135deg,\s*#005550,\s*#006761\);/,
     );
   });
 
   it("keeps legacy graph tokens on updated cool spectrum", () => {
     expect(legacyCss).toMatch(/--graph-node-citing:\s*#0EA5E9;/);
     expect(legacyCss).toMatch(/--graph-node-selected:\s*#22C55E;/);
-    expect(legacyCss).toMatch(/--graph-node-candidate-pubmed:\s*#3B82F6;/);
-    expect(legacyCss).toMatch(/--graph-node-candidate-doaj:\s*#93C5FD;/);
+    expect(legacyCss).toMatch(/--graph-node-candidate-pubmed:\s*#0D9488;/);
+    expect(legacyCss).toMatch(/--graph-node-candidate-doaj:\s*#5EEAD4;/);
     expect(legacyCss).toMatch(/--graph-node-candidate-wiley:\s*#6366F1;/);
     expect(legacyCss).toMatch(/--graph-node-reference:\s*#38BDF8;/);
     expect(legacyCss).toMatch(/--graph-node-related:\s*#14B8A6;/);
     expect(legacyCss).toMatch(/--graph-node-pvalue:\s*#F59E0B;/);
-    expect(legacyCss).toMatch(/--graph-bg:\s*#F8FBFF;/);
-    expect(legacyCss).toMatch(/--graph-bg-fullscreen:\s*#F1F6FF;/);
+    expect(legacyCss).toMatch(/--graph-bg:\s*#F5FFFE;/);
+    expect(legacyCss).toMatch(/--graph-bg-fullscreen:\s*#F0FFFD;/);
     expect(legacyCss).toMatch(
-      /--graph-link-color:\s*rgba\(37,\s*99,\s*235,\s*0\.22\);/,
+      /--graph-link-color:\s*rgba\(0, 103, 97,\s*0\.22\);/,
     );
   });
 });

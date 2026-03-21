@@ -114,9 +114,9 @@ describe("CitationGraph utils", () => {
     document.body.classList.add("light-theme");
 
     const lightBackground = getGraphBackgroundColors();
-    expect(lightBackground.normal).toBe("#f8fbff");
-    expect(lightBackground.fullscreen).toBe("#f1f6ff");
-    expect(lightBackground.linkColor).toBe("rgba(37, 99, 235, 0.22)");
+    expect(lightBackground.normal).toBe("#F5FFFE");
+    expect(lightBackground.fullscreen).toBe("#F0FFFD");
+    expect(lightBackground.linkColor).toBe("rgba(0, 103, 97, 0.22)");
   });
 
   it("maps graph level labels and level colors", () => {

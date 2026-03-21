@@ -230,7 +230,7 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.1;
 }
 
-/* Force heading color on external pages and cancel legacy blue gradient. */
+/* Force heading color on external pages — cancel legacy gradient except hero. */
 .professional-landing h1,
 .professional-landing h2,
 .professional-landing h3,
@@ -241,6 +241,7 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-background-clip: border-box !important;
   -webkit-text-fill-color: currentColor !important;
   background-clip: border-box !important;
+  color: inherit;
 }
 
 .font-light {
@@ -697,6 +698,22 @@ h1, h2, h3, h4, h5, h6 {
   line-height: 1.2 !important;
   overflow: visible;
   padding-bottom: 4px;
+}
+
+/* Teal gradient for hero heading (light theme) */
+.professional-landing .hero-copy-block h1 {
+  background: linear-gradient(135deg, #006761, #0D9488) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+}
+
+/* Teal gradient for hero heading (dark theme) */
+.landing-style-bch .hero-copy-block h1 {
+  background: linear-gradient(135deg, #00D4C8, #5EEAD4) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
 }
 
 .hero-image-shell {
@@ -1695,12 +1712,32 @@ h1, h2, h3, h4, h5, h6 {
     inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
     0 0.25em 0.125em -0.125em rgba(0, 0, 0, 0.2),
     0 0 0.1em 0.25em inset rgba(255, 255, 255, 0.2),
-    0 14px 30px -8px rgba(0, 0, 0, 0.22),
-    0 8px 14px -6px rgba(0, 0, 0, 0.16);
-  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.2));
+    0 0 0 0 rgba(255, 255, 255, 1);
   backdrop-filter: blur(clamp(1px, 0.125em, 4px));
   transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease,
     backdrop-filter 0.3s ease;
+  overflow: visible;
+}
+
+.landing-auth-submit::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -1em;
+  border-radius: 999vw;
+  filter: blur(clamp(2px, 0.125em, 12px));
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
+  width: calc(100% - 0.25em);
+  height: calc(100% - 0.25em);
+  top: calc(1em - 0.5em);
+  left: calc(1em - 0.875em);
+  padding: 0.125em;
+  box-sizing: border-box;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 1;
+  pointer-events: none;
+  transition: all 0.3s ease;
 }
 
 .landing-auth-submit:hover:not(:disabled) {
@@ -1710,9 +1747,11 @@ h1, h2, h3, h4, h5, h6 {
     inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
     0 0.15em 0.05em -0.1em rgba(0, 0, 0, 0.25),
     0 0 0.05em 0.1em inset rgba(255, 255, 255, 0.5),
-    0 18px 36px -8px rgba(0, 0, 0, 0.28),
-    0 10px 18px -6px rgba(0, 0, 0, 0.2);
-  filter: drop-shadow(0 14px 18px rgba(0, 0, 0, 0.25));
+    0 0 0 0 rgba(255, 255, 255, 1);
+}
+
+.landing-auth-submit:hover:not(:disabled)::before {
+  opacity: 0.7;
 }
 
 .landing-style-bch .landing-auth-submit {
@@ -1727,9 +1766,7 @@ h1, h2, h3, h4, h5, h6 {
     inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.1),
     0 0.25em 0.125em -0.125em rgba(0, 0, 0, 0.3),
     0 0 0.1em 0.25em inset rgba(255, 255, 255, 0.05),
-    0 16px 34px -8px rgba(0, 0, 0, 0.4),
-    0 10px 18px -7px rgba(0, 0, 0, 0.3);
-  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.36));
+    0 0 0 0 rgba(255, 255, 255, 1);
 }
 
 .landing-auth-submit:disabled {

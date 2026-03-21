@@ -79,7 +79,7 @@
 }
 
 .articles-header-status {
-  @apply text-blue-400 font-medium;
+  @apply text-teal-400 font-medium;
 }
 
 .articles-header-count {
@@ -149,7 +149,7 @@
   @apply rounded-md;
   @apply text-neutral-200;
   @apply hover:text-white;
-  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  @apply focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2;
   border-radius: 0.375rem;
   background-color: var(--btn-secondary);
   border: 1px solid var(--input-border);
@@ -165,8 +165,8 @@
 }
 
 .articles-toolbar-btn--primary {
-  @apply bg-blue-600 text-white border-blue-500;
-  @apply hover:bg-blue-500;
+  @apply bg-teal-600 text-white border-teal-500;
+  @apply hover:bg-teal-500;
 }
 
 .light-theme .articles-toolbar-btn,
@@ -212,7 +212,7 @@
 }
 
 .article-card--selected {
-  @apply ring-2 ring-blue-500 ring-offset-2;
+  @apply ring-2 ring-teal-500 ring-offset-2;
   --tw-ring-offset-color: transparent;
 }
 
@@ -263,8 +263,8 @@
 }
 
 .article-checkbox input {
-  @apply w-4 h-4 border-neutral-600 bg-neutral-800 text-blue-500;
-  @apply focus:ring-blue-500/30 focus:ring-offset-0;
+  @apply w-4 h-4 border-neutral-600 bg-neutral-800 text-teal-500;
+  @apply focus:ring-teal-500/30 focus:ring-offset-0;
   border-radius: 0.25rem;
 }
 
@@ -294,7 +294,7 @@
 .article-title {
   @apply text-sm font-semibold leading-snug cursor-pointer;
   @apply text-neutral-100 dark:text-neutral-100;
-  @apply hover:text-blue-400 dark:hover:text-blue-400;
+  @apply hover:text-teal-400 dark:hover:text-teal-400;
   @apply transition-colors;
 }
 
@@ -346,7 +346,7 @@
 
 .article-id-link {
   @apply inline-flex items-center gap-1;
-  @apply text-neutral-500 hover:text-blue-400;
+  @apply text-neutral-500 hover:text-teal-400;
   @apply transition-colors;
 }
 
@@ -374,7 +374,7 @@
 
 .article-abstract-toggle {
   @apply mt-1 flex items-center gap-1;
-  @apply text-xs font-medium text-blue-400 hover:text-blue-300;
+  @apply text-xs font-medium text-teal-400 hover:text-teal-300;
   @apply transition-colors cursor-pointer;
   @apply bg-transparent border-0;
 }
@@ -408,7 +408,7 @@
   background-color: rgba(255, 255, 255, 0.35);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-top: 1px solid rgba(37, 99, 235, 0.15);
+  border-top: 1px solid rgba(0, 103, 97, 0.15);
 }
 
 .article-status-actions,
@@ -711,7 +711,7 @@
 }
 
 .search-source-option.active {
-  @apply border-blue-500 bg-blue-500/10;
+  @apply border-teal-500 bg-teal-500/10;
 }
 
 .light-theme .search-source-option,
@@ -742,7 +742,7 @@
 }
 
 .search-checkbox {
-  @apply w-4 h-4 text-blue-500;
+  @apply w-4 h-4 text-teal-500;
   border-radius: 0.25rem;
   border-color: rgba(56, 89, 138, 0.4);
   background-color: var(--input-bg);
@@ -755,7 +755,7 @@
 
 .search-submit-btn {
   @apply px-4 py-2;
-  @apply bg-blue-600 hover:bg-blue-700 text-white;
+  @apply bg-teal-600 hover:bg-teal-700 text-white;
   @apply font-medium text-sm;
   border-radius: 0.375rem;
 }
@@ -915,7 +915,7 @@
   width: 20px;
   height: 20px;
   border: 3px solid var(--border-color, #e2e8f0);
-  border-top-color: var(--accent-color, #3b82f6);
+  border-top-color: var(--accent-color, #0D9488);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -1027,8 +1027,8 @@
 }
 
 .articles-filter-search input:focus {
-  @apply outline-none ring-2 ring-blue-500/30;
-  border-color: rgba(59, 130, 246, 0.5);
+  @apply outline-none ring-2 ring-teal-500/30;
+  border-color: rgba(13, 148, 136, 0.5);
 }
 
 .light-theme .articles-filter-search input,
@@ -1060,8 +1060,8 @@
 }
 
 .articles-filter-years input:focus {
-  @apply outline-none ring-2 ring-blue-500/30;
-  border-color: rgba(59, 130, 246, 0.5);
+  @apply outline-none ring-2 ring-teal-500/30;
+  border-color: rgba(13, 148, 136, 0.5);
 }
 
 .light-theme .articles-filter-years .muted,
@@ -1088,8 +1088,8 @@
 }
 
 .articles-filter-select:focus {
-  @apply outline-none ring-2 ring-blue-500/30;
-  border-color: rgba(59, 130, 246, 0.5);
+  @apply outline-none ring-2 ring-teal-500/30;
+  border-color: rgba(13, 148, 136, 0.5);
 }
 
 .light-theme .articles-filter-select,
@@ -1116,7 +1116,7 @@
 .articles-filter-checkbox input[type="checkbox"] {
   @apply w-4 h-4 rounded;
   @apply border-neutral-600 bg-neutral-800;
-  @apply text-blue-500 focus:ring-blue-500/30 focus:ring-offset-0;
+  @apply text-teal-500 focus:ring-teal-500/30 focus:ring-offset-0;
 }
 
 .articles-filter-checkbox svg {
@@ -1167,8 +1167,8 @@
 .bulk-actions {
   @apply flex items-center gap-4 flex-wrap;
   @apply px-4 py-2;
-  background-color: rgba(59, 130, 246, 0.1);
-  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+  background-color: rgba(13, 148, 136, 0.1);
+  border-bottom: 1px solid rgba(13, 148, 136, 0.2);
 }
 
 .bulk-action-btn {
@@ -1192,8 +1192,8 @@
 
 .light-theme .bulk-actions,
 [data-theme="light"] .bulk-actions {
-  background-color: rgba(37, 99, 235, 0.06);
-  border-bottom: 1px solid rgba(37, 99, 235, 0.16);
+  background-color: rgba(0, 103, 97, 0.06);
+  border-bottom: 1px solid rgba(0, 103, 97, 0.16);
 }
 
 @media (max-width: 900px) {
@@ -1392,7 +1392,7 @@
 
 .articles-toolbar-btn--primary.liquid-metal {
   animation: liquidMetalPulse 2s ease-in-out infinite;
-  box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4);
+  box-shadow: 0 0 0 0 rgba(0, 103, 97, 0.4);
 }
 
 .articles-toolbar-btn--primary.liquid-metal:hover {
@@ -1401,13 +1401,13 @@
 
 @keyframes liquidMetalPulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+    box-shadow: 0 0 0 0 rgba(0, 103, 97, 0.7);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+    box-shadow: 0 0 0 8px rgba(0, 103, 97, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0);
+    box-shadow: 0 0 0 0 rgba(0, 103, 97, 0);
   }
 }
 
@@ -2914,8 +2914,8 @@ body.agent-no-select {
 }
 
 .article-ai-tag--candidate {
-  background: rgba(59, 130, 246, 0.12);
-  color: rgba(59, 130, 246, 0.85);
+  background: rgba(13, 148, 136, 0.12);
+  color: rgba(13, 148, 136, 0.85);
 }
 
 .article-ai-tag--selected {
@@ -3344,8 +3344,8 @@ body.agent-no-select {
 }
 
 .article-ai-tab.active {
-  @apply text-blue-600 border-blue-600;
-  background: rgba(59, 130, 246, 0.05);
+  @apply text-teal-600 border-teal-600;
+  background: rgba(13, 148, 136, 0.05);
 }
 
 .light-theme .article-ai-tab,
@@ -3355,8 +3355,8 @@ body.agent-no-select {
 
 .light-theme .article-ai-tab.active,
 [data-theme="light"] .article-ai-tab.active {
-  @apply text-blue-600;
-  background: rgba(59, 130, 246, 0.05);
+  @apply text-teal-600;
+  background: rgba(13, 148, 136, 0.05);
 }
 
 .dark-theme .article-ai-tab,
@@ -3366,7 +3366,7 @@ body.agent-no-select {
 
 .dark-theme .article-ai-tab.active,
 [data-theme="dark"] .article-ai-tab.active {
-  @apply text-blue-400;
+  @apply text-teal-400;
   background: rgba(96, 165, 250, 0.1);
 }
 

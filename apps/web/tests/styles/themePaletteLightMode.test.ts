@@ -66,18 +66,18 @@ describe("light theme teal/white palette safeguards", () => {
     );
   });
 
-  it("keeps legacy light theme accent and graph variables aligned to blue theme", () => {
-    expect(legacyCss).toMatch(/--accent:\s*#2563EB;/);
-    expect(legacyCss).toMatch(/--accent-secondary:\s*#3B82F6;/);
-    expect(legacyCss).toMatch(/--graph-bg:\s*#F8FBFF;/);
-    expect(legacyCss).toMatch(/--graph-node-candidate-pubmed:\s*#3B82F6;/);
+  it("keeps legacy light theme accent and graph variables aligned to teal theme", () => {
+    expect(legacyCss).toMatch(/--accent:\s*#006761;/);
+    expect(legacyCss).toMatch(/--accent-secondary:\s*#0D9488;/);
+    expect(legacyCss).toMatch(/--graph-bg:\s*#F5FFFE;/);
+    expect(legacyCss).toMatch(/--graph-node-candidate-pubmed:\s*#0D9488;/);
     expect(legacyCss).toMatch(/--graph-node-reference:\s*#38BDF8;/);
     expect(legacyCss).toMatch(/--graph-node-pvalue:\s*#F59E0B;/);
   });
 
   it("keeps citation graph light legend tokens synchronized with updated node palette", () => {
     expect(graphCss).toMatch(
-      /\.graph-legend-theme-light\s*\{[\s\S]*?--graph-legend-candidate:\s*#3b82f6;/,
+      /\.graph-legend-theme-light\s*\{[\s\S]*?--graph-legend-candidate:\s*#0D9488;/,
     );
     expect(graphCss).toMatch(
       /\.graph-legend-theme-light\s*\{[\s\S]*?--graph-legend-citing:\s*#0ea5e9;/,
@@ -97,7 +97,7 @@ describe("light theme teal/white palette safeguards", () => {
     expect(pagesCss).toMatch(/\.doc-nav-item:focus-visible\s*\{/);
     expect(pagesCss).toMatch(/\.docs-subnav-item:focus-visible\s*\{/);
     expect(pagesCss).toMatch(
-      /box-shadow:\s*0 0 0 2px rgba\(37,\s*99,\s*235,\s*0\.2\);/,
+      /box-shadow:\s*0 0 0 2px rgba\(0,\s*103,\s*97,\s*0\.2\);/,
     );
     expect(pagesCss).toMatch(
       /@media\s*\(max-width:\s*1024px\)\s*\{[\s\S]*?\.docs-subnav-list\s*\{/,
@@ -106,25 +106,25 @@ describe("light theme teal/white palette safeguards", () => {
 
   it("keeps mobile light-theme controls aligned in layout and admin shells", () => {
     expect(appLayoutCss).toMatch(
-      /\.light-theme \.app-mobile-fab-toggle,[\s\S]*?border-color:\s*rgba\(191,\s*219,\s*254,\s*0\.95\);[\s\S]*?color:\s*#0f172a;/,
+      /\.light-theme \.app-mobile-fab-toggle,[\s\S]*?border-color:\s*rgba\(153, 246, 228,\s*0\.95\);[\s\S]*?color:\s*#0f172a;/,
     );
     expect(appLayoutCss).toMatch(
       /\.light-theme \.app-mobile-nav-toggle,[\s\S]*?color:\s*#334155;/,
     );
     expect(adminCss).toMatch(
-      /\.light-theme \.admin-mobile-topbar,[\s\S]*?border-bottom-color:\s*rgba\(191,\s*219,\s*254,\s*0\.9\);/,
+      /\.light-theme \.admin-mobile-topbar,[\s\S]*?border-bottom-color:\s*rgba\(153, 246, 228,\s*0\.9\);/,
     );
     expect(adminCss).toMatch(
-      /\.light-theme \.admin-mobile-nav-toggle:hover,[\s\S]*?border-color:\s*rgba\(37,\s*99,\s*235,\s*0\.45\);/,
+      /\.light-theme \.admin-mobile-nav-toggle:hover,[\s\S]*?border-color:\s*rgba\(0, 103, 97,\s*0\.45\);/,
     );
   });
 
-  it("keeps article actions and theme switcher light accents on blue palette", () => {
+  it("keeps article actions and theme switcher light accents on teal palette", () => {
     expect(articlesSectionCss).toMatch(
-      /\.light-theme \.article-actions,[\s\S]*?border-top:\s*1px solid rgba\(37,\s*99,\s*235,\s*0\.15\);/,
+      /\.light-theme \.article-actions,[\s\S]*?border-top:\s*1px solid rgba\(0, 103, 97,\s*0\.15\);/,
     );
     expect(articlesSectionCss).toMatch(
-      /\.light-theme \.bulk-actions,[\s\S]*?background-color:\s*rgba\(37,\s*99,\s*235,\s*0\.06\);/,
+      /\.light-theme \.bulk-actions,[\s\S]*?background-color:\s*rgba\(0, 103, 97,\s*0\.06\);/,
     );
     expect(themeSwitcherCss).toMatch(
       /\.light-theme \.theme-switcher,[\s\S]*?--c-content:\s*#1E293B;/,
@@ -156,7 +156,7 @@ describe("light theme teal/white palette safeguards", () => {
     );
   });
 
-  it("keeps graph utility fallbacks aligned with blue/white light contract", () => {
+  it("keeps graph utility fallbacks aligned with teal/white light contract", () => {
     expect(graphUtils).toMatch(
       /citing:\s*getCSSVariable\("--graph-node-citing"\)\s*\|\|\s*"#0ea5e9"/,
     );
@@ -167,14 +167,12 @@ describe("light theme teal/white palette safeguards", () => {
       /related:\s*getCSSVariable\("--graph-node-related"\)\s*\|\|\s*"#14b8a6"/,
     );
     expect(graphUtils).toMatch(
-      /normal:\s*getCSSVariable\("--graph-bg"\)\s*\|\|\s*\(lightTheme \? "#f8fbff" : "#0b0f19"\)/,
+      /normal:\s*getCSSVariable\("--graph-bg"\)\s*\|\|\s*\(lightTheme \? "#F5FFFE" : "#0b0f19"\)/,
     );
     expect(graphUtils).toMatch(
-      /fullscreen:[\s\S]*?getCSSVariable\("--graph-bg-fullscreen"\)[\s\S]*?\(lightTheme \? "#f1f6ff" : "#050810"\)/,
+      /fullscreen:[\s\S]*?getCSSVariable\("--graph-bg-fullscreen"\)[\s\S]*?\(lightTheme \? "#F0FFFD" : "#050810"\)/,
     );
-    expect(graphUtils).toMatch(
-      /lightTheme[\s\S]*?rgba\(37,\s*99,\s*235,\s*0\.22\)/,
-    );
+    expect(graphUtils).toMatch(/lightTheme[\s\S]*?rgba\(0, 103, 97,\s*0\.22\)/);
   });
 
   it("keeps graph legend and helper color maps normalized before lookup", () => {

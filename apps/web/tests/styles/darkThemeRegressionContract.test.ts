@@ -34,14 +34,14 @@ describe("dark theme regression contract", () => {
 
   it("keeps legacy root dark palette tokens for glass surfaces and accents", () => {
     expect(rootDarkBlockMatch).not.toBeNull();
-    expect(rootDarkBlock).toMatch(/--bg-primary:\s*#0a1628;/);
+    expect(rootDarkBlock).toMatch(/--bg-primary:\s*#021A19;/);
     expect(rootDarkBlock).toMatch(
-      /--bg-secondary:\s*rgba\(13,\s*27,\s*42,\s*0\.9\);/,
+      /--bg-secondary:\s*rgba\(3, 31, 29,\s*0\.9\);/,
     );
     expect(rootDarkBlock).toMatch(/--text-primary:\s*#e8f0ff;/);
-    expect(rootDarkBlock).toMatch(/--accent:\s*#4b74ff;/);
+    expect(rootDarkBlock).toMatch(/--accent:\s*#00D4C8;/);
     expect(rootDarkBlock).toMatch(
-      /--accent-gradient:\s*linear-gradient\(135deg,\s*#4b74ff,\s*#7c3aed\);/,
+      /--accent-gradient:\s*linear-gradient\(135deg,\s*#00D4C8,\s*#0D9488\);/,
     );
   });
 
@@ -53,8 +53,8 @@ describe("dark theme regression contract", () => {
       /--graph-link-color:\s*rgba\(100,\s*130,\s*180,\s*0\.25\);/,
     );
 
-    expect(rootDarkBlock).not.toMatch(/--graph-bg:\s*#F8FBFF;/);
-    expect(rootDarkBlock).not.toMatch(/--graph-bg-fullscreen:\s*#F1F6FF;/);
+    expect(rootDarkBlock).not.toMatch(/--graph-bg:\s*#F5FFFE;/);
+    expect(rootDarkBlock).not.toMatch(/--graph-bg-fullscreen:\s*#F0FFFD;/);
     expect(rootDarkBlock).not.toMatch(/--graph-panel-bg:\s*#F7FAFF;/);
   });
 });

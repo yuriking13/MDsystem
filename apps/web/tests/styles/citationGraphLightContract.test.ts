@@ -14,7 +14,7 @@ const legacyCss = readFileSync(
 describe("citation graph light-theme visual contract", () => {
   it("keeps light legend panel and text overrides for readability", () => {
     expect(graphCss).toMatch(
-      /\.light-theme \.graph-legend-panel,[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(255,\s*255,\s*255,\s*0\.94\)\s*0%,\s*rgba\(239,\s*246,\s*255,\s*0\.95\)\s*100%\);/,
+      /\.light-theme \.graph-legend-panel,[\s\S]*?background:\s*linear-gradient\(135deg,\s*rgba\(255,\s*255,\s*255,\s*0\.94\)\s*0%,\s*rgba\(230,\s*255,\s*252,\s*0\.95\)\s*100%\);/,
     );
     expect(graphCss).toMatch(
       /\.light-theme \.graph-legend-item-label,[\s\S]*?color:\s*#1e293b;/,
@@ -24,9 +24,9 @@ describe("citation graph light-theme visual contract", () => {
     );
   });
 
-  it("keeps light graph control surface overrides on blue-white tones", () => {
+  it("keeps light graph control surface overrides on teal-white tones", () => {
     expect(graphCss).toMatch(
-      /\.light-theme \.quick-stats,[\s\S]*?background:\s*rgba\(239,\s*246,\s*255,\s*0\.8\);/,
+      /\.light-theme \.quick-stats,[\s\S]*?background:\s*rgba\(230,\s*255,\s*252,\s*0\.8\);/,
     );
     expect(graphCss).toMatch(
       /\.light-theme \.select-input,[\s\S]*?background:\s*rgba\(255,\s*255,\s*255,\s*0\.95\);/,
@@ -44,7 +44,7 @@ describe("citation graph light-theme visual contract", () => {
       /\.graph-legend-theme-light\s*\{[\s\S]*?--graph-legend-selected:\s*#22c55e;/,
     );
     expect(graphCss).toMatch(
-      /\.graph-legend-theme-light\s*\{[\s\S]*?--graph-legend-candidate:\s*#3b82f6;/,
+      /\.graph-legend-theme-light\s*\{[\s\S]*?--graph-legend-candidate:\s*#0D9488;/,
     );
     expect(graphCss).toMatch(
       /\.graph-legend-theme-light\s*\{[\s\S]*?--graph-legend-citing:\s*#0ea5e9;/,

@@ -8,21 +8,21 @@ const legacyCss = readFileSync(
 );
 
 describe("auth page light-theme visual contract", () => {
-  it("keeps auth feature and card accent gradients on blue palette", () => {
+  it("keeps auth feature and card accent gradients on teal palette", () => {
     expect(legacyCss).toMatch(
-      /\.light-theme \.auth-feature::before\s*\{[\s\S]*?background:\s*linear-gradient\(180deg,\s*#2563EB,\s*#3B82F6\);/,
+      /\.light-theme \.auth-feature::before\s*\{[\s\S]*?background:\s*linear-gradient\(180deg,\s*#006761,\s*#0D9488\);/,
     );
     expect(legacyCss).toMatch(
-      /\.light-theme \.auth-form-card::before\s*\{[\s\S]*?background:\s*linear-gradient\(135deg,\s*#2563EB,\s*#3B82F6\);/,
+      /\.light-theme \.auth-form-card::before\s*\{[\s\S]*?background:\s*linear-gradient\(135deg,\s*#006761,\s*#0D9488\);/,
     );
     expect(legacyCss).toMatch(
-      /\.light-theme \.auth-submit\s*\{[\s\S]*?background:\s*linear-gradient\(135deg,\s*#2563EB,\s*#3B82F6\);/,
+      /\.light-theme \.auth-submit\s*\{[\s\S]*?background:\s*linear-gradient\(135deg,\s*#006761,\s*#0D9488\);/,
     );
   });
 
-  it("keeps auth typography and icon accents in updated blue-neutral values", () => {
+  it("keeps auth typography and icon accents in updated teal-neutral values", () => {
     expect(legacyCss).toMatch(
-      /\.light-theme \.auth-title\s*\{[\s\S]*?color:\s*#1D4ED8;/,
+      /\.light-theme \.auth-title\s*\{[\s\S]*?color:\s*#005550;/,
     );
     expect(legacyCss).toMatch(
       /\.light-theme \.auth-link\s*\{[\s\S]*?color:\s*#475569;/,
@@ -31,19 +31,19 @@ describe("auth page light-theme visual contract", () => {
       /\.light-theme \.auth-logo-icon\s*\{[\s\S]*?color:\s*#64748B;/,
     );
     expect(legacyCss).toMatch(
-      /\.light-theme \.auth-feature-icon\s*\{[\s\S]*?color:\s*#2563EB;/,
+      /\.light-theme \.auth-feature-icon\s*\{[\s\S]*?color:\s*#006761;/,
     );
   });
 
-  it("keeps auth input focus and hover states on blue focus/border shadows", () => {
+  it("keeps auth input focus and hover states on teal focus/border shadows", () => {
     expect(legacyCss).toMatch(
-      /\.light-theme \.auth-field input:focus\s*\{[\s\S]*?border-color:\s*rgba\(37,\s*99,\s*235,\s*0\.7\);/,
+      /\.light-theme \.auth-field input:focus\s*\{[\s\S]*?border-color:\s*rgba\(0, 103, 97,\s*0\.7\);/,
     );
     expect(legacyCss).toMatch(
-      /\.light-theme \.auth-field input:focus\s*\{[\s\S]*?0 0 0 4px rgba\(37,\s*99,\s*235,\s*0\.2\),/,
+      /\.light-theme \.auth-field input:focus\s*\{[\s\S]*?0 0 0 4px rgba\(0, 103, 97,\s*0\.2\),/,
     );
     expect(legacyCss).toMatch(
-      /\.light-theme \.auth-feature:hover\s*\{[\s\S]*?border-color:\s*rgba\(37,\s*99,\s*235,\s*0\.55\);/,
+      /\.light-theme \.auth-feature:hover\s*\{[\s\S]*?border-color:\s*rgba\(0, 103, 97,\s*0\.55\);/,
     );
   });
 });

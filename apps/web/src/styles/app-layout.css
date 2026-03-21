@@ -478,7 +478,7 @@ html.layout-fixed #root {
 
 .sidebar-logo-icon {
   @apply flex items-center justify-center w-8 h-8 rounded-lg;
-  @apply bg-gradient-to-br from-blue-500 to-blue-600;
+  @apply bg-gradient-to-br from-teal-500 to-teal-600;
   @apply text-white;
 }
 
@@ -514,7 +514,7 @@ html.layout-fixed #root {
 }
 
 .sidebar-project-role {
-  @apply text-xs text-blue-400 font-medium;
+  @apply text-xs text-teal-400 font-medium;
 }
 
 .sidebar-project-date {
@@ -551,8 +551,8 @@ html.layout-fixed #root {
 }
 
 .sidebar-nav-item--active {
-  @apply bg-blue-600/20 text-blue-400;
-  @apply hover:bg-blue-600/30 hover:text-blue-300;
+  @apply bg-teal-600/20 text-teal-400;
+  @apply hover:bg-teal-600/30 hover:text-teal-300;
 }
 
 .sidebar-nav-icon {
@@ -566,7 +566,7 @@ html.layout-fixed #root {
 
 .sidebar-nav-badge {
   @apply ml-auto px-1.5 py-0.5 rounded-md text-xs font-medium;
-  @apply bg-blue-500/20 text-blue-400;
+  @apply bg-teal-500/20 text-teal-400;
 }
 
 /* Collapsed state - center icons */
@@ -600,8 +600,8 @@ html.layout-fixed #root {
 }
 
 .sidebar-submenu-item--active {
-  @apply bg-blue-600/15 text-blue-400;
-  @apply hover:bg-blue-600/25 hover:text-blue-300;
+  @apply bg-teal-600/15 text-teal-400;
+  @apply hover:bg-teal-600/25 hover:text-teal-300;
 }
 
 .sidebar-submenu-icon {
@@ -621,7 +621,7 @@ html.layout-fixed #root {
 }
 
 .sidebar-submenu-item--active .sidebar-submenu-badge {
-  @apply bg-blue-500/20 text-blue-400;
+  @apply bg-teal-500/20 text-teal-400;
 }
 
 /* Collapsed state - hide submenu */
@@ -981,20 +981,20 @@ html.layout-fixed #root {
   .light-theme .app-mobile-fab-toggle,
   [data-theme="light"] .app-mobile-fab-toggle {
     background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(191, 219, 254, 0.95);
+  border-color: rgba(153, 246, 228, 0.95);
   color: #0f172a;
   }
 
   .light-theme .app-mobile-fab-toggle:hover,
   [data-theme="light"] .app-mobile-fab-toggle:hover {
-  background: rgba(239, 246, 255, 1);
+  background: rgba(230, 255, 252, 1);
   color: #0f172a;
   }
 
   .light-theme .app-mobile-topbar,
   [data-theme="light"] .app-mobile-topbar {
     background: rgba(255, 255, 255, 0.9);
-  border-bottom-color: rgba(191, 219, 254, 0.9);
+  border-bottom-color: rgba(153, 246, 228, 0.9);
   }
 
   .app-mobile-topbar-title {
@@ -1048,13 +1048,13 @@ html.layout-fixed #root {
   .light-theme .app-mobile-nav-toggle,
   [data-theme="light"] .app-mobile-nav-toggle {
     background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(191, 219, 254, 0.95);
+  border-color: rgba(153, 246, 228, 0.95);
   color: #334155;
   }
 
   .light-theme .app-mobile-nav-toggle:hover,
   [data-theme="light"] .app-mobile-nav-toggle:hover {
-  background: rgba(239, 246, 255, 1);
+  background: rgba(230, 255, 252, 1);
   color: #0f172a;
   }
 

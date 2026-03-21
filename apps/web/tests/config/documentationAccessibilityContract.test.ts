@@ -40,7 +40,7 @@ describe("documentation accessibility contract", () => {
     expect(pagesCss).toMatch(/\.doc-nav-item:focus-visible\s*\{/);
     expect(pagesCss).toMatch(/\.docs-subnav-item:focus-visible\s*\{/);
     expect(pagesCss).toMatch(
-      /box-shadow:\s*0 0 0 2px rgba\(37,\s*99,\s*235,\s*0\.2\);/,
+      /box-shadow:\s*0 0 0 2px rgba\(0,\s*103,\s*97,\s*0\.2\);/,
     );
   });
 
