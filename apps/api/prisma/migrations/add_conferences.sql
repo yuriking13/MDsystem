@@ -29,12 +29,23 @@ CREATE TABLE IF NOT EXISTS "conferences" (
   "specialty"    "MedicalSpecialty" NOT NULL,
   "description"  TEXT,
   "image_url"    VARCHAR(1000),
+  "logo_url"     VARCHAR(1000),
   "is_published" BOOLEAN NOT NULL DEFAULT false,
   "created_at"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   "updated_at"   TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
   CONSTRAINT "conferences_pkey" PRIMARY KEY ("id")
 );
+
+-- Add logo_url if table already exists (idempotent)
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'conferences' AND column_name = 'logo_url'
+  ) THEN
+    ALTER TABLE "conferences" ADD COLUMN "logo_url" VARCHAR(1000);
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS "conferences_date_idx" ON "conferences"("date");
 CREATE INDEX IF NOT EXISTS "conferences_specialty_idx" ON "conferences"("specialty");

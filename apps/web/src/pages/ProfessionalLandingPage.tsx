@@ -115,23 +115,13 @@ export default function ProfessionalLandingPage() {
         title: "Будущие мероприятия",
         subtitle: "Ближайшие конференции. Примите участие",
         moreBtn: "Узнать о других конференциях",
-        banners: [
-          {
-            title: "Международный конгресс кардиологов 2026",
-            subtitle: "Москва · 15 июня 2026",
-            image: "",
-          },
-          {
-            title: "Форум неврологии и нейронаук",
-            subtitle: "Санкт-Петербург · 22 сентября 2026",
-            image: "",
-          },
-          {
-            title: "Конференция по регенеративной медицине",
-            subtitle: "Казань · 10 апреля 2026",
-            image: "",
-          },
-        ],
+        emptyNote: "Конференции скоро появятся",
+        banners: [] as {
+          title: string;
+          subtitle: string;
+          image: string;
+          logoUrl: string;
+        }[],
       },
       faq: {
         title: "FAQ / Вопросы и ответы",
@@ -250,23 +240,13 @@ export default function ProfessionalLandingPage() {
         title: "Upcoming Events",
         subtitle: "Nearest conferences. Join in",
         moreBtn: "Discover more conferences",
-        banners: [
-          {
-            title: "International Cardiology Congress 2026",
-            subtitle: "Moscow · June 15, 2026",
-            image: "",
-          },
-          {
-            title: "Neurology & Neuroscience Forum",
-            subtitle: "Saint Petersburg · Sep 22, 2026",
-            image: "",
-          },
-          {
-            title: "Regenerative Medicine Conference",
-            subtitle: "Kazan · April 10, 2026",
-            image: "",
-          },
-        ],
+        emptyNote: "Conferences coming soon",
+        banners: [] as {
+          title: string;
+          subtitle: string;
+          image: string;
+          logoUrl: string;
+        }[],
       },
       faq: {
         title: "FAQ",
@@ -977,52 +957,72 @@ export default function ProfessionalLandingPage() {
             </p>
           </div>
           <div className="conference-banner-grid">
-            {t.conference.banners.map((banner) => (
-              <div key={banner.title} className="conf-banner-card">
-                <div className="conf-banner-image">
-                  {banner.image ? (
-                    <img src={banner.image} alt={banner.title} loading="lazy" />
-                  ) : (
-                    <div className="conf-banner-placeholder">
-                      <svg
-                        viewBox="0 0 80 80"
-                        fill="none"
-                        className="conf-placeholder-svg"
-                      >
-                        <rect
-                          x="8"
-                          y="18"
-                          width="64"
-                          height="44"
-                          rx="8"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          opacity="0.25"
-                        />
-                        <circle
-                          cx="28"
-                          cy="36"
-                          r="7"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          opacity="0.25"
-                        />
-                        <path
-                          d="M8 52l18-14 14 10 18-16 14 18"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          opacity="0.25"
-                        />
-                      </svg>
-                    </div>
-                  )}
+            {t.conference.banners.length > 0 ? (
+              t.conference.banners.map((banner) => (
+                <div key={banner.title} className="conf-banner-card">
+                  <div className="conf-banner-image">
+                    {banner.image ? (
+                      <img
+                        src={banner.image}
+                        alt={banner.title}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="conf-banner-placeholder">
+                        <svg
+                          viewBox="0 0 80 80"
+                          fill="none"
+                          className="conf-placeholder-svg"
+                        >
+                          <rect
+                            x="8"
+                            y="18"
+                            width="64"
+                            height="44"
+                            rx="8"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            opacity="0.25"
+                          />
+                          <circle
+                            cx="28"
+                            cy="36"
+                            r="7"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            opacity="0.25"
+                          />
+                          <path
+                            d="M8 52l18-14 14 10 18-16 14 18"
+                            stroke="currentColor"
+                            strokeWidth="1.5"
+                            opacity="0.25"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  <div className="conf-banner-body">
+                    {banner.logoUrl && (
+                      <img
+                        src={banner.logoUrl}
+                        alt=""
+                        className="conf-banner-logo"
+                        loading="lazy"
+                      />
+                    )}
+                    <h3 className="conf-banner-title">{banner.title}</h3>
+                    <p className="conf-banner-sub">{banner.subtitle}</p>
+                  </div>
                 </div>
-                <div className="conf-banner-body">
-                  <h3 className="conf-banner-title">{banner.title}</h3>
-                  <p className="conf-banner-sub">{banner.subtitle}</p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p
+                className={`text-center col-span-full py-12 text-lg ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}
+              >
+                {t.conference.emptyNote}
+              </p>
+            )}
           </div>
           <div className="text-center mt-10">
             <Link to="/conferences" className="glass-button-wrap">

@@ -42,65 +42,11 @@ interface Conference {
   date: string;
   specialty: string;
   imageUrl: string;
+  logoUrl: string;
 }
 
-/* Demo data — replaced by API later */
-const DEMO_CONFERENCES: Conference[] = [
-  {
-    id: "1",
-    title: "Международный конгресс кардиологов 2026",
-    subtitle: "Современные подходы к лечению сердечно-сосудистых заболеваний",
-    location: "Москва, Россия",
-    date: "2026-06-15",
-    specialty: "CARDIOLOGY",
-    imageUrl: "",
-  },
-  {
-    id: "2",
-    title: "Форум неврологии и нейронаук",
-    subtitle: "Инновации в диагностике и терапии неврологических заболеваний",
-    location: "Санкт-Петербург, Россия",
-    date: "2026-09-22",
-    specialty: "NEUROLOGY",
-    imageUrl: "",
-  },
-  {
-    id: "3",
-    title: "Конференция по регенеративной медицине",
-    subtitle: "Генная терапия и клеточные технологии",
-    location: "Казань, Россия",
-    date: "2026-04-10",
-    specialty: "GENETICS",
-    imageUrl: "",
-  },
-  {
-    id: "4",
-    title: "Национальный хирургический конгресс",
-    subtitle: "Минимально инвазивные технологии XXI века",
-    location: "Новосибирск, Россия",
-    date: "2026-11-05",
-    specialty: "SURGERY",
-    imageUrl: "",
-  },
-  {
-    id: "5",
-    title: "Эндокринология: диагностика и лечение",
-    subtitle: "Актуальные вопросы эндокринной хирургии и терапии",
-    location: "Екатеринбург, Россия",
-    date: "2026-07-18",
-    specialty: "ENDOCRINOLOGY",
-    imageUrl: "",
-  },
-  {
-    id: "6",
-    title: "Стоматологический саммит 2026",
-    subtitle: "Цифровая стоматология и имплантология",
-    location: "Сочи, Россия",
-    date: "2026-05-28",
-    specialty: "DENTISTRY",
-    imageUrl: "",
-  },
-];
+/* Data will come from API — empty for now */
+const CONFERENCES: Conference[] = [];
 
 function getMonthLabel(month: number, lang: Language) {
   const ru = [
@@ -161,16 +107,14 @@ export default function ConferencesPage() {
     setLanguage((prev) => (prev === "ru" ? "en" : "ru"));
 
   const years = useMemo(() => {
-    const set = new Set(
-      DEMO_CONFERENCES.map((c) => new Date(c.date).getFullYear()),
-    );
+    const set = new Set(CONFERENCES.map((c) => new Date(c.date).getFullYear()));
     return Array.from(set).sort();
   }, []);
 
   const months = Array.from({ length: 12 }, (_, i) => i);
 
   const filtered = useMemo(() => {
-    return DEMO_CONFERENCES.filter((c) => {
+    return CONFERENCES.filter((c) => {
       const d = new Date(c.date);
       if (selectedSpecialty && c.specialty !== selectedSpecialty) return false;
       if (selectedYear && d.getFullYear() !== Number(selectedYear))
@@ -416,6 +360,14 @@ export default function ConferencesPage() {
                     )}
                   </div>
                   <div className="conf-card-body">
+                    {c.logoUrl && (
+                      <img
+                        src={c.logoUrl}
+                        alt=""
+                        className="conf-card-logo"
+                        loading="lazy"
+                      />
+                    )}
                     <span className="conf-card-tag">
                       {specialtyLabel(c.specialty, language)}
                     </span>
@@ -433,14 +385,45 @@ export default function ConferencesPage() {
         </div>
       </section>
 
-      {/* Back link */}
-      <footer className="px-6 pb-16 text-center">
-        <Link to="/" className="glass-button-wrap">
-          <span className="glass-button">
-            <span>{t.back}</span>
-          </span>
-          <span className="glass-button-shadow" />
-        </Link>
+      {/* Footer */}
+      <footer
+        className={`py-16 px-6 ${theme === "dark" ? "bg-slate-800" : "bg-slate-900"} text-white`}
+      >
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="border-t border-slate-700 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <Link
+                to="/"
+                className="text-2xl font-bold text-white hover:text-slate-200 transition-colors"
+              >
+                Scientiaiter
+              </Link>
+
+              <div className="flex gap-8 text-sm">
+                <Link
+                  to="/privacy"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  {language === "ru" ? "Конфиденциальность" : "Privacy"}
+                </Link>
+                <Link
+                  to="/terms"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  {language === "ru" ? "Условия" : "Terms"}
+                </Link>
+                <Link
+                  to="/support"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  {language === "ru" ? "Поддержка" : "Support"}
+                </Link>
+              </div>
+
+              <div className="text-slate-500 text-sm">© 2026 Scientiaiter</div>
+            </div>
+          </div>
+        </div>
       </footer>
     </div>
   );
