@@ -19,7 +19,7 @@ const rootDarkBlock = rootDarkBlockMatch?.[1] ?? "";
 describe("dark theme regression contract", () => {
   it("keeps index.css dark theme token hierarchy intact", () => {
     expect(indexCss).toMatch(
-      /\[data-theme="dark"\]\s*\{[\s\S]*?--color-background:\s*10 22 40;\s*\/\* #0A1628 \*\/[\s\S]*?--color-background-secondary:\s*13 27 42;\s*\/\* #0D1B2A \*\/[\s\S]*?--color-background-tertiary:\s*22 34 54;\s*\/\* #162236 \*\//,
+      /\[data-theme="dark"\]\s*\{[\s\S]*?--color-background:\s*2 26 25;\s*\/\* #021A19 \*\/[\s\S]*?--color-background-secondary:\s*3 31 29;\s*\/\* #031F1D \*\/[\s\S]*?--color-background-tertiary:\s*5 45 42;\s*\/\* #052D2A \*\//,
     );
     expect(indexCss).toMatch(
       /\[data-theme="dark"\]\s*\{[\s\S]*?--color-text-primary:\s*248 250 252;\s*\/\* #F8FAFC \*\/[\s\S]*?--color-text-secondary:\s*203 213 225;\s*\/\* #CBD5E1 \*\/[\s\S]*?--color-text-tertiary:\s*148 163 184;\s*\/\* #94A3B8 \*\//,
@@ -28,7 +28,7 @@ describe("dark theme regression contract", () => {
 
   it("keeps default body fallback in dark mode colors", () => {
     expect(indexCss).toMatch(
-      /body\s*\{[\s\S]*?@apply text-neutral-50;[\s\S]*?background-color:\s*#0a1628;/,
+      /body\s*\{[\s\S]*?@apply text-neutral-50;[\s\S]*?background-color:\s*#021A19;/,
     );
   });
 

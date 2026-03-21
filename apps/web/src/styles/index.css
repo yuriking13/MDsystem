@@ -18,17 +18,17 @@
 
 /* Register custom primary color scale for Tailwind v4 utilities */
 @theme {
-  --color-primary-50: #EFF6FF;
-  --color-primary-100: #DBEAFE;
-  --color-primary-200: #BFDBFE;
-  --color-primary-300: #93C5FD;
-  --color-primary-400: #60A5FA;
-  --color-primary-500: #3B82F6;
-  --color-primary-600: #2563EB;
-  --color-primary-700: #1D4ED8;
-  --color-primary-800: #1E40AF;
-  --color-primary-900: #1E3A8A;
-  --color-primary-950: #172554;
+  --color-primary-50: #F0FFFD;
+  --color-primary-100: #CCFBF1;
+  --color-primary-200: #99F6E4;
+  --color-primary-300: #5EEAD4;
+  --color-primary-400: #2DD4BF;
+  --color-primary-500: #14B8A6;
+  --color-primary-600: #0D9488;
+  --color-primary-700: #0F766E;
+  --color-primary-800: #115E59;
+  --color-primary-900: #134E4A;
+  --color-primary-950: #082F28;
 }
 
 /* ===== DESIGN TOKENS & CSS VARIABLES ===== */
@@ -74,11 +74,11 @@
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
     --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
     
-    /* Light Theme Colors — Blue/Neutral */
-    --color-primary: 37 99 235; /* #2563EB */
+    /* Light Theme Colors — Teal/Neutral */
+    --color-primary: 0 103 97; /* #006761 */
     --color-primary-foreground: 255 255 255;
     
-    --color-secondary: 59 130 246; /* #3B82F6 */
+    --color-secondary: 0 212 200; /* #00D4C8 */
     --color-secondary-foreground: 255 255 255;
     
     --color-success: 21 128 61; /* #15803D */
@@ -93,19 +93,19 @@
     --color-info: 14 116 144; /* #0E7490 */
     --color-info-foreground: 255 255 255;
     
-    /* Background Colors — Neutral blue-white */
-    --color-background: 248 251 255; /* #F8FBFF */
-    --color-background-secondary: 240 247 255; /* #F0F7FF */
-    --color-background-tertiary: 234 243 255; /* #EAF3FF */
+    /* Background Colors — Neutral teal-white */
+    --color-background: 245 255 254; /* #F5FFFE */
+    --color-background-secondary: 240 255 253; /* #F0FFFD */
+    --color-background-tertiary: 230 255 252; /* #E6FFFC */
     
     /* Surface Colors */
     --color-surface: 255 255 255;
-    --color-surface-hover: 243 248 255; /* #F3F8FF */
-    --color-surface-active: 231 240 255; /* #E7F0FF */
+    --color-surface-hover: 240 255 253; /* #F0FFFD */
+    --color-surface-active: 224 255 253; /* #E0FFFD */
     
     /* Border Colors */
-    --color-border: 191 219 254; /* #BFDBFE */
-    --color-border-hover: 147 197 253; /* #93C5FD */
+    --color-border: 153 246 228; /* #99F6E4 - teal-200 */
+    --color-border-hover: 94 234 212; /* #5EEAD4 - teal-300 */
     
     /* Text Colors */
     --color-text-primary: 15 23 42; /* #0F172A */
@@ -118,8 +118,8 @@
   }
 
   [data-theme="dark"] {
-    /* Dark Theme Colors — Deep scientific blue */
-    --color-primary: 75 116 255;
+    /* Dark Theme Colors — Deep teal */
+    --color-primary: 0 212 200; /* #00D4C8 */
     --color-primary-foreground: 255 255 255;
     
     --color-secondary: 124 58 237;
@@ -138,18 +138,18 @@
     --color-info-foreground: 255 255 255;
     
     /* Background Colors — Contract-regression protected */
-    --color-background: 10 22 40; /* #0A1628 */
-    --color-background-secondary: 13 27 42; /* #0D1B2A */
-    --color-background-tertiary: 22 34 54; /* #162236 */
+    --color-background: 2 26 25; /* #021A19 */
+    --color-background-secondary: 3 31 29; /* #031F1D */
+    --color-background-tertiary: 5 45 42; /* #052D2A */
     
     /* Surface Colors */
-    --color-surface: 15 23 42;
-    --color-surface-hover: 22 34 54;
-    --color-surface-active: 30 41 59;
+    --color-surface: 3 26 24; /* #031A18 */
+    --color-surface-hover: 5 45 42; /* #052D2A */
+    --color-surface-active: 10 60 56; /* #0A3C38 */
     
     /* Border Colors */
-    --color-border: 51 65 85;
-    --color-border-hover: 71 85 105;
+    --color-border: 45 80 79; /* #2D504F */
+    --color-border-hover: 54 100 95; /* #36645F */
     
     /* Text Colors — Contract-regression protected */
     --color-text-primary: 248 250 252; /* #F8FAFC */
@@ -175,12 +175,12 @@
   body {
     @apply font-sans;
     @apply text-neutral-50;
-    background-color: #0a1628;
+    background-color: #021A19;
   }
 
   body.light-theme,
   [data-theme="light"] body {
-    background-color: #F8FBFF;
+    background-color: #F5FFFE;
     color: #0F172A;
   }
 

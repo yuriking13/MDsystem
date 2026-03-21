@@ -43,26 +43,26 @@ const graphUtils = readFileSync(
   "utf8",
 );
 
-describe("light theme blue/white palette safeguards", () => {
-  it("keeps primary Tailwind scale on blue spectrum", () => {
-    expect(indexCss).toMatch(/--color-primary-50:\s*#EFF6FF;/);
-    expect(indexCss).toMatch(/--color-primary-500:\s*#3B82F6;/);
-    expect(indexCss).toMatch(/--color-primary-600:\s*#2563EB;/);
-    expect(indexCss).toMatch(/--color-primary-950:\s*#172554;/);
+describe("light theme teal/white palette safeguards", () => {
+  it("keeps primary Tailwind scale on teal spectrum", () => {
+    expect(indexCss).toMatch(/--color-primary-50:\s*#F0FFFD;/);
+    expect(indexCss).toMatch(/--color-primary-500:\s*#14B8A6;/);
+    expect(indexCss).toMatch(/--color-primary-600:\s*#0D9488;/);
+    expect(indexCss).toMatch(/--color-primary-950:\s*#082F28;/);
   });
 
-  it("keeps core light design tokens on neutral blue-white palette", () => {
+  it("keeps core light design tokens on neutral teal-white palette", () => {
     expect(indexCss).toMatch(
-      /--color-background:\s*248 251 255;\s*\/\* #F8FBFF \*\//,
+      /--color-background:\s*245 255 254;\s*\/\* #F5FFFE \*\//,
     );
     expect(indexCss).toMatch(
-      /--color-border:\s*191 219 254;\s*\/\* #BFDBFE \*\//,
+      /--color-border:\s*153 246 228;\s*\/\* #99F6E4 - teal-200 \*\//,
     );
     expect(indexCss).toMatch(
       /--color-text-primary:\s*15 23 42;\s*\/\* #0F172A \*\//,
     );
     expect(indexCss).toMatch(
-      /--color-primary:\s*37 99 235;\s*\/\* #2563EB \*\//,
+      /--color-primary:\s*0 103 97;\s*\/\* #006761 \*\//,
     );
   });
 

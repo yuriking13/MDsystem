@@ -12,21 +12,21 @@ const legacyCss = readFileSync(
 );
 
 describe("light theme variable contract", () => {
-  it("keeps index light-mode body foreground/background on blue-neutral pair", () => {
+  it("keeps index light-mode body foreground/background on teal-neutral pair", () => {
     expect(indexCss).toMatch(
-      /body\.light-theme,\s*\[data-theme="light"\] body\s*\{[\s\S]*?background-color:\s*#F8FBFF;[\s\S]*?color:\s*#0F172A;/,
+      /body\.light-theme,\s*\[data-theme="light"\] body\s*\{[\s\S]*?background-color:\s*#F5FFFE;[\s\S]*?color:\s*#0F172A;/,
     );
   });
 
   it("keeps light global CSS variable values for background and text hierarchy", () => {
     expect(indexCss).toMatch(
-      /--color-background:\s*248 251 255;\s*\/\* #F8FBFF \*\//,
+      /--color-background:\s*245 255 254;\s*\/\* #F5FFFE \*\//,
     );
     expect(indexCss).toMatch(
-      /--color-background-secondary:\s*240 247 255;\s*\/\* #F0F7FF \*\//,
+      /--color-background-secondary:\s*240 255 253;\s*\/\* #F0FFFD \*\//,
     );
     expect(indexCss).toMatch(
-      /--color-background-tertiary:\s*234 243 255;\s*\/\* #EAF3FF \*\//,
+      /--color-background-tertiary:\s*230 255 252;\s*\/\* #E6FFFC \*\//,
     );
     expect(indexCss).toMatch(
       /--color-text-primary:\s*15 23 42;\s*\/\* #0F172A \*\//,
