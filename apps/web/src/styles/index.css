@@ -236,7 +236,7 @@
 
   /* Selection */
   ::selection {
-    @apply bg-blue-200 dark:bg-blue-800;
+    @apply bg-teal-200 dark:bg-teal-800;
   }
 }
 
@@ -270,7 +270,7 @@
   /* Focus Visible Ring */
   .focus-ring {
     @apply focus-visible:outline-none focus-visible:ring-2;
-    @apply focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+    @apply focus-visible:ring-teal-500 focus-visible:ring-offset-2;
     @apply focus-visible:ring-offset-white dark:focus-visible:ring-offset-neutral-950;
   }
 
@@ -296,7 +296,7 @@
     @apply border-neutral-300 dark:border-neutral-700;
     @apply px-3 py-2 text-sm;
     @apply placeholder:text-neutral-400 dark:placeholder:text-neutral-600;
-    @apply focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20;
+    @apply focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
   }
 

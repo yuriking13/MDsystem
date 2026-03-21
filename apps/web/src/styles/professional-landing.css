@@ -304,17 +304,17 @@ h1, h2, h3, h4, h5, h6 {
   background:
     radial-gradient(circle at 15% 12%, rgba(0, 103, 97, 0.2), transparent 44%),
     radial-gradient(circle at 82% 18%, rgba(249, 115, 22, 0.18), transparent 42%),
-    linear-gradient(145deg, #050d1f 0%, #0a1a34 48%, #09122a 100%);
+    linear-gradient(145deg, #021a19 0%, #04302e 48%, #031f1e 100%);
 }
 
 .modern-section-surface {
   background:
-    linear-gradient(180deg, rgba(10, 24, 47, 0.98), rgba(8, 18, 37, 0.98));
+    linear-gradient(180deg, rgba(3, 26, 24, 0.98), rgba(2, 20, 19, 0.98));
 }
 
 .modern-section-muted {
   background:
-    linear-gradient(180deg, rgba(6, 14, 28, 1), rgba(9, 16, 31, 1));
+    linear-gradient(180deg, rgba(2, 16, 15, 1), rgba(3, 18, 17, 1));
 }
 
 .light-theme .modern-hero-shell,
@@ -1564,6 +1564,28 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+/* ─── Scrollbar ─── */
+.professional-landing::-webkit-scrollbar {
+  width: 8px;
+}
+
+.professional-landing::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.professional-landing::-webkit-scrollbar-thumb {
+  background: rgba(0, 103, 97, 0.35);
+  border-radius: 999px;
+}
+
+.professional-landing::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 103, 97, 0.55);
+}
+
+.professional-landing {
+  scrollbar-color: rgba(0, 103, 97, 0.35) transparent;
+}
+
 /* ─── Auth pages (login / register) ─── */
 .landing-auth-card {
   width: 100%;
@@ -1640,20 +1662,51 @@ h1, h2, h3, h4, h5, h6 {
 
 .landing-auth-submit {
   width: 100%;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
+  padding: 0.875em;
+  border-radius: 999vw;
   border: none;
-  background: linear-gradient(135deg, #006761, #00ffef);
-  color: #fff;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  position: relative;
   cursor: pointer;
-  transition: background 0.2s, transform 0.15s;
+  font-family: "Noto Serif", Georgia, serif;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+  font-size: 0.9375rem;
+  color: rgba(50, 50, 50, 1);
+  background: linear-gradient(
+    -75deg,
+    rgba(255, 255, 255, 0.05),
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.05)
+  );
+  box-shadow: inset 0 0.125em 0.125em rgba(0, 0, 0, 0.05),
+    inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
+    0 0.25em 0.125em -0.125em rgba(0, 0, 0, 0.2),
+    0 0 0.1em 0.25em inset rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(clamp(1px, 0.125em, 4px));
+  transition: all 0.3s ease;
 }
 
 .landing-auth-submit:hover:not(:disabled) {
-  background: linear-gradient(135deg, #005a55, #00e6d6);
-  transform: translateY(-1px);
+  transform: scale(0.975);
+  backdrop-filter: blur(0.01em);
+  box-shadow: inset 0 0.125em 0.125em rgba(0, 0, 0, 0.05),
+    inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.5),
+    0 0.15em 0.05em -0.1em rgba(0, 0, 0, 0.25),
+    0 0 0.05em 0.1em inset rgba(255, 255, 255, 0.5);
+}
+
+.landing-style-bch .landing-auth-submit {
+  color: rgba(230, 230, 230, 1);
+  background: linear-gradient(
+    -75deg,
+    rgba(255, 255, 255, 0.03),
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.03)
+  );
+  box-shadow: inset 0 0.125em 0.125em rgba(0, 0, 0, 0.15),
+    inset 0 -0.125em 0.125em rgba(255, 255, 255, 0.1),
+    0 0.25em 0.125em -0.125em rgba(0, 0, 0, 0.3),
+    0 0 0.1em 0.25em inset rgba(255, 255, 255, 0.05);
 }
 
 .landing-auth-submit:disabled {

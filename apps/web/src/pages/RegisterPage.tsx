@@ -220,7 +220,7 @@ export default function RegisterPage() {
             >
               {busy
                 ? t("Создание...", "Creating...")
-                : t("Создать аккаунт", "Create Account")}
+                : t("Создать аккаунт", "Create")}
             </button>
 
             <p

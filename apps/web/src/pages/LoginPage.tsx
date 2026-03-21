@@ -174,9 +174,7 @@ export default function LoginPage() {
               data-testid="login-submit-button"
               disabled={busy}
             >
-              {busy
-                ? t("Вход...", "Signing in...")
-                : t("Войти в аккаунт", "Sign in")}
+              {busy ? t("Вход...", "Signing in...") : t("Войти", "Sign in")}
             </button>
 
             <p
