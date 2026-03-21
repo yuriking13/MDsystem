@@ -692,12 +692,10 @@ h1, h2, h3, h4, h5, h6 {
 .partners-runner {
   position: relative;
   z-index: 5;
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
   align-items: center;
-  gap: 1rem;
   overflow: hidden;
-  padding: 0.9rem 1.2rem;
+  padding: 0.9rem 0;
   border-top: 1px solid rgba(148, 163, 184, 0.22);
   border-bottom: 1px solid rgba(148, 163, 184, 0.22);
   background: rgba(2, 6, 23, 0.9);
@@ -710,13 +708,15 @@ h1, h2, h3, h4, h5, h6 {
   font-weight: 700;
   color: #e2e8f0;
   white-space: nowrap;
+  padding-left: 1.2rem;
+  padding-right: 1rem;
 }
 
 .partners-runner-track {
   display: flex;
-  gap: 0.85rem;
+  gap: 2.5rem;
   min-width: max-content;
-  animation: marqueeMove 24s linear infinite;
+  animation: marqueeMove 20s linear infinite;
 }
 
 .partner-chip {

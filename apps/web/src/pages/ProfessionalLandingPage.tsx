@@ -447,41 +447,33 @@ export default function ProfessionalLandingPage() {
 
       <section
         className="partners-runner"
-        aria-label={language === "ru" ? "Наши партнеры" : "Our partners"}
+        aria-label={language === "ru" ? "Наши источники" : "Our sources"}
       >
-        <div className="partners-runner-label">
-          {language === "ru" ? "Наши партнеры" : "Our partners"}
-        </div>
         <div className="partners-runner-track">
-          {[
-            {
-              name: "Cochrane",
-              src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/Cochrane-logo.jpg",
-            },
-            {
-              name: "DOAJ",
-              src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/DOAJ_idGdm4HXaq_0.png",
-            },
-            {
-              name: "PubMed",
-              src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/US-NLM-PubMed-Logo.svg.png",
-            },
-            {
-              name: "eLibrary",
-              src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/elibrary_ru2.svg",
-            },
-          ].flatMap((p, _, arr) => [
-            <span key={`a-${p.name}`} className="partner-logo-chip">
-              <img src={p.src} alt={p.name} loading="lazy" />
-            </span>,
-            ...(arr.length - 1 === arr.indexOf(p)
-              ? arr.map((pp) => (
-                  <span key={`b-${pp.name}`} className="partner-logo-chip">
-                    <img src={pp.src} alt={pp.name} loading="lazy" />
-                  </span>
-                ))
-              : []),
-          ])}
+          {[0, 1].map((copy) =>
+            [
+              {
+                name: "Cochrane",
+                src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/Cochrane-logo.jpg",
+              },
+              {
+                name: "DOAJ",
+                src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/DOAJ_idGdm4HXaq_0.png",
+              },
+              {
+                name: "PubMed",
+                src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/US-NLM-PubMed-Logo.svg.png",
+              },
+              {
+                name: "eLibrary",
+                src: "https://storage.yandexcloud.net/scentiaiterpublic/partners/elibrary_ru2.svg",
+              },
+            ].map((p) => (
+              <span key={`${copy}-${p.name}`} className="partner-logo-chip">
+                <img src={p.src} alt={p.name} loading="lazy" />
+              </span>
+            )),
+          )}
         </div>
       </section>
 
