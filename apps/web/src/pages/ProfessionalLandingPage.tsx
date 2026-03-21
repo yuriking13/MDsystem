@@ -38,7 +38,7 @@ export default function ProfessionalLandingPage() {
         title: "Умное рабочее пространство для научных работ по медицине",
         subtitle:
           "Профессиональная платформа для систематизации знаний, анализа данных и подготовки публикаций в области медицинских исследований",
-        cta1: "Попробовать платформу",
+        cta1: "Создать проект",
         cta2: "Запросить демо",
       },
       capabilities: {
@@ -160,7 +160,7 @@ export default function ProfessionalLandingPage() {
         title: "Smart workspace for medical scientific publications",
         subtitle:
           "Professional platform for knowledge systematization, data analysis and publication preparation in medical research",
-        cta1: "Try Platform",
+        cta1: "Create Project",
         cta2: "Request Demo",
       },
       capabilities: {
@@ -390,26 +390,56 @@ export default function ProfessionalLandingPage() {
                   {t.nav.login}
                 </Link>
 
-                <Link to="/register" className="modern-cta-chip">
-                  {t.nav.start}
+                <Link to="/register" className="glass-button-wrap">
+                  <span className="glass-button">
+                    <span>{t.nav.start}</span>
+                  </span>
+                  <span className="glass-button-shadow" />
                 </Link>
               </div>
             </div>
           </div>
         </header>
 
+        {/* Dotted Grid Background */}
+        <svg
+          className="absolute inset-0 w-full h-full z-10 pointer-events-none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <pattern
+              id="dottedGrid"
+              width="30"
+              height="30"
+              patternUnits="userSpaceOnUse"
+            >
+              <circle
+                cx="2"
+                cy="2"
+                r="1"
+                fill={
+                  theme === "dark"
+                    ? "rgba(255,255,255,0.08)"
+                    : "rgba(0,0,0,0.15)"
+                }
+              />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dottedGrid)" />
+        </svg>
+
         {/* Hero Content */}
         <div className="relative z-40 min-h-[calc(100vh-100px)] px-6 flex items-center">
           <div className="max-w-7xl w-full mx-auto hero-split-layout">
             <div className="hero-copy-block">
               <h1
-                className={`text-5xl md:text-7xl font-bold mb-8 ${theme === "dark" ? "text-white" : "text-slate-900"} leading-tight animate-fade-in-up-delay-1`}
+                className={`text-5xl md:text-7xl font-bold mb-8 ${theme === "dark" ? "text-white" : "text-black"} leading-tight animate-fade-in-up-delay-1`}
               >
                 {t.hero.title}
               </h1>
 
               <p
-                className={`text-xl md:text-2xl ${theme === "dark" ? "text-slate-300" : "text-slate-600"} mb-12 leading-relaxed max-w-3xl font-light animate-fade-in-up-delay-2`}
+                className={`text-sm ${theme === "dark" ? "text-slate-300" : "text-black"} mb-12 uppercase tracking-widest font-medium opacity-80 animate-fade-in-up-delay-2`}
               >
                 {t.hero.subtitle}
               </p>
@@ -417,9 +447,12 @@ export default function ProfessionalLandingPage() {
               <div className="flex flex-col sm:flex-row gap-6 animate-fade-in-up-delay-3">
                 <Link
                   to="/register"
-                  className="modern-hero-primary text-white px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+                  className="glass-button-wrap glass-button-wrap--hero"
                 >
-                  {t.hero.cta1}
+                  <span className="glass-button">
+                    <span>{t.hero.cta1}</span>
+                  </span>
+                  <span className="glass-button-shadow" />
                 </Link>
               </div>
             </div>
