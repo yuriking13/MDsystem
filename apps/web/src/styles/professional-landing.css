@@ -1231,6 +1231,30 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* =============================================================================
+   Policy / Legal Pages
+   ============================================================================= */
+
+.policy-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.policy-section {
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.policy-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.landing-style-chb .policy-section {
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+/* =============================================================================
    Conferences Page
    ============================================================================= */
 

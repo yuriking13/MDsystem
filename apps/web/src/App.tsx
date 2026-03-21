@@ -25,6 +25,7 @@ const MedScienceLandingPage = lazy(
 const PublicOfferPage = lazy(() => import("./pages/PublicOfferPage"));
 const TermsOfUsePage = lazy(() => import("./pages/TermsOfUsePage"));
 const PrivacyPolicyPage = lazy(() => import("./pages/PrivacyPolicyPage"));
+const PlatformEthicsPage = lazy(() => import("./pages/PlatformEthicsPage"));
 const ProjectFacesPage = lazy(() => import("./pages/ProjectFacesPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
@@ -118,6 +119,7 @@ export default function App() {
             <Route path="/offer" element={<PublicOfferPage />} />
             <Route path="/terms" element={<TermsOfUsePage />} />
             <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/ethics" element={<PlatformEthicsPage />} />
             <Route path="/project-faces" element={<ProjectFacesPage />} />
             <Route path="/conferences" element={<ConferencesPage />} />
 

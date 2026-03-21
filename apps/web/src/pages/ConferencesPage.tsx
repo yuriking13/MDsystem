@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import "../styles/professional-landing.css";
+import LandingFooter from "../components/LandingFooter";
 
 const SPECIALTIES = [
   { value: "", label: { ru: "Все направления", en: "All specialties" } },
@@ -385,46 +386,7 @@ export default function ConferencesPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer
-        className={`py-16 px-6 ${theme === "dark" ? "bg-slate-800" : "bg-slate-900"} text-white`}
-      >
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="border-t border-slate-700 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <Link
-                to="/"
-                className="text-2xl font-bold text-white hover:text-slate-200 transition-colors"
-              >
-                Scientiaiter
-              </Link>
-
-              <div className="flex gap-8 text-sm">
-                <Link
-                  to="/privacy"
-                  className="text-slate-400 hover:text-white transition-colors"
-                >
-                  {language === "ru" ? "Конфиденциальность" : "Privacy"}
-                </Link>
-                <Link
-                  to="/terms"
-                  className="text-slate-400 hover:text-white transition-colors"
-                >
-                  {language === "ru" ? "Условия" : "Terms"}
-                </Link>
-                <Link
-                  to="/support"
-                  className="text-slate-400 hover:text-white transition-colors"
-                >
-                  {language === "ru" ? "Поддержка" : "Support"}
-                </Link>
-              </div>
-
-              <div className="text-slate-500 text-sm">© 2026 Scientiaiter</div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter language={language} theme={theme} />
     </div>
   );
 }

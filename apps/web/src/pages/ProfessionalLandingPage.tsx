@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "../styles/professional-landing.css";
+import LandingFooter from "../components/LandingFooter";
 
 const HERO_IMAGE_URL =
   "https://storage.yandexcloud.net/scentiaiterpublic/landing/Cell-cenet.png";
@@ -1118,66 +1119,7 @@ export default function ProfessionalLandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer
-        className={`py-24 px-6 ${theme === "dark" ? "bg-slate-800" : "bg-slate-900"} text-white`}
-      >
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-light mb-6">
-            {t.footer.title}
-          </h2>
-          <p
-            className={`text-xl ${theme === "dark" ? "text-slate-300" : "text-slate-300"} mb-8 font-light`}
-          >
-            {t.footer.subtitle}
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-6 justify-center mb-12">
-            <Link
-              to="/register"
-              className="bg-blue-600 text-white px-10 py-4 rounded-xl text-lg font-medium hover:bg-blue-700 transition-colors"
-            >
-              {t.footer.cta1}
-            </Link>
-            <Link
-              to="/demo"
-              className="border-2 border-white text-white px-10 py-4 rounded-xl text-lg font-medium hover:bg-white/10 transition-colors"
-            >
-              {t.footer.cta2}
-            </Link>
-          </div>
-
-          {/* Footer Links */}
-          <div className="border-t border-slate-700 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="text-2xl font-bold">Scientiaiter</div>
-
-              <div className="flex gap-8 text-sm">
-                <Link
-                  to="/privacy"
-                  className="text-slate-400 hover:text-white transition-colors"
-                >
-                  {language === "ru" ? "Конфиденциальность" : "Privacy"}
-                </Link>
-                <Link
-                  to="/terms"
-                  className="text-slate-400 hover:text-white transition-colors"
-                >
-                  {language === "ru" ? "Условия" : "Terms"}
-                </Link>
-                <Link
-                  to="/support"
-                  className="text-slate-400 hover:text-white transition-colors"
-                >
-                  {language === "ru" ? "Поддержка" : "Support"}
-                </Link>
-              </div>
-
-              <div className="text-slate-500 text-sm">© 2026 Scientiaiter</div>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter language={language} theme={theme} cta={t.footer} />
     </div>
   );
 }
