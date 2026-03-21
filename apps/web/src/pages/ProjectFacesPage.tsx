@@ -48,9 +48,6 @@ export default function ProjectFacesPage() {
             <span>Scientiaiter</span>
           </Link>
           <div className="public-header-actions">
-            <Link to="/" className="public-btn public-btn-secondary">
-              {t("На лендинг", "To Landing")}
-            </Link>
             <Link to="/offer" className="public-btn public-btn-secondary">
               {t("Оферта", "Terms")}
             </Link>

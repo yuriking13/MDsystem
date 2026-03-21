@@ -16,7 +16,6 @@ export default function PrivacyPolicyPage() {
 
   const content = {
     ru: {
-      back: "← На главную",
       title: "Политика конфиденциальности",
       subtitle:
         "Документ описывает, какие данные обрабатываются в сервисе Scientiaiter и с какой целью.",
@@ -56,7 +55,6 @@ export default function PrivacyPolicyPage() {
       ],
     },
     en: {
-      back: "← Home",
       title: "Privacy Policy",
       subtitle:
         "This document describes what data is processed by Scientiaiter and for what purpose.",
@@ -157,13 +155,6 @@ export default function PrivacyPolicyPage() {
 
       <main className="px-6 py-12">
         <div className="max-w-3xl mx-auto">
-          <Link
-            to="/"
-            className={`inline-block mb-8 text-sm font-medium transition-colors ${theme === "dark" ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}
-          >
-            {t.back}
-          </Link>
-
           <h1
             className={`text-4xl md:text-5xl font-light mb-4 ${theme === "dark" ? "text-white" : "text-slate-900"}`}
           >

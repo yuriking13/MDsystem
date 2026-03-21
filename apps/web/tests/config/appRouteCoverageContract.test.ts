@@ -81,8 +81,10 @@ describe("app route coverage contract", () => {
     );
   });
 
-  it("keeps root route rendering rootElement", () => {
-    expect(appSource).toMatch(/<Route path="\/" element=\{rootElement\} \/>/);
+  it("keeps root route rendering LandingPage", () => {
+    expect(appSource).toMatch(
+      /<Route path="\/" element=\{<LandingPage \/>\} \/>/,
+    );
   });
 
   it("keeps public marketing pages routed without auth", () => {

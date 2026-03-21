@@ -16,7 +16,6 @@ export default function PlatformEthicsPage() {
 
   const content = {
     ru: {
-      back: "← На главную",
       title: "Этика платформы",
       subtitle:
         "Принципы, которым мы следуем при разработке и эксплуатации научной платформы Scientiaiter.",
@@ -53,7 +52,6 @@ export default function PlatformEthicsPage() {
       ],
     },
     en: {
-      back: "← Home",
       title: "Platform Ethics",
       subtitle:
         "Principles we follow in the development and operation of the Scientiaiter research platform.",
@@ -151,13 +149,6 @@ export default function PlatformEthicsPage() {
 
       <main className="px-6 py-12">
         <div className="max-w-3xl mx-auto">
-          <Link
-            to="/"
-            className={`inline-block mb-8 text-sm font-medium transition-colors ${theme === "dark" ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}
-          >
-            {t.back}
-          </Link>
-
           <h1
             className={`text-4xl md:text-5xl font-light mb-4 ${theme === "dark" ? "text-white" : "text-slate-900"}`}
           >

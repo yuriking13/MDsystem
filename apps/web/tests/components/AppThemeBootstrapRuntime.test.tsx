@@ -145,14 +145,6 @@ vi.mock("../../src/pages/ProfessionalLandingPage", () => ({
   default: () => <div>Landing Page</div>,
 }));
 
-vi.mock("../../src/pages/science/ScienceLandingPage", () => ({
-  default: () => <div>Science Landing Page</div>,
-}));
-
-vi.mock("../../src/pages/science/ScienceDisciplinePlaceholderPage", () => ({
-  default: () => <div>Science Placeholder Page</div>,
-}));
-
 vi.mock("../../src/pages/med/MedScienceLandingPage", () => ({
   default: () => <div>Med Science Landing Page</div>,
 }));
@@ -171,10 +163,6 @@ vi.mock("../../src/pages/PrivacyPolicyPage", () => ({
 
 vi.mock("../../src/pages/ProjectFacesPage", () => ({
   default: () => <div>Project Faces Page</div>,
-}));
-
-vi.mock("../../src/lib/scienceDomains", () => ({
-  resolveScienceDisciplineFromHostname: () => null,
 }));
 
 function createThemeStorage(theme: string | null): Storage {

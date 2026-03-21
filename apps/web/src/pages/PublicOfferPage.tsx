@@ -15,9 +15,6 @@ export default function PublicOfferPage() {
             <span>Scientiaiter</span>
           </Link>
           <div className="public-header-actions">
-            <Link to="/" className="public-btn public-btn-secondary">
-              На лендинг
-            </Link>
             <Link to="/login" className="public-btn">
               Войти
             </Link>

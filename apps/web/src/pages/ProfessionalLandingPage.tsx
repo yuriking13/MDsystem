@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Link } from "react-router-dom";
 import "../styles/professional-landing.css";
 import LandingFooter from "../components/LandingFooter";
@@ -6,14 +6,45 @@ import LandingFooter from "../components/LandingFooter";
 const HERO_IMAGE_URL =
   "https://storage.yandexcloud.net/scentiaiterpublic/landing/Cell-cenet.png";
 
+const SECTIONS = [
+  { id: "hero", ru: "Главная", en: "Home" },
+  { id: "capabilities", ru: "Возможности", en: "Features" },
+  { id: "conference", ru: "Конференции", en: "Conferences" },
+  { id: "pricing", ru: "Цены", en: "Pricing" },
+  { id: "faq", ru: "FAQ", en: "FAQ" },
+];
+
 export default function ProfessionalLandingPage() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [language, setLanguage] = useState<"ru" | "en">("ru");
+  const [activeSection, setActiveSection] = useState("hero");
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
-    // Apply theme to document
     document.documentElement.className = theme === "dark" ? "dark" : "";
   }, [theme]);
+
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: "-40% 0px -40% 0px", threshold: 0 },
+    );
+    for (const s of SECTIONS) {
+      const el = document.getElementById(s.id);
+      if (el) observerRef.current.observe(el);
+    }
+    return () => observerRef.current?.disconnect();
+  }, []);
+
+  const scrollTo = useCallback((id: string) => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  }, []);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
@@ -269,7 +300,10 @@ export default function ProfessionalLandingPage() {
       className={`professional-landing min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-slate-900 landing-style-bch" : "bg-slate-50 landing-style-chb"}`}
     >
       {/* Header + Hero Combined */}
-      <section className="min-h-screen relative overflow-hidden modern-hero-shell">
+      <section
+        id="hero"
+        className="min-h-screen relative overflow-hidden modern-hero-shell"
+      >
         {/* Header */}
         <header className="relative z-50 px-6 py-6">
           <div className="max-w-7xl mx-auto">
@@ -1106,6 +1140,19 @@ export default function ProfessionalLandingPage() {
       </section>
 
       <LandingFooter language={language} theme={theme} />
+
+      {/* Section dots nav */}
+      <nav className="section-dots" aria-label="Page sections">
+        {SECTIONS.map((s) => (
+          <button
+            key={s.id}
+            className={`section-dot${activeSection === s.id ? " active" : ""}`}
+            onClick={() => scrollTo(s.id)}
+            title={language === "ru" ? s.ru : s.en}
+            aria-label={language === "ru" ? s.ru : s.en}
+          />
+        ))}
+      </nav>
     </div>
   );
 }

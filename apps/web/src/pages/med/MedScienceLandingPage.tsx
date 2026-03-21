@@ -22,9 +22,9 @@ import {
   type MedPublisherTimelineEvent,
 } from "../../lib/medPublisherApi";
 import { getErrorMessage } from "../../types";
-import { getScienceMainHref } from "../../lib/scienceDomains";
-import { ScienceDisciplinePlaceholderContent } from "../science/ScienceDisciplinePlaceholderPage";
 import { useAuth } from "../../lib/AuthContext";
+import "../../styles/professional-landing.css";
+import LandingFooter from "../../components/LandingFooter";
 
 type PublisherTab = "overview" | "submissions" | "tracking" | "reviewer";
 
@@ -849,8 +849,12 @@ export default function MedScienceLandingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const selectedSubmissionIdRef = useRef<string | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const language = "ru" as "ru" | "en";
 
-  const mainScienceHref = useMemo(() => getScienceMainHref("/science"), []);
+  useEffect(() => {
+    document.documentElement.className = theme === "dark" ? "dark" : "";
+  }, [theme]);
 
   useEffect(() => {
     const nextTab = inferTabFromParams(searchParams);
@@ -958,278 +962,308 @@ export default function MedScienceLandingPage() {
   }, [dashboard.authoredSubmissions, dashboard.editorAssignments]);
 
   if (!medEnabled) {
-    return (
-      <ScienceDisciplinePlaceholderContent
-        slug="med"
-        code="MED"
-        label="Медицина"
-        fallbackPath="/med"
-      />
-    );
+    return null;
   }
 
   return (
-    <div className="public-page science-page">
-      <header className="public-header">
-        <div className="public-header-inner">
-          <a href={mainScienceHref} className="public-brand">
-            <img
-              src="/logo.svg"
-              alt="Scientiaiter Med"
-              className="public-brand-logo"
-            />
-            <span>Scientiaiter Med</span>
-          </a>
-          <div className="public-header-actions">
+    <div
+      className={`professional-landing min-h-screen transition-colors duration-300 flex flex-col ${theme === "dark" ? "bg-slate-900 landing-style-bch" : "bg-slate-50 landing-style-chb"}`}
+    >
+      <header className="relative z-50 px-6 py-6">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link
+            to="/med"
+            className={`brand-name-stack ${theme === "dark" ? "text-white" : "text-slate-900"}`}
+          >
+            <img src="/logo.svg" alt="" className="landing-footer-logo" />
+            <span className="brand-name-primary">Scientiaiter Med</span>
+          </Link>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
             <button
               type="button"
-              className={`public-theme-toggle ${tab === "overview" ? "med-tab-active" : ""}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "overview" ? "bg-blue-500 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
               onClick={() => selectTab("overview")}
             >
               Обзор
             </button>
             <button
               type="button"
-              className={`public-theme-toggle ${tab === "submissions" ? "med-tab-active" : ""}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "submissions" ? "bg-blue-500 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
               onClick={() => selectTab("submissions")}
             >
               Издательство
             </button>
             <button
               type="button"
-              className={`public-theme-toggle ${tab === "tracking" ? "med-tab-active" : ""}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "tracking" ? "bg-blue-500 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
               onClick={() => selectTab("tracking")}
             >
               Трекинг
             </button>
             <button
               type="button"
-              className={`public-theme-toggle ${tab === "reviewer" ? "med-tab-active" : ""}`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${tab === "reviewer" ? "bg-blue-500 text-white" : theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
               onClick={() => selectTab("reviewer")}
             >
               Рецензент
             </button>
-            <Link to="/login" className="public-theme-toggle">
+            <Link
+              to="/login"
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${theme === "dark" ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
+            >
               Войти в проект
             </Link>
+            <button
+              onClick={() =>
+                setTheme((p) => (p === "light" ? "dark" : "light"))
+              }
+              className={`p-2 rounded-lg transition-colors ${theme === "dark" ? "text-yellow-400 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"}`}
+            >
+              {theme === "dark" ? (
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="w-5 h-5"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                </svg>
+              )}
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="public-main">
-        <section className="public-hero">
-          <article className="public-hero-content">
-            <span className="public-badge">med.*.ru</span>
-            <h1>Медицинский контур с издательским workflow</h1>
-            <p>
-              Реализован стартовый лендинг направления, подача рукописи,
-              назначение рецензентов, принятие решения редакцией и публикация с
-              таймлайном этапов.
+      <main className="flex-1 px-6 py-12">
+        <div className="max-w-7xl mx-auto">
+          <section className="text-center mb-16">
+            <span
+              className={`inline-block px-3 py-1 rounded-full text-xs font-medium mb-4 ${theme === "dark" ? "bg-blue-500/20 text-blue-400" : "bg-blue-100 text-blue-600"}`}
+            >
+              med.scientiaiter.ru
+            </span>
+            <h1
+              className={`text-4xl md:text-5xl font-light mb-4 ${theme === "dark" ? "text-white" : "text-slate-900"}`}
+            >
+              Медицинское издательство
+            </h1>
+            <p
+              className={`text-lg max-w-2xl mx-auto mb-8 ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`}
+            >
+              Полный цикл рецензирования и публикации: подача рукописи,
+              назначение рецензентов, решение редакции и публикация с таймлайном
+              этапов.
             </p>
-            <div className="public-hero-actions">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <button
-                className="public-btn"
+                className="landing-auth-submit landing-auth-submit--inline"
                 type="button"
                 onClick={() => selectTab("submissions")}
               >
                 Открыть издательство
               </button>
               <button
-                className="public-btn public-btn-secondary"
+                className={`px-5 py-2.5 rounded-lg text-sm font-medium border transition-colors ${theme === "dark" ? "border-slate-600 text-slate-300 hover:bg-slate-800" : "border-slate-300 text-slate-600 hover:bg-slate-100"}`}
                 type="button"
                 onClick={() => selectTab("tracking")}
               >
                 Смотреть таймлайн
               </button>
             </div>
-          </article>
-          <aside className="public-hero-panel">
-            <h3>Что реализовано</h3>
-            <ul className="public-list">
-              <li>Сторона автора: подача и управление рукописью.</li>
-              <li>Сторона редактора: распределение, решения и публикация.</li>
-              <li>Сторона рецензента: кабинет с отправкой заключения.</li>
-              <li>Таймлайн статусов рецензирования и публикации.</li>
-              <li>Бэкенд + БД workflow, совместимый с текущей архитектурой.</li>
-            </ul>
-          </aside>
-        </section>
-
-        {error ? (
-          <section className="public-section">
-            <article className="public-card">
-              <p className="med-error">{error}</p>
-            </article>
           </section>
-        ) : null}
+          {error ? (
+            <section className="public-section">
+              <article className="public-card">
+                <p className="med-error">{error}</p>
+              </article>
+            </section>
+          ) : null}
 
-        {!token ? (
-          <section className="public-section">
-            <article className="public-card">
-              <h3>Режим предпросмотра</h3>
-              <p>
-                Вы просматриваете публичную часть издательства. Для создания
-                подачи, назначения рецензентов и публикации войдите в аккаунт.
-              </p>
-              <div className="public-hero-actions">
-                <Link to="/login" className="public-btn">
-                  Войти
-                </Link>
-                <Link
-                  to="/register"
-                  className="public-btn public-btn-secondary"
-                >
-                  Регистрация
-                </Link>
+          {!token ? (
+            <section className="public-section">
+              <article className="public-card">
+                <h3>Режим предпросмотра</h3>
+                <p>
+                  Вы просматриваете публичную часть издательства. Для создания
+                  подачи, назначения рецензентов и публикации войдите в аккаунт.
+                </p>
+                <div className="public-hero-actions">
+                  <Link to="/login" className="public-btn">
+                    Войти
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="public-btn public-btn-secondary"
+                  >
+                    Регистрация
+                  </Link>
+                </div>
+              </article>
+            </section>
+          ) : null}
+
+          {loading ? (
+            <section className="public-section">
+              <article className="public-card">
+                <p>Загрузка данных издательства...</p>
+              </article>
+            </section>
+          ) : null}
+
+          {tab === "overview" ? (
+            <section className="public-section">
+              <div className="public-section-header">
+                <h2>Стартовая страница издательства</h2>
+                <p>
+                  Вкладка объединяет вход в авторский и рецензентский контур,
+                  сохраняя общий стиль проекта.
+                </p>
               </div>
-            </article>
-          </section>
-        ) : null}
+              <div className="public-grid public-grid-3">
+                <article className="public-card">
+                  <h3>Подачи автора</h3>
+                  <p>
+                    Всего рукописей:{" "}
+                    {token
+                      ? dashboard.authoredSubmissions.length
+                      : "после входа"}
+                  </p>
+                </article>
+                <article className="public-card">
+                  <h3>Назначения рецензента</h3>
+                  <p>
+                    Активных назначений:{" "}
+                    {token ? dashboard.reviewAssignments.length : "после входа"}
+                  </p>
+                </article>
+                <article className="public-card">
+                  <h3>Назначения редактора</h3>
+                  <p>
+                    Активных рукописей:{" "}
+                    {token ? dashboard.editorAssignments.length : "после входа"}
+                  </p>
+                </article>
+                <article className="public-card">
+                  <h3>Текущая рукопись</h3>
+                  <p>
+                    {selectedSubmission
+                      ? `${selectedSubmission.title} · ${statusLabels[selectedSubmission.status] || selectedSubmission.status}`
+                      : "Рукопись не выбрана"}
+                  </p>
+                </article>
+              </div>
+            </section>
+          ) : null}
 
-        {loading ? (
-          <section className="public-section">
-            <article className="public-card">
-              <p>Загрузка данных издательства...</p>
-            </article>
-          </section>
-        ) : null}
+          {tab === "submissions" ? (
+            token ? (
+              <>
+                {isChiefEditor ? (
+                  <ChiefEditorPanel
+                    unassignedSubmissions={dashboard.unassignedForChiefEditor}
+                    editors={dashboard.editors}
+                    onReload={reloadDashboard}
+                  />
+                ) : null}
 
-        {tab === "overview" ? (
-          <section className="public-section">
-            <div className="public-section-header">
-              <h2>Стартовая страница издательства</h2>
-              <p>
-                Вкладка объединяет вход в авторский и рецензентский контур,
-                сохраняя общий стиль проекта.
-              </p>
-            </div>
-            <div className="public-grid public-grid-3">
-              <article className="public-card">
-                <h3>Подачи автора</h3>
-                <p>
-                  Всего рукописей:{" "}
-                  {token ? dashboard.authoredSubmissions.length : "после входа"}
-                </p>
-              </article>
-              <article className="public-card">
-                <h3>Назначения рецензента</h3>
-                <p>
-                  Активных назначений:{" "}
-                  {token ? dashboard.reviewAssignments.length : "после входа"}
-                </p>
-              </article>
-              <article className="public-card">
-                <h3>Назначения редактора</h3>
-                <p>
-                  Активных рукописей:{" "}
-                  {token ? dashboard.editorAssignments.length : "после входа"}
-                </p>
-              </article>
-              <article className="public-card">
-                <h3>Текущая рукопись</h3>
-                <p>
-                  {selectedSubmission
-                    ? `${selectedSubmission.title} · ${statusLabels[selectedSubmission.status] || selectedSubmission.status}`
-                    : "Рукопись не выбрана"}
-                </p>
-              </article>
-            </div>
-          </section>
-        ) : null}
-
-        {tab === "submissions" ? (
-          token ? (
-            <>
-              {isChiefEditor ? (
-                <ChiefEditorPanel
-                  unassignedSubmissions={dashboard.unassignedForChiefEditor}
-                  editors={dashboard.editors}
-                  onReload={reloadDashboard}
+                <SubmissionCreateForm
+                  onCreated={async (submission) => {
+                    setSelectedSubmissionId(submission.id);
+                    await reloadDashboard();
+                  }}
                 />
-              ) : null}
+                <SubmissionList
+                  submissions={submissionItems}
+                  authoredSubmissionIds={authoredSubmissionIds}
+                  editorSubmissionIds={editorSubmissionIds}
+                  selectedId={selectedSubmissionId}
+                  onSelect={setSelectedSubmissionId}
+                  onReload={reloadDashboard}
+                  canSubmit={canSubmitSelectedSubmission}
+                  canManageEditorActions={canManageSelectedSubmission}
+                />
+              </>
+            ) : (
+              <section className="public-section">
+                <article className="public-card">
+                  <h3>Издательство (авторский контур)</h3>
+                  <p>
+                    В этой вкладке после входа доступны: создание рукописи
+                    автором, работа редактора (назначения/решения) и
+                    рецензирование.
+                  </p>
+                </article>
+              </section>
+            )
+          ) : null}
 
-              <SubmissionCreateForm
-                onCreated={async (submission) => {
-                  setSelectedSubmissionId(submission.id);
-                  await reloadDashboard();
-                }}
-              />
-              <SubmissionList
-                submissions={submissionItems}
-                authoredSubmissionIds={authoredSubmissionIds}
-                editorSubmissionIds={editorSubmissionIds}
-                selectedId={selectedSubmissionId}
-                onSelect={setSelectedSubmissionId}
-                onReload={reloadDashboard}
-                canSubmit={canSubmitSelectedSubmission}
-                canManageEditorActions={canManageSelectedSubmission}
+          {tab === "tracking" ? (
+            <>
+              <StageOverview timeline={token ? timeline : PREVIEW_TIMELINE} />
+              <Timeline
+                events={token ? timeline : PREVIEW_TIMELINE}
+                title="Отслеживание рецензирования и публикации"
               />
             </>
-          ) : (
-            <section className="public-section">
-              <article className="public-card">
-                <h3>Издательство (авторский контур)</h3>
-                <p>
-                  В этой вкладке после входа доступны: создание рукописи
-                  автором, работа редактора (назначения/решения) и
-                  рецензирование.
-                </p>
-              </article>
-            </section>
-          )
-        ) : null}
+          ) : null}
 
-        {tab === "tracking" ? (
-          <>
-            <StageOverview timeline={token ? timeline : PREVIEW_TIMELINE} />
-            <Timeline
-              events={token ? timeline : PREVIEW_TIMELINE}
-              title="Отслеживание рецензирования и публикации"
-            />
-          </>
-        ) : null}
-
-        {tab === "reviewer" ? (
-          token ? (
-            <ReviewerPanel
-              assignments={dashboard.reviewAssignments}
-              onReload={reloadDashboard}
-            />
-          ) : (
-            <section className="public-section">
-              <article className="public-card">
-                <h3>Кабинет рецензента</h3>
-                <p>
-                  После авторизации рецензент получает назначения, оставляет
-                  заключение и комментарии в рамках редакционного workflow.
-                </p>
-              </article>
-            </section>
-          )
-        ) : null}
-
-        {tab === "tracking" && token && reviews.length > 0 ? (
-          <section className="public-section">
-            <div className="public-section-header">
-              <h2>Текущие рецензии</h2>
-              <p>Сводка полученных заключений по выбранной рукописи.</p>
-            </div>
-            <div className="public-grid public-grid-2">
-              {reviews.map((review) => (
-                <article className="public-card" key={review.id}>
-                  <h3>{review.reviewer_email || "Рецензент"}</h3>
+          {tab === "reviewer" ? (
+            token ? (
+              <ReviewerPanel
+                assignments={dashboard.reviewAssignments}
+                onReload={reloadDashboard}
+              />
+            ) : (
+              <section className="public-section">
+                <article className="public-card">
+                  <h3>Кабинет рецензента</h3>
                   <p>
-                    Статус:{" "}
-                    {review.status === "submitted" ? "отправлена" : "назначена"}
+                    После авторизации рецензент получает назначения, оставляет
+                    заключение и комментарии в рамках редакционного workflow.
                   </p>
-                  <p>Рекомендация: {review.recommendation || "ожидается"}</p>
-                  <p>Отправлена: {formatDate(review.submitted_at)}</p>
                 </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
+              </section>
+            )
+          ) : null}
+
+          {tab === "tracking" && token && reviews.length > 0 ? (
+            <section className="public-section">
+              <div className="public-section-header">
+                <h2>Текущие рецензии</h2>
+                <p>Сводка полученных заключений по выбранной рукописи.</p>
+              </div>
+              <div className="public-grid public-grid-2">
+                {reviews.map((review) => (
+                  <article className="public-card" key={review.id}>
+                    <h3>{review.reviewer_email || "Рецензент"}</h3>
+                    <p>
+                      Статус:{" "}
+                      {review.status === "submitted"
+                        ? "отправлена"
+                        : "назначена"}
+                    </p>
+                    <p>Рекомендация: {review.recommendation || "ожидается"}</p>
+                    <p>Отправлена: {formatDate(review.submitted_at)}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
       </main>
+
+      <LandingFooter language={language} theme={theme} />
     </div>
   );
 }
