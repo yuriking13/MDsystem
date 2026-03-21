@@ -75,6 +75,7 @@ jobs:
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_refresh_tokens.sql
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_med_publisher_v1.sql
             apply_migration /root/MDsystem/apps/api/prisma/migrations/add_composite_indexes_v2.sql
+            apply_migration /root/MDsystem/apps/api/prisma/migrations/add_conferences.sql
 
             JWT_SECRET='${{ secrets.JWT_SECRET }}'
             ENC_SECRET='${{ secrets.API_KEY_ENCRYPTION_SECRET }}'
