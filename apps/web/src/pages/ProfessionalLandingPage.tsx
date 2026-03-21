@@ -275,31 +275,6 @@ export default function ProfessionalLandingPage() {
     <div
       className={`professional-landing min-h-screen transition-colors duration-300 ${theme === "dark" ? "bg-slate-900 landing-style-bch" : "bg-slate-50 landing-style-chb"}`}
     >
-      {/* Animated Background with brand logos */}
-      <div className="logo-bg" aria-hidden="true">
-        <div className="logo-aura logo-aura-1" />
-        <div className="logo-aura logo-aura-2" />
-        <div className="logo-aura logo-aura-3" />
-        <div className="floating-logo logo-1">
-          <img src="/logo.svg" alt="" loading="lazy" />
-        </div>
-        <div className="floating-logo logo-2">
-          <img src="/logo.svg" alt="" loading="lazy" />
-        </div>
-        <div className="floating-logo logo-3">
-          <img src="/logo.svg" alt="" loading="lazy" />
-        </div>
-        <div className="floating-logo logo-4">
-          <img src="/logo.svg" alt="" loading="lazy" />
-        </div>
-        <div className="floating-logo logo-5">
-          <img src="/logo.svg" alt="" loading="lazy" />
-        </div>
-        <div className="floating-logo logo-6">
-          <img src="/logo.svg" alt="" loading="lazy" />
-        </div>
-      </div>
-
       {/* Header + Hero Combined */}
       <section className="min-h-screen relative overflow-hidden modern-hero-shell">
         {/* Header */}
@@ -477,9 +452,13 @@ export default function ProfessionalLandingPage() {
         </div>
       </section>
 
-      {/* Capabilities Section */}
-      <section id="capabilities" className="py-24 px-6 modern-section-surface">
-        <div className="max-w-7xl mx-auto">
+      {/* Capabilities Section — Futuristic Glass */}
+      <section
+        id="capabilities"
+        className="py-24 px-6 modern-section-surface relative overflow-hidden"
+      >
+        <div className="capabilities-glow" aria-hidden="true" />
+        <div className="max-w-7xl mx-auto relative z-10">
           <div className="text-center mb-20">
             <h2
               className={`text-4xl md:text-5xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-6`}
@@ -493,109 +472,490 @@ export default function ProfessionalLandingPage() {
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 xl:grid-cols-4 gap-8">
+          <div className="capabilities-glass-grid">
             {t.capabilities.cards.map((card, index) => {
-              const colors = [
-                {
-                  bg:
-                    theme === "dark"
-                      ? "bg-slate-700 hover:bg-blue-900"
-                      : "bg-slate-50 hover:bg-blue-50",
-                  icon:
-                    theme === "dark"
-                      ? "bg-blue-900 text-blue-300"
-                      : "bg-blue-100 text-blue-600",
-                },
-                {
-                  bg:
-                    theme === "dark"
-                      ? "bg-slate-700 hover:bg-emerald-900"
-                      : "bg-slate-50 hover:bg-emerald-50",
-                  icon:
-                    theme === "dark"
-                      ? "bg-emerald-900 text-emerald-300"
-                      : "bg-emerald-100 text-emerald-600",
-                },
-                {
-                  bg:
-                    theme === "dark"
-                      ? "bg-slate-700 hover:bg-amber-900"
-                      : "bg-slate-50 hover:bg-amber-50",
-                  icon:
-                    theme === "dark"
-                      ? "bg-amber-900 text-amber-300"
-                      : "bg-amber-100 text-amber-600",
-                },
-                {
-                  bg:
-                    theme === "dark"
-                      ? "bg-slate-700 hover:bg-purple-900"
-                      : "bg-slate-50 hover:bg-purple-50",
-                  icon:
-                    theme === "dark"
-                      ? "bg-purple-900 text-purple-300"
-                      : "bg-purple-100 text-purple-600",
-                },
-              ];
-
-              const svgIcons = [
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />,
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />,
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C20.832 18.477 19.246 18 17.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />,
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-                />,
+              const illustrations = [
+                <svg
+                  key="a"
+                  className="capability-svg"
+                  viewBox="0 0 120 120"
+                  fill="none"
+                >
+                  <defs>
+                    <linearGradient
+                      id="cg0"
+                      x1="0"
+                      y1="120"
+                      x2="120"
+                      y2="0"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop stopColor="#0ea5e9" />
+                      <stop offset="1" stopColor="#38bdf8" />
+                    </linearGradient>
+                  </defs>
+                  <rect
+                    x="12"
+                    y="72"
+                    width="18"
+                    height="36"
+                    rx="4"
+                    fill="url(#cg0)"
+                    opacity="0.45"
+                  />
+                  <rect
+                    x="36"
+                    y="52"
+                    width="18"
+                    height="56"
+                    rx="4"
+                    fill="url(#cg0)"
+                    opacity="0.6"
+                  />
+                  <rect
+                    x="60"
+                    y="32"
+                    width="18"
+                    height="76"
+                    rx="4"
+                    fill="url(#cg0)"
+                    opacity="0.78"
+                  />
+                  <rect
+                    x="84"
+                    y="14"
+                    width="18"
+                    height="94"
+                    rx="4"
+                    fill="url(#cg0)"
+                  />
+                  <path
+                    d="M21 65L45 46L69 28L93 10"
+                    stroke="#7dd3fc"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    opacity="0.5"
+                  />
+                  <circle cx="21" cy="65" r="3.5" fill="#7dd3fc" />
+                  <circle cx="45" cy="46" r="3.5" fill="#7dd3fc" />
+                  <circle cx="69" cy="28" r="3.5" fill="#7dd3fc" />
+                  <circle cx="93" cy="10" r="3.5" fill="#7dd3fc" />
+                </svg>,
+                <svg
+                  key="b"
+                  className="capability-svg"
+                  viewBox="0 0 120 120"
+                  fill="none"
+                >
+                  <defs>
+                    <linearGradient
+                      id="cg1"
+                      x1="0"
+                      y1="0"
+                      x2="120"
+                      y2="120"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop stopColor="#10b981" />
+                      <stop offset="1" stopColor="#34d399" />
+                    </linearGradient>
+                  </defs>
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="28"
+                    stroke="url(#cg1)"
+                    strokeWidth="2"
+                    opacity="0.25"
+                  />
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="44"
+                    stroke="url(#cg1)"
+                    strokeWidth="1.5"
+                    strokeDasharray="6 4"
+                    opacity="0.15"
+                  />
+                  <circle cx="60" cy="60" r="9" fill="url(#cg1)" />
+                  <circle
+                    cx="60"
+                    cy="32"
+                    r="5"
+                    fill="url(#cg1)"
+                    opacity="0.65"
+                  />
+                  <circle
+                    cx="60"
+                    cy="88"
+                    r="5"
+                    fill="url(#cg1)"
+                    opacity="0.65"
+                  />
+                  <circle
+                    cx="32"
+                    cy="60"
+                    r="5"
+                    fill="url(#cg1)"
+                    opacity="0.65"
+                  />
+                  <circle
+                    cx="88"
+                    cy="60"
+                    r="5"
+                    fill="url(#cg1)"
+                    opacity="0.65"
+                  />
+                  <circle
+                    cx="40"
+                    cy="40"
+                    r="3.5"
+                    fill="url(#cg1)"
+                    opacity="0.4"
+                  />
+                  <circle
+                    cx="80"
+                    cy="40"
+                    r="3.5"
+                    fill="url(#cg1)"
+                    opacity="0.4"
+                  />
+                  <circle
+                    cx="40"
+                    cy="80"
+                    r="3.5"
+                    fill="url(#cg1)"
+                    opacity="0.4"
+                  />
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r="3.5"
+                    fill="url(#cg1)"
+                    opacity="0.4"
+                  />
+                  <line
+                    x1="60"
+                    y1="51"
+                    x2="60"
+                    y2="37"
+                    stroke="#34d399"
+                    strokeWidth="1.5"
+                    opacity="0.4"
+                  />
+                  <line
+                    x1="60"
+                    y1="69"
+                    x2="60"
+                    y2="83"
+                    stroke="#34d399"
+                    strokeWidth="1.5"
+                    opacity="0.4"
+                  />
+                  <line
+                    x1="51"
+                    y1="60"
+                    x2="37"
+                    y2="60"
+                    stroke="#34d399"
+                    strokeWidth="1.5"
+                    opacity="0.4"
+                  />
+                  <line
+                    x1="69"
+                    y1="60"
+                    x2="83"
+                    y2="60"
+                    stroke="#34d399"
+                    strokeWidth="1.5"
+                    opacity="0.4"
+                  />
+                  <line
+                    x1="55"
+                    y1="55"
+                    x2="43"
+                    y2="43"
+                    stroke="#34d399"
+                    strokeWidth="1"
+                    opacity="0.25"
+                  />
+                  <line
+                    x1="65"
+                    y1="55"
+                    x2="77"
+                    y2="43"
+                    stroke="#34d399"
+                    strokeWidth="1"
+                    opacity="0.25"
+                  />
+                  <line
+                    x1="55"
+                    y1="65"
+                    x2="43"
+                    y2="77"
+                    stroke="#34d399"
+                    strokeWidth="1"
+                    opacity="0.25"
+                  />
+                  <line
+                    x1="65"
+                    y1="65"
+                    x2="77"
+                    y2="77"
+                    stroke="#34d399"
+                    strokeWidth="1"
+                    opacity="0.25"
+                  />
+                </svg>,
+                <svg
+                  key="c"
+                  className="capability-svg"
+                  viewBox="0 0 120 120"
+                  fill="none"
+                >
+                  <defs>
+                    <linearGradient
+                      id="cg2"
+                      x1="0"
+                      y1="0"
+                      x2="120"
+                      y2="120"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop stopColor="#f59e0b" />
+                      <stop offset="1" stopColor="#fbbf24" />
+                    </linearGradient>
+                  </defs>
+                  <rect
+                    x="18"
+                    y="28"
+                    width="52"
+                    height="68"
+                    rx="6"
+                    stroke="url(#cg2)"
+                    strokeWidth="2"
+                    opacity="0.55"
+                  />
+                  <rect
+                    x="28"
+                    y="38"
+                    width="32"
+                    height="3"
+                    rx="1.5"
+                    fill="url(#cg2)"
+                    opacity="0.35"
+                  />
+                  <rect
+                    x="28"
+                    y="46"
+                    width="26"
+                    height="3"
+                    rx="1.5"
+                    fill="url(#cg2)"
+                    opacity="0.25"
+                  />
+                  <rect
+                    x="28"
+                    y="54"
+                    width="30"
+                    height="3"
+                    rx="1.5"
+                    fill="url(#cg2)"
+                    opacity="0.25"
+                  />
+                  <rect
+                    x="28"
+                    y="62"
+                    width="22"
+                    height="3"
+                    rx="1.5"
+                    fill="url(#cg2)"
+                    opacity="0.25"
+                  />
+                  <circle
+                    cx="86"
+                    cy="44"
+                    r="18"
+                    stroke="url(#cg2)"
+                    strokeWidth="2"
+                    opacity="0.45"
+                  />
+                  <line
+                    x1="99"
+                    y1="57"
+                    x2="110"
+                    y2="68"
+                    stroke="url(#cg2)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    opacity="0.55"
+                  />
+                  <path
+                    d="M70 82Q86 76 86 62"
+                    stroke="#fbbf24"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 3"
+                    opacity="0.35"
+                    fill="none"
+                  />
+                </svg>,
+                <svg
+                  key="d"
+                  className="capability-svg"
+                  viewBox="0 0 120 120"
+                  fill="none"
+                >
+                  <defs>
+                    <linearGradient
+                      id="cg3"
+                      x1="0"
+                      y1="0"
+                      x2="120"
+                      y2="120"
+                      gradientUnits="userSpaceOnUse"
+                    >
+                      <stop stopColor="#8b5cf6" />
+                      <stop offset="1" stopColor="#a78bfa" />
+                    </linearGradient>
+                  </defs>
+                  <line
+                    x1="60"
+                    y1="30"
+                    x2="30"
+                    y2="65"
+                    stroke="#a78bfa"
+                    strokeWidth="1.5"
+                    opacity="0.25"
+                  />
+                  <line
+                    x1="60"
+                    y1="30"
+                    x2="90"
+                    y2="65"
+                    stroke="#a78bfa"
+                    strokeWidth="1.5"
+                    opacity="0.25"
+                  />
+                  <line
+                    x1="30"
+                    y1="65"
+                    x2="90"
+                    y2="65"
+                    stroke="#a78bfa"
+                    strokeWidth="1.5"
+                    opacity="0.25"
+                  />
+                  <line
+                    x1="30"
+                    y1="65"
+                    x2="50"
+                    y2="95"
+                    stroke="#a78bfa"
+                    strokeWidth="1.5"
+                    opacity="0.25"
+                  />
+                  <line
+                    x1="90"
+                    y1="65"
+                    x2="70"
+                    y2="95"
+                    stroke="#a78bfa"
+                    strokeWidth="1.5"
+                    opacity="0.25"
+                  />
+                  <line
+                    x1="50"
+                    y1="95"
+                    x2="70"
+                    y2="95"
+                    stroke="#a78bfa"
+                    strokeWidth="1.5"
+                    opacity="0.25"
+                  />
+                  <circle
+                    cx="60"
+                    cy="30"
+                    r="12"
+                    fill="url(#cg3)"
+                    opacity="0.75"
+                  />
+                  <circle
+                    cx="30"
+                    cy="65"
+                    r="10"
+                    fill="url(#cg3)"
+                    opacity="0.55"
+                  />
+                  <circle
+                    cx="90"
+                    cy="65"
+                    r="10"
+                    fill="url(#cg3)"
+                    opacity="0.55"
+                  />
+                  <circle
+                    cx="50"
+                    cy="95"
+                    r="8"
+                    fill="url(#cg3)"
+                    opacity="0.38"
+                  />
+                  <circle
+                    cx="70"
+                    cy="95"
+                    r="8"
+                    fill="url(#cg3)"
+                    opacity="0.38"
+                  />
+                  <circle cx="60" cy="30" r="5" fill="#c4b5fd" />
+                  <circle cx="30" cy="65" r="4" fill="#c4b5fd" />
+                  <circle cx="90" cy="65" r="4" fill="#c4b5fd" />
+                </svg>,
               ];
 
               return (
-                <div key={index} className="group">
-                  <div
-                    className={`${colors[index].bg} ${theme === "dark" ? "border-slate-600" : "border-slate-200"} rounded-2xl p-8 h-full border transition-all duration-300`}
-                  >
-                    <div
-                      className={`w-16 h-16 ${colors[index].icon} rounded-xl flex items-center justify-center mb-6 transition-colors`}
-                    >
-                      <svg
-                        className="w-8 h-8"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        {svgIcons[index]}
-                      </svg>
-                    </div>
-                    <h3
-                      className={`text-xl font-medium ${theme === "dark" ? "text-white" : "text-slate-900"} mb-4`}
-                    >
-                      {card.title}
-                    </h3>
-                    <p
-                      className={`${theme === "dark" ? "text-slate-300" : "text-slate-600"} leading-relaxed font-light`}
-                    >
-                      {card.description}
-                    </p>
+                <div key={index} className="capability-glass-card">
+                  <div className="capability-glass-illustration">
+                    {illustrations[index]}
                   </div>
+                  <h3
+                    className={`capability-glass-title ${theme === "dark" ? "text-white" : "text-slate-900"}`}
+                  >
+                    {card.title}
+                  </h3>
+                  <p
+                    className={`capability-glass-desc ${theme === "dark" ? "text-slate-300" : "text-slate-600"}`}
+                  >
+                    {card.description}
+                  </p>
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Conference Banners */}
+      <section className="py-20 px-6 modern-section-surface" id="conference">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-12">
+            <h2
+              className={`text-4xl md:text-5xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-4`}
+            >
+              {t.conference.title}
+            </h2>
+            <p
+              className={`${theme === "dark" ? "text-slate-300" : "text-slate-600"} text-lg`}
+            >
+              {t.conference.subtitle}
+            </p>
+          </div>
+          <div className="conference-banner-grid">
+            {t.conference.slots.map((slot) => (
+              <a href="#" key={slot} className="conference-banner-slot">
+                <span>{slot}</span>
+              </a>
+            ))}
           </div>
         </div>
       </section>
@@ -652,30 +1012,6 @@ export default function ProfessionalLandingPage() {
                   {language === "ru" ? "Выбрать план" : "Choose plan"}
                 </Link>
               </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-20 px-6 modern-section-surface" id="conference">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2
-              className={`text-4xl md:text-5xl font-light ${theme === "dark" ? "text-white" : "text-slate-900"} mb-4`}
-            >
-              {t.conference.title}
-            </h2>
-            <p
-              className={`${theme === "dark" ? "text-slate-300" : "text-slate-600"} text-lg`}
-            >
-              {t.conference.subtitle}
-            </p>
-          </div>
-          <div className="conference-banner-grid">
-            {t.conference.slots.map((slot) => (
-              <a href="#" key={slot} className="conference-banner-slot">
-                <span>{slot}</span>
-              </a>
             ))}
           </div>
         </div>
