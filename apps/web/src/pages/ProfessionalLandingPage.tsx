@@ -402,14 +402,8 @@ export default function ProfessionalLandingPage() {
         <div className="relative z-40 min-h-[calc(100vh-100px)] px-6 flex items-center">
           <div className="max-w-7xl w-full mx-auto hero-split-layout">
             <div className="hero-copy-block">
-              <div className="mb-8 animate-fade-in-up">
-                <span className="modern-badge border px-6 py-3 rounded-full text-sm font-medium backdrop-blur-sm">
-                  {t.hero.badge}
-                </span>
-              </div>
-
               <h1
-                className={`text-5xl md:text-7xl font-light mb-8 ${theme === "dark" ? "text-white" : "text-slate-900"} leading-tight animate-fade-in-up-delay-1`}
+                className={`text-5xl md:text-7xl font-bold mb-8 ${theme === "dark" ? "text-white" : "text-slate-900"} leading-tight animate-fade-in-up-delay-1`}
               >
                 {t.hero.title}
               </h1>
@@ -426,12 +420,6 @@ export default function ProfessionalLandingPage() {
                   className="modern-hero-primary text-white px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   {t.hero.cta1}
-                </Link>
-                <Link
-                  to="/demo"
-                  className="modern-hero-secondary border-2 px-10 py-4 rounded-xl text-lg font-medium transition-all duration-200 hover:scale-105"
-                >
-                  {t.hero.cta2}
                 </Link>
               </div>
             </div>
