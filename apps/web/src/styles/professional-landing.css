@@ -714,9 +714,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .partners-runner-track {
   display: flex;
-  gap: 2.5rem;
+  gap: 3.5rem;
   min-width: max-content;
-  animation: marqueeMove 20s linear infinite;
+  animation: marqueeMove 30s linear infinite;
 }
 
 .partner-chip {

@@ -450,7 +450,7 @@ export default function ProfessionalLandingPage() {
         aria-label={language === "ru" ? "Наши источники" : "Our sources"}
       >
         <div className="partners-runner-track">
-          {[0, 1].map((copy) =>
+          {[0, 1, 2, 3, 4, 5].map((copy) =>
             [
               {
                 name: "Cochrane",
